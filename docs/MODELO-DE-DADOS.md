@@ -1,7 +1,7 @@
 # Modelo de Dados — Plataforma de Cibersegurança
 
 Desenho conceitual das entidades e suas relações, **em nível de projeto**.
-Ainda **sem código, sem SQL e sem schema definitivo** — isso chega na Fase 2.
+Ainda **sem código, sem SQL e sem schema definitivo** — isso chega na Fase 3.
 Este documento existe para guiar a implementação e alinhar o vocabulário.
 
 ## Princípios
@@ -102,16 +102,16 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
 ---
 
 ## Ciclo de vida dos dados
-1. **Ingestão (Fase 2):** os MDX de `content/` são lidos e viram registros de
+1. **Ingestão (Fase 3):** os MDX de `content/` são lidos e viram registros de
    Track, Module, Prerequisite, Task, Flag, Lab e GlossaryTerm. Reexecutar a
    ingestão atualiza o conteúdo sem apagar o estado do usuário.
-2. **Uso (Fase 3+):** o estudo gera Progress; a resolução de flags gera
+2. **Uso (Fase 4+):** o estudo gera Progress; a resolução de flags gera
    FlagSubmission.
 3. **Separação:** conteúdo pode ser regenerado a partir dos arquivos; estado é
    preservado no banco local.
 
 ## Fora de escopo neste documento
-- Tipos de coluna, índices, chaves e constraints exatas (Fase 2).
-- Estratégia de migração e seed (Fase 2).
+- Tipos de coluna, índices, chaves e constraints exatas (Fase 3).
+- Estratégia de migração e seed (Fase 3).
 - Formato exato do front-matter MDX que declara pré-requisitos, tarefas e flags
-  (definido junto da ingestão, na Fase 2).
+  (definido junto da ingestão, na Fase 3).

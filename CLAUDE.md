@@ -56,6 +56,9 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
 - Priorize qualidade sobre velocidade. Tempo não é problema.
 
 ## Documentos do projeto
-- [`ROADMAP.md`](ROADMAP.md) — as 9 fases de construção da plataforma.
+- [`ROADMAP.md`](ROADMAP.md) — as 10 fases (0 a 9) de construção da plataforma.
 - [`docs/CURRICULO.md`](docs/CURRICULO.md) — currículo detalhado, módulo a módulo.
 - [`docs/MODELO-DE-DADOS.md`](docs/MODELO-DE-DADOS.md) — entidades e relações.
+- [`docs/LABORATORIO.md`](docs/LABORATORIO.md) — como subir, descer e validar o
+  isolamento do laboratório.
+- [`docs/MEDICOES-RAM.md`](docs/MEDICOES-RAM.md) — consumo real de RAM medido.

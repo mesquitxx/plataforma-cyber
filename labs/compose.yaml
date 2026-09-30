@@ -1,0 +1,166 @@
+# Phase 1 lab stack: Guacamole gateway + Kali attack box + DVWA target.
+#
+# Isolation rules (see CLAUDE.md and docs/LABORATORIO.md):
+# - The only published port is Guacamole on 127.0.0.1:8080.
+# - Kali and DVWA live only on internal networks: no gateway, no internet.
+# - Internal bridges get no IPv4 address on the host (inhibit_ipv4), so
+#   containers cannot reach host services through the bridge gateway.
+# - No container is privileged and none mounts the Docker socket.
+# - restart: "no" everywhere, so the lab never starts on its own (RAM rule).
+
+name: cyberlab
+
+x-hardening: &hardening
+  restart: "no"
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  guacamole:
+    <<: *hardening
+    image: guacamole/guacamole:1.6.0@sha256:f344085e618bb05e22b964b0208dbd06d3468275bac70206f93805245e067b40
+    depends_on:
+      guacd:
+        condition: service_started
+      guac-db:
+        condition: service_healthy
+    environment:
+      GUACD_HOSTNAME: guacd
+      POSTGRESQL_ENABLED: "true"
+      POSTGRESQL_HOSTNAME: guac-db
+      POSTGRESQL_DATABASE: guacamole
+      POSTGRESQL_USERNAME: guacamole
+      POSTGRESQL_PASSWORD: ${GUAC_DB_PASSWORD:?set GUAC_DB_PASSWORD in labs/.env}
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks: [guac_front, guac_back]
+    mem_limit: 768m
+
+  guacd:
+    <<: *hardening
+    image: guacamole/guacd:1.6.0@sha256:8974eaa9ba32f713daf311e7cc8cd7e4cdfba1edea39eed75524e78ef4b08f4f
+    # The image's own healthcheck only runs every 300s, stalling `up --wait`.
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 4822 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [guac_back, desktop_net]
+    mem_limit: 256m
+
+  guac-db:
+    <<: *hardening
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    environment:
+      POSTGRES_DB: guacamole
+      POSTGRES_USER: guacamole
+      POSTGRES_PASSWORD: ${GUAC_DB_PASSWORD:?set GUAC_DB_PASSWORD in labs/.env}
+      # Read only by guacamole/initdb/02-seed.sh on the first boot.
+      GUAC_ADMIN_PASSWORD: ${GUAC_ADMIN_PASSWORD:?set GUAC_ADMIN_PASSWORD in labs/.env}
+      KALI_VNC_PASSWORD: ${KALI_VNC_PASSWORD:?set KALI_VNC_PASSWORD in labs/.env}
+    volumes:
+      - ./guacamole/initdb:/docker-entrypoint-initdb.d:ro
+      - guac_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "guacamole", "-d", "guacamole"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [guac_back]
+    mem_limit: 256m
+
+  kali:
+    # Built with internet access (docker build); runs without it.
+    # no-new-privileges is intentionally absent: sudo must work inside the box.
+    restart: "no"
+    build: ./kali
+    image: cyberlab/kali-xfce:local
+    hostname: kali
+    init: true
+    shm_size: 1g
+    environment:
+      VNC_PASSWORD: ${KALI_VNC_PASSWORD:?set KALI_VNC_PASSWORD in labs/.env}
+      VNC_GEOMETRY: ${KALI_VNC_GEOMETRY:-1600x900}
+    volumes:
+      - kali_home:/home/kali
+    healthcheck:
+      # Does not open port 5901: half-open VNC probes get 127.0.0.1 blacklisted.
+      test: ["CMD", "bash", "-c", "test -S /tmp/.X11-unix/X1 && pgrep -x Xvnc"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [desktop_net, lab_net]
+    mem_limit: 3g
+
+  dvwa:
+    <<: *hardening
+    image: ghcr.io/digininja/dvwa:latest@sha256:ed35515e9111801e6e386a6fbb11165508cc7f72e0cb8da4dbb3df70182986c6
+    hostname: dvwa
+    depends_on:
+      dvwa-db:
+        condition: service_healthy
+    environment:
+      DB_SERVER: dvwa-db
+      DB_DATABASE: dvwa
+      DB_USER: dvwa
+      DB_PASSWORD: ${DVWA_DB_PASSWORD:?set DVWA_DB_PASSWORD in labs/.env}
+      DEFAULT_SECURITY_LEVEL: low
+    networks: [lab_net, dvwa_back]
+    mem_limit: 256m
+
+  dvwa-db:
+    <<: *hardening
+    image: mariadb:11@sha256:79d59758afc91b89b120b0a8904d637f5a3b3e1c4900f29b740d6d46c72fef68
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DVWA_DB_ROOT_PASSWORD:?set DVWA_DB_ROOT_PASSWORD in labs/.env}
+      MARIADB_DATABASE: dvwa
+      MARIADB_USER: dvwa
+      MARIADB_PASSWORD: ${DVWA_DB_PASSWORD:?set DVWA_DB_PASSWORD in labs/.env}
+    volumes:
+      - dvwa_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [dvwa_back]
+    mem_limit: 256m
+
+networks:
+  # The only non-internal network: Docker cannot publish ports from internal
+  # networks. Only the Guacamole web container is attached to it.
+  guac_front:
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.name: cl-guacfront
+  guac_back:
+    internal: true
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.name: cl-guacback
+      com.docker.network.bridge.inhibit_ipv4: "true"
+  # guacd <-> Kali only; keeps guacd out of the target's reach.
+  desktop_net:
+    internal: true
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.name: cl-desktop
+      com.docker.network.bridge.inhibit_ipv4: "true"
+  # Where the attack happens: Kali <-> DVWA.
+  lab_net:
+    internal: true
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.name: cl-lab
+      com.docker.network.bridge.inhibit_ipv4: "true"
+  dvwa_back:
+    internal: true
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.name: cl-dvwaback
+      com.docker.network.bridge.inhibit_ipv4: "true"
+
+volumes:
+  guac_db_data:
+  dvwa_db_data:
+  kali_home:
