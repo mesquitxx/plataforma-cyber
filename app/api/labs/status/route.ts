@@ -5,28 +5,9 @@
  * another site cannot read the response.
  */
 import { NextResponse } from "next/server";
-import { exitMessage } from "@/lib/labs/jobs";
+import { exitMessage, type JobView, type LabsStatusResponse } from "@/lib/labs/jobs";
 import { getLabJobs, readLabsStatus } from "@/lib/labs/runner";
 import type { LabsStatus } from "@/lib/labs/status";
-
-export type LabsStatusResponse = {
-  /** null when Docker could not be read (e.g. the daemon is not running). */
-  status: LabsStatus | null;
-  error: string | null;
-  current: JobView | null;
-  last: JobView | null;
-};
-
-export type JobView = {
-  id: number;
-  action: string;
-  lab: string;
-  startedAt: number;
-  finishedAt: number | null;
-  exitCode: number | null;
-  message: string;
-  output: string[];
-};
 
 export async function GET() {
   const { current, last } = getLabJobs();

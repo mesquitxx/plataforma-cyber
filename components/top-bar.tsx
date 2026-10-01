@@ -1,4 +1,5 @@
 import { ShieldCheck } from "lucide-react";
+import { ActiveLabIndicator } from "@/components/labs/active-lab-indicator";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -14,11 +15,7 @@ export function TopBar() {
         127.0.0.1 · offline
       </Badge>
 
-      {/* Placeholder: real lab status arrives in Phase 6. */}
-      <div className="ml-auto flex items-center gap-2 font-mono text-xs text-muted-foreground">
-        <span className="size-2 rounded-full bg-muted-foreground/60" aria-hidden />
-        Lab: — parado
-      </div>
+      <ActiveLabIndicator />
     </header>
   );
 }

@@ -4,6 +4,7 @@
  * scripts/lab.sh becomes a message. Pure; the process itself is handled by
  * lib/labs/runner.ts.
  */
+import type { LabsStatus } from "./status";
 
 /** Actions the platform may run. pull, rebuild and purge stay terminal-only. */
 export const LAB_ACTIONS = ["up", "down", "switch", "reset", "verify"] as const;
@@ -27,6 +28,18 @@ export type LabJob = {
   exitCode: number | null;
   /** Last lines of stdout and stderr, oldest first. */
   output: string[];
+};
+
+/** A job as GET /api/labs/status returns it, with its message in Portuguese. */
+export type JobView = LabJob & { message: string };
+
+/** Body of GET /api/labs/status. */
+export type LabsStatusResponse = {
+  /** null when Docker could not be read (e.g. the daemon is not running). */
+  status: LabsStatus | null;
+  error: string | null;
+  current: JobView | null;
+  last: JobView | null;
 };
 
 export const MAX_OUTPUT_LINES = 400;

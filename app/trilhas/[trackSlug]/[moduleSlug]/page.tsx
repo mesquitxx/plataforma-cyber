@@ -8,6 +8,7 @@ import { FlagInput } from "@/components/content/flag-input";
 import { ModuleGlossary } from "@/components/content/glossary-term";
 import { Quiz } from "@/components/content/quiz";
 import { LabBadge } from "@/components/lab-badge";
+import { LabPanel } from "@/components/labs/lab-panel";
 import { ModuleStateBadge, ModuleStateIcon } from "@/components/module-state";
 import { ModuleTasks } from "@/components/module-tasks";
 import { PageBreadcrumb } from "@/components/page-breadcrumb";
@@ -133,6 +134,9 @@ export default async function ModulePage({ params }: Props) {
         </section>
       )}
 
+      {/* The module's lab, right before the content that uses it. */}
+      {module.labSlug && <LabPanel slug={module.labSlug} />}
+
       {Content ? (
         <article className="prose prose-lab max-w-none">
           <Content
@@ -156,7 +160,7 @@ export default async function ModulePage({ params }: Props) {
             </CardDescription>
           </CardHeader>
           <CardContent className="font-mono text-xs text-muted-foreground">
-            Este módulo ainda não foi escrito (as trilhas chegam a partir da Fase 7).
+            Este módulo ainda não foi escrito (o conteúdo chega a partir da Fase 7).
           </CardContent>
         </Card>
       )}
