@@ -1,0 +1,56 @@
+# DVWA target, layered on top of labs/base/compose.yaml (lab "dvwa").
+# Never run it alone: scripts/lab.sh passes both files.
+#
+# DVWA is reachable only from Kali, through lab_net (internal, from the base
+# file). Its database sits on dvwa_back, which nothing else joins.
+
+x-hardening: &hardening
+  restart: "no"
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  dvwa:
+    <<: *hardening
+    image: ghcr.io/digininja/dvwa:latest@sha256:ed35515e9111801e6e386a6fbb11165508cc7f72e0cb8da4dbb3df70182986c6
+    hostname: dvwa
+    depends_on:
+      dvwa-db:
+        condition: service_healthy
+    environment:
+      DB_SERVER: dvwa-db
+      DB_DATABASE: dvwa
+      DB_USER: dvwa
+      DB_PASSWORD: ${DVWA_DB_PASSWORD:?set DVWA_DB_PASSWORD in labs/.env}
+      DEFAULT_SECURITY_LEVEL: low
+    networks: [lab_net, dvwa_back]
+    mem_limit: 256m
+
+  dvwa-db:
+    <<: *hardening
+    image: mariadb:11@sha256:79d59758afc91b89b120b0a8904d637f5a3b3e1c4900f29b740d6d46c72fef68
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DVWA_DB_ROOT_PASSWORD:?set DVWA_DB_ROOT_PASSWORD in labs/.env}
+      MARIADB_DATABASE: dvwa
+      MARIADB_USER: dvwa
+      MARIADB_PASSWORD: ${DVWA_DB_PASSWORD:?set DVWA_DB_PASSWORD in labs/.env}
+    volumes:
+      - dvwa_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [dvwa_back]
+    mem_limit: 256m
+
+networks:
+  dvwa_back:
+    internal: true
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.name: cl-dvwaback
+      com.docker.network.bridge.inhibit_ipv4: "true"
+
+volumes:
+  dvwa_db_data:

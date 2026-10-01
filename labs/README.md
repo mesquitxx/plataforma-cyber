@@ -1,20 +1,21 @@
 # Laboratórios
 
-Pilha de laboratório da Fase 1: Apache Guacamole (desktop no navegador) +
-attack box Kali (XFCE) + DVWA como alvo, tudo em redes internas do Docker.
-Desde a Fase 4, também o `linux-sandbox`, um contêiner sem rede para praticar o
-terminal (módulo 0.3). Um laboratório ativo por vez.
+Desde a Fase 6, a plataforma liga, desliga e reseta os labs, **um por vez**,
+sempre pelo mesmo executor: `scripts/lab.sh`. A lista de labs que ele aceita
+é fechada (`scripts/lab-common.sh`) e precisa bater com o catálogo da
+plataforma (`lib/labs/catalog.ts`); o `npm test` confere.
 
 - Como subir, descer e validar o isolamento: [`docs/LABORATORIO.md`](../docs/LABORATORIO.md)
 - Consumo de RAM medido: [`docs/MEDICOES-RAM.md`](../docs/MEDICOES-RAM.md)
 
 | Caminho | Conteúdo |
 |---|---|
-| `compose.yaml` | Serviços, redes internas e limites de memória |
-| `.env.example` | Modelo de senhas (o `lab-up.sh` gera o `.env` real) |
-| `guacamole/initdb/` | Schema oficial do Guacamole + seed (senha do admin e conexão "Kali") |
-| `kali/` | Dockerfile da attack box (XFCE + TigerVNC + ferramentas) |
-| `dvwa/` | Notas do alvo DVWA (usa a imagem oficial) |
-| `linux-sandbox/` | Contêiner de prática sem rede do módulo 0.3 (`npm run lab:sandbox`) |
+| `base/compose.yaml` | Base de todo lab com desktop: Guacamole + Kali, redes internas e limites de memória. Sozinha, é o lab `kali` (Kali sem alvo). |
+| `base/guacamole/initdb/` | Schema oficial do Guacamole + seed (senha do admin e conexão "Kali") |
+| `base/kali/` | Dockerfile da attack box (XFCE + TigerVNC + ferramentas) |
+| `dvwa/compose.yaml` | Alvo DVWA, que entra por cima da base (lab `dvwa`) |
+| `linux-sandbox/` | Contêiner de prática sem rede do módulo 0.3 (lab `linux-sandbox`) |
+| `.env.example` | Modelo de senhas (o `lab.sh` gera o `.env` real) |
 
-As pastas `juice-shop/`, `webgoat/` e `vulhub/` ficam para fases futuras.
+As pastas `juice-shop/`, `webgoat/` e `vulhub/` recebem seus arquivos nas
+fases de conteúdo (catálogo de labs planejados em `lib/labs/catalog.ts`).

@@ -1,12 +1,18 @@
-# Phase 1 lab stack: Guacamole gateway + Kali attack box + DVWA target.
+# Base of every desktop lab: Guacamole gateway + Kali attack box.
+# A target file (e.g. labs/dvwa/compose.yaml) is layered on top with a second
+# -f; alone, this file is the "kali" lab (Kali with no target).
+# Never run it by hand: scripts/lab.sh owns the file combinations (Phase 6).
 #
 # Isolation rules (see CLAUDE.md and docs/LABORATORIO.md):
 # - The only published port is Guacamole on 127.0.0.1:8080.
-# - Kali and DVWA live only on internal networks: no gateway, no internet.
+# - Kali and the targets live only on internal networks: no gateway, no internet.
 # - Internal bridges get no IPv4 address on the host (inhibit_ipv4), so
 #   containers cannot reach host services through the bridge gateway.
 # - No container is privileged and none mounts the Docker socket.
 # - restart: "no" everywhere, so the lab never starts on its own (RAM rule).
+#
+# Network, bridge and volume names are the same as in Phase 1, when this was a
+# single labs/compose.yaml: data in existing volumes survives the split.
 
 name: cyberlab
 
@@ -70,7 +76,7 @@ services:
     mem_limit: 256m
 
   kali:
-    # Built with internet access (docker build); runs without it.
+    # Built with internet access (scripts/lab.sh pull); runs without it.
     # no-new-privileges is intentionally absent: sudo must work inside the box.
     restart: "no"
     build: ./kali
@@ -92,40 +98,6 @@ services:
     networks: [desktop_net, lab_net]
     mem_limit: 3g
 
-  dvwa:
-    <<: *hardening
-    image: ghcr.io/digininja/dvwa:latest@sha256:ed35515e9111801e6e386a6fbb11165508cc7f72e0cb8da4dbb3df70182986c6
-    hostname: dvwa
-    depends_on:
-      dvwa-db:
-        condition: service_healthy
-    environment:
-      DB_SERVER: dvwa-db
-      DB_DATABASE: dvwa
-      DB_USER: dvwa
-      DB_PASSWORD: ${DVWA_DB_PASSWORD:?set DVWA_DB_PASSWORD in labs/.env}
-      DEFAULT_SECURITY_LEVEL: low
-    networks: [lab_net, dvwa_back]
-    mem_limit: 256m
-
-  dvwa-db:
-    <<: *hardening
-    image: mariadb:11@sha256:79d59758afc91b89b120b0a8904d637f5a3b3e1c4900f29b740d6d46c72fef68
-    environment:
-      MARIADB_ROOT_PASSWORD: ${DVWA_DB_ROOT_PASSWORD:?set DVWA_DB_ROOT_PASSWORD in labs/.env}
-      MARIADB_DATABASE: dvwa
-      MARIADB_USER: dvwa
-      MARIADB_PASSWORD: ${DVWA_DB_PASSWORD:?set DVWA_DB_PASSWORD in labs/.env}
-    volumes:
-      - dvwa_db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
-    networks: [dvwa_back]
-    mem_limit: 256m
-
 networks:
   # The only non-internal network: Docker cannot publish ports from internal
   # networks. Only the Guacamole web container is attached to it.
@@ -146,21 +118,14 @@ networks:
     driver_opts:
       com.docker.network.bridge.name: cl-desktop
       com.docker.network.bridge.inhibit_ipv4: "true"
-  # Where the attack happens: Kali <-> DVWA.
+  # Where the attack happens: Kali <-> targets (declared by the target files).
   lab_net:
     internal: true
     enable_ipv6: false
     driver_opts:
       com.docker.network.bridge.name: cl-lab
       com.docker.network.bridge.inhibit_ipv4: "true"
-  dvwa_back:
-    internal: true
-    enable_ipv6: false
-    driver_opts:
-      com.docker.network.bridge.name: cl-dvwaback
-      com.docker.network.bridge.inhibit_ipv4: "true"
 
 volumes:
   guac_db_data:
-  dvwa_db_data:
   kali_home:

@@ -10,35 +10,16 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DIR="$ROOT/labs/linux-sandbox"
-PROJECT="cyberlab-sandbox"
+# Start, reset, stop and rebuild go through the single lab runner, which holds
+# the lock and the one-lab-at-a-time rule (Phase 6).
+LAB="$ROOT/scripts/lab.sh"
 
 sandbox_compose() {
-    docker compose --project-directory "$DIR" -f "$DIR/compose.yaml" "$@"
+    docker compose -p cyberlab-sandbox --project-directory "$DIR" -f "$DIR/compose.yaml" "$@"
 }
 
 is_running() {
     [ -n "$(sandbox_compose ps -q --status running sandbox 2>/dev/null)" ]
-}
-
-# RAM rule: one lab at a time. Refuse to start next to other compose projects.
-refuse_if_other_lab() {
-    local others
-    others="$(docker ps --format '{{.Names}}' --filter "label=com.docker.compose.project" \
-        | while read -r name; do
-              project="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$name")"
-              [ "$project" != "$PROJECT" ] && echo "$name"
-          done || true)"
-    if [ -n "$others" ]; then
-        echo "Other containers are running (one lab at a time):" >&2
-        echo "$others" >&2
-        echo "Stop them first, e.g. scripts/lab-down.sh" >&2
-        exit 1
-    fi
-}
-
-start() {
-    refuse_if_other_lab
-    sandbox_compose up -d "$@"
 }
 
 open_shell() {
@@ -100,22 +81,20 @@ verify() {
 
 case "${1:-shell}" in
     shell)
-        is_running || start
+        is_running || "$LAB" up linux-sandbox
         open_shell
         ;;
     reset)
-        start --force-recreate
+        "$LAB" reset linux-sandbox
         open_shell
         ;;
     rebuild)
-        refuse_if_other_lab
-        sandbox_compose build --pull
-        start --force-recreate
+        "$LAB" rebuild linux-sandbox
+        "$LAB" reset linux-sandbox
         echo "Sandbox rebuilt. Open it with: npm run lab:sandbox"
         ;;
     down)
-        sandbox_compose down --remove-orphans
-        echo "Sandbox is down."
+        "$LAB" down linux-sandbox
         ;;
     verify)
         verify

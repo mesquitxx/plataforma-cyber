@@ -1,25 +1,19 @@
 #!/usr/bin/env bash
-# Stops the lab stack and removes its containers and networks.
+# Stops the desktop lab (Guacamole + Kali + target) and removes its containers
+# and networks: kept as a shortcut for `scripts/lab.sh down dvwa` (Phase 6).
+# Any desktop lab goes down, since they all share the "cyberlab" project.
 # Usage: scripts/lab-down.sh [--purge]
 #   --purge  also delete the volumes (Guacamole DB, DVWA DB, Kali home).
 #            Required after changing passwords in labs/.env.
 set -euo pipefail
-source "$(dirname "$0")/lab-common.sh"
+lab="$(dirname "$0")/lab.sh"
 
-args=(down --remove-orphans)
+command=down
 for arg in "$@"; do
     case "$arg" in
-        --purge) args+=(--volumes) ;;
+        --purge) command=purge ;;
         *) echo "unknown option: $arg" >&2; exit 2 ;;
     esac
 done
 
-lab_compose "${args[@]}"
-
-left="$(docker ps -a --filter "label=com.docker.compose.project=$LAB_PROJECT" -q)"
-nets="$(docker network ls --filter "label=com.docker.compose.project=$LAB_PROJECT" -q)"
-if [ -n "$left$nets" ]; then
-    echo "Warning: lab containers or networks are still present" >&2
-    exit 1
-fi
-echo "Lab is down: no containers, no networks left."
+exec "$lab" "$command" dvwa

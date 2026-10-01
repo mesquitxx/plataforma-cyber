@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Proves the lab isolation rules with real connection attempts.
-# Run with the lab up (scripts/lab-up.sh). Exit code 0 only if every test passes.
-# The LAN test (another device on your Wi-Fi) is manual: see docs/LABORATORIO.md.
+# Proves the lab isolation rules with real connection attempts, for the
+# desktop lab that is running (dvwa, or kali with no target). Usually run as
+# `scripts/lab.sh verify <lab>` or from the platform. Exit code 0 only if
+# every test passes. The LAN test (another device on your Wi-Fi) is manual:
+# see docs/LABORATORIO.md.
 set -uo pipefail
 source "$(dirname "$0")/lab-common.sh"
 
@@ -46,9 +48,22 @@ network_is_internal() {
     [ "$(docker network inspect -f '{{.Internal}}' "${LAB_PROJECT}_$1")" = true ]
 }
 
-for svc in dvwa kali; do
+LAB_ACTIVE="${LAB_ACTIVE:-$(lab_active_desktop || true)}"
+if [ -z "$LAB_ACTIVE" ]; then
+    echo "No desktop lab is running. Start one with: scripts/lab.sh up dvwa" >&2
+    exit 2
+fi
+# Targets of the lab (reachable from Kali), and their private back-end networks.
+case "$LAB_ACTIVE" in
+    dvwa) targets=(dvwa); back_nets=(dvwa_back); back_bridges=(cl-dvwaback); back_dbs=(dvwa-db) ;;
+    *) targets=(); back_nets=(); back_bridges=(); back_dbs=() ;;
+esac
+has_dvwa=false
+[ "${targets[*]}" = dvwa ] && has_dvwa=true
+
+for svc in kali "${targets[@]}"; do
     if [ -z "$(lab_compose ps -q --status running "$svc")" ]; then
-        echo "Service '$svc' is not running. Start the lab with scripts/lab-up.sh" >&2
+        echo "Service '$svc' is not running. Start the lab with: scripts/lab.sh up $LAB_ACTIVE" >&2
         exit 2
     fi
 done
@@ -72,20 +87,22 @@ done
 trap 'kill "${canary_pids[@]}" 2>/dev/null' EXIT
 sleep 0.5
 
-echo "Lab isolation check — $(date '+%Y-%m-%d %H:%M:%S')"
+echo "Lab isolation check (lab: $LAB_ACTIVE) — $(date '+%Y-%m-%d %H:%M:%S')"
 echo "WSL eth0: $wsl_ip | Windows host: $windows_ip | guac_front gateway: $front_gw | canary port: $canary_port"
 echo
 printf '%-4s  %-7s  %-13s  %s\n' "RES" "EXPECT" "ID" "ATTEMPT"
 
 # 0. Probe controls: prove the probes work, so a "blocked" below is real and
 #    not a missing tool (bash, timeout, getent) inside the container.
-expect ok "0.dvwa" "probe control: dvwa -> dvwa-db:3306 (TCP)"  tcp_from dvwa dvwa-db 3306
-expect ok "0.dvwa" "probe control: dvwa resolves 'kali'"         dns_from dvwa kali
-expect ok "0.kali" "probe control: kali -> dvwa:80 (TCP)"        tcp_from kali dvwa 80
+if $has_dvwa; then
+    expect ok "0.dvwa" "probe control: dvwa -> dvwa-db:3306 (TCP)"  tcp_from dvwa dvwa-db 3306
+    expect ok "0.dvwa" "probe control: dvwa resolves 'kali'"         dns_from dvwa kali
+    expect ok "0.kali" "probe control: kali -> dvwa:80 (TCP)"        tcp_from kali dvwa 80
+fi
 expect ok "0.kali" "probe control: kali resolves 'guacd' (accepted trade-off)" dns_from kali guacd
 
-# 1-2. No internet (TCP and DNS) from target and attack box.
-for svc in dvwa kali; do
+# 1-2. No internet (TCP and DNS) from targets and attack box.
+for svc in "${targets[@]}" kali; do
     expect blocked "1.$svc" "$svc -> internet TCP 1.1.1.1:443"        tcp_from "$svc" 1.1.1.1 443
     expect blocked "1.$svc" "$svc -> internet TCP 8.8.8.8:53"         tcp_from "$svc" 8.8.8.8 53
     expect blocked "2.$svc" "$svc -> DNS resolution of example.com"   dns_from "$svc" example.com
@@ -93,33 +110,36 @@ for svc in dvwa kali; do
 done
 
 # 3. Internal bridges have no IPv4 on the host; networks are marked internal.
-for net in lab_net desktop_net dvwa_back guac_back; do
+for net in lab_net desktop_net "${back_nets[@]}" guac_back; do
     expect ok "8.$net" "network $net is internal"                     network_is_internal "$net"
 done
-for br in cl-lab cl-desktop cl-dvwaback cl-guacback; do
+for br in cl-lab cl-desktop "${back_bridges[@]}" cl-guacback; do
     expect blocked "3.$br" "host bridge $br has an IPv4 address"      bridge_has_ipv4 "$br"
 done
 
 # 4. Canary on the host: reachable from the host itself, never from the lab.
 expect ok      "4.ctl"  "host -> canary $wsl_ip:$canary_port (control)" \
     timeout 4 bash -c "</dev/tcp/$wsl_ip/$canary_port"
-for svc in dvwa kali; do
+for svc in "${targets[@]}" kali; do
     expect blocked "4.$svc" "$svc -> host canary $wsl_ip:$canary_port (WSL eth0)"  tcp_from "$svc" "$wsl_ip" "$canary_port"
     expect blocked "4.$svc" "$svc -> host canary $front_gw:$canary_port (guac_front gw)" tcp_from "$svc" "$front_gw" "$canary_port"
     expect blocked "4.$svc" "$svc -> host docker0 172.17.0.1:$canary_port"          tcp_from "$svc" 172.17.0.1 "$canary_port"
     expect blocked "4.$svc" "$svc -> WSL DNS 10.255.255.254:53"                     tcp_from "$svc" 10.255.255.254 53
 done
 
-# 5. Windows host.
+# 5. Windows host (from the target; from Kali when the lab has no target).
+from_svc="${targets[0]:-kali}"
 for port in 135 445 3389; do
-    expect blocked "5.dvwa" "dvwa -> Windows host $windows_ip:$port"  tcp_from dvwa "$windows_ip" "$port"
+    expect blocked "5.$from_svc" "$from_svc -> Windows host $windows_ip:$port"  tcp_from "$from_svc" "$windows_ip" "$port"
 done
 
 # 6-7. The target cannot even resolve the platform infrastructure.
-for name in host.docker.internal guacamole guacd guac-db; do
-    expect blocked "7.dvwa" "dvwa resolves '$name'"                   dns_from dvwa "$name"
+for svc in "${targets[@]}"; do
+    for name in host.docker.internal guacamole guacd guac-db; do
+        expect blocked "7.$svc" "$svc resolves '$name'"               dns_from "$svc" "$name"
+    done
 done
-for name in guacamole guac-db dvwa-db; do
+for name in guacamole guac-db "${back_dbs[@]}"; do
     expect blocked "7.kali" "kali resolves '$name'"                   dns_from kali "$name"
 done
 
@@ -138,9 +158,24 @@ if command -v powershell.exe >/dev/null 2>&1; then
         [ -z "$addrs" ] || ! echo "$addrs" | grep -Evq "^(127\.0\.0\.1|::1)$"'
 fi
 
+# 9b. The platform (Phase 6) is loopback-only too, whether it runs or not.
+expect blocked "9.app" "something listens on 0.0.0.0:3000 or [::]:3000 in WSL" \
+    bash -c "ss -Hltn | awk '{ print \$4 }' | grep -Eq '^(0\.0\.0\.0|\*|\[::\]):3000$'"
+
+# 10. No lab container is privileged or can reach the Docker daemon.
+for id in $(docker ps -q --filter "label=com.docker.compose.project=$LAB_PROJECT"); do
+    name="$(docker inspect -f '{{.Name}}' "$id")"
+    expect blocked "10" "${name#/} is privileged" \
+        test "$(docker inspect -f '{{.HostConfig.Privileged}}' "$id")" = true
+    expect blocked "10" "${name#/} mounts the Docker socket" \
+        bash -c "docker inspect -f '{{range .Mounts}}{{.Source}} {{end}}' '$id' | grep -q docker.sock"
+done
+
 # 11-12. Positive controls: the lab must still work.
-expect ok "11"   "kali -> dvwa:80 (HTTP)" \
-    lab_compose exec -T kali curl -fsS -o /dev/null --max-time 5 http://dvwa/login.php
+if $has_dvwa; then
+    expect ok "11" "kali -> dvwa:80 (HTTP)" \
+        lab_compose exec -T kali curl -fsS -o /dev/null --max-time 5 http://dvwa/login.php
+fi
 expect ok "12a"  "host -> Guacamole http://127.0.0.1:8080/guacamole/" \
     curl -fsS -o /dev/null --max-time 5 http://127.0.0.1:8080/guacamole/
 expect ok "12b"  "guacd -> kali:5901 (VNC)" \
@@ -152,6 +187,30 @@ expect ok      "12c" "Guacamole login with labs/.env password" \
 expect blocked "12d" "Guacamole login with default guacadmin/guacadmin" \
     curl -fsS -o /dev/null --max-time 5 -d username=guacadmin -d password=guacadmin \
         http://127.0.0.1:8080/guacamole/api/tokens
+
+# 13. The platform's Guacamole user (Phase 6) sees the Kali connection and
+#     nothing else: no connection parameters (VNC password), no admin.
+api="http://127.0.0.1:8080/guacamole/api"
+platform_token="$(curl -fsS --max-time 5 --data-urlencode username=plataforma \
+    --data-urlencode "password=$(lab_env_value PLATFORM_GUAC_PASSWORD)" "$api/tokens" \
+    | python3 -c 'import json, sys; print(json.load(sys.stdin)["authToken"])' 2>/dev/null)"
+expect ok "13a" "Guacamole login as 'plataforma' (restricted user)" test -n "$platform_token"
+expect ok "13b" "'plataforma' sees exactly one connection: Kali (attack box)" bash -c "
+    curl -fsS --max-time 5 '$api/session/data/postgresql/connections?token=$platform_token' \
+        | python3 -c 'import json, sys; d = json.load(sys.stdin); sys.exit(0 if [c[\"name\"] for c in d.values()] == [\"Kali (attack box)\"] else 1)'"
+kali_id="$(curl -fsS --max-time 5 "$api/session/data/postgresql/connections?token=$platform_token" \
+    | python3 -c 'import json, sys; print(next(iter(json.load(sys.stdin))))' 2>/dev/null)"
+expect blocked "13c" "'plataforma' reads the Kali connection parameters (VNC password)" \
+    curl -fsS -o /dev/null --max-time 5 "$api/session/data/postgresql/connections/$kali_id/parameters?token=$platform_token"
+expect blocked "13d" "'plataforma' creates a connection" \
+    curl -fsS -o /dev/null --max-time 5 -H 'Content-Type: application/json' \
+        -d '{"parentIdentifier":"ROOT","name":"x","protocol":"ssh","parameters":{},"attributes":{}}' \
+        "$api/session/data/postgresql/connections?token=$platform_token"
+expect blocked "13e" "'plataforma' creates a user" \
+    curl -fsS -o /dev/null --max-time 5 -H 'Content-Type: application/json' \
+        -d '{"username":"x","password":"x","attributes":{}}' \
+        "$api/session/data/postgresql/users?token=$platform_token"
+[ -n "$platform_token" ] && curl -fsS -o /dev/null -X DELETE "$api/session?token=$platform_token"
 
 echo
 echo "Result: $pass passed, $fail failed."

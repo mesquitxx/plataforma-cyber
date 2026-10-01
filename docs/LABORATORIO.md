@@ -166,8 +166,8 @@ nmap -sV dvwa                # funciona: 80/tcp aberto
   (regra de 1 lab por vez).
 - **Login do Guacamole falha depois de trocar o `.env`:** rode
   `scripts/lab-down.sh --purge` e suba de novo.
-- **Tela preta no Kali:** `docker compose -f labs/compose.yaml logs kali`; em
-  geral basta `scripts/lab-down.sh && scripts/lab-up.sh`.
+- **Tela preta no Kali:** `docker logs cyberlab-kali-1`; em
+  geral basta `scripts/lab.sh reset dvwa` (ou `reset kali`).
 - **DVWA pede "Create / Reset Database":** abra `http://dvwa/setup.php` no Kali
   e clique no botão.
 
