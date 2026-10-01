@@ -42,20 +42,19 @@ export function getFlagTask(moduleSlug: string, taskSlug: string): FlagTaskView 
 export function getFlagSecret(moduleSlug: string, taskSlug: string) {
   return (
     db
-      .select({ flagId: flags.id, answerHash: flags.answerHash, salt: flags.salt })
+      .select({
+        flagId: flags.id,
+        taskId: tasks.id,
+        moduleId: tasks.moduleId,
+        answerHash: flags.answerHash,
+        salt: flags.salt,
+      })
       .from(flags)
       .innerJoin(tasks, eq(tasks.id, flags.taskId))
       .innerJoin(modules, eq(modules.id, tasks.moduleId))
       .where(and(eq(modules.slug, moduleSlug), eq(tasks.slug, taskSlug)))
       .get() ?? null
   );
-}
-
-export function recordFlagSubmission(flagId: number, value: string, isCorrect: boolean) {
-  // Only wrong attempts keep the typed value (CHECK constraint in the schema).
-  db.insert(flagSubmissions)
-    .values({ flagId, isCorrect, submittedValue: isCorrect ? null : value })
-    .run();
 }
 
 export type GlossaryEntry = { term: string; definition: string };

@@ -1,27 +1,15 @@
 /**
  * Seeds the curriculum (tracks, labs, modules, prerequisites) from
  * db/seed/curriculum.ts, upserting by slug in a single transaction.
- *
- *   npm run db:seed        content only; never touches user progress
- *   npm run db:seed:demo   content + REPLACES progress with demo progress
+ * Usage: npm run db:seed   (content only; never touches user progress)
  *
  * Module bodies are only set on insert, so MDX ingested later (Phase 4) is
  * never overwritten by an empty seed body.
  */
-import { eq, inArray, sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { openDatabase, resolveDatabasePath } from "../db/connection";
-import {
-  labs,
-  modulePrerequisites,
-  moduleProgress,
-  modules,
-  taskProgress,
-  tracks,
-} from "../db/schema";
+import { labs, modulePrerequisites, modules, tracks } from "../db/schema";
 import { resolveCurriculum } from "../db/seed/curriculum";
-import { DEMO_PROGRESS } from "../db/seed/demo-progress";
-
-const withDemoProgress = process.argv.includes("--demo-progress");
 
 const curriculum = resolveCurriculum();
 const filePath = resolveDatabasePath();
@@ -93,46 +81,15 @@ try {
       })),
     );
     if (prerequisiteRows.length > 0) tx.insert(modulePrerequisites).values(prerequisiteRows).run();
-
-    if (withDemoProgress) {
-      tx.delete(taskProgress).run();
-      tx.delete(moduleProgress).run();
-      const now = Date.now();
-      tx.insert(moduleProgress)
-        .values(
-          DEMO_PROGRESS.map((entry) => {
-            const moduleId = moduleIds.get(entry.moduleSlug);
-            if (moduleId === undefined) {
-              throw new Error(`Demo progress references unknown module "${entry.moduleSlug}"`);
-            }
-            return {
-              moduleId,
-              status: entry.status,
-              updatedAt: new Date(now - entry.hoursAgo * 3_600_000),
-            };
-          }),
-        )
-        .run();
-    }
   });
 
   const count = (table: typeof tracks | typeof modules | typeof labs | typeof modulePrerequisites) =>
     db.select({ n: sql<number>`count(*)` }).from(table).get()!.n;
-  const completed = db
-    .select({ n: sql<number>`count(*)` })
-    .from(moduleProgress)
-    .where(eq(moduleProgress.status, "completed"))
-    .get()!.n;
 
   console.log(`Seeded ${filePath}`);
   console.log(
     `Tracks: ${count(tracks)} · Modules: ${count(modules)} · Labs: ${count(labs)} · ` +
       `Prerequisites: ${count(modulePrerequisites)}`,
-  );
-  console.log(
-    withDemoProgress
-      ? `Demo progress written (${completed} modules completed).`
-      : "Progress untouched (use npm run db:seed:demo for demo progress).",
   );
 } finally {
   sqlite.close();

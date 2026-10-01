@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { LABS, TRACKS, resolveCurriculum, type TrackSeed } from "./curriculum";
-import { DEMO_PROGRESS } from "./demo-progress";
 
 describe("curriculum seed", () => {
   const curriculum = resolveCurriculum();
@@ -44,9 +43,5 @@ describe("curriculum seed", () => {
     assert.throws(() => resolveCurriculum(base(["second"]), []), /unknown or not earlier/);
     assert.throws(() => resolveCurriculum(base(["trilha-0"]), []), /its own track/);
     assert.doesNotThrow(() => resolveCurriculum(base(["first"]), []));
-  });
-
-  it("only references known modules in the demo progress", () => {
-    for (const entry of DEMO_PROGRESS) assert.ok(bySlug.has(entry.moduleSlug), entry.moduleSlug);
   });
 });
