@@ -17,15 +17,11 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-// "linux-sandbox" is a practice box with no vulnerability and no network,
-// not an attack target (see CLAUDE.md, isolation rules).
-export const LAB_TARGETS = ["dvwa", "juice-shop", "webgoat", "vulhub", "linux-sandbox"] as const;
 export const TASK_TYPES = ["reading", "exercise", "lab_step", "flag", "quiz"] as const;
 /** Task types the reader marks as done by hand (flags and quizzes are graded). */
 export const MANUAL_TASK_TYPES = ["reading", "exercise", "lab_step"] as const;
 export const PROGRESS_STATUS = ["not_started", "in_progress", "completed"] as const;
 
-export type LabTarget = (typeof LAB_TARGETS)[number];
 export type TaskType = (typeof TASK_TYPES)[number];
 export type ProgressStatus = (typeof PROGRESS_STATUS)[number];
 
@@ -48,26 +44,18 @@ export const tracks = sqliteTable(
     description: text("description").notNull(),
     sortOrder: integer("sort_order").notNull(),
   },
-  (t) => [check("tracks_number_range", sql`${t.number} BETWEEN 0 AND 7`)],
+  (t) => [check("tracks_number_range", sql`${t.number} BETWEEN 0 AND 8`)],
 );
 
-export const labs = sqliteTable(
-  "labs",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    slug: text("slug").notNull().unique(),
-    target: text("target", { enum: LAB_TARGETS }).notNull(),
-    // Relative to labs/.
-    composeDir: text("compose_dir").notNull(),
-    // Host ports, always bound to 127.0.0.1 (enforced in Phase 6).
-    localPorts: text("local_ports", { mode: "json" })
-      .$type<number[]>()
-      .notNull()
-      .default(sql`'[]'`),
-    isolationNotes: text("isolation_notes"),
-  },
-  (t) => [check("labs_target_valid", sql`${t.target} IN (${sqlInList(LAB_TARGETS)})`)],
-);
+// Since Phase 6 a lab is defined in code (lib/labs/catalog.ts): kind, compose
+// files, targets and ports never come from the database, so nothing the
+// platform hands to scripts/lab.sh can be changed by editing data. The row
+// exists so modules can point at a lab (same slug as the catalog).
+export const labs = sqliteTable("labs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  slug: text("slug").notNull().unique(),
+  isolationNotes: text("isolation_notes"),
+});
 
 export const modules = sqliteTable(
   "modules",

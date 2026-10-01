@@ -81,11 +81,11 @@ verify() {
 
 case "${1:-shell}" in
     shell)
-        is_running || "$LAB" up linux-sandbox
+        is_running || CYBERLAB_CALLER=sandbox-shell "$LAB" up linux-sandbox
         open_shell
         ;;
     reset)
-        "$LAB" reset linux-sandbox
+        CYBERLAB_CALLER=sandbox-shell "$LAB" reset linux-sandbox
         open_shell
         ;;
     rebuild)

@@ -605,7 +605,7 @@ aluno:x:1000:1000::/home/aluno:/bin/bash
 As senhas ficam em `/etc/shadow`, na forma de
 <GlossaryTerm term="hash">hash</GlossaryTerm>: uma "impressão digital" calculada a
 partir da senha, que permite conferir se uma senha digitada está certa sem guardar a
-senha em si (a Trilha 4 aprofunda o assunto). Esse arquivo só o root e o grupo
+senha em si (a Trilha 3, de criptografia, aprofunda o assunto). Esse arquivo só o root e o grupo
 `shadow` leem. Compare as permissões dos dois
 arquivos (saída real):
 
@@ -879,7 +879,7 @@ Todos esses são normais num Debian: o `passwd`, por exemplo, precisa ser SUID p
 um usuário comum conseguir trocar a própria senha, que fica no `/etc/shadow` (só o
 root escreve ali). Mas um programa SUID **fora do comum** é um dos caminhos clássicos
 de <GlossaryTerm term="privilege escalation">privilege escalation</GlossaryTerm>
-(escalação de privilégios, passar de usuário comum a root), assunto da Trilha 5.
+(escalação de privilégios, passar de usuário comum a root), assunto da Trilha 6.
 
 ### 3.2 Como atacantes reais usam o básico
 
@@ -1090,17 +1090,19 @@ qualquer momento. Pode errar à vontade.
    npm run lab:sandbox
    ```
 
-   Na **primeira vez**, a imagem é construída (alguns minutos; é o único momento em
-   que há internet). Depois, a saída é esta (saída real):
+   Na **primeira vez**, a imagem precisa ser construída: rode antes
+   `scripts/lab.sh pull linux-sandbox` (alguns minutos; é o único momento em que há
+   internet). Depois, a saída é esta (saída real):
 
    ```text
-   > plataforma-cyber@0.4.0 lab:sandbox
+   > plataforma-cyber@0.6.0 lab:sandbox
    > scripts/lab-sandbox.sh
 
-    Container cyberlab-sandbox-sandbox-1 Creating
-    Container cyberlab-sandbox-sandbox-1 Created
-    Container cyberlab-sandbox-sandbox-1 Starting
-    Container cyberlab-sandbox-sandbox-1 Started
+   ==> Starting lab 'linux-sandbox'
+   [+] up 1/1
+    ✔ Container cyberlab-sandbox-sandbox-1 Healthy                             0.8s
+
+   Lab 'linux-sandbox' is up.
    ==> Entering the sandbox (type 'exit' to leave)
 
    Sandbox do módulo 0.3 — sem rede, descartável. Pode errar à vontade.
@@ -1110,9 +1112,16 @@ qualquer momento. Pode errar à vontade.
    ```
 
 <Callout variant="warning" title="Um laboratório por vez">
-Se o lab da Trilha 2 (Kali + DVWA) estiver no ar, o script recusa subir o sandbox e
-lista os contêineres que estão rodando. Desça o outro lab primeiro
-(`scripts/lab-down.sh`). É a regra de RAM da plataforma.
+Se outro lab estiver no ar (por exemplo, o Kali + DVWA da Trilha 2), o script recusa
+subir o sandbox e mostra qual está rodando. Desça o outro primeiro, pelo painel do lab
+na página do módulo ou em **Laboratórios**, ou no terminal com
+`scripts/lab.sh down <lab>`. É a regra de RAM da plataforma.
+</Callout>
+
+<Callout variant="info" title="Também dá pela página">
+O painel de laboratório, no topo desta página, liga, reseta e desliga o sandbox. O
+shell, porém, abre sempre no terminal do WSL, com `npm run lab:sandbox`: a plataforma
+não tem terminal web, de propósito (seria mais uma porta aberta).
 </Callout>
 
 3. Confira onde você está e o que existe ali. Note que, daqui em diante, o prompt é
@@ -1294,7 +1303,7 @@ Há ainda uma terceira forma, que junta `find` e `grep` num comando só:
 Agora você recebe só o objetivo e a direção. Entre em `~/missao-3` e leia as
 instruções. O arquivo `vazamento.txt` é uma lista **fictícia** de senhas "vazadas",
 uma por linha, no estilo das <GlossaryTerm term="wordlist">wordlists</GlossaryTerm>
-(listas de palavras) usadas em testes de senha, como você verá na Trilha 4. Quase
+(listas de palavras) usadas em testes de senha, como você verá nas Trilhas 3 e 5. Quase
 todas as senhas se repetem; **uma única aparece uma vez só**, e ela é a flag, no
 formato `FLAG{senha}`.
 

@@ -1,20 +1,25 @@
 import { FlaskConical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { LabTarget } from "@/db/schema";
+import { cn } from "@/lib/utils";
+import { getLab, isAvailable } from "@/lib/labs/catalog";
 
-const LAB_TARGET_LABELS: Record<LabTarget, string> = {
-  dvwa: "DVWA",
-  "juice-shop": "Juice Shop",
-  webgoat: "WebGoat",
-  vulhub: "Vulhub",
-  "linux-sandbox": "Sandbox Linux",
-};
-
-export function LabBadge({ target }: { target: LabTarget }) {
+/** The module's lab; planned labs (not runnable yet) are shown muted. */
+export function LabBadge({ slug }: { slug: string }) {
+  const lab = getLab(slug);
+  const available = lab !== null && isAvailable(lab);
   return (
-    <Badge variant="outline" className="gap-1 font-mono text-warning" title="Módulo com laboratório">
+    <Badge
+      variant="outline"
+      className={cn("gap-1 font-mono", available ? "text-warning" : "text-muted-foreground")}
+      title={
+        available
+          ? "Módulo com laboratório"
+          : `Laboratório previsto${lab?.plannedPhase ? ` para a Fase ${lab.plannedPhase}` : ""}`
+      }
+    >
       <FlaskConical aria-hidden />
-      {LAB_TARGET_LABELS[target]}
+      {lab?.title ?? slug}
+      {!available && <span className="text-[0.65rem] opacity-80">· previsto</span>}
     </Badge>
   );
 }

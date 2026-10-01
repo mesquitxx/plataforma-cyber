@@ -37,12 +37,7 @@ try {
 
     const labIds = new Map<string, number>();
     for (const lab of curriculum.labs) {
-      const values = {
-        slug: lab.slug,
-        target: lab.target,
-        composeDir: lab.composeDir,
-        isolationNotes: lab.isolationNotes,
-      };
+      const values = { slug: lab.slug, isolationNotes: lab.isolationNotes };
       const row = tx
         .insert(labs)
         .values(values)

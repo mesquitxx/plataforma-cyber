@@ -29,7 +29,7 @@ function snapshot(progress: CurriculumSnapshot["progress"] = []): CurriculumSnap
       { moduleId: 3, requiredModuleId: 2 },
     ],
     progress,
-    labs: [{ id: 7, target: "dvwa" }],
+    labs: [{ id: 7, slug: "dvwa" }],
   };
 }
 
@@ -76,7 +76,7 @@ describe("buildCurriculumView", () => {
       ["0.1 a1", "0.2 a2", "1.1 b1", "1.2 b2"],
     );
     assert.equal(view.modules[2].href, "/trilhas/trilha-1/b1");
-    assert.equal(view.modules[2].labTarget, "dvwa");
+    assert.equal(view.modules[2].labSlug, "dvwa");
     assert.equal(formatModuleNumber(3, 9), "3.9");
   });
 

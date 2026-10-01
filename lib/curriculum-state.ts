@@ -4,7 +4,7 @@
  * snapshot of the tables. Rules: docs/MODELO-DE-DADOS.md, "Decisões de
  * navegação (Fase 3)".
  */
-import type { LabTarget, ProgressStatus } from "@/db/schema";
+import type { ProgressStatus } from "@/db/schema";
 
 // ---------- Input: raw rows ----------
 
@@ -13,7 +13,7 @@ export type CurriculumSnapshot = {
   modules: { id: number; trackId: number; slug: string; title: string; sortOrder: number; labId: number | null }[];
   prerequisites: { moduleId: number; requiredModuleId: number }[];
   progress: { moduleId: number; status: ProgressStatus; updatedAt: Date }[];
-  labs: { id: number; target: LabTarget }[];
+  labs: { id: number; slug: string }[];
 };
 
 // ---------- Output: view model ----------
@@ -41,7 +41,8 @@ export type ModuleRef = {
 export type ModuleView = ModuleRef & {
   id: number;
   trackSlug: string;
-  labTarget: LabTarget | null;
+  /** Slug in lib/labs/catalog.ts, or null when the module has no lab. */
+  labSlug: string | null;
   updatedAt: Date | null;
   prerequisites: ModuleRef[];
   /** Prerequisites not completed yet; non-empty exactly when the state is "locked". */
@@ -117,7 +118,7 @@ export function pickContinueModule(modulesInOrder: ModuleView[]): ModuleView | n
 
 export function buildCurriculumView(snapshot: CurriculumSnapshot): CurriculumView {
   const progressById = new Map(snapshot.progress.map((p) => [p.moduleId, p]));
-  const labTargetById = new Map(snapshot.labs.map((lab) => [lab.id, lab.target]));
+  const labSlugById = new Map(snapshot.labs.map((lab) => [lab.id, lab.slug]));
   const requiredById = new Map<number, number[]>();
   for (const { moduleId, requiredModuleId } of snapshot.prerequisites) {
     const list = requiredById.get(moduleId) ?? [];
@@ -162,7 +163,7 @@ export function buildCurriculumView(snapshot: CurriculumSnapshot): CurriculumVie
           ...ref,
           id: module.id,
           trackSlug: track.slug,
-          labTarget: module.labId === null ? null : (labTargetById.get(module.labId) ?? null),
+          labSlug: module.labId === null ? null : (labSlugById.get(module.labId) ?? null),
           updatedAt: progressById.get(module.id)?.updatedAt ?? null,
           prerequisites,
           pendingPrerequisites:

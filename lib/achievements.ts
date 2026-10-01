@@ -27,6 +27,7 @@ const TRACK_ACHIEVEMENTS = [
   "Fundação sólida",
   "Hacker ético",
   "Kit montado",
+  "Criptógrafo",
   "Caçador web",
   "Mestre dos serviços",
   "Root",

@@ -203,7 +203,8 @@ summary() {
             echo "  or http://127.0.0.1:8080/guacamole/ as guacadmin (GUAC_ADMIN_PASSWORD in labs/.env)"
             ;;
         sandbox)
-            echo "  Open a shell in it: npm run lab:sandbox"
+            # lab-sandbox.sh opens the shell itself right after this.
+            [ "${CYBERLAB_CALLER:-}" = sandbox-shell ] || echo "  Open a shell in it: npm run lab:sandbox"
             ;;
     esac
     case "$lab" in

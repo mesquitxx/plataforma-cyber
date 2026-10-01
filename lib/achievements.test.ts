@@ -46,9 +46,9 @@ describe("achievements", () => {
 
   it("starts with everything locked, with one per track", () => {
     const list = computeAchievements(none);
-    assert.equal(list.length, 18);
+    assert.equal(list.length, 19);
     assert.ok(list.every((a) => a.unlockedAt === null));
-    assert.equal(list.filter((a) => a.id.startsWith("trilha-")).length, 8);
+    assert.equal(list.filter((a) => a.id.startsWith("trilha-")).length, 9);
   });
 
   it("dates module and track achievements", () => {
@@ -64,7 +64,7 @@ describe("achievements", () => {
     assert.deepEqual(result["metade-do-caminho"], oct(5)); // 2 of 3 >= 50%
     assert.deepEqual(result["trilha-0"], oct(5));
     assert.equal(result["trilha-1"], null);
-    assert.equal(result["trilha-7"], null); // a track with no modules is never done
+    assert.equal(result["trilha-8"], null); // a track with no modules is never done
     assert.equal(result["zerou"], null);
   });
 

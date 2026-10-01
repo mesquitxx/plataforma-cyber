@@ -71,7 +71,7 @@ export default async function ModulePage({ params }: Props) {
         <h1 className="text-3xl font-semibold tracking-tight">{module.title}</h1>
         <div className="flex flex-wrap gap-2">
           <ModuleStateBadge state={module.state} />
-          {module.labTarget && <LabBadge target={module.labTarget} />}
+          {module.labSlug && <LabBadge slug={module.labSlug} />}
         </div>
         {tasks.length > 0 && (
           <div className="max-w-sm space-y-1.5">

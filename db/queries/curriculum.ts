@@ -1,6 +1,6 @@
 /**
  * Loads the curriculum and module progress for the app. The dataset is small
- * (8 tracks, ~50 modules), so it is read whole and shaped in memory by
+ * (9 tracks, ~60 modules), so it is read whole and shaped in memory by
  * lib/curriculum-state.ts. Server-only, like db/index.ts.
  */
 import "server-only";
@@ -26,6 +26,6 @@ export const getCurriculum = cache((): CurriculumView => {
       .all(),
     prerequisites: db.select().from(modulePrerequisites).all(),
     progress: db.select().from(moduleProgress).all(),
-    labs: db.select({ id: labs.id, target: labs.target }).from(labs).all(),
+    labs: db.select({ id: labs.id, slug: labs.slug }).from(labs).all(),
   });
 });

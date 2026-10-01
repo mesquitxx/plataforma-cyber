@@ -72,7 +72,7 @@ const otherTask = z.strictObject({
 
 export const frontmatterSchema = z.strictObject({
   slug,
-  track: z.string().regex(/^trilha-[0-7]$/),
+  track: z.string().regex(/^trilha-[0-8]$/),
   title: text,
   prerequisites: z.array(z.string()),
   lab: slug.nullable().default(null),

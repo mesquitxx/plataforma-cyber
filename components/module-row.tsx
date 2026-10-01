@@ -24,7 +24,7 @@ export function ModuleRow({ module }: { module: ModuleView }) {
             </span>
           )}
         </span>
-        {module.labTarget && <LabBadge target={module.labTarget} />}
+        {module.labSlug && <LabBadge slug={module.labSlug} />}
         <span className={cn("hidden w-24 text-right text-xs sm:block", MODULE_STATE_META[module.state].className)}>
           {MODULE_STATE_META[module.state].label}
         </span>

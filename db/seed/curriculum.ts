@@ -1,17 +1,18 @@
 /**
- * Curriculum seed, transcribed from docs/CURRICULO.md (Phase 3; 0.3 split in Phase 4).
+ * Curriculum seed, transcribed from docs/CURRICULO.md (Phase 3; 0.3 split in
+ * Phase 4; Cryptography track and four new modules in Phase 6, with tracks 3+
+ * renumbered to 4–8).
  *
- * Slugs here are the same ones the MDX files will use in Phase 4, so content
- * ingestion overwrites this seed (upsert by slug) without losing user state.
+ * Slugs here are the same ones the MDX files use, so content ingestion and
+ * re-seeding upsert by slug without losing user state. Track slugs follow the
+ * track number ("trilha-N"), so renumbering moves modules between track rows;
+ * progress hangs off modules, never off tracks.
  * Slugs are content (Portuguese, URL-facing); identifiers are in English.
  */
-import type { LabTarget } from "../schema";
+import { LAB_CATALOG } from "../../lib/labs/catalog";
 
 export type LabSeed = {
   slug: string;
-  target: LabTarget;
-  /** Relative to labs/. */
-  composeDir: string;
   isolationNotes: string;
 };
 
@@ -25,7 +26,7 @@ export type ModuleSeed = {
   slug: string;
   title: string;
   prerequisites: PrerequisiteRef[];
-  /** Lab slug. Labs that do not fit LAB_TARGETS yet are left out until Phase 6. */
+  /** Lab slug from lib/labs/catalog.ts (available or planned). */
   lab?: string;
 };
 
@@ -38,27 +39,14 @@ export type TrackSeed = {
   modules: ModuleSeed[];
 };
 
-const TARGET_ISOLATION =
-  "Rede interna sem internet; alcançável só pelo Kali, via Guacamole em 127.0.0.1.";
+/** Highest track number (CHECK in db/schema.ts and front-matter validation). */
+export const MAX_TRACK_NUMBER = 8;
 
-export const LABS: LabSeed[] = [
-  { slug: "dvwa", target: "dvwa", composeDir: "dvwa", isolationNotes: TARGET_ISOLATION },
-  {
-    slug: "juice-shop",
-    target: "juice-shop",
-    composeDir: "juice-shop",
-    isolationNotes: TARGET_ISOLATION,
-  },
-  { slug: "webgoat", target: "webgoat", composeDir: "webgoat", isolationNotes: TARGET_ISOLATION },
-  { slug: "vulhub", target: "vulhub", composeDir: "vulhub", isolationNotes: TARGET_ISOLATION },
-  {
-    slug: "linux-sandbox",
-    target: "linux-sandbox",
-    composeDir: "linux-sandbox",
-    isolationNotes:
-      "Sandbox de prática sem vulnerabilidade: sem rede (network_mode: none), sem portas publicadas; acesso só por docker exec no WSL.",
-  },
-];
+/** Every lab of the catalog, available or planned (the definition lives in code). */
+export const LABS: LabSeed[] = LAB_CATALOG.map((lab) => ({
+  slug: lab.slug,
+  isolationNotes: lab.isolationNotes,
+}));
 
 export const TRACKS: TrackSeed[] = [
   {
@@ -148,12 +136,24 @@ export const TRACKS: TrackSeed[] = [
         slug: "kali-linux",
         title: "Kali Linux e organização do ambiente",
         prerequisites: ["trilha-0", "escopo-e-autorizacao"],
+        lab: "kali",
       },
-      // Lab: internal target network (not in LAB_TARGETS yet).
+      // Phase 6: passive recon comes before active scanning (nmap).
+      {
+        slug: "osint-e-reconhecimento-passivo",
+        title: "OSINT e reconhecimento passivo",
+        prerequisites: ["kali-linux", "lei-e-etica"],
+      },
+      {
+        slug: "engenharia-social-e-phishing",
+        title: "Engenharia social e phishing",
+        prerequisites: ["osint-e-reconhecimento-passivo", "lei-e-etica"],
+      },
       {
         slug: "nmap",
         title: "Reconhecimento e nmap",
-        prerequisites: ["redes-tcp-ip", "kali-linux"],
+        prerequisites: ["redes-tcp-ip", "kali-linux", "osint-e-reconhecimento-passivo"],
+        lab: "rede-de-alvos",
       },
       {
         slug: "burp-suite",
@@ -161,17 +161,19 @@ export const TRACKS: TrackSeed[] = [
         prerequisites: ["redes-tcp-ip", "kali-linux"],
         lab: "juice-shop",
       },
-      // Lab: capture on the internal lab network (not in LAB_TARGETS yet).
+      // Captures Kali <-> DVWA traffic on the internal lab network.
       {
         slug: "wireshark",
         title: "Wireshark e análise de tráfego",
         prerequisites: ["redes-tcp-ip", "kali-linux"],
+        lab: "dvwa",
       },
-      // Lab: simple container on the isolated network (not in LAB_TARGETS yet).
+      // Kali and DVWA as the two ends: no custom "peer" container (CLAUDE.md, R8).
       {
         slug: "netcat-e-shells",
         title: "netcat, shells e transferência de arquivos",
         prerequisites: ["linux-processos-e-pacotes", "kali-linux"],
+        lab: "dvwa",
       },
       {
         slug: "wordlists-e-fuzzing",
@@ -184,13 +186,50 @@ export const TRACKS: TrackSeed[] = [
   {
     slug: "trilha-3",
     number: 3,
+    title: "Criptografia",
+    description:
+      "O que protege (e o que não protege) os dados: encoding, hashes, cifras simétricas e assimétricas, TLS e a transição pós-quântica.",
+    modules: [
+      {
+        slug: "fundamentos-de-criptografia",
+        title: "Fundamentos de criptografia",
+        prerequisites: ["trilha-2"],
+      },
+      {
+        slug: "hashing-senhas-e-quebra",
+        title: "Hashing, senhas e quebra de hashes",
+        prerequisites: ["fundamentos-de-criptografia"],
+        lab: "kali",
+      },
+      {
+        slug: "criptografia-simetrica",
+        title: "Criptografia simétrica",
+        prerequisites: ["fundamentos-de-criptografia"],
+        lab: "kali",
+      },
+      {
+        slug: "criptografia-assimetrica-e-tls",
+        title: "Criptografia assimétrica e TLS",
+        prerequisites: ["hashing-senhas-e-quebra", "criptografia-simetrica"],
+        lab: "juice-shop",
+      },
+      {
+        slug: "cripto-pos-quantica",
+        title: "Criptografia pós-quântica",
+        prerequisites: ["criptografia-assimetrica-e-tls"],
+      },
+    ],
+  },
+  {
+    slug: "trilha-4",
+    number: 4,
     title: "Hacking Web (OWASP Top 10)",
     description: "As principais classes de falha web, na prática, em alvos consagrados.",
     modules: [
       {
         slug: "web-por-dentro",
         title: "Como a web funciona por dentro (revisão aplicada)",
-        prerequisites: ["trilha-2"],
+        prerequisites: ["trilha-2", "fundamentos-de-criptografia"],
       },
       {
         slug: "sql-injection",
@@ -235,6 +274,18 @@ export const TRACKS: TrackSeed[] = [
         prerequisites: ["web-por-dentro"],
         lab: "webgoat",
       },
+      // Phase 6: after the OWASP basics. The lab target is a candidate (DVGA),
+      // confirmed in Phase 8.
+      {
+        slug: "seguranca-de-apis-e-graphql",
+        title: "Segurança de APIs e GraphQL",
+        prerequisites: [
+          "autenticacao-e-sessoes",
+          "controle-de-acesso-e-idor",
+          "criptografia-assimetrica-e-tls",
+        ],
+        lab: "dvga",
+      },
       {
         slug: "mini-projeto-web",
         title: "Mini-projeto web: encadear falhas",
@@ -246,14 +297,15 @@ export const TRACKS: TrackSeed[] = [
           "command-injection-e-upload",
           "csrf-e-ssrf",
           "componentes-vulneraveis",
+          "seguranca-de-apis-e-graphql",
         ],
         lab: "juice-shop",
       },
     ],
   },
   {
-    slug: "trilha-4",
-    number: 4,
+    slug: "trilha-5",
+    number: 5,
     title: "Redes e Serviços",
     description: "Do recon de serviços à exploração de CVEs reais com ferramentas de mercado.",
     modules: [
@@ -281,11 +333,13 @@ export const TRACKS: TrackSeed[] = [
         prerequisites: ["metasploit"],
         lab: "vulhub",
       },
-      // Lab: internal service on the isolated network (not in LAB_TARGETS yet).
+      // Offline cracking is taught in hashing-senhas-e-quebra (Track 3); this
+      // module focuses on online attacks against services.
       {
         slug: "ataques-a-senhas",
         title: "Ataques a senhas",
-        prerequisites: ["ataque-a-servicos"],
+        prerequisites: ["ataque-a-servicos", "hashing-senhas-e-quebra"],
+        lab: "vulhub",
       },
       {
         slug: "mini-projeto-servicos",
@@ -302,18 +356,19 @@ export const TRACKS: TrackSeed[] = [
     ],
   },
   {
-    slug: "trilha-5",
-    number: 5,
+    slug: "trilha-6",
+    number: 6,
     title: "Escalação de Privilégios",
     description:
-      "De um acesso inicial ao controle total do host — Linux primeiro, Windows depois.",
+      "De um acesso inicial ao controle total do host — Linux primeiro, Windows depois — e o que vem depois dele.",
     modules: [
       {
         slug: "conceitos-de-privesc",
         title: "Conceitos de privilégio e superfícies de escalação",
-        prerequisites: ["trilha-4"],
+        prerequisites: ["trilha-5"],
       },
-      // Lab (5.2, 5.3, 5.6): Linux container (not in LAB_TARGETS yet).
+      // Lab for 6.2, 6.3 and 6.6: decided in Phase 9 (a custom misconfigured
+      // container would clash with the "only well-known targets" rule).
       {
         slug: "privesc-linux-enumeracao",
         title: "PrivEsc Linux: enumeração",
@@ -344,18 +399,24 @@ export const TRACKS: TrackSeed[] = [
           "privesc-windows-vetores",
         ],
       },
+      // Phase 6: closes the track, after the mini-project.
+      {
+        slug: "pos-exploracao-e-persistencia",
+        title: "Pós-exploração e persistência",
+        prerequisites: ["mini-projeto-privesc"],
+      },
     ],
   },
   {
-    slug: "trilha-6",
-    number: 6,
+    slug: "trilha-7",
+    number: 7,
     title: "Active Directory",
     description: "Conceitos de AD e os ataques clássicos, em um lab enxuto e guiado.",
     modules: [
       {
         slug: "o-que-e-active-directory",
         title: "O que é AD e por que importa",
-        prerequisites: ["trilha-5"],
+        prerequisites: ["trilha-6"],
       },
       {
         slug: "enumeracao-de-dominio",
@@ -380,8 +441,8 @@ export const TRACKS: TrackSeed[] = [
     ],
   },
   {
-    slug: "trilha-7",
-    number: 7,
+    slug: "trilha-8",
+    number: 8,
     title: "Consolidação",
     description:
       "Juntar tudo: metodologia integrada, máquinas estilo CTF e o relatório final.",
@@ -389,9 +450,9 @@ export const TRACKS: TrackSeed[] = [
       {
         slug: "metodologia-completa",
         title: "Metodologia completa de ataque (revisão integrada)",
-        prerequisites: ["trilha-2", "trilha-3", "trilha-4", "trilha-5", "trilha-6"],
+        prerequisites: ["trilha-2", "trilha-3", "trilha-4", "trilha-5", "trilha-6", "trilha-7"],
       },
-      // Lab (7.2, 7.3, 7.5): boot2root machines (not in LAB_TARGETS yet).
+      // Lab (8.2, 8.3, 8.5): boot2root machines, decided in Phase 10.
       { slug: "ctf-guiado", title: "Máquina CTF guiada", prerequisites: ["metodologia-completa"] },
       { slug: "ctf-sem-dicas", title: "Máquina CTF sem dicas", prerequisites: ["ctf-guiado"] },
       {
@@ -442,7 +503,10 @@ export function resolveCurriculum(tracks: TrackSeed[] = TRACKS, labs: LabSeed[] 
   const trackNumbers = new Set<number>();
   for (const track of tracks) {
     if (!TRACK_REF.test(track.slug)) fail(`track slug "${track.slug}" must match trilha-N`);
-    if (track.number < 0 || track.number > 7) fail(`track number ${track.number} out of 0–7`);
+    if (track.number < 0 || track.number > MAX_TRACK_NUMBER) {
+      fail(`track number ${track.number} out of 0–${MAX_TRACK_NUMBER}`);
+    }
+    if (track.slug !== `trilha-${track.number}`) fail(`track "${track.slug}" must be trilha-${track.number}`);
     if (trackSlugs.has(track.slug)) fail(`duplicate track slug "${track.slug}"`);
     if (trackNumbers.has(track.number)) fail(`duplicate track number ${track.number}`);
     trackSlugs.add(track.slug);
