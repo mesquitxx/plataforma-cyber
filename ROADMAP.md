@@ -46,7 +46,7 @@ apresentado para aprovação (ver [`CLAUDE.md`](CLAUDE.md)).
 - Seed do currículo real (8 trilhas, 49 módulos — 50 desde a Fase 4 —,
   pré-requisitos e labs) com
   *upsert* por slug — os mesmos slugs que os MDX usarão na Fase 4.
-- Progresso de demonstração opcional (`npm run db:seed:demo`), descartável.
+- Progresso de demonstração opcional (`db:seed:demo`), descartável (removido na Fase 5).
 - Homepage: progresso geral, "continuar de onde parei" e as 8 trilhas.
 - Página de trilha: módulos com estados concluído, em andamento, disponível e
   bloqueado (calculado pelos pré-requisitos; bloqueio suave, só com aviso).
@@ -68,11 +68,18 @@ apresentado para aprovação (ver [`CLAUDE.md`](CLAUDE.md)).
   [`docs/PADRAO-DE-MODULO.md`](docs/PADRAO-DE-MODULO.md).
 - Modelo reutilizável [`docs/TEMPLATE-MODULO.mdx`](docs/TEMPLATE-MODULO.mdx).
 
-## Fase 5 — Progresso e glossário
+## Fase 5 — Progresso e glossário ✅
 **Entrega:** a experiência de estudo utilizável.
-- Marcação de progresso por módulo e por tarefa (substitui o progresso de
-  demonstração); flag correta conclui a tarefa; resultado do quiz.
-- Página do Glossário (os termos já são ingeridos desde a Fase 4).
+- Progresso por tarefa e por módulo, persistido no SQLite (substitui o
+  progresso de demonstração; `npm run progress:reset -- --yes` zera tudo).
+- Flag correta conclui a tarefa (hash scrypt, decidido na Fase 4); o módulo
+  se conclui quando todas as tarefas estão concluídas.
+- Quiz como tarefa `type: quiz` no front-matter, corrigido no servidor (o
+  gabarito não vai ao navegador); aprovação padrão de 70%.
+- Painel `/painel`: progresso geral e por trilha, flags, quizzes, sequência
+  de dias de estudo, atividade recente e 18 conquistas derivadas do estado.
+- Página do Glossário `/glossario`, montada dos termos marcados nos módulos,
+  com o módulo que introduz cada termo e onde mais ele aparece.
 
 ## Fase 6 — Orquestração de laboratórios
 **Entrega:** ligar/desligar alvos com segurança, um por vez.

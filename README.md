@@ -3,11 +3,13 @@
 Plataforma pessoal, local e offline, no estilo TryHackMe, para aprender pentest
 (segurança ofensiva) do zero ao avançado — teoria + laboratórios isolados.
 
-> **Status:** Fase 4 (Motor de conteúdo). O app roda em
+> **Status:** Fase 5 (Progresso e glossário). O app roda em
 > `http://127.0.0.1:3000` com homepage, trilhas e módulos navegáveis. Os módulos
-> são escritos em MDX, com quiz, flags validadas no servidor, dicas recolhidas e
-> glossário. O primeiro módulo completo é o 0.3, "Linux: primeiros passos no
-> terminal", com o lab `linux-sandbox` (`npm run lab:sandbox`). O lab da
+> são escritos em MDX, com flags e quizzes corrigidos no servidor, dicas
+> recolhidas e glossário. O progresso (tarefas, módulos, tentativas) fica salvo
+> no SQLite local; há um painel com conquistas (`/painel`) e o Glossário
+> automático (`/glossario`). O primeiro módulo completo é o 0.3, "Linux:
+> primeiros passos no terminal", com o lab `linux-sandbox` (`npm run lab:sandbox`). O lab da
 > Trilha 2 sobe com `scripts/lab-up.sh` (ver [`docs/LABORATORIO.md`](docs/LABORATORIO.md)).
 
 ## Rodando a aplicação
@@ -16,8 +18,8 @@ Requer Node.js 20.9+ (testado com Node 22) dentro do WSL.
 ```bash
 npm install          # dependências
 npm run db:migrate   # cria data/plataforma.db e aplica as migrações
-npm run db:seed      # carrega o currículo (ou db:seed:demo, com progresso de demonstração)
-npm run content:ingest # lê os módulos MDX de content/ (tarefas, flags, glossário)
+npm run db:seed      # carrega o currículo (trilhas, módulos, pré-requisitos, labs)
+npm run content:ingest # lê os módulos MDX de content/ (tarefas, flags, quizzes, glossário)
 npm run dev          # http://127.0.0.1:3000 (só local)
 ```
 
@@ -30,11 +32,11 @@ npm run dev          # http://127.0.0.1:3000 (só local)
 | `npm run db:migrate` | Aplica as migrações pendentes ao banco local |
 | `npm run db:check` | Relatório de saúde do banco (tabelas, *foreign keys*, migrações) |
 | `npm run db:seed` | Carrega/atualiza o currículo (trilhas, módulos, pré-requisitos, labs); não mexe no progresso |
-| `npm run db:seed:demo` | Igual ao anterior e **substitui** o progresso por um de demonstração |
-| `npm run content:ingest` | Valida e grava no banco os módulos de `content/` (tarefas, flags, glossário), sem apagar progresso |
+| `npm run content:ingest` | Valida e grava no banco os módulos de `content/` (tarefas, flags, quizzes, glossário), sem apagar progresso |
+| `npm run progress:reset -- --yes` | **Apaga todo o progresso** (módulos, tarefas, tentativas de flag e de quiz); mantém o conteúdo |
 | `npm run flag:hash -- 'FLAG{...}'` | Gera o hash e o salt de uma flag para o front-matter do módulo |
 | `npm run lab:sandbox` | Sobe o `linux-sandbox` e abre um shell nele (`-- reset`, `-- down`, `-- verify`, `-- rebuild`) |
-| `npm test` | Testes das regras do currículo, do seed, do hash de flags e de todos os módulos de `content/` |
+| `npm test` | Testes das regras do currículo, do progresso, das conquistas, do glossário, do seed, do hash de flags e de todos os módulos de `content/` |
 
 ## Documentação-mestre
 - [`CLAUDE.md`](CLAUDE.md) — fonte de verdade do projeto (objetivo, stack, regras

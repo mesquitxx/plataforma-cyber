@@ -43,7 +43,7 @@ Relação que liga um módulo aos módulos que devem vir antes.
 Um passo verificável dentro de um módulo (uma pergunta, um objetivo prático,
 uma etapa do lab).
 - **Atributos:** slug, título/enunciado, ordem no módulo, tipo (leitura,
-  exercício, etapa de lab, flag), indicação se exige submissão de flag.
+  exercício, etapa de lab, flag, quiz), indicação se exige submissão de flag.
 - **Origem:** conteúdo.
 - **Pertence a:** um Module.
 
@@ -53,6 +53,17 @@ A resposta esperada de uma tarefa do tipo flag (estilo CTF).
   (armazenada de forma a permitir verificação, não em texto claro), dica opcional.
 - **Origem:** conteúdo.
 - **Pertence a:** uma Task (relação um-para-um com tarefas do tipo flag).
+
+### Quiz (Fase 5)
+As perguntas de uma tarefa do tipo quiz, com alternativas, a resposta certa e a
+explicação de cada uma, mais o percentual de acertos que conclui a tarefa.
+- **Origem:** conteúdo (front-matter do MDX).
+- **Pertence a:** uma Task (relação um-para-um com tarefas do tipo quiz).
+
+### QuizAttempt (Tentativa de quiz, Fase 5)
+- **Atributos:** referência ao Quiz, alternativas escolhidas, nota e total
+  congelados no momento do envio, data/hora.
+- **Origem:** estado.
 
 ### Lab
 A definição de um laboratório associado a um módulo.
@@ -79,7 +90,7 @@ Registro de tentativas de resolver uma flag.
 ### GlossaryTerm (Termo do Glossário)
 Um termo técnico (em inglês) com sua explicação em português.
 - **Atributos:** termo, definição, primeira ocorrência (módulo onde foi
-  introduzido).
+  introduzido) e, desde a Fase 5, todos os módulos que o citam.
 - **Origem:** conteúdo (extraído/declarado no MDX).
 
 ---
@@ -91,11 +102,13 @@ Track (1) ───< (N) Module
 Module (N) >───< (N) Module         [via Prerequisite]
 Module (1) ───< (N) Task
 Task  (1) ───── (0..1) Flag          [apenas tarefas do tipo flag]
+Task  (1) ───── (0..1) Quiz          [apenas tarefas do tipo quiz]
+Quiz  (1) ───< (N) QuizAttempt       [histórico de tentativas]
 Module (N) ───> (0..1) Lab           [módulos com lab apontam para um Lab]
 Module (1) ───< (N) Progress         [estado por módulo]
 Task  (1) ───< (N) Progress          [estado por tarefa]
 Flag  (1) ───< (N) FlagSubmission    [histórico de tentativas]
-GlossaryTerm  ─ referenciado pelo conteúdo dos módulos
+GlossaryTerm (N) >───< (N) Module   [via menções <GlossaryTerm>]
 ```
 
 Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-muitos;
@@ -108,14 +121,15 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
    `db/seed/curriculum.ts` (trilhas, módulos, pré-requisitos e labs, sem corpo
    MDX, tarefas nem flags), com *upsert* por slug. Os slugs são os mesmos que os
    MDX usarão, então a ingestão sobrescreve o seed sem perder estado.
-   `npm run db:seed:demo` também **substitui** o progresso por um progresso de
-   demonstração, descartado na Fase 5.
+   O progresso de demonstração da Fase 3 (`db:seed:demo`) foi removido na
+   Fase 5.
 2. **Ingestão (Fase 4):** `npm run content:ingest` lê os MDX de `content/` e
    grava o corpo do módulo, Task, Flag e GlossaryTerm. Trilhas, módulos,
    pré-requisitos e labs continuam vindo do seed (ver "Decisões da Fase 4").
    Reexecutar a ingestão atualiza o conteúdo sem apagar o estado do usuário.
-3. **Uso:** a resolução de flags gera FlagSubmission (Fase 4); o estudo gera
-   Progress (Fase 5).
+3. **Uso:** a resolução de flags gera FlagSubmission (Fase 4); quizzes geram
+   QuizAttempt e todo o estudo gera Progress (Fase 5).
+   `npm run progress:reset -- --yes` apaga todo o estado e mantém o conteúdo.
 4. **Separação:** conteúdo pode ser regenerado a partir dos arquivos; estado é
    preservado no banco local.
 
@@ -125,12 +139,15 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
 | Track | `tracks` | `number` restrito a 0–7 (CHECK). |
 | Module | `modules` | `slug` único global (pré-requisitos cruzam trilhas). "Tem lab" = `lab_id IS NOT NULL`. |
 | Prerequisite | `module_prerequisites` | Chave composta; CHECK impede um módulo exigir a si mesmo. |
-| Task | `tasks` | `slug` único por módulo. "Exige flag" = `type = 'flag'`. Tipos: `reading`, `exercise`, `lab_step`, `flag`. |
+| Task | `tasks` | `slug` único por módulo. "Exige flag" = `type = 'flag'`. Tipos: `reading`, `exercise`, `lab_step`, `flag` e, desde a Fase 5, `quiz`. |
 | Flag | `flags` | Guarda `answer_hash` + `salt`, nunca a resposta em claro. Algoritmo e normalização: Fase 4. |
 | Lab | `labs` | `target` restrito a `dvwa`, `juice-shop`, `webgoat`, `vulhub` e, desde a Fase 4, `linux-sandbox`. `local_ports` em JSON. |
 | Progress | `module_progress` e `task_progress` | Duas tabelas com *foreign key* real, em vez de uma referência polimórfica. Status: `not_started`, `in_progress`, `completed`. |
 | FlagSubmission | `flag_submissions` | Desde a Fase 4, guarda o valor digitado **só nas tentativas erradas**; nas corretas, `submitted_value` é `NULL` (CHECK no banco). |
 | GlossaryTerm | `glossary_terms` | `term` único sem diferenciar maiúsculas/minúsculas. |
+| Quiz | `quizzes` e `quiz_questions` | Fase 5. `pass_percent` de 1 a 100; perguntas com `options` em JSON e `answer_index` a partir de 0. |
+| QuizAttempt | `quiz_attempts` | Fase 5. `answers` em JSON; `score` e `total` congelados no envio. |
+| (menções) | `glossary_term_mentions` | Fase 5. Chave composta (termo, módulo); inclui o módulo que declara o termo. |
 
 - **Chaves:** IDs inteiros; a ingestão faz *upsert* pela chave natural (slug),
   nunca apaga-e-recria, para o estado do usuário sobreviver à reingestão.
@@ -230,5 +247,69 @@ errado". As duas mudanças recriam as tabelas; por isso o `db:migrate` desliga
 as *foreign keys* em volta do migrador e roda `foreign_key_check` no fim. Sem
 isso, o `DROP TABLE labs` dentro da transação anulava todo `modules.lab_id`.
 
-## Fora de escopo neste documento
-- Ligação entre termos do glossário e **todos** os módulos que os citam (Fase 5).
+## Decisões da Fase 5 (progresso, quizzes, painel e glossário)
+
+### Flags
+- O hash continua **scrypt** (Fase 4). O pedido original citava SHA-256, mas o
+  scrypt atende igual a regra "nunca em claro" e resiste muito mais a força
+  bruta de flags de baixa entropia a partir do hash no front-matter.
+- Sem limite de tentativas: uso local, uma pessoa, e o scrypt já deixa cada
+  envio lento. Tentativas erradas guardam o valor digitado (Fase 4).
+
+### Quizzes
+- O quiz é uma tarefa `type: quiz` no front-matter; o corpo só tem
+  `<Quiz task="..." />`. A ingestão valida (2 a 6 alternativas distintas,
+  `answer` no intervalo, exatamente um `<Quiz task>` por tarefa, nenhum quiz
+  inline) e grava. Formato: [`TEMPLATE-MODULO.mdx`](TEMPLATE-MODULO.mdx).
+- Correção no servidor (Server Action). O navegador recebe só perguntas e
+  alternativas; gabarito e explicações voltam depois que a tentativa é gravada.
+- Aprova com `acertos / total >= passPercent%` (padrão 70). Tentativas
+  ilimitadas; vale a melhor nota. Reingerir mantém o quiz e suas tentativas e
+  substitui as perguntas.
+
+### Regras de progresso (`lib/progress-rules.ts`)
+| Evento | Efeito |
+|---|---|
+| Flag correta | tarefa `completed`, na mesma transação do registro da tentativa |
+| Flag errada | tarefa `in_progress` (nunca desfaz uma conclusão) |
+| Quiz com nota ≥ aprovação | tarefa `completed` |
+| Quiz abaixo da aprovação | tarefa `in_progress` (nunca desfaz uma conclusão) |
+| `reading`, `exercise`, `lab_step` | marcadas e desmarcadas à mão no painel "Tarefas do módulo" |
+| Qualquer ação numa tarefa | módulo `in_progress` |
+| Todas as tarefas concluídas | módulo `completed` |
+| Módulo **sem** tarefas | botões "Marcar módulo como concluído" e "Reabrir módulo" |
+
+- Abrir a página não marca "em andamento", para não bagunçar o "continuar".
+- Módulo com tarefas não tem conclusão manual: ela vem das tarefas.
+- Um módulo concluído continua concluído se a reingestão acrescentar uma
+  tarefa; só desmarcar uma tarefa o reabre.
+- `module_progress.updated_at` de um módulo concluído é a data da conclusão:
+  ele não é tocado enquanto o módulo continua concluído. Por isso não há
+  coluna `completed_at`.
+
+### Painel e conquistas
+- Conquistas e sequência de estudo são **derivadas** do estado a cada
+  requisição (`lib/achievements.ts`, `lib/activity.ts`), nunca gravadas: não
+  há o que ficar inconsistente. Se um conteúdo some, a conquista ligada a ele
+  também some.
+- Dia de estudo: dia do calendário local (fuso do WSL) com tentativa de flag,
+  de quiz ou tarefa/módulo marcado. A sequência atual conta até hoje ou, se
+  hoje ainda não houve atividade, até ontem.
+- 18 conquistas: Primeiro passo, Captura de bandeira, De primeira,
+  Persistente, Dez bandeiras, Nota máxima, Constância (3 dias), Hábito
+  (7 dias), Metade do caminho, uma por trilha (Fundação sólida, Hacker ético,
+  Kit montado, Caçador web, Mestre dos serviços, Root, Domain Admin,
+  Pentester) e Zerou.
+
+### Glossário
+- `glossary_term_mentions` liga cada termo a todos os módulos que o marcam com
+  `<GlossaryTerm>`, gravado pela ingestão numa segunda passada (um módulo pode
+  citar um termo declarado por outro arquivo).
+- `/glossario`: A–Z com ordenação pt-BR, busca sem acentos, âncora estável por
+  termo (`#t-<slug>`), módulo que introduz o termo e onde mais ele aparece.
+
+### Migração 0002
+Cria `quizzes`, `quiz_questions`, `quiz_attempts` e `glossary_term_mentions` e
+acrescenta `quiz` ao CHECK de `tasks.type` (o drizzle-kit recria `tasks`; as
+*foreign keys* ficam desligadas em volta do migrador, como na 0001). Backup
+prévio em `data/plataforma.pre-fase5.db`.

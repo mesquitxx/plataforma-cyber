@@ -76,19 +76,29 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
 - `db/index.ts` — conexão do app (`server-only`). Scripts CLI usam
   `db/connection.ts`, porque `server-only` quebra fora do Next.
 - `data/plataforma.db` — banco local, fora do git.
-- `db/seed/` — currículo de exemplo (Fase 3) e progresso de demonstração;
-  `npm run db:seed` (só conteúdo) e `npm run db:seed:demo` (substitui o
-  progresso). Slugs iguais aos que os MDX usarão.
-- `db/queries/` — leitura do banco para as páginas (`server-only`).
-  `lib/curriculum-state.ts` — regras puras (estados dos módulos, progresso,
-  "continuar"), testadas com `npm test` (executor nativo do Node via `tsx`).
-- Rotas do currículo: `/trilhas`, `/trilhas/[trackSlug]`,
-  `/trilhas/[trackSlug]/[moduleSlug]`.
+- `db/seed/` — currículo (Fase 3); `npm run db:seed` grava só conteúdo, nunca
+  progresso. Slugs iguais aos dos MDX. `npm run progress:reset -- --yes` apaga
+  todo o estado do usuário (só por linha de comando, nunca na interface).
+- `db/queries/` — leitura e escrita do banco para as páginas (`server-only`);
+  `db/queries/progress.ts` grava cada tentativa e atualiza tarefa e módulo
+  numa única transação.
+- Regras puras, testadas com `npm test` (executor nativo do Node via `tsx`):
+  `lib/curriculum-state.ts` (estados dos módulos, "continuar"),
+  `lib/progress-rules.ts` (conclusão de tarefas e módulos, nota do quiz),
+  `lib/activity.ts` (dias de estudo e sequência), `lib/achievements.ts`
+  (conquistas, derivadas do estado e nunca gravadas), `lib/dashboard.ts` e
+  `lib/glossary.ts`.
+- Rotas: `/trilhas`, `/trilhas/[trackSlug]`,
+  `/trilhas/[trackSlug]/[moduleSlug]`, `/painel` (progresso e conquistas) e
+  `/glossario`. As Server Actions do módulo ficam em `actions.ts` ao lado da
+  página e validam toda entrada com zod.
 - `content/trilha-N/<slug>/index.mdx` — módulos (front-matter YAML + MDX) e
   `img/` ao lado. A página do módulo importa o MDX (`@next/mdx`);
   `mdx-components.tsx` registra os componentes de `components/content/`
   (Callout, CodeBlock, Figure, FlagInput, GlossaryTerm, Hint/Solution, Quiz,
-  ModuleGlossary). O seed continua dono de título, trilha, pré-requisitos e
+  ModuleGlossary). Quizzes são tarefas `type: quiz` no front-matter, ligadas
+  por `<Quiz task="...">` e corrigidas no servidor: o gabarito nunca vai ao
+  navegador. O seed continua dono de título, trilha, pré-requisitos e
   lab; o front-matter os repete e o `npm test` exige que batam.
 - `lib/module-source.ts` — parser/validador do front-matter (usado pelo
   `npm test` e por `npm run content:ingest`). `lib/flag-hash.ts` — scrypt das
