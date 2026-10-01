@@ -55,6 +55,24 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
 - Trabalhe em passos pequenos e verificáveis; commit ao fim de cada fase.
 - Priorize qualidade sobre velocidade. Tempo não é problema.
 
+## Estrutura do app (Fase 2)
+- `app/` — rotas (App Router). `components/` — componentes; `components/ui/` é
+  gerado pelo shadcn/ui. `lib/` — utilitários. `hooks/` — hooks React.
+- `db/schema.ts` — schema Drizzle (fonte do banco). `db/migrations/` — SQL
+  versionado, gerado por `npm run db:generate`; nunca editar à mão.
+- `db/index.ts` — conexão do app (`server-only`). Scripts CLI usam
+  `db/connection.ts`, porque `server-only` quebra fora do Next.
+- `data/plataforma.db` — banco local, fora do git.
+- `proxy.ts` — recusa (403) requisições cujo `Host` não seja
+  `127.0.0.1:3000`/`localhost:3000` (proteção contra DNS rebinding).
+- Os scripts `dev`/`start` fixam `-H 127.0.0.1 -p 3000`; o padrão do Next.js é
+  `0.0.0.0`, então **nunca** rode `next dev` sem esses parâmetros.
+- Docs do Next.js da versão instalada: `node_modules/next/dist/docs/`. Consulte
+  lá (ou no Context7) antes de usar APIs do Next.js; a versão 16 tem mudanças
+  grandes (ex.: `middleware` virou `proxy`).
+- `next.config.ts` usa `agentRules: false` para o `next dev` não escrever
+  blocos próprios neste arquivo.
+
 ## Documentos do projeto
 - [`ROADMAP.md`](ROADMAP.md) — as 10 fases (0 a 9) de construção da plataforma.
 - [`docs/CURRICULO.md`](docs/CURRICULO.md) — currículo detalhado, módulo a módulo.

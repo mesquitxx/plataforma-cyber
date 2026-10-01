@@ -32,18 +32,22 @@ apresentado para aprovação (ver [`CLAUDE.md`](CLAUDE.md)).
 - Documentação: [`docs/LABORATORIO.md`](docs/LABORATORIO.md) e
   [`docs/MEDICOES-RAM.md`](docs/MEDICOES-RAM.md).
 
-## Fase 2 — Esqueleto da aplicação
+## Fase 2 — Esqueleto da aplicação ✅
 **Entrega:** a casca do app rodando localmente, sem conteúdo real.
-- Next.js (App Router) + TypeScript + Tailwind + shadcn/ui inicializados.
-- SQLite conectado (arquivo local, sem servidor).
-- Layout base, tema e navegação vazia.
-- Servidor de desenvolvimento escutando apenas em `127.0.0.1`.
+- Next.js 16 (App Router) + TypeScript + Tailwind v4 + shadcn/ui inicializados.
+- SQLite conectado via Drizzle ORM + better-sqlite3 (arquivo local, sem servidor).
+- Schema inicial completo e primeira migração versionada (antecipado da Fase 3).
+- Layout base, tema escuro "laboratório" e navegação com páginas provisórias.
+- Servidor (dev e produção) escutando apenas em `127.0.0.1:3000`, com checagem
+  do cabeçalho `Host` contra DNS rebinding.
 
-## Fase 3 — Modelo de dados & ingestão de conteúdo
-**Entrega:** o banco implementado e alimentado a partir dos arquivos MDX.
-- Schema SQLite implementado conforme `docs/MODELO-DE-DADOS.md`.
-- Pipeline que lê os módulos MDX de `content/` e popula trilhas/módulos/tarefas.
-- Seed inicial e migrações versionadas.
+## Fase 3 — Ingestão de conteúdo
+**Entrega:** o banco alimentado a partir dos arquivos MDX.
+- Formato do front-matter MDX (pré-requisitos, tarefas, flags, glossário).
+- Pipeline que lê os módulos MDX de `content/` e faz *upsert* por slug em
+  trilhas/módulos/tarefas/flags/labs/glossário, sem apagar o estado do usuário.
+- Hash das flags (algoritmo e normalização) e seed inicial.
+- Novas migrações, se o schema precisar evoluir.
 
 ## Fase 4 — Navegação do currículo & progresso
 **Entrega:** a experiência de estudo utilizável.

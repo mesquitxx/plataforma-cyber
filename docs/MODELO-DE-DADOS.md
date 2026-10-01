@@ -1,8 +1,10 @@
 # Modelo de Dados — Plataforma de Cibersegurança
 
 Desenho conceitual das entidades e suas relações, **em nível de projeto**.
-Ainda **sem código, sem SQL e sem schema definitivo** — isso chega na Fase 3.
-Este documento existe para guiar a implementação e alinhar o vocabulário.
+Este documento guia a implementação e alinha o vocabulário. O schema concreto
+foi implementado na Fase 2 em [`db/schema.ts`](../db/schema.ts) (Drizzle ORM),
+com o SQL versionado em [`db/migrations/`](../db/migrations/). Em caso de
+divergência, o código é a referência de colunas e o documento, a de conceitos.
 
 ## Princípios
 - **Conteúdo vs. estado.** O conteúdo (trilhas, módulos, tarefas, labs) nasce dos
@@ -110,8 +112,28 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
 3. **Separação:** conteúdo pode ser regenerado a partir dos arquivos; estado é
    preservado no banco local.
 
+## Decisões de implementação (Fase 2)
+| Entidade | Tabela | Notas |
+|---|---|---|
+| Track | `tracks` | `number` restrito a 0–7 (CHECK). |
+| Module | `modules` | `slug` único global (pré-requisitos cruzam trilhas). "Tem lab" = `lab_id IS NOT NULL`. |
+| Prerequisite | `module_prerequisites` | Chave composta; CHECK impede um módulo exigir a si mesmo. |
+| Task | `tasks` | `slug` único por módulo. "Exige flag" = `type = 'flag'`. Tipos: `reading`, `exercise`, `lab_step`, `flag`. |
+| Flag | `flags` | Guarda `answer_hash` + `salt`, nunca a resposta em claro. Algoritmo e normalização: Fase 3. |
+| Lab | `labs` | `target` restrito a `dvwa`, `juice-shop`, `webgoat`, `vulhub`. `local_ports` em JSON. |
+| Progress | `module_progress` e `task_progress` | Duas tabelas com *foreign key* real, em vez de uma referência polimórfica. Status: `not_started`, `in_progress`, `completed`. |
+| FlagSubmission | `flag_submissions` | Guarda o valor digitado (para rever tentativas); o banco é local e fora do git. |
+| GlossaryTerm | `glossary_terms` | `term` único sem diferenciar maiúsculas/minúsculas. |
+
+- **Chaves:** IDs inteiros; a ingestão faz *upsert* pela chave natural (slug),
+  nunca apaga-e-recria, para o estado do usuário sobreviver à reingestão.
+- **Remoção de conteúdo:** apagar um módulo/tarefa/flag do conteúdo apaga em
+  cascata seu progresso e suas submissões (intencional).
+- **Invariante entre tabelas:** "flag só existe para tarefa do tipo `flag`" é
+  garantida pela ingestão, não por CHECK.
+- **Banco:** `data/plataforma.db`, modo WAL, `foreign_keys = ON`.
+
 ## Fora de escopo neste documento
-- Tipos de coluna, índices, chaves e constraints exatas (Fase 3).
-- Estratégia de migração e seed (Fase 3).
 - Formato exato do front-matter MDX que declara pré-requisitos, tarefas e flags
   (definido junto da ingestão, na Fase 3).
+- Ligação entre termos do glossário e todos os módulos que os citam (Fase 4).
