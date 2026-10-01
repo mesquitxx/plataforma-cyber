@@ -3,14 +3,16 @@
 Plataforma pessoal, local e offline, no estilo TryHackMe, para aprender pentest
 (segurança ofensiva) do zero ao avançado — teoria + laboratórios isolados.
 
-> **Status:** Fase 5 (Progresso e glossário). O app roda em
-> `http://127.0.0.1:3000` com homepage, trilhas e módulos navegáveis. Os módulos
-> são escritos em MDX, com flags e quizzes corrigidos no servidor, dicas
-> recolhidas e glossário. O progresso (tarefas, módulos, tentativas) fica salvo
-> no SQLite local; há um painel com conquistas (`/painel`) e o Glossário
-> automático (`/glossario`). O primeiro módulo completo é o 0.3, "Linux:
-> primeiros passos no terminal", com o lab `linux-sandbox` (`npm run lab:sandbox`). O lab da
-> Trilha 2 sobe com `scripts/lab-up.sh` (ver [`docs/LABORATORIO.md`](docs/LABORATORIO.md)).
+> **Status:** Fase 6 (Orquestração de laboratórios). O app roda em
+> `http://127.0.0.1:3000` com homepage, 9 trilhas e 59 módulos navegáveis. Os
+> módulos são escritos em MDX, com flags e quizzes corrigidos no servidor,
+> dicas recolhidas e glossário. O progresso fica salvo no SQLite local; há um
+> painel com conquistas (`/painel`) e o Glossário automático (`/glossario`).
+> A plataforma liga, desliga e reseta os labs (um por vez) em
+> `/laboratorios` e no painel de cada módulo, com o desktop do Kali embutido
+> na página (ver [`docs/LABORATORIO.md`](docs/LABORATORIO.md)). O primeiro
+> módulo completo é o 0.3, "Linux: primeiros passos no terminal", com o lab
+> `linux-sandbox`.
 
 ## Rodando a aplicação
 Requer Node.js 20.9+ (testado com Node 22) dentro do WSL.
@@ -35,8 +37,9 @@ npm run dev          # http://127.0.0.1:3000 (só local)
 | `npm run content:ingest` | Valida e grava no banco os módulos de `content/` (tarefas, flags, quizzes, glossário), sem apagar progresso |
 | `npm run progress:reset -- --yes` | **Apaga todo o progresso** (módulos, tarefas, tentativas de flag e de quiz); mantém o conteúdo |
 | `npm run flag:hash -- 'FLAG{...}'` | Gera o hash e o salt de uma flag para o front-matter do módulo |
+| `scripts/lab.sh <comando> <lab>` | Executor dos labs: `up`, `down`, `switch`, `reset`, `verify`; só no terminal: `pull`, `rebuild`, `purge` (ver `docs/LABORATORIO.md`) |
 | `npm run lab:sandbox` | Sobe o `linux-sandbox` e abre um shell nele (`-- reset`, `-- down`, `-- verify`, `-- rebuild`) |
-| `npm test` | Testes das regras do currículo, do progresso, das conquistas, do glossário, do seed, do hash de flags e de todos os módulos de `content/` |
+| `npm test` | Testes das regras do currículo, do progresso, das conquistas, do glossário, do seed, do hash de flags, do catálogo e do status dos labs, e de todos os módulos de `content/` |
 
 ## Documentação-mestre
 - [`CLAUDE.md`](CLAUDE.md) — fonte de verdade do projeto (objetivo, stack, regras
@@ -56,8 +59,11 @@ permitidos.
 Ver [`CLAUDE.md`](CLAUDE.md) para as regras completas.
 
 O app web segue as mesmas regras: escuta só em `127.0.0.1:3000`, recusa (403)
-requisições com cabeçalho `Host` estranho, usa fontes locais e não envia
-telemetria. As únicas conexões externas são as do `npm install`.
+requisições com cabeçalho `Host` estranho e POSTs sem `Origin` local, usa
+fontes locais e não envia telemetria. Ele controla o Docker só por
+`scripts/lab.sh`, com uma lista fechada de labs e ações, e nunca baixa nada ao
+ligar um lab. As únicas conexões externas são as do `npm install` e as de
+`scripts/lab.sh pull`, rodado à mão no terminal.
 
 **Alerta conhecido do `npm audit`:** 4 avisos moderados vêm de uma versão
 antiga do `esbuild` usada internamente pelo `drizzle-kit` (ferramenta de

@@ -22,7 +22,12 @@ Plataforma pessoal no estilo TryHackMe para o MESQUITA aprender pentest
 ## Regras de isolamento (segurança — inegociáveis)
 - Tudo escuta apenas em `127.0.0.1`. Nada acessível por outros aparelhos na rede.
 - A rede dos laboratórios é interna e sem internet; os alvos não enxergam o PC.
-- Só a plataforma controla o Docker, e só localmente.
+- Só a plataforma controla o Docker, e só localmente: sempre por
+  `scripts/lab.sh`, com uma lista fechada de labs e ações (Fase 6). Nenhum
+  contêiner monta `docker.sock` ou roda `privileged`, e a plataforma não roda
+  em contêiner. Ligar um lab nunca usa a internet (`--pull never --no-build`);
+  baixar imagens (`lab.sh pull`) e apagar o `/home/kali` (`lab.sh purge`) só
+  pelo terminal.
 - Alvos vêm de projetos vulneráveis-por-design consagrados (DVWA, Juice Shop,
   WebGoat, Vulhub). **Nunca** exploit ou malware escrito sob medida.
 - **Sandboxes de prática** são permitidos: contêineres sem nenhuma
@@ -31,15 +36,20 @@ Plataforma pessoal no estilo TryHackMe para o MESQUITA aprender pentest
   `labs/linux-sandbox`). Não são alvos de ataque e também contam na regra de
   um lab por vez.
 
-## Currículo (foco ofensivo, do zero, 8 trilhas)
+## Currículo (foco ofensivo, do zero, 9 trilhas)
 - **Trilha 0 — Pré-Segurança:** redes, terminal Linux, Windows básico, scripting.
 - **Trilha 1 — Fundamentos e Ética:** metodologia, escopo, lei brasileira.
-- **Trilha 2 — Kit do Pentester:** Kali, nmap, Burp, Wireshark, netcat.
-- **Trilha 3 — Hacking Web:** OWASP Top 10 na prática.
-- **Trilha 4 — Redes e Serviços:** enumeração, Metasploit, CVEs reais.
-- **Trilha 5 — Escalação de Privilégios:** Linux e depois Windows.
-- **Trilha 6 — Active Directory:** conceitos e lab enxuto.
-- **Trilha 7 — Consolidação:** máquinas estilo CTF e relatório de pentest.
+- **Trilha 2 — Kit do Pentester:** Kali, OSINT, engenharia social, nmap, Burp,
+  Wireshark, netcat.
+- **Trilha 3 — Criptografia:** encoding, hashes, cifras, TLS, pós-quântica.
+- **Trilha 4 — Hacking Web:** OWASP Top 10 e APIs na prática.
+- **Trilha 5 — Redes e Serviços:** enumeração, Metasploit, CVEs reais.
+- **Trilha 6 — Escalação de Privilégios:** Linux, Windows e pós-exploração.
+- **Trilha 7 — Active Directory:** conceitos e lab enxuto.
+- **Trilha 8 — Consolidação:** máquinas estilo CTF e relatório de pentest.
+
+A Trilha 3 e os módulos de OSINT, engenharia social, APIs e pós-exploração
+entraram na Fase 6 (as trilhas seguintes foram renumeradas).
 
 O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.md).
 
@@ -89,8 +99,8 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
   (conquistas, derivadas do estado e nunca gravadas), `lib/dashboard.ts` e
   `lib/glossary.ts`.
 - Rotas: `/trilhas`, `/trilhas/[trackSlug]`,
-  `/trilhas/[trackSlug]/[moduleSlug]`, `/painel` (progresso e conquistas) e
-  `/glossario`. As Server Actions do módulo ficam em `actions.ts` ao lado da
+  `/trilhas/[trackSlug]/[moduleSlug]`, `/painel` (progresso e conquistas),
+  `/glossario` e `/laboratorios`. As Server Actions do módulo ficam em `actions.ts` ao lado da
   página e validam toda entrada com zod.
 - `content/trilha-N/<slug>/index.mdx` — módulos (front-matter YAML + MDX) e
   `img/` ao lado. A página do módulo importa o MDX (`@next/mdx`);
@@ -109,7 +119,20 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
   migrações que recriam tabelas (drizzle-kit) disparariam `ON DELETE` em
   cascata dentro da transação.
 - `proxy.ts` — recusa (403) requisições cujo `Host` não seja
-  `127.0.0.1:3000`/`localhost:3000` (proteção contra DNS rebinding).
+  `127.0.0.1:3000`/`localhost:3000` (proteção contra DNS rebinding), cujo
+  `X-Forwarded-Host` difira do `Host`, ou que não sejam GET/HEAD sem um
+  `Origin` local (Fase 6).
+- Labs (Fase 6) — `lib/labs/catalog.ts` é a fonte de verdade dos labs
+  (disponíveis e previstos); o banco guarda só o slug. `scripts/lab.sh` é o
+  único executor (registro fechado em `scripts/lab-common.sh`; o `npm test`
+  confere que bate com o catálogo). `lib/labs/runner.ts` (`server-only`) o
+  roda sem shell; `lib/labs/guacamole.ts` abre o Kali com o usuário restrito
+  `plataforma`; `lib/labs/status.ts` e `jobs.ts` são puros e testados.
+  Compose: `labs/base/` (Guacamole + Kali) + um arquivo por alvo
+  (`labs/dvwa/`). Server Actions em `app/laboratorios/actions.ts`; status em
+  `GET /api/labs/status` (só leitura). Interface: `/laboratorios`, painel do
+  lab em cada módulo e lab ativo na barra superior. Detalhes e trocas de
+  segurança em `docs/LABORATORIO.md`.
 - Os scripts `dev`/`start` fixam `-H 127.0.0.1 -p 3000`; o padrão do Next.js é
   `0.0.0.0`, então **nunca** rode `next dev` sem esses parâmetros.
 - Docs do Next.js da versão instalada: `node_modules/next/dist/docs/`. Consulte
@@ -122,8 +145,9 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
 - [`ROADMAP.md`](ROADMAP.md) — as 11 fases (0 a 10) de construção da plataforma.
 - [`docs/CURRICULO.md`](docs/CURRICULO.md) — currículo detalhado, módulo a módulo.
 - [`docs/MODELO-DE-DADOS.md`](docs/MODELO-DE-DADOS.md) — entidades e relações.
-- [`docs/LABORATORIO.md`](docs/LABORATORIO.md) — como subir, descer e validar o
-  isolamento do laboratório.
+- [`docs/LABORATORIO.md`](docs/LABORATORIO.md) — como ligar, desligar e validar o
+  isolamento dos labs (pela plataforma e pelo terminal) e as trocas de
+  segurança aceitas.
 - [`docs/MEDICOES-RAM.md`](docs/MEDICOES-RAM.md) — consumo real de RAM medido.
 - [`docs/PADRAO-DE-MODULO.md`](docs/PADRAO-DE-MODULO.md) — régua obrigatória de
   qualidade de todo módulo.

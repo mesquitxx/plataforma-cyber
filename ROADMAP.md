@@ -1,11 +1,12 @@
 # ROADMAP — Plataforma de Cibersegurança
 
 Este roteiro descreve as **11 fases de construção** da plataforma (engenharia).
-Não confundir com as **8 trilhas** do currículo (conteúdo de estudo), descritas
+Não confundir com as **9 trilhas** do currículo (conteúdo de estudo), descritas
 em [`docs/CURRICULO.md`](docs/CURRICULO.md).
 
 - **Fases (0 a 10):** etapas de desenvolvimento do software.
-- **Trilhas (0 a 7):** o material de aprendizado que a plataforma entrega.
+- **Trilhas (0 a 8):** o material de aprendizado que a plataforma entrega
+  (eram 8 trilhas, de 0 a 7, até a expansão aprovada na Fase 6).
 
 Cada fase termina com um commit. Antes de mudanças grandes, um plano curto é
 apresentado para aprovação (ver [`CLAUDE.md`](CLAUDE.md)).
@@ -81,38 +82,58 @@ apresentado para aprovação (ver [`CLAUDE.md`](CLAUDE.md)).
 - Página do Glossário `/glossario`, montada dos termos marcados nos módulos,
   com o módulo que introduz cada termo e onde mais ele aparece.
 
-## Fase 6 — Orquestração de laboratórios
-**Entrega:** ligar/desligar alvos com segurança, um por vez.
-- Integração com Docker Compose a partir da plataforma, reaproveitando a pilha
-  validada na Fase 1 (separar base Guacamole + Kali de um arquivo por alvo).
-- Iniciar/parar **um laboratório ativo por vez** (regra de RAM).
-- Regras de isolamento aplicadas e verificadas: bind em `127.0.0.1`, rede
-  interna sem internet, alvos sem acesso ao host.
-- Painel de status do lab (rodando/parado, portas locais).
-- Definir os labs que ainda não cabem em `LAB_TARGETS` (rede interna de alvos,
-  contêiner Linux, máquinas boot2root), com migração do schema.
+## Fase 6 — Orquestração de laboratórios ✅
+**Entrega:** a plataforma liga e desliga os labs com segurança, um por vez, e
+mostra o desktop do Kali na página. Decisões e trocas de segurança (T1 a T5) em
+[`docs/LABORATORIO.md`](docs/LABORATORIO.md).
+- Compose separado em base (Guacamole + Kali, `labs/base/`) e um arquivo por
+  alvo (`labs/dvwa/`), com os mesmos nomes de rede, bridge e volume da Fase 1.
+- Executor único `scripts/lab.sh` (terminal e plataforma): lista fechada de
+  labs, `flock`, um lab por vez, sem internet ao ligar, reset por lab que
+  preserva o `/home/kali`; `pull`, `rebuild` e `purge` só no terminal.
+- A plataforma controla o Docker só localmente: Server Actions validadas com
+  zod, `proxy.ts` conferindo `Host`, `X-Forwarded-Host` e `Origin`, rota de
+  status só de leitura.
+- Desktop do Kali embutido (iframe do Guacamole), logado por um usuário
+  restrito (`plataforma`, só `READ` na conexão do Kali).
+- Página `/laboratorios`, painel de lab em cada módulo e lab ativo na barra
+  superior.
+- Catálogo de labs em código (`lib/labs/catalog.ts`): `kali` (novo), `dvwa` e
+  `linux-sandbox` disponíveis; `juice-shop`, `rede-de-alvos`, `webgoat`,
+  `vulhub` e `dvga` previstos. Cada lab ligado aos seus módulos.
+- Isolamento revalidado: `dvwa` 66/66, `kali` 43/43, `linux-sandbox` 17/17, com
+  testes novos (porta da plataforma, `privileged`/`docker.sock`, usuário
+  restrito).
+- **Expansão do currículo** (aprovada pelo MESQUITA): nova Trilha 3
+  Criptografia, módulos de OSINT, engenharia social, APIs/GraphQL e
+  pós-exploração, trilhas 3+ renumeradas para 4–8 (59 módulos), na mesma
+  migração (0003), com o progresso preservado.
 
 ## Fase 7 — Primeiras trilhas de conteúdo
 **Entrega:** Trilhas 0–2 escritas com labs reais.
 - Conteúdo MDX das Trilhas 0 (Pré-Segurança), 1 (Fundamentos e Ética) e 2
-  (Kit do Pentester).
-- Primeiros labs integrados: DVWA e Juice Shop.
+  (Kit do Pentester, agora com OSINT e engenharia social).
+- Labs novos: Juice Shop e a rede de alvos (DVWA + Juice Shop) para o nmap.
 
 ## Fase 8 — Trilhas intermediárias
-**Entrega:** Trilhas 3–4 escritas com labs.
-- Trilha 3 (Hacking Web / OWASP Top 10): DVWA, Juice Shop, WebGoat.
-- Trilha 4 (Redes e Serviços): Vulhub, Metasploit, CVEs reais.
+**Entrega:** Trilhas 3–5 escritas com labs.
+- Trilha 3 (Criptografia): labs no Kali sem alvo e no Juice Shop (JWT).
+- Trilha 4 (Hacking Web / OWASP Top 10 e APIs): DVWA, Juice Shop, WebGoat e o
+  alvo de APIs/GraphQL (candidato: DVGA, decidido nesta fase).
+- Trilha 5 (Redes e Serviços): Vulhub, Metasploit, CVEs reais.
 
 ## Fase 9 — Trilhas avançadas
-**Entrega:** Trilhas 5–6.
-- Trilha 5 (Escalação de Privilégios): labs Linux em contêiner; Windows como
-  teoria + walkthrough guiado (respeitando a regra de 1 lab/16 GB).
-- Trilha 6 (Active Directory): conceitos + walkthrough guiado; lab enxuto.
+**Entrega:** Trilhas 6–7.
+- Trilha 6 (Escalação de Privilégios e pós-exploração): labs Linux em
+  contêiner; Windows como teoria + walkthrough guiado (respeitando a regra de
+  1 lab/16 GB).
+- Trilha 7 (Active Directory): conceitos + walkthrough guiado; lab enxuto.
 
 ## Fase 10 — Consolidação & polimento
-**Entrega:** Trilha 7 e o fechamento do projeto.
-- Trilha 7 (Consolidação): máquinas estilo CTF e relatório de pentest.
+**Entrega:** Trilha 8 e o fechamento do projeto.
+- Trilha 8 (Consolidação): máquinas estilo CTF e relatório de pentest.
 - Testes de interface com Playwright.
 - Hardening final das regras de isolamento (incluindo restringir a saída de
-  internet do contêiner web do Guacamole).
+  internet do contêiner web do Guacamole e, se possível, `frame-ancestors` no
+  Guacamole).
 - Backup e versionamento no GitHub privado.

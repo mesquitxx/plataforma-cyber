@@ -1,16 +1,90 @@
-# Laboratório — subir, descer e validar o isolamento
+# Laboratório — ligar, desligar e validar o isolamento
 
-Dois laboratórios, sempre **um ativo por vez**:
+Desde a Fase 6, a **plataforma** liga, desliga e reseta os labs, sempre **um
+ativo por vez**. Por baixo, tudo passa por um único executor,
+`scripts/lab.sh`, que o terminal também usa.
 
-- **Pilha da Fase 1** (Trilha 2 em diante): um desktop Kali no navegador, via
-  Apache Guacamole, atacando o DVWA. Descrita a partir de "Arquitetura".
-- **`linux-sandbox`** (Fase 4, módulo 0.3): um contêiner Debian sem rede para
-  treinar o terminal. Descrito em "linux-sandbox", no fim deste documento.
+| Lab | Tipo | O que é |
+|---|---|---|
+| `kali` | desktop | Só o Kali (XFCE) no navegador, via Apache Guacamole, sem alvo na rede. |
+| `dvwa` | desktop | O Kali + o DVWA como alvo: a pilha da Fase 1. |
+| `linux-sandbox` | sandbox | Contêiner Debian sem rede para treinar o terminal (módulo 0.3). O shell abre no WSL. |
+
+Os labs **previstos** (Juice Shop, rede de alvos, WebGoat, Vulhub, DVGA) já
+estão no catálogo (`lib/labs/catalog.ts`) e aparecem na interface, mas só podem
+ser ligados na fase que os traz.
+
+## Pela plataforma (o jeito normal)
+
+1. Rode o app: `npm run dev` e abra **http://127.0.0.1:3000**.
+2. Abra um módulo com lab (ex.: 2.6 Wireshark) ou **Laboratórios** no menu.
+3. No painel **Laboratório**, clique em **Iniciar**. O log aparece ao vivo; o
+   lab `dvwa` leva cerca de 10 s para subir quando as imagens já existem.
+4. Com um lab de desktop rodando, o **desktop do Kali** aparece no próprio
+   painel, já logado. Clique nele para o teclado ir para o Kali.
+   - **Tela cheia**, **Nova aba** e **Reconectar** ficam acima do desktop.
+   - `Ctrl+Alt+Shift` abre o menu do Guacamole (área de transferência).
+5. Botões com o lab no ar:
+   - **Parar** desliga o lab (os dados ficam).
+   - **Resetar** (pede confirmação) recria o alvo do zero. O DVWA volta ao
+     estado de fábrica; o `/home/kali` **nunca** é apagado pela interface.
+   - **Verificar isolamento** roda os testes da seção "Validar o isolamento" e
+     mostra o resultado.
+6. Se outro lab estiver rodando, o botão vira **Trocar para este lab**: ele
+   desliga o atual (com confirmação) e liga o novo.
+
+A barra superior mostra o lab ativo em todas as páginas.
+
+**O que a plataforma não faz, de propósito:**
+- **Não usa a internet.** Ela sobe os labs com `--pull never --no-build`; se
+  faltar uma imagem, recusa e mostra o comando para baixar no terminal.
+- **Não apaga o `/home/kali`** nem o banco do Guacamole: o `purge` só existe
+  no terminal.
+- **Não tem terminal web.** O sandbox abre no WSL, com `npm run lab:sandbox`.
+
+## Pelo terminal
+
+```bash
+scripts/lab.sh list              # labs que o executor aceita
+scripts/lab.sh status            # contêineres Compose e a que lab pertencem
+scripts/lab.sh up dvwa           # liga (recusa se outro lab estiver rodando)
+scripts/lab.sh down dvwa         # desliga; os dados ficam
+scripts/lab.sh switch kali       # desliga o lab atual e liga o kali
+scripts/lab.sh reset dvwa        # recria o alvo (o /home/kali fica)
+scripts/lab.sh verify dvwa       # prova o isolamento (código 0 só se tudo passar)
+# Só no terminal (a plataforma recebe recusa, código 6):
+scripts/lab.sh pull dvwa         # baixa/constrói as imagens (usa internet)
+scripts/lab.sh rebuild dvwa      # reconstrói o Kali com pacotes novos (internet)
+scripts/lab.sh purge dvwa        # desliga e apaga os volumes, inclusive /home/kali
+```
+
+Atalhos antigos, que continuam valendo: `scripts/lab-up.sh` (= `up dvwa`;
+`--rebuild` reconstrói antes), `scripts/lab-down.sh` (= `down`; `--purge` =
+`purge`) e `npm run lab:sandbox` (sobe o sandbox se preciso e abre o shell).
+
+**Códigos de saída do `lab.sh`:** 0 ok · 1 falha · 2 uso inválido ·
+3 imagem ausente · 4 outra operação em andamento · 5 outro lab rodando ·
+6 comando só de terminal.
+
+**Na primeira vez** (máquina nova): `scripts/lab.sh pull dvwa` e
+`scripts/lab.sh pull linux-sandbox` baixam as imagens e constroem o Kali e o
+sandbox (vários minutos; é o **único momento** com internet). O `up` cria o
+`labs/.env` com senhas aleatórias se ele não existir.
+
+**Login manual no Guacamole** (fora da plataforma, raramente necessário):
+**http://127.0.0.1:8080/guacamole/** como `guacadmin`, com a senha
+`GUAC_ADMIN_PASSWORD` do `labs/.env` (`grep GUAC_ADMIN labs/.env`). A senha
+padrão `guacadmin` **não** funciona.
 
 ## Arquitetura
 
 ```
- Navegador (Windows) ──► http://127.0.0.1:8080/guacamole/
+ Navegador (Windows) ──► http://127.0.0.1:3000  (plataforma, Next.js)
+        │                       │ Server Action (POST, Origin local)
+        │                       ▼
+        │                scripts/lab.sh ──► docker compose (lista fechada)
+        │
+        └── iframe ──► http://127.0.0.1:8080/guacamole/
                               │
                     ┌─────────▼─────────┐  guac_front (única rede não interna,
                     │ guacamole (web)   │  exigida pelo Docker para publicar porta)
@@ -30,110 +104,87 @@ Dois laboratórios, sempre **um ativo por vez**:
                    └─────────┘                         └──────────┘
 ```
 
+**Arquivos Compose (Fase 6):** `labs/base/compose.yaml` traz Guacamole + Kali e
+as redes `guac_front`, `guac_back`, `desktop_net` e `lab_net`. Sozinho, ele é o
+lab `kali`. `labs/dvwa/compose.yaml` entra por cima (segundo `-f`) com o DVWA,
+o banco e a `dvwa_back`. Todos usam o projeto Compose `cyberlab`, com os mesmos
+nomes de rede, bridge e volume da Fase 1: os dados antigos continuaram valendo.
+Os arquivos dos alvos previstos seguem o mesmo padrão.
+
+**Como a plataforma sabe qual lab está rodando:** pelo rótulo
+`com.docker.compose.project.config_files`, que o Compose grava em cada
+contêiner com os arquivos usados. O estado vem sempre do Docker, nunca da
+memória do app.
+
 | Serviço | Papel | Redes |
 |---|---|---|
-| `guacamole` | Interface web (Tomcat) — o que você abre no navegador | `guac_front`, `guac_back` |
+| `guacamole` | Interface web (Tomcat) — o que aparece no iframe | `guac_front`, `guac_back` |
 | `guacd` | Proxy que converte VNC para o protocolo do Guacamole | `guac_back`, `desktop_net` |
 | `guac-db` | PostgreSQL com usuários e conexões do Guacamole | `guac_back` |
 | `kali` | Attack box: XFCE + TigerVNC + nmap, Burp, sqlmap, Wireshark, Firefox | `desktop_net`, `lab_net` |
-| `dvwa` | Alvo vulnerável-por-design | `lab_net`, `dvwa_back` |
-| `dvwa-db` | MariaDB do DVWA | `dvwa_back` |
+| `dvwa` | Alvo vulnerável-por-design (só no lab `dvwa`) | `lab_net`, `dvwa_back` |
+| `dvwa-db` | MariaDB do DVWA (só no lab `dvwa`) | `dvwa_back` |
 
-**Garantias de isolamento:**
+**Garantias de isolamento (Fase 1, reconfirmadas na Fase 6):**
 - **Redes internas** (`internal: true`): não têm gateway nem NAT, então o
   contêiner não tem rota para fora. Isso vale para Kali, DVWA e os bancos.
 - **`inhibit_ipv4`** nas bridges internas: o host não ganha IP nessas redes,
   então nem o "IP de gateway" da bridge serve como porta para o PC.
 - **Uma única porta publicada:** `127.0.0.1:8080` (Guacamole). O VNC (5901), o
-  DVWA (80) e os bancos não são publicados.
+  DVWA (80) e os bancos não são publicados. A plataforma escuta só em
+  `127.0.0.1:3000`.
 - **Segmentação:** o DVWA não enxerga `guacd`, `guac-db` nem `guacamole` (nem
   resolve os nomes). O Kali enxerga o `guacd` (necessário para a tela), mas
   não os bancos nem a interface web.
 - **Sem `privileged` e sem `docker.sock`** em nenhum contêiner; todos, exceto
-  o Kali, rodam com `no-new-privileges`.
+  o Kali, rodam com `no-new-privileges`. A plataforma **não** roda em contêiner.
 - **`restart: "no"`:** o lab nunca sobe sozinho com o Windows.
 
-## Pré-requisitos
-- Docker Engine e Docker Compose v2 dentro do WSL (testado com Engine 29.8.1 e
-  Compose v5.5.1).
-- Cerca de 8 GB livres em disco para as imagens (a do Kali é a maior).
-- Nenhum outro laboratório rodando (o `lab-up.sh` recusa subir se houver).
-
-## Subir
-
-```bash
-scripts/lab-up.sh
-```
-
-**Na primeira vez:**
-1. gera `labs/.env` com senhas aleatórias (arquivo fora do git);
-2. constrói a imagem do Kali (vários minutos; é o **único momento** com
-   internet);
-3. sobe tudo e espera os healthchecks;
-4. cria as tabelas do DVWA.
-
-**Depois:**
-1. Abra **http://127.0.0.1:8080/guacamole/** no navegador do Windows.
-2. Faça login como `guacadmin`, com a senha `GUAC_ADMIN_PASSWORD` do `labs/.env`
-   (`grep GUAC_ADMIN labs/.env`). A senha padrão `guacadmin` **não** funciona.
-3. Clique em **"Kali (attack box)"**.
-4. No Kali, abra o Firefox em **http://dvwa/** e entre com `admin` / `password`.
-
-**Dicas:**
-- **Área de transferência:** `Ctrl+Alt+Shift` abre o menu do Guacamole.
-- **nmap:** sem `sudo`, faz *connect scan* (`-sT`, inclusive com `-sV`).
-  Varreduras que exigem raw socket (`-sS`, `-O`) pedem `sudo nmap ...`, como em
-  qualquer Linux. Diferente do Kali "de fábrica", o binário não tem file
-  capabilities: elas exigiriam dar `NET_ADMIN` ao contêiner.
-- **Wireshark:** rode `sudo wireshark` no terminal (captura exige root).
-- **Burp Suite:** na primeira execução, ele mostra os termos de uso da
-  PortSwigger. Aceitar é decisão sua. A escolha fica salva em `/home/kali`.
-- **Firefox:** o aviso "Some of Firefox's security features may offer less
-  protection" é esperado. Dentro do contêiner, o sandbox do Firefox não usa
-  user namespaces. Ver "Trocas de segurança" abaixo.
-- **Arquivos:** o que ficar em `/home/kali` persiste entre sessões (volume
-  `kali_home`).
-- **Atualizar as ferramentas do Kali:** `scripts/lab-up.sh --rebuild`. O Kali
-  não tem internet em execução, então `apt install` dentro dele não funciona.
-
-## Descer
-
-```bash
-scripts/lab-down.sh           # para e remove contêineres e redes; mantém os dados
-scripts/lab-down.sh --purge   # também apaga os volumes (bancos e /home/kali)
-```
-
-Use `--purge` depois de trocar senhas no `labs/.env`: os bancos só leem as
-senhas na primeira inicialização.
+**Garantias novas da Fase 6:**
+- **Lista fechada:** o `lab.sh` só aceita os labs do registro em
+  `scripts/lab-common.sh`. A plataforma só envia ações de `LAB_ACTIONS` e slugs
+  de labs disponíveis, validados com zod. O `npm test` exige que o catálogo e
+  o registro batam.
+- **Uma operação por vez:** `flock` em `data/lab.lock` (terminal e plataforma).
+- **Um lab por vez:** o `up` recusa (código 5) se houver contêiner de outro lab
+  ou de fora da plataforma rodando.
+- **Sem internet ao ligar:** `--pull never --no-build`.
 
 ## Validar o isolamento
 
-Com o lab no ar:
+Com um lab de desktop no ar, pela plataforma (**Verificar isolamento**) ou:
 
 ```bash
-scripts/lab-verify-isolation.sh
+scripts/lab.sh verify dvwa    # ou: verify kali
 ```
 
 O script faz **tentativas reais de conexão** e imprime PASS/FAIL. A coluna
 `EXPECT` diz se a tentativa **deve funcionar** (`ok`) ou **deve falhar**
-(`blocked`). Ele só termina com código 0 se todos os testes passarem.
+(`blocked`). Ele só termina com código 0 se todos os testes passarem. Os testes
+do alvo só rodam quando o lab tem alvo (no `kali`, as tentativas de chegar ao
+Windows partem do próprio Kali).
 
 | ID | O que prova | Como |
 |---|---|---|
-| 1 | Sem internet por TCP | DVWA e Kali tentam `1.1.1.1:443` e `8.8.8.8:53` |
+| 1 | Sem internet por TCP | Alvo e Kali tentam `1.1.1.1:443` e `8.8.8.8:53` |
 | 2 | Sem internet por DNS (sem exfiltração via DNS) | `getent hosts example.com` |
 | 3 | Sem rota de saída | Nenhuma rota padrão em `/proc/net/route`; bridges internas sem IPv4 no host |
-| 4 | Alvo não alcança o PC | **Canário**: o script abre uma porta no IP `eth0` do WSL e no gateway da `guac_front`. O próprio host conecta (controle); DVWA e Kali não. Também testa `docker0` e o DNS do WSL (`10.255.255.254`). |
-| 5 | Alvo não alcança o Windows | DVWA tenta portas 135/445/3389 do IP do Windows |
+| 4 | Alvo não alcança o PC | **Canário**: o script abre uma porta no IP `eth0` do WSL e no gateway da `guac_front`. O próprio host conecta (controle); alvo e Kali não. Também testa `docker0` e o DNS do WSL (`10.255.255.254`). |
+| 5 | Alvo não alcança o Windows | Portas 135/445/3389 do IP do Windows |
 | 7 | Alvo não enxerga a infraestrutura | DVWA não resolve `guacamole`, `guacd`, `guac-db`, `host.docker.internal`; Kali não resolve os bancos nem a interface web |
 | 8 | Redes marcadas como internas | `docker network inspect` → `Internal: true` |
-| 9 | Só loopback | Única porta publicada é `127.0.0.1:8080`; nada em `0.0.0.0:8080` no WSL; a 8080 não responde no IP `eth0` do WSL; no Windows, a 8080 só escuta em `127.0.0.1`/`::1` |
-| 11 | **Controle positivo:** o lab funciona | Kali acessa `http://dvwa/` |
+| 9 | Só loopback | Única porta publicada é `127.0.0.1:8080`; nada em `0.0.0.0:8080` no WSL; a 8080 não responde no IP `eth0` do WSL; no Windows, a 8080 só escuta em `127.0.0.1`/`::1`; **(Fase 6)** nada em `0.0.0.0:3000` (a plataforma) |
+| 10 | **(Fase 6)** Nenhum contêiner perigoso | Nenhum contêiner do lab é `privileged` nem monta `docker.sock` |
+| 11 | **Controle positivo:** o lab funciona | Kali acessa `http://dvwa/` (lab `dvwa`) |
 | 12 | **Controle positivo:** a tela funciona | Guacamole responde; `guacd` alcança o VNC do Kali; login com a senha do `.env` funciona e com `guacadmin/guacadmin` falha |
+| 13 | **(Fase 6)** Usuário `plataforma` restrito | Loga; vê só a conexão "Kali (attack box)"; **não** lê os parâmetros dela (senha VNC), **não** cria conexão nem usuário |
 
-Os controles positivos (11 e 12, mais as sondas do grupo 0) são essenciais.
+Os controles positivos (11, 12, 13a/b e as sondas do grupo 0) são essenciais.
 Sem eles, "tudo bloqueado" poderia significar apenas que a rede está quebrada
 ou que falta uma ferramenta no contêiner.
+
+**Resultado na Fase 6:** `dvwa` 66/66 PASS (também pela interface), `kali`
+43/43 PASS, `linux-sandbox` 17/17 PASS (também pela interface).
 
 ### Teste do teste (opcional)
 Para ver o script **pegar** uma quebra de isolamento, ligue o DVWA de propósito
@@ -145,15 +196,30 @@ scripts/lab-verify-isolation.sh      # esperado: FAILs no DVWA, código 1
 docker network disconnect bridge cyberlab-dvwa-1
 ```
 
-Na Fase 1, esse teste deu 7 FAILs (internet, DNS, rota e canários) e voltou a
-48/48 depois de desfeito.
+Na Fase 1 e de novo na Fase 6, esse teste deu 7 FAILs (internet, DNS, rota e
+canários) e voltou a passar tudo depois de desfeito.
+
+### Testes da plataforma (Fase 6)
+Feitos com o app no ar, de ponta a ponta num Chromium headless (Playwright
+temporário, fora do repositório):
+- Iniciar, resetar (com confirmação), verificar (66/66) e parar o `dvwa` pela
+  interface; o Kali abre no iframe **sem** tela de login, e "Nova aba" também.
+- Trocar do `dvwa` para o sandbox pelo módulo 0.3 (com confirmação),
+  verificar (17/17) e parar.
+- Lab previsto (`rede-de-alvos`, no módulo 2.4) aparece sem nenhum botão.
+- Entradas forjadas na Server Action (`../../etc/passwd`, `kali; id`, o lab
+  previsto `juice-shop`, as ações `pull` e `purge`) recusadas com "Ação ou
+  laboratório inválido", sem nenhum contêiner criado.
+- `proxy.ts`: `Host` estranho, `X-Forwarded-Host` forjado e POST sem `Origin`
+  ou com `Origin` de outro site recebem 403.
 
 ### Teste manual (outro aparelho)
 1. No Windows, descubra o IP da rede local: `ipconfig` (ex.: `192.168.0.10`).
-2. Do celular, na mesma Wi-Fi, abra `http://192.168.0.10:8080/guacamole/`.
-3. **Esperado:** a página não carrega.
+2. Do celular, na mesma Wi-Fi, abra `http://192.168.0.10:8080/guacamole/` e
+   `http://192.168.0.10:3000/`.
+3. **Esperado:** nenhuma das duas carrega.
 
-### Testes manuais extras (de dentro do Kali, via Guacamole)
+### Testes manuais extras (de dentro do Kali)
 
 ```bash
 ping -c 2 1.1.1.1            # "Network is unreachable"
@@ -161,17 +227,45 @@ curl -m 5 https://example.com  # falha de DNS
 nmap -sV dvwa                # funciona: 80/tcp aberto
 ```
 
+## Dicas de uso do Kali
+- **nmap:** sem `sudo`, faz *connect scan* (`-sT`, inclusive com `-sV`).
+  Varreduras que exigem raw socket (`-sS`, `-O`) pedem `sudo nmap ...`, como em
+  qualquer Linux. Diferente do Kali "de fábrica", o binário não tem file
+  capabilities: elas exigiriam dar `NET_ADMIN` ao contêiner.
+- **Wireshark:** rode `sudo wireshark` no terminal (captura exige root).
+- **Burp Suite:** na primeira execução, ele mostra os termos de uso da
+  PortSwigger. Aceitar é decisão sua. A escolha fica salva em `/home/kali`.
+- **Firefox:** o aviso "Some of Firefox's security features may offer less
+  protection" é esperado. Dentro do contêiner, o sandbox do Firefox não usa
+  user namespaces. Ver "Trocas de segurança" abaixo.
+- **Arquivos:** o que ficar em `/home/kali` persiste entre sessões e entre labs
+  (volume `kali_home`), inclusive depois de **Resetar**.
+- **Atualizar as ferramentas do Kali:** `scripts/lab.sh rebuild dvwa`, no
+  terminal. O Kali não tem internet em execução, então `apt install` dentro
+  dele não funciona.
+
 ## Solução de problemas
-- **"Other containers are running":** pare o outro lab/contêiner primeiro
-  (regra de 1 lab por vez).
+- **"Outro laboratório está rodando" (código 5):** pare o outro lab ou use
+  **Trocar para este lab**. Contêineres de fora da plataforma precisam ser
+  parados no terminal.
+- **"Faltam imagens deste lab" (código 3):** rode no terminal
+  `scripts/lab.sh pull <lab>` (usa internet).
+- **"Outra operação de laboratório está em andamento" (código 4):** espere a
+  operação do terminal (ou de outra aba) terminar.
+- **"Não foi possível ler o Docker":** o Docker não está rodando no WSL
+  (`sudo service docker start` ou abra o Ubuntu de novo).
+- **O Kali não abre no painel:** clique em **Reconectar**. Se persistir, veja o
+  terminal do `npm run dev` e rode `scripts/lab.sh verify <lab>` (teste 13).
 - **Login do Guacamole falha depois de trocar o `.env`:** rode
-  `scripts/lab-down.sh --purge` e suba de novo.
+  `scripts/lab.sh purge dvwa` e suba de novo (apaga o `/home/kali`).
 - **Tela preta no Kali:** `docker logs cyberlab-kali-1`; em
   geral basta `scripts/lab.sh reset dvwa` (ou `reset kali`).
-- **DVWA pede "Create / Reset Database":** abra `http://dvwa/setup.php` no Kali
-  e clique no botão.
+- **DVWA pede "Create / Reset Database":** use **Resetar** ou abra
+  `http://dvwa/setup.php` no Kali e clique no botão.
 
-## Trocas de segurança aceitas nesta fase
+## Trocas de segurança aceitas
+
+### Fase 1
 - **Kali construído com internet e executado sem ela:** atualizar exige rebuild.
 - **O contêiner web do Guacamole tem saída para a internet:** a rede
   `guac_front` precisa ser não interna para publicar a porta. Ele não fica
@@ -188,11 +282,63 @@ nmap -sV dvwa                # funciona: 80/tcp aberto
 - **nmap sem file capabilities:** preferimos `sudo nmap` a dar `NET_ADMIN` ao
   contêiner inteiro.
 
+### Fase 6 (aprovadas pelo MESQUITA antes da implementação)
+- **T1 — O servidor da plataforma controla o Docker.** O Next.js roda como o
+  seu usuário, que está no grupo `docker` (no WSL, equivale a root). Uma
+  requisição HTTP para `127.0.0.1:3000` pode, então, ligar e desligar labs.
+  **Mitigações:**
+  - só o `scripts/lab.sh`, executado sem shell (`spawn`), com argumentos de
+    uma lista fechada (zod no servidor e no próprio script);
+  - nenhum caminho ou comando vem do banco ou do navegador;
+  - ambiente mínimo com `CYBERLAB_CALLER=platform`, que faz o script recusar
+    `pull`, `rebuild` e `purge`;
+  - Server Actions só por POST, com o `Origin` conferido pelo Next.js e pelo
+    `proxy.ts`;
+  - `X-Forwarded-Host` precisa ser igual ao `Host` (o Next.js o define
+    sozinho), e `Host` estranho recebe 403 (DNS rebinding);
+  - a rota de status só lê e não tem segredos.
+
+  **Risco que sobra:** uma execução remota de código no próprio Next daria
+  acesso ao Docker, mas ela já daria acesso ao seu usuário, que já tem o Docker.
+- **T2 — Kali embutido por iframe.** O Guacamole 1.6.0 não envia
+  `X-Frame-Options` nem CSP (verificado), então **outro site aberto no
+  navegador também poderia embuti-lo** (*clickjacking*). Restringir com
+  `frame-ancestors` exigiria mexer no Tomcat da imagem oficial. O filtro
+  nativo do Tomcat só oferece `SAMEORIGIN`, que bloquearia a própria
+  plataforma (porta 3000 ≠ 8080).
+
+  **Por que o risco é baixo:**
+  - o navegador isola o armazenamento do iframe pelo site da aba principal,
+    então a sessão aberta na plataforma não existe num iframe dentro de outro
+    site (lá só aparece a tela de login);
+  - a senha é aleatória;
+  - o iframe da plataforma usa `sandbox` (sem navegação da aba principal) e
+    `referrerPolicy="no-referrer"`.
+- **T3 — Login automático com um usuário restrito.** O servidor lê a senha do
+  usuário `plataforma` no `labs/.env` (`PLATFORM_GUAC_PASSWORD`, nunca enviada
+  ao navegador), pede um token à API do Guacamole e o põe na URL do iframe
+  (`?token=`, aceito pelo webapp 1.6, verificado no código-fonte e na
+  prática).
+  - O usuário `plataforma` só tem `READ` na conexão do Kali: não lê a senha
+    VNC, não cria conexões nem usuários (teste 13).
+  - Ele é recriado a cada `up`, sem `--purge`.
+  - A senha vai ao `psql` pelo stdin, nunca pela linha de comando.
+
+  **Troca:** o token aparece na URL do iframe (e da "Nova aba") e pode ficar no
+  histórico. Ele vale só para esse usuário restrito, expira por inatividade e
+  morre quando o lab desce.
+- **T4 — Sem terminal web.** O sandbox continua só no terminal do WSL; a
+  plataforma só o liga, reseta e desliga.
+- **T5 — Verificar o isolamento pela interface.** Roda o mesmo script, que abre
+  por alguns segundos uma porta canário no IP `eth0` do WSL; só muda quem o
+  dispara.
+
 ## linux-sandbox (módulo 0.3)
 
 Contêiner de prática **sem nenhuma vulnerabilidade**: só guarda os arquivos das
 missões do módulo 0.3. Fica em `labs/linux-sandbox/` (projeto Compose
-`cyberlab-sandbox`) e é controlado por `scripts/lab-sandbox.sh`.
+`cyberlab-sandbox`). Liga, reseta e desliga pela plataforma (painel do módulo
+0.3 ou **Laboratórios**) ou pelo terminal:
 
 ```bash
 npm run lab:sandbox             # sobe (se preciso) e abre um shell como "aluno"
@@ -210,8 +356,7 @@ npm run lab:sandbox -- rebuild  # reconstrói a imagem (usa internet)
   `privileged` e sem `docker.sock`.
 - `mem_limit: 128m`, `pids_limit: 128`, `restart: "no"`.
 - Descartável: o `reset` recria o contêiner a partir da imagem.
-- Recusa subir se houver contêineres de outro projeto Compose rodando (e o
-  `lab-up.sh` recusa subir com o sandbox no ar): regra de um lab por vez.
+- Conta na regra de um lab por vez, como os outros.
 
 **Imagem:** `debian:trixie-slim` fixada por digest. O Dockerfile devolve as man
 pages que a variante slim remove, porque o módulo ensina `man`. As missões são
@@ -223,11 +368,12 @@ saídas citadas no módulo são sempre as mesmas).
 do lab. A plataforma só guarda os hashes. Numa plataforma pessoal, o único risco
 é "colar" de si mesmo.
 
-**Validação (Fase 4):** `npm run lab:sandbox -- verify` deu 17/17 PASS. Os
-controles positivos (bash roda, missões existem) garantem que os "blocked"
+**Validação:** 17/17 PASS na Fase 4 e de novo na Fase 6 (também pela interface).
+Os controles positivos (bash roda, missões existem) garantem que os "blocked"
 (internet, DNS, host Docker, `sudo`, `docker.sock`) são reais.
 
 ## Memória
 Consumo medido e recomendações para o WSL: [`MEDICOES-RAM.md`](MEDICOES-RAM.md).
-Resumo: cerca de 0,6 GB com o lab ocioso e cerca de 1,5 GB no pico. O maior
-risco é o page cache do WSL depois de builds (`wsl --shutdown` resolve).
+Resumo: cerca de 0,6 GB com o lab `dvwa` ocioso (0,45 GB no `kali`) e cerca de
+1,5 GB no pico. O maior risco é o page cache do WSL depois de builds
+(`wsl --shutdown` resolve).

@@ -46,7 +46,7 @@ const DESKTOP_ISOLATION =
   "Rede interna sem internet; o alvo só é alcançável pelo Kali, e o Kali só pela tela do Guacamole em 127.0.0.1:8080.";
 const PLANNED_RESET = "Definido quando o lab for montado.";
 
-export const DVWA_TARGET: LabTarget = {
+const DVWA_TARGET: LabTarget = {
   host: "dvwa",
   title: "DVWA",
   url: "http://dvwa/",
@@ -64,7 +64,7 @@ export const LAB_CATALOG: LabDefinition[] = [
     plannedPhase: null,
     targets: [],
     localPort: 8080,
-    ram: "≈ 0,45 GB ocioso · ≈ 1,35 GB no pico (estimado da medição da Fase 1, sem o DVWA)",
+    ram: "≈ 0,45 GB ocioso (medido na Fase 6) · ≈ 1,35 GB no pico (estimado: o pico do DVWA sem o alvo)",
     reset: "Recria o contêiner do Kali a partir da imagem. O que está em /home/kali continua lá.",
     isolationNotes: DESKTOP_ISOLATION,
   },

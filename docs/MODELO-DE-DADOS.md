@@ -21,7 +21,7 @@ divergência, o código é a referência de colunas e o documento, a de conceito
 ## Entidades
 
 ### Track (Trilha)
-Uma das 8 trilhas do currículo.
+Uma das 9 trilhas do currículo (0 a 8, desde a Fase 6).
 - **Atributos:** identificador estável (slug), número da trilha, título,
   descrição, ordem de exibição.
 - **Origem:** conteúdo (ingerido do MDX).
@@ -66,12 +66,15 @@ explicação de cada uma, mais o percentual de acertos que conclui a tarefa.
 - **Origem:** estado.
 
 ### Lab
-A definição de um laboratório associado a um módulo.
-- **Atributos:** slug, alvo (DVWA, Juice Shop, WebGoat, Vulhub, etc.), referência
-  ao diretório do Docker Compose em `labs/`, portas locais esperadas (sempre em
-  `127.0.0.1`), observações de isolamento.
-- **Origem:** conteúdo + configuração.
+Um laboratório que um ou mais módulos usam.
+- **Atributos:** slug, título, tipo (desktop com Kali ou sandbox no
+  terminal), disponível ou previsto (com a fase), arquivos Compose, alvos que o
+  Kali alcança, porta local (sempre em `127.0.0.1`), memória, o que o reset
+  faz, observações de isolamento.
+- **Origem:** configuração em código (`lib/labs/catalog.ts`, desde a Fase 6).
+  O banco guarda só o slug e as observações, para a *foreign key* do módulo.
 - **Relação:** referenciado por Module (um módulo com lab aponta para um Lab).
+- **Estado (rodando/parado):** nunca gravado; vem do Docker a cada consulta.
 
 ### Progress (Progresso)
 Estado de conclusão do usuário local.
@@ -136,12 +139,12 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
 ## Decisões de implementação (Fase 2)
 | Entidade | Tabela | Notas |
 |---|---|---|
-| Track | `tracks` | `number` restrito a 0–7 (CHECK). |
+| Track | `tracks` | `number` restrito a 0–8 (CHECK; 0–7 até a Fase 6). |
 | Module | `modules` | `slug` único global (pré-requisitos cruzam trilhas). "Tem lab" = `lab_id IS NOT NULL`. |
 | Prerequisite | `module_prerequisites` | Chave composta; CHECK impede um módulo exigir a si mesmo. |
 | Task | `tasks` | `slug` único por módulo. "Exige flag" = `type = 'flag'`. Tipos: `reading`, `exercise`, `lab_step`, `flag` e, desde a Fase 5, `quiz`. |
 | Flag | `flags` | Guarda `answer_hash` + `salt`, nunca a resposta em claro. Algoritmo e normalização: Fase 4. |
-| Lab | `labs` | `target` restrito a `dvwa`, `juice-shop`, `webgoat`, `vulhub` e, desde a Fase 4, `linux-sandbox`. `local_ports` em JSON. |
+| Lab | `labs` | Desde a Fase 6, só `slug` e `isolation_notes`; o resto vive em `lib/labs/catalog.ts` (ver "Decisões da Fase 6"). Até a Fase 5: `target` (CHECK), `compose_dir` e `local_ports`. |
 | Progress | `module_progress` e `task_progress` | Duas tabelas com *foreign key* real, em vez de uma referência polimórfica. Status: `not_started`, `in_progress`, `completed`. |
 | FlagSubmission | `flag_submissions` | Desde a Fase 4, guarda o valor digitado **só nas tentativas erradas**; nas corretas, `submitted_value` é `NULL` (CHECK no banco). |
 | GlossaryTerm | `glossary_terms` | `term` único sem diferenciar maiúsculas/minúsculas. |
@@ -158,7 +161,8 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
 - **Banco:** `data/plataforma.db`, modo WAL, `foreign_keys = ON`.
 
 ## Decisões de navegação (Fase 3)
-- **Slugs:** trilhas `trilha-0` … `trilha-7` (iguais às pastas de `content/`);
+- **Slugs:** trilhas `trilha-0` … `trilha-8` (iguais às pastas de `content/`;
+  o slug segue o número da trilha, `trilha-N`);
   módulos em português, sem acento e sem número (ex.: `lei-e-etica`), para
   continuarem estáveis se a ordem mudar. São dados, não código.
 - **Número exibido** do módulo (ex.: "1.4") = número da trilha + `sort_order`
@@ -183,9 +187,9 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
   pré-requisitos pendentes.
 - **"Continuar de onde parei":** o módulo em andamento com `updated_at` mais
   recente; senão, o primeiro disponível na ordem do currículo.
-- **Labs fora do enum:** módulos cujo lab ainda não cabe em `LAB_TARGETS`
-  (rede interna de alvos, contêiner Linux, máquinas boot2root) ficam sem
-  `lab_id` até a Fase 6.
+- **Labs fora do enum (até a Fase 5):** módulos cujo lab não cabia em
+  `LAB_TARGETS` ficavam sem `lab_id`. A Fase 6 trocou o enum pelo catálogo de
+  labs e ligou os que já tinham decisão (ver "Decisões da Fase 6").
 
 ## Decisões da Fase 4 (motor de conteúdo)
 
@@ -313,3 +317,49 @@ Cria `quizzes`, `quiz_questions`, `quiz_attempts` e `glossary_term_mentions` e
 acrescenta `quiz` ao CHECK de `tasks.type` (o drizzle-kit recria `tasks`; as
 *foreign keys* ficam desligadas em volta do migrador, como na 0001). Backup
 prévio em `data/plataforma.pre-fase5.db`.
+
+## Decisões da Fase 6 (laboratórios e expansão do currículo)
+
+### Catálogo de labs em código
+- `lib/labs/catalog.ts` é a fonte de verdade de cada lab: tipo, arquivos
+  Compose, alvos, porta, memória, o que o reset faz e se está disponível ou
+  previsto (com a fase). É dado puro, usado pelo servidor e pelo navegador.
+- A tabela `labs` ficou só com `slug` e `isolation_notes`. **Motivo de
+  segurança:** nada que a plataforma entrega ao `scripts/lab.sh` vem do banco,
+  então editar dados não muda o que roda no Docker.
+- O `npm test` exige que os labs disponíveis do catálogo batam com o registro
+  fechado do `scripts/lab-common.sh` (`scripts/lab.sh list`) e que todo lab
+  citado pelo seed exista no catálogo.
+- O seed grava uma linha por lab do catálogo, disponível ou previsto: módulos
+  podem apontar para um lab previsto (ex.: `nmap` → `rede-de-alvos`), e a
+  interface mostra "previsto · Fase N" sem botões.
+- **Estado dos labs não é gravado:** "rodando/parado" vem do Docker
+  (`scripts/lab.sh status`, pelo rótulo `config_files` do Compose) a cada
+  consulta. Não há tabela de sessões de lab.
+
+### Expansão do currículo (aprovada pelo MESQUITA)
+- Nova Trilha 3 (Criptografia, 5 módulos); Hacking Web, Redes e Serviços,
+  Escalação de Privilégios, Active Directory e Consolidação passam a 4–8.
+  Quatro módulos novos: `osint-e-reconhecimento-passivo`,
+  `engenharia-social-e-phishing`, `seguranca-de-apis-e-graphql` e
+  `pos-exploracao-e-persistencia`. Total: 9 trilhas e 59 módulos.
+- **Progresso preservado:** o progresso pende de módulos e tarefas, nunca de
+  trilhas. O seed faz *upsert* das trilhas por slug (`trilha-3` ganha o título
+  "Criptografia"; `trilha-8` é nova) e dos módulos por slug, só trocando o
+  `track_id` dos que mudaram de trilha. Testado numa cópia do banco com
+  progresso sintético antes de aplicar no banco real: status, tarefas e
+  tentativas de flag ficaram intactos e o `foreign_key_check` voltou vazio.
+- Módulos novos entram com `body_mdx` vazio; o conteúdo vem nas fases de
+  conteúdo, seguindo o padrão de módulo.
+- Conquistas: 19 (uma nova por trilha, "Criptógrafo" para a Trilha 3). Como
+  são derivadas, os ids `trilha-N` passam a seguir a nova numeração sem
+  migração.
+- O front-matter aceita `track: trilha-0` … `trilha-8`.
+
+### Migração 0003
+Recria `labs` (sai `target` com seu CHECK, `compose_dir` e `local_ports`) e
+`tracks` (CHECK de `number` de 0–7 para 0–8), copiando as linhas com os mesmos
+ids. Como nas migrações 0001 e 0002, as *foreign keys* ficam desligadas em
+volta do migrador, então os `modules.lab_id` sobrevivem. Backup prévio em
+`data/plataforma.pre-fase6.db`. Depois: `npm run db:seed` e
+`npm run content:ingest`.

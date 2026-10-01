@@ -1,7 +1,8 @@
-# Medições de RAM — laboratório da Fase 1
+# Medições de RAM — laboratórios
 
-Consumo **real** da pilha Guacamole + Kali (XFCE) + DVWA, medido em
-2026-09-30 com `scripts/lab-measure-ram.sh`.
+Consumo **real** da pilha Guacamole + Kali (XFCE) + DVWA (lab `dvwa`), medido em
+2026-09-30 com `scripts/lab-measure-ram.sh`, e do lab `kali` (sem alvo), medido
+na Fase 6.
 
 ## Ambiente medido
 
@@ -73,6 +74,26 @@ depois de builds e pulls e **não** reflete o consumo do lab (ver
    Com o proxy ativo e histórico acumulado, espere algumas centenas de MB a
    mais (estimativa, não medida). Para medir de novo depois de aceitar:
    `scripts/lab-measure-ram.sh "C — Burp com proxy ativo"`.
+
+## Fase 6 — lab `kali` (Kali sem alvo)
+
+Medido em 2026-10-01 com o lab ligado **pela plataforma** e uma sessão real do
+Guacamole aberta no painel (Chromium headless), parada.
+
+| Contêiner | Limite | B — ocioso |
+|---|---:|---:|
+| `kali` | 3072 | 209 |
+| `guacamole` | 768 | 206 |
+| `guac-db` | 256 | 26 |
+| `guacd` | 256 | 17 |
+| **Total** | **4352** | **≈ 457** |
+
+- Bate com a estimativa (pilha da Fase 1 menos o DVWA e o banco dele, cerca de
+  106 MiB a menos). O pico não foi medido de novo: ele vem do Kali (Firefox,
+  Burp), que é o mesmo, então fica em cerca de 1,35 GB.
+- Nesta medição, a VM do WSL tinha **5.929 MB** (na Fase 1, 7.945 MB). O
+  `used` do WSL (2.405 MB) inclui o `npm run dev` e o Chromium do teste, então
+  não é comparável ao da tabela da Fase 1.
 
 ## Achado importante: o cache do WSL aperta o Windows
 
@@ -178,4 +199,23 @@ Windows total: 14021 MB, free: 1133 MB
 
 As amostras 2 e 3 (16:50:04 e 16:50:25) ficaram entre essas duas: Kali com
 1.016 GiB e 1007 MiB; WSL `used` 2.205 e 2.161 MB.
+
+### Fase 6 — lab kali, ocioso
+```
+# docker stats (containers of project cyberlab)
+NAME                   MEM USAGE / LIMIT   MEM %     CPU %
+cyberlab-guacamole-1   205.7MiB / 768MiB   26.78%    0.98%
+cyberlab-guacd-1       16.86MiB / 256MiB   6.58%     0.95%
+cyberlab-kali-1        208.7MiB / 3GiB     6.79%     4.30%
+cyberlab-guac-db-1     25.92MiB / 256MiB   10.13%    0.02%
+
+# free -m (inside the WSL VM)
+               total        used        free      shared  buff/cache   available
+Mem:            5929        2405         895         140        2951        3523
+Swap:           4096           0        4095
+
+# Windows view (vmmemWSL = what the whole WSL VM costs the PC)
+vmmemWSL: 4893 MB
+Windows total: 14021 MB, free: 1604 MB
+```
 </details>
