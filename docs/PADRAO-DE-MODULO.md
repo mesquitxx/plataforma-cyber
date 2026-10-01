@@ -1,12 +1,12 @@
 # Padrão de Módulo — a régua de qualidade do conteúdo
 
-Todo módulo da plataforma segue este padrão. Ele existe para garantir uma coisa: que cada módulo seja um capítulo completo e profundo, nunca um resumo raso. É a única régua que a automação usa para escrever os 49 módulos, então precisa ser exigente.
+Todo módulo da plataforma segue este padrão. Ele existe para garantir uma coisa: que cada módulo seja um capítulo completo e profundo, nunca um resumo raso. É a única régua que a automação usa para escrever todos os módulos, então precisa ser exigente.
 
 ## Para que serve este padrão
 
-A plataforma tem duas metades: a estrutura (homepage, navegação, labs) e o conteúdo (os 49 módulos). A estrutura o Claude Code resolve bem sozinho. O conteúdo é o que de fato ensina, e é onde mora o risco de ficar raso — um módulo pode ter a aparência pronta e, por dentro, ser três parágrafos que não ensinam nada.
+A plataforma tem duas metades: a estrutura (homepage, navegação, labs) e o conteúdo (todos os módulos). A estrutura o Claude Code resolve bem sozinho. O conteúdo é o que de fato ensina, e é onde mora o risco de ficar raso — um módulo pode ter a aparência pronta e, por dentro, ser três parágrafos que não ensinam nada.
 
-Este documento é a defesa contra isso. Ele define, de forma objetiva, o que todo módulo precisa conter para ser considerado completo. A automação escreve os 49 módulos sem revisão humana módulo a módulo, então esta régua é a única coisa que separa um capítulo profundo de um resumo de blog. Por isso ela é exigente de propósito.
+Este documento é a defesa contra isso. Ele define, de forma objetiva, o que todo módulo precisa conter para ser considerado completo. A automação escreve todos os módulos sem revisão humana módulo a módulo, então esta régua é a única coisa que separa um capítulo profundo de um resumo de blog. Por isso ela é exigente de propósito.
 
 A decisão que rege tudo aqui: **qualidade máxima, sem economia**. Cada módulo é um capítulo completo, no nível de um bom curso pago ou livro técnico, cobrindo ataque, teoria e defesa. Tempo e limite de uso não são restrição; conteúdo raso, sim.
 
@@ -44,7 +44,7 @@ Todo módulo tem estas 10 seções, nesta ordem. A extensão mínima é um piso,
 
 **8. Defesa e mitigação.** Como se proteger contra o ataque: boas práticas, configurações, código seguro. A metade que fecha a visão completa. Quem entende a defesa entende o ataque. (uma a duas páginas)
 
-**9. Exercícios.** Perguntas e desafios para fixar, incluindo a tarefa que gera a flag do módulo. Alguns de teoria, alguns práticos. (meia página)
+**9. Exercícios.** Perguntas e desafios para fixar, incluindo a tarefa que gera a flag do módulo. Alguns de teoria, alguns práticos. (meia página) O quiz de teoria é uma tarefa `type: quiz` declarada no front-matter (perguntas, alternativas, resposta e explicação de cada uma) e posicionada no corpo com `<Quiz task="..." />`; a plataforma corrige no servidor, sem expor o gabarito ao navegador, e o quiz conta para concluir o módulo. O formato está no [template](TEMPLATE-MODULO.mdx).
 
 **10. Resumo e glossário.** Os pontos-chave em poucas linhas e a lista dos termos técnicos novos que apareceram, com a definição de cada um (alimenta o Glossário global). (meia página)
 
@@ -138,6 +138,7 @@ Antes de considerar um módulo pronto, o autor confere item por item. Se algum n
 - [ ] O lab foi executado de verdade durante a escrita; saídas e screenshots são reais.
 - [ ] O começo é guiado; o meio tem desafios com dicas e solução recolhidas.
 - [ ] A flag só é obtida completando o exercício, e foi testada.
+- [ ] O quiz é uma tarefa `type: quiz` no front-matter, com explicação em cada resposta, e foi respondido na plataforma.
 
 **Leitor**
 

@@ -1,7 +1,7 @@
 /**
  * Global MDX components (required by @next/mdx in the App Router). Module
  * MDX uses these names without importing them; see docs/TEMPLATE-MODULO.mdx.
- * The module page overrides FlagInput and ModuleGlossary to bind the module.
+ * The module page overrides FlagInput, Quiz and ModuleGlossary to bind the module.
  */
 import type { ComponentPropsWithoutRef } from "react";
 import type { MDXComponents } from "mdx/types";

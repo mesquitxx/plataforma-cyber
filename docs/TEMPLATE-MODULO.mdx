@@ -38,6 +38,24 @@ tasks:
     flag:
       hash: "scrypt$16384$8$1$<saída do flag:hash>"
       salt: "<saída do flag:hash>"
+  # O quiz da seção 9 também é uma tarefa: as perguntas ficam aqui, o
+  # gabarito fica no servidor e a correção é feita lá (o navegador só recebe
+  # perguntas e alternativas). No corpo: <Quiz task="quiz-final" />,
+  # exatamente um por tarefa type: quiz.
+  #   - options: de 2 a 6, sem repetição; `crases` viram código.
+  #   - answer: índice da alternativa certa, começando em 0.
+  #   - passPercent: % de acertos que conclui a tarefa (padrão 70).
+  - slug: quiz-final
+    title: "Quiz — Título do módulo"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Pergunta que testa entendimento, não decoreba?"
+        options: ["Opção A", "Opção B", "Opção C", "Opção D"]
+        answer: 1
+        explanation: "Por que B está certa e por que as outras não."
+  # Outros tipos, marcados à mão pelo leitor no painel "Tarefas do módulo":
+  # reading, exercise e lab_step (só slug, title, type e prompt opcional).
 
 # Termos técnicos que ESTE módulo introduz (primeira aparição na
 # plataforma). Cada termo:
@@ -64,7 +82,7 @@ import diagramaDoAtaque from "./img/fluxo-do-ataque.svg";
     - <CodeBlock code={`...`} lang="bash" title="arquivo.sh" /> (com título)
     - <Hint title="Dica 1"> e <Solution title="Solução"> (recolhidos)
     - <GlossaryTerm term="...">texto</GlossaryTerm>
-    - <Quiz title="..." questions={[{ question, options, answer, explanation }]} />
+    - <Quiz task="slug-da-tarefa" /> (perguntas no front-matter, type: quiz)
     - <FlagInput task="slug-da-tarefa" />
     - <ModuleGlossary /> (seção 10: lista os termos deste módulo)
     Em texto corrido, { } e < > são sintaxe de MDX: escreva FLAG{...} e
@@ -212,17 +230,7 @@ saída real
     exercícios práticos com soluções recolhidas. A tarefa que gera a flag
     é a do lab (seção 5); cite-a aqui. */}
 
-<Quiz
-  title="Quiz — Título do módulo"
-  questions={[
-    {
-      question: "Pergunta que testa entendimento, não decoreba?",
-      options: ["Opção A", "Opção B", "Opção C", "Opção D"],
-      answer: 1,
-      explanation: "Por que B está certa e por que as outras não.",
-    },
-  ]}
-/>
+<Quiz task="quiz-final" />
 
 ## 10. Resumo e glossário
 
@@ -273,6 +281,9 @@ saída real
         screenshots são reais.
     [ ] O começo é guiado; o meio tem desafios com dicas e solução recolhidas.
     [ ] A flag só é obtida completando o exercício, e foi testada.
+    [ ] O quiz é uma tarefa type: quiz no front-matter (com explicação em
+        cada resposta), ligado por <Quiz task="...">, e foi respondido na
+        plataforma.
 
     Leitor
     [ ] Todo termo técnico é explicado na primeira aparição e está no

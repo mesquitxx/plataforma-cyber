@@ -5,14 +5,23 @@
  * - Validates every file first (lib/module-source.ts); nothing is written if
  *   any file is invalid.
  * - Modules must already exist (the curriculum seed creates them); ingestion
- *   fills body_mdx and upserts tasks, flags and glossary terms by natural key.
+ *   fills body_mdx and upserts tasks, flags, quizzes and glossary terms by
+ *   natural key, then records which modules mention each term.
  * - User state survives: progress and flag submissions hang off ids that are
  *   kept. Only tasks/flags/terms removed from a module's front-matter are
  *   deleted (their progress and submissions go with them, by design).
  */
 import { and, eq, notInArray, sql } from "drizzle-orm";
 import { openDatabase, resolveDatabasePath } from "../db/connection";
-import { flags, glossaryTerms, modules, tasks } from "../db/schema";
+import {
+  flags,
+  glossaryTermMentions,
+  glossaryTerms,
+  modules,
+  quizQuestions,
+  quizzes,
+  tasks,
+} from "../db/schema";
 import { TRACKS } from "../db/seed/curriculum";
 import { checkContent, curriculumIndex, loadModuleSources } from "../lib/module-source";
 
@@ -30,7 +39,7 @@ const filePath = resolveDatabasePath();
 const { sqlite, db } = openDatabase(filePath);
 
 try {
-  const totals = { modules: 0, tasks: 0, flags: 0, terms: 0 };
+  const totals = { modules: 0, tasks: 0, flags: 0, quizzes: 0, terms: 0, mentions: 0 };
 
   db.transaction((tx) => {
     for (const source of sources) {
@@ -84,6 +93,33 @@ try {
           // A task that stopped being a flag keeps no flag row.
           tx.delete(flags).where(eq(flags.taskId, row.id)).run();
         }
+
+        if (task.type === "quiz") {
+          // The quiz row (and its attempts) is kept; its questions are replaced.
+          const quizValues = { taskId: row.id, passPercent: task.passPercent };
+          const quiz = tx
+            .insert(quizzes)
+            .values(quizValues)
+            .onConflictDoUpdate({ target: quizzes.taskId, set: quizValues })
+            .returning({ id: quizzes.id })
+            .get();
+          tx.delete(quizQuestions).where(eq(quizQuestions.quizId, quiz.id)).run();
+          tx.insert(quizQuestions)
+            .values(
+              task.questions.map((q, i) => ({
+                quizId: quiz.id,
+                sortOrder: i + 1,
+                question: q.question,
+                options: q.options,
+                answerIndex: q.answer,
+                explanation: q.explanation,
+              })),
+            )
+            .run();
+          totals.quizzes++;
+        } else {
+          tx.delete(quizzes).where(eq(quizzes.taskId, row.id)).run();
+        }
       });
 
       // Glossary terms introduced by this module, matched case-insensitively.
@@ -114,12 +150,37 @@ try {
         totals.terms++;
       }
     }
+
+    // Mentions: every module that marks a term with <GlossaryTerm>. A second
+    // pass, because a module may cite a term declared by a later file.
+    const termIds = new Map(
+      tx
+        .select({ id: glossaryTerms.id, term: glossaryTerms.term })
+        .from(glossaryTerms)
+        .all()
+        .map((row) => [row.term.toLowerCase(), row.id]),
+    );
+    for (const source of sources) {
+      const moduleId = tx
+        .select({ id: modules.id })
+        .from(modules)
+        .where(eq(modules.slug, source.frontmatter.slug))
+        .get()!.id;
+      tx.delete(glossaryTermMentions).where(eq(glossaryTermMentions.moduleId, moduleId)).run();
+      const ids = [...new Set(source.glossaryRefs.map((term) => termIds.get(term.trim().toLowerCase())!))];
+      if (ids.length > 0) {
+        tx.insert(glossaryTermMentions)
+          .values(ids.map((termId) => ({ termId, moduleId })))
+          .run();
+      }
+      totals.mentions += ids.length;
+    }
   });
 
   console.log(`Ingested ${filePath}`);
   console.log(
     `Modules: ${totals.modules} · Tasks: ${totals.tasks} · Flags: ${totals.flags} · ` +
-      `Glossary terms: ${totals.terms}`,
+      `Quizzes: ${totals.quizzes} · Glossary terms: ${totals.terms} · Mentions: ${totals.mentions}`,
   );
 } finally {
   sqlite.close();

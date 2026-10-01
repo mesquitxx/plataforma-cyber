@@ -31,10 +31,42 @@ const flagTask = z.strictObject({
   }),
 });
 
+export const DEFAULT_PASS_PERCENT = 70;
+
+const quizQuestion = z
+  .strictObject({
+    question: text,
+    options: z.array(text).min(2).max(6),
+    /** 0-based index of the right option. */
+    answer: z.number().int().min(0),
+    explanation: text,
+  })
+  .superRefine((q, ctx) => {
+    if (q.answer >= q.options.length) {
+      ctx.addIssue({ code: "custom", path: ["answer"], message: `must be between 0 and ${q.options.length - 1}` });
+    }
+    if (new Set(q.options).size !== q.options.length) {
+      ctx.addIssue({ code: "custom", path: ["options"], message: "options must be distinct" });
+    }
+  });
+
+const quizTask = z.strictObject({
+  slug,
+  title: text,
+  type: z.literal("quiz"),
+  prompt: text.optional(),
+  passPercent: z.number().int().min(1).max(100).default(DEFAULT_PASS_PERCENT),
+  questions: z.array(quizQuestion).min(1),
+});
+
+type GradedTaskType = "flag" | "quiz";
+
 const otherTask = z.strictObject({
   slug,
   title: text,
-  type: z.enum(TASK_TYPES.filter((t): t is Exclude<TaskType, "flag"> => t !== "flag")),
+  type: z.enum(
+    TASK_TYPES.filter((t): t is Exclude<TaskType, GradedTaskType> => t !== "flag" && t !== "quiz"),
+  ),
   prompt: text.optional(),
 });
 
@@ -45,7 +77,7 @@ export const frontmatterSchema = z.strictObject({
   prerequisites: z.array(z.string()),
   lab: slug.nullable().default(null),
   glossary: z.array(z.strictObject({ term: text, definition: text })).default([]),
-  tasks: z.array(z.discriminatedUnion("type", [flagTask, otherTask])).default([]),
+  tasks: z.array(z.discriminatedUnion("type", [flagTask, quizTask, otherTask])).default([]),
 });
 
 export type ModuleFrontmatter = z.infer<typeof frontmatterSchema>;
@@ -59,6 +91,10 @@ export type ModuleSource = {
   body: string;
   /** Task slugs used by <FlagInput task="..."> in the body, in order. */
   flagInputs: string[];
+  /** Task slugs used by <Quiz task="..."> in the body, in order. */
+  quizRefs: string[];
+  /** Every <Quiz ...> tag, with or without task= (inline quizzes are an error). */
+  quizTagCount: number;
   /** Terms used by <GlossaryTerm term="..."> in the body (as written). */
   glossaryRefs: string[];
 };
@@ -75,6 +111,8 @@ export type CurriculumEntry = {
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
 const FLAG_INPUT = /<FlagInput\b[^>]*?\btask="([^"]+)"/g;
 const GLOSSARY_TERM = /<GlossaryTerm\b[^>]*?\bterm="([^"]+)"/g;
+const QUIZ = /<Quiz\b[^>]*?\btask="([^"]+)"/g;
+const QUIZ_TAG = /<Quiz\b/g;
 
 export class ContentError extends Error {
   constructor(
@@ -110,6 +148,8 @@ export function parseModuleSource(file: string, source: string): ModuleSource {
     frontmatter: result.data,
     body,
     flagInputs: [...body.matchAll(FLAG_INPUT)].map((m) => m[1]),
+    quizRefs: [...body.matchAll(QUIZ)].map((m) => m[1]),
+    quizTagCount: [...body.matchAll(QUIZ_TAG)].length,
     glossaryRefs: [...body.matchAll(GLOSSARY_TERM)].map((m) => m[1]),
   };
 }
@@ -144,15 +184,27 @@ export function checkModule(source: ModuleSource, curriculum: Map<string, Curric
     taskSlugs.add(task.slug);
   }
 
-  const flagSlugs = new Set(fm.tasks.filter((t) => t.type === "flag").map((t) => t.slug));
-  const used = new Map<string, number>();
-  for (const slug of source.flagInputs) used.set(slug, (used.get(slug) ?? 0) + 1);
-  for (const [slug, count] of used) {
-    if (!flagSlugs.has(slug)) problems.push(`<FlagInput task="${slug}"> has no flag task in the front-matter`);
-    if (count > 1) problems.push(`<FlagInput task="${slug}"> appears ${count} times`);
+  // Each graded task has exactly one component in the body, and vice versa.
+  const graded = [
+    { type: "flag", tag: "FlagInput", refs: source.flagInputs },
+    { type: "quiz", tag: "Quiz", refs: source.quizRefs },
+  ] as const;
+  for (const { type, tag, refs } of graded) {
+    const slugs = new Set(fm.tasks.filter((t) => t.type === type).map((t) => t.slug));
+    const used = new Map<string, number>();
+    for (const slug of refs) used.set(slug, (used.get(slug) ?? 0) + 1);
+    for (const [slug, count] of used) {
+      if (!slugs.has(slug)) problems.push(`<${tag} task="${slug}"> has no ${type} task in the front-matter`);
+      if (count > 1) problems.push(`<${tag} task="${slug}"> appears ${count} times`);
+    }
+    for (const slug of slugs) {
+      if (!used.has(slug)) problems.push(`${type} task "${slug}" has no <${tag} task="${slug}"> in the body`);
+    }
   }
-  for (const slug of flagSlugs) {
-    if (!used.has(slug)) problems.push(`flag task "${slug}" has no <FlagInput task="${slug}"> in the body`);
+  if (source.quizTagCount > source.quizRefs.length) {
+    problems.push(
+      '<Quiz> without task="...": quiz questions go in the front-matter as a task with type: quiz',
+    );
   }
 
   const declared = new Set<string>();

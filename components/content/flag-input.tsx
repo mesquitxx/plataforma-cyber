@@ -28,7 +28,7 @@ export function FlagInput({ task, moduleSlug }: FlagInputProps) {
   }
 
   return (
-    <section className="not-prose my-6 rounded-lg border border-primary/30 bg-card">
+    <section id={`tarefa-${task}`} className="not-prose my-6 scroll-mt-20 rounded-lg border border-primary/30 bg-card">
       <header className="flex items-center justify-between gap-2 border-b px-4 py-3">
         <h4 className="flex items-center gap-2 font-semibold">
           <Flag className="size-4 text-primary" aria-hidden />

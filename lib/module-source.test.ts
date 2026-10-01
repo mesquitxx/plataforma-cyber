@@ -73,6 +73,48 @@ describe("module sources", () => {
     assert.throws(() => checkContent([unusedTerm], curriculum), /not declared by any module/);
   });
 
+  const QUIZ_TASK = `  - slug: quiz-final
+    title: Quiz
+    type: quiz
+    questions:
+      - question: "Qual?"
+        options: ["A", "B"]
+        answer: 1
+        explanation: "Porque B."
+`;
+
+  it("parses a quiz task, with a default pass mark, tied to <Quiz task>", () => {
+    const parsed = parseModuleSource(
+      FILE,
+      source({ frontmatter: QUIZ_TASK, body: '<Quiz task="quiz-final" />\n' }),
+    );
+    const quiz = parsed.frontmatter.tasks.find((t) => t.type === "quiz");
+    assert.ok(quiz && quiz.type === "quiz");
+    assert.equal(quiz.passPercent, 70);
+    assert.deepEqual(parsed.quizRefs, ["quiz-final"]);
+    assert.deepEqual(checkModule(parsed, curriculum), []);
+
+    const missing = parseModuleSource(FILE, source({ frontmatter: QUIZ_TASK }));
+    assert.match(checkModule(missing, curriculum).join("\n"), /has no <Quiz task="quiz-final">/);
+  });
+
+  it("rejects inline quizzes and invalid questions", () => {
+    const inline = parseModuleSource(FILE, source({ body: "<Quiz title=\"x\" questions={[]} />\n" }));
+    assert.match(checkModule(inline, curriculum).join("\n"), /front-matter as a task with type: quiz/);
+    assert.throws(
+      () => parseModuleSource(FILE, source({ frontmatter: QUIZ_TASK.replace("answer: 1", "answer: 2") })),
+      /must be between 0 and 1/,
+    );
+    assert.throws(
+      () => parseModuleSource(FILE, source({ frontmatter: QUIZ_TASK.replace('["A", "B"]', '["A", "A"]') })),
+      /distinct/,
+    );
+    assert.throws(
+      () => parseModuleSource(FILE, source({ frontmatter: `${QUIZ_TASK}    passPercent: 0\n` })),
+      /passPercent/,
+    );
+  });
+
   it("accepts every module in content/", () => {
     const modules = loadModuleSources(process.cwd());
     assert.ok(modules.length > 0, "expected at least the pilot module");

@@ -6,12 +6,16 @@ import { connection } from "next/server";
 import { FileText, Lock } from "lucide-react";
 import { FlagInput } from "@/components/content/flag-input";
 import { ModuleGlossary } from "@/components/content/glossary-term";
+import { Quiz } from "@/components/content/quiz";
 import { LabBadge } from "@/components/lab-badge";
 import { ModuleStateBadge, ModuleStateIcon } from "@/components/module-state";
+import { ModuleTasks } from "@/components/module-tasks";
 import { PageBreadcrumb } from "@/components/page-breadcrumb";
 import { Pager } from "@/components/pager";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { getCurriculum } from "@/db/queries/curriculum";
+import { getModuleTasks } from "@/db/queries/progress";
 import { findModule } from "@/lib/curriculum-state";
 
 type Props = PageProps<"/trilhas/[trackSlug]/[moduleSlug]">;
@@ -47,6 +51,8 @@ export default async function ModulePage({ params }: Props) {
 
   const { track, module, previous, next } = found;
   const Content = await loadModuleContent(track.slug, module.slug);
+  const tasks = getModuleTasks(module.slug);
+  const tasksDone = tasks.filter((t) => t.status === "completed").length;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
@@ -67,6 +73,19 @@ export default async function ModulePage({ params }: Props) {
           <ModuleStateBadge state={module.state} />
           {module.labTarget && <LabBadge target={module.labTarget} />}
         </div>
+        {tasks.length > 0 && (
+          <div className="max-w-sm space-y-1.5">
+            <Progress
+              value={Math.floor((tasksDone / tasks.length) * 100)}
+              aria-label={`Tarefas do módulo ${module.number}`}
+            />
+            <p className="font-mono text-xs text-muted-foreground">
+              <a href="#tarefas-do-modulo" className="hover:text-foreground">
+                {tasksDone}/{tasks.length} tarefas concluídas
+              </a>
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Soft lock: the page stays readable, with a warning. */}
@@ -120,6 +139,7 @@ export default async function ModulePage({ params }: Props) {
             components={{
               // Bind the module: MDX authors only write <FlagInput task="..." />.
               FlagInput: (props: { task: string }) => <FlagInput {...props} moduleSlug={module.slug} />,
+              Quiz: (props: { task: string }) => <Quiz {...props} moduleSlug={module.slug} />,
               ModuleGlossary: () => <ModuleGlossary moduleSlug={module.slug} />,
             }}
           />
@@ -140,6 +160,8 @@ export default async function ModulePage({ params }: Props) {
           </CardContent>
         </Card>
       )}
+
+      <ModuleTasks moduleSlug={module.slug} tasks={tasks} moduleCompleted={module.state === "completed"} />
 
       <Pager
         previous={previous ? { href: previous.href, label: `${previous.number} ${previous.title}` } : null}

@@ -29,6 +29,91 @@ tasks:
     flag:
       hash: "scrypt$16384$8$1$e8d7b2ba84c773933c9559295cd9b375ad76ba9be72d22dee47ae08b232175cb"
       salt: "65d26450460c9c87cfa611cb6db5126e"
+  - slug: quiz-final
+    title: "Quiz — Linux: primeiros passos no terminal"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "O que o `#` no fim do prompt indica?"
+        options:
+          - "Que o comando anterior deu erro"
+          - "Que você está logado como root"
+          - "Que você está dentro de uma pasta oculta"
+          - "Que o shell é o zsh"
+        answer: 1
+        explanation: "`$` indica usuário comum e `#` indica root, o superusuário. Um `#` no prompt pede atenção redobrada: o kernel quase não vai barrar nada."
+      - question: "Por que `cd` precisa ser um builtin do shell, e não um programa em `/usr/bin`?"
+        options:
+          - "Porque é mais rápido"
+          - "Porque só o root pode executar programas em /usr/bin"
+          - "Porque cada processo tem o próprio diretório atual; um programa separado mudaria só o dele"
+          - "Porque o kernel não permite trocar de pasta"
+        answer: 2
+        explanation: "Um processo filho não consegue mudar o diretório do processo pai. Se `cd` fosse um programa, mudaria a pasta dele mesmo e terminaria, e o shell ficaria onde estava."
+      - question: "Estando em `/home/aluno/missao-2`, qual caminho aponta para `/home/aluno/missao-1/instrucoes.txt`?"
+        options:
+          - "`missao-1/instrucoes.txt`"
+          - "`../missao-1/instrucoes.txt`"
+          - "`/missao-1/instrucoes.txt`"
+          - "`./missao-1/instrucoes.txt`"
+        answer: 1
+        explanation: "`..` sobe para `/home/aluno` e, de lá, `missao-1/instrucoes.txt`. Começar com `/` faria um caminho absoluto a partir da raiz, que não existe."
+      - question: "Um arquivo tem permissões `-rw-r-----`. Qual é o equivalente em octal?"
+        options:
+          - "`640`"
+          - "`750`"
+          - "`644`"
+          - "`460`"
+        answer: 0
+        explanation: "Dono `rw-` = 4+2 = 6; grupo `r--` = 4; outros `---` = 0. Resultado: 640."
+      - question: "Você é o dono de um arquivo `----r--r--`. Consegue lê-lo?"
+        options:
+          - "Sim, porque os outros podem ler e você também é um \"outro\""
+          - "Sim, porque o dono sempre pode ler"
+          - "Não: como dono, só o trio do dono vale, e ele está vazio"
+          - "Só se estiver no mesmo grupo"
+        answer: 2
+        explanation: "As classes não se somam: o kernel usa só o trio da primeira classe que se aplica a você. Mas, como dono, você pode dar a permissão a si mesmo com `chmod u+r`."
+      - question: "Qual a diferença entre `comando > saida.txt` e `comando >> saida.txt`?"
+        options:
+          - "Nenhuma"
+          - "`>` sobrescreve o arquivo; `>>` acrescenta ao fim"
+          - "`>` grava os erros; `>>` grava a saída normal"
+          - "`>>` grava em dois arquivos"
+        answer: 1
+        explanation: "`>` apaga o conteúdo anterior sem perguntar. Para acrescentar, use `>>`. Os erros (stderr) só vão para o arquivo com `2>`."
+      - question: "Em `find / -name \"*.conf\" 2>/dev/null`, o que faz o `2>/dev/null`?"
+        options:
+          - "Limita a busca a 2 níveis de pasta"
+          - "Descarta as mensagens de erro, como os \"Permission denied\""
+          - "Salva os resultados em /dev/null"
+          - "Executa a busca como root"
+        answer: 1
+        explanation: "O canal 2 é o stderr. Mandá-lo para `/dev/null` descarta os erros e deixa na tela só os resultados (stdout)."
+      - question: "Por que `sort arquivo | uniq -u` funciona e `uniq -u arquivo` não basta?"
+        options:
+          - "Porque o uniq só compara linhas vizinhas, e o sort deixa as iguais lado a lado"
+          - "Porque o uniq não lê arquivos, só pipes"
+          - "Porque o sort remove as duplicatas sozinho"
+          - "Porque o -u só funciona depois de um pipe"
+        answer: 0
+        explanation: "O `uniq` só junta repetições consecutivas. No laboratório, `uniq` sem `sort` deixou 1118 linhas; com `sort`, sobraram as 59 senhas distintas."
+      - question: "Num script, qual forma protege contra o bug do Steam (variável vazia apagando tudo)?"
+        options:
+          - "`rm -rf $PASTA/*`"
+          - "`rm -rf \"$PASTA/\"*`"
+          - "`rm -rf \"${PASTA:?}/\"*`"
+          - "`sudo rm -rf \"$PASTA/\"*`"
+        answer: 2
+        explanation: "`${PASTA:?}` faz o shell abortar com erro se a variável estiver vazia ou não definida, antes de o `rm` rodar. O `sudo` só pioraria: um root apagaria inclusive o sistema."
+      - question: "Um arquivo chamado `.config_backup` não aparece no `ls`. Isso significa que ele está protegido?"
+        options:
+          - "Sim, arquivos ocultos só o root lê"
+          - "Não: o ponto é só uma convenção; `ls -a` mostra e as permissões continuam sendo as do `ls -l`"
+          - "Sim, porque o kernel esconde arquivos com ponto"
+          - "Depende do shell"
+        answer: 1
+        explanation: "Ocultar não é proteger. Atacantes usam essa convenção para esconder ferramentas (MITRE T1564.001), e defensores procuram com `ls -la` e `find -name \".*\"`."
 glossary:
   - term: terminal
     definition: "Programa que mostra texto e lê o teclado para você usar o computador por linha de comando. Tecnicamente, um emulador de terminal: imita os antigos aparelhos de teclado e tela."
@@ -1566,116 +1651,7 @@ As três flags da seção 5 são as tarefas oficiais deste módulo. Antes de seg
 confira a teoria com o quiz e, se quiser fixar mais, faça os exercícios práticos
 extras no sandbox.
 
-<Quiz
-  title="Quiz — Linux: primeiros passos no terminal"
-  questions={[
-    {
-      question: "O que o `#` no fim do prompt indica?",
-      options: [
-        "Que o comando anterior deu erro",
-        "Que você está logado como root",
-        "Que você está dentro de uma pasta oculta",
-        "Que o shell é o zsh",
-      ],
-      answer: 1,
-      explanation: "`$` indica usuário comum e `#` indica root, o superusuário. Um `#` no prompt pede atenção redobrada: o kernel quase não vai barrar nada.",
-    },
-    {
-      question: "Por que `cd` precisa ser um builtin do shell, e não um programa em `/usr/bin`?",
-      options: [
-        "Porque é mais rápido",
-        "Porque só o root pode executar programas em /usr/bin",
-        "Porque cada processo tem o próprio diretório atual; um programa separado mudaria só o dele",
-        "Porque o kernel não permite trocar de pasta",
-      ],
-      answer: 2,
-      explanation: "Um processo filho não consegue mudar o diretório do processo pai. Se `cd` fosse um programa, mudaria a pasta dele mesmo e terminaria, e o shell ficaria onde estava.",
-    },
-    {
-      question: "Estando em `/home/aluno/missao-2`, qual caminho aponta para `/home/aluno/missao-1/instrucoes.txt`?",
-      options: [
-        "`missao-1/instrucoes.txt`",
-        "`../missao-1/instrucoes.txt`",
-        "`/missao-1/instrucoes.txt`",
-        "`./missao-1/instrucoes.txt`",
-      ],
-      answer: 1,
-      explanation: "`..` sobe para `/home/aluno` e, de lá, `missao-1/instrucoes.txt`. Começar com `/` faria um caminho absoluto a partir da raiz, que não existe.",
-    },
-    {
-      question: "Um arquivo tem permissões `-rw-r-----`. Qual é o equivalente em octal?",
-      options: ["`640`", "`750`", "`644`", "`460`"],
-      answer: 0,
-      explanation: "Dono `rw-` = 4+2 = 6; grupo `r--` = 4; outros `---` = 0. Resultado: 640.",
-    },
-    {
-      question: "Você é o dono de um arquivo `----r--r--`. Consegue lê-lo?",
-      options: [
-        "Sim, porque os outros podem ler e você também é um \"outro\"",
-        "Sim, porque o dono sempre pode ler",
-        "Não: como dono, só o trio do dono vale, e ele está vazio",
-        "Só se estiver no mesmo grupo",
-      ],
-      answer: 2,
-      explanation: "As classes não se somam: o kernel usa só o trio da primeira classe que se aplica a você. Mas, como dono, você pode dar a permissão a si mesmo com `chmod u+r`.",
-    },
-    {
-      question: "Qual a diferença entre `comando > saida.txt` e `comando >> saida.txt`?",
-      options: [
-        "Nenhuma",
-        "`>` sobrescreve o arquivo; `>>` acrescenta ao fim",
-        "`>` grava os erros; `>>` grava a saída normal",
-        "`>>` grava em dois arquivos",
-      ],
-      answer: 1,
-      explanation: "`>` apaga o conteúdo anterior sem perguntar. Para acrescentar, use `>>`. Os erros (stderr) só vão para o arquivo com `2>`.",
-    },
-    {
-      question: "Em `find / -name \"*.conf\" 2>/dev/null`, o que faz o `2>/dev/null`?",
-      options: [
-        "Limita a busca a 2 níveis de pasta",
-        "Descarta as mensagens de erro, como os \"Permission denied\"",
-        "Salva os resultados em /dev/null",
-        "Executa a busca como root",
-      ],
-      answer: 1,
-      explanation: "O canal 2 é o stderr. Mandá-lo para `/dev/null` descarta os erros e deixa na tela só os resultados (stdout).",
-    },
-    {
-      question: "Por que `sort arquivo | uniq -u` funciona e `uniq -u arquivo` não basta?",
-      options: [
-        "Porque o uniq só compara linhas vizinhas, e o sort deixa as iguais lado a lado",
-        "Porque o uniq não lê arquivos, só pipes",
-        "Porque o sort remove as duplicatas sozinho",
-        "Porque o -u só funciona depois de um pipe",
-      ],
-      answer: 0,
-      explanation: "O `uniq` só junta repetições consecutivas. No laboratório, `uniq` sem `sort` deixou 1118 linhas; com `sort`, sobraram as 59 senhas distintas.",
-    },
-    {
-      question: "Num script, qual forma protege contra o bug do Steam (variável vazia apagando tudo)?",
-      options: [
-        "`rm -rf $PASTA/*`",
-        "`rm -rf \"$PASTA/\"*`",
-        "`rm -rf \"${PASTA:?}/\"*`",
-        "`sudo rm -rf \"$PASTA/\"*`",
-      ],
-      answer: 2,
-      explanation: "`${PASTA:?}` faz o shell abortar com erro se a variável estiver vazia ou não definida, antes de o `rm` rodar. O `sudo` só pioraria: um root apagaria inclusive o sistema.",
-    },
-    {
-      question: "Um arquivo chamado `.config_backup` não aparece no `ls`. Isso significa que ele está protegido?",
-      options: [
-        "Sim, arquivos ocultos só o root lê",
-        "Não: o ponto é só uma convenção; `ls -a` mostra e as permissões continuam sendo as do `ls -l`",
-        "Sim, porque o kernel esconde arquivos com ponto",
-        "Depende do shell",
-      ],
-      answer: 1,
-      explanation: "Ocultar não é proteger. Atacantes usam essa convenção para esconder ferramentas (MITRE T1564.001), e defensores procuram com `ls -la` e `find -name \".*\"`.",
-    },
-  ]}
-/>
+<Quiz task="quiz-final" />
 
 ### Cenários para pensar
 
