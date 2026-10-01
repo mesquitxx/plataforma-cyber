@@ -1,4 +1,5 @@
 import { Gauge } from "lucide-react";
+import Link from "next/link";
 import { connection } from "next/server";
 import { ContinueCard } from "@/components/continue-card";
 import { ProgressMeter } from "@/components/progress-meter";
@@ -59,6 +60,12 @@ export default async function HomePage() {
                   {curriculum.summary.percent}%
                 </p>
                 <ProgressMeter summary={curriculum.summary} label="Progresso geral" />
+                <Link
+                  href="/painel"
+                  className="mt-3 inline-block font-mono text-xs text-muted-foreground hover:text-foreground"
+                >
+                  ver painel e conquistas →
+                </Link>
               </CardContent>
             </Card>
           </section>
@@ -76,7 +83,7 @@ export default async function HomePage() {
 
       <footer className="font-mono text-xs text-muted-foreground">
         SQLite {status.ok ? "conectado" : "sem schema"} · {status.tables.length} tabelas ·{" "}
-        {status.appliedMigrations} migração(ões) · progresso de exemplo até a Fase 5
+        {status.appliedMigrations} migração(ões) · progresso salvo localmente
       </footer>
     </div>
   );
