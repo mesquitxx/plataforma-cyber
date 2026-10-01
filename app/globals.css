@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -123,6 +124,60 @@
       animation: none;
     }
   }
+}
+
+/*
+ * Module content (MDX). `prose` comes from @tailwindcss/typography; these
+ * variables map it onto the lab theme instead of its own gray palette.
+ * Unlayered on purpose: the plugin's `.prose` lives in a later cascade layer
+ * than `components`, so layered overrides would lose to it.
+ */
+.prose-lab {
+  --tw-prose-body: oklch(0.86 0.01 150);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-lead: var(--muted-foreground);
+  --tw-prose-links: var(--primary);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--muted-foreground);
+  --tw-prose-quote-borders: var(--border);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-kbd: var(--foreground);
+  --tw-prose-code: var(--primary);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+}
+.prose-lab :where(h2):not(:where(.not-prose *)) {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.4em;
+  scroll-margin-top: 5rem;
+}
+.prose-lab :where(h3):not(:where(.not-prose *)) {
+  scroll-margin-top: 5rem;
+}
+.prose-lab :where(code):not(:where(pre code, .not-prose *)) {
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+  padding: 0.1em 0.35em;
+  font-weight: 500;
+}
+.prose-lab :where(code):not(:where(pre code, .not-prose *))::before,
+.prose-lab :where(code):not(:where(pre code, .not-prose *))::after {
+  content: none;
+}
+.prose-lab :where(a):not(:where(.not-prose *)) {
+  text-underline-offset: 3px;
+}
+
+/* Shiki output: keep the card background and spacing of CodeBlock. */
+.code-block pre.shiki {
+  margin: 0;
+  padding: 0.875rem 1rem;
+  background-color: transparent !important;
+  font-family: var(--font-mono);
+  line-height: 1.6;
 }
 
 @keyframes terminal-blink {

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import type { MDXContent } from "mdx/types";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { FileText, Lock } from "lucide-react";
+import { FlagInput } from "@/components/content/flag-input";
+import { ModuleGlossary } from "@/components/content/glossary-term";
 import { LabBadge } from "@/components/lab-badge";
 import { ModuleStateBadge, ModuleStateIcon } from "@/components/module-state";
 import { PageBreadcrumb } from "@/components/page-breadcrumb";
@@ -12,6 +15,20 @@ import { getCurriculum } from "@/db/queries/curriculum";
 import { findModule } from "@/lib/curriculum-state";
 
 type Props = PageProps<"/trilhas/[trackSlug]/[moduleSlug]">;
+
+/**
+ * Module content compiled from content/<track>/<module>/index.mdx, or null
+ * if the module has not been written yet. Slugs come from the database
+ * (findModule), and the import can only resolve files under content/.
+ */
+async function loadModuleContent(trackSlug: string, moduleSlug: string): Promise<MDXContent | null> {
+  try {
+    const mod = await import(`@/content/${trackSlug}/${moduleSlug}/index.mdx`);
+    return mod.default as MDXContent;
+  } catch {
+    return null;
+  }
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   await connection();
@@ -29,6 +46,7 @@ export default async function ModulePage({ params }: Props) {
   if (!found) notFound();
 
   const { track, module, previous, next } = found;
+  const Content = await loadModuleContent(track.slug, module.slug);
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
@@ -96,20 +114,32 @@ export default async function ModulePage({ params }: Props) {
         </section>
       )}
 
-      <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FileText className="size-4 text-info" aria-hidden />
-            Conteúdo do módulo
-          </CardTitle>
-          <CardDescription>
-            Aqui vão aparecer a teoria, as tarefas e, quando houver, o laboratório deste módulo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="font-mono text-xs text-muted-foreground">
-          O conteúdo em MDX chega na Fase 4.
-        </CardContent>
-      </Card>
+      {Content ? (
+        <article className="prose prose-lab max-w-none">
+          <Content
+            components={{
+              // Bind the module: MDX authors only write <FlagInput task="..." />.
+              FlagInput: (props: { task: string }) => <FlagInput {...props} moduleSlug={module.slug} />,
+              ModuleGlossary: () => <ModuleGlossary moduleSlug={module.slug} />,
+            }}
+          />
+        </article>
+      ) : (
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileText className="size-4 text-info" aria-hidden />
+              Conteúdo do módulo
+            </CardTitle>
+            <CardDescription>
+              Aqui vão aparecer a teoria, as tarefas e, quando houver, o laboratório deste módulo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="font-mono text-xs text-muted-foreground">
+            Este módulo ainda não foi escrito (as trilhas chegam a partir da Fase 7).
+          </CardContent>
+        </Card>
+      )}
 
       <Pager
         previous={previous ? { href: previous.href, label: `${previous.number} ${previous.title}` } : null}

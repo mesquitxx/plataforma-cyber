@@ -59,7 +59,7 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <p className="px-2 font-mono text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-          Fase 3 · v0.2
+          Fase 4 · v0.4
         </p>
       </SidebarFooter>
       <SidebarRail />
