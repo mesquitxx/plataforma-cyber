@@ -1,0 +1,290 @@
+---
+# =====================================================================
+# TEMPLATE DE MÓDULO — copie este arquivo para
+#   content/trilha-N/<slug>/index.mdx
+# e as imagens para content/trilha-N/<slug>/img/.
+#
+# Régua obrigatória: docs/PADRAO-DE-MODULO.md (leia inteiro antes).
+# Exemplo completo: content/trilha-0/terminal-linux/index.mdx (0.3).
+#
+# Depois de escrever:
+#   npm test                 valida este arquivo contra o currículo
+#   npm run content:ingest   grava tarefas, flags e glossário no banco
+#
+# Os comentários YAML (#) e MDX ({/* */}) deste template devem ser
+# apagados no módulo final.
+# =====================================================================
+
+# Igual ao currículo (db/seed/curriculum.ts). O teste falha se divergir.
+slug: slug-do-modulo
+track: trilha-N
+title: "Título exatamente como no currículo"
+# Slugs de módulo ou "trilha-N", exatamente como no seed (sem expandir).
+prerequisites: [slug-do-pre-requisito]
+# Slug do lab no seed (dvwa, juice-shop, webgoat, vulhub, linux-sandbox)
+# ou null se o módulo não tem lab.
+lab: dvwa
+
+# Tarefas. Toda tarefa type: flag precisa de um <FlagInput task="..." />
+# no corpo (exatamente um). O hash e o salt vêm de:
+#   npm run flag:hash -- 'FLAG{...}'
+# NUNCA escreva a flag em claro aqui nem no corpo do MDX.
+tasks:
+  - slug: nome-da-tarefa
+    title: "Título que aparece no cartão da flag"
+    type: flag
+    prompt: "O que exatamente o leitor deve colar aqui."
+    hint: "Uma dica curta, que não entrega a resposta."
+    flag:
+      hash: "scrypt$16384$8$1$<saída do flag:hash>"
+      salt: "<saída do flag:hash>"
+
+# Termos técnicos que ESTE módulo introduz (primeira aparição na
+# plataforma). Cada termo:
+#   - é declarado por um único módulo (o teste acusa duplicata);
+#   - é marcado no corpo com <GlossaryTerm term="..."> ao menos uma vez;
+#   - é explicado no próprio texto na primeira aparição (o popover só
+#     reforça). Termos já declarados por módulos anteriores podem ser
+#     marcados com <GlossaryTerm> sem declarar de novo.
+glossary:
+  - term: termo em inglês
+    definition: "Uma ou duas frases em português: o que é e por que importa."
+---
+
+{/* Imagens: SVG próprio no tema da plataforma ou screenshot/saída real do lab.
+    Nada baixado da internet. Importe cada uma e use com <Figure>. */}
+import diagramaDoAtaque from "./img/fluxo-do-ataque.svg";
+
+{/* ===================================================================
+    COMPONENTES DISPONÍVEIS (registrados em mdx-components.tsx)
+    - <Callout variant="info|tip|warning|danger|ethics|hypothetical" title="...">
+    - <Figure src={importado} alt="..." caption="frase do que o diagrama mostra" />
+    - Blocos ```console (sessão: "$ comando" + saída; o botão copia só os
+      comandos), ```bash, ```python, ```sql, ```http, ```text ...
+    - <CodeBlock code={`...`} lang="bash" title="arquivo.sh" /> (com título)
+    - <Hint title="Dica 1"> e <Solution title="Solução"> (recolhidos)
+    - <GlossaryTerm term="...">texto</GlossaryTerm>
+    - <Quiz title="..." questions={[{ question, options, answer, explanation }]} />
+    - <FlagInput task="slug-da-tarefa" />
+    - <ModuleGlossary /> (seção 10: lista os termos deste módulo)
+    Em texto corrido, { } e < > são sintaxe de MDX: escreva FLAG{...} e
+    <arquivo> dentro de `código` (crases).
+    =================================================================== */}
+
+## 1. Abertura — o que você vai aprender e por quê
+
+{/* Meia a uma página. Por que isto importa no mundo real (com um exemplo
+    concreto), o que o leitor vai saber fazer no fim, objetivos em lista,
+    pré-requisitos relembrados em uma linha cada (iguais ao currículo) e
+    tempo estimado. */}
+
+Parágrafo de motivação: onde isto aparece num ataque real e por que quem defende
+precisa entender.
+
+**Ao final, você vai saber:**
+
+- objetivo verificável 1;
+- objetivo verificável 2;
+- objetivo verificável 3.
+
+**Pré-requisitos:** N.N — Título (o que dele você vai usar aqui, em uma linha).
+
+**Tempo estimado:** X horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+O limite deste módulo: o que se faz aqui só é legítimo no laboratório local ou em
+ambiente com autorização por escrito.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+{/* Duas a quatro páginas. Não basta dizer O QUE é: explique POR QUE a
+    falha existe e COMO funciona por dentro (como a aplicação monta a
+    query, como o kernel decide a permissão...). Analogias, exemplos,
+    subseções ###. Todo termo técnico explicado na primeira aparição e
+    marcado com <GlossaryTerm>. Pelo menos um diagrama próprio onde ajude. */}
+
+### 2.1 Primeiro conceito
+
+Explicação com <GlossaryTerm term="termo em inglês">termo em inglês</GlossaryTerm>
+(tradução e frase do que é, na primeira vez).
+
+<Figure
+  src={diagramaDoAtaque}
+  alt="Descrição completa do diagrama para quem não o vê."
+  caption="Uma frase dizendo o que o diagrama mostra."
+/>
+
+### 2.2 Segundo conceito
+
+## 3. Como o ataque funciona — a mecânica
+
+{/* Duas a três páginas. Passo a passo técnico, com código, requisições e
+    comandos REAIS (do lab), cada etapa explicada.
+    MÓDULOS DE FUNDAMENTOS (Trilhas 0 e 1): esta seção vira
+    "## 3. Na prática da segurança" — como pentester e atacante usam o
+    assunto no dia a dia. */}
+
+```console
+$ comando-real --opcao alvo
+saída real copiada do laboratório
+```
+
+## 4. Casos reais — o que aconteceu no mundo
+
+{/* Meia a uma página. Pelo menos UM incidente real VERIFICADO na fonte
+    primária (relatório, CVE, postmortem). Para cada caso: o que aconteceu,
+    data, impacto com números confirmados, lição e link. Na dúvida, não
+    afirme. Cenário inventado só dentro de <Callout variant="hypothetical">. */}
+
+### Nome do caso (ano)
+
+O que aconteceu, com datas e números conferidos.
+
+- **Impacto:** ...
+- **Lição:** ...
+- **Fonte:** [título da fonte primária](https://exemplo.org/fonte).
+
+<Callout variant="hypothetical" title="nome do cenário">
+Só se precisar ilustrar algo sem caso público bom. Nunca disfarçado de caso real.
+</Callout>
+
+## 5. Mãos à obra — o laboratório guiado
+
+{/* Duas a quatro páginas. RODE O LAB DE VERDADE enquanto escreve: comandos,
+    saídas e flag reais. Estrutura:
+    - objetivo claro logo no início (o que o leitor terá conseguido);
+    - começo guiado, passo a passo, com o que esperar na tela;
+    - meio com desafios: objetivo + direção, dicas e solução recolhidas;
+    - fim com a flag, que só se obtém fazendo o exercício. */}
+
+**Objetivo:** ao terminar, você terá ... e encontrado a flag ...
+
+### 5.1 Subir o laboratório (passo a passo)
+
+```bash
+comando para subir o lab
+```
+
+### 5.2 Primeiro passo guiado
+
+### 5.3 Desafio
+
+O que precisa ser descoberto e a direção, sem dar o comando pronto.
+
+<Hint title="Dica 1">
+Direção, não resposta.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ comando
+saída real
+```
+</Solution>
+
+<FlagInput task="nome-da-tarefa" />
+
+### 5.4 Desligar o laboratório
+
+## 6. Variações e aprofundamento
+
+{/* Uma a duas páginas. Outras formas da técnica, casos mais difíceis, como
+    aparece em cenários modernos, opções avançadas das ferramentas. */}
+
+## 7. Erros comuns
+
+{/* Meia página. O que trava iniciantes, mensagens de erro reais e o que
+    fazer quando "não funciona". */}
+
+- **Mensagem ou sintoma:** causa e como resolver.
+
+## 8. Defesa e mitigação
+
+{/* Uma a duas páginas. Exatamente o que fazer e como: configurações,
+    código seguro (exemplo vulnerável x corrigido), como detectar.
+    MÓDULOS DE FUNDAMENTOS: esta seção vira
+    "## 8. Boas práticas e segurança" — usar com segurança e evitar riscos. */}
+
+## 9. Exercícios
+
+{/* Meia página. Quiz de teoria (com explicação em cada resposta) e
+    exercícios práticos com soluções recolhidas. A tarefa que gera a flag
+    é a do lab (seção 5); cite-a aqui. */}
+
+<Quiz
+  title="Quiz — Título do módulo"
+  questions={[
+    {
+      question: "Pergunta que testa entendimento, não decoreba?",
+      options: ["Opção A", "Opção B", "Opção C", "Opção D"],
+      answer: 1,
+      explanation: "Por que B está certa e por que as outras não.",
+    },
+  ]}
+/>
+
+## 10. Resumo e glossário
+
+{/* Meia página. Pontos-chave em poucas linhas, cola rápida se fizer
+    sentido, os termos do módulo e material para ir além. */}
+
+**Pontos-chave:**
+
+- ...
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Material externo verificado](https://exemplo.org/) — por que vale a pena.
+
+{/* ===================================================================
+    CHECKLIST FINAL DE APROVAÇÃO (docs/PADRAO-DE-MODULO.md)
+    Confira item por item. Se algum não estiver marcado, o módulo volta.
+
+    Estrutura
+    [ ] As 10 seções estão presentes, na ordem, cada uma acima da extensão
+        mínima.
+    [ ] O arquivo segue este template e fica em
+        content/trilha-N/<slug>/index.mdx, com o slug idêntico ao do currículo.
+    [ ] Os pré-requisitos citados na abertura batem com os do currículo.
+
+    Profundidade
+    [ ] A teoria explica por que a falha existe e como funciona por dentro,
+        não só o que ela é.
+    [ ] A mecânica do ataque tem exemplos concretos (código, requisições,
+        comandos) explicados etapa por etapa.
+    [ ] Há variações além do caso básico e uma seção de erros comuns.
+    [ ] A defesa diz exatamente o que fazer e como, com exemplos de
+        configuração ou código seguro.
+
+    Fatos
+    [ ] Há pelo menos um caso real verificado, com data, impacto e link para
+        fonte primária.
+    [ ] Todo CVE, versão, data, número e comando foi confirmado (web,
+        Context7 ou documentação oficial).
+    [ ] Cenários hipotéticos estão rotulados como tal.
+
+    Prática
+    [ ] O lab foi executado de verdade durante a escrita; saídas e
+        screenshots são reais.
+    [ ] O começo é guiado; o meio tem desafios com dicas e solução recolhidas.
+    [ ] A flag só é obtida completando o exercício, e foi testada.
+
+    Leitor
+    [ ] Todo termo técnico é explicado na primeira aparição e está no
+        glossário do módulo.
+    [ ] Há pelo menos um diagrama próprio (SVG ou Mermaid) onde ele ajuda,
+        com a frase de explicação embaixo.
+    [ ] O texto deixa claro o limite ético: só em ambiente autorizado.
+    [ ] Teste final: alguém que nunca viu o assunto entende a
+        vulnerabilidade, explora no lab e sabe defender, só com este módulo.
+
+    Técnico (plataforma)
+    [ ] npm test passa (front-matter igual ao currículo, flags e termos ligados).
+    [ ] npm run content:ingest roda sem erro e a página abre sem avisos.
+    [ ] Nenhuma flag em claro no MDX, na página ou no bundle.
+    =================================================================== */}

@@ -25,6 +25,11 @@ Plataforma pessoal no estilo TryHackMe para o MESQUITA aprender pentest
 - Só a plataforma controla o Docker, e só localmente.
 - Alvos vêm de projetos vulneráveis-por-design consagrados (DVWA, Juice Shop,
   WebGoat, Vulhub). **Nunca** exploit ou malware escrito sob medida.
+- **Sandboxes de prática** são permitidos: contêineres sem nenhuma
+  vulnerabilidade e **sem rede** (`network_mode: none`), usuário sem
+  privilégios, sem portas publicadas, só para treinar comandos (ex.:
+  `labs/linux-sandbox`). Não são alvos de ataque e também contam na regra de
+  um lab por vez.
 
 ## Currículo (foco ofensivo, do zero, 8 trilhas)
 - **Trilha 0 — Pré-Segurança:** redes, terminal Linux, Windows básico, scripting.
@@ -37,6 +42,14 @@ Plataforma pessoal no estilo TryHackMe para o MESQUITA aprender pentest
 - **Trilha 7 — Consolidação:** máquinas estilo CTF e relatório de pentest.
 
 O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.md).
+
+## Padrão de módulo (requisito, não sugestão)
+- **Antes de escrever qualquer módulo**, leia inteiro
+  [`docs/PADRAO-DE-MODULO.md`](docs/PADRAO-DE-MODULO.md): 10 seções na ordem,
+  extensões mínimas, verificação de fatos em fonte primária, lab executado de
+  verdade e o checklist final. Um módulo que não cumpre o padrão não está pronto.
+- Parta de [`docs/TEMPLATE-MODULO.mdx`](docs/TEMPLATE-MODULO.mdx). O módulo
+  0.3 (`content/trilha-0/terminal-linux/`) é o exemplo de referência.
 
 ## Idioma e convenções
 - **Interface e conteúdo em português.** Termos técnicos em inglês, explicados na
@@ -71,6 +84,20 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
   "continuar"), testadas com `npm test` (executor nativo do Node via `tsx`).
 - Rotas do currículo: `/trilhas`, `/trilhas/[trackSlug]`,
   `/trilhas/[trackSlug]/[moduleSlug]`.
+- `content/trilha-N/<slug>/index.mdx` — módulos (front-matter YAML + MDX) e
+  `img/` ao lado. A página do módulo importa o MDX (`@next/mdx`);
+  `mdx-components.tsx` registra os componentes de `components/content/`
+  (Callout, CodeBlock, Figure, FlagInput, GlossaryTerm, Hint/Solution, Quiz,
+  ModuleGlossary). O seed continua dono de título, trilha, pré-requisitos e
+  lab; o front-matter os repete e o `npm test` exige que batam.
+- `lib/module-source.ts` — parser/validador do front-matter (usado pelo
+  `npm test` e por `npm run content:ingest`). `lib/flag-hash.ts` — scrypt das
+  flags. **Flags nunca em claro** no MDX, no banco ou no navegador: o
+  front-matter guarda hash + salt (`npm run flag:hash`), a validação é uma
+  Server Action, e só tentativas **erradas** guardam o valor digitado.
+- `npm run db:migrate` desliga as *foreign keys* em volta do migrador: as
+  migrações que recriam tabelas (drizzle-kit) disparariam `ON DELETE` em
+  cascata dentro da transação.
 - `proxy.ts` — recusa (403) requisições cujo `Host` não seja
   `127.0.0.1:3000`/`localhost:3000` (proteção contra DNS rebinding).
 - Os scripts `dev`/`start` fixam `-H 127.0.0.1 -p 3000`; o padrão do Next.js é
@@ -88,3 +115,7 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
 - [`docs/LABORATORIO.md`](docs/LABORATORIO.md) — como subir, descer e validar o
   isolamento do laboratório.
 - [`docs/MEDICOES-RAM.md`](docs/MEDICOES-RAM.md) — consumo real de RAM medido.
+- [`docs/PADRAO-DE-MODULO.md`](docs/PADRAO-DE-MODULO.md) — régua obrigatória de
+  qualidade de todo módulo.
+- [`docs/TEMPLATE-MODULO.mdx`](docs/TEMPLATE-MODULO.mdx) — modelo reutilizável
+  de módulo, com o checklist final.

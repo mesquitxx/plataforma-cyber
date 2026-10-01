@@ -43,7 +43,8 @@ apresentado para aprovação (ver [`CLAUDE.md`](CLAUDE.md)).
 
 ## Fase 3 — Homepage e navegação ✅
 **Entrega:** a casca navegável do currículo, com dados de exemplo (seed).
-- Seed do currículo real (8 trilhas, 49 módulos, pré-requisitos e labs) com
+- Seed do currículo real (8 trilhas, 49 módulos — 50 desde a Fase 4 —,
+  pré-requisitos e labs) com
   *upsert* por slug — os mesmos slugs que os MDX usarão na Fase 4.
 - Progresso de demonstração opcional (`npm run db:seed:demo`), descartável.
 - Homepage: progresso geral, "continuar de onde parei" e as 8 trilhas.
@@ -51,21 +52,27 @@ apresentado para aprovação (ver [`CLAUDE.md`](CLAUDE.md)).
   bloqueado (calculado pelos pré-requisitos; bloqueio suave, só com aviso).
 - Página de módulo: área de conteúdo ainda com placeholder.
 
-## Fase 4 — Ingestão de conteúdo
-**Entrega:** o banco alimentado a partir dos arquivos MDX.
-- Formato do front-matter MDX (pré-requisitos, tarefas, flags, glossário).
-- Pipeline que lê os módulos MDX de `content/` e faz *upsert* por slug em
-  trilhas/módulos/tarefas/flags/labs/glossário, sem apagar o estado do usuário.
-- Hash das flags (algoritmo e normalização).
-- Leitura do conteúdo MDX na página do módulo.
-- Novas migrações, se o schema precisar evoluir.
+## Fase 4 — Motor de conteúdo ✅
+**Entrega:** MDX com componentes interativos, o módulo-piloto e o template.
+(Antes chamada "Ingestão de conteúdo"; ampliada na aprovação do plano.)
+- MDX no App Router (`@next/mdx`), renderizado na página do módulo.
+- Componentes de conteúdo: Quiz, FlagInput, CodeBlock, Callout, GlossaryTerm,
+  Figure e dicas/soluções recolhidas.
+- Front-matter dos módulos (pré-requisitos, tarefas, flags, glossário) e
+  ingestão `npm run content:ingest`, com *upsert* por slug sem apagar estado.
+- Hash das flags (scrypt) e **validação de flag** por Server Action, com
+  registro das tentativas (adiantado da Fase 5).
+- Lab `linux-sandbox` (contêiner de prática sem rede).
+- Divisão do antigo 0.3 em dois módulos (currículo com 50 módulos).
+- Módulo-piloto 0.3 "Linux: primeiros passos no terminal", seguindo
+  [`docs/PADRAO-DE-MODULO.md`](docs/PADRAO-DE-MODULO.md).
+- Modelo reutilizável [`docs/TEMPLATE-MODULO.mdx`](docs/TEMPLATE-MODULO.mdx).
 
-## Fase 5 — Progresso, flags e glossário
+## Fase 5 — Progresso e glossário
 **Entrega:** a experiência de estudo utilizável.
 - Marcação de progresso por módulo e por tarefa (substitui o progresso de
-  demonstração).
-- Submissão e validação de flags.
-- Glossário automático (termos técnicos explicados na primeira ocorrência).
+  demonstração); flag correta conclui a tarefa; resultado do quiz.
+- Página do Glossário (os termos já são ingeridos desde a Fase 4).
 
 ## Fase 6 — Orquestração de laboratórios
 **Entrega:** ligar/desligar alvos com segurança, um por vez.

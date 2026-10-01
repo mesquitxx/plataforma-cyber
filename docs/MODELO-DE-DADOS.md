@@ -110,11 +110,12 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
    MDX usarão, então a ingestão sobrescreve o seed sem perder estado.
    `npm run db:seed:demo` também **substitui** o progresso por um progresso de
    demonstração, descartado na Fase 5.
-2. **Ingestão (Fase 4):** os MDX de `content/` são lidos e viram registros de
-   Track, Module, Prerequisite, Task, Flag, Lab e GlossaryTerm. Reexecutar a
-   ingestão atualiza o conteúdo sem apagar o estado do usuário.
-3. **Uso (Fase 5+):** o estudo gera Progress; a resolução de flags gera
-   FlagSubmission.
+2. **Ingestão (Fase 4):** `npm run content:ingest` lê os MDX de `content/` e
+   grava o corpo do módulo, Task, Flag e GlossaryTerm. Trilhas, módulos,
+   pré-requisitos e labs continuam vindo do seed (ver "Decisões da Fase 4").
+   Reexecutar a ingestão atualiza o conteúdo sem apagar o estado do usuário.
+3. **Uso:** a resolução de flags gera FlagSubmission (Fase 4); o estudo gera
+   Progress (Fase 5).
 4. **Separação:** conteúdo pode ser regenerado a partir dos arquivos; estado é
    preservado no banco local.
 
@@ -126,9 +127,9 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
 | Prerequisite | `module_prerequisites` | Chave composta; CHECK impede um módulo exigir a si mesmo. |
 | Task | `tasks` | `slug` único por módulo. "Exige flag" = `type = 'flag'`. Tipos: `reading`, `exercise`, `lab_step`, `flag`. |
 | Flag | `flags` | Guarda `answer_hash` + `salt`, nunca a resposta em claro. Algoritmo e normalização: Fase 4. |
-| Lab | `labs` | `target` restrito a `dvwa`, `juice-shop`, `webgoat`, `vulhub`. `local_ports` em JSON. |
+| Lab | `labs` | `target` restrito a `dvwa`, `juice-shop`, `webgoat`, `vulhub` e, desde a Fase 4, `linux-sandbox`. `local_ports` em JSON. |
 | Progress | `module_progress` e `task_progress` | Duas tabelas com *foreign key* real, em vez de uma referência polimórfica. Status: `not_started`, `in_progress`, `completed`. |
-| FlagSubmission | `flag_submissions` | Guarda o valor digitado (para rever tentativas); o banco é local e fora do git. |
+| FlagSubmission | `flag_submissions` | Desde a Fase 4, guarda o valor digitado **só nas tentativas erradas**; nas corretas, `submitted_value` é `NULL` (CHECK no banco). |
 | GlossaryTerm | `glossary_terms` | `term` único sem diferenciar maiúsculas/minúsculas. |
 
 - **Chaves:** IDs inteiros; a ingestão faz *upsert* pela chave natural (slug),
@@ -169,7 +170,65 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
   (rede interna de alvos, contêiner Linux, máquinas boot2root) ficam sem
   `lab_id` até a Fase 6.
 
+## Decisões da Fase 4 (motor de conteúdo)
+
+### Quem é dono de cada dado
+- **Seed (`db/seed/curriculum.ts`):** trilhas, módulos (título, ordem), pré-
+  requisitos e labs. É o currículo.
+- **Front-matter do MDX:** repete `slug`, `track`, `title`, `prerequisites` e
+  `lab` para quem escreve, e o `npm test` exige que batam com o seed. Acrescenta
+  o que só o módulo sabe: tarefas, flags e termos de glossário.
+- **Corpo do MDX:** renderizado na página a partir do arquivo compilado; a
+  ingestão guarda uma cópia em `modules.body_mdx` (para busca futura).
+
+### Formato do front-matter
+```yaml
+slug: terminal-linux
+track: trilha-0
+title: "Linux: primeiros passos no terminal"
+prerequisites: [como-usar-a-plataforma]   # como no seed, sem expandir "trilha-N"
+lab: linux-sandbox                        # ou null
+tasks:
+  - slug: missao-1-arquivo-oculto
+    title: "Missão 1 — ..."
+    type: flag                            # reading | exercise | lab_step | flag
+    prompt: "..."                         # opcional
+    hint: "..."                           # opcional, só em flags
+    flag: { hash: "scrypt$16384$8$1$<hex>", salt: "<hex>" }   # só em flags
+glossary:
+  - term: shell
+    definition: "..."
+```
+Modelo completo e comentado: [`TEMPLATE-MODULO.mdx`](TEMPLATE-MODULO.mdx).
+
+### Regras de ingestão
+- Tudo é validado antes de gravar; um arquivo inválido aborta a ingestão
+  inteira, numa única transação.
+- Tarefas: *upsert* por `(module_id, slug)`; `sort_order` segue a ordem do
+  front-matter. Tarefas removidas do front-matter são apagadas (com progresso e
+  submissões, em cascata).
+- Flags: *upsert* por `task_id`. Uma tarefa que deixa de ser `flag` perde a flag.
+  Cada tarefa `flag` tem exatamente um `<FlagInput task="...">` no corpo.
+- Glossário: cada termo é declarado por **um único** módulo (o da primeira
+  aparição), que vira `first_module_id`. Todo termo declarado é marcado no corpo
+  com `<GlossaryTerm>`, e todo `<GlossaryTerm>` aponta para um termo declarado
+  em algum módulo.
+
+### Hash das flags
+- **Normalização:** `trim()` e Unicode NFC. Diferencia maiúsculas de minúsculas.
+- **Algoritmo:** scrypt (`node:crypto`), N=16384, r=8, p=1, 32 bytes, salt
+  aleatório de 16 bytes por flag. Comparação em tempo constante.
+- **Formato:** `answer_hash = "scrypt$N$r$p$<hex>"`, para poder mudar parâmetros
+  no futuro sem invalidar flags antigas; `salt` em hex.
+- **Onde a flag existe em claro:** só dentro do lab (os arquivos que o leitor
+  encontra). Front-matter, banco, página e bundle do navegador só veem o hash.
+
+### Migração 0001
+Acrescenta `linux-sandbox` ao CHECK de `labs.target` e torna
+`flag_submissions.submitted_value` anulável, com o CHECK "valor só quando
+errado". As duas mudanças recriam as tabelas; por isso o `db:migrate` desliga
+as *foreign keys* em volta do migrador e roda `foreign_key_check` no fim. Sem
+isso, o `DROP TABLE labs` dentro da transação anulava todo `modules.lab_id`.
+
 ## Fora de escopo neste documento
-- Formato exato do front-matter MDX que declara pré-requisitos, tarefas e flags
-  (definido junto da ingestão, na Fase 4).
-- Ligação entre termos do glossário e todos os módulos que os citam (Fase 5).
+- Ligação entre termos do glossário e **todos** os módulos que os citam (Fase 5).

@@ -1,0 +1,1823 @@
+---
+slug: terminal-linux
+track: trilha-0
+title: "Linux: primeiros passos no terminal"
+prerequisites: [como-usar-a-plataforma]
+lab: linux-sandbox
+tasks:
+  - slug: missao-1-arquivo-oculto
+    title: "Missão 1 — O arquivo que o ls não mostra"
+    type: flag
+    prompt: "Cole aqui a flag que estava no esconderijo da pasta missao-1."
+    hint: "Nomes que começam com ponto ficam ocultos. Qual opção do ls mostra tudo (all)?"
+    flag:
+      hash: "scrypt$16384$8$1$cc843f183bf6c4ce3b31be6bd7ea45c09d69795e342071009bc0bf7c10e06ecc"
+      salt: "d3e46c858b09290b2ce57ab4e700815d"
+  - slug: missao-2-agulha-no-palheiro
+    title: "Missão 2 — Uma agulha num palheiro de pastas"
+    type: flag
+    prompt: "O código da única linha status=ALERTA do relatorio-final.txt, dentro de FLAG{ }."
+    hint: "Primeiro find -name com o nome exato; depois grep no arquivo que ele achar."
+    flag:
+      hash: "scrypt$16384$8$1$0eb5473c028d2fc42bb28ff38c8d1c75fd5da80143cce69a930e9331b0df732f"
+      salt: "3a537b9112f772710731e17a9c1a0bb3"
+  - slug: missao-3-permissao-e-pipe
+    title: "Missão 3 — O arquivo que nem você consegue ler"
+    type: flag
+    prompt: "A senha que aparece uma única vez em vazamento.txt, dentro de FLAG{ }."
+    hint: "chmod u+r para poder ler; depois sort, e uniq com a opção que mostra só as linhas únicas."
+    flag:
+      hash: "scrypt$16384$8$1$e8d7b2ba84c773933c9559295cd9b375ad76ba9be72d22dee47ae08b232175cb"
+      salt: "65d26450460c9c87cfa611cb6db5126e"
+glossary:
+  - term: terminal
+    definition: "Programa que mostra texto e lê o teclado para você usar o computador por linha de comando. Tecnicamente, um emulador de terminal: imita os antigos aparelhos de teclado e tela."
+  - term: shell
+    definition: "Programa que lê cada linha digitada, interpreta (expande curingas, variáveis, pipes e redirecionamentos) e pede ao sistema que execute os comandos. Exemplos: bash, zsh."
+  - term: Bash
+    definition: "Bourne Again SHell, o shell padrão do Debian e do Ubuntu. O Kali usa o zsh, que funciona igual no uso básico."
+  - term: kernel
+    definition: "O núcleo do sistema operacional: cria processos, controla memória, disco e rede e decide, a cada acesso, se a permissão é concedida."
+  - term: system call
+    definition: "Pedido que um programa faz ao kernel (abrir um arquivo, criar um processo, ler dados). É a única porta de entrada para os recursos do sistema."
+  - term: process
+    definition: "Um programa em execução, com número próprio (PID), dono, memória e canais de entrada e saída."
+  - term: command line
+    definition: "Forma de usar o computador digitando comandos em texto. Também chamada de CLI (command-line interface)."
+  - term: prompt
+    definition: "Texto que o shell mostra antes do cursor quando está pronto para receber um comando; costuma exibir usuário, máquina e diretório atual."
+  - term: option
+    definition: "Modificador de um comando, como -l ou --all, que muda o que ele faz. Também chamada de flag de linha de comando (não confundir com a flag de CTF)."
+  - term: argument
+    definition: "Aquilo sobre o que o comando age, como o nome de um arquivo ou de uma pasta."
+  - term: flag (CTF)
+    definition: "Texto secreto (aqui no formato FLAG{...}) que prova que você completou um desafio. CTF = Capture The Flag, competição de segurança em que se caçam flags."
+  - term: root
+    definition: "O superusuário do Linux (UID 0), que passa por cima das permissões comuns. A palavra também nomeia a raiz / do sistema de arquivos e a pasta /root."
+  - term: UID
+    definition: "User ID: número que identifica um usuário para o kernel. O root é o UID 0; o primeiro usuário comum costuma ser o 1000."
+  - term: home
+    definition: "Pasta pessoal de cada usuário (ex.: /home/aluno), abreviada como ~ no shell."
+  - term: directory
+    definition: "Pasta: um arquivo especial que guarda os nomes de outros arquivos e pastas."
+  - term: path
+    definition: "Endereço de um arquivo na árvore. Absoluto começa em / (ex.: /etc/passwd); relativo parte do diretório atual (ex.: missao-1/instrucoes.txt)."
+  - term: filesystem
+    definition: "Sistema de arquivos: a organização dos arquivos numa árvore única que começa em /, e as regras de como eles são guardados."
+  - term: hidden file
+    definition: "Arquivo ou pasta cujo nome começa com ponto (ex.: .bashrc). Não aparece no ls simples. É só uma convenção, não uma proteção. Também chamado de dotfile."
+  - term: man page
+    definition: "Página do manual oficial de um comando, aberta com man seguido do nome do comando."
+  - term: builtin
+    definition: "Comando embutido no próprio shell (como cd), em vez de um programa separado no disco."
+  - term: exit code
+    definition: "Número que todo comando devolve ao terminar: 0 é sucesso; qualquer outro valor indica algum erro. Veja o do último comando com echo $?."
+  - term: case-sensitive
+    definition: "Que diferencia maiúsculas de minúsculas. No Linux, Senha.txt e senha.txt são arquivos diferentes."
+  - term: tab completion
+    definition: "Recurso do shell que completa nomes de comandos, arquivos e pastas quando você aperta Tab."
+  - term: environment variable
+    definition: "Variável que o shell e os programas herdam, como $HOME (sua pasta pessoal), $SHELL e $PATH (onde procurar programas)."
+  - term: wildcard
+    definition: "Curinga (*, ?) que o shell troca pelos nomes de arquivo que combinam com o padrão, antes de rodar o comando. Também chamado de glob."
+  - term: stdin
+    definition: "Entrada padrão (canal 0) de um processo; por padrão, o teclado."
+  - term: stdout
+    definition: "Saída padrão (canal 1) de um processo; por padrão, a tela. É o que o pipe leva adiante."
+  - term: stderr
+    definition: "Saída de erro (canal 2); separada do stdout para que mensagens de erro não se misturem com os resultados."
+  - term: pipe
+    definition: "O operador |, que liga o stdout de um comando ao stdin do comando seguinte."
+  - term: redirection
+    definition: "Redirecionamento: mandar a saída de um comando para um arquivo (>, >>, 2>) ou ler a entrada de um arquivo (<)."
+  - term: permission
+    definition: "Regra que diz quem pode ler (r), escrever (w) ou executar/entrar (x) num arquivo ou pasta, separada para dono, grupo e outros."
+  - term: umask
+    definition: "Máscara que define as permissões padrão de arquivos e pastas novos. O valor 0022 tira a escrita do grupo e dos outros."
+  - term: sudo
+    definition: "Comando que executa outro comando como root (ou outro usuário), se a política do sistema permitir. Não existe no sandbox deste módulo."
+  - term: symlink
+    definition: "Link simbólico: um atalho que aponta para outro caminho. Aparece com o tipo l no ls -l."
+  - term: SUID
+    definition: "Permissão especial (s no lugar do x do dono) que faz um programa rodar com os privilégios do dono do arquivo, não de quem o executa."
+  - term: sticky bit
+    definition: "Permissão especial (t no fim) em pastas como /tmp: todos podem criar arquivos ali, mas cada um só apaga os seus."
+  - term: regular expression
+    definition: "Expressão regular (regex): linguagem de padrões de texto, como ^ (início da linha) e $ (fim da linha), usada pelo grep e por muitas ferramentas."
+  - term: pentest
+    definition: "Teste de intrusão (penetration test): ataque simulado e autorizado, para encontrar falhas antes que um criminoso as encontre."
+  - term: enumeration
+    definition: "Enumeração: levantar sistematicamente informações de um sistema (usuários, arquivos, permissões, serviços) para decidir o próximo passo."
+  - term: privilege escalation
+    definition: "Escalação de privilégios: passar de um acesso limitado a um acesso maior, por exemplo de usuário comum a root."
+  - term: MITRE ATT&CK
+    definition: "Base de conhecimento pública, mantida pela organização MITRE, que cataloga táticas e técnicas usadas por atacantes reais, cada uma com um ID (ex.: T1564.001)."
+  - term: log
+    definition: "Registro de eventos gravado por sistemas e programas, geralmente em /var/log."
+  - term: wordlist
+    definition: "Lista de palavras (por exemplo, senhas comuns) usada em testes de senha e na descoberta de arquivos e pastas."
+  - term: backup
+    definition: "Cópia de segurança dos dados, guardada à parte, para restaurar em caso de perda."
+  - term: postmortem
+    definition: "Relatório publicado depois de um incidente, explicando o que aconteceu, por quê e o que vai mudar."
+  - term: supply chain attack
+    definition: "Ataque à cadeia de suprimentos: comprometer uma ferramenta ou dependência confiável para atingir todos que a usam."
+  - term: CI
+    definition: "Integração contínua (continuous integration): servidores que compilam e testam o código automaticamente a cada mudança; costumam guardar segredos em variáveis de ambiente."
+  - term: checksum
+    definition: "Valor calculado a partir do conteúdo de um arquivo (ex.: SHA-256). Se um único bit muda, o valor muda; serve para conferir se o arquivo é o original."
+  - term: least privilege
+    definition: "Princípio do menor privilégio: cada usuário ou programa recebe apenas as permissões de que realmente precisa."
+  - term: script
+    definition: "Arquivo de texto com uma sequência de comandos para o shell executar."
+  - term: sandbox
+    definition: "Ambiente isolado e descartável, para praticar ou testar sem risco para o sistema real."
+  - term: container
+    definition: "Contêiner: ambiente isolado que compartilha o kernel do computador, mas tem seus próprios arquivos, processos e rede. Criado e gerenciado pelo Docker."
+  - term: Docker
+    definition: "Ferramenta que cria e roda contêineres a partir de imagens. A plataforma usa o Docker para os laboratórios."
+  - term: TTY
+    definition: "Dispositivo de terminal que o kernel oferece aos programas interativos (de teletypewriter). Sem ele, um shell perde Tab, job control e programas como less."
+  - term: hash
+    definition: "Resultado de uma função que transforma um dado (como uma senha) numa \"impressão digital\" de tamanho fixo, da qual não se volta ao original. Serve para conferir senhas sem guardá-las."
+  - term: hostname
+    definition: "O nome da máquina na rede (ex.: sandbox). Aparece no prompt e no comando hostname."
+  - term: token
+    definition: "Chave de acesso em forma de texto, usada por programas no lugar de usuário e senha. Quem tem o token tem o acesso."
+  - term: WSL
+    definition: "Windows Subsystem for Linux: roda um Linux de verdade dentro do Windows. É onde esta plataforma vive."
+---
+
+import camadas from "./img/camadas-terminal-shell-kernel.svg";
+import anatomia from "./img/anatomia-da-linha-de-comando.svg";
+import arvore from "./img/arvore-de-diretorios.svg";
+import permissoes from "./img/permissoes-rwx.svg";
+import fluxos from "./img/fluxos-e-pipe.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Quase todo computador que importa em segurança não tem janelas, ícones nem mouse.
+Servidores web, bancos de dados, roteadores, câmeras, a nuvem inteira: eles são
+administrados por texto, digitando comandos. Quando um atacante (ou um
+profissional de <GlossaryTerm term="pentest">pentest</GlossaryTerm>, o teste de
+intrusão autorizado) consegue acesso a uma dessas máquinas, o que ele recebe
+quase sempre é uma tela preta com um cursor piscando. Quem não sabe se mover ali
+para no primeiro minuto.
+
+Este módulo é a porta de entrada para esse mundo. Você vai usar a
+<GlossaryTerm term="command line">linha de comando</GlossaryTerm> (*command line*, a
+forma de usar o computador digitando comandos em texto) do jeito que um
+pentester usa: para descobrir onde está, quem é, o que existe ao redor e o que
+pode ou não pode fazer. No caminho, você vai entender o que acontece **por dentro**
+quando aperta Enter, porque é esse entendimento que transforma uma lista de
+comandos decorados em habilidade de verdade.
+
+**Ao final, você vai saber:**
+
+- explicar a diferença entre terminal, shell e kernel, e o caminho de um comando
+  do teclado até o sistema;
+- ler um prompt e montar comandos com opções e argumentos, pedindo ajuda ao
+  próprio sistema (`man`, `--help`);
+- navegar pela árvore de diretórios com caminhos absolutos e relativos, inclusive
+  achando arquivos ocultos;
+- criar, copiar, mover e apagar arquivos **com segurança**;
+- ler e procurar arquivos com `cat`, `less`, `head`, `tail`, `find` e `grep`;
+- encadear comandos com pipes e redirecionamentos;
+- ler e alterar permissões (`ls -l`, `chmod`) e entender por que um acesso é negado;
+- reconhecer como esses mesmos comandos aparecem num ataque real e como se
+  proteger dos erros mais caros.
+
+**Pré-requisito:** 0.1 — Como usar esta plataforma (navegar módulos, enviar flags
+e respeitar a regra de um lab por vez).
+
+**Tempo estimado:** de 2 a 3 horas, incluindo o laboratório. Não tenha pressa: a
+Trilha 0 inteira se apoia neste módulo.
+
+<Callout variant="ethics">
+Tudo o que você vai digitar aqui roda no **seu** laboratório, um contêiner isolado e
+sem rede, criado só para isso. Os comandos de "enumeração" da seção 3 são
+inofensivos em si, mas usá-los em máquinas de terceiros sem autorização por escrito
+é crime no Brasil (a Trilha 1 trata da lei). A regra da plataforma vale desde o
+primeiro módulo: **só em ambiente seu ou autorizado.**
+</Callout>
+
+## 2. Teoria aprofundada — o terminal por dentro
+
+### 2.1 Terminal, shell e kernel: quem faz o quê
+
+Três palavras se misturam no dia a dia, mas são três peças diferentes. Entender a
+separação resolve metade das dúvidas de quem começa.
+
+O <GlossaryTerm term="terminal">terminal</GlossaryTerm> é a janela onde você digita.
+Antigamente, terminais eram aparelhos físicos — teclado e tela (ou impressora)
+ligados a um computador central. Hoje são programas que **imitam** esses aparelhos,
+por isso o nome técnico é "emulador de terminal". O terminal não entende nenhum
+comando: ele só mostra caracteres e repassa o que você digita.
+
+Quem entende é o <GlossaryTerm term="shell">shell</GlossaryTerm>, um programa que
+fica esperando uma linha de texto, interpreta essa linha e manda executar o que ela
+pede. O shell mais comum em servidores Linux é o
+<GlossaryTerm term="Bash">Bash</GlossaryTerm> (*Bourne Again SHell*), padrão no
+Debian e no Ubuntu. O Kali Linux, que você vai usar a partir da Trilha 2, adotou o
+**zsh** como padrão na versão 2020.4 ([anúncio oficial](https://www.kali.org/blog/kali-linux-2020-4-release/));
+para tudo o que este módulo ensina, os dois funcionam igual.
+
+Abaixo do shell está o <GlossaryTerm term="kernel">kernel</GlossaryTerm>, o núcleo do
+sistema operacional. É ele que de fato cria programas em execução, lê o disco, fala
+com a rede e — ponto central para segurança — **decide se cada acesso é permitido**.
+Nenhum programa, nem o shell, toca no disco diretamente: todos fazem pedidos ao
+kernel, chamados <GlossaryTerm term="system call">system calls</GlossaryTerm>
+(chamadas de sistema), e o kernel aceita ou recusa.
+
+<Figure
+  src={camadas}
+  alt="Diagrama em camadas: você, terminal, shell (bash), kernel (Linux) e hardware, com uma seta de ida (o pedido) descendo até o hardware e uma seta de volta (a saída) subindo até você."
+  caption="O caminho de um comando: o terminal só transporta texto; o shell interpreta; o kernel executa e aplica as permissões; a saída faz o caminho de volta."
+/>
+
+O que acontece quando você digita `ls -la` e aperta Enter:
+
+1. O terminal entrega a linha `ls -la` ao shell.
+2. O shell quebra a linha em palavras (`ls` e `-la`), expande os símbolos especiais
+   que você vai conhecer adiante (`*`, `~`, `$VAR`) e procura um programa chamado
+   `ls` nas pastas listadas na variável `PATH`. Ele encontra `/usr/bin/ls`.
+3. O shell pede ao kernel para criar um <GlossaryTerm term="process">processo</GlossaryTerm>
+   (um programa em execução, com número próprio, dono e memória) e carregar nele o
+   `/usr/bin/ls`, passando `-la` como parâmetro. São duas system calls clássicas:
+   `fork` (cria uma cópia do processo do shell) e `exec` (troca o programa dessa
+   cópia pelo `ls`).
+4. O `ls` pede ao kernel a lista de arquivos da pasta. O kernel confere se você tem
+   permissão e responde.
+5. O `ls` escreve o resultado na tela, termina e devolve um número de status ao
+   shell. O shell mostra o prompt de novo, pronto para o próximo comando.
+
+Você pode ver o passo 2 com seus próprios olhos. O comando `type` diz o que o shell
+vai fazer com cada nome (saída real do laboratório):
+
+```console
+$ type ls cd cat
+ls is hashed (/usr/bin/ls)
+cd is a shell builtin
+cat is hashed (/usr/bin/cat)
+```
+
+`ls` e `cat` são programas separados no disco ("hashed" significa que o shell já
+guardou o caminho deles para não procurar de novo). Já o `cd` é um
+<GlossaryTerm term="builtin">builtin</GlossaryTerm>, um comando embutido no próprio
+shell. Ele **precisa** ser embutido, e o motivo diz muito sobre como o sistema
+funciona: cada processo tem seu próprio "diretório atual". Se `cd` fosse um
+programa separado, ele mudaria o diretório do processo **dele** e terminaria, e o
+shell continuaria exatamente onde estava. Só o próprio shell pode mudar o próprio
+diretório.
+
+<Callout variant="info" title="Por que isso importa em segurança">
+Quando você ouvir que um atacante "conseguiu uma shell", significa que ele tem um
+processo de shell rodando na máquina da vítima, com as permissões de algum usuário.
+Tudo o que ele fizer dali em diante passa pelo kernel, que só autoriza o que aquele
+usuário pode. Por isso o próximo passo de um atacante quase sempre é descobrir
+**quem** ele é ali dentro e tentar virar alguém com mais poder.
+</Callout>
+
+### 2.2 Anatomia de uma linha de comando
+
+Antes do cursor, o shell escreve o <GlossaryTerm term="prompt">prompt</GlossaryTerm>:
+um aviso de que está pronto e um resumo de onde você está. No sandbox do módulo ele
+fica assim:
+
+<Figure
+  src={anatomia}
+  alt="A linha aluno@sandbox:~/missao-1$ ls -la .cofre com cada parte destacada: usuário aluno, máquina sandbox, diretório atual ~/missao-1, símbolo $, comando ls, opções -la e argumento .cofre."
+  caption="O prompt (escrito pelo shell) diz quem, onde e com qual poder você está. Depois do $, vem o que você digita: comando, opções e argumentos, separados por espaços."
+/>
+
+- **`aluno`** é o usuário com que você está logado.
+- **`sandbox`** é o nome da máquina, o <GlossaryTerm term="hostname">hostname</GlossaryTerm>.
+  Em trabalho real, olhar esse nome antes de um comando perigoso evita desastres
+  (seção 4).
+- **`~/missao-1`** é o diretório atual. O til `~` é a abreviação da sua pasta
+  pessoal, a <GlossaryTerm term="home">home</GlossaryTerm>, que aqui é `/home/aluno`.
+- **`$`** indica usuário comum. Se aparecer **`#`**, você é o
+  <GlossaryTerm term="root">root</GlossaryTerm>, o superusuário que passa por cima de
+  todas as permissões. Um `#` no prompt pede atenção redobrada.
+
+Depois do prompt vem o comando. Ele tem três tipos de peça, sempre separados por
+espaços:
+
+- **O comando:** o programa a executar (`ls`).
+- **As <GlossaryTerm term="option">opções</GlossaryTerm>:** modificadores que começam
+  com hífen. Opções curtas têm um hífen e uma letra (`-l`, `-a`) e podem ser
+  juntadas (`-la` = `-l -a`); opções longas têm dois hífens e uma palavra
+  (`--all`). Muita documentação chama opções de *flags* — não confunda com a
+  <GlossaryTerm term="flag (CTF)">flag de CTF</GlossaryTerm>, o texto secreto no formato
+  `FLAG{...}` que prova que você venceu um desafio.
+- **Os <GlossaryTerm term="argument">argumentos</GlossaryTerm>:** sobre o que o comando
+  vai agir (`.cofre`, um arquivo, uma pasta).
+
+Como o espaço separa as peças, um nome de arquivo com espaço vira **dois**
+argumentos. Veja o erro real e a correção com aspas:
+
+```console
+$ cat meu arquivo.txt
+cat: meu: No such file or directory
+cat: arquivo.txt: No such file or directory
+$ cat "meu arquivo.txt"
+```
+
+O Linux também é <GlossaryTerm term="case-sensitive">case-sensitive</GlossaryTerm>:
+diferencia maiúsculas de minúsculas. `LS` não é `ls`, e `Senha.txt` e `senha.txt`
+são arquivos diferentes.
+
+**Todo comando devolve um número ao terminar**, o
+<GlossaryTerm term="exit code">exit code</GlossaryTerm> (código de saída). Zero
+significa sucesso; qualquer outro número indica erro. A variável especial `$?`
+guarda o código do último comando (saída real):
+
+```console
+$ ls missao-1 > /dev/null
+$ echo $?
+0
+$ cat nao-existe.txt
+cat: nao-existe.txt: No such file or directory
+$ echo $?
+1
+$ ls /root
+ls: cannot open directory '/root': Permission denied
+$ echo $?
+2
+```
+
+Você vai usar muito isso no módulo de scripting: é assim que um
+<GlossaryTerm term="script">script</GlossaryTerm> (um arquivo com uma sequência de
+comandos) descobre se o passo anterior deu certo.
+
+#### Atalhos que poupam horas
+
+| Tecla | O que faz |
+|---|---|
+| `Tab` | Completa nomes de comandos, arquivos e pastas; duas vezes lista as opções |
+| `↑` / `↓` | Navega pelos comandos anteriores |
+| `Ctrl+R` | Busca no histórico de comandos (digite um trecho) |
+| `Ctrl+C` | Interrompe o comando que está rodando |
+| `Ctrl+L` | Limpa a tela (o mesmo que `clear`) |
+| `Ctrl+D` | Encerra a sessão do shell (o mesmo que `exit`) |
+
+O <GlossaryTerm term="tab completion">tab completion</GlossaryTerm> não é luxo: ele
+evita erros de digitação e mostra na hora se um caminho existe. Se o Tab não
+completa, o caminho provavelmente está errado.
+
+#### Pedindo ajuda ao próprio sistema
+
+Você não precisa decorar opções. O Linux traz o próprio manual:
+
+- **`comando --help`** mostra um resumo rápido (saída real, primeiras linhas):
+
+  ```console
+  $ ls --help | head -6
+  Usage: ls [OPTION]... [FILE]...
+  List information about the FILEs (the current directory by default).
+  Sort entries alphabetically if none of -cftuvSUX nor --sort is specified.
+
+  Mandatory arguments to long options are mandatory for short options too.
+    -a, --all                  do not ignore entries starting with .
+  ```
+
+- **`man comando`** abre a <GlossaryTerm term="man page">man page</GlossaryTerm>, a
+  página completa do manual. Dentro dela: `Espaço` avança, `b` volta, `/palavra`
+  busca, `n` vai para a próxima ocorrência e `q` sai. As páginas são numeradas por
+  seção: **1** para comandos de usuário, **5** para formatos de arquivo (por
+  exemplo `man 5 passwd`, o formato do `/etc/passwd`) e **8** para comandos de
+  administração.
+- **`whatis comando`** dá a descrição de uma linha, e **`apropos palavra`** procura
+  comandos pelo assunto (saída real):
+
+  ```console
+  $ whatis ls grep
+  ls (1)               - list directory contents
+  grep (1)             - print lines that match patterns
+  $ apropos copy
+  cp (1)               - copy files and directories
+  dd (1)               - convert and copy a file
+  install (1)          - copy files and set attributes
+  string_copying (7)   - copying strings and character sequences
+  ```
+
+Repare que `whatis cd` responde `cd: nothing appropriate.`: como `cd` é um builtin,
+a ajuda dele está no próprio Bash (`help cd`), não numa man page separada.
+
+<Callout variant="tip">
+O manual está em inglês, assim como a maior parte da documentação técnica. Não
+traduza palavra por palavra: procure o exemplo e a opção de que precisa. Com o tempo,
+o vocabulário das man pages fica familiar.
+</Callout>
+
+### 2.3 Tudo é arquivo: a árvore de diretórios
+
+No Windows, cada disco tem uma letra (`C:`, `D:`). No Linux, existe **uma única
+árvore** que começa na raiz, `/`, e todo disco, pendrive ou partição aparece
+pendurado em algum galho dela. Essa organização é o
+<GlossaryTerm term="filesystem">filesystem</GlossaryTerm> (sistema de arquivos), e
+seus nomes seguem um padrão, o *Filesystem Hierarchy Standard*
+([FHS 3.0](https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html)). Por isso
+você encontra as mesmas pastas em qualquer distribuição.
+
+<Figure
+  src={arvore}
+  alt="Árvore de diretórios a partir de /: etc (configurações), home (pastas pessoais, com aluno e as missões), root (pasta do root, fechada), tmp (todos escrevem), var (var/log: registros) e usr (programas)."
+  caption="A árvore começa em /. Em amarelo, o que um pentester olha primeiro. Abaixo, a diferença entre caminho absoluto (começa em /) e relativo (começa onde você está)."
+/>
+
+A raiz do sandbox, listada de verdade:
+
+```console
+$ ls /
+bin   dev  home  lib64  mnt  proc  run   srv  tmp  var
+boot  etc  lib   media  opt  root  sbin  sys  usr
+```
+
+As pastas que mais importam agora:
+
+| Pasta | Conteúdo | Por que um pentester olha |
+|---|---|---|
+| `/etc` | Configurações do sistema e dos serviços | Usuários (`/etc/passwd`), arquivos `.conf` com senhas esquecidas |
+| `/home` | Uma pasta pessoal por usuário | Documentos, chaves, histórico de comandos |
+| `/root` | Pasta pessoal do root | Normalmente fechada para os outros (`drwx------`) |
+| `/tmp` | Arquivos temporários; todos podem escrever | Lugar onde atacantes deixam ferramentas |
+| `/var/log` | Registros de eventos (logs) | Rastro do que aconteceu na máquina |
+| `/usr/bin` | Os programas (`ls`, `grep`, `find`...) | Que ferramentas existem ali |
+| `/dev`, `/proc` | Dispositivos e processos vistos como arquivos | Informação sobre hardware e processos em execução |
+
+Cada <GlossaryTerm term="directory">directory</GlossaryTerm> (diretório, ou pasta) é,
+na verdade, um arquivo especial que guarda uma lista de nomes. É daí que vem a frase
+"no Linux, tudo é arquivo": até processos aparecem como arquivos em `/proc`. O
+sandbox, por exemplo, verifica as próprias permissões lendo `/proc/self/status`.
+
+Os <GlossaryTerm term="log">logs</GlossaryTerm>, registros de eventos que sistemas e
+programas gravam, ficam quase sempre em `/var/log`, e serão importantes tanto para
+quem ataca (que tenta não deixar rastro) quanto para quem defende (que investiga).
+
+#### Caminhos absolutos e relativos
+
+Um <GlossaryTerm term="path">path</GlossaryTerm> (caminho) é o endereço de um arquivo
+na árvore, e existe de duas formas:
+
+- **Absoluto:** começa em `/` e funciona de qualquer lugar.
+  Ex.: `/home/aluno/missao-1/instrucoes.txt`.
+- **Relativo:** parte do diretório atual. Estando em `/home/aluno`, o mesmo arquivo
+  é `missao-1/instrucoes.txt`.
+
+Três atalhos completam o mapa: `.` é a pasta atual, `..` é a pasta de cima e `~` é a
+sua home. E o `cd -` volta para a pasta anterior. Saída real de uma sequência de
+`cd` e `pwd` (*print working directory*, mostra onde você está):
+
+```console
+$ pwd
+/home/aluno/projetos/pentest-lab
+$ cd ..
+$ pwd
+/home/aluno/projetos
+$ cd ../..
+$ pwd
+/home
+$ cd -
+/home/aluno/projetos
+$ cd ~
+$ pwd
+/home/aluno
+```
+
+#### Arquivos ocultos
+
+Arquivos e pastas cujo nome começa com ponto (`.bashrc`, `.cofre`) são
+<GlossaryTerm term="hidden file">hidden files</GlossaryTerm>: o `ls` simples não os
+mostra; o `ls -a` (*all*) mostra. Isso é **só uma convenção** para esconder arquivos
+de configuração e não poluir a listagem. Não é proteção nenhuma: qualquer um que
+digite `ls -a` vê tudo. Guarde essa ideia, porque ela é a Missão 1 do laboratório.
+
+### 2.4 Usuários e permissões: o modelo de segurança do Linux
+
+O Linux foi feito para várias pessoas usarem a mesma máquina ao mesmo tempo, e o
+mecanismo que separa umas das outras é o coração da segurança do sistema.
+
+Cada usuário tem um número, o <GlossaryTerm term="UID">UID</GlossaryTerm> (*User ID*).
+O kernel não liga para nomes, só para números: o root é sempre o UID **0**, e o
+primeiro usuário comum costuma ser o 1000. Cada usuário também pertence a um ou mais
+grupos. O comando `id` mostra tudo isso (saída real):
+
+```console
+$ id
+uid=1000(aluno) gid=1000(aluno) groups=1000(aluno)
+```
+
+A lista de usuários fica em `/etc/passwd`, que **todo mundo pode ler**. Cada linha
+tem campos separados por `:` — nome, senha (`x` significa "está em outro arquivo"),
+UID, GID, descrição, home e shell:
+
+```console
+$ grep aluno /etc/passwd
+aluno:x:1000:1000::/home/aluno:/bin/bash
+```
+
+As senhas ficam em `/etc/shadow`, na forma de
+<GlossaryTerm term="hash">hash</GlossaryTerm>: uma "impressão digital" calculada a
+partir da senha, que permite conferir se uma senha digitada está certa sem guardar a
+senha em si (a Trilha 4 aprofunda o assunto). Esse arquivo só o root e o grupo
+`shadow` leem. Compare as permissões dos dois
+arquivos (saída real):
+
+```console
+$ ls -l /etc/passwd /etc/shadow
+-rw-r--r-- 1 root root   880 Oct  1 08:38 /etc/passwd
+-rw-r----- 1 root shadow 501 Oct  1 08:38 /etc/shadow
+$ cat /etc/shadow
+cat: /etc/shadow: Permission denied
+```
+
+#### Lendo a string de permissões
+
+Aquele `-rw-r--r--` é a <GlossaryTerm term="permission">permission</GlossaryTerm>
+(permissão) do arquivo. São 10 caracteres:
+
+<Figure
+  src={permissoes}
+  alt="A string -rwxr-x--- dividida em: tipo (-), dono (rwx), grupo (r-x) e outros (---). Embaixo, a conversão para octal 750 (4+2+1, 4+0+1, 0+0+0) e uma tabela com o significado de r, w e x em arquivos e pastas."
+  caption="O primeiro caractere é o tipo; depois vêm três trios rwx, para dono, grupo e outros. Somando r=4, w=2 e x=1 em cada trio, rwxr-x--- vira 750."
+/>
+
+- **1º caractere, o tipo:** `-` arquivo comum, `d` diretório, `l` link simbólico.
+- **Três trios** para três classes de pessoas: o **dono** (*user*, `u`), o
+  **grupo** (*group*, `g`) e **os outros** (*others*, `o`).
+- Em cada trio: **`r`** (*read*, ler), **`w`** (*write*, escrever), **`x`**
+  (*execute*, executar), ou `-` quando falta a permissão.
+
+O significado muda entre arquivos e pastas, e essa diferença confunde muita gente:
+
+| Permissão | Em um arquivo | Em uma pasta |
+|---|---|---|
+| `r` | Ler o conteúdo | Listar os nomes que ela contém |
+| `w` | Alterar o conteúdo | Criar, renomear e apagar arquivos dentro dela |
+| `x` | Executar como programa | Entrar nela (`cd`) e acessar o que está dentro |
+
+Um teste real no sandbox mostra a diferença. Com uma pasta sem `x`, o `ls` ainda
+lista os nomes (por causa do `r`), mas não é possível entrar nem ler o que há dentro;
+sem `r` e com `x`, o `ls` falha, mas quem já sabe o nome do arquivo consegue lê-lo:
+
+```console
+$ chmod u-x cofre-teste
+$ ls cofre-teste
+a
+$ cd cofre-teste
+bash: cd: cofre-teste: Permission denied
+$ cat cofre-teste/a
+cat: cofre-teste/a: Permission denied
+$ chmod u+x,u-r cofre-teste
+$ ls cofre-teste
+ls: cannot open directory 'cofre-teste': Permission denied
+$ cat cofre-teste/a && echo "leu a"
+leu a
+```
+
+Repare também: apagar um arquivo depende da permissão `w` **da pasta**, não do
+arquivo. Quem pode escrever numa pasta pode apagar arquivos dela, mesmo que não
+possa lê-los.
+
+#### Como o kernel decide
+
+A cada acesso, o kernel faz a mesma conta:
+
+1. Se você é o **root** (UID 0), quase tudo é permitido (ele ignora `r` e `w`).
+2. Se você é o **dono** do arquivo, valem **só** as permissões do dono.
+3. Senão, se você está no **grupo** do arquivo, valem só as do grupo.
+4. Senão, valem as dos **outros**.
+
+O detalhe que pega os iniciantes: **as classes não se somam**. Se você é o dono e o
+trio do dono é `---`, o acesso é negado mesmo que os "outros" tenham `rwx`. A Missão
+3 é exatamente isso: o arquivo é seu, mas o trio do dono está vazio.
+
+#### Mudando permissões com chmod
+
+O `chmod` (*change mode*) altera permissões de duas formas (saídas reais):
+
+- **Simbólica:** quem (`u`, `g`, `o`, `a` para todos), operação (`+` dá, `-` tira,
+  `=` define exatamente) e quais permissões.
+- **Octal:** um número por trio, somando **r=4, w=2, x=1**. `750` = `rwx` (7) para
+  o dono, `r-x` (5) para o grupo e nada (0) para os outros.
+
+```console
+$ ls -l script.sh
+-rw-r--r-- 1 aluno aluno 0 Oct  1 08:39 script.sh
+$ chmod 750 script.sh
+$ ls -l script.sh
+-rwxr-x--- 1 aluno aluno 0 Oct  1 08:39 script.sh
+$ chmod u=rw,g=r,o= script.sh
+$ ls -l script.sh
+-rw-r----- 1 aluno aluno 0 Oct  1 08:39 script.sh
+```
+
+Por que um arquivo novo nasce `rw-r--r--` (644)? Por causa da
+<GlossaryTerm term="umask">umask</GlossaryTerm>, uma máscara que retira permissões dos
+arquivos novos. No sandbox ela vale `0022` (confira com `umask`): tira a escrita do
+grupo e dos outros. Só o dono pode mudar as permissões de um arquivo (além do root).
+
+### 2.5 Fluxos, pipes e redirecionamento
+
+Todo processo nasce com três canais abertos, numerados:
+
+- **0 — <GlossaryTerm term="stdin">stdin</GlossaryTerm>**, a entrada padrão
+  (normalmente o teclado);
+- **1 — <GlossaryTerm term="stdout">stdout</GlossaryTerm>**, a saída padrão
+  (normalmente a tela), por onde sai o resultado;
+- **2 — <GlossaryTerm term="stderr">stderr</GlossaryTerm>**, a saída de erro, também
+  na tela, mas num canal **separado**, para que erros não se misturem ao resultado.
+
+<Figure
+  src={fluxos}
+  alt="No alto, um processo com stdin entrando e stdout e stderr saindo. Embaixo, o pipeline sort vazamento.txt | uniq -c | sort -rn > ranking.txt, com setas de pipe entre os comandos, a saída final indo para ranking.txt e o stderr de todos indo para a tela."
+  caption="O pipe liga o stdout de um comando ao stdin do próximo; o > manda o stdout final para um arquivo. O stderr não entra no pipe: continua indo para a tela."
+/>
+
+O shell pode religar esses canais antes de executar o comando. Os programas nem
+ficam sabendo: o `sort` lê do stdin dele, venha isso do teclado, de um arquivo ou de
+outro programa.
+
+**O <GlossaryTerm term="pipe">pipe</GlossaryTerm> (`|`)** liga o stdout de um comando
+ao stdin do seguinte. É a ideia central da chamada filosofia Unix: cada programa
+faz uma coisa só, bem feita, e você monta ferramentas maiores combinando programas
+pequenos. Um exemplo real, que lista os primeiros usuários do sistema em ordem
+alfabética:
+
+```console
+$ cut -d: -f1 /etc/passwd | sort | head -5
+_apt
+aluno
+backup
+bin
+daemon
+```
+
+`cut` recorta o primeiro campo (`-f1`) usando `:` como separador (`-d:`), `sort`
+ordena e `head -5` fica com as cinco primeiras linhas.
+
+**O <GlossaryTerm term="redirection">redirecionamento</GlossaryTerm>** manda um canal
+para um arquivo:
+
+| Operador | Efeito |
+|---|---|
+| `> arquivo` | Manda o stdout para o arquivo, **apagando** o que havia nele |
+| `>> arquivo` | Acrescenta o stdout ao fim do arquivo |
+| `2> arquivo` | Manda só o stderr (os erros) para o arquivo |
+| `2> /dev/null` | Descarta os erros (`/dev/null` é um "buraco negro" que engole tudo) |
+| `2>&1` | Manda o stderr para onde o stdout está indo agora |
+| `< arquivo` | Usa o arquivo como stdin |
+
+A diferença entre `>` e `>>` em ação (saída real):
+
+```console
+$ echo "linha 1" > notas.txt
+$ echo "linha 2" >> notas.txt
+$ cat notas.txt
+linha 1
+linha 2
+$ echo "linha 3" > notas.txt
+$ cat notas.txt
+linha 3
+```
+
+#### O shell expande antes de executar
+
+Uma última peça do "por dentro": os curingas. Um
+<GlossaryTerm term="wildcard">wildcard</GlossaryTerm> como `*` (qualquer sequência de
+caracteres) ou `?` (exatamente um caractere) é substituído **pelo shell**, antes de o
+comando rodar. O comando nunca vê o `*`; vê a lista de nomes. O `echo` deixa isso
+visível (saída real):
+
+```console
+$ ls
+scan-01.txt  scan-02.txt  scan-10.txt
+$ echo scan-*
+scan-01.txt scan-02.txt scan-10.txt
+$ ls scan-0?.txt
+scan-01.txt  scan-02.txt
+```
+
+O mesmo vale para as <GlossaryTerm term="environment variable">environment variables</GlossaryTerm>
+(variáveis de ambiente), como `$HOME` e `$PATH`: o shell troca `$NOME` pelo valor
+antes de executar. Isso é poderoso e perigoso ao mesmo tempo. Se uma variável
+estiver vazia, `rm -rf "$PASTA/"*` vira `rm -rf /*`. Um bug exatamente assim apagou
+os arquivos de usuários do Steam para Linux, como você vai ver na seção 4.
+
+## 3. Na prática da segurança
+
+O módulo não ensina um ataque específico, mas todos os ataques da plataforma passam
+por aqui. Veja como os comandos da seção 2 aparecem no trabalho de quem ataca e de
+quem defende.
+
+### 3.1 Os primeiros minutos depois de um acesso
+
+Imagine o momento seguinte a uma invasão bem-sucedida (num pentest autorizado): você
+tem uma shell numa máquina desconhecida. O que vem agora se chama
+<GlossaryTerm term="enumeration">enumeração</GlossaryTerm>: levantar, com método,
+tudo o que a máquina revela sobre si mesma. O roteiro abaixo foi executado de verdade
+no sandbox; em uma máquina real, as respostas seriam bem mais interessantes.
+
+**Quem sou eu e onde estou?**
+
+```console
+$ whoami
+aluno
+$ id
+uid=1000(aluno) gid=1000(aluno) groups=1000(aluno)
+$ hostname
+sandbox
+$ uname -a
+Linux sandbox 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 GNU/Linux
+$ head -4 /etc/os-release
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+NAME="Debian GNU/Linux"
+VERSION_ID="13"
+VERSION="13 (trixie)"
+```
+
+O `id` mostra se você já está em algum grupo poderoso; o `uname -a` mostra a versão
+do kernel (versões antigas têm falhas conhecidas); o `/etc/os-release` diz a
+distribuição. Repare que o kernel do sandbox é o do WSL: um contêiner compartilha o
+kernel da máquina que o roda.
+
+**Quem mais existe aqui?** Usuários com um shell de verdade (os outros têm
+`nologin`, que impede o login):
+
+```console
+$ grep -v nologin /etc/passwd | cut -d: -f1,7
+root:/bin/bash
+sync:/bin/sync
+aluno:/bin/bash
+```
+
+**O que eu posso ler que não deveria?** O pentester procura arquivos de
+configuração (onde senhas costumam ser esquecidas), o histórico de comandos de outros
+usuários e pastas abertas para escrita. Os erros de "Permission denied" de uma busca
+pelo sistema inteiro são descartados com `2>/dev/null`:
+
+```console
+$ find /etc -name "*.conf" 2>/dev/null | head -5
+/etc/host.conf
+/etc/gai.conf
+/etc/pam.conf
+/etc/xattr.conf
+/etc/debconf.conf
+$ find / -xdev -perm -0002 -type d 2>/dev/null
+/tmp
+/var/tmp
+/run/lock
+```
+
+A segunda busca lista as pastas em que **qualquer um** pode escrever, onde um
+atacante consegue deixar arquivos.
+
+**Que programas rodam com mais poder do que eu?** Esta busca acha programas com a
+permissão especial <GlossaryTerm term="SUID">SUID</GlossaryTerm>, que faz o programa
+rodar com os privilégios do **dono** do arquivo (geralmente o root), não de quem o
+executa:
+
+```console
+$ find / -perm -4000 -type f 2>/dev/null
+/usr/bin/passwd
+/usr/bin/umount
+/usr/bin/chsh
+/usr/bin/su
+/usr/bin/gpasswd
+/usr/bin/mount
+/usr/bin/newgrp
+/usr/bin/chfn
+```
+
+Todos esses são normais num Debian: o `passwd`, por exemplo, precisa ser SUID para
+um usuário comum conseguir trocar a própria senha, que fica no `/etc/shadow` (só o
+root escreve ali). Mas um programa SUID **fora do comum** é um dos caminhos clássicos
+de <GlossaryTerm term="privilege escalation">privilege escalation</GlossaryTerm>
+(escalação de privilégios, passar de usuário comum a root), assunto da Trilha 5.
+
+### 3.2 Como atacantes reais usam o básico
+
+Não é exagero dizer que o terminal é a principal ferramenta de ataque. O
+<GlossaryTerm term="MITRE ATT&CK">MITRE ATT&CK</GlossaryTerm>, a base pública que
+cataloga técnicas de atacantes reais, descreve várias que usam exatamente o que você
+aprendeu:
+
+- **[T1564.001 — Hidden Files and Directories](https://attack.mitre.org/techniques/T1564/001/):**
+  esconder ferramentas em arquivos e pastas que começam com ponto, porque o `ls`
+  comum não os mostra.
+- **[T1552.003 — Shell History](https://attack.mitre.org/techniques/T1552/003/):**
+  procurar senhas no histórico de comandos (`~/.bash_history`), porque usuários
+  digitam senhas como parâmetros de programas e elas ficam gravadas.
+- **[T1070.003 — Clear Command History](https://attack.mitre.org/techniques/T1070/003/):**
+  apagar o próprio histórico (`history -c`, `rm ~/.bash_history`) para não deixar
+  rastro.
+
+Do outro lado, quem defende usa **os mesmos comandos** para auditar: procurar
+arquivos ocultos em `/tmp`, conferir quais programas são SUID, ler logs e permissões.
+Saber o comando é neutro; o que o torna ataque ou defesa é a autorização e o
+propósito.
+
+### 3.3 Registrar tudo: evidências com tee e redirecionamento
+
+Num pentest de verdade, o que não foi registrado não aconteceu: o relatório final
+precisa mostrar **o comando, a saída e quando**. O redirecionamento da seção 2.5
+resolve metade do problema, mas `>` esconde a saída da tela. O `tee` resolve as
+duas coisas: ele copia o stdin para a tela **e** para um arquivo (com `-a`,
+acrescentando em vez de sobrescrever). Saída real no sandbox:
+
+```console
+$ mkdir -p ~/evidencias
+$ date -u | tee -a ~/evidencias/enum.txt
+Thu Oct  1 09:00:13 UTC 2026
+$ id | tee -a ~/evidencias/enum.txt
+uid=1000(aluno) gid=1000(aluno) groups=1000(aluno)
+$ hostname | tee -a ~/evidencias/enum.txt
+sandbox
+$ cat ~/evidencias/enum.txt
+Thu Oct  1 09:00:13 UTC 2026
+uid=1000(aluno) gid=1000(aluno) groups=1000(aluno)
+sandbox
+```
+
+O `date -u` grava a hora em UTC (o fuso de referência mundial), o que evita
+confusão de fuso horário quando você cruzar suas anotações com os logs da máquina
+analisada. A Trilha 1 (módulo 1.5) transforma esse hábito num método completo de
+anotações.
+
+### 3.4 A shell "limitada" que o atacante costuma receber
+
+O terminal que você usa no dia a dia é confortável: tem prompt colorido, Tab,
+histórico com as setas e `Ctrl+C` interrompendo só o comando atual. Isso tudo
+depende de o shell estar ligado a um <GlossaryTerm term="TTY">TTY</GlossaryTerm>, o
+dispositivo de terminal que o kernel oferece aos programas interativos (o nome vem
+de *teletypewriter*, os aparelhos de antigamente). Num terminal de verdade, o
+comando `tty` responde com o nome desse dispositivo, algo como `/dev/pts/0`.
+
+Quando um atacante consegue executar comandos numa máquina por meio de uma falha,
+muitas vezes recebe um shell **sem** TTY: os comandos chegam e as saídas voltam por
+uma conexão de rede crua. Dá para ver como isso fica abrindo o Bash do sandbox sem
+um terminal por trás (saída real):
+
+```text
+bash: cannot set terminal process group (-1): Inappropriate ioctl for device
+bash: no job control in this shell
+aluno@sandbox:~$ tty
+not a tty
+```
+
+As consequências práticas para quem está do outro lado:
+
+- **Sem *job control*:** não dá para suspender e retomar programas, e em muitas
+  dessas conexões um `Ctrl+C` derruba a conexão inteira, em vez de só o comando.
+- **Programas interativos travam:** `less`, `man`, editores e qualquer coisa que
+  peça senha esperam um terminal que não existe.
+- **Sem Tab nem histórico confortável.**
+
+Por isso a enumeração da seção 3.1 usa comandos que **terminam sozinhos** e
+escrevem tudo no stdout (`id`, `find ... 2>/dev/null`, `grep`), e não programas
+interativos. Transformar uma shell dessas numa shell completa (o *upgrade* de shell)
+é assunto do módulo 2.5, "netcat, shells e transferência de arquivos".
+
+<Callout variant="ethics">
+Rodar `find /` ou ler `/etc/passwd` na **sua** máquina é aprendizado. Fazer o mesmo
+numa máquina do trabalho, da faculdade ou de um cliente sem autorização escrita é
+acesso indevido, mesmo que "só tenha olhado". Na plataforma, os alvos são sempre
+seus e isolados.
+</Callout>
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os casos abaixo têm algo em comum: nenhum envolveu um ataque sofisticado. Foram
+comandos simples de terminal, usados no lugar errado, sem uma rede de proteção. As
+datas e números foram conferidos nas fontes indicadas.
+
+### Pixar, *Toy Story 2* (1998): `rm -r -f *` no lugar errado
+
+Durante a produção de *Toy Story 2*, um comando de remoção recursiva (provavelmente
+`rm -r -f *`, segundo Oren Jacob, então diretor técnico associado do filme) foi
+executado na pasta raiz dos arquivos do filme. O primeiro sinal veio com o Woody: a
+pasta do personagem tinha cerca de 40 arquivos e, olhando de novo, tinha quatro. Cerca de **90% do filme** foi
+apagado. Os backups em fita também falharam: havia um limite de 4 GB por arquivo, e o
+log que avisaria do problema estava no mesmo volume cheio, com zero bytes. O filme
+foi salvo porque a supervisora técnica Galyn Susman, que trabalhava de casa depois do
+nascimento do filho, tinha uma cópia completa numa estação de trabalho em casa. A
+máquina foi levada de carro até a Pixar, enrolada em cobertores e presa com cintos de
+segurança.
+
+- **Impacto:** quase a perda de um longa-metragem inteiro.
+- **Lição:** `rm` não tem lixeira, e um <GlossaryTerm term="backup">backup</GlossaryTerm>
+  que nunca foi testado não é backup.
+- **Fonte:** entrevista de Oren Jacob ao The Next Web, 2012 —
+  [How Pixar's Toy Story 2 was deleted twice](https://thenextweb.com/news/how-pixars-toy-story-2-was-deleted-twice-once-by-technology-and-again-for-its-own-good).
+
+### Steam para Linux (janeiro de 2015): uma variável vazia
+
+Em 14 de janeiro de 2015, um usuário relatou no repositório oficial da Valve que,
+depois de mover a pasta do Steam e executá-lo, o programa apagou **todos os arquivos
+do sistema pertencentes ao seu usuário**, inclusive um disco externo de backup de 3 TB
+montado em `/media`. Na discussão, colaboradores apontaram a linha do script
+`steam.sh`:
+
+```bash
+rm -rf "$STEAMROOT/"*
+```
+
+Quando `STEAMROOT` ficava vazia, a linha virava `rm -rf "/"*`: apagar tudo a partir
+da raiz. As permissões impediram que arquivos do sistema fossem apagados (o Steam
+roda como usuário comum), mas tudo o que pertencia ao usuário se foi.
+
+- **Impacto:** perda total dos dados pessoais dos usuários afetados.
+- **Lição:** variáveis vazias + `rm -rf` + curinga é uma combinação explosiva. Na
+  própria discussão, foi sugerido usar `${STEAMROOT:?}`, que aborta se a variável
+  estiver vazia (seção 8).
+- **Fonte:** [issue #3671 do steam-for-linux no GitHub](https://github.com/ValveSoftware/steam-for-linux/issues/3671).
+
+### GitLab.com (31 de janeiro de 2017): o servidor errado
+
+Durante um problema de replicação (a cópia contínua de um banco de dados para um
+segundo servidor), um engenheiro do GitLab apagou o diretório de dados do banco
+PostgreSQL achando que estava no servidor secundário
+(`db2.cluster.gitlab.com`). Estava no **primário** (`db1.cluster.gitlab.com`). Ele
+interrompeu o comando um ou dois segundos depois de perceber o erro, mas cerca de
+**300 GB** já tinham sido removidos. Os backups automáticos não estavam funcionando:
+usavam uma versão do `pg_dump` (a ferramenta de backup do PostgreSQL) incompatível com
+o banco, e os e-mails de alerta eram rejeitados. Os *snapshots* de disco (cópias
+instantâneas do disco inteiro) não estavam ativados. A restauração usou uma
+cópia feita 6 horas antes e levou cerca de 18 horas. Foram perdidas cerca de 6 horas
+de dados: aproximadamente 5.000 projetos, 5.000 comentários e 700 contas novas.
+
+- **Impacto:** cerca de 18 horas fora do ar e perda permanente de dados de usuários.
+- **Lição:** confira **em qual máquina** você está antes de um comando destrutivo (o
+  `hostname` está no seu prompt por um motivo) e teste a restauração dos backups. O
+  GitLab publicou um <GlossaryTerm term="postmortem">postmortem</GlossaryTerm>
+  (relatório público do incidente) exemplar.
+- **Fonte:** [Postmortem of database outage of January 31](https://about.gitlab.com/blog/2017/02/10/postmortem-of-database-outage-of-january-31/), blog do GitLab.
+
+### Codecov (2021): o perigo do `curl | bash`
+
+O Codecov oferecia um *Bash Uploader*, um script que muitas empresas baixavam e
+executavam direto no terminal dos servidores de <GlossaryTerm term="CI">CI</GlossaryTerm>
+(integração contínua, que testam o código automaticamente e guardam segredos em
+variáveis de ambiente). A partir de **31 de janeiro de 2021**, um invasor, usando uma
+credencial exposta por um erro no processo de criação de imagens Docker da empresa,
+alterou o script hospedado. A versão adulterada enviava para um servidor do atacante
+a saída de `env` (todas as variáveis de ambiente, incluindo senhas e
+<GlossaryTerm term="token">tokens</GlossaryTerm> de acesso) e o endereço dos
+repositórios git (o sistema de versionamento que você verá no módulo 0.8). O problema só foi descoberto em **1º de abril de
+2021**, quando um cliente comparou o <GlossaryTerm term="checksum">checksum</GlossaryTerm>
+(a "impressão digital" SHA-256) do script baixado com o publicado no GitHub, e eles
+não bateram.
+
+- **Impacto:** segredos de pipelines de CI de clientes expostos por cerca de dois
+  meses; foi um <GlossaryTerm term="supply chain attack">supply chain attack</GlossaryTerm>
+  (ataque à cadeia de suprimentos), que atinge todos os que confiam numa ferramenta.
+- **Lição:** não execute um script baixado sem lê-lo e sem conferir o checksum.
+  Um `curl ... | bash` executa o que vier, do jeito que vier.
+- **Fonte:** [Codecov — Bash Uploader Security Update](https://about.codecov.io/security-update/).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá encontrado três flags no sandbox: uma escondida
+num arquivo oculto, uma perdida em mais de 240 pastas e uma trancada por permissões.
+Cada missão usa um bloco da teoria; a dificuldade sobe aos poucos.
+
+O laboratório é o **linux-sandbox**, um
+<GlossaryTerm term="container">container</GlossaryTerm> (contêiner: ambiente isolado
+que compartilha o kernel do computador, mas tem seus próprios arquivos e processos)
+criado pelo <GlossaryTerm term="Docker">Docker</GlossaryTerm>. Ele é um
+<GlossaryTerm term="sandbox">sandbox</GlossaryTerm>: isolado e descartável. Não tem
+rede, não tem `sudo`, roda como o usuário comum `aluno` e pode ser recriado do zero a
+qualquer momento. Pode errar à vontade.
+
+### 5.1 Subir o sandbox (passo a passo)
+
+1. Abra o terminal do Ubuntu no <GlossaryTerm term="WSL">WSL</GlossaryTerm> (o Linux
+   que roda dentro do seu Windows) e entre na pasta do projeto:
+
+   ```bash
+   cd ~/projetos/plataforma-cyber
+   ```
+
+2. Suba o sandbox e entre nele:
+
+   ```bash
+   npm run lab:sandbox
+   ```
+
+   Na **primeira vez**, a imagem é construída (alguns minutos; é o único momento em
+   que há internet). Depois, a saída é esta (saída real):
+
+   ```text
+   > plataforma-cyber@0.4.0 lab:sandbox
+   > scripts/lab-sandbox.sh
+
+    Container cyberlab-sandbox-sandbox-1 Creating
+    Container cyberlab-sandbox-sandbox-1 Created
+    Container cyberlab-sandbox-sandbox-1 Starting
+    Container cyberlab-sandbox-sandbox-1 Started
+   ==> Entering the sandbox (type 'exit' to leave)
+
+   Sandbox do módulo 0.3 — sem rede, descartável. Pode errar à vontade.
+   Comece com:  cat LEIA-ME.txt
+
+   aluno@sandbox:~$
+   ```
+
+<Callout variant="warning" title="Um laboratório por vez">
+Se o lab da Trilha 2 (Kali + DVWA) estiver no ar, o script recusa subir o sandbox e
+lista os contêineres que estão rodando. Desça o outro lab primeiro
+(`scripts/lab-down.sh`). É a regra de RAM da plataforma.
+</Callout>
+
+3. Confira onde você está e o que existe ali. Note que, daqui em diante, o prompt é
+   o do sandbox (`aluno@sandbox`), não o do seu WSL:
+
+   ```console
+   $ whoami
+   aluno
+   $ pwd
+   /home/aluno
+   $ ls
+   LEIA-ME.txt  missao-1  missao-2  missao-3
+   $ cat LEIA-ME.txt
+   ```
+
+   O `LEIA-ME.txt` lista as missões e lembra como resetar o sandbox.
+
+### 5.2 Missão 1 — O arquivo que o ls não mostra (guiada)
+
+Entre na pasta e leia as instruções:
+
+```console
+$ cd missao-1
+$ cat instrucoes.txt
+MISSÃO 1 — O arquivo que o ls não mostra
+
+Alguém escondeu a flag nesta pasta. Um "ls" simples não mostra o
+esconderijo, mas ele está aqui.
+
+Objetivo: encontrar o esconderijo, entrar nele e ler o arquivo com a flag.
+Comandos úteis: ls (e suas opções), cd, cat.
+$ ls
+instrucoes.txt  lista-de-compras.txt  rascunho.txt
+```
+
+Nada suspeito. Agora peça ao `ls` para mostrar **tudo** (`-a`) em formato **longo**
+(`-l`):
+
+```console
+$ ls -la
+total 24
+drwxr-xr-x 3 aluno aluno 4096 Oct  1 08:38 .
+drwx------ 1 aluno aluno 4096 Oct  1 08:38 ..
+drwxr-xr-x 2 aluno aluno 4096 Oct  1 08:38 .cofre
+-rw-r--r-- 1 aluno aluno  270 Oct  1 08:38 instrucoes.txt
+-rw-r--r-- 1 aluno aluno   39 Oct  1 08:38 lista-de-compras.txt
+-rw-r--r-- 1 aluno aluno   46 Oct  1 08:38 rascunho.txt
+```
+
+Leia a listagem com calma, porque ela ensina várias coisas de uma vez:
+
+- `.` e `..` são a pasta atual e a de cima.
+- A linha do `..` (a sua home) tem `drwx------`: só você entra na sua pasta pessoal.
+- **`.cofre`** começa com `d` (é uma pasta) e com ponto (é oculta). Achamos o
+  esconderijo.
+
+Entre nele. Repare que um `ls` simples dentro do cofre não mostra nada:
+
+```console
+$ cd .cofre
+$ ls
+$ ls -a
+.  ..  .chave
+```
+
+Agora é com você: leia o arquivo `.chave`. A flag é a linha inteira, no formato
+`FLAG{...}`.
+
+<Hint title="Dica">
+O comando que mostra o conteúdo de um arquivo de texto você já usou duas vezes nesta
+missão. O nome do arquivo começa com ponto, e o ponto faz parte do nome.
+</Hint>
+
+<FlagInput task="missao-1-arquivo-oculto" />
+
+### 5.3 Missão 2 — Uma agulha num palheiro de pastas (com desafios)
+
+Volte para a home e entre na pasta da missão 2. Leia as instruções:
+
+```console
+$ cd ~/missao-2
+$ cat instrucoes.txt
+```
+
+Resumo: a pasta `arquivo-morto/` guarda quatro anos de relatórios, organizados em
+`ano/mês/semana`. Em algum lugar há **um** arquivo chamado exatamente
+`relatorio-final.txt`. Dentro dele, centenas de linhas; só uma tem `status=ALERTA`, e
+o campo `codigo=` dessa linha é a resposta.
+
+Explore um pouco para sentir o tamanho do problema:
+
+```console
+$ ls arquivo-morto
+2021  2022  2023  2024
+$ ls arquivo-morto/2023
+01  02  03  04  05  06  07  08  09  10  11  12
+$ ls arquivo-morto/2023/08
+semana-1  semana-2  semana-3  semana-4
+$ find arquivo-morto -type d | wc -l
+245
+```
+
+São 245 pastas. Abrir uma por uma não é opção. Você precisa de duas ferramentas novas:
+
+- **`find`** procura arquivos **pelo nome e por atributos**, descendo por todas as
+  subpastas: `find <onde> -name "<nome>"`. Aceita curingas entre aspas
+  (`-name "*.txt"`) e filtros como `-type f` (só arquivos) e `-type d` (só pastas).
+- **`grep`** procura um **texto dentro** de arquivos e mostra as linhas que o contêm:
+  `grep "<texto>" <arquivo>`. Com `-r`, procura em todos os arquivos de uma pasta,
+  recursivamente.
+
+**Desafio 2.1:** encontre o caminho do `relatorio-final.txt`. Cuidado: existe um
+rascunho com nome parecido, e ele não vale.
+
+<Hint title="Dica 1">
+Use `find` a partir da pasta atual (`.`) com `-name`. O nome precisa ser exato: com
+`-name "*final*"`, você vai achar dois arquivos.
+</Hint>
+
+<Solution title="Solução do desafio 2.1">
+```console
+$ find . -name relatorio-final.txt
+./arquivo-morto/2023/08/semana-3/relatorio-final.txt
+$ find . -name "*final*"
+./arquivo-morto/2022/11/semana-2/relatorio-final-rascunho.txt
+./arquivo-morto/2023/08/semana-3/relatorio-final.txt
+```
+A segunda busca mostra por que o nome exato importa.
+</Solution>
+
+**Desafio 2.2:** olhe o começo do arquivo para entender o formato das linhas e conte
+quantas linhas ele tem. Depois encontre a única linha com `status=ALERTA`.
+
+<Hint title="Dica 2">
+`head` mostra o começo de um arquivo; `wc -l` conta linhas. Para achar a linha, use
+`grep` com o caminho completo que o `find` mostrou (o Tab ajuda a digitar).
+</Hint>
+
+<Solution title="Solução do desafio 2.2">
+```console
+$ head -5 arquivo-morto/2023/08/semana-3/relatorio-final.txt
+2023-08-09 07:30:58 registro=0001 status=ok codigo=530dec3a
+2023-08-04 18:29:05 registro=0002 status=ok codigo=6070e56a
+2023-08-25 00:20:40 registro=0003 status=ok codigo=9dcfee52
+2023-08-20 01:00:07 registro=0004 status=ok codigo=b179db42
+2023-08-24 15:36:38 registro=0005 status=ok codigo=51a8dbfa
+$ wc -l arquivo-morto/2023/08/semana-3/relatorio-final.txt
+300 arquivo-morto/2023/08/semana-3/relatorio-final.txt
+$ grep ALERTA arquivo-morto/2023/08/semana-3/relatorio-final.txt
+```
+A última linha mostra o registro 0187. O que vem depois de `codigo=` é a resposta;
+monte a flag como `FLAG{código}`.
+</Solution>
+
+**Desafio 2.3 (para pensar):** e se você tentasse pular o `find` e procurar `ALERTA`
+em tudo de uma vez, com `grep -r ALERTA .`? Rode e conte quantas linhas aparecem
+(`| wc -l`). Por que essa abordagem sozinha não resolve, e como um pipe com um
+segundo `grep` resolveria?
+
+<Solution title="Discussão do desafio 2.3">
+```console
+$ grep -r ALERTA . | wc -l
+30
+$ grep -r ALERTA . | head -2
+./arquivo-morto/2022/10/semana-1/relatorio-semanal.txt:2022-10-04 17:22:05 registro=0012 status=ALERTA codigo=falso-alarme-6767
+./arquivo-morto/2022/07/semana-3/relatorio-semanal.txt:2022-07-02 14:01:25 registro=0010 status=ALERTA codigo=falso-alarme-e558
+```
+São 30 alertas: 28 falsos alarmes nos relatórios semanais, um no rascunho e um no
+relatório final. Com `-r`, o `grep` põe o caminho do arquivo no começo de cada
+linha, então um segundo filtro resolve: `grep -r ALERTA . | grep "/relatorio-final.txt:"`.
+Há ainda uma terceira forma, que junta `find` e `grep` num comando só:
+`find . -name relatorio-final.txt -exec grep ALERTA {} \;`. Qualquer uma delas está certa.
+</Solution>
+
+<FlagInput task="missao-2-agulha-no-palheiro" />
+
+### 5.4 Missão 3 — O arquivo que nem você consegue ler (desafio)
+
+Agora você recebe só o objetivo e a direção. Entre em `~/missao-3` e leia as
+instruções. O arquivo `vazamento.txt` é uma lista **fictícia** de senhas "vazadas",
+uma por linha, no estilo das <GlossaryTerm term="wordlist">wordlists</GlossaryTerm>
+(listas de palavras) usadas em testes de senha, como você verá na Trilha 4. Quase
+todas as senhas se repetem; **uma única aparece uma vez só**, e ela é a flag, no
+formato `FLAG{senha}`.
+
+O primeiro obstáculo aparece logo (saída real):
+
+```console
+$ cat vazamento.txt
+cat: vazamento.txt: Permission denied
+```
+
+**Desafio 3.1:** descubra **por que** a leitura é negada, se o arquivo é seu, e dê
+permissão de leitura **só para você**, sem abrir para o grupo nem para os outros.
+
+<Hint title="Dica 1">
+`ls -l` mostra dono e permissões. Releia "Como o kernel decide" (seção 2.4): ser o
+dono não basta se o trio do dono estiver vazio.
+</Hint>
+
+<Solution title="Solução do desafio 3.1">
+```console
+$ ls -l
+total 16
+-rw-r--r-- 1 aluno aluno  590 Oct  1 08:38 instrucoes.txt
+---------- 1 aluno aluno 9800 Oct  1 08:38 vazamento.txt
+$ chmod u+r vazamento.txt
+$ ls -l vazamento.txt
+-r-------- 1 aluno aluno 9800 Oct  1 08:38 vazamento.txt
+```
+O trio do dono era `---`. Como você é o dono, só esse trio vale, e ele não tinha
+`r`. Mas, como dono, você pode mudar as permissões: `u+r` dá leitura apenas ao dono.
+Um `chmod 777` "também funcionaria", mas abriria o arquivo para todo mundo — o
+contrário do que se quer (seção 8).
+</Solution>
+
+**Desafio 3.2:** o arquivo tem mais de mil linhas (confira com `wc -l`). Encontre a
+senha que aparece uma única vez sem ler nada no olho. Pense em como **agrupar
+linhas iguais** e então **ficar só com as que não se repetem**.
+
+<Hint title="Dica 2">
+O comando `uniq` junta linhas iguais **vizinhas**. Para que as iguais fiquem vizinhas,
+alguém precisa ordenar antes. Consulte `uniq --help` e procure a opção que mostra
+apenas as linhas únicas.
+</Hint>
+
+<Hint title="Dica 3">
+`sort vazamento.txt | uniq -c` mostra cada senha com o número de vezes que ela
+aparece. Ordenar esse resultado por número também revela a resposta.
+</Hint>
+
+<Solution title="Solução do desafio 3.2">
+```console
+$ wc -l vazamento.txt
+1152 vazamento.txt
+$ sort vazamento.txt | uniq -u
+```
+O resultado é uma única linha: a senha que aparece uma vez só. A flag é ela dentro
+de `FLAG{ }`. O caminho alternativo, que mostra a contagem, é
+`sort vazamento.txt | uniq -c | sort -n | head -3`: a primeira linha tem contagem 1.
+
+Por que o `sort` é indispensável? Sem ele, o `uniq` só junta repetições
+**consecutivas**. Veja a diferença real na contagem de linhas distintas:
+
+```console
+$ uniq vazamento.txt | wc -l
+1118
+$ sort vazamento.txt | uniq | wc -l
+59
+```
+</Solution>
+
+<FlagInput task="missao-3-permissao-e-pipe" />
+
+### 5.5 Sair, resetar e desligar
+
+- **Sair do sandbox:** `exit` (ou `Ctrl+D`). O contêiner continua no ar; `npm run
+  lab:sandbox` entra de novo.
+- **Começar do zero** (apagou algo sem querer? quer refazer as missões?), no
+  terminal do WSL:
+
+  ```bash
+  npm run lab:sandbox -- reset
+  ```
+
+- **Desligar** quando terminar (libera a vaga de "um lab por vez"):
+
+  ```bash
+  npm run lab:sandbox -- down
+  ```
+
+## 6. Variações e aprofundamento
+
+O que você usou no laboratório é o básico. Esta seção mostra até onde as mesmas
+ferramentas vão, e é o que separa quem conhece o comando de quem sabe usá-lo.
+
+### 6.1 find: filtros que combinam
+
+O `find` aceita muitos filtros, que se somam (todos precisam ser verdadeiros):
+
+| Filtro | Significado |
+|---|---|
+| `-name "*.conf"` / `-iname` | Nome (com `-iname`, sem diferenciar maiúsculas) |
+| `-type f` / `-type d` / `-type l` | Arquivo / pasta / link simbólico |
+| `-size +1k` / `-size -10M` | Maior que 1 KiB / menor que 10 MiB |
+| `-mtime -1` | Modificado nas últimas 24 horas |
+| `-user aluno` | Pertence ao usuário |
+| `-perm -4000` | Tem o bit SUID (e quaisquer outros) |
+| `-exec cmd {} \;` | Executa `cmd` para cada resultado (`{}` é o arquivo) |
+
+Exemplo real, na missão 2: só dois arquivos passam de 1 KiB, justamente o rascunho e
+o relatório final, que têm mais linhas:
+
+```console
+$ find missao-2 -type f -size +1k
+missao-2/arquivo-morto/2022/11/semana-2/relatorio-final-rascunho.txt
+missao-2/arquivo-morto/2023/08/semana-3/relatorio-final.txt
+```
+
+Em resposta a incidentes, `find / -mtime -1 -type f 2>/dev/null` (arquivos alterados
+no último dia) é uma das primeiras perguntas que se faz a uma máquina suspeita.
+
+### 6.2 grep: opções e padrões
+
+| Opção | Efeito |
+|---|---|
+| `-i` | Ignora maiúsculas e minúsculas |
+| `-n` | Mostra o número da linha |
+| `-r` | Recursivo, em todos os arquivos de uma pasta |
+| `-l` | Mostra só os nomes dos arquivos que contêm o texto |
+| `-v` | Inverte: mostra as linhas que **não** contêm o texto |
+| `-c` | Conta as linhas que combinam |
+| `-w` | Só palavras inteiras |
+| `-E` | Expressões regulares estendidas |
+
+O `grep` entende <GlossaryTerm term="regular expression">regular expressions</GlossaryTerm>
+(expressões regulares), uma linguagem de padrões: `^` é o início da linha, `$` o fim,
+`.` qualquer caractere. Na missão 3, `^senha123$` significa "a linha inteira é
+exatamente senha123". Saída real, que também mostra o efeito do `-i`:
+
+```console
+$ grep -c '^senha123$' vazamento.txt
+4
+$ grep -ic '^senha123$' vazamento.txt
+39
+```
+
+Com `-i`, as 35 ocorrências de `Senha123` (com S maiúsculo) também entram na conta.
+Em segurança, isso faz diferença: para o sistema, `Senha123` e `senha123` são senhas
+diferentes.
+
+### 6.3 Aspas: simples, duplas e nenhuma
+
+```console
+$ NOME=aluno
+$ echo "Olá, $NOME"
+Olá, aluno
+$ echo 'Olá, $NOME'
+Olá, $NOME
+```
+
+- **Aspas duplas** agrupam palavras (resolvem o problema do espaço), mas o shell
+  ainda expande `$VARIAVEL`.
+- **Aspas simples** desligam toda expansão: o texto vai literalmente.
+- **Sem aspas**, o shell quebra nos espaços e expande curingas. Quase sempre, a
+  forma certa de usar uma variável é entre aspas duplas: `"$ARQUIVO"`.
+
+### 6.4 Tipos e permissões especiais
+
+Três coisas aparecem no `ls -l` de qualquer sistema real (saídas reais):
+
+```console
+$ ls -ld /bin
+lrwxrwxrwx 1 root root 7 Jul 17 17:05 /bin -> usr/bin
+$ ls -l /usr/bin/passwd
+-rwsr-xr-x 1 root root 118168 Apr 19  2025 /usr/bin/passwd
+$ ls -ld /tmp
+drwxrwxrwt 2 root root 4096 Sep 18 00:00 /tmp
+```
+
+- **`l` e `->`:** `/bin` é um <GlossaryTerm term="symlink">symlink</GlossaryTerm>
+  (link simbólico), um atalho que aponta para `usr/bin`. As permissões de um link não
+  importam; valem as do destino.
+- **`s` no lugar do `x` do dono:** o SUID que você viu na seção 3.
+- **`t` no fim:** o <GlossaryTerm term="sticky bit">sticky bit</GlossaryTerm>. Em
+  `/tmp`, todos podem escrever (`rwxrwxrwx`), mas o `t` garante que cada um só
+  apague os próprios arquivos. Sem ele, qualquer usuário poderia apagar ou trocar
+  arquivos temporários dos outros.
+
+### 6.5 Ler arquivos grandes e logs vivos
+
+- **`less arquivo`** abre arquivos de qualquer tamanho sem carregar tudo na memória
+  (é o mesmo leitor das man pages: `/` busca, `q` sai).
+- **`tail -n 20 arquivo`** mostra o fim; **`tail -f arquivo`** fica mostrando as
+  linhas novas conforme o arquivo cresce. É assim que se acompanha um log ao vivo
+  (`tail -f /var/log/...`); `Ctrl+C` para.
+- **`file arquivo`** diz o que um arquivo é de verdade, pelo conteúdo e não pela
+  extensão (saída real):
+
+  ```console
+  $ file /etc/passwd /usr/bin/ls LEIA-ME.txt missao-3/vazamento.txt
+  /etc/passwd:            ASCII text
+  /usr/bin/ls:            ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=0243f2a3ad64d635299a574bbc8ef951ddde9b21, for GNU/Linux 3.2.0, stripped
+  LEIA-ME.txt:            Unicode text, UTF-8 text
+  missao-3/vazamento.txt: regular file, no read permission
+  ```
+
+  ELF (*Executable and Linkable Format*) é o formato dos programas executáveis no
+  Linux. Em perícia e em pentest, uma "foto.jpg" que o `file` identifica como
+  executável ELF é um alerta vermelho.
+
+### 6.6 Outros shells e o que muda no Kali
+
+No Kali, com o zsh, o prompt é desenhado em duas linhas e colorido, mas os comandos
+deste módulo funcionam da mesma forma. As diferenças entre Bash e zsh (curingas
+avançados, configuração, plugins) só importam quando você escrever scripts, e a
+regra prática é simples: scripts começam com `#!/bin/bash` e são executados pelo Bash,
+qualquer que seja o seu shell interativo. Isso fica para o módulo 0.6.
+
+## 7. Erros comuns
+
+Quase todo "não funciona" no terminal cai numa destas categorias. Todas as mensagens
+abaixo são reais, tiradas do sandbox.
+
+- **`No such file or directory`:** o caminho está errado. Confira com `pwd` onde você
+  está, use o Tab para completar (se ele não completa, o nome não existe) e lembre que
+  maiúsculas importam.
+- **`Permission denied`:** você não tem a permissão necessária. Não tente "resolver"
+  com `chmod 777`. Leia o `ls -l` (do arquivo **e** da pasta) e descubra qual
+  permissão falta e para qual classe (seção 2.4).
+- **`Is a directory`:** você usou num diretório um comando que espera arquivo:
+
+  ```console
+  $ grep ALERTA arquivo-morto
+  grep: arquivo-morto: Is a directory
+  $ rm copia
+  rm: cannot remove 'copia': Is a directory
+  $ cp evidencias copia
+  cp: -r not specified; omitting directory 'evidencias'
+  ```
+
+  Para pastas: `grep -r`, `rm -r` (com cuidado!) e `cp -r`. Pasta vazia sai com
+  `rmdir`; com conteúdo, o `rmdir` recusa: `rmdir: failed to remove 'copia': Directory not empty`.
+- **`mkdir` de várias pastas de uma vez:** sem `-p`, o `mkdir` não cria as
+  intermediárias:
+
+  ```console
+  $ mkdir outro/sub/pasta
+  mkdir: cannot create directory ‘outro/sub/pasta’: No such file or directory
+  ```
+
+  Use `mkdir -p outro/sub/pasta`.
+- **Nome com espaço virou dois arquivos:** use aspas (`"meu arquivo.txt"`) ou o Tab,
+  que escapa o espaço sozinho (`meu\ arquivo.txt`).
+- **Copiou o prompt junto:** ao colar exemplos, não inclua o `$` do início:
+
+  ```console
+  $ $ ls
+  bash: $: command not found
+  ```
+
+  (Nos blocos de terminal deste módulo, o botão de copiar já tira o `$` e a saída.)
+- **`grep` não mostrou nada:** não é erro de sintaxe; não houve correspondência (o
+  código de saída é 1). Confira maiúsculas (`-i`) e se o texto existe mesmo.
+- **`uniq` não removeu as repetições:** faltou ordenar antes (`sort | uniq`).
+- **`>` apagou o arquivo:** `>` sobrescreve sem perguntar. Para acrescentar, `>>`.
+- **Preso numa tela:** em `man` e `less`, `q` sai. Um comando que não termina para
+  com `Ctrl+C`. Um `cat` sem argumento fica esperando o teclado (o stdin): `Ctrl+D`
+  encerra a entrada, `Ctrl+C` cancela.
+- **Comando não encontrado (`command not found`):** o programa não está instalado
+  ou não está no `PATH`. No sandbox, `ping` não existe de propósito: não há rede para
+  testar.
+
+## 8. Boas práticas e segurança
+
+Cada caso real da seção 4 tinha uma proteção simples que teria evitado o pior. Estas
+são as práticas que você deve adotar **a partir de hoje**, no seu WSL inclusive.
+
+### 8.1 Apagar com segurança
+
+1. **Veja antes de apagar.** Rode o mesmo padrão com `ls` antes do `rm`: se
+   `ls scan-*` mostra exatamente o que você quer apagar, aí sim `rm scan-*`.
+2. **Peça confirmação quando estiver inseguro.** `rm -i` pergunta arquivo por
+   arquivo; `rm -I` pergunta uma vez antes de apagar muitos arquivos ou pastas
+   inteiras.
+3. **Proteja variáveis em comandos destrutivos.** Em scripts, use `"${VAR:?}"`:
+   se a variável estiver vazia, o shell aborta **antes** de executar. Teste real no
+   sandbox, primeiro mostrando o que o `rm` receberia e depois com a proteção:
+
+   ```console
+   $ VAZIO=""
+   $ echo rm -rf "$VAZIO/"*
+   rm -rf /bin /boot /dev /etc /home /lib /lib64 /media /mnt /opt /proc /root /run /sbin /srv /sys /tmp /usr /var
+   $ rm -rf "${VAZIO:?}/"*
+   bash: VAZIO: parameter null or not set
+   ```
+
+   O `echo` mostra exatamente o bug do Steam; com `:?`, o `rm` nem chega a rodar.
+4. **Confira a máquina.** Antes de qualquer comando destrutivo em servidor, olhe o
+   hostname no prompt (ou rode `hostname`). Foi o que faltou no caso do GitLab.
+5. **Backups testados.** Um backup só existe se você já restaurou a partir dele. A
+   lição da Pixar e do GitLab é a mesma.
+
+### 8.2 Menor privilégio
+
+O princípio do <GlossaryTerm term="least privilege">least privilege</GlossaryTerm>
+(menor privilégio) diz que cada usuário e cada programa deve ter só as permissões de
+que precisa.
+
+- **Trabalhe como usuário comum.** Use o <GlossaryTerm term="sudo">sudo</GlossaryTerm>
+  (que executa um comando como root, se a política permitir) só no comando que
+  precisa dele, nunca para "abrir uma sessão de root e esquecer".
+- **Nunca use `chmod 777`.** Ele dá escrita a todos os usuários da máquina. Na
+  Missão 3, `chmod u+r` resolveu sem abrir nada para ninguém.
+- **Segredos com `600`.** Arquivos com senhas, chaves ou tokens devem ser `rw-------`
+  (`chmod 600 arquivo`): só o dono lê e escreve. Confira com `ls -l`.
+
+### 8.3 Não execute o que não leu
+
+- Evite `curl ... | bash`. Baixe o script, **leia**, e só então execute.
+- Confira o checksum quando o fornecedor o publicar. O `sha256sum` calcula a
+  impressão digital de um arquivo (saída real):
+
+  ```console
+  $ sha256sum LEIA-ME.txt
+  9f9840e64342f342bded27fbea9306eca327bab256f79fabffb320e65f83d90d  LEIA-ME.txt
+  ```
+
+  Se um único caractere do arquivo mudar, esse valor muda por completo. Foi assim que
+  um cliente descobriu o ataque ao Codecov.
+
+### 8.4 Cuidado com o histórico
+
+O Bash grava seus comandos em `~/.bash_history`. Uma senha digitada como parâmetro
+(`mysql -p MinhaSenha`, por exemplo) fica lá, em texto claro — exatamente o que a
+técnica T1552.003 explora. Duas defesas:
+
+- Prefira que o programa **pergunte** a senha (a maioria pergunta se você não a
+  passar na linha).
+- No Debian e no Ubuntu, o `~/.bashrc` padrão já traz `HISTCONTROL=ignoreboth`
+  (confira com `grep HISTCONTROL ~/.bashrc`): comandos que começam com **espaço** não
+  vão para o histórico. Útil para o caso raro em que não há alternativa.
+
+### 8.5 O olhar de quem defende
+
+Os mesmos comandos da seção 3 viram auditoria quando o objetivo é proteger:
+
+- `find / -perm -4000 -type f 2>/dev/null` — algum SUID novo ou estranho?
+- `find / -xdev -perm -0002 -type f 2>/dev/null` — arquivos que qualquer um pode alterar?
+- `ls -la /tmp /var/tmp` — arquivos ocultos ou executáveis esquecidos?
+- `grep -v nologin /etc/passwd` — quem tem shell e não deveria?
+
+## 9. Exercícios
+
+As três flags da seção 5 são as tarefas oficiais deste módulo. Antes de seguir,
+confira a teoria com o quiz e, se quiser fixar mais, faça os exercícios práticos
+extras no sandbox.
+
+<Quiz
+  title="Quiz — Linux: primeiros passos no terminal"
+  questions={[
+    {
+      question: "O que o `#` no fim do prompt indica?",
+      options: [
+        "Que o comando anterior deu erro",
+        "Que você está logado como root",
+        "Que você está dentro de uma pasta oculta",
+        "Que o shell é o zsh",
+      ],
+      answer: 1,
+      explanation: "`$` indica usuário comum e `#` indica root, o superusuário. Um `#` no prompt pede atenção redobrada: o kernel quase não vai barrar nada.",
+    },
+    {
+      question: "Por que `cd` precisa ser um builtin do shell, e não um programa em `/usr/bin`?",
+      options: [
+        "Porque é mais rápido",
+        "Porque só o root pode executar programas em /usr/bin",
+        "Porque cada processo tem o próprio diretório atual; um programa separado mudaria só o dele",
+        "Porque o kernel não permite trocar de pasta",
+      ],
+      answer: 2,
+      explanation: "Um processo filho não consegue mudar o diretório do processo pai. Se `cd` fosse um programa, mudaria a pasta dele mesmo e terminaria, e o shell ficaria onde estava.",
+    },
+    {
+      question: "Estando em `/home/aluno/missao-2`, qual caminho aponta para `/home/aluno/missao-1/instrucoes.txt`?",
+      options: [
+        "`missao-1/instrucoes.txt`",
+        "`../missao-1/instrucoes.txt`",
+        "`/missao-1/instrucoes.txt`",
+        "`./missao-1/instrucoes.txt`",
+      ],
+      answer: 1,
+      explanation: "`..` sobe para `/home/aluno` e, de lá, `missao-1/instrucoes.txt`. Começar com `/` faria um caminho absoluto a partir da raiz, que não existe.",
+    },
+    {
+      question: "Um arquivo tem permissões `-rw-r-----`. Qual é o equivalente em octal?",
+      options: ["`640`", "`750`", "`644`", "`460`"],
+      answer: 0,
+      explanation: "Dono `rw-` = 4+2 = 6; grupo `r--` = 4; outros `---` = 0. Resultado: 640.",
+    },
+    {
+      question: "Você é o dono de um arquivo `----r--r--`. Consegue lê-lo?",
+      options: [
+        "Sim, porque os outros podem ler e você também é um \"outro\"",
+        "Sim, porque o dono sempre pode ler",
+        "Não: como dono, só o trio do dono vale, e ele está vazio",
+        "Só se estiver no mesmo grupo",
+      ],
+      answer: 2,
+      explanation: "As classes não se somam: o kernel usa só o trio da primeira classe que se aplica a você. Mas, como dono, você pode dar a permissão a si mesmo com `chmod u+r`.",
+    },
+    {
+      question: "Qual a diferença entre `comando > saida.txt` e `comando >> saida.txt`?",
+      options: [
+        "Nenhuma",
+        "`>` sobrescreve o arquivo; `>>` acrescenta ao fim",
+        "`>` grava os erros; `>>` grava a saída normal",
+        "`>>` grava em dois arquivos",
+      ],
+      answer: 1,
+      explanation: "`>` apaga o conteúdo anterior sem perguntar. Para acrescentar, use `>>`. Os erros (stderr) só vão para o arquivo com `2>`.",
+    },
+    {
+      question: "Em `find / -name \"*.conf\" 2>/dev/null`, o que faz o `2>/dev/null`?",
+      options: [
+        "Limita a busca a 2 níveis de pasta",
+        "Descarta as mensagens de erro, como os \"Permission denied\"",
+        "Salva os resultados em /dev/null",
+        "Executa a busca como root",
+      ],
+      answer: 1,
+      explanation: "O canal 2 é o stderr. Mandá-lo para `/dev/null` descarta os erros e deixa na tela só os resultados (stdout).",
+    },
+    {
+      question: "Por que `sort arquivo | uniq -u` funciona e `uniq -u arquivo` não basta?",
+      options: [
+        "Porque o uniq só compara linhas vizinhas, e o sort deixa as iguais lado a lado",
+        "Porque o uniq não lê arquivos, só pipes",
+        "Porque o sort remove as duplicatas sozinho",
+        "Porque o -u só funciona depois de um pipe",
+      ],
+      answer: 0,
+      explanation: "O `uniq` só junta repetições consecutivas. No laboratório, `uniq` sem `sort` deixou 1118 linhas; com `sort`, sobraram as 59 senhas distintas.",
+    },
+    {
+      question: "Num script, qual forma protege contra o bug do Steam (variável vazia apagando tudo)?",
+      options: [
+        "`rm -rf $PASTA/*`",
+        "`rm -rf \"$PASTA/\"*`",
+        "`rm -rf \"${PASTA:?}/\"*`",
+        "`sudo rm -rf \"$PASTA/\"*`",
+      ],
+      answer: 2,
+      explanation: "`${PASTA:?}` faz o shell abortar com erro se a variável estiver vazia ou não definida, antes de o `rm` rodar. O `sudo` só pioraria: um root apagaria inclusive o sistema.",
+    },
+    {
+      question: "Um arquivo chamado `.config_backup` não aparece no `ls`. Isso significa que ele está protegido?",
+      options: [
+        "Sim, arquivos ocultos só o root lê",
+        "Não: o ponto é só uma convenção; `ls -a` mostra e as permissões continuam sendo as do `ls -l`",
+        "Sim, porque o kernel esconde arquivos com ponto",
+        "Depende do shell",
+      ],
+      answer: 1,
+      explanation: "Ocultar não é proteger. Atacantes usam essa convenção para esconder ferramentas (MITRE T1564.001), e defensores procuram com `ls -la` e `find -name \".*\"`.",
+    },
+  ]}
+/>
+
+### Cenários para pensar
+
+Os três cenários abaixo são inventados para treinar o raciocínio; não são casos
+reais. Pense na sua resposta antes de abrir a discussão.
+
+<Callout variant="hypothetical" title="a shell no servidor do cliente">
+Num pentest autorizado, você explorou uma falha num servidor web e recebeu uma
+shell sem TTY. O tempo da janela de teste está acabando. Quais são os cinco
+primeiros comandos que você roda, em que ordem, e por quê?
+</Callout>
+
+<Solution title="Discussão do cenário a">
+Uma ordem razoável: `id` (quem sou e em que grupos estou), `hostname` e `uname -a`
+(que máquina e que kernel), `grep -v nologin /etc/passwd` (quem mais tem shell),
+`find / -perm -4000 -type f 2>/dev/null` (caminhos de escalação) e `ls -la ~`
+(o que há na home do usuário que você virou). Todos terminam sozinhos e não precisam
+de TTY (seção 3.4). E cada um vai para as evidências com `| tee -a` (seção 3.3).
+Não existe uma ordem "oficial"; o que importa é ir do mais barato e revelador para
+o mais demorado, e registrar tudo.
+</Solution>
+
+<Callout variant="hypothetical" title="o comando que o colega mandou">
+Um colega de trabalho manda no chat: "roda isso aí que resolve teu problema:
+`curl -s https://example.com/instalar.sh | sudo bash`". Ele é
+confiável e está com pressa. O que você faz?
+</Callout>
+
+<Solution title="Discussão do cenário b">
+Não executa assim. Esse comando baixa um script que você nunca leu e o executa
+**como root** (`sudo bash`): se o script ou o site tiverem sido adulterados, como no
+caso Codecov, o invasor ganha a máquina inteira. O caminho seguro: baixar para um
+arquivo (`curl -s -o instalar.sh URL`), ler com `less`, conferir o checksum se o
+fornecedor o publicar (`sha256sum instalar.sh`) e só então decidir executar, de
+preferência sem `sudo`. A confiança no colega não se estende ao servidor de onde o
+script vem.
+</Solution>
+
+<Callout variant="hypothetical" title="o log de 2 GB">
+Um serviço caiu às 3h da manhã e você precisa descobrir por quê. O log tem 2 GB e
+abrir no editor trava a máquina. Como encontrar o erro?
+</Callout>
+
+<Solution title="Discussão do cenário c">
+Nunca abra o arquivo inteiro: deixe o filtro trabalhar. `tail -n 200 servico.log`
+mostra o fim (onde está o erro mais recente); `grep -n "ERROR" servico.log | tail`
+mostra as últimas linhas de erro com o número da linha; `grep -c "ERROR"` conta
+quantas são. Achou o número da linha (digamos, 18230)? Veja só a vizinhança dela
+com `sed -n '18200,18260p' servico.log`, que imprime apenas esse intervalo. Para
+acompanhar o serviço depois de reiniciado, `tail -f`.
+</Solution>
+
+### Exercícios práticos extras (sem flag)
+
+1. Liste, com um único pipeline, os nomes dos usuários do `/etc/passwd` que têm
+   `/bin/bash` como shell.
+2. Na missão 2, descubra **em quantos arquivos** diferentes aparece a palavra
+   `ALERTA` (não quantas linhas).
+3. Na missão 3, gere um arquivo `~/ranking.txt` com as senhas ordenadas da mais
+   repetida para a menos repetida, com a contagem ao lado. Quais são as três primeiras?
+4. Rode `find / -name "*.conf"` sem descartar erros e conte **só os erros**,
+   jogando os resultados fora.
+
+<Solution title="Soluções dos exercícios extras">
+```console
+$ grep "/bin/bash$" /etc/passwd | cut -d: -f1
+root
+aluno
+$ grep -rl ALERTA ~/missao-2 | wc -l
+30
+$ sort ~/missao-3/vazamento.txt | uniq -c | sort -rn > ~/ranking.txt
+$ head -3 ~/ranking.txt
+     38 trustno1
+     37 brasil2024
+     37 batman
+```
+No exercício 4, a ordem dos redirecionamentos importa: `find / -name "*.conf" 2>&1 >/dev/null | wc -l`
+primeiro aponta o stderr para onde o stdout está (o pipe) e só depois manda o stdout
+para `/dev/null`. Assim, só os erros seguem pelo pipe até o `wc -l`.
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O **terminal** só transporta texto; o **shell** interpreta (expande `*`, `~`,
+  `$VAR`, pipes e redirecionamentos); o **kernel** executa e decide cada permissão.
+- Um comando é **comando + opções + argumentos**, separados por espaços. Todo
+  comando devolve um **exit code** (0 = sucesso).
+- Há **uma** árvore a partir de `/`. Caminhos absolutos começam em `/`; relativos,
+  onde você está. Arquivos com ponto são ocultos, mas **não** protegidos.
+- Permissões: tipo + três trios `rwx` (dono, grupo, outros). O kernel aplica **só**
+  o trio da primeira classe que combina com você. Em pastas, `x` é entrar e `w` é
+  criar e apagar.
+- Todo processo tem **stdin, stdout e stderr**. O pipe `|` liga o stdout ao próximo
+  stdin; `>`, `>>` e `2>` mandam saídas para arquivos.
+- Em segurança, o básico é a **enumeração**: quem sou, onde estou, o que posso ler,
+  o que roda com mais poder (SUID).
+- Os maiores desastres vieram de comandos simples: **veja antes de apagar**, proteja
+  variáveis com `:?`, confira a máquina, teste backups e não execute o que não leu.
+
+### Cola rápida
+
+| Tarefa | Comando |
+|---|---|
+| Onde estou / quem sou | `pwd` · `whoami` · `id` · `hostname` |
+| Listar tudo, com detalhes | `ls -la` |
+| Navegar | `cd pasta` · `cd ..` · `cd ~` · `cd -` |
+| Ler | `cat` · `less` · `head -n 5` · `tail -f` · `file` |
+| Criar | `touch arquivo` · `mkdir -p a/b/c` |
+| Copiar / mover / renomear | `cp -r origem destino` · `mv origem destino` |
+| Apagar (com cuidado) | `rm -i arquivo` · `rm -r pasta` · `rmdir pasta-vazia` |
+| Procurar pelo nome | `find . -name "*.txt" -type f` |
+| Procurar no conteúdo | `grep -rin "texto" pasta` |
+| Encadear e contar | `sort` · `uniq -c` · `wc -l` · `cut -d: -f1` |
+| Permissões | `ls -l` · `chmod u+r` · `chmod 600` · `umask` |
+| Ajuda | `comando --help` · `man comando` · `apropos palavra` |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [The Linux command line for beginners](https://ubuntu.com/tutorials/command-line-for-beginners)
+  — tutorial oficial do Ubuntu, curto e prático (em inglês).
+- [The Linux Command Line](https://linuxcommand.org/tlcl.php), de William Shotts —
+  livro completo e gratuito, a melhor continuação deste módulo (em inglês).
+- [Debian Reference, capítulo 1](https://www.debian.org/doc/manuals/debian-reference/ch01.en.html)
+  — tutoriais do sistema, incluindo permissões e o shell (em inglês).
+- [explainshell.com](https://explainshell.com/) — cole um comando e veja cada parte
+  explicada a partir das man pages.
+- [Manual do GNU Bash](https://www.gnu.org/software/bash/manual/bash.html) e
+  [manual do GNU Coreutils](https://www.gnu.org/software/coreutils/manual/coreutils.html)
+  — a referência oficial do shell e de `ls`, `cp`, `sort`, `uniq` e companhia.
+- [man7.org](https://man7.org/linux/man-pages/index.html) — as man pages do Linux
+  na web.
+- [OverTheWire: Bandit](https://overthewire.org/wargames/bandit/) — jogo legal e
+  público, feito para treinar exatamente estas habilidades. Os primeiros níveis são o
+  próximo passo natural depois deste módulo. (Ele roda num servidor público, fora da
+  plataforma: lá, as regras do jogo são a sua autorização.)
+
+**O que vem a seguir:** o módulo 0.4, "Linux: processos, pacotes e edição", completa a
+base: processos e sinais, usuários e grupos, variáveis de ambiente, instalação de
+programas e edição de arquivos no terminal.

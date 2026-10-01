@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 420" role="img" aria-labelledby="t d">
+  <title id="t">Do teclado ao kernel</title>
+  <desc id="d">Você digita no terminal; o terminal entrega o texto ao shell; o shell interpreta e pede ao kernel, por chamadas de sistema, que execute programas e acesse arquivos; o kernel fala com o hardware. A saída faz o caminho de volta.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .small { font-size: 13px; fill: #9fb0a6; }
+    .label { font-size: 17px; font-weight: 700; }
+    .tag { font-size: 12px; fill: #161d1a; font-weight: 700; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; rx: 10; }
+  </style>
+  <rect width="820" height="420" fill="#121815"/>
+
+  <!-- Layers -->
+  <rect class="box" x="40" y="30" width="470" height="62" style="stroke:#5cc8d8"/>
+  <text class="label" x="60" y="58">Você</text>
+  <text class="small" x="60" y="80">digita "ls -la" e aperta Enter</text>
+
+  <rect class="box" x="40" y="112" width="470" height="62" style="stroke:#5cc8d8"/>
+  <text class="label" x="60" y="140">Terminal (emulador)</text>
+  <text class="small" x="60" y="162">janela que mostra texto e lê o teclado</text>
+
+  <rect class="box" x="40" y="194" width="470" height="62" style="stroke:#5ee08a"/>
+  <text class="label" x="60" y="222">Shell (bash)</text>
+  <text class="small" x="60" y="244">interpreta a linha: expande *, ~, $VAR, | e &gt;</text>
+
+  <rect class="box" x="40" y="276" width="470" height="62" style="stroke:#e8c25a"/>
+  <text class="label" x="60" y="304">Kernel (Linux)</text>
+  <text class="small" x="60" y="326">cria processos, aplica permissões, lê o disco</text>
+
+  <rect class="box" x="40" y="358" width="470" height="44" style="stroke:#34413b"/>
+  <text class="label" x="60" y="386">Hardware</text>
+  <text class="small" x="190" y="386">CPU · memória · disco · rede</text>
+
+  <!-- Arrows down (request) -->
+  <g stroke="#5ee08a" stroke-width="2" fill="#5ee08a">
+    <line x1="560" y1="70" x2="560" y2="370"/>
+    <polygon points="553,362 567,362 560,378"/>
+  </g>
+  <text class="small" x="576" y="150" style="fill:#5ee08a">ida: o pedido</text>
+  <text class="small" x="576" y="232" style="fill:#5ee08a">fork + exec do /usr/bin/ls</text>
+  <text class="small" x="576" y="314" style="fill:#5ee08a">"system calls"</text>
+
+  <!-- Arrows up (output) -->
+  <g stroke="#5cc8d8" stroke-width="2" fill="#5cc8d8">
+    <line x1="760" y1="370" x2="760" y2="70"/>
+    <polygon points="753,78 767,78 760,62"/>
+  </g>
+  <text class="small" x="672" y="110" style="fill:#5cc8d8">volta:</text>
+  <text class="small" x="672" y="128" style="fill:#5cc8d8">a saída</text>
+</svg>
