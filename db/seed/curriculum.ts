@@ -275,7 +275,7 @@ export const TRACKS: TrackSeed[] = [
         lab: "webgoat",
       },
       // Phase 6: after the OWASP basics. The lab target is a candidate (DVGA),
-      // confirmed in Phase 8.
+      // confirmed in Phase 10 (Track 4 content).
       {
         slug: "seguranca-de-apis-e-graphql",
         title: "Segurança de APIs e GraphQL",
@@ -367,7 +367,7 @@ export const TRACKS: TrackSeed[] = [
         title: "Conceitos de privilégio e superfícies de escalação",
         prerequisites: ["trilha-5"],
       },
-      // Lab for 6.2, 6.3 and 6.6: decided in Phase 9 (a custom misconfigured
+      // Lab for 6.2, 6.3 and 6.6: decided in Phase 11 (a custom misconfigured
       // container would clash with the "only well-known targets" rule).
       {
         slug: "privesc-linux-enumeracao",
@@ -452,7 +452,7 @@ export const TRACKS: TrackSeed[] = [
         title: "Metodologia completa de ataque (revisão integrada)",
         prerequisites: ["trilha-2", "trilha-3", "trilha-4", "trilha-5", "trilha-6", "trilha-7"],
       },
-      // Lab (8.2, 8.3, 8.5): boot2root machines, decided in Phase 10.
+      // Lab (8.2, 8.3, 8.5): boot2root machines, decided in Phase 11.
       { slug: "ctf-guiado", title: "Máquina CTF guiada", prerequisites: ["metodologia-completa"] },
       { slug: "ctf-sem-dicas", title: "Máquina CTF sem dicas", prerequisites: ["ctf-guiado"] },
       {

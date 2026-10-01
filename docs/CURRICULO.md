@@ -46,7 +46,7 @@ com o alvo usado.
   **sem** contêiner "parceiro" feito sob medida (que não seria alvo consagrado
   nem sandbox sem rede); o nmap (2.4) usa a `rede-de-alvos` (DVWA + Juice Shop).
   Os labs das trilhas 6 a 8 (contêiner Linux de PrivEsc, boot2root) são
-  decididos na Fase 10, junto com o conteúdo.
+  decididos na Fase 11, junto com o conteúdo.
 - **Decisões da Fase 7 — Expansão do catálogo de alvos (MESQUITA):**
   - **Labs construídos e disponíveis:** `juice-shop`, `webgoat`, `vulhub`
     (provisório) e `rede-de-alvos`. Toda a infraestrutura de labs de alvo foi
@@ -329,7 +329,7 @@ As principais classes de falha web, na prática, em alvos consagrados.
   limite de taxa); introspecção e consultas abusivas em GraphQL; JWT em APIs.
 - **Lab:** sim — alvo próprio de APIs. **Candidato:** DVGA (Damn Vulnerable
   GraphQL Application, `dvga`) para GraphQL, com a parte REST no Juice Shop.
-  A escolha final sai na Fase 8, junto com os demais labs dessa fase.
+  A escolha final sai na Fase 10, junto com o conteúdo da Trilha 4.
 
 ### 4.10 — Mini-projeto web: encadear falhas
 - **Pré-requisitos:** 4.2–4.9.
@@ -394,13 +394,13 @@ depois — e o que vem depois dele.
 - **Pré-requisitos:** 6.1; 0.4.
 - **Objetivos:** enumeração manual e com linpeas; ler o resultado e priorizar
   vetores.
-- **Lab:** sim — **contêiner Linux** na rede isolada (definido na Fase 9).
+- **Lab:** sim — **contêiner Linux** na rede isolada (definido na Fase 11).
 
 ### 6.3 — PrivEsc Linux: SUID, cron, sudo, capabilities
 - **Pré-requisitos:** 6.2.
 - **Objetivos:** explorar SUID, cron jobs, regras de sudo e capabilities;
   chegar a root.
-- **Lab:** sim — **contêiner Linux** na rede isolada (definido na Fase 9).
+- **Lab:** sim — **contêiner Linux** na rede isolada (definido na Fase 11).
 
 ### 6.4 — PrivEsc Windows: enumeração
 - **Pré-requisitos:** 6.1; 0.5.
@@ -418,7 +418,7 @@ depois — e o que vem depois dele.
 - **Pré-requisitos:** 6.2–6.5.
 - **Objetivos:** encadear acesso inicial + escalação; documentar o caminho.
 - **Lab:** sim — **contêiner Linux encadeado** (parte Windows como walkthrough;
-  definido na Fase 9).
+  definido na Fase 11).
 
 ### 6.7 — Pós-exploração e persistência *(novo na Fase 6)*
 - **Pré-requisitos:** 6.6.
@@ -426,7 +426,7 @@ depois — e o que vem depois dele.
   evidências, credenciais e informações do host; mecanismos de persistência
   (cron, serviços, chaves SSH, tarefas agendadas) e como detectá-los;
   limpeza e o compromisso de deixar o ambiente como estava.
-- **Lab:** a definir na Fase 9 (junto com o contêiner Linux da trilha).
+- **Lab:** a definir na Fase 11 (junto com o contêiner Linux da trilha).
 
 ---
 
@@ -478,12 +478,12 @@ Juntar tudo: metodologia integrada, máquinas estilo CTF e o relatório final.
 - **Objetivos:** resolver uma máquina boot2root com dicas; aplicar a metodologia
   ponta a ponta.
 - **Lab:** sim — **máquina estilo boot2root** (alvo consagrado, isolado;
-  definido na Fase 10).
+  definido na Fase 11).
 
 ### 8.3 — Máquina CTF sem dicas
 - **Pré-requisitos:** 8.2.
 - **Objetivos:** resolver uma máquina sem dicas; autonomia total.
-- **Lab:** sim — **máquina estilo boot2root** (definido na Fase 10).
+- **Lab:** sim — **máquina estilo boot2root** (definido na Fase 11).
 
 ### 8.4 — Escrevendo o relatório de pentest
 - **Pré-requisitos:** 1.5; 8.2.
@@ -495,4 +495,4 @@ Juntar tudo: metodologia integrada, máquinas estilo CTF e o relatório final.
 - **Pré-requisitos:** 8.1–8.4.
 - **Objetivos:** conduzir um pentest do início ao fim em ambiente isolado e
   entregar o relatório completo.
-- **Lab:** sim — **ambiente final** (alvo consagrado, isolado; definido na Fase 10).
+- **Lab:** sim — **ambiente final** (alvo consagrado, isolado; definido na Fase 11).

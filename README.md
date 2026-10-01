@@ -44,7 +44,7 @@ npm run dev          # http://127.0.0.1:3000 (só local)
 ## Documentação-mestre
 - [`CLAUDE.md`](CLAUDE.md) — fonte de verdade do projeto (objetivo, stack, regras
   de isolamento, convenções).
-- [`ROADMAP.md`](ROADMAP.md) — as 11 fases (0 a 10) de construção da plataforma.
+- [`ROADMAP.md`](ROADMAP.md) — as 12 fases (0 a 11) de construção da plataforma.
 - [`docs/CURRICULO.md`](docs/CURRICULO.md) — currículo detalhado, módulo a módulo.
 - [`docs/MODELO-DE-DADOS.md`](docs/MODELO-DE-DADOS.md) — entidades e relações.
 - [`docs/PADRAO-DE-MODULO.md`](docs/PADRAO-DE-MODULO.md) — régua de qualidade de

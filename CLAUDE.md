@@ -142,7 +142,7 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
   blocos próprios neste arquivo.
 
 ## Documentos do projeto
-- [`ROADMAP.md`](ROADMAP.md) — as 11 fases (0 a 10) de construção da plataforma.
+- [`ROADMAP.md`](ROADMAP.md) — as 12 fases (0 a 11) de construção da plataforma.
 - [`docs/CURRICULO.md`](docs/CURRICULO.md) — currículo detalhado, módulo a módulo.
 - [`docs/MODELO-DE-DADOS.md`](docs/MODELO-DE-DADOS.md) — entidades e relações.
 - [`docs/LABORATORIO.md`](docs/LABORATORIO.md) — como ligar, desligar e validar o

@@ -1,10 +1,12 @@
 # ROADMAP — Plataforma de Cibersegurança
 
-Este roteiro descreve as **11 fases de construção** da plataforma (engenharia).
+Este roteiro descreve as **12 fases de construção** da plataforma (engenharia).
 Não confundir com as **9 trilhas** do currículo (conteúdo de estudo), descritas
 em [`docs/CURRICULO.md`](docs/CURRICULO.md).
 
-- **Fases (0 a 10):** etapas de desenvolvimento do software.
+- **Fases (0 a 11):** etapas de desenvolvimento do software (eram 11, de 0 a
+  10, até a Fase 8 de endurecimento ser inserida; as fases de conteúdo foram
+  renumeradas para 9–11).
 - **Trilhas (0 a 8):** o material de aprendizado que a plataforma entrega
   (eram 8 trilhas, de 0 a 7, até a expansão aprovada na Fase 6).
 
@@ -109,7 +111,7 @@ mostra o desktop do Kali na página. Decisões e trocas de segurança (T1 a T5) 
   pós-exploração, trilhas 3+ renumeradas para 4–8 (59 módulos), na mesma
   migração (0003), com o progresso preservado.
 
-## Fase 7 — Expansão do catálogo de alvos
+## Fase 7 — Expansão do catálogo de alvos ✅
 **Entrega:** toda a infraestrutura de labs de alvo desta expansão, pronta para
 as fases de conteúdo; nenhum módulo MDX novo. (Reescopo aprovado pelo MESQUITA:
 antes esta fase era "Primeiras trilhas de conteúdo"; os labs que estavam
@@ -129,14 +131,40 @@ passam a focar **só o conteúdo MDX**, usando labs já prontos.)
 - Cada lab ligado aos seus módulos no catálogo (`lib/labs/catalog.ts`) e no
   registro fechado (`scripts/lab-common.sh`); `scripts/lab.sh verify` estendido
   aos novos alvos; medições de RAM feitas após o `pull` (terminal).
+- **Pendente:** a validação do isolamento e a RAM dos labs novos dependem do
+  `pull` das imagens (internet, terminal). O `scripts/audit.sh` da Fase 8 os
+  marca como PENDENTE até lá.
 
-## Fase 8 — Conteúdo: Trilhas 0–2
+## Fase 8 — Endurecimento e polimento ✅
+**Entrega:** o projeto auditado, com backup, rotina de disco e acabamento.
+(Fase inserida a pedido do MESQUITA; antes, estes itens estavam no fim da
+antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
+[`docs/LABORATORIO.md`](docs/LABORATORIO.md) e
+[`docs/MANUTENCAO.md`](docs/MANUTENCAO.md).)
+- **Auditoria do isolamento** (`scripts/audit.sh`): host/WSL (todas as portas
+  em escuta, daemon Docker só por socket Unix, permissões), Windows
+  (`.wslconfig`, `portproxy`, portas só em loopback, sonda pela rede local) e
+  todos os labs, um por vez. Verificação estendida a UDP, ICMP, IPv6, proxy no
+  ambiente e à infraestrutura do Guacamole; "teste do teste" automatizado
+  (`--self-test`). Relatórios datados em `docs/auditorias/`.
+- **Hardening:** proxy nginx (`guac-proxy`) na frente do Guacamole, que passa
+  a viver só em rede interna, sem internet (T8); `frame-ancestors` no Guacamole
+  (T9, fecha a troca T2); cabeçalhos de segurança na plataforma (T10).
+- **Backup e restauração** do SQLite (`npm run db:backup` / `db:restore`), com
+  cópia no Windows, backup diário automático ao rodar `npm run dev`, e backup do
+  `/home/kali` e do `labs/.env` (`scripts/lab.sh backup-home`).
+- **Manutenção de disco:** `scripts/disk-cleanup.sh` (WSL/Docker) e
+  `scripts/windows/compact-wsl.ps1` (VHDX esparso ou compactação manual).
+- **Acabamento:** telas de erro e carregamento, títulos de página, acessibilidade
+  e teste automático de consistência dos documentos.
+
+## Fase 9 — Conteúdo: Trilhas 0–2
 **Entrega:** Trilhas 0–2 escritas em MDX, com os labs já prontos.
 - Trilha 0 (Pré-Segurança), Trilha 1 (Fundamentos e Ética) e Trilha 2 (Kit do
   Pentester, agora com OSINT e engenharia social).
 - Labs usados: `linux-sandbox`, `kali`, `dvwa`, `rede-de-alvos` e `juice-shop`.
 
-## Fase 9 — Conteúdo: Trilhas 3–5
+## Fase 10 — Conteúdo: Trilhas 3–5
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.
 - Trilha 3 (Criptografia): `kali` sem alvo e `juice-shop` (JWT).
 - Trilha 4 (Hacking Web / OWASP Top 10 e APIs): `dvwa`, `juice-shop`, `webgoat`
@@ -144,7 +172,7 @@ passam a focar **só o conteúdo MDX**, usando labs já prontos.)
 - Trilha 5 (Redes e Serviços): `vulhub`, Metasploit, CVEs reais (incluindo a
   escolha da CVE final do lab `vulhub`).
 
-## Fase 10 — Conteúdo: Trilhas 6–8, consolidação & polimento
+## Fase 11 — Conteúdo: Trilhas 6–8 e consolidação
 **Entrega:** Trilhas 6–8 e o fechamento do projeto.
 - Trilha 6 (Escalação de Privilégios e pós-exploração): lab Linux em contêiner
   (definido aqui, com o conteúdo); Windows como teoria + walkthrough guiado.
@@ -152,7 +180,5 @@ passam a focar **só o conteúdo MDX**, usando labs já prontos.)
 - Trilha 8 (Consolidação): máquinas estilo CTF (boot2root, definido aqui) e
   relatório de pentest.
 - Testes de interface com Playwright.
-- Hardening final das regras de isolamento (incluindo restringir a saída de
-  internet do contêiner web do Guacamole e, se possível, `frame-ancestors` no
-  Guacamole).
-- Backup e versionamento no GitHub privado.
+- Repetir a auditoria (`scripts/audit.sh`) e o passe de consistência com o
+  conteúdo novo (o hardening, o backup e a rotina de disco vieram na Fase 8).
