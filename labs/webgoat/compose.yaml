@@ -1,0 +1,32 @@
+# OWASP WebGoat target, layered on top of labs/base/compose.yaml (lab
+# "webgoat"). Never run it alone: scripts/lab.sh passes both files.
+#
+# WebGoat is reachable only from Kali, through lab_net (internal, declared in
+# the base file). It serves the lessons on 8080 under /WebGoat; the WebWolf
+# companion on 9090. Neither port is published to the host: the internal 8080
+# does NOT clash with Guacamole's published 127.0.0.1:8080, because WebGoat
+# lives on the internal lab_net and publishes nothing (see docs/LABORATORIO.md).
+#
+# No volume: WebGoat keeps progress in an in-memory H2 database, so recreating
+# the container is a full reset.
+
+x-hardening: &hardening
+  restart: "no"
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  webgoat:
+    <<: *hardening
+    image: webgoat/webgoat:latest@sha256:d4ac9fc2b0a41b68d64dedde684f4783aa60cc785838435a6d5bd5a25b387497
+    hostname: webgoat
+    environment:
+      # Bind to every interface so Kali reaches it by hostname, not just on the
+      # container's loopback. Harmless if the image already defaults to 0.0.0.0.
+      WEBGOAT_HOST: 0.0.0.0
+      WEBGOAT_PORT: "8080"
+      WEBWOLF_HOST: 0.0.0.0
+      WEBWOLF_PORT: "9090"
+      TZ: UTC
+    networks: [lab_net]
+    mem_limit: 1g

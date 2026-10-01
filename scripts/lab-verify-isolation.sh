@@ -53,13 +53,30 @@ if [ -z "$LAB_ACTIVE" ]; then
     echo "No desktop lab is running. Start one with: scripts/lab.sh up dvwa" >&2
     exit 2
 fi
-# Targets of the lab (reachable from Kali), and their private back-end networks.
+# Targets of the lab (reachable from Kali), their private back-end networks, and
+# per-target probe port + positive-control HTTP URL.
+declare -A target_http=() target_port=()
 case "$LAB_ACTIVE" in
-    dvwa) targets=(dvwa); back_nets=(dvwa_back); back_bridges=(cl-dvwaback); back_dbs=(dvwa-db) ;;
+    dvwa)
+        targets=(dvwa); back_nets=(dvwa_back); back_bridges=(cl-dvwaback); back_dbs=(dvwa-db)
+        target_http=([dvwa]="http://dvwa/login.php"); target_port=([dvwa]=80) ;;
+    juice-shop)
+        targets=(juice-shop); back_nets=(); back_bridges=(); back_dbs=()
+        target_http=([juice-shop]="http://juice-shop:3000/"); target_port=([juice-shop]=3000) ;;
+    webgoat)
+        targets=(webgoat); back_nets=(); back_bridges=(); back_dbs=()
+        target_http=([webgoat]="http://webgoat:8080/WebGoat/login"); target_port=([webgoat]=8080) ;;
+    vulhub)
+        targets=(vulhub); back_nets=(); back_bridges=(); back_dbs=()
+        target_http=([vulhub]="http://vulhub/"); target_port=([vulhub]=80) ;;
+    rede-de-alvos)
+        targets=(dvwa juice-shop); back_nets=(dvwa_back); back_bridges=(cl-dvwaback); back_dbs=(dvwa-db)
+        target_http=([dvwa]="http://dvwa/login.php" [juice-shop]="http://juice-shop:3000/")
+        target_port=([dvwa]=80 [juice-shop]=3000) ;;
     *) targets=(); back_nets=(); back_bridges=(); back_dbs=() ;;
 esac
 has_dvwa=false
-[ "${targets[*]}" = dvwa ] && has_dvwa=true
+for t in "${targets[@]}"; do [ "$t" = dvwa ] && has_dvwa=true; done
 
 for svc in kali "${targets[@]}"; do
     if [ -z "$(lab_compose ps -q --status running "$svc")" ]; then
@@ -97,8 +114,10 @@ printf '%-4s  %-7s  %-13s  %s\n' "RES" "EXPECT" "ID" "ATTEMPT"
 if $has_dvwa; then
     expect ok "0.dvwa" "probe control: dvwa -> dvwa-db:3306 (TCP)"  tcp_from dvwa dvwa-db 3306
     expect ok "0.dvwa" "probe control: dvwa resolves 'kali'"         dns_from dvwa kali
-    expect ok "0.kali" "probe control: kali -> dvwa:80 (TCP)"        tcp_from kali dvwa 80
 fi
+for svc in "${targets[@]}"; do
+    expect ok "0.kali" "probe control: kali -> $svc:${target_port[$svc]} (TCP)" tcp_from kali "$svc" "${target_port[$svc]}"
+done
 expect ok "0.kali" "probe control: kali resolves 'guacd' (accepted trade-off)" dns_from kali guacd
 
 # 1-2. No internet (TCP and DNS) from targets and attack box.
@@ -172,10 +191,10 @@ for id in $(docker ps -q --filter "label=com.docker.compose.project=$LAB_PROJECT
 done
 
 # 11-12. Positive controls: the lab must still work.
-if $has_dvwa; then
-    expect ok "11" "kali -> dvwa:80 (HTTP)" \
-        lab_compose exec -T kali curl -fsS -o /dev/null --max-time 5 http://dvwa/login.php
-fi
+for svc in "${targets[@]}"; do
+    expect ok "11" "kali -> $svc (HTTP ${target_http[$svc]})" \
+        lab_compose exec -T kali curl -fsS -o /dev/null --max-time 10 "${target_http[$svc]}"
+done
 expect ok "12a"  "host -> Guacamole http://127.0.0.1:8080/guacamole/" \
     curl -fsS -o /dev/null --max-time 5 http://127.0.0.1:8080/guacamole/
 expect ok "12b"  "guacd -> kali:5901 (VNC)" \

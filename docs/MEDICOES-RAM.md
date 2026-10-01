@@ -95,6 +95,27 @@ Guacamole aberta no painel (Chromium headless), parada.
   `used` do WSL (2.405 MB) inclui o `npm run dev` e o Chromium do teste, então
   não é comparável ao da tabela da Fase 1.
 
+## Fase 7 — labs novos (estimativas; medição pendente)
+
+Os labs da Fase 7 (`juice-shop`, `webgoat`, `vulhub`, `rede-de-alvos`) **ainda
+não foram medidos**: as imagens precisam ser baixadas no terminal
+(`scripts/lab.sh pull <lab>`, único momento com internet) e cada lab subido uma
+vez. Os números abaixo são **estimativas** a partir dos tamanhos de imagem e da
+pilha base já medida (Guacamole + Kali ≈ 0,35 GB ociosa; o Kali domina o pico
+com ≈ 1,35 GB). O pico de cada lab é ditado pelo Kali, que é o mesmo em todos.
+
+| Lab | Alvo(s) | Estimativa ociosa | Estimativa de pico | Observação |
+|---|---|---:|---:|---|
+| `juice-shop` | Juice Shop (Node.js) | ≈ 0,7 GB | ≈ 1,5 GB | Estado em memória; reset = recriar o contêiner. |
+| `rede-de-alvos` | DVWA + Juice Shop | ≈ 0,8 GB | ≈ 1,6 GB | Dois alvos na mesma `lab_net`. |
+| `webgoat` | WebGoat (JVM) | ≈ 0,9 GB | ≈ 1,7 GB | A JVM pesa mais no ocioso. |
+| `vulhub` | Apache 2.4.49 (provisório) | ≈ 0,5 GB | ≈ 1,4 GB | Alvo leve; imagem construída localmente. |
+
+Todas as estimativas ficam **bem abaixo** dos ~7,9 GB da VM do WSL, respeitando
+a regra de **um lab por vez**. Para medir de verdade, com o lab no ar:
+`scripts/lab-measure-ram.sh "<cenário>"`. Substituir esta seção pelas medições
+reais quando o `pull` for feito.
+
 ## Achado importante: o cache do WSL aperta o Windows
 
 Depois de baixar as imagens e construir o Kali, o page cache inflou a VM do

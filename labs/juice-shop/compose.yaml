@@ -1,0 +1,20 @@
+# OWASP Juice Shop target, layered on top of labs/base/compose.yaml (lab
+# "juice-shop", and one of the two targets of "rede-de-alvos"). Never run it
+# alone: scripts/lab.sh passes both files.
+#
+# Juice Shop is reachable only from Kali, through lab_net (internal, declared in
+# the base file). It keeps its state in an in-memory database, so recreating the
+# container is already a full reset (no volume to delete).
+
+x-hardening: &hardening
+  restart: "no"
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  juice-shop:
+    <<: *hardening
+    image: bkimminich/juice-shop:latest@sha256:73c53fbf442e8337b3ea3d98c7e8550308854701ebdfce4cc39768f36b75430e
+    hostname: juice-shop
+    networks: [lab_net]
+    mem_limit: 768m

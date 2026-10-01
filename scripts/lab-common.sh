@@ -12,18 +12,37 @@ LAB_PROJECT="cyberlab"
 # lib/labs/catalog.ts must agree: `npm test` compares it with `lab.sh list`.
 # Files are relative to labs/; the first one's directory is the Compose
 # project directory.
-LAB_SLUGS=(kali dvwa linux-sandbox)
-declare -A LAB_KIND=([kali]=desktop [dvwa]=desktop [linux-sandbox]=sandbox)
-declare -A LAB_PROJECT_OF=([kali]=cyberlab [dvwa]=cyberlab [linux-sandbox]=cyberlab-sandbox)
+# Order matters: it must match the order of the available labs in
+# lib/labs/catalog.ts (the deepEqual in lib/labs/catalog.test.ts).
+LAB_SLUGS=(kali dvwa linux-sandbox juice-shop rede-de-alvos webgoat vulhub)
+declare -A LAB_KIND=(
+    [kali]=desktop [dvwa]=desktop [linux-sandbox]=sandbox
+    [juice-shop]=desktop [rede-de-alvos]=desktop [webgoat]=desktop [vulhub]=desktop
+)
+declare -A LAB_PROJECT_OF=(
+    [kali]=cyberlab [dvwa]=cyberlab [linux-sandbox]=cyberlab-sandbox
+    [juice-shop]=cyberlab [rede-de-alvos]=cyberlab [webgoat]=cyberlab [vulhub]=cyberlab
+)
 declare -A LAB_FILES=(
     [kali]="base/compose.yaml"
     [dvwa]="base/compose.yaml dvwa/compose.yaml"
     [linux-sandbox]="linux-sandbox/compose.yaml"
+    [juice-shop]="base/compose.yaml juice-shop/compose.yaml"
+    [rede-de-alvos]="base/compose.yaml dvwa/compose.yaml juice-shop/compose.yaml"
+    [webgoat]="base/compose.yaml webgoat/compose.yaml"
+    [vulhub]="base/compose.yaml vulhub/compose.yaml"
 )
 # What "reset" throws away: these services are recreated and these named
 # volumes (without the project prefix) are deleted. kali_home is never here.
-declare -A LAB_RESET_SERVICES=([kali]="kali" [dvwa]="dvwa dvwa-db" [linux-sandbox]="sandbox")
-declare -A LAB_RESET_VOLUMES=([kali]="" [dvwa]="dvwa_db_data" [linux-sandbox]="")
+declare -A LAB_RESET_SERVICES=(
+    [kali]="kali" [dvwa]="dvwa dvwa-db" [linux-sandbox]="sandbox"
+    [juice-shop]="juice-shop" [rede-de-alvos]="dvwa dvwa-db juice-shop"
+    [webgoat]="webgoat" [vulhub]="vulhub"
+)
+declare -A LAB_RESET_VOLUMES=(
+    [kali]="" [dvwa]="dvwa_db_data" [linux-sandbox]=""
+    [juice-shop]="" [rede-de-alvos]="dvwa_db_data" [webgoat]="" [vulhub]=""
+)
 
 lab_is_known() {
     [ -n "${1:-}" ] && [ -n "${LAB_KIND[$1]+x}" ]

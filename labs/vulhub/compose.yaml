@@ -1,0 +1,27 @@
+# Vulhub target (lab "vulhub"), layered on top of labs/base/compose.yaml.
+# Never run it alone: scripts/lab.sh passes both files.
+#
+# PROVISIONAL (Fase 7): the final CVE for this lab is still MESQUITA's choice.
+# Three candidates are listed in docs/CURRICULO.md (Trilha 5). This provisional
+# target is the lightest and most didactic of them: Apache httpd 2.4.49,
+# vulnerable to CVE-2021-41773 (path traversal -> RCE). It reproduces the
+# consagrado Vulhub environment on the OFFICIAL httpd image pinned by digest,
+# instead of a community image (see labs/vulhub/Dockerfile).
+#
+# The target is reachable only from Kali, through lab_net (internal). Unlike the
+# upstream Vulhub compose, NO port is published to the host (security trade-off
+# T7, docs/LABORATORIO.md). Built locally, like Kali: scripts/lab.sh pull vulhub.
+
+services:
+  vulhub:
+    build:
+      # Compose resolves relative paths against the project directory
+      # (labs/base, set by scripts/lab.sh), so the Dockerfile is one level up.
+      context: ../vulhub
+    image: cyberlab/vulhub-cve-2021-41773:local
+    hostname: vulhub
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    networks: [lab_net]
+    mem_limit: 256m

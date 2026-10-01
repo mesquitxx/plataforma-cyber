@@ -45,8 +45,31 @@ com o alvo usado.
   (Wireshark) e 2.7 (netcat) usam o DVWA, com Kali e DVWA como as duas pontas,
   **sem** contêiner "parceiro" feito sob medida (que não seria alvo consagrado
   nem sandbox sem rede); o nmap (2.4) usa a `rede-de-alvos` (DVWA + Juice Shop).
-  Os labs das trilhas 6 a 8 (contêiner Linux de PrivEsc, boot2root, AD) são
-  decididos nas fases 9 e 10.
+  Os labs das trilhas 6 a 8 (contêiner Linux de PrivEsc, boot2root) são
+  decididos na Fase 10, junto com o conteúdo.
+- **Decisões da Fase 7 — Expansão do catálogo de alvos (MESQUITA):**
+  - **Labs construídos e disponíveis:** `juice-shop`, `webgoat`, `vulhub`
+    (provisório) e `rede-de-alvos`. Toda a infraestrutura de labs de alvo foi
+    concentrada nesta fase; as fases seguintes focam só o conteúdo MDX.
+  - **Rede de alvos (opção 3a):** DVWA + Juice Shop na mesma rede interna, sem
+    um contêiner de *pivoting* dedicado por ora.
+  - **Active Directory (opção C — adiar):** nenhum lab de AD é construído. A
+    Trilha 7 segue como teoria + walkthrough guiado (como na Fase 0). A
+    comparação das opções (GOAD-Mini, VM de domínio único, adiar) e o porquê
+    estão em [`LABORATORIO.md`](LABORATORIO.md).
+  - **Vulhub — CVE provisória e candidatos (decisão pendente do MESQUITA):** o
+    lab `vulhub` já compila com a opção **mais leve e didática**; a escolha
+    final fica para a Fase 5 de conteúdo (Trilha 5). Candidatos:
+    1. **CVE-2021-41773 — Apache httpd 2.4.49** (*path traversal* → RCE).
+       Imagem oficial `httpd:2.4.49` (~145 MB). Encaixa em **5.1** (enumeração
+       do serviço/versão), **5.4** (reproduzir a CVE; exploração didática por
+       `curl`) e **5.3** (há módulo no Metasploit). **← provisório atual.**
+    2. **CVE-2017-7494 — Samba "SambaCry"** (RCE em SMB). Imagem maior
+       (~300–400 MB). Encaixa em **5.2** (serviços SMB) e **5.3** (módulo
+       `is_known_pipename` no Metasploit).
+    3. **CVE-2017-5638 — Apache Struts2 S2-045** (RCE via header `Content-Type`).
+       Imagem com Tomcat/JVM (~400–600 MB). Encaixa forte em **5.4** e **5.3**
+       (módulo `struts2_code_exec_jakarta`); boa para **5.6** (ponta a ponta).
 
 ---
 
@@ -177,13 +200,13 @@ As ferramentas de base e como operá-las com segurança em labs isolados.
 - **Objetivos:** host discovery; varredura de portas; detecção de serviço e
   versão; NSE básico; leitura de resultados.
 - **Lab:** sim — **Rede de alvos** (`rede-de-alvos`: DVWA + Juice Shop na rede
-  interna; previsto para a Fase 7).
+  interna; disponível desde a Fase 7).
 
 ### 2.5 — Burp Suite
 - **Pré-requisitos:** 0.2; 2.1.
 - **Objetivos:** proxy e intercepção; Repeater; Intruder; escopo; noções de
   fluxo de teste web.
-- **Lab:** sim — **OWASP Juice Shop** (`juice-shop`, previsto para a Fase 7).
+- **Lab:** sim — **OWASP Juice Shop** (`juice-shop`, disponível desde a Fase 7).
 
 ### 2.6 — Wireshark e análise de tráfego
 - **Pré-requisitos:** 0.2; 2.1.
@@ -237,8 +260,8 @@ simétricas e assimétricas, TLS e a transição pós-quântica.
 - **Objetivos:** RSA, Diffie-Hellman e curvas elípticas (ECC); assinaturas
   digitais; certificados e cadeias de confiança; como o TLS combina tudo;
   ataques a JWT fraco (algoritmo `none`, segredo fraco, confusão de chaves).
-- **Lab:** sim — **OWASP Juice Shop** (`juice-shop`, desafios de JWT; previsto
-  para a Fase 7).
+- **Lab:** sim — **OWASP Juice Shop** (`juice-shop`, desafios de JWT; disponível
+  desde a Fase 7).
 
 ### 3.5 — Criptografia pós-quântica
 - **Pré-requisitos:** 3.4.
@@ -291,7 +314,7 @@ As principais classes de falha web, na prática, em alvos consagrados.
 ### 4.7 — CSRF e SSRF
 - **Pré-requisitos:** 4.1.
 - **Objetivos:** CSRF e defesas (tokens); SSRF e alcance de rede interna.
-- **Lab:** sim — **OWASP WebGoat** (`webgoat`, previsto para a Fase 8).
+- **Lab:** sim — **OWASP WebGoat** (`webgoat`, disponível desde a Fase 7).
 
 ### 4.8 — Componentes vulneráveis e desserialização
 - **Pré-requisitos:** 4.1.
@@ -323,7 +346,8 @@ Do recon de serviços à exploração de CVEs reais com ferramentas de mercado.
 - **Pré-requisitos:** 2.4.
 - **Objetivos:** enumerar serviços e versões; banners; mapear superfície de
   ataque de um host.
-- **Lab:** sim — **Vulhub** (`vulhub`, previsto para a Fase 8).
+- **Lab:** sim — **Vulhub** (`vulhub`, disponível desde a Fase 7; alvo
+  **provisório**: Apache 2.4.49 / CVE-2021-41773 — ver candidatos abaixo).
 
 ### 5.2 — Ataque a serviços comuns
 - **Pré-requisitos:** 5.1; 2.7.

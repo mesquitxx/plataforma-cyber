@@ -167,7 +167,7 @@ SQL
 # Only when they are missing: running it again would wipe the target's state.
 init_dvwa_db() {
     users_table() {
-        lab_compose_of dvwa exec -T dvwa-db sh -c \
+        lab_compose_of "$lab" exec -T dvwa-db sh -c \
             'mariadb -udvwa -p"$MARIADB_PASSWORD" -N -e "SHOW TABLES LIKE '\''users'\''" dvwa'
     }
     echo "==> Initialising the DVWA database (if needed)"
@@ -176,7 +176,7 @@ init_dvwa_db() {
         return
     fi
     # Done from inside Kali, the only machine that can reach DVWA.
-    lab_compose_of dvwa exec -T kali bash -s <<'EOF'
+    lab_compose_of "$lab" exec -T kali bash -s <<'EOF'
 set -euo pipefail
 jar="$(mktemp)"
 trap 'rm -f "$jar"' EXIT
@@ -209,6 +209,11 @@ summary() {
     esac
     case "$lab" in
         dvwa) echo "  Inside Kali, DVWA is at http://dvwa/  (admin / password)" ;;
+        juice-shop) echo "  Inside Kali, Juice Shop is at http://juice-shop:3000/" ;;
+        webgoat) echo "  Inside Kali, WebGoat is at http://webgoat:8080/WebGoat/" ;;
+        vulhub) echo "  Inside Kali, the Vulhub target is at http://vulhub/ (provisional: CVE-2021-41773)" ;;
+        rede-de-alvos)
+            echo "  Inside Kali: http://dvwa/ (admin / password) and http://juice-shop:3000/" ;;
     esac
 }
 
@@ -231,9 +236,9 @@ cmd_up() {
     if [ "${LAB_KIND[$lab]}" = desktop ]; then
         ensure_platform_user
     fi
-    if [ "$lab" = dvwa ]; then
-        init_dvwa_db
-    fi
+    case "$lab" in
+        dvwa | rede-de-alvos) init_dvwa_db ;;
+    esac
     summary
 }
 

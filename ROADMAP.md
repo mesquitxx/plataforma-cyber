@@ -109,29 +109,48 @@ mostra o desktop do Kali na página. Decisões e trocas de segurança (T1 a T5) 
   pós-exploração, trilhas 3+ renumeradas para 4–8 (59 módulos), na mesma
   migração (0003), com o progresso preservado.
 
-## Fase 7 — Primeiras trilhas de conteúdo
-**Entrega:** Trilhas 0–2 escritas com labs reais.
-- Conteúdo MDX das Trilhas 0 (Pré-Segurança), 1 (Fundamentos e Ética) e 2
-  (Kit do Pentester, agora com OSINT e engenharia social).
-- Labs novos: Juice Shop e a rede de alvos (DVWA + Juice Shop) para o nmap.
+## Fase 7 — Expansão do catálogo de alvos
+**Entrega:** toda a infraestrutura de labs de alvo desta expansão, pronta para
+as fases de conteúdo; nenhum módulo MDX novo. (Reescopo aprovado pelo MESQUITA:
+antes esta fase era "Primeiras trilhas de conteúdo"; os labs que estavam
+espalhados entre as fases 7 e 8 foram concentrados aqui, e as fases seguintes
+passam a focar **só o conteúdo MDX**, usando labs já prontos.)
+- **OWASP Juice Shop** (`juice-shop`) — alvo web moderno (Node.js).
+- **OWASP WebGoat** (`webgoat`) — aulas guiadas de falhas web em Java.
+- **Vulhub** (`vulhub`) — alvo com uma CVE real. **Provisório:** Apache 2.4.49
+  (CVE-2021-41773), o candidato mais leve e didático; a CVE final é decisão do
+  MESQUITA (três candidatos em [`docs/CURRICULO.md`](docs/CURRICULO.md)).
+- **Rede de alvos** (`rede-de-alvos`) — DVWA + Juice Shop na mesma rede interna
+  para o nmap e a enumeração (opção 3a, sem pivoting dedicado por ora).
+- **Active Directory — decisão:** **adiar** (opção C). A Trilha 7 segue como
+  teoria + walkthrough guiado, como já decidido na Fase 0; nenhum lab de AD é
+  construído, para respeitar os 16 GB. Comparação das opções (GOAD-Mini, VM de
+  domínio único e adiar) registrada em [`docs/LABORATORIO.md`](docs/LABORATORIO.md).
+- Cada lab ligado aos seus módulos no catálogo (`lib/labs/catalog.ts`) e no
+  registro fechado (`scripts/lab-common.sh`); `scripts/lab.sh verify` estendido
+  aos novos alvos; medições de RAM feitas após o `pull` (terminal).
 
-## Fase 8 — Trilhas intermediárias
-**Entrega:** Trilhas 3–5 escritas com labs.
-- Trilha 3 (Criptografia): labs no Kali sem alvo e no Juice Shop (JWT).
-- Trilha 4 (Hacking Web / OWASP Top 10 e APIs): DVWA, Juice Shop, WebGoat e o
-  alvo de APIs/GraphQL (candidato: DVGA, decidido nesta fase).
-- Trilha 5 (Redes e Serviços): Vulhub, Metasploit, CVEs reais.
+## Fase 8 — Conteúdo: Trilhas 0–2
+**Entrega:** Trilhas 0–2 escritas em MDX, com os labs já prontos.
+- Trilha 0 (Pré-Segurança), Trilha 1 (Fundamentos e Ética) e Trilha 2 (Kit do
+  Pentester, agora com OSINT e engenharia social).
+- Labs usados: `linux-sandbox`, `kali`, `dvwa`, `rede-de-alvos` e `juice-shop`.
 
-## Fase 9 — Trilhas avançadas
-**Entrega:** Trilhas 6–7.
-- Trilha 6 (Escalação de Privilégios e pós-exploração): labs Linux em
-  contêiner; Windows como teoria + walkthrough guiado (respeitando a regra de
-  1 lab/16 GB).
-- Trilha 7 (Active Directory): conceitos + walkthrough guiado; lab enxuto.
+## Fase 9 — Conteúdo: Trilhas 3–5
+**Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.
+- Trilha 3 (Criptografia): `kali` sem alvo e `juice-shop` (JWT).
+- Trilha 4 (Hacking Web / OWASP Top 10 e APIs): `dvwa`, `juice-shop`, `webgoat`
+  e o alvo de APIs/GraphQL (candidato DVGA, decidido nesta fase se necessário).
+- Trilha 5 (Redes e Serviços): `vulhub`, Metasploit, CVEs reais (incluindo a
+  escolha da CVE final do lab `vulhub`).
 
-## Fase 10 — Consolidação & polimento
-**Entrega:** Trilha 8 e o fechamento do projeto.
-- Trilha 8 (Consolidação): máquinas estilo CTF e relatório de pentest.
+## Fase 10 — Conteúdo: Trilhas 6–8, consolidação & polimento
+**Entrega:** Trilhas 6–8 e o fechamento do projeto.
+- Trilha 6 (Escalação de Privilégios e pós-exploração): lab Linux em contêiner
+  (definido aqui, com o conteúdo); Windows como teoria + walkthrough guiado.
+- Trilha 7 (Active Directory): conceitos + walkthrough guiado; sem lab local.
+- Trilha 8 (Consolidação): máquinas estilo CTF (boot2root, definido aqui) e
+  relatório de pentest.
 - Testes de interface com Playwright.
 - Hardening final das regras de isolamento (incluindo restringir a saída de
   internet do contêiner web do Guacamole e, se possível, `frame-ancestors` no

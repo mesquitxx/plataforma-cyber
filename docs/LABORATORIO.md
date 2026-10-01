@@ -9,10 +9,20 @@ ativo por vez**. Por baixo, tudo passa por um único executor,
 | `kali` | desktop | Só o Kali (XFCE) no navegador, via Apache Guacamole, sem alvo na rede. |
 | `dvwa` | desktop | O Kali + o DVWA como alvo: a pilha da Fase 1. |
 | `linux-sandbox` | sandbox | Contêiner Debian sem rede para treinar o terminal (módulo 0.3). O shell abre no WSL. |
+| `juice-shop` | desktop | O Kali + o OWASP Juice Shop (Node.js), alvo web moderno. *(Fase 7)* |
+| `rede-de-alvos` | desktop | O Kali + DVWA + Juice Shop na mesma rede interna, para nmap e enumeração. *(Fase 7)* |
+| `webgoat` | desktop | O Kali + o OWASP WebGoat (Java), aulas guiadas de falhas web. *(Fase 7)* |
+| `vulhub` | desktop | O Kali + um alvo Vulhub com CVE real. **Provisório:** Apache 2.4.49 / CVE-2021-41773. *(Fase 7)* |
 
-Os labs **previstos** (Juice Shop, rede de alvos, WebGoat, Vulhub, DVGA) já
-estão no catálogo (`lib/labs/catalog.ts`) e aparecem na interface, mas só podem
-ser ligados na fase que os traz.
+O lab **previsto** `dvga` (Damn Vulnerable GraphQL Application) já está no
+catálogo (`lib/labs/catalog.ts`) e aparece na interface, mas só pode ser ligado
+na fase que o traz (candidato de APIs/GraphQL, decidido na fase de conteúdo da
+Trilha 4).
+
+Os labs da Fase 7 (`juice-shop`, `rede-de-alvos`, `webgoat`, `vulhub`) usam
+imagens que **ainda não estão baixadas**: na primeira vez, rode
+`scripts/lab.sh pull <lab>` no terminal (único momento com internet). O `vulhub`
+é **construído localmente**, como o Kali.
 
 ## Pela plataforma (o jeito normal)
 
@@ -333,6 +343,22 @@ nmap -sV dvwa                # funciona: 80/tcp aberto
   por alguns segundos uma porta canário no IP `eth0` do WSL; só muda quem o
   dispara.
 
+### Fase 7 (aprovadas pelo MESQUITA antes da implementação)
+- **T6 — Imagens de terceiros adicionais (Juice Shop, WebGoat, Vulhub).** São
+  projetos consagrados, vulneráveis-por-design. **Mitigações:** todas as imagens
+  são **fixadas por digest** (`@sha256:`); os alvos ficam só na `lab_net`
+  interna (sem internet, sem acesso ao host); nenhum publica porta; `restart:
+  "no"` e `no-new-privileges`. O risco é equivalente ao do DVWA, já aceito.
+- **T7 — Vulhub sem portas publicadas e porta interna 8080 do WebGoat.** O
+  compose original do Vulhub publica portas no host; nós **as removemos** e
+  expomos o alvo só na `lab_net`. O WebGoat usa a porta **8080 por dentro do
+  contêiner** — o mesmo número do Guacamole —, mas **não** publica porta, então
+  não há conflito no host: a única porta publicada continua sendo
+  `127.0.0.1:8080` (Guacamole). O alvo provisório do `vulhub` é reconstruído
+  **sobre a imagem oficial `httpd:2.4.49`** (fixada por digest), aplicando só as
+  duas configurações erradas que a CVE-2021-41773 exige — não há exploit sob
+  medida (ver `labs/vulhub/Dockerfile`).
+
 ## linux-sandbox (módulo 0.3)
 
 Contêiner de prática **sem nenhuma vulnerabilidade**: só guarda os arquivos das
@@ -371,6 +397,43 @@ do lab. A plataforma só guarda os hashes. Numa plataforma pessoal, o único ris
 **Validação:** 17/17 PASS na Fase 4 e de novo na Fase 6 (também pela interface).
 Os controles positivos (bash roda, missões existem) garantem que os "blocked"
 (internet, DNS, host Docker, `sudo`, `docker.sock`) são reais.
+
+## Estratégia de Windows / Active Directory (decidida na Fase 7)
+
+A Trilha 7 (Active Directory) foi analisada de novo na Fase 7, dentro do limite
+de **16 GB** (VM do WSL com ~7,9 GB úteis; o pico do lab atual é ~1,5 GB).
+**Decisão do MESQUITA: opção C — adiar.** Nenhum lab de AD é construído; a
+trilha segue como **teoria + walkthrough guiado**, como já decidido na Fase 0.
+As três opções comparadas:
+
+| Opção | O que é | RAM (VM + Kali) | Veredito |
+|---|---|---|---|
+| **A — GOAD-Mini** | *Game of Active Directory* reduzido: ~2 VMs Windows (DC + servidor), lab de AD consagrado. | **~8–10 GB** só nas VMs + Kali → estoura os 16 GB. | **Desaconselhada.** Exige trocar Docker/Guacamole por VMs, muda as regras de isolamento e tem alto risco de *thrashing*. |
+| **B — VM de domínio único** | Uma VM Windows Server como DC único, populada com usuários/SPNs vulneráveis; Kali ataca de fora. | **~6–6,5 GB** (VM ~4–5 GB + Kali ~1,5 GB). Cabe, apertado. | **Possível no futuro**, em fase própria. Cobre o essencial (Kerberoasting, AS-REP, pass-the-hash num DC), mas sem movimento lateral entre máquinas e ainda é VM (nova base de isolamento a documentar). |
+| **C — Adiar (teoria + walkthrough)** ✅ | A decisão da Fase 0: conceitos + walkthrough guiado sobre dados de exemplo (dumps, saídas salvas, BloodHound sobre grafo fornecido). | **0 GB adicional.** | **Escolhida.** Sem risco de RAM, sem mudar a arquitetura; entrega a teoria completa de AD e concentra o esforço nos labs Docker que cabem com folga. |
+
+**Troca aceita (futuro, se a opção B for adotada):** VMs passam a ser uma nova
+base de isolamento, com seção própria neste documento (rede de VMs, não redes
+Docker internas), teto de memória no `.wslconfig` e o AD rodando como lab
+exclusivo. **Nada disso foi construído na Fase 7.**
+
+## Validar o isolamento dos labs da Fase 7
+
+Os novos labs entram no mesmo `scripts/lab.sh verify <lab>`, que foi estendido
+para os seus alvos (controles positivos de HTTP por alvo e sondas de porta). Como
+as imagens ainda não foram baixadas, a validação fica pendente do `pull`:
+
+```bash
+scripts/lab.sh pull juice-shop     # idem: webgoat, vulhub, rede-de-alvos
+scripts/lab.sh up juice-shop
+scripts/lab.sh verify juice-shop   # espera-se todos PASS, código 0
+scripts/lab.sh down juice-shop
+```
+
+> **Pendente de execução no terminal (precisa de internet para o `pull`):** os
+> resultados PASS/FAIL e as medições de RAM dos labs da Fase 7 serão anexados
+> aqui e em [`MEDICOES-RAM.md`](MEDICOES-RAM.md) depois da primeira subida. Até
+> lá, os números de RAM no catálogo são **estimativas**, não medições.
 
 ## Memória
 Consumo medido e recomendações para o WSL: [`MEDICOES-RAM.md`](MEDICOES-RAM.md).
