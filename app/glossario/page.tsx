@@ -10,7 +10,7 @@ export default function GlossaryPage() {
       icon={BookOpenText}
       title="Glossário"
       description="Termos técnicos em inglês com explicação em português, montado automaticamente a partir dos módulos."
-      phase="Fase 4"
+      phase="Fase 5"
     />
   );
 }

@@ -2,7 +2,7 @@
  * Initial SQLite schema, following docs/MODELO-DE-DADOS.md.
  *
  * Two kinds of tables:
- * - Content: ingested from MDX in content/ (Phase 3). Ingestion must UPSERT by
+ * - Content: ingested from MDX in content/ (Phase 4). Ingestion must UPSERT by
  *   natural key (slug), never delete-and-recreate, so user state survives.
  * - State: produced by using the platform (progress, flag submissions).
  */
@@ -55,7 +55,7 @@ export const labs = sqliteTable(
     target: text("target", { enum: LAB_TARGETS }).notNull(),
     // Relative to labs/.
     composeDir: text("compose_dir").notNull(),
-    // Host ports, always bound to 127.0.0.1 (enforced in Phase 5).
+    // Host ports, always bound to 127.0.0.1 (enforced in Phase 6).
     localPorts: text("local_ports", { mode: "json" })
       .$type<number[]>()
       .notNull()
@@ -121,14 +121,14 @@ export const tasks = sqliteTable(
 );
 
 // Invariant "flags only exist for tasks with type = 'flag'" spans two tables,
-// so it is enforced by ingestion (Phase 3), not by a CHECK.
+// so it is enforced by ingestion (Phase 4), not by a CHECK.
 export const flags = sqliteTable("flags", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   taskId: integer("task_id")
     .notNull()
     .unique()
     .references(() => tasks.id, { onDelete: "cascade" }),
-  // Never the plaintext answer. Algorithm and normalization: Phase 3.
+  // Never the plaintext answer. Algorithm and normalization: Phase 4.
   answerHash: text("answer_hash").notNull(),
   salt: text("salt").notNull(),
   hint: text("hint"),

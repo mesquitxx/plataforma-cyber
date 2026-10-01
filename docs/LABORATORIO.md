@@ -171,7 +171,7 @@ nmap -sV dvwa                # funciona: 80/tcp aberto
 - **Kali construído com internet e executado sem ela:** atualizar exige rebuild.
 - **O contêiner web do Guacamole tem saída para a internet:** a rede
   `guac_front` precisa ser não interna para publicar a porta. Ele não fica
-  exposto ao alvo; restringir essa saída fica para o hardening (Fase 9).
+  exposto ao alvo; restringir essa saída fica para o hardening (Fase 10).
 - **O `guacd` faz ponte entre `guac_back` e `desktop_net`:** o Kali (que é seu)
   alcança o `guacd`; o DVWA não.
 - **VNC sem TLS:** o tráfego fica dentro da `desktop_net` interna.

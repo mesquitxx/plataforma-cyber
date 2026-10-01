@@ -4,7 +4,7 @@
  * The server only listens on 127.0.0.1, but a malicious page open in the
  * browser could point its own domain at 127.0.0.1 and talk to this app.
  * Such requests carry a foreign Host header, so anything that is not an
- * explicit local origin gets a 403. This matters most from Phase 5 on, when
+ * explicit local origin gets a 403. This matters most from Phase 6 on, when
  * the platform controls Docker.
  *
  * No `matcher`: the guard runs on every request, static assets included.

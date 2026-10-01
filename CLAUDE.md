@@ -55,7 +55,7 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
 - Trabalhe em passos pequenos e verificáveis; commit ao fim de cada fase.
 - Priorize qualidade sobre velocidade. Tempo não é problema.
 
-## Estrutura do app (Fase 2)
+## Estrutura do app
 - `app/` — rotas (App Router). `components/` — componentes; `components/ui/` é
   gerado pelo shadcn/ui. `lib/` — utilitários. `hooks/` — hooks React.
 - `db/schema.ts` — schema Drizzle (fonte do banco). `db/migrations/` — SQL
@@ -63,6 +63,14 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
 - `db/index.ts` — conexão do app (`server-only`). Scripts CLI usam
   `db/connection.ts`, porque `server-only` quebra fora do Next.
 - `data/plataforma.db` — banco local, fora do git.
+- `db/seed/` — currículo de exemplo (Fase 3) e progresso de demonstração;
+  `npm run db:seed` (só conteúdo) e `npm run db:seed:demo` (substitui o
+  progresso). Slugs iguais aos que os MDX usarão.
+- `db/queries/` — leitura do banco para as páginas (`server-only`).
+  `lib/curriculum-state.ts` — regras puras (estados dos módulos, progresso,
+  "continuar"), testadas com `npm test` (executor nativo do Node via `tsx`).
+- Rotas do currículo: `/trilhas`, `/trilhas/[trackSlug]`,
+  `/trilhas/[trackSlug]/[moduleSlug]`.
 - `proxy.ts` — recusa (403) requisições cujo `Host` não seja
   `127.0.0.1:3000`/`localhost:3000` (proteção contra DNS rebinding).
 - Os scripts `dev`/`start` fixam `-H 127.0.0.1 -p 3000`; o padrão do Next.js é
@@ -74,7 +82,7 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
   blocos próprios neste arquivo.
 
 ## Documentos do projeto
-- [`ROADMAP.md`](ROADMAP.md) — as 10 fases (0 a 9) de construção da plataforma.
+- [`ROADMAP.md`](ROADMAP.md) — as 11 fases (0 a 10) de construção da plataforma.
 - [`docs/CURRICULO.md`](docs/CURRICULO.md) — currículo detalhado, módulo a módulo.
 - [`docs/MODELO-DE-DADOS.md`](docs/MODELO-DE-DADOS.md) — entidades e relações.
 - [`docs/LABORATORIO.md`](docs/LABORATORIO.md) — como subir, descer e validar o

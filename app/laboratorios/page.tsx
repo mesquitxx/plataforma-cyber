@@ -10,7 +10,7 @@ export default function LabsPage() {
       icon={FlaskConical}
       title="Laboratórios"
       description="Ligar e desligar alvos isolados (DVWA, Juice Shop, WebGoat, Vulhub), um por vez, sempre em 127.0.0.1."
-      phase="Fase 5"
+      phase="Fase 6"
     />
   );
 }

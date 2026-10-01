@@ -104,12 +104,18 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
 ---
 
 ## Ciclo de vida dos dados
-1. **Ingestão (Fase 3):** os MDX de `content/` são lidos e viram registros de
+1. **Seed (Fase 3):** `npm run db:seed` grava o currículo de
+   `db/seed/curriculum.ts` (trilhas, módulos, pré-requisitos e labs, sem corpo
+   MDX, tarefas nem flags), com *upsert* por slug. Os slugs são os mesmos que os
+   MDX usarão, então a ingestão sobrescreve o seed sem perder estado.
+   `npm run db:seed:demo` também **substitui** o progresso por um progresso de
+   demonstração, descartado na Fase 5.
+2. **Ingestão (Fase 4):** os MDX de `content/` são lidos e viram registros de
    Track, Module, Prerequisite, Task, Flag, Lab e GlossaryTerm. Reexecutar a
    ingestão atualiza o conteúdo sem apagar o estado do usuário.
-2. **Uso (Fase 4+):** o estudo gera Progress; a resolução de flags gera
+3. **Uso (Fase 5+):** o estudo gera Progress; a resolução de flags gera
    FlagSubmission.
-3. **Separação:** conteúdo pode ser regenerado a partir dos arquivos; estado é
+4. **Separação:** conteúdo pode ser regenerado a partir dos arquivos; estado é
    preservado no banco local.
 
 ## Decisões de implementação (Fase 2)
@@ -119,7 +125,7 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
 | Module | `modules` | `slug` único global (pré-requisitos cruzam trilhas). "Tem lab" = `lab_id IS NOT NULL`. |
 | Prerequisite | `module_prerequisites` | Chave composta; CHECK impede um módulo exigir a si mesmo. |
 | Task | `tasks` | `slug` único por módulo. "Exige flag" = `type = 'flag'`. Tipos: `reading`, `exercise`, `lab_step`, `flag`. |
-| Flag | `flags` | Guarda `answer_hash` + `salt`, nunca a resposta em claro. Algoritmo e normalização: Fase 3. |
+| Flag | `flags` | Guarda `answer_hash` + `salt`, nunca a resposta em claro. Algoritmo e normalização: Fase 4. |
 | Lab | `labs` | `target` restrito a `dvwa`, `juice-shop`, `webgoat`, `vulhub`. `local_ports` em JSON. |
 | Progress | `module_progress` e `task_progress` | Duas tabelas com *foreign key* real, em vez de uma referência polimórfica. Status: `not_started`, `in_progress`, `completed`. |
 | FlagSubmission | `flag_submissions` | Guarda o valor digitado (para rever tentativas); o banco é local e fora do git. |
@@ -133,7 +139,37 @@ Legenda: `(1)───<(N)` = um-para-muitos; `(N)>───<(N)` = muitos-para-
   garantida pela ingestão, não por CHECK.
 - **Banco:** `data/plataforma.db`, modo WAL, `foreign_keys = ON`.
 
+## Decisões de navegação (Fase 3)
+- **Slugs:** trilhas `trilha-0` … `trilha-7` (iguais às pastas de `content/`);
+  módulos em português, sem acento e sem número (ex.: `lei-e-etica`), para
+  continuarem estáveis se a ordem mudar. São dados, não código.
+- **Número exibido** do módulo (ex.: "1.4") = número da trilha + `sort_order`
+  (que começa em 1 dentro da trilha). Não é armazenado.
+- **"Pré-requisito: Trilha N"** do currículo vira uma linha em
+  `module_prerequisites` para **cada** módulo da trilha N.
+- **Pré-requisitos sempre anteriores:** todo pré-requisito vem antes do módulo na
+  ordem do currículo (trilha, depois `sort_order`); isso também garante que não
+  há ciclos. O seed valida e aborta se a regra for violada.
+- **Estado do módulo é derivado, não armazenado:** o banco guarda só
+  `not_started | in_progress | completed`. A interface mostra 4 estados, nesta
+  ordem de precedência:
+
+  | Estado | Regra |
+  |---|---|
+  | Concluído | `module_progress.status = 'completed'` |
+  | Em andamento | `status = 'in_progress'` |
+  | Bloqueado | algum pré-requisito não está concluído |
+  | Disponível | todos os pré-requisitos concluídos, sem progresso |
+
+  O bloqueio é **suave**: a página do módulo abre e mostra um aviso com os
+  pré-requisitos pendentes.
+- **"Continuar de onde parei":** o módulo em andamento com `updated_at` mais
+  recente; senão, o primeiro disponível na ordem do currículo.
+- **Labs fora do enum:** módulos cujo lab ainda não cabe em `LAB_TARGETS`
+  (rede interna de alvos, contêiner Linux, máquinas boot2root) ficam sem
+  `lab_id` até a Fase 6.
+
 ## Fora de escopo neste documento
 - Formato exato do front-matter MDX que declara pré-requisitos, tarefas e flags
-  (definido junto da ingestão, na Fase 3).
-- Ligação entre termos do glossário e todos os módulos que os citam (Fase 4).
+  (definido junto da ingestão, na Fase 4).
+- Ligação entre termos do glossário e todos os módulos que os citam (Fase 5).

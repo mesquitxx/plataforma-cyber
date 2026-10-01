@@ -1,15 +1,20 @@
-import { Database, FlaskConical, Route } from "lucide-react";
+import { Gauge } from "lucide-react";
 import { connection } from "next/server";
-import { Badge } from "@/components/ui/badge";
+import { ContinueCard } from "@/components/continue-card";
+import { ProgressMeter } from "@/components/progress-meter";
+import { SetupHint } from "@/components/setup-hint";
+import { TrackCard } from "@/components/track-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { sqlite } from "@/db";
+import { getCurriculum } from "@/db/queries/curriculum";
 import { getDatabaseStatus } from "@/db/status";
 
 export default async function HomePage() {
-  // better-sqlite3 is synchronous: opt out of prerendering so the status is
+  // better-sqlite3 is synchronous: opt out of prerendering so the data is
   // read per request, not frozen at build time.
   await connection();
   const status = getDatabaseStatus(sqlite);
+  const curriculum = status.ok ? getCurriculum() : null;
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
@@ -23,56 +28,56 @@ export default async function HomePage() {
         </p>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Database className="size-4 text-info" aria-hidden />
-              Banco de dados
-            </CardTitle>
-            <CardDescription>SQLite local, sem servidor.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 font-mono text-xs">
-            {status.ok ? (
-              <Badge className="bg-primary/15 text-primary">conectado</Badge>
-            ) : (
-              <Badge variant="destructive">sem schema</Badge>
-            )}
-            <p className="text-muted-foreground">
-              {status.tables.length} tabelas · {status.appliedMigrations} migração(ões)
-            </p>
-            {!status.ok && (
-              <p className="text-warning">Rode: npm run db:migrate</p>
-            )}
-          </CardContent>
-        </Card>
+      {!curriculum ? (
+        <SetupHint
+          title="Banco sem schema"
+          description="O banco local ainda não tem as tabelas. Aplique as migrações e carregue o currículo."
+          commands={["npm run db:migrate", "npm run db:seed"]}
+        />
+      ) : curriculum.tracks.length === 0 ? (
+        <SetupHint
+          title="Currículo vazio"
+          description="O banco existe, mas ainda não tem trilhas. Carregue o currículo de exemplo."
+          commands={["npm run db:seed"]}
+        />
+      ) : (
+        <>
+          <section className="grid gap-4 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <ContinueCard target={curriculum.continueTarget} />
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Gauge className="size-4 text-info" aria-hidden />
+                  Progresso geral
+                </CardTitle>
+                <CardDescription>Módulos concluídos em todo o currículo.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-3 font-mono text-4xl font-semibold text-primary">
+                  {curriculum.summary.percent}%
+                </p>
+                <ProgressMeter summary={curriculum.summary} label="Progresso geral" />
+              </CardContent>
+            </Card>
+          </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Route className="size-4 text-info" aria-hidden />
-              Trilhas
-            </CardTitle>
-            <CardDescription>8 trilhas, do zero ao avançado.</CardDescription>
-          </CardHeader>
-          <CardContent className="font-mono text-xs text-muted-foreground">
-            Conteúdo chega na Fase 4.
-          </CardContent>
-        </Card>
+          <section className="space-y-4">
+            <h2 className="font-mono text-sm text-muted-foreground">$ ls trilhas/</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {curriculum.tracks.map((track) => (
+                <TrackCard key={track.slug} track={track} />
+              ))}
+            </div>
+          </section>
+        </>
+      )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FlaskConical className="size-4 text-info" aria-hidden />
-              Laboratório ativo
-            </CardTitle>
-            <CardDescription>Um laboratório por vez (regra de RAM).</CardDescription>
-          </CardHeader>
-          <CardContent className="font-mono text-xs text-muted-foreground">
-            Controle pela plataforma chega na Fase 5.
-          </CardContent>
-        </Card>
-      </section>
+      <footer className="font-mono text-xs text-muted-foreground">
+        SQLite {status.ok ? "conectado" : "sem schema"} · {status.tables.length} tabelas ·{" "}
+        {status.appliedMigrations} migração(ões) · progresso de exemplo até a Fase 5
+      </footer>
     </div>
   );
 }
