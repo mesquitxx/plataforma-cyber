@@ -1,0 +1,30 @@
+# linux-sandbox: practice box for module 0.3 (no vulnerability, no network).
+# Controlled by scripts/lab-sandbox.sh (npm run lab:sandbox). See docs/LABORATORIO.md.
+#
+# Isolation:
+# - network_mode: none: only the loopback interface; no internet, no LAN,
+#   no host, no other container. No published ports.
+# - Unprivileged user (aluno, uid 1000), no sudo, every capability dropped,
+#   no-new-privileges, no Docker socket.
+# - Small memory and process limits; restart: "no" (never starts on its own).
+# - Disposable: `reset` recreates the container from the image.
+
+name: cyberlab-sandbox
+
+services:
+  sandbox:
+    build: .
+    image: cyberlab/linux-sandbox:local
+    hostname: sandbox
+    init: true
+    restart: "no"
+    network_mode: none
+    user: aluno
+    working_dir: /home/aluno
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    pids_limit: 128
+    environment:
+      TERM: xterm-256color

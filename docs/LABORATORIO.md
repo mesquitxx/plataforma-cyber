@@ -1,7 +1,11 @@
 # Laboratório — subir, descer e validar o isolamento
 
-Pilha da **Fase 1 (prova de fogo)**: um desktop Kali no navegador, via Apache
-Guacamole, atacando o DVWA. Tudo local, com **um laboratório ativo por vez**.
+Dois laboratórios, sempre **um ativo por vez**:
+
+- **Pilha da Fase 1** (Trilha 2 em diante): um desktop Kali no navegador, via
+  Apache Guacamole, atacando o DVWA. Descrita a partir de "Arquitetura".
+- **`linux-sandbox`** (Fase 4, módulo 0.3): um contêiner Debian sem rede para
+  treinar o terminal. Descrito em "linux-sandbox", no fim deste documento.
 
 ## Arquitetura
 
@@ -183,6 +187,45 @@ nmap -sV dvwa                # funciona: 80/tcp aberto
   barreira.
 - **nmap sem file capabilities:** preferimos `sudo nmap` a dar `NET_ADMIN` ao
   contêiner inteiro.
+
+## linux-sandbox (módulo 0.3)
+
+Contêiner de prática **sem nenhuma vulnerabilidade**: só guarda os arquivos das
+missões do módulo 0.3. Fica em `labs/linux-sandbox/` (projeto Compose
+`cyberlab-sandbox`) e é controlado por `scripts/lab-sandbox.sh`.
+
+```bash
+npm run lab:sandbox             # sobe (se preciso) e abre um shell como "aluno"
+npm run lab:sandbox -- reset    # descarta o contêiner e começa do zero
+npm run lab:sandbox -- down     # desliga
+npm run lab:sandbox -- verify   # prova o isolamento (17 testes)
+npm run lab:sandbox -- rebuild  # reconstrói a imagem (usa internet)
+```
+
+**Isolamento:**
+- `network_mode: none`: só a interface de loopback. Sem internet, sem rede local,
+  sem acesso ao host nem a outros contêineres; nenhuma porta publicada.
+- Usuário `aluno` (UID 1000), **sem `sudo`** (nem instalado), todas as
+  *capabilities* removidas (`cap_drop: ALL`), `no-new-privileges`, sem
+  `privileged` e sem `docker.sock`.
+- `mem_limit: 128m`, `pids_limit: 128`, `restart: "no"`.
+- Descartável: o `reset` recria o contêiner a partir da imagem.
+- Recusa subir se houver contêineres de outro projeto Compose rodando (e o
+  `lab-up.sh` recusa subir com o sandbox no ar): regra de um lab por vez.
+
+**Imagem:** `debian:trixie-slim` fixada por digest. O Dockerfile devolve as man
+pages que a variante slim remove, porque o módulo ensina `man`. As missões são
+geradas no build por `missions/build-missions.sh`, de forma determinística (as
+saídas citadas no módulo são sempre as mesmas).
+
+**Troca aceita:** as flags do 0.3 estão em texto claro em
+`labs/linux-sandbox/missions/build-missions.sh`, porque precisam existir dentro
+do lab. A plataforma só guarda os hashes. Numa plataforma pessoal, o único risco
+é "colar" de si mesmo.
+
+**Validação (Fase 4):** `npm run lab:sandbox -- verify` deu 17/17 PASS. Os
+controles positivos (bash roda, missões existem) garantem que os "blocked"
+(internet, DNS, host Docker, `sudo`, `docker.sock`) são reais.
 
 ## Memória
 Consumo medido e recomendações para o WSL: [`MEDICOES-RAM.md`](MEDICOES-RAM.md).
