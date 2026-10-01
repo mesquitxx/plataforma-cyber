@@ -20,7 +20,9 @@ import {
 // "linux-sandbox" is a practice box with no vulnerability and no network,
 // not an attack target (see CLAUDE.md, isolation rules).
 export const LAB_TARGETS = ["dvwa", "juice-shop", "webgoat", "vulhub", "linux-sandbox"] as const;
-export const TASK_TYPES = ["reading", "exercise", "lab_step", "flag"] as const;
+export const TASK_TYPES = ["reading", "exercise", "lab_step", "flag", "quiz"] as const;
+/** Task types the reader marks as done by hand (flags and quizzes are graded). */
+export const MANUAL_TASK_TYPES = ["reading", "exercise", "lab_step"] as const;
 export const PROGRESS_STATUS = ["not_started", "in_progress", "completed"] as const;
 
 export type LabTarget = (typeof LAB_TARGETS)[number];
@@ -122,8 +124,8 @@ export const tasks = sqliteTable(
   ],
 );
 
-// Invariant "flags only exist for tasks with type = 'flag'" spans two tables,
-// so it is enforced by ingestion (Phase 4), not by a CHECK.
+// Invariants "flags only exist for tasks with type = 'flag'" (and quizzes for
+// type = 'quiz') span two tables, so ingestion enforces them, not a CHECK.
 export const flags = sqliteTable("flags", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   taskId: integer("task_id")
@@ -136,6 +138,42 @@ export const flags = sqliteTable("flags", {
   hint: text("hint"),
 });
 
+// Same pattern as flags: one row per task with type = 'quiz' (Phase 5). The
+// answer key stays on the server; the quiz is graded by a Server Action.
+export const quizzes = sqliteTable(
+  "quizzes",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    taskId: integer("task_id")
+      .notNull()
+      .unique()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    // Minimum share of right answers (1–100) that completes the task.
+    passPercent: integer("pass_percent").notNull(),
+  },
+  (t) => [check("quizzes_pass_percent_range", sql`${t.passPercent} BETWEEN 1 AND 100`)],
+);
+
+export const quizQuestions = sqliteTable(
+  "quiz_questions",
+  {
+    quizId: integer("quiz_id")
+      .notNull()
+      .references(() => quizzes.id, { onDelete: "cascade" }),
+    // 1-based position in the quiz.
+    sortOrder: integer("sort_order").notNull(),
+    question: text("question").notNull(),
+    options: text("options", { mode: "json" }).$type<string[]>().notNull(),
+    // 0-based index into options.
+    answerIndex: integer("answer_index").notNull(),
+    explanation: text("explanation").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.quizId, t.sortOrder] }),
+    check("quiz_questions_answer_index_valid", sql`${t.answerIndex} >= 0`),
+  ],
+);
+
 export const glossaryTerms = sqliteTable(
   "glossary_terms",
   {
@@ -147,6 +185,23 @@ export const glossaryTerms = sqliteTable(
     }),
   },
   (t) => [uniqueIndex("glossary_terms_term_ci_uq").on(sql`lower(${t.term})`)],
+);
+
+/** Every module that marks a term with <GlossaryTerm> (Phase 5), the first one included. */
+export const glossaryTermMentions = sqliteTable(
+  "glossary_term_mentions",
+  {
+    termId: integer("term_id")
+      .notNull()
+      .references(() => glossaryTerms.id, { onDelete: "cascade" }),
+    moduleId: integer("module_id")
+      .notNull()
+      .references(() => modules.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.termId, t.moduleId] }),
+    index("glossary_term_mentions_module_idx").on(t.moduleId),
+  ],
 );
 
 // ---------- User state ----------
@@ -198,5 +253,25 @@ export const flagSubmissions = sqliteTable(
       "flag_submissions_value_only_when_wrong",
       sql`(${t.isCorrect} = 0 AND ${t.submittedValue} IS NOT NULL) OR (${t.isCorrect} = 1 AND ${t.submittedValue} IS NULL)`,
     ),
+  ],
+);
+
+export const quizAttempts = sqliteTable(
+  "quiz_attempts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    quizId: integer("quiz_id")
+      .notNull()
+      .references(() => quizzes.id, { onDelete: "cascade" }),
+    // Chosen option per question, in order. Score and total are frozen at
+    // submission time, so editing the quiz later does not rewrite history.
+    answers: text("answers", { mode: "json" }).$type<number[]>().notNull(),
+    score: integer("score").notNull(),
+    total: integer("total").notNull(),
+    submittedAt: integer("submitted_at", { mode: "timestamp" }).notNull().default(now),
+  },
+  (t) => [
+    index("quiz_attempts_quiz_idx").on(t.quizId),
+    check("quiz_attempts_score_range", sql`${t.score} BETWEEN 0 AND ${t.total} AND ${t.total} > 0`),
   ],
 );
