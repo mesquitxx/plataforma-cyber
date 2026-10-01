@@ -7,6 +7,7 @@ const LAB_TARGET_LABELS: Record<LabTarget, string> = {
   "juice-shop": "Juice Shop",
   webgoat: "WebGoat",
   vulhub: "Vulhub",
+  "linux-sandbox": "Sandbox Linux",
 };
 
 export function LabBadge({ target }: { target: LabTarget }) {

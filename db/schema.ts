@@ -17,7 +17,9 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-export const LAB_TARGETS = ["dvwa", "juice-shop", "webgoat", "vulhub"] as const;
+// "linux-sandbox" is a practice box with no vulnerability and no network,
+// not an attack target (see CLAUDE.md, isolation rules).
+export const LAB_TARGETS = ["dvwa", "juice-shop", "webgoat", "vulhub", "linux-sandbox"] as const;
 export const TASK_TYPES = ["reading", "exercise", "lab_step", "flag"] as const;
 export const PROGRESS_STATUS = ["not_started", "in_progress", "completed"] as const;
 
@@ -128,7 +130,7 @@ export const flags = sqliteTable("flags", {
     .notNull()
     .unique()
     .references(() => tasks.id, { onDelete: "cascade" }),
-  // Never the plaintext answer. Algorithm and normalization: Phase 4.
+  // Never the plaintext answer: "scrypt$N$r$p$<hex>" (lib/flag-hash.ts).
   answerHash: text("answer_hash").notNull(),
   salt: text("salt").notNull(),
   hint: text("hint"),
@@ -184,11 +186,17 @@ export const flagSubmissions = sqliteTable(
     flagId: integer("flag_id")
       .notNull()
       .references(() => flags.id, { onDelete: "cascade" }),
-    // Stored as typed, to review past attempts. The database is local and
-    // never versioned (data/ is gitignored).
-    submittedValue: text("submitted_value").notNull(),
+    // Only wrong attempts keep what was typed (to review mistakes); a correct
+    // submission never stores the answer in clear text.
+    submittedValue: text("submitted_value"),
     isCorrect: integer("is_correct", { mode: "boolean" }).notNull(),
     submittedAt: integer("submitted_at", { mode: "timestamp" }).notNull().default(now),
   },
-  (t) => [index("flag_submissions_flag_idx").on(t.flagId)],
+  (t) => [
+    index("flag_submissions_flag_idx").on(t.flagId),
+    check(
+      "flag_submissions_value_only_when_wrong",
+      sql`(${t.isCorrect} = 0 AND ${t.submittedValue} IS NOT NULL) OR (${t.isCorrect} = 1 AND ${t.submittedValue} IS NULL)`,
+    ),
+  ],
 );

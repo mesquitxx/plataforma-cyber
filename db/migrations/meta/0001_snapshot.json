@@ -1,0 +1,733 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "9cc30bd5-ca88-423c-b7bf-b59076df803b",
+  "prevId": "13506f36-29ad-44bb-85bd-e42b8eb8d0c7",
+  "tables": {
+    "flag_submissions": {
+      "name": "flag_submissions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "flag_id": {
+          "name": "flag_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "submitted_value": {
+          "name": "submitted_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_correct": {
+          "name": "is_correct",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "flag_submissions_flag_idx": {
+          "name": "flag_submissions_flag_idx",
+          "columns": [
+            "flag_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "flag_submissions_flag_id_flags_id_fk": {
+          "name": "flag_submissions_flag_id_flags_id_fk",
+          "tableFrom": "flag_submissions",
+          "tableTo": "flags",
+          "columnsFrom": [
+            "flag_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "flag_submissions_value_only_when_wrong": {
+          "name": "flag_submissions_value_only_when_wrong",
+          "value": "(\"flag_submissions\".\"is_correct\" = 0 AND \"flag_submissions\".\"submitted_value\" IS NOT NULL) OR (\"flag_submissions\".\"is_correct\" = 1 AND \"flag_submissions\".\"submitted_value\" IS NULL)"
+        }
+      }
+    },
+    "flags": {
+      "name": "flags",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "task_id": {
+          "name": "task_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "answer_hash": {
+          "name": "answer_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "salt": {
+          "name": "salt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "hint": {
+          "name": "hint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "flags_task_id_unique": {
+          "name": "flags_task_id_unique",
+          "columns": [
+            "task_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "flags_task_id_tasks_id_fk": {
+          "name": "flags_task_id_tasks_id_fk",
+          "tableFrom": "flags",
+          "tableTo": "tasks",
+          "columnsFrom": [
+            "task_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "glossary_terms": {
+      "name": "glossary_terms",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "term": {
+          "name": "term",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "definition": {
+          "name": "definition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "first_module_id": {
+          "name": "first_module_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "glossary_terms_term_ci_uq": {
+          "name": "glossary_terms_term_ci_uq",
+          "columns": [
+            "lower(\"term\")"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "glossary_terms_first_module_id_modules_id_fk": {
+          "name": "glossary_terms_first_module_id_modules_id_fk",
+          "tableFrom": "glossary_terms",
+          "tableTo": "modules",
+          "columnsFrom": [
+            "first_module_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "labs": {
+      "name": "labs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "target": {
+          "name": "target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "compose_dir": {
+          "name": "compose_dir",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "local_ports": {
+          "name": "local_ports",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "isolation_notes": {
+          "name": "isolation_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "labs_slug_unique": {
+          "name": "labs_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "labs_target_valid": {
+          "name": "labs_target_valid",
+          "value": "\"labs\".\"target\" IN ('dvwa', 'juice-shop', 'webgoat', 'vulhub', 'linux-sandbox')"
+        }
+      }
+    },
+    "module_prerequisites": {
+      "name": "module_prerequisites",
+      "columns": {
+        "module_id": {
+          "name": "module_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "required_module_id": {
+          "name": "required_module_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "module_prerequisites_required_idx": {
+          "name": "module_prerequisites_required_idx",
+          "columns": [
+            "required_module_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "module_prerequisites_module_id_modules_id_fk": {
+          "name": "module_prerequisites_module_id_modules_id_fk",
+          "tableFrom": "module_prerequisites",
+          "tableTo": "modules",
+          "columnsFrom": [
+            "module_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "module_prerequisites_required_module_id_modules_id_fk": {
+          "name": "module_prerequisites_required_module_id_modules_id_fk",
+          "tableFrom": "module_prerequisites",
+          "tableTo": "modules",
+          "columnsFrom": [
+            "required_module_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "module_prerequisites_module_id_required_module_id_pk": {
+          "columns": [
+            "module_id",
+            "required_module_id"
+          ],
+          "name": "module_prerequisites_module_id_required_module_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "module_prerequisites_not_self": {
+          "name": "module_prerequisites_not_self",
+          "value": "\"module_prerequisites\".\"module_id\" <> \"module_prerequisites\".\"required_module_id\""
+        }
+      }
+    },
+    "module_progress": {
+      "name": "module_progress",
+      "columns": {
+        "module_id": {
+          "name": "module_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "module_progress_module_id_modules_id_fk": {
+          "name": "module_progress_module_id_modules_id_fk",
+          "tableFrom": "module_progress",
+          "tableTo": "modules",
+          "columnsFrom": [
+            "module_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "module_progress_status_valid": {
+          "name": "module_progress_status_valid",
+          "value": "\"module_progress\".\"status\" IN ('not_started', 'in_progress', 'completed')"
+        }
+      }
+    },
+    "modules": {
+      "name": "modules",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "track_id": {
+          "name": "track_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "body_mdx": {
+          "name": "body_mdx",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "lab_id": {
+          "name": "lab_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "modules_slug_unique": {
+          "name": "modules_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        },
+        "modules_track_idx": {
+          "name": "modules_track_idx",
+          "columns": [
+            "track_id"
+          ],
+          "isUnique": false
+        },
+        "modules_lab_idx": {
+          "name": "modules_lab_idx",
+          "columns": [
+            "lab_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "modules_track_id_tracks_id_fk": {
+          "name": "modules_track_id_tracks_id_fk",
+          "tableFrom": "modules",
+          "tableTo": "tracks",
+          "columnsFrom": [
+            "track_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "modules_lab_id_labs_id_fk": {
+          "name": "modules_lab_id_labs_id_fk",
+          "tableFrom": "modules",
+          "tableTo": "labs",
+          "columnsFrom": [
+            "lab_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "task_progress": {
+      "name": "task_progress",
+      "columns": {
+        "task_id": {
+          "name": "task_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "task_progress_task_id_tasks_id_fk": {
+          "name": "task_progress_task_id_tasks_id_fk",
+          "tableFrom": "task_progress",
+          "tableTo": "tasks",
+          "columnsFrom": [
+            "task_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "task_progress_status_valid": {
+          "name": "task_progress_status_valid",
+          "value": "\"task_progress\".\"status\" IN ('not_started', 'in_progress', 'completed')"
+        }
+      }
+    },
+    "tasks": {
+      "name": "tasks",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "module_id": {
+          "name": "module_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "prompt": {
+          "name": "prompt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "tasks_module_slug_uq": {
+          "name": "tasks_module_slug_uq",
+          "columns": [
+            "module_id",
+            "slug"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "tasks_module_id_modules_id_fk": {
+          "name": "tasks_module_id_modules_id_fk",
+          "tableFrom": "tasks",
+          "tableTo": "modules",
+          "columnsFrom": [
+            "module_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "tasks_type_valid": {
+          "name": "tasks_type_valid",
+          "value": "\"tasks\".\"type\" IN ('reading', 'exercise', 'lab_step', 'flag')"
+        }
+      }
+    },
+    "tracks": {
+      "name": "tracks",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "number": {
+          "name": "number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "tracks_slug_unique": {
+          "name": "tracks_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        },
+        "tracks_number_unique": {
+          "name": "tracks_number_unique",
+          "columns": [
+            "number"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "tracks_number_range": {
+          "name": "tracks_number_range",
+          "value": "\"tracks\".\"number\" BETWEEN 0 AND 7"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {
+      "glossary_terms_term_ci_uq": {
+        "columns": {
+          "lower(\"term\")": {
+            "isExpression": true
+          }
+        }
+      }
+    }
+  }
+}

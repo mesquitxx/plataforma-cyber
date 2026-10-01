@@ -10,12 +10,22 @@ com o alvo usado.
   primeira ocorrência (alimentam o Glossário automático).
 - **Alvos de lab:** apenas projetos vulneráveis-por-design consagrados —
   DVWA, OWASP Juice Shop, OWASP WebGoat, Vulhub. Nunca exploit/malware sob medida.
+- **Sandboxes de prática:** contêineres sem nenhuma vulnerabilidade e sem rede
+  (ex.: `linux-sandbox`), só para treinar comandos. São permitidos; não são
+  alvos de ataque.
 - **Isolamento:** todo lab escuta só em `127.0.0.1`, em rede interna sem internet,
   com **um laboratório ativo por vez** (ver [`../CLAUDE.md`](../CLAUDE.md)).
+- **Padrão de qualidade:** todo módulo segue
+  [`PADRAO-DE-MODULO.md`](PADRAO-DE-MODULO.md) (10 seções e checklist final) e
+  parte do modelo [`TEMPLATE-MODULO.mdx`](TEMPLATE-MODULO.mdx).
 - **Decisões de escopo (aprovadas na Fase 0):**
   - **PrivEsc Windows (5.4, 5.5):** teoria + walkthrough guiado, sem lab local
     pesado, para respeitar a regra de 1 lab/16 GB.
   - **Active Directory (Trilha 6):** conceitos + walkthrough guiado; lab enxuto.
+- **Decisão da Fase 4:** o antigo "0.3 Terminal Linux essencial" foi dividido em
+  0.3 (primeiros passos) e 0.4 (processos, pacotes e edição). Os módulos 0.4 a
+  0.7 passaram a 0.5 a 0.8. Tudo que exigia o antigo 0.3 passou a exigir o 0.4,
+  que por sua vez exige o 0.3. O currículo tem agora **50 módulos**.
 
 ---
 
@@ -35,32 +45,42 @@ scripting. Sem labs de ataque; prática guiada no próprio ambiente.
   requisição HTTP viaja da ponta ao servidor.
 - **Lab:** não (exercícios guiados de inspeção).
 
-### 0.3 — Terminal Linux essencial
+### 0.3 — Linux: primeiros passos no terminal
 - **Pré-requisitos:** 0.1.
-- **Objetivos:** navegação de arquivos, permissões, pipes e redirecionamento,
-  processos, pacotes; edição no terminal.
-- **Lab:** não (prática no próprio WSL/Ubuntu).
+- **Objetivos:** terminal, shell e prompt; anatomia de um comando e como pedir
+  ajuda; sistema de arquivos e navegação; criar, copiar, mover e apagar;
+  ler e procurar arquivos; pipes e redirecionamento; ler e alterar permissões.
+- **Lab:** sim — **linux-sandbox** (contêiner de prática sem rede).
+- **Módulo-piloto** da Fase 4: referência de qualidade para os demais.
 
-### 0.4 — Windows para quem vem do Linux
+### 0.4 — Linux: processos, pacotes e edição
 - **Pré-requisitos:** 0.3.
+- **Objetivos:** processos (`ps`, `top`, sinais, `kill`, jobs); usuários e
+  grupos; variáveis de ambiente e `PATH`; gerenciador de pacotes (`apt`);
+  edição no terminal (`nano` e noções de `vim`).
+- **Lab:** a definir na Fase 7 (provavelmente o linux-sandbox).
+- Criado na Fase 4, ao dividir o antigo "Terminal Linux essencial" em dois.
+
+### 0.5 — Windows para quem vem do Linux
+- **Pré-requisitos:** 0.4.
 - **Objetivos:** conceitos de Windows (usuários, serviços, registro); `cmd` e
   noções de PowerShell; diferenças relevantes para pentest.
 - **Lab:** não.
 
-### 0.5 — Scripting: Bash
-- **Pré-requisitos:** 0.3.
+### 0.6 — Scripting: Bash
+- **Pré-requisitos:** 0.4.
 - **Objetivos:** variáveis, condicionais, loops, funções; automação de tarefas
   comuns de recon; boas práticas de scripts.
 - **Lab:** não (exercícios de script).
 
-### 0.6 — Scripting: Python para segurança
-- **Pré-requisitos:** 0.5.
+### 0.7 — Scripting: Python para segurança
+- **Pré-requisitos:** 0.6.
 - **Objetivos:** sintaxe essencial; requisições HTTP; sockets; parsing de saída;
   pequenas ferramentas de apoio ao pentest.
 - **Lab:** não (exercícios de script).
 
-### 0.7 — Git e versionamento básico
-- **Pré-requisitos:** 0.3.
+### 0.8 — Git e versionamento básico
+- **Pré-requisitos:** 0.4.
 - **Objetivos:** clone, commit, branch, diff; por que versionar anotações e
   evidências; fluxo com repositório privado.
 - **Lab:** não.
@@ -130,7 +150,7 @@ As ferramentas de base e como operá-las com segurança em labs isolados.
 - **Lab:** sim — **captura na rede interna** de laboratórios.
 
 ### 2.5 — netcat, shells e transferência de arquivos
-- **Pré-requisitos:** 0.3; 2.1.
+- **Pré-requisitos:** 0.4; 2.1.
 - **Objetivos:** bind vs reverse shell; ouvir e conectar; transferir arquivos;
   noções de upgrade de shell.
 - **Lab:** sim — **contêiner simples** na rede isolada.
@@ -249,7 +269,7 @@ De um acesso inicial ao controle total do host — Linux primeiro, Windows depoi
 - **Lab:** não.
 
 ### 5.2 — PrivEsc Linux: enumeração
-- **Pré-requisitos:** 5.1; 0.3.
+- **Pré-requisitos:** 5.1; 0.4.
 - **Objetivos:** enumeração manual e com linpeas; ler o resultado e priorizar
   vetores.
 - **Lab:** sim — **contêiner Linux** na rede isolada.
@@ -261,7 +281,7 @@ De um acesso inicial ao controle total do host — Linux primeiro, Windows depoi
 - **Lab:** sim — **contêiner Linux** na rede isolada.
 
 ### 5.4 — PrivEsc Windows: enumeração
-- **Pré-requisitos:** 5.1; 0.4.
+- **Pré-requisitos:** 5.1; 0.5.
 - **Objetivos:** identificar vetores de escalação no Windows; ferramentas de
   enumeração.
 - **Lab:** não — **teoria + walkthrough guiado** (sem lab local pesado).

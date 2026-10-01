@@ -1,5 +1,5 @@
 /**
- * Curriculum seed, transcribed from docs/CURRICULO.md (Phase 3).
+ * Curriculum seed, transcribed from docs/CURRICULO.md (Phase 3; 0.3 split in Phase 4).
  *
  * Slugs here are the same ones the MDX files will use in Phase 4, so content
  * ingestion overwrites this seed (upsert by slug) without losing user state.
@@ -51,6 +51,13 @@ export const LABS: LabSeed[] = [
   },
   { slug: "webgoat", target: "webgoat", composeDir: "webgoat", isolationNotes: TARGET_ISOLATION },
   { slug: "vulhub", target: "vulhub", composeDir: "vulhub", isolationNotes: TARGET_ISOLATION },
+  {
+    slug: "linux-sandbox",
+    target: "linux-sandbox",
+    composeDir: "linux-sandbox",
+    isolationNotes:
+      "Sandbox de prática sem vulnerabilidade: sem rede (network_mode: none), sem portas publicadas; acesso só por docker exec no WSL.",
+  },
 ];
 
 export const TRACKS: TrackSeed[] = [
@@ -69,15 +76,27 @@ export const TRACKS: TrackSeed[] = [
       },
       {
         slug: "terminal-linux",
-        title: "Terminal Linux essencial",
+        title: "Linux: primeiros passos no terminal",
         prerequisites: ["como-usar-a-plataforma"],
+        lab: "linux-sandbox",
+      },
+      // Split from the original 0.3 in Phase 4; everything that required the
+      // original 0.3 now requires this module (which requires terminal-linux).
+      {
+        slug: "linux-processos-e-pacotes",
+        title: "Linux: processos, pacotes e edição",
+        prerequisites: ["terminal-linux"],
       },
       {
         slug: "windows-para-quem-vem-do-linux",
         title: "Windows para quem vem do Linux",
-        prerequisites: ["terminal-linux"],
+        prerequisites: ["linux-processos-e-pacotes"],
       },
-      { slug: "scripting-bash", title: "Scripting: Bash", prerequisites: ["terminal-linux"] },
+      {
+        slug: "scripting-bash",
+        title: "Scripting: Bash",
+        prerequisites: ["linux-processos-e-pacotes"],
+      },
       {
         slug: "python-para-seguranca",
         title: "Scripting: Python para segurança",
@@ -86,7 +105,7 @@ export const TRACKS: TrackSeed[] = [
       {
         slug: "git-basico",
         title: "Git e versionamento básico",
-        prerequisites: ["terminal-linux"],
+        prerequisites: ["linux-processos-e-pacotes"],
       },
     ],
   },
@@ -152,7 +171,7 @@ export const TRACKS: TrackSeed[] = [
       {
         slug: "netcat-e-shells",
         title: "netcat, shells e transferência de arquivos",
-        prerequisites: ["terminal-linux", "kali-linux"],
+        prerequisites: ["linux-processos-e-pacotes", "kali-linux"],
       },
       {
         slug: "wordlists-e-fuzzing",
@@ -298,7 +317,7 @@ export const TRACKS: TrackSeed[] = [
       {
         slug: "privesc-linux-enumeracao",
         title: "PrivEsc Linux: enumeração",
-        prerequisites: ["conceitos-de-privesc", "terminal-linux"],
+        prerequisites: ["conceitos-de-privesc", "linux-processos-e-pacotes"],
       },
       {
         slug: "privesc-linux-vetores",

@@ -7,18 +7,18 @@ describe("curriculum seed", () => {
   const curriculum = resolveCurriculum();
   const bySlug = new Map(curriculum.modules.map((m) => [m.slug, m]));
 
-  it("matches docs/CURRICULO.md in size", () => {
+  it("matches docs/CURRICULO.md in size (0.3 split in Phase 4)", () => {
     assert.equal(curriculum.tracks.length, 8);
     assert.deepEqual(
       curriculum.tracks.map((t) => t.modules.length),
-      [7, 5, 6, 9, 6, 6, 5, 5],
+      [8, 5, 6, 9, 6, 6, 5, 5],
     );
-    assert.equal(curriculum.modules.length, 49);
-    assert.equal(LABS.length, 4);
+    assert.equal(curriculum.modules.length, 50);
+    assert.equal(LABS.length, 5);
   });
 
   it("expands whole-track prerequisites", () => {
-    assert.equal(bySlug.get("o-que-e-pentest")!.prerequisites.length, 7);
+    assert.equal(bySlug.get("o-que-e-pentest")!.prerequisites.length, 8);
     assert.deepEqual(
       [...bySlug.get("kali-linux")!.prerequisites].sort(),
       [...TRACKS[0].modules.map((m) => m.slug), "escopo-e-autorizacao"].sort(),
