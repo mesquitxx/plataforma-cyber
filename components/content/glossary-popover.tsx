@@ -1,8 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { BookOpenText } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { termAnchor } from "@/lib/glossary";
 
 type GlossaryPopoverProps = {
   term: string;
@@ -26,6 +28,12 @@ export function GlossaryPopover({ term, definition, children }: GlossaryPopoverP
         </p>
         <p className="font-semibold">{term}</p>
         <p className="text-muted-foreground">{definition}</p>
+        <Link
+          href={`/glossario#${termAnchor(term)}`}
+          className="font-mono text-xs text-info underline-offset-4 hover:underline"
+        >
+          ver no glossário →
+        </Link>
       </PopoverContent>
     </Popover>
   );

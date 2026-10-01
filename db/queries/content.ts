@@ -7,7 +7,9 @@ import "server-only";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { cache } from "react";
 import { db } from "@/db";
-import { flagSubmissions, flags, glossaryTerms, modules, tasks } from "@/db/schema";
+import { flagSubmissions, flags, glossaryTermMentions, glossaryTerms, modules, tasks } from "@/db/schema";
+import type { CurriculumView, ModuleRef } from "@/lib/curriculum-state";
+import { termAnchor } from "@/lib/glossary";
 
 export type FlagTaskView = {
   title: string;
@@ -67,6 +69,43 @@ export const getGlossary = cache((): Map<string, GlossaryEntry> => {
     .all();
   return new Map(rows.map((row) => [row.term.toLowerCase(), row]));
 });
+
+export type GlossaryModuleLink = Pick<ModuleRef, "number" | "title" | "href">;
+
+export type GlossaryPageEntry = GlossaryEntry & {
+  anchor: string;
+  /** Module that introduces (declares) the term. */
+  firstModule: GlossaryModuleLink | null;
+  /** Other modules that mark the term with <GlossaryTerm>, in curriculum order. */
+  alsoIn: GlossaryModuleLink[];
+};
+
+/** Whole glossary for /glossario, linked to the curriculum's modules. */
+export function getGlossaryPage(curriculum: CurriculumView): GlossaryPageEntry[] {
+  const moduleById = new Map(
+    curriculum.modules.map((m): [number, GlossaryModuleLink] => [m.id, { number: m.number, title: m.title, href: m.href }]),
+  );
+  const order = new Map(curriculum.modules.map((m, i) => [m.id, i]));
+  const mentions = new Map<number, number[]>();
+  for (const row of db.select().from(glossaryTermMentions).all()) {
+    mentions.set(row.termId, [...(mentions.get(row.termId) ?? []), row.moduleId]);
+  }
+
+  return db
+    .select()
+    .from(glossaryTerms)
+    .all()
+    .map((row) => ({
+      term: row.term,
+      definition: row.definition,
+      anchor: termAnchor(row.term),
+      firstModule: (row.firstModuleId !== null && moduleById.get(row.firstModuleId)) || null,
+      alsoIn: (mentions.get(row.id) ?? [])
+        .filter((id) => id !== row.firstModuleId && moduleById.has(id))
+        .sort((a, b) => order.get(a)! - order.get(b)!)
+        .map((id) => moduleById.get(id)!),
+    }));
+}
 
 /** Terms first introduced by a module, alphabetically. */
 export function getModuleGlossary(moduleSlug: string): GlossaryEntry[] {
