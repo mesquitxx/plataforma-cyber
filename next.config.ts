@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   agentRules: false,
   // Never advertise the framework in response headers.
   poweredByHeader: false,
+  // The dev-only Next.js badge would cover the sidebar footer (bottom-left).
+  devIndicators: { position: "bottom-right" },
   // Phase 8, security trade-off T10 (docs/LABORATORIO.md). The platform embeds
   // Guacamole but is never embedded itself: a page framing it could trick a
   // click on "Resetar" or "Trocar lab", and the Server Action would carry

@@ -1,10 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = { title: "Página não encontrada" };
 
 export default function NotFound() {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
-      <p className="font-mono text-5xl font-semibold text-primary">404</p>
+      <h1 className="font-mono text-5xl font-semibold text-primary">404</h1>
       <p className="font-mono text-sm text-muted-foreground">
         bash: página não encontrada
       </p>

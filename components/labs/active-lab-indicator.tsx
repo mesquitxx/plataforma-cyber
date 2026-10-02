@@ -14,20 +14,24 @@ export function ActiveLabIndicator() {
   const active = data?.status?.running[0] ?? null;
   const state = active ? data!.status!.states[active] : "stopped";
 
-  let text = "Lab: —";
-  if (data?.error) text = "Lab: Docker indisponível";
-  else if (job) text = `Lab: ${ACTION_LABELS[job.action as LabAction].toLowerCase()} ${getLab(job.lab)?.title ?? job.lab}…`;
-  else if (active) text = `Lab: ${getLab(active)?.title ?? active} · ${RUN_STATE_LABELS[state]}`;
-  else if (data) text = "Lab: nenhum ativo";
+  let text = "—";
+  if (data?.error) text = "Docker indisponível";
+  else if (job) text = `${ACTION_LABELS[job.action as LabAction].toLowerCase()} ${getLab(job.lab)?.title ?? job.lab}…`;
+  else if (active) text = `${getLab(active)?.title ?? active} · ${RUN_STATE_LABELS[state]}`;
+  else if (data) text = "nenhum ativo";
 
   return (
     <Link
       href="/laboratorios"
-      className="ml-auto flex items-center gap-2 rounded-md px-2 py-1 font-mono text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+      className="ml-auto flex min-w-0 items-center gap-2 whitespace-nowrap rounded-md px-2 py-1 font-mono text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
       aria-live="polite"
     >
       <LabStateDot state={job ? "starting" : state} />
-      {text}
+      {/* One line on phones: the "Lab:" label only from sm up. */}
+      <span className="truncate">
+        <span className="hidden sm:inline">Lab: </span>
+        {text}
+      </span>
     </Link>
   );
 }

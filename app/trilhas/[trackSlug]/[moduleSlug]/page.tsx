@@ -18,6 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { getCurriculum } from "@/db/queries/curriculum";
 import { getModuleTasks } from "@/db/queries/progress";
 import { findModule } from "@/lib/curriculum-state";
+import { contentPhaseForTrack } from "@/lib/roadmap";
 
 type Props = PageProps<"/trilhas/[trackSlug]/[moduleSlug]">;
 
@@ -160,7 +161,8 @@ export default async function ModulePage({ params }: Props) {
             </CardDescription>
           </CardHeader>
           <CardContent className="font-mono text-xs text-muted-foreground">
-            Este módulo ainda não foi escrito (o conteúdo chega a partir da Fase 7).
+            Este módulo ainda não foi escrito: o conteúdo da Trilha {track.number} chega na Fase{" "}
+            {contentPhaseForTrack(track.number) ?? "final"} (veja o ROADMAP).
           </CardContent>
         </Card>
       )}
