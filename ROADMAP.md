@@ -167,6 +167,8 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
 - Trilha 0 (Pré-Segurança), Trilha 1 (Fundamentos e Ética) e Trilha 2 (Kit do
   Pentester, agora com OSINT e engenharia social).
 - Labs usados: `linux-sandbox`, `kali`, `dvwa`, `rede-de-alvos` e `juice-shop`.
+- Andamento: 0.1 "Como usar esta plataforma" (sem lab; duas missões de
+  reconhecimento e verificação do isolamento) e 0.3 (piloto da Fase 4) escritos.
 
 ## Fase 10 — Conteúdo: Trilhas 3–5
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.

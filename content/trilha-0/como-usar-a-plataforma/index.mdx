@@ -1,0 +1,1422 @@
+---
+slug: como-usar-a-plataforma
+track: trilha-0
+title: "Como usar esta plataforma"
+prerequisites: []
+lab: null
+tasks:
+  - slug: missao-1-reconhecimento
+    title: "Missão 1 — Reconhecimento da plataforma"
+    type: flag
+    prompt: "Monte FLAG{A-B-C} com as três peças que você coletou navegando pela plataforma."
+    hint: "A e B estão em Laboratórios; C está no Painel, na lista de conquistas. Copie C exatamente como aparece, com acentos e espaço."
+    flag:
+      hash: "scrypt$16384$8$1$e41e19329a74002b7fe016f75608ec84d2e1e1adf44e99ec6e2c31fa2333f7ff"
+      salt: "cc7a060f01b3d9ede259775f2153020b"
+  - slug: missao-2-isolamento
+    title: "Missão 2 — O isolamento visto com os próprios olhos"
+    type: flag
+    prompt: "O código HTTP e o motivo da recusa (o texto depois de \"Forbidden: \"), no formato FLAG{código-motivo}."
+    hint: "Use curl com -H para mandar um cabeçalho Host que não seja 127.0.0.1:3000 nem localhost:3000, e leia o corpo da resposta."
+    flag:
+      hash: "scrypt$16384$8$1$09608c5b2fa54bab3feaad4f288dd4fcfcdebbc784b529645a91d537d6a884bc"
+      salt: "de5470611ffdc2e6f197c0fed85a3036"
+  - slug: quiz-final
+    title: "Quiz — Como usar esta plataforma"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "O que uma flag correta prova?"
+        options:
+          - "Que você leu o módulo inteiro"
+          - "Que você executou o exercício e chegou ao resultado que só ele revela"
+          - "Que você memorizou os comandos do módulo"
+          - "Que o laboratório está ligado"
+        answer: 1
+        explanation: "A flag é um texto que só aparece para quem completa o desafio. Ela não mede leitura nem memória: mede se você chegou lá. Por isso a plataforma guarda só o hash dela."
+      - question: "Por que a plataforma guarda apenas o hash (com salt) de cada flag, e não a flag em si?"
+        options:
+          - "Para economizar espaço no banco"
+          - "Porque o SQLite não aceita chaves { } em textos"
+          - "Para que nem o código da página, nem o banco revelem a resposta: só dá para conferir um palpite"
+          - "Para a flag funcionar sem internet"
+        answer: 2
+        explanation: "Um hash não volta ao texto original. O servidor calcula o hash do que você digitou e compara. Se a flag estivesse no HTML, no JavaScript ou em claro no banco, bastaria ler o código para \"resolver\" sem fazer o exercício."
+      - question: "Você enviou `flag{abc}` e a plataforma recusou, mas a resposta certa é `FLAG{abc}`. Por quê?"
+        options:
+          - "A plataforma só aceita uma tentativa por flag"
+          - "A comparação diferencia maiúsculas de minúsculas; só os espaços das pontas são ignorados"
+          - "Faltou apertar Enter duas vezes"
+          - "As flags expiram depois de um tempo"
+        answer: 1
+        explanation: "Antes de comparar, o servidor só remove espaços do começo e do fim e padroniza os acentos (Unicode NFC). Maiúsculas, minúsculas e qualquer caractere do meio fazem parte da resposta."
+      - question: "Um módulo aparece como \"Bloqueado\". O que isso significa?"
+        options:
+          - "A página não pode ser aberta até você concluir os pré-requisitos"
+          - "O laboratório dele está quebrado"
+          - "Algum pré-requisito ainda não foi concluído; você pode ler mesmo assim, é só um aviso"
+          - "Você errou flags demais naquele módulo"
+        answer: 2
+        explanation: "O bloqueio é suave: a página mostra o aviso \"Pré-requisitos pendentes\" com links, mas o conteúdo continua legível. O estado serve para orientar a ordem de estudo."
+      - question: "Quando um módulo passa a \"Concluído\"?"
+        options:
+          - "Quando você rola a página até o fim"
+          - "Quando todas as tarefas dele estão concluídas (flags certas, quiz aprovado, tarefas manuais marcadas)"
+          - "Quando você acerta a primeira flag"
+          - "Depois de 24 horas em andamento"
+        answer: 1
+        explanation: "O módulo se conclui quando a última tarefa se conclui. Errar uma flag nunca desfaz o que já foi concluído; só desmarcar uma tarefa manual devolve o módulo para \"Em andamento\"."
+      - question: "Por que a plataforma permite só um laboratório ligado por vez?"
+        options:
+          - "Por causa da memória: com 16 GB de RAM, dois labs com Kali e alvos deixariam o computador sem fôlego"
+          - "Porque o Docker só roda um contêiner por vez"
+          - "Porque dois labs teriam a mesma flag"
+          - "Por exigência da lei brasileira"
+        answer: 0
+        explanation: "É a regra de RAM do projeto. O `scripts/lab.sh` recusa ligar um segundo lab (código de saída 5) e a interface oferece \"Trocar para este lab\", que desliga o atual antes."
+      - question: "Qual a diferença entre um serviço escutar em `127.0.0.1:3000` e em `0.0.0.0:3000`?"
+        options:
+          - "Nenhuma: os dois são só locais"
+          - "`127.0.0.1` é a interface de loopback, que só o próprio computador alcança; `0.0.0.0` significa todas as interfaces, inclusive a da rede de casa"
+          - "`0.0.0.0` é mais rápido"
+          - "`127.0.0.1` só funciona sem internet"
+        answer: 1
+        explanation: "Quem escuta em `0.0.0.0` aceita conexões por qualquer interface de rede, então qualquer aparelho que alcance o seu computador chega ao serviço. É por isso que a plataforma é iniciada sempre com `-H 127.0.0.1`: o padrão do Next.js é `0.0.0.0`."
+      - question: "A plataforma só escuta em 127.0.0.1. Por que ela ainda confere o cabeçalho `Host` de cada requisição?"
+        options:
+          - "Para contar visitas"
+          - "Porque o navegador pode ser enganado por DNS rebinding: um site malicioso faz o próprio nome apontar para 127.0.0.1 e manda requisições com o Host dele"
+          - "Porque o Windows exige"
+          - "Para bloquear o Kali"
+        answer: 1
+        explanation: "Escutar só localmente barra os outros aparelhos, mas não barra o seu próprio navegador visitando um site hostil. Numa requisição \"rebindada\", o Host é o nome do atacante; recusar Hosts desconhecidos (403) fecha essa porta, como fez a correção do Transmission em 2018."
+      - question: "Por que nenhum contêiner da plataforma monta o `docker.sock`?"
+        options:
+          - "Porque deixaria o contêiner mais lento"
+          - "Porque quem fala com o Docker pode criar contêineres com acesso ao computador inteiro: dar o socket a um contêiner é dar o controle total da máquina"
+          - "Porque o `docker.sock` só existe no Windows"
+          - "Porque o Kali não sabe usar Docker"
+        answer: 1
+        explanation: "O Docker obedece a quem tem acesso à API dele, e ela permite montar qualquer pasta do computador num contêiner novo. O caso Graboid (2019) mostrou o que acontece quando essa API fica ao alcance de quem não devia."
+      - question: "Por que os alvos dos laboratórios ficam numa rede interna, sem internet?"
+        options:
+          - "Para os alvos ficarem mais rápidos"
+          - "Porque alvos vulneráveis-por-design são, de propósito, fáceis de invadir: sem rota para fora nem para o PC, um erro ou um ataque fica preso no laboratório"
+          - "Porque o DVWA não funciona com internet"
+          - "Para economizar dados móveis"
+        answer: 1
+        explanation: "Um alvo feito para ser invadido não pode virar trampolim. Sem internet e sem rota para o seu computador, nem o seu próprio ataque nem um terceiro conseguem usá-lo para chegar a outro lugar. O `scripts/lab.sh verify` testa isso de verdade."
+glossary:
+  - term: terminal
+    definition: "Programa que mostra texto e lê o teclado para você usar o computador por linha de comando. Tecnicamente, um emulador de terminal: imita os antigos aparelhos de teclado e tela."
+  - term: pentest
+    definition: "Teste de intrusão (penetration test): ataque simulado e autorizado, para encontrar falhas antes que um criminoso as encontre."
+  - term: flag (CTF)
+    definition: "Texto secreto (aqui no formato FLAG{...}) que prova que você completou um desafio. CTF = Capture The Flag, competição de segurança em que se caçam flags."
+  - term: hash
+    definition: "Resultado de uma função que transforma um dado (como uma senha) numa \"impressão digital\" de tamanho fixo, da qual não se volta ao original. Serve para conferir senhas sem guardá-las."
+  - term: salt
+    definition: "Valor aleatório misturado ao dado antes de calcular o hash. Faz o mesmo texto gerar hashes diferentes em lugares diferentes e inutiliza tabelas de hashes pré-calculados."
+  - term: Unicode
+    definition: "Padrão que dá um número a cada caractere de todas as escritas. Um mesmo \"ç\" pode ser gravado de duas formas; a normalização NFC escolhe sempre a mesma."
+  - term: vulnerable by design
+    definition: "Vulnerável por design: sistema construído de propósito com falhas, para treino legal (ex.: DVWA, OWASP Juice Shop). Nunca deve ficar exposto a outras redes."
+  - term: attack box
+    definition: "A máquina de onde se ataca num laboratório, já com as ferramentas instaladas. Aqui é o Kali, aberto no navegador."
+  - term: Kali Linux
+    definition: "Distribuição Linux (baseada no Debian) mantida pela OffSec, com centenas de ferramentas de segurança ofensiva pré-instaladas."
+  - term: Guacamole
+    definition: "Apache Guacamole: software que mostra a tela de outro computador dentro do navegador. A plataforma o usa para exibir o desktop do Kali."
+  - term: container
+    definition: "Contêiner: ambiente isolado que compartilha o kernel do computador, mas tem seus próprios arquivos, processos e rede. Criado e gerenciado pelo Docker."
+  - term: Docker
+    definition: "Ferramenta que cria e roda contêineres a partir de imagens. A plataforma usa o Docker para os laboratórios."
+  - term: image
+    definition: "Imagem (Docker): o molde somente-leitura de onde um contêiner nasce, com o sistema e os programas já instalados. Baixada uma vez, roda sem internet."
+  - term: Docker Compose
+    definition: "Ferramenta do Docker que descreve, num arquivo YAML, vários contêineres, suas redes e volumes, e os sobe ou derruba juntos."
+  - term: daemon
+    definition: "Programa que roda em segundo plano prestando um serviço, sem janela. O Docker daemon (dockerd) é quem de fato cria e controla os contêineres."
+  - term: docker.sock
+    definition: "Arquivo especial (/var/run/docker.sock) por onde se dão ordens ao Docker daemon. Quem o acessa controla o Docker e, na prática, o computador inteiro."
+  - term: API
+    definition: "Application Programming Interface: o conjunto de pedidos que um programa aceita de outros programas, com formato definido. A API do Docker, por exemplo, aceita \"crie um contêiner\"."
+  - term: sandbox
+    definition: "Ambiente isolado e descartável, para praticar ou testar sem risco para o sistema real."
+  - term: WSL
+    definition: "Windows Subsystem for Linux: roda um Linux de verdade dentro do Windows. É onde esta plataforma vive."
+  - term: IP address
+    definition: "Endereço IP: número que identifica uma interface de rede (ex.: 192.168.0.10). O módulo 0.2 explica em detalhe."
+  - term: network interface
+    definition: "Interface de rede: cada \"porta de entrada\" de rede de um computador (Wi-Fi, cabo, loopback, as redes virtuais do WSL e do Docker), cada uma com seu endereço IP."
+  - term: loopback
+    definition: "Interface de rede virtual que só leva de volta ao próprio computador. Seu endereço é 127.0.0.1 (IPv4) e ::1 (IPv6); nenhum outro aparelho a alcança."
+  - term: localhost
+    definition: "Nome que aponta para a interface de loopback, ou seja, para o próprio computador (127.0.0.1)."
+  - term: port
+    definition: "Porta: número de 0 a 65535 que, junto com o endereço IP, diz a qual programa uma conexão se destina (ex.: 127.0.0.1:3000 é a plataforma)."
+  - term: HTTP
+    definition: "HyperText Transfer Protocol: o protocolo das páginas web. O navegador manda pedidos (requisições) e o servidor devolve respostas."
+  - term: HTTP header
+    definition: "Cabeçalho HTTP: linha \"Nome: valor\" que acompanha um pedido ou uma resposta, como Host (para qual site é o pedido) e Origin (de qual site ele veio)."
+  - term: status code
+    definition: "Código de status: número de três dígitos no começo de toda resposta HTTP. 200 = deu certo; 403 = proibido; 404 = não encontrado."
+  - term: proxy
+    definition: "Intermediário que recebe as conexões no lugar de outro serviço e as repassa (ou recusa). Aqui, o guac-proxy fica na frente do Guacamole."
+  - term: DNS
+    definition: "Domain Name System: o sistema que traduz nomes (como exemplo.com) em endereços IP. Quem controla o DNS de um nome decide para onde ele aponta."
+  - term: TTL
+    definition: "Time To Live: por quanto tempo uma resposta de DNS pode ser reaproveitada antes de perguntar de novo. Um TTL de segundos permite trocar o endereço quase na hora."
+  - term: same-origin policy
+    definition: "Política de mesma origem: regra do navegador que só deixa um script ler respostas do mesmo esquema, nome e porta da página que o carregou. Ela compara nomes, não endereços."
+  - term: DNS rebinding
+    definition: "Ataque em que um site malicioso troca o endereço do próprio nome (de um IP dele para 127.0.0.1, por exemplo), para o navegador da vítima conversar com serviços locais achando que fala com o mesmo site."
+  - term: allowlist
+    definition: "Lista do que é permitido; tudo o que não está nela é recusado. Também chamada de whitelist. É o oposto de uma lista de proibidos."
+  - term: RPC
+    definition: "Remote Procedure Call: interface que permite a outro programa mandar comandos para um serviço pela rede, como se chamasse uma função dele."
+  - term: attack surface
+    definition: "Superfície de ataque: tudo o que um atacante pode alcançar e tentar abusar (portas abertas, páginas, APIs, arquivos). Diminuí-la é a primeira defesa."
+  - term: CVE
+    definition: "Common Vulnerabilities and Exposures: catálogo público que dá um identificador único (ex.: CVE-2018-5702) a cada vulnerabilidade conhecida."
+  - term: worm
+    definition: "Programa malicioso que se espalha sozinho de máquina em máquina, sem precisar que alguém o execute em cada uma."
+  - term: cryptojacking
+    definition: "Uso escondido do computador de outra pessoa para minerar criptomoeda, gastando a energia e o processador dela."
+  - term: Shodan
+    definition: "Buscador de aparelhos e serviços expostos na internet. Pesquisadores (e atacantes) o usam para contar quantos sistemas estão abertos."
+  - term: backup
+    definition: "Cópia de segurança dos dados, guardada à parte, para restaurar em caso de perda."
+---
+
+import mapa from "./img/mapa-da-plataforma.svg";
+import ciclo from "./img/ciclo-do-modulo.svg";
+import verificacao from "./img/verificacao-da-flag.svg";
+import fronteiras from "./img/fronteiras-de-isolamento.svg";
+import rebinding from "./img/dns-rebinding.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Toda plataforma de treino em segurança tem um paradoxo embutido: ela existe para
+você aprender a invadir sistemas, e por isso mesmo guarda, dentro do seu computador,
+sistemas feitos para serem invadidos. Se ela for montada sem cuidado, o primeiro
+alvo atacado não vai ser o do laboratório: vai ser você. Um alvo de treino esquecido
+na rede de casa, um painel de controle acessível pelo Wi-Fi ou uma página maliciosa
+falando com um serviço local já bastam. A seção 4 mostra que isso aconteceu de
+verdade, com programas usados por milhões de pessoas.
+
+Por isso o primeiro módulo da plataforma não é sobre ataques. É sobre o **lugar** onde
+você vai treinar: como ele está organizado, como ele registra o seu progresso, como
+confere as suas respostas e, principalmente, **por que ele é seguro** e como você
+pode verificar isso com os próprios olhos, em vez de acreditar na palavra de ninguém.
+Esse hábito de conferir tem nome em segurança: confiar, mas verificar. Ele vale
+para a plataforma e vai valer para todo o resto da sua formação.
+
+A plataforma segue o estilo de sites como o TryHackMe: cada módulo junta teoria,
+prática num laboratório e uma <GlossaryTerm term="flag (CTF)">flag</GlossaryTerm>, um
+texto secreto no formato `FLAG{...}` que você só encontra completando o exercício. O
+nome vem dos CTFs (*Capture The Flag*, "capture a bandeira"), competições de segurança
+em que se caçam essas flags. O objetivo final de tudo isso é o
+<GlossaryTerm term="pentest">pentest</GlossaryTerm> (*penetration test*, teste de
+intrusão): um ataque simulado e **autorizado**, para encontrar as falhas antes de um
+criminoso.
+
+**Ao final, você vai saber:**
+
+- navegar pelas trilhas, módulos, Painel, Laboratórios e Glossário, e saber o que
+  cada página oferece;
+- explicar os estados de um módulo (bloqueado, disponível, em andamento, concluído) e
+  o que faz cada um mudar;
+- enviar flags e responder quizzes, entendendo como o servidor confere a resposta sem
+  nunca mandá-la ao navegador;
+- ligar, trocar e desligar um laboratório, respeitando a regra de um lab por vez;
+- descrever as fronteiras de isolamento da plataforma e por que cada uma existe;
+- conferir, no terminal, que a plataforma só escuta no seu próprio computador e que
+  ela recusa pedidos com nomes estranhos;
+- reconhecer, em casos reais, o que acontece quando um serviço local confia demais.
+
+**Pré-requisitos:** nenhum. Este é o primeiro módulo da plataforma.
+
+**Tempo estimado:** de 1h30 a 2 horas, incluindo as duas missões práticas.
+
+<Callout variant="ethics">
+Esta plataforma ensina técnicas de ataque, e a regra que vale do primeiro ao último
+módulo é simples: **só em ambiente seu ou com autorização por escrito.** No Brasil,
+invadir dispositivo alheio sem autorização é crime (art. 154-A do Código Penal, criado
+pela Lei 12.737/2012 e endurecido pela Lei 14.155/2021, com pena de reclusão de 1 a 4
+anos e multa). A Trilha 1 trata da lei em detalhe. Os laboratórios daqui existem
+justamente para você praticar sem ferir ninguém.
+</Callout>
+
+## 2. Teoria aprofundada — a plataforma por dentro
+
+### 2.1 O que é uma plataforma estilo CTF, e por que a flag funciona
+
+Aprender segurança só lendo é como aprender a nadar só lendo. Plataformas de treino
+resolvem isso com um ciclo em três tempos:
+
+1. **Teoria:** o conceito por dentro, para você entender o que vai fazer.
+2. **Prática:** um laboratório em que você aplica a técnica num alvo preparado.
+3. **Prova:** uma flag, que só aparece para quem chega ao fim do exercício.
+
+A flag é a peça mais engenhosa do ciclo. Ela transforma "acho que entendi" em "fiz e
+deu certo": ou você achou o texto, ou não achou. Para isso funcionar, uma condição é
+inegociável: **a resposta não pode estar ao alcance de quem não fez o exercício.** Se
+a flag estivesse escrita no código da página, qualquer um abriria o código-fonte e
+copiaria. A seção 2.4 mostra como a plataforma garante isso.
+
+Os alvos dos laboratórios são sistemas <GlossaryTerm term="vulnerable by design">vulnerable by design</GlossaryTerm>
+(vulneráveis por design): construídos de propósito cheios de falhas, para treino
+legal. Exemplos que você vai usar: o DVWA (*Damn Vulnerable Web Application*) e o
+OWASP Juice Shop. A plataforma nunca usa ataques ou programas maliciosos escritos sob
+medida: só projetos consagrados, mantidos por comunidades de segurança.
+
+Quem ataca, num laboratório, precisa de uma máquina de onde atacar: a
+<GlossaryTerm term="attack box">attack box</GlossaryTerm>. Aqui ela é o
+<GlossaryTerm term="Kali Linux">Kali Linux</GlossaryTerm>, uma distribuição Linux
+mantida pela OffSec com centenas de ferramentas de segurança já instaladas. Você não
+precisa instalar nada: o desktop do Kali aparece dentro do navegador, na própria
+página do módulo, graças ao <GlossaryTerm term="Guacamole">Guacamole</GlossaryTerm>
+(Apache Guacamole), um programa que mostra a tela de outro computador numa página web.
+
+### 2.2 O mapa da plataforma
+
+<Figure
+  src={mapa}
+  alt="Mapa da plataforma: barra superior com o selo 127.0.0.1 · offline; menu lateral com Início, Trilhas, Painel, Laboratórios e Glossário; Trilhas leva a uma trilha e ela ao módulo; a página do módulo tem pré-requisitos, painel do laboratório, conteúdo com flags e quiz, tarefas do módulo e os botões anterior e próximo."
+  caption="Cinco páginas no menu lateral; o caminho do estudo é Trilhas → trilha → módulo. A página do módulo concentra tudo: pré-requisitos, laboratório, conteúdo, flags, quiz e tarefas."
+/>
+
+Tudo começa no endereço `http://127.0.0.1:3000` (a seção 2.5 explica por que ele é
+assim). O menu lateral tem cinco destinos:
+
+| Página | Endereço | Para que serve |
+|---|---|---|
+| **Início** | `/` | Progresso geral, o botão "continuar de onde parei" e as trilhas |
+| **Trilhas** | `/trilhas` | As 9 trilhas do currículo (da 0 à 8), com o progresso de cada uma |
+| **Painel** | `/painel` | Progresso por trilha, flags, quizzes, sequência de dias de estudo, atividade recente e conquistas |
+| **Laboratórios** | `/laboratorios` | Todos os labs: o que cada um tem, quanta memória usa, quais módulos o usam, e os botões de controle |
+| **Glossário** | `/glossario` | Todos os termos técnicos da plataforma, com busca, o módulo que introduz cada um e onde mais ele aparece |
+
+O currículo tem **9 trilhas e 59 módulos**, do zero ao avançado: Pré-Segurança (a
+trilha deste módulo), Fundamentos e Ética, Kit do Pentester, Criptografia, Hacking
+Web, Redes e Serviços, Escalação de Privilégios, Active Directory e Consolidação. Cada
+módulo tem um número no formato `trilha.ordem`: este é o **0.1**, o primeiro da
+Trilha 0.
+
+Duas coisas ficam sempre visíveis no alto de qualquer página:
+
+- o selo **`127.0.0.1 · offline`**, um lembrete de onde a plataforma está escutando (a
+  seção 2.5 explica);
+- o **lab ativo**, quando há um laboratório ligado, com o estado dele. Assim você
+  nunca esquece um laboratório consumindo memória.
+
+#### A página de um módulo, de cima para baixo
+
+1. **Cabeçalho:** número, título, estado do módulo e, se houver, o selo do lab que ele
+   usa. Se o módulo tem tarefas, uma barra mostra quantas já foram concluídas.
+2. **Aviso de pré-requisitos**, se algum estiver pendente (seção 2.3).
+3. **`$ cat pre-requisitos`:** a lista dos módulos que vêm antes, com o estado de cada
+   um.
+4. **Painel do laboratório**, nos módulos que têm lab: botões de controle e o desktop
+   do Kali, ou o comando que abre o sandbox no terminal.
+5. **O conteúdo**, sempre com as mesmas 10 seções: abertura, teoria, prática da
+   segurança (ou mecânica do ataque), casos reais, laboratório, variações, erros
+   comuns, defesa, exercícios e resumo. É dentro do conteúdo que ficam os campos de
+   flag e o quiz.
+6. **Tarefas do módulo:** a lista de tudo o que conta para concluir o módulo.
+7. **Anterior e próximo**, para seguir na ordem do currículo.
+
+No meio do texto, palavras sublinhadas são termos do glossário: passe o mouse (ou
+toque) para ver a definição sem sair da página. Blocos de código têm um botão de
+copiar; nos blocos de sessão de terminal (os que mostram `$` antes dos comandos), ele
+copia **só os comandos**, sem o `$` e sem a saída. Dicas e
+soluções dos desafios ficam **recolhidas**: você abre só se precisar.
+
+### 2.3 O ciclo de um módulo: estados e tarefas
+
+Cada módulo está sempre em um de quatro estados:
+
+<Figure
+  src={ciclo}
+  alt="Diagrama de estados: Bloqueado vai para Disponível quando os pré-requisitos são concluídos; Disponível vai para Em andamento quando alguma tarefa é tentada; Em andamento vai para Concluído quando todas as tarefas são concluídas; desmarcar uma tarefa manual volta para Em andamento. Embaixo, os tipos de tarefa: flag e quiz, corrigidos pelo servidor; leitura, exercício e passo de lab, marcados à mão."
+  caption="Os estados mudam por ações suas: concluir pré-requisitos, tentar uma tarefa, concluir todas. Errar nunca desfaz o que já foi concluído."
+/>
+
+- **Bloqueado:** algum pré-requisito ainda não foi concluído. É um **bloqueio
+  suave**: a página continua legível, só mostra o aviso "Pré-requisitos pendentes"
+  com links para eles. A ideia é orientar a ordem de estudo, não trancar você para
+  fora. Se quiser espiar o que vem pela frente, pode.
+- **Disponível:** todos os pré-requisitos estão concluídos (ou o módulo não tem
+  nenhum, como este).
+- **Em andamento:** você já fez alguma coisa numa tarefa do módulo (uma flag enviada,
+  certa ou errada, um quiz respondido, uma tarefa marcada).
+- **Concluído:** **todas** as tarefas do módulo estão concluídas.
+
+"Bloqueado" e "Disponível" nunca são gravados no banco: a plataforma os **calcula** a
+cada vez, olhando os pré-requisitos. Só "em andamento" e "concluído" são gravados,
+porque dependem do que você fez. Essa distinção evita um problema clássico de
+sistemas: duas informações que deveriam concordar e, um dia, discordam.
+
+#### Os tipos de tarefa
+
+| Tipo | Como se conclui | Quem decide |
+|---|---|---|
+| **flag** | Enviando o texto certo | O servidor, comparando hashes (seção 2.4) |
+| **quiz** | Acertando pelo menos 70% das perguntas (o padrão) | O servidor, com o gabarito que nunca sai dele |
+| **leitura, exercício, passo de lab** | Marcando à mão no quadro "Tarefas do módulo" | Você |
+
+Três regras do progresso valem a pena guardar:
+
+- **Errar não desfaz.** Uma flag errada deixa a tarefa "em andamento", mas nunca
+  desconclui uma tarefa já concluída. Pode experimentar à vontade.
+- **Tudo é registrado.** Cada tentativa de flag e de quiz fica no banco, com a data.
+  É daí que o Painel tira a sua sequência de dias de estudo e a atividade recente.
+- **Conquistas são derivadas.** As 19 conquistas do Painel (primeira flag, nota
+  máxima num quiz, três dias seguidos de estudo, concluir uma trilha inteira...)
+  não são gravadas: são calculadas a partir do seu progresso. Se o progresso mudar,
+  elas acompanham.
+
+### 2.4 Como a flag é verificada por dentro
+
+Volte à condição inegociável da seção 2.1: a resposta não pode estar ao alcance de
+quem não fez o exercício. Pense em onde a flag **poderia** estar guardada:
+
+- **No navegador** (no HTML ou no JavaScript da página)? Não: o navegador recebe
+  tudo o que a página usa, e qualquer um lê com "Exibir código-fonte" ou com as
+  ferramentas de desenvolvedor. Seria como imprimir o gabarito no verso da prova.
+- **No servidor, em texto claro**? Melhor, mas ainda frágil: quem abrisse o arquivo do
+  conteúdo ou do banco veria a resposta.
+- **No servidor, como hash**: é o que a plataforma faz.
+
+Um <GlossaryTerm term="hash">hash</GlossaryTerm> é o resultado de uma função que
+transforma um texto numa "impressão digital" de tamanho fixo, da qual **não se volta**
+ao original. Mesmo texto, mesmo hash; um caractere diferente, hash completamente
+diferente. Assim dá para **conferir** um palpite sem guardar a resposta: calcula-se
+o hash do que você digitou e compara-se com o hash guardado. É exatamente assim que
+sistemas sérios guardam senhas (a Trilha 3, de criptografia, aprofunda).
+
+Antes de calcular, o servidor mistura ao texto um <GlossaryTerm term="salt">salt</GlossaryTerm>,
+um valor aleatório diferente para cada flag. O salt faz o mesmo texto gerar hashes
+diferentes em lugares diferentes, o que inutiliza tabelas de hashes pré-calculados. A
+função usada é a **scrypt**, feita de propósito para ser lenta e gastar memória: um
+palpite leva uma fração de segundo, mas testar milhões de palpites fica caro.
+
+<Figure
+  src={verificacao}
+  alt="Fluxo: o navegador envia a flag por POST ao servidor local; o servidor confere Host e Origin, normaliza o texto (pontas e NFC), calcula scrypt com o salt e compara com o hash guardado no banco SQLite, que nunca tem a flag em claro; a tentativa errada guarda o texto, a certa não; ao navegador volta só 'Flag correta!' ou 'Ainda não'."
+  caption="O navegador só envia um palpite e recebe 'certo' ou 'errado'. Hash e salt ficam no servidor; a flag em si não está em lugar nenhum."
+/>
+
+O caminho de um envio, passo a passo:
+
+1. Você digita a flag e clica em **Enviar**. O formulário vai para o servidor local.
+2. O servidor confere se o pedido veio de uma página da própria plataforma (seção 3.2)
+   e valida os campos: tamanho, formato do nome da tarefa.
+3. O texto é **normalizado**: os espaços do começo e do fim são removidos, e a forma
+   dos acentos é padronizada (normalização <GlossaryTerm term="Unicode">Unicode</GlossaryTerm>
+   NFC). Isso existe porque um "ç" pode ser gravado de duas formas diferentes, como um
+   caractere só ou como "c" seguido do sinal da cedilha; para você, é a mesma letra,
+   mas para o computador são bytes diferentes. **Nada mais é alterado:** maiúsculas,
+   minúsculas e espaços no meio contam.
+4. O servidor calcula a scrypt do texto com o salt da tarefa e compara com o hash
+   guardado.
+5. A tentativa é registrada. Se estiver **errada**, o texto digitado é guardado, para
+   você poder rever seus erros. Se estiver **certa**, o texto **não** é guardado:
+   assim, nem o seu histórico vira um lugar onde a flag aparece em claro.
+6. Ao navegador volta só uma frase: "Flag correta! Missão concluída." ou "Ainda não.
+   Confira maiúsculas, as chaves `{ }` e se copiou a linha inteira."
+
+O quiz segue a mesma lógica: o navegador recebe as perguntas e as alternativas, mas
+**nunca** o gabarito. Você envia as respostas, o servidor corrige e só então devolve o
+resultado e as explicações de cada pergunta.
+
+<Callout variant="info" title="Por que isso importa em segurança">
+O erro de "guardar a resposta no lado do cliente" não é só de plataformas de treino.
+Lojas que calculavam o preço no navegador, jogos que confiavam no placar enviado pelo
+jogador e formulários que escondiam campos "somente leitura" caíram todos pelo mesmo
+motivo: **tudo o que está no navegador está nas mãos do usuário.** Você vai explorar
+exatamente isso na Trilha 4, de hacking web.
+</Callout>
+
+### 2.5 A arquitetura do isolamento
+
+Agora a parte que mais importa. A plataforma inteira vive no seu computador, dentro do
+<GlossaryTerm term="WSL">WSL</GlossaryTerm> (*Windows Subsystem for Linux*, um Linux de
+verdade rodando dentro do Windows). Não há nuvem, não há login, não há servidor
+externo. Mas "está no meu computador" não significa automaticamente "está protegido".
+Para entender por quê, precisamos de três ideias de rede, explicadas aqui só o
+suficiente (o módulo 0.2 aprofunda).
+
+#### Endereços, interfaces e portas
+
+Um computador conversa com a rede por <GlossaryTerm term="network interface">interfaces de rede</GlossaryTerm>:
+o Wi-Fi é uma, o cabo é outra, e o WSL e o Docker criam mais algumas, virtuais. Cada
+interface tem um <GlossaryTerm term="IP address">endereço IP</GlossaryTerm>, um número
+como `192.168.0.10` que identifica aquela interface na rede.
+
+Existe uma interface especial, que não sai do computador: a
+<GlossaryTerm term="loopback">loopback</GlossaryTerm>. Tudo o que é enviado para ela
+volta para a própria máquina. Seu endereço é **`127.0.0.1`**, e o nome
+<GlossaryTerm term="localhost">localhost</GlossaryTerm> aponta para ele. Nenhum outro
+aparelho do mundo consegue mandar nada para o seu `127.0.0.1`: para cada aparelho,
+`127.0.0.1` é **ele mesmo**.
+
+Num mesmo computador rodam vários programas que usam a rede, e a
+<GlossaryTerm term="port">porta</GlossaryTerm> (*port*), um número de 0 a 65535, diz a
+qual deles uma conexão se destina. A plataforma usa a porta **3000**; a tela do Kali,
+a porta **8080**.
+
+Quando um programa começa a **escutar** (aceitar conexões), ele escolhe em qual
+endereço. E aqui mora o ponto central:
+
+- escutar em **`127.0.0.1:3000`** = aceitar conexões só pela loopback, ou seja, só do
+  próprio computador;
+- escutar em **`0.0.0.0:3000`** = aceitar conexões por **todas** as interfaces,
+  inclusive a do Wi-Fi. Qualquer aparelho que alcance o seu computador (o celular de
+  uma visita, um notebook na mesma rede do café) chega ao programa.
+
+O detalhe perigoso: **`0.0.0.0` é o padrão** de muitas ferramentas. A documentação do
+Next.js, o framework em que esta plataforma foi feita, diz que o `next dev` usa
+`0.0.0.0` se você não disser outra coisa. O Docker faz o mesmo ao publicar uma porta
+sem endereço (seção 8). Por isso os scripts da plataforma fixam `-H 127.0.0.1 -p 3000`,
+e por isso você deve **sempre** iniciá-la com `npm run dev`, nunca com um `next dev`
+solto.
+
+#### As fronteiras, uma a uma
+
+<Figure
+  src={fronteiras}
+  alt="Topologia: dentro do Windows, o WSL. No WSL, o navegador fala com a plataforma em 127.0.0.1:3000; a plataforma, processo comum fora de contêiner, chama scripts/lab.sh, que controla o Docker. No Docker, o guac-proxy em 127.0.0.1:8080 é a única porta de lab; atrás dele, em redes internas sem internet, o Guacamole, o Kali e o alvo; à parte, o linux-sandbox sem rede. Setas cortadas: outros aparelhos da rede de casa não alcançam as portas; o alvo não alcança a internet."
+  caption="Cada caixa tem uma fronteira e um motivo. O que importa é o que fica de fora: a rede de casa não chega às portas, e os alvos não chegam à internet nem ao seu computador."
+/>
+
+1. **Tudo escuta só em `127.0.0.1`.** A plataforma (porta 3000) e a tela do Kali
+   (porta 8080) não aceitam conexões de outros aparelhos. Você vai conferir isso na
+   Missão 2.
+2. **Os labs rodam em <GlossaryTerm term="container">contêineres</GlossaryTerm>.** Um
+   contêiner é um ambiente isolado, com arquivos, processos e rede próprios, criado
+   pelo <GlossaryTerm term="Docker">Docker</GlossaryTerm>. Cada contêiner nasce de uma
+   <GlossaryTerm term="image">imagem</GlossaryTerm>, um molde com o sistema e os
+   programas já instalados. O <GlossaryTerm term="Docker Compose">Docker Compose</GlossaryTerm>
+   descreve, num arquivo, quais contêineres um lab tem e como se ligam.
+3. **Os alvos ficam em redes internas, sem internet e sem rota para o seu PC.** Um
+   alvo vulnerável por design é, por definição, fácil de invadir. Se ele tivesse saída
+   para a internet ou para o seu computador, poderia virar trampolim: para um
+   terceiro, ou para um erro seu. Sem rota para fora, o que acontece no lab fica no lab.
+4. **O Kali só é alcançável pela tela do Guacamole**, e o Guacamole só por um
+   intermediário, o <GlossaryTerm term="proxy">proxy</GlossaryTerm> `guac-proxy`, que é
+   o **único** contêiner numa rede que não é interna, e mesmo ele não tem saída para a
+   internet. O resultado: dos labs, existe exatamente uma porta no seu computador,
+   `127.0.0.1:8080`.
+5. **Só a plataforma liga e desliga labs, e só por um caminho:** o script
+   `scripts/lab.sh`, com uma lista fechada de labs e de ações. A página nunca manda um
+   comando livre ao sistema; manda "ligue o lab `dvwa`", e o script só aceita nomes da
+   lista. Se alguém conseguisse forjar um pedido, o pior que obteria seria ligar ou
+   desligar um lab da lista.
+6. **Nenhum contêiner tem poder sobre o Docker.** Nenhum monta o
+   <GlossaryTerm term="docker.sock">docker.sock</GlossaryTerm>, o arquivo por onde se
+   dão ordens ao Docker, nem roda em modo privilegiado, e a própria plataforma não roda
+   em contêiner. A seção 3.3 explica por que isso equivale a não entregar a chave da
+   casa.
+7. **Ligar um lab nunca usa a internet.** As imagens são baixadas **uma vez**, à mão,
+   no terminal (`scripts/lab.sh pull <lab>`). Depois disso, a plataforma liga os labs
+   com o Docker proibido de baixar ou construir qualquer coisa. Apagar o `/home/kali`
+   (onde ficam os seus arquivos dentro do Kali) também só pelo terminal. Ações
+   irreversíveis ou que tocam a internet ficam fora do alcance de um clique.
+8. **Um laboratório ativo por vez.** O computador tem 16 GB de RAM, e um lab com Kali
+   e alvo usa perto de 1,5 GB no pico, sem contar o Windows, o navegador e o próprio
+   WSL. Com um lab por vez, nada trava. O `scripts/lab.sh` recusa ligar um segundo
+   lab, e a interface oferece "Trocar para este lab", que desliga o atual antes.
+
+Há ainda um tipo especial de lab: o **<GlossaryTerm term="sandbox">sandbox</GlossaryTerm>**
+de prática, um ambiente isolado e descartável para treinar comandos. O
+`linux-sandbox`, usado no módulo 0.3, não tem vulnerabilidade nenhuma, não tem **nenhuma**
+rede (nem interna), não tem portas e roda como usuário comum. O shell dele abre no
+<GlossaryTerm term="terminal">terminal</GlossaryTerm> do WSL (o programa onde você
+digita comandos), com `npm run lab:sandbox`: a plataforma não tem um terminal dentro
+da página, de propósito, porque seria mais uma porta aberta.
+
+### 2.6 O Glossário e o Painel
+
+O **Glossário** (`/glossario`) é montado sozinho, a partir dos termos que cada módulo
+declara. Para cada termo, ele mostra a definição, o módulo que o **introduz** (onde
+ele é explicado pela primeira vez) e os outros módulos em que ele aparece. A busca
+ignora acentos e maiúsculas e procura também dentro das definições. Use-o como
+dicionário de bolso: quando um termo de um módulo avançado não fizer sentido, o
+Glossário diz em qual módulo voltar.
+
+O **Painel** (`/painel`) é o seu boletim: progresso geral e por trilha, flags
+acertadas, quizzes com a melhor nota, a **sequência** de dias seguidos de estudo
+(qualquer tentativa de flag, quiz ou tarefa conta como dia de estudo), a atividade
+recente e as conquistas, inclusive as que ainda faltam, com a descrição do que é
+preciso para ganhar cada uma.
+
+## 3. Na prática da segurança
+
+Este módulo não ensina um ataque, mas tudo o que você viu na seção 2 existe porque
+ataques reais acontecem. Esta seção mostra a plataforma do ponto de vista de quem
+tentaria abusar dela, e de quem a defende.
+
+### 3.1 O raciocínio do atacante: superfície de ataque
+
+Um atacante começa sempre pela mesma pergunta: **o que eu consigo alcançar daqui?**
+Tudo o que ele alcança, portas abertas, páginas, APIs, arquivos, forma a
+<GlossaryTerm term="attack surface">attack surface</GlossaryTerm> (superfície de
+ataque). Defender começa por diminuí-la: o que não está ao alcance não pode ser atacado.
+
+Olhe a plataforma com esses olhos. Um vizinho no mesmo Wi-Fi que fizesse uma
+varredura no seu computador (a Trilha 2 ensina a usar o `nmap` para isso) acharia o
+quê?
+
+- Se o DVWA escutasse em `0.0.0.0`, ele acharia um site **feito para ser invadido**,
+  com usuário e senha de fábrica conhecidos no mundo inteiro.
+- Se a plataforma escutasse em `0.0.0.0`, ele acharia um painel capaz de ligar e
+  desligar contêineres no seu computador.
+- Com tudo em `127.0.0.1`, ele não acha **nada**: para a rede, essas portas não
+  existem.
+
+Por isso a regra "tudo em `127.0.0.1`" não é detalhe técnico: é a fronteira que
+separa um laboratório de treino de uma porta dos fundos.
+
+### 3.2 O ataque que passa por dentro do seu navegador: DNS rebinding
+
+Escutar só em `127.0.0.1` barra os **outros aparelhos**. Mas há um programa que roda
+no seu computador e conversa com a internet o dia inteiro: o seu navegador. Se uma
+página maliciosa conseguisse usar o **seu** navegador para falar com `127.0.0.1:3000`,
+a fronteira cairia. Esse é o ataque de <GlossaryTerm term="DNS rebinding">DNS rebinding</GlossaryTerm>,
+e entendê-lo exige três peças.
+
+**Peça 1: o DNS.** Quando você digita um nome como `exemplo.com`, o navegador pergunta
+ao <GlossaryTerm term="DNS">DNS</GlossaryTerm> (*Domain Name System*) qual é o endereço
+IP daquele nome. Quem é dono de um nome controla o servidor de DNS dele e decide a
+resposta, inclusive responder `127.0.0.1`. Cada resposta vem com um
+<GlossaryTerm term="TTL">TTL</GlossaryTerm> (*Time To Live*), o tempo pelo qual ela pode
+ser reaproveitada; com um TTL de poucos segundos, o dono do nome pode trocar o endereço
+quase na hora.
+
+**Peça 2: a política de mesma origem.** O navegador tem uma regra de ouro, a
+<GlossaryTerm term="same-origin policy">same-origin policy</GlossaryTerm> (política de
+mesma origem): o JavaScript de uma página só pode ler respostas de pedidos feitos ao
+**mesmo esquema, nome e porta** da página. É ela que impede o site de um golpista de
+ler o seu e-mail aberto em outra aba. O detalhe que o ataque explora: a regra compara
+**nomes**, não endereços IP.
+
+**Peça 3: o cabeçalho `Host`.** Todo pedido <GlossaryTerm term="HTTP">HTTP</GlossaryTerm>
+(o protocolo das páginas web) leva <GlossaryTerm term="HTTP header">cabeçalhos</GlossaryTerm>,
+linhas `Nome: valor` com informações extras. O cabeçalho `Host` diz **para qual nome**
+o pedido foi feito. Um servidor pode olhar o `Host` e recusar nomes que não são os dele.
+
+<Figure
+  src={rebinding}
+  alt="Diagrama de sequência com navegador, DNS do atacante, site do atacante e serviço local. 1: o DNS responde o IP do atacante com TTL curto. 2: o navegador baixa a página com JavaScript. 3: o TTL vence e o DNS agora responde 127.0.0.1. 4: o navegador manda GET ao serviço local com Host: ataque.example. 5a: sem checar o Host, o serviço devolve os dados; 5b: checando o Host, responde 403 Forbidden."
+  caption="O nome é o mesmo do começo ao fim; só o endereço por trás dele muda. Para o navegador, continua sendo 'o mesmo site', e só a checagem do Host no serviço local percebe o truque."
+/>
+
+Juntando as peças, o ataque (cenário genérico, com o nome fictício `ataque.example`):
+
+1. Você visita `ataque.example`. O DNS do atacante responde com o IP do servidor dele,
+   com TTL de poucos segundos.
+2. A página carrega um JavaScript do atacante.
+3. O script espera o TTL vencer e faz um pedido para `http://ataque.example:3000/`. O
+   navegador pergunta o DNS de novo, e agora a resposta é `127.0.0.1`.
+4. O navegador envia o pedido para o **seu** `127.0.0.1:3000`. Para ele, é o mesmo
+   nome da página, então o script pode ler a resposta. O pedido chega com
+   `Host: ataque.example:3000`.
+5. Se o serviço local não conferir o `Host`, ele responde normalmente, e o atacante,
+   de dentro do seu navegador, lê e comanda um serviço que "só escutava localmente".
+
+A defesa da plataforma está no arquivo `proxy.ts`, que roda antes de qualquer página
+ou ação:
+
+- só aceita os `Host` `127.0.0.1:3000` e `localhost:3000`; qualquer outro recebe o
+  <GlossaryTerm term="status code">status code</GlossaryTerm> **403** (proibido), o
+  código de três dígitos que abre toda resposta HTTP;
+- recusa o pedido se o cabeçalho `X-Forwarded-Host` (usado por intermediários para
+  dizer o nome original) for diferente do `Host`;
+- todo pedido que **muda** alguma coisa (enviar flag, ligar lab: tudo o que não é uma
+  simples leitura) precisa trazer um cabeçalho `Origin` local, que diz de qual site o
+  pedido partiu. Isso barra um site qualquer de mandar o seu navegador "clicar" em
+  botões da plataforma.
+
+Na Missão 2 você vai fazer o papel do atacante e ver essa defesa responder.
+
+### 3.3 Por que o Docker é a chave da casa
+
+O Docker é controlado por um programa que roda em segundo plano, o
+<GlossaryTerm term="daemon">daemon</GlossaryTerm> `dockerd`, que obedece a pedidos
+recebidos pela sua <GlossaryTerm term="API">API</GlossaryTerm> (o conjunto de pedidos
+que ele aceita de outros programas). Normalmente essa API fica num arquivo especial, o
+`/var/run/docker.sock`.
+
+O problema: entre os pedidos que a API aceita está "crie um contêiner e monte dentro
+dele a pasta tal do computador", e a pasta pode ser a raiz do sistema. Quem fala com a
+API do Docker consegue, portanto, ler e alterar **qualquer arquivo** do computador.
+Dar o `docker.sock` a um contêiner é dar a ele a chave da casa; deixar a API do Docker
+aberta na rede é deixar a chave na porta. Por isso:
+
+- nenhum contêiner da plataforma monta o `docker.sock` nem roda em modo privilegiado;
+- a plataforma não roda em contêiner: ela é um processo comum do seu usuário, que só
+  chama o `scripts/lab.sh`;
+- a API do Docker não é publicada em porta nenhuma (a auditoria da Fase 8 confere que
+  o daemon só escuta pelo socket local).
+
+O caso Graboid, na seção 4, mostra o que acontece quando essa regra é quebrada na
+internet.
+
+### 3.4 O hash do lado de quem ataca e de quem defende
+
+A seção 2.4 mostrou o hash do lado de quem guarda a resposta. Do lado de quem ataca, a
+pergunta é outra: "consigo descobrir o texto a partir do hash?". Não diretamente, mas
+dá para **chutar**: calcular o hash de milhões de palpites e ver se algum bate. É o
+que se faz com senhas vazadas, e é por isso que o salt e funções lentas como a scrypt
+existem: elas tornam cada palpite caro. Uma flag como as daqui, que junta peças
+específicas, não está em nenhuma lista de palpites, e o caminho mais curto até ela
+continua sendo fazer o exercício. Você vai quebrar hashes de verdade, legalmente, na
+Trilha 3.
+
+<Callout variant="ethics">
+Testar o cabeçalho `Host` da **sua** plataforma, no **seu** computador, é exatamente o
+que um defensor faz. Mandar pedidos forjados para serviços de terceiros, mesmo "só
+para ver o que responde", sem autorização, já é tentativa de acesso indevido. A
+diferença entre auditoria e ataque é a autorização.
+</Callout>
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os três casos abaixo têm a mesma raiz: um serviço que confiou demais em quem
+conseguia alcançá-lo. Datas e números foram conferidos nas fontes indicadas.
+
+### Transmission (2017–2018): DNS rebinding contra um cliente de BitTorrent
+
+O Transmission é um programa popular para baixar arquivos por BitTorrent. Ele tem um
+serviço de controle remoto, uma interface <GlossaryTerm term="RPC">RPC</GlossaryTerm>
+(*Remote Procedure Call*, que permite a outro programa mandar comandos), que escuta na
+porta **9091**. A proteção dele era exigir um identificador de sessão, que uma página
+de outro site não conseguiria ler.
+
+Tavis Ormandy, pesquisador do Google Project Zero, mostrou que o DNS rebinding contornava
+isso: como ele escreveu no pull request da correção, qualquer site pode criar um nome
+de DNS com o qual tem permissão de conversar e, então, fazê-lo apontar para
+localhost. A partir daí, o site conseguia ler e enviar cabeçalhos ao serviço e mudar a
+configuração do programa, por exemplo ligar a opção `script-torrent-done-enabled`, que
+executa um script quando um download termina: na prática, **executar comandos no
+computador da vítima só porque ela visitou uma página**. O problema foi informado à
+equipe do Transmission em 30 de novembro de 2017; em 11 de janeiro de 2018, Ormandy abriu
+publicamente a correção, e a falha recebeu o <GlossaryTerm term="CVE">CVE</GlossaryTerm>-2018-5702
+(o CVE é o catálogo público que dá um identificador a cada vulnerabilidade conhecida).
+
+A correção é a mesma ideia do `proxy.ts` desta plataforma: uma
+<GlossaryTerm term="allowlist">allowlist</GlossaryTerm> (lista do que é permitido) de
+nomes no cabeçalho `Host`, nas opções `rpc-host-whitelist` e
+`rpc-host-whitelist-enabled`. Só `localhost`, endereços IP e nomes da lista são aceitos.
+
+- **Impacto:** qualquer usuário com o serviço ligado podia ter o computador
+  comandado ao visitar uma página.
+- **Lição:** "só escuta em localhost" não protege contra o seu próprio navegador.
+  Confira o `Host`.
+- **Fontes:** [pull request #468 do Transmission, com a correção](https://github.com/transmission/transmission/pull/468)
+  e [aviso na lista oss-security, 15/01/2018](https://www.openwall.com/lists/oss-security/2018/01/15/1).
+
+### Zoom para macOS (julho de 2019): o servidor web escondido
+
+Para que um clique num link de reunião abrisse o Zoom direto, sem a confirmação que o
+Safari 12 passou a exigir, o Zoom instalava no Mac um **servidor web local**, escutando
+nas portas 19421 e 19424 de localhost. Em 8 de julho de 2019, o pesquisador Jonathan
+Leitschuh publicou que qualquer site podia conversar com esse servidor e, com isso,
+**colocar o usuário numa chamada com a câmera ligada**, sem pedir permissão. Pior: o
+servidor continuava instalado mesmo depois de o usuário desinstalar o Zoom. O registro
+oficial, CVE-2019-13450, descreve o Zoom Client até a versão 4.4.4 no macOS: "qualquer
+site pode interagir com o servidor web do Zoom em localhost, porta 19421 ou 19424".
+
+No mesmo dia, o Zoom publicou que o servidor era uma solução de contorno para a
+mudança do Safari 12 e anunciou uma atualização que o removeria por completo. Dois
+dias depois, a Apple foi além: distribuiu uma atualização silenciosa do macOS que
+removia o servidor escondido de todos os Macs, sem exigir nada do usuário.
+
+- **Impacto:** câmeras de usuários de Mac ligadas por qualquer página visitada, e um
+  serviço vulnerável que sobrevivia à desinstalação.
+- **Lição:** um serviço local que aceita pedidos de qualquer página amplia a
+  superfície de ataque de **todos** os sites que você visita. Por isso a plataforma
+  exige `Origin` local em tudo o que muda estado.
+- **Fontes:** [registro CVE-2019-13450](https://www.cve.org/CVERecord?id=CVE-2019-13450),
+  [resposta oficial do Zoom](https://www.zoom.com/en/blog/response-to-video-on-concern/)
+  e [TechCrunch sobre a atualização silenciosa da Apple](https://techcrunch.com/2019/07/10/apple-silent-update-zoom-app).
+
+### Graboid (outubro de 2019): o worm que entrava pela API do Docker
+
+Em 16 de outubro de 2019, a Unit 42, equipe de pesquisa da Palo Alto Networks,
+publicou a análise do Graboid, que ela chamou de o primeiro
+<GlossaryTerm term="worm">worm</GlossaryTerm> (programa malicioso que se espalha
+sozinho) a se propagar usando contêineres do Docker. Ele procurava servidores com a API
+do Docker **aberta na internet, sem autenticação**, mandava cada um baixar uma imagem
+maliciosa publicada no Docker Hub e, a partir dela, minerava a criptomoeda Monero e
+procurava novas vítimas. É um caso de <GlossaryTerm term="cryptojacking">cryptojacking</GlossaryTerm>:
+usar escondido o computador dos outros para minerar.
+
+Os números do relatório: uma busca no <GlossaryTerm term="Shodan">Shodan</GlossaryTerm>
+(buscador de aparelhos expostos na internet) achou **mais de 2.000** Docker Engines
+expostos de forma insegura; a imagem `pocosow/centos` tinha **mais de 10.000**
+downloads, e a `gakeaws/nginx`, **mais de 6.500**.
+
+- **Impacto:** milhares de servidores com a "chave da casa" na porta, e um worm que
+  só precisava pedir com educação para entrar.
+- **Lição:** a API do Docker equivale a controle total da máquina. Nunca a exponha, e
+  nunca dê o `docker.sock` a um contêiner. É a regra da seção 3.3.
+- **Fonte:** [Unit 42 — Graboid: First-Ever Cryptojacking Worm Found in Images on Docker Hub](https://unit42.paloaltonetworks.com/graboid-first-ever-cryptojacking-worm-found-in-images-on-docker-hub/).
+
+## 5. Mãos à obra — explorando e verificando a plataforma
+
+Este módulo não tem laboratório próprio: o "alvo" é a própria plataforma, e você vai
+explorá-la como um pentester explora um sistema novo, primeiro com reconhecimento,
+depois verificando as defesas.
+
+**Objetivo:** ao terminar, você terá percorrido todas as páginas, coletado três peças
+escondidas em lugares diferentes da interface (Missão 1), confirmado no terminal que a
+plataforma não é alcançável pela rede e feito o papel do atacante de DNS rebinding
+para ver a defesa responder (Missão 2). Cada missão termina numa flag.
+
+### 5.1 Abrir a plataforma (passo a passo)
+
+A plataforma é um programa que precisa estar rodando para a página abrir. Se você
+está lendo isto no navegador, ela já está; mesmo assim, vale saber o caminho inteiro.
+
+1. Abra o terminal do Ubuntu (no Windows, procure por "Ubuntu" no menu Iniciar) e
+   entre na pasta do projeto. Não se preocupe com os detalhes dos comandos: o módulo
+   0.3 explica cada um. Por ora, copie e cole:
+
+   ```bash
+   cd ~/projetos/plataforma-cyber
+   ```
+
+2. Inicie a plataforma:
+
+   ```bash
+   npm run dev
+   ```
+
+   Saída real (antes de iniciar, o comando faz o backup diário do progresso, em
+   silêncio se já houver um recente):
+
+   ```text
+   > plataforma-cyber@0.8.0 predev
+   > tsx scripts/db-backup.ts --auto --if-older-than 24 --windows
+
+   > plataforma-cyber@0.8.0 dev
+   > NEXT_TELEMETRY_DISABLED=1 next dev -H 127.0.0.1 -p 3000
+
+   ▲ Next.js 16.3.8 (Turbopack)
+   - Local:         http://127.0.0.1:3000
+   - Network:       http://127.0.0.1:3000
+   ✓ Ready in 587ms
+   ```
+
+   Repare na linha `next dev -H 127.0.0.1 -p 3000`: é ela que prende a plataforma na
+   loopback. E repare que até a linha "Network" mostra `127.0.0.1`: não há endereço de
+   rede para outros aparelhos usarem.
+
+3. No navegador do Windows, abra `http://127.0.0.1:3000`. O WSL repassa o endereço
+   local do Windows para o Linux, então funciona direto.
+4. Deixe esse terminal aberto enquanto estuda. Para desligar a plataforma, volte a ele
+   e aperte `Ctrl+C`.
+
+### 5.2 Missão 1 — Reconhecimento da plataforma
+
+Todo pentest começa pelo reconhecimento: antes de atacar, conhecer o terreno. Aqui o
+terreno é a interface. Faça o percurso abaixo; no caminho, você vai coletar três peças,
+**A**, **B** e **C**. A flag é `FLAG{A-B-C}`.
+
+**Parte guiada: o percurso.**
+
+1. **Início** (`/`): veja o progresso geral e o cartão "continuar de onde parei". Se
+   você nunca estudou aqui, ele aponta para o primeiro módulo disponível.
+2. **Trilhas** (`/trilhas`): as 9 trilhas. Abra a **Trilha 0** e observe os estados
+   dos módulos: este (0.1) está disponível ou em andamento; os outros aparecem
+   bloqueados, porque dependem dele.
+3. Abra um módulo bloqueado, por exemplo o 0.3. Repare no aviso "Pré-requisitos
+   pendentes" e confirme que a página continua legível: é o bloqueio suave da seção 2.3.
+   Volte para cá pelos links ou pelo botão "anterior".
+4. **Glossário** (`/glossario`): busque `flag`. Repare no "Introduzido em" de cada
+   termo. Busque também `loopback` e leia a definição.
+5. **Laboratórios** (`/laboratorios`): leia o quadro "Regras de isolamento" no topo e
+   compare com a seção 2.5. Depois, percorra os cartões dos labs disponíveis.
+
+**Peça A.** Na página Laboratórios, encontre o lab que **não publica porta nenhuma**
+no seu computador. O cartão dele diz em quais módulos ele é usado. A peça A é o
+**número** do módulo da Trilha 0 que o usa (no formato `N.N`).
+
+<Hint title="Dica da peça A">
+Cada cartão tem uma linha "Porta no PC". Só um dos labs disponíveis responde
+"nenhuma": é o que abre no terminal, não no navegador. A linha "Usado em" é a
+última do cartão, depois de "Memória" e "Resetar".
+</Hint>
+
+**Peça B.** Ainda em Laboratórios: os labs com desktop do Kali compartilham uma única
+porta no seu computador. A peça B é **o número dessa porta** (só o número, sem o
+endereço).
+
+<Hint title="Dica da peça B">
+Olhe a linha "Porta no PC" de qualquer lab com desktop, como o Kali ou o DVWA. O
+formato é `endereço:porta (Guacamole)`.
+</Hint>
+
+**Peça C.** Abra o **Painel** (`/painel`) e vá até as conquistas. A peça C é o
+**título** da conquista que você ganha ao concluir **todos os módulos da Trilha 0**,
+copiado exatamente como aparece (com maiúsculas, acentos e espaço).
+
+<Hint title="Dica da peça C">
+As conquistas de trilha mostram a descrição "Concluir todos os módulos da Trilha N."
+embaixo do título. As que você ainda não ganhou aparecem apagadas, com a marca
+"Bloqueada", mas aparecem.
+</Hint>
+
+Monte a flag no formato `FLAG{A-B-C}`, com hífens entre as peças, e envie:
+
+<Solution title="Solução da Missão 1 (o caminho, não a resposta)">
+A: o cartão "Laboratório: Sandbox Linux" tem "Porta no PC: nenhuma" e "Usado em" com
+um único módulo da Trilha 0. B: os cartões do Kali, do DVWA e dos outros labs com
+desktop dizem `127.0.0.1:8080 (Guacamole)`. C: no Painel, a primeira das nove
+conquistas de trilha. Se a flag for recusada, confira o acento e a maiúscula da peça C:
+`Concluir` não é título, é descrição.
+</Solution>
+
+<FlagInput task="missao-1-reconhecimento" />
+
+### 5.3 Missão 2 — O isolamento visto com os próprios olhos
+
+As regras de isolamento estão escritas na página Laboratórios. Um bom profissional de
+segurança não acredita em documentação: **confere**. Nesta missão você vai provar, com
+dois programas de linha de comando, que a plataforma só escuta no seu computador e que
+ela recusa pedidos com nomes estranhos.
+
+Abra um **segundo** terminal do Ubuntu (o primeiro está ocupado com o `npm run dev`).
+
+**Passo 1 (guiado): quem está escutando?** O comando `ss` (*socket statistics*) lista
+as conexões e os programas que estão escutando. As opções: `-t` mostra só conexões TCP
+(o tipo usado pela web), `-l` mostra só quem está escutando (*listening*) e `-n` mostra
+números em vez de nomes. Saída real, com a plataforma ligada e nenhum lab:
+
+```console
+$ ss -tln
+State  Recv-Q Send-Q  Local Address:Port Peer Address:Port
+LISTEN 0      4096       127.0.0.54:53        0.0.0.0:*
+LISTEN 0      511         127.0.0.1:3000      0.0.0.0:*
+LISTEN 0      4096    127.0.0.53%lo:53        0.0.0.0:*
+LISTEN 0      1000   10.255.255.254:53        0.0.0.0:*
+```
+
+Leia a coluna **Local Address:Port**: é onde cada programa escuta. A linha que importa é
+`127.0.0.1:3000`, a plataforma, presa na loopback. As linhas com a porta 53 são o DNS
+do próprio Ubuntu e do WSL, e também só aceitam conexões locais. A coluna **Peer
+Address** (`0.0.0.0:*`) só diz que qualquer endereço de origem é aceito **por quem já
+chegou** à interface; quem decide quem chega é o endereço local.
+
+Se um dia você vir `0.0.0.0:3000` ou `*:3000` nessa coluna, a plataforma está exposta
+para a rede: pare-a com `Ctrl+C` e inicie de novo com `npm run dev` (seção 7).
+
+**Passo 2 (guiado): o teste de quem está de fora.** O `curl` é um programa que faz
+pedidos HTTP pelo terminal, como um navegador sem tela. Com `-s` (*silent*) ele não
+mostra a barra de progresso; com `-o /dev/null` descarta a página; com
+`-w '%{http_code}\n'` escreve só o status code da resposta. Primeiro, pelo endereço
+certo (saída real):
+
+```console
+$ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/
+200
+```
+
+`200` quer dizer "deu certo". Agora finja ser outro aparelho da rede: descubra o
+endereço do seu computador na rede (`hostname -I` mostra os endereços das interfaces;
+o primeiro é o da rede de casa, e o seu será diferente do exemplo) e tente a porta 3000
+por ele (saída real):
+
+```console
+$ hostname -I
+192.168.76.109 172.17.0.1
+$ curl -sS -m 3 http://192.168.76.109:3000/
+curl: (7) Failed to connect to 192.168.76.109 port 3000 after 0 ms: Could not connect to server
+```
+
+"Could not connect": **ninguém atende** a porta 3000 nesse endereço. É exatamente o que
+um vizinho no mesmo Wi-Fi veria. (O `-S` mostra a mensagem de erro, e `-m 3` desiste
+depois de 3 segundos.) O segundo endereço, `172.17.0.1`, é a rede virtual do Docker.
+
+**Passo 3 (desafio): faça o papel do atacante de DNS rebinding.** Reveja a seção 3.2:
+num ataque de rebinding, o pedido chega a `127.0.0.1:3000`, mas com o cabeçalho `Host`
+do site do atacante. Você não precisa de um servidor de DNS para simular isso: o `curl`
+deixa você escrever o cabeçalho que quiser, com a opção `-H 'Nome: valor'`.
+
+Seu objetivo: mandar à plataforma um pedido para `http://127.0.0.1:3000/` com um `Host`
+que não seja o dela (invente um nome, como o de um site de atacante) e ler **a resposta
+inteira**: o status code e a mensagem do corpo. A flag é
+`FLAG{código-motivo}`, em que o código é o status code e o motivo é o texto que vem
+depois de `Forbidden: ` no corpo da resposta, copiado exatamente.
+
+<Hint title="Dica 1">
+Para ver o status code, você pode usar a opção `-i`, que mostra a resposta com os
+cabeçalhos (a primeira linha traz o código). Sem `-o /dev/null`, o corpo aparece no
+fim.
+</Hint>
+
+<Hint title="Dica 2">
+Combine as duas ideias: `curl -s -i -H 'Host: um-nome-qualquer.example' http://127.0.0.1:3000/`.
+O corpo é uma linha só, depois da linha em branco que separa os cabeçalhos.
+</Hint>
+
+<Solution title="Solução do passo 3 (sem a flag)">
+```console
+$ curl -s -i -H 'Host: ataque.example' http://127.0.0.1:3000/
+HTTP/1.1 403 Forbidden
+X-Frame-Options: DENY
+Content-Security-Policy: frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+Referrer-Policy: no-referrer
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+content-type: text/plain;charset=UTF-8
+...
+```
+A primeira linha traz o código. A última linha da sua saída (o corpo) começa com
+`Forbidden: ` e traz o motivo: ele vai na flag depois do código e do hífen, com
+maiúsculas e espaços exatamente como estão. Os outros cabeçalhos são defesas que você
+vai estudar na Trilha 4: `X-Frame-Options` e `frame-ancestors`, por exemplo, impedem
+outro site de embutir a plataforma numa moldura invisível.
+</Solution>
+
+<FlagInput task="missao-2-isolamento" />
+
+**Para pensar:** compare o passo 2 com o passo 3. No passo 2, o pedido nem chegou ao
+programa: a porta não existe naquela interface. No passo 3, o pedido chegou, e o
+programa o recusou por um motivo. São duas camadas diferentes de defesa, e cada uma
+cobre um ataque diferente (o vizinho de Wi-Fi e a página maliciosa). Em segurança, isso
+se chama defesa em profundidade.
+
+### 5.4 Walkthrough: ligar, recusar e desligar um laboratório
+
+Esta parte não tem flag: é um passeio guiado pelo controle dos labs, para você saber o
+que esperar quando chegar ao módulo 0.3. Ele usa o `linux-sandbox`, o lab mais leve
+(até 128 MB de memória).
+
+<Callout variant="info" title="Primeira vez: as imagens">
+Se o lab nunca foi baixado, a plataforma mostra "Faltam imagens deste lab. A
+plataforma nunca usa a internet: baixe-as no terminal com scripts/lab.sh pull
+linux-sandbox." Isso é a regra 7 da seção 2.5 funcionando. Rode o comando sugerido no
+terminal, uma única vez, e tente de novo.
+</Callout>
+
+1. Em **Laboratórios**, no cartão "Laboratório: Sandbox Linux", clique em **Iniciar**.
+   Em alguns segundos o estado muda para "rodando", e a barra superior passa a mostrar
+   o lab ativo. O mesmo, pelo terminal (saída real):
+
+   ```console
+   $ scripts/lab.sh up linux-sandbox
+   ==> Starting lab 'linux-sandbox'
+    Container cyberlab-sandbox-sandbox-1 Creating
+    Container cyberlab-sandbox-sandbox-1 Created
+    Container cyberlab-sandbox-sandbox-1 Starting
+    Container cyberlab-sandbox-sandbox-1 Started
+    Container cyberlab-sandbox-sandbox-1 Waiting
+    Container cyberlab-sandbox-sandbox-1 Healthy
+
+   Lab 'linux-sandbox' is up.
+     Open a shell in it: npm run lab:sandbox
+   ```
+
+2. **Tente ligar um segundo lab.** Nos outros cartões, o botão **Iniciar** deu lugar a
+   **Trocar para este lab**: a interface já sabe que existe um lab ativo. Pelo terminal,
+   o `lab.sh` recusa e explica (saída real; o código de saída 5 significa "outro lab
+   está rodando"):
+
+   ```console
+   $ scripts/lab.sh up kali
+   Another lab is running (one lab at a time):
+     lab: linux-sandbox
+   Stop it first, e.g. scripts/lab.sh down <lab>
+   $ echo $?
+   5
+   ```
+
+3. **Verifique o isolamento.** No cartão do lab ligado, clique em **Verificar
+   isolamento**. A plataforma roda uma bateria de testes que tenta, de dentro do lab,
+   fazer tudo o que ele **não** deveria conseguir. Saída real do mesmo teste no
+   terminal:
+
+   ```console
+   $ scripts/lab.sh verify linux-sandbox
+   linux-sandbox isolation check — 2026-10-02 03:06:28
+   RES   EXPECT   ATTEMPT
+   PASS  ok       probe control: bash runs inside the sandbox
+   PASS  ok       probe control: missions exist (missao-1..3)
+   PASS  ok       network mode is 'none'
+   PASS  ok       only the loopback interface exists
+   PASS  blocked  sandbox -> internet TCP 1.1.1.1:443
+   PASS  blocked  sandbox -> DNS resolution of example.com
+   PASS  blocked  sandbox -> Docker host 172.17.0.1:22
+   PASS  ok       no published ports
+   PASS  ok       runs as aluno (uid 1000), not root
+   PASS  blocked  sudo is available
+   PASS  ok       no effective capabilities
+   PASS  ok       no-new-privileges is set
+   PASS  ok       not privileged
+   PASS  blocked  Docker socket is mounted
+   PASS  ok       memory limit is set (128 MiB)
+   PASS  ok       process limit is set (128)
+   PASS  ok       restart policy is 'no'
+
+   Result: 17 passed, 0 failed.
+   ```
+
+   Leia a coluna **EXPECT**: `blocked` quer dizer que o teste **tentou** a ação (sair
+   para a internet, resolver um nome, alcançar o computador, usar `sudo`, achar o
+   `docker.sock`) e o certo era **não conseguir**. As duas primeiras linhas, "probe
+   control", são o "teste do teste": provam que a sonda realmente rodou dentro do lab,
+   para um "bloqueado" não ser só um teste quebrado. Repare também nas linhas sobre o
+   `docker.sock` e o modo privilegiado: são as regras da seção 3.3.
+
+4. **Desligue.** Clique em **Parar** (ou `scripts/lab.sh down linux-sandbox`). Saída
+   real do fim:
+
+   ```text
+    Container cyberlab-sandbox-sandbox-1 Removing
+    Container cyberlab-sandbox-sandbox-1 Removed
+   Lab 'linux-sandbox' is down: no containers, no networks left.
+   ```
+
+   O indicador da barra superior some. A vaga de "um lab por vez" está livre.
+
+Os botões do painel de um lab, para referência:
+
+| Botão | O que faz |
+|---|---|
+| **Iniciar** | Liga o lab (recusa se outro estiver ligado) |
+| **Trocar para este lab** | Desliga o lab atual e liga este |
+| **Parar** | Desliga o lab e remove os contêineres e redes dele, mantendo os dados |
+| **Resetar** | Recria o alvo do zero (o cartão diz exatamente o que se perde; o `/home/kali` é sempre mantido) |
+| **Verificar isolamento** | Roda a bateria de testes de isolamento no lab ligado |
+
+## 6. Variações e aprofundamento
+
+### 6.1 Plataformas online e o que muda nelas
+
+TryHackMe, Hack The Box e OverTheWire são as plataformas de treino mais conhecidas, e
+elas têm o modelo oposto ao desta: os alvos ficam nos servidores **delas**, e você se
+conecta pela internet, normalmente por uma VPN (uma conexão que coloca o seu computador
+dentro da rede do laboratório delas) ou, no caso do OverTheWire, por SSH (acesso remoto
+a um terminal). Isso tem consequências que vale conhecer antes de usá-las:
+
+- **As regras do jogo são a sua autorização.** Lá, você só pode atacar os alvos que a
+  plataforma indica, do jeito que ela permite. Atacar a infraestrutura da própria
+  plataforma ou outros jogadores não é parte do jogo.
+- **A sua máquina entra numa rede que você não controla.** Numa VPN de laboratório, a
+  sua attack box fica do lado de dentro de uma rede cheia de pessoas atacando coisas.
+  Use uma máquina dedicada (uma VM ou o próprio Kali), sem serviços desnecessários
+  escutando e sem seus arquivos pessoais.
+- **Vantagem delas:** variedade enorme de alvos e nenhuma exigência de hardware. A
+  vantagem daqui: tudo offline, sem conta, sem depender de ninguém, e com o isolamento
+  à vista para você auditar.
+
+As duas coisas se complementam: o que você aprender aqui vale lá, e vice-versa.
+
+### 6.2 Tudo pelo terminal: o `scripts/lab.sh`
+
+A interface é a forma confortável, mas tudo o que ela faz com os labs passa por um
+único script, que você pode usar direto no terminal (na pasta do projeto):
+
+| Comando | O que faz |
+|---|---|
+| `scripts/lab.sh list` | Os labs que o script sabe rodar (a lista fechada) |
+| `scripts/lab.sh status` | Os contêineres de lab e o estado de cada um |
+| `scripts/lab.sh up <lab>` / `down <lab>` | Liga / desliga |
+| `scripts/lab.sh switch <lab>` | Desliga o atual e liga outro |
+| `scripts/lab.sh reset <lab>` | Recria o alvo do zero e liga |
+| `scripts/lab.sh verify <lab>` | Prova as regras de isolamento (o lab precisa estar ligado) |
+| `scripts/lab.sh pull <lab>` | **Só no terminal:** baixa as imagens (usa a internet) |
+| `scripts/lab.sh purge <lab>` | **Só no terminal:** apaga todos os dados do lab, inclusive o `/home/kali` |
+| `scripts/lab.sh backup-home` | **Só no terminal:** copia o `/home/kali` para a pasta de backups |
+
+Os três últimos são recusados quando o pedido vem da plataforma (código de saída 6):
+baixar da internet e apagar dados são ações que exigem você no teclado. É a mesma
+ideia de pedir a senha de novo antes de uma operação perigosa.
+
+Há também uma auditoria completa, que confere o computador, o Windows e todos os labs,
+um por vez: `scripts/audit.sh` (ou `scripts/audit.sh --no-labs`, sem ligar labs). Os
+detalhes estão em `docs/LABORATORIO.md`.
+
+### 6.3 Seu progresso: backup, restauração e recomeço
+
+Todo o seu progresso fica num único arquivo, o banco SQLite `data/plataforma.db`, fora
+do git. Para não perdê-lo:
+
+- **Backup automático:** o `npm run dev` faz um <GlossaryTerm term="backup">backup</GlossaryTerm>
+  (cópia de segurança) por dia, antes de iniciar (aquela linha `predev` da seção 5.1),
+  em `data/backups/` e numa pasta de backups nos seus Documentos do Windows.
+- **Backup na hora:** `npm run db:backup`; para listar os existentes,
+  `npm run db:backup -- --list`.
+- **Restaurar:** `npm run db:restore -- <arquivo> --yes`.
+- **Recomeçar do zero:** `npm run progress:reset -- --yes` apaga **todo** o seu
+  progresso (flags, quizzes, tarefas). Esse comando não existe na interface, de
+  propósito: um clique errado não pode apagar meses de estudo.
+
+Os seus arquivos dentro do Kali (`/home/kali`) sobrevivem a "Parar" e a "Resetar"; o
+backup deles é o `scripts/lab.sh backup-home`. O passo a passo completo está em
+`docs/MANUTENCAO.md`.
+
+### 6.4 Como estudar com a plataforma
+
+- **Siga a ordem dos pré-requisitos.** O bloqueio é suave, mas o currículo foi
+  montado em camadas: cada módulo assume os anteriores, e não mais que eles.
+- **Faça antes de abrir a solução.** As dicas existem para destravar, não para pular o
+  raciocínio. Uma boa regra: tente por 10 a 15 minutos, abra a primeira dica, tente de
+  novo.
+- **Anote o que fez, com os comandos e as saídas.** No mercado, o que não está no
+  relatório não aconteceu; o módulo 1.5 transforma isso em método.
+- **Estude um pouco todo dia.** A sequência de dias do Painel existe para isso: meia
+  hora diária rende mais que um sábado inteiro por mês.
+- **Volte ao Glossário.** Ao travar num termo, veja em qual módulo ele foi introduzido
+  e releia aquele trecho.
+
+## 7. Erros comuns
+
+- **A página não abre ("não é possível acessar esse site").** A plataforma não está
+  rodando. Abra o terminal, entre na pasta do projeto e rode `npm run dev`; espere o
+  "Ready" e recarregue.
+- **A página responde só uma linha começando com `Forbidden`.** Você abriu por um
+  endereço que não é `127.0.0.1:3000` nem `localhost:3000` (por exemplo, pelo IP da
+  rede, por outro nome ou por outra porta repassada). É a defesa da seção 3.2: use
+  `http://127.0.0.1:3000`.
+- **`ss -tln` mostra `0.0.0.0:3000` ou `*:3000`.** Alguém iniciou o Next.js sem
+  `-H 127.0.0.1` (um `next dev` solto, ou um script alterado). Pare com `Ctrl+C` e use
+  `npm run dev`. Confira o `package.json`: o script `dev` precisa ter
+  `-H 127.0.0.1 -p 3000`.
+- **"Port 3000 is in use" ao rodar `npm run dev`.** Já há uma plataforma (ou outro
+  programa) rodando, talvez num terminal esquecido. Procure-o e feche com `Ctrl+C`, ou
+  descubra quem é com `ss -tlnp | grep 3000`.
+- **"Outro laboratório está rodando (um por vez)".** Pare o lab ativo (veja qual na
+  barra superior) ou use "Trocar para este lab".
+- **"Faltam imagens deste lab".** As imagens ainda não foram baixadas. No terminal:
+  `scripts/lab.sh pull <lab>` (uma vez; usa a internet).
+- **"Docker indisponível" na barra superior.** O Docker não está rodando no WSL.
+  Confira com `systemctl is-active docker` (o certo é `active`); se não estiver,
+  inicie com `sudo systemctl start docker` e recarregue a página.
+- **"Ainda não. Confira maiúsculas, as chaves { } e se copiou a linha inteira."** A
+  flag está errada. As causas mais comuns: `flag{` em vez de `FLAG{`, uma letra
+  maiúscula trocada, um espaço a mais **no meio** (os das pontas são ignorados), aspas
+  copiadas junto ou a chave de fechamento esquecida. Lembre: errar não desfaz nada e
+  não tem limite de tentativas.
+- **"Esta tarefa não está no banco. Rode npm run content:ingest."** O conteúdo dos
+  módulos ainda não foi carregado no banco (acontece depois de atualizar o projeto).
+  Rode o comando sugerido e recarregue.
+- **Quiz reprovado.** É preciso acertar pelo menos 70% (7 de 10, neste módulo). Leia as
+  explicações de cada resposta, releia a seção correspondente e responda de novo: a
+  melhor nota fica registrada.
+- **"Módulo bloqueado" e o medo de não poder ler.** Pode ler. O aviso só lembra que
+  ele faz mais sentido depois dos pré-requisitos.
+
+## 8. Boas práticas e segurança
+
+Cada caso da seção 4 tinha uma proteção simples que teria evitado o pior. Estas são as
+práticas que mantêm a plataforma, e qualquer laboratório seu no futuro, seguros.
+
+### 8.1 Escute só onde precisa
+
+- **Inicie a plataforma sempre com `npm run dev`** (ou `npm run start`, para a versão
+  de produção). Os dois fixam `-H 127.0.0.1 -p 3000`. Nunca rode `next dev` ou
+  `next start` sozinhos: o padrão deles é `0.0.0.0`.
+- **Ao publicar portas no Docker, diga o endereço.** Num arquivo do Compose, a forma
+  `"8080:8080"` publica em **todas** as interfaces; a forma segura é
+  `"127.0.0.1:8080:8080"`, que é exatamente como o `guac-proxy` está declarado em
+  `labs/base/compose.yaml`. A documentação oficial do Docker avisa que publicar portas
+  "é inseguro por padrão" e que, sem um endereço, o daemon publica em `0.0.0.0` e `[::]`.
+  Ela avisa também que, antes da versão 28.0.0 do Docker, até portas publicadas em
+  `127.0.0.1` podiam ser alcançadas por aparelhos do mesmo segmento de rede: mantenha o
+  Docker atualizado (confira com `docker version`).
+- **Confira de tempos em tempos** com `ss -tln`: nada de lab ou da plataforma deve
+  aparecer com `0.0.0.0` ou `*`.
+- **Não crie atalhos para "acessar do celular".** Repasses de porta do Windows
+  (`netsh interface portproxy`), túneis e serviços de "compartilhar localhost" desfazem
+  a fronteira inteira. A auditoria (`scripts/audit.sh`) procura `portproxy` no Windows
+  justamente por isso.
+
+### 8.2 Confira o `Host` e a `Origin`
+
+Se um dia você escrever um serviço local (e na sua carreira vai escrever), copie a
+defesa do `proxy.ts` e do Transmission: **allowlist** de nomes no `Host`, e exigência
+de `Origin` conhecida em tudo o que muda estado. A ideia, em pseudocódigo comentado:
+
+```text
+nomes_permitidos = {"127.0.0.1:3000", "localhost:3000"}
+se Host não está em nomes_permitidos:            -> 403
+se o pedido muda algo (não é GET/HEAD) e
+   Origin não é http://127.0.0.1:3000 nem http://localhost:3000: -> 403
+senão: atende
+```
+
+Repare que é uma lista do que é **permitido**, não do que é proibido: um atacante pode
+inventar infinitos nomes, mas não consegue entrar numa lista de dois.
+
+### 8.3 Nunca dê o Docker a quem não precisa
+
+- Nenhum contêiner com o `docker.sock` montado (`/var/run/docker.sock:/var/run/docker.sock`
+  num `volumes:` é sinal de alerta em qualquer projeto que você baixar).
+- Nenhum `privileged: true`.
+- Nunca exponha a API do Docker numa porta TCP (a lição do Graboid).
+- Quem precisa controlar o Docker, como a plataforma, deve fazê-lo por um caminho
+  estreito: aqui, uma lista fechada de labs e ações num único script.
+
+### 8.4 Mantenha os alvos presos
+
+- Alvos vulneráveis só em redes internas, sem internet e sem rota para o computador.
+- Depois de mudar qualquer coisa num lab, rode `scripts/lab.sh verify <lab>` e só
+  continue com 0 falhas.
+- Nunca leve um alvo vulnerável por design para uma rede de verdade, "só para mostrar
+  a um amigo". O DVWA de fábrica, numa rede aberta, é um convite.
+
+### 8.5 Um lab por vez, e desligado quando não estiver usando
+
+Além da memória, um lab desligado não tem superfície de ataque nenhuma. Pare o lab ao
+terminar a sessão de estudo; a barra superior lembra quando há um ligado.
+
+### 8.6 Proteja o seu progresso e as respostas
+
+- Deixe o backup diário trabalhar e, de vez em quando, confira com
+  `npm run db:backup -- --list`. Um backup que nunca foi conferido não é backup.
+- Se você criar desafios próprios, **nunca** escreva a flag em claro no conteúdo:
+  gere o hash com `npm run flag:hash -- 'FLAG{...}'` e guarde só hash e salt.
+- Não publique as flags e soluções dos módulos. Elas só funcionam como prova enquanto
+  ninguém as entrega prontas, e isso vale também para plataformas online, cujas regras
+  normalmente proíbem publicar flags.
+
+## 9. Exercícios
+
+As duas flags da seção 5 são as tarefas práticas deste módulo. Confira a teoria com o
+quiz (é preciso 70% para concluir) e, se quiser, pense nos cenários abaixo.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar
+
+Os três cenários são inventados para treinar o raciocínio; não são casos reais.
+
+<Callout variant="hypothetical" title="a: o amigo que quer ver o DVWA">
+Um amigo, no mesmo Wi-Fi, pede: "abre o DVWA aí pra eu acessar do meu notebook, é só
+mudar a porta para 0.0.0.0". O que pode dar errado, e que alternativa segura você
+propõe?
+</Callout>
+
+<Solution title="Discussão do cenário a">
+Expor um alvo vulnerável por design na rede deixa qualquer aparelho dessa rede (não só
+o do amigo) invadir um sistema no seu computador, com senha de fábrica conhecida, e
+quebra a regra de isolamento da plataforma. A alternativa segura é o amigo rodar o
+próprio laboratório, na máquina dele, isolado do mesmo jeito; ou vocês estudarem
+juntos olhando a mesma tela. A autorização dele para ver não muda o fato de que a rede
+inteira passaria a alcançar o alvo.
+</Solution>
+
+<Callout variant="hypothetical" title="b: o tutorial apressado">
+Um tutorial na internet diz: "para rodar mais rápido, use `npx next dev` direto".
+Você roda, a página abre normalmente e tudo parece igual. Como você descobre se algo
+mudou, e o que mudou?
+</Callout>
+
+<Solution title="Discussão do cenário b">
+`ss -tln` responde: com `next dev` sem `-H`, a linha da porta 3000 mostra `0.0.0.0:3000`
+(ou `*:3000`), e não `127.0.0.1:3000`. A plataforma ficou alcançável pela rede (a
+checagem do `Host` ainda recusa nomes estranhos, mas a primeira camada de defesa caiu).
+Pare com `Ctrl+C` e volte ao `npm run dev`. Lição: "parece igual" não é verificação.
+</Solution>
+
+<Callout variant="hypothetical" title="c: a flag que não entra">
+Você tem certeza de que achou a flag certa, mas a plataforma insiste em "Ainda não".
+Liste, em ordem, o que você confere antes de concluir que o exercício está quebrado.
+</Callout>
+
+<Solution title="Discussão do cenário c">
+1) O formato: `FLAG{` em maiúsculas e a chave de fechamento. 2) Maiúsculas, minúsculas
+e acentos dentro da flag. 3) Espaços no meio, aspas ou pontuação copiados junto. 4) Se
+você está no campo da tarefa certa (cada missão tem o seu). 5) Se a instrução pedia
+exatamente aquilo (o motivo inteiro? só o número?). Só depois disso suspeite do
+exercício. Em pentest, o mesmo método vale para "o ataque não funciona": antes de
+culpar a ferramenta, confira cada detalhe do que você mandou.
+</Solution>
+
+### Exercícios práticos extras (sem flag)
+
+1. No Glossário, descubra quantos termos este módulo introduz. (Dica: a lista está na
+   seção 10 deste módulo, e o Glossário mostra "Introduzido em" em cada um.)
+2. Com a plataforma ligada, repita o passo 3 da Missão 2 usando
+   `-H 'Host: localhost:3000'`. Que status code volta, e por quê?
+3. Mande um pedido que muda estado sem `Origin` local:
+   `curl -s -o /dev/null -w '%{http_code}\n' -X POST http://127.0.0.1:3000/`
+   (`-X POST` muda o método do pedido). O que acontece, e qual regra da seção 3.2 ele
+   prova?
+4. No Painel, encontre a conquista que você ganha ao acertar uma flag **sem nenhuma**
+   tentativa errada antes. Você a ganhou na Missão 1 ou na Missão 2?
+
+<Solution title="Soluções dos exercícios extras">
+2: `200`. `localhost:3000` é um dos dois nomes da allowlist, então o pedido passa.
+
+3: `403`. Um `POST` sem cabeçalho `Origin` é barrado antes de chegar a qualquer página
+ou ação: é a regra que impede um site qualquer de mandar o seu navegador acionar a
+plataforma. Para ver o motivo, troque `-o /dev/null -w ...` por nada e leia o corpo.
+
+4: "De primeira". Se você errou alguma vez antes de acertar uma das flags, ganhou com a
+outra; se errou nas duas, ela fica para um próximo módulo.
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O ciclo de cada módulo é **teoria → prática → flag**, com 10 seções fixas. O menu
+  leva a Início, Trilhas, Painel, Laboratórios e Glossário.
+- Um módulo está **bloqueado** (aviso suave, a página continua legível),
+  **disponível**, **em andamento** ou **concluído** (todas as tarefas concluídas).
+  Errar nunca desfaz uma conclusão.
+- Flags ficam só como **hash scrypt com salt**, no servidor. O navegador envia um
+  palpite e recebe "certo" ou "errado"; o gabarito do quiz também nunca sai do
+  servidor. Só os espaços das pontas são ignorados: maiúsculas contam.
+- Tudo escuta em **`127.0.0.1`** (loopback): a plataforma na porta 3000 e a tela do
+  Kali na 8080. `0.0.0.0` significa todas as interfaces, e é o padrão perigoso de
+  muitas ferramentas.
+- O **`proxy.ts`** recusa `Host` desconhecido (contra **DNS rebinding**) e exige
+  `Origin` local em tudo o que muda estado.
+- Alvos em redes internas, **sem internet**; nenhum contêiner com o `docker.sock`;
+  labs controlados só pelo `scripts/lab.sh`, com lista fechada; **um lab por vez**.
+- Casos reais (Transmission, Zoom, Graboid) mostram o mesmo erro: confiar em quem
+  alcança o serviço. A defesa é diminuir a superfície de ataque e **verificar**.
+
+### Cola rápida
+
+| Quero... | Onde / como |
+|---|---|
+| Ligar a plataforma | `cd ~/projetos/plataforma-cyber` e `npm run dev`; abrir `http://127.0.0.1:3000` |
+| Desligar a plataforma | `Ctrl+C` no terminal do `npm run dev` |
+| Continuar de onde parei | Início |
+| Ver meu progresso e conquistas | Painel |
+| Ligar / parar / resetar um lab | Laboratórios, ou o painel do lab no módulo, ou `scripts/lab.sh up/down/reset <lab>` |
+| Provar o isolamento de um lab | Botão "Verificar isolamento" ou `scripts/lab.sh verify <lab>` |
+| Conferir onde a plataforma escuta | `ss -tln` (procure `127.0.0.1:3000`) |
+| Baixar as imagens de um lab | `scripts/lab.sh pull <lab>` (só no terminal; usa a internet) |
+| Fazer backup do progresso | `npm run db:backup` |
+| Achar um termo | Glossário, com a busca |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Docker — Port publishing and mapping](https://docs.docker.com/engine/network/port-publishing/)
+  — a documentação oficial sobre publicar portas, com o aviso de que o padrão é
+  inseguro (em inglês).
+- [Pull request #468 do Transmission](https://github.com/transmission/transmission/pull/468)
+  — a correção do DNS rebinding, com a explicação de Tavis Ormandy (em inglês).
+- [Unit 42 — Graboid](https://unit42.paloaltonetworks.com/graboid-first-ever-cryptojacking-worm-found-in-images-on-docker-hub/)
+  — a análise completa do worm que usava a API do Docker exposta (em inglês).
+- [Código Penal, art. 154-A](https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm)
+  — o texto oficial e atualizado do crime de invasão de dispositivo informático.
+- `docs/LABORATORIO.md` e `docs/MANUTENCAO.md`, no próprio projeto — como os labs são
+  isolados e verificados, e como fazer backup e limpeza de disco.
+
+**O que vem a seguir:** o módulo 0.2, "Redes TCP/IP na prática", aprofunda o que aqui
+apareceu de passagem: endereços IP, portas, DNS e o caminho de uma requisição HTTP. O
+0.3 abre o terminal de verdade, no sandbox que você ligou na seção 5.4.

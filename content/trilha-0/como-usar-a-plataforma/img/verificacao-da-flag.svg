@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
+  <title id="t">Como a flag é verificada</title>
+  <desc id="d">Você digita a flag no navegador e clica em Enviar. O formulário vai ao servidor local, passando pelo guarda de Host e Origin. No servidor, o texto é normalizado (espaços das pontas removidos e Unicode NFC), passa pela função scrypt junto com o salt da tarefa, e o resultado é comparado com o hash guardado no banco. O banco nunca tem a flag em claro, só hash e salt. A tentativa é registrada: a errada guarda o texto digitado, a certa não. Ao navegador volta só "correta" ou "ainda não".</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 15px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="430" fill="#121815"/>
+
+  <!-- Browser -->
+  <rect class="box" x="20" y="30" width="230" height="150" rx="10" style="stroke:#5cc8d8"/>
+  <text class="t" x="36" y="56" style="fill:#5cc8d8">Navegador</text>
+  <rect x="36" y="72" width="198" height="30" rx="5" fill="#121815" stroke="#34413b"/>
+  <text class="s" x="46" y="92" style="fill:#e6ede8">FLAG{...}   [Enviar]</text>
+  <text class="s" x="36" y="128">não tem o hash,</text>
+  <text class="s" x="36" y="144">nem a resposta, nem o</text>
+  <text class="s" x="36" y="160">gabarito do quiz</text>
+
+  <line x1="250" y1="87" x2="316" y2="87" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="s" x="258" y="78">POST</text>
+
+  <!-- Server -->
+  <rect class="box" x="320" y="30" width="560" height="250" rx="10" style="stroke:#5ee08a"/>
+  <text class="t" x="336" y="56" style="fill:#5ee08a">Servidor local (127.0.0.1:3000)</text>
+
+  <rect x="336" y="70" width="250" height="34" rx="5" fill="#121815" stroke="#34413b"/>
+  <text class="s" x="346" y="92" style="fill:#e6ede8">1. guarda: Host e Origin locais?</text>
+  <rect x="336" y="114" width="250" height="34" rx="5" fill="#121815" stroke="#34413b"/>
+  <text class="s" x="346" y="136" style="fill:#e6ede8">2. normaliza (pontas + NFC)</text>
+  <rect x="336" y="174" width="250" height="34" rx="5" fill="#121815" stroke="#e8c25a"/>
+  <text class="s" x="346" y="196" style="fill:#e8c25a">3. scrypt(texto, salt)</text>
+  <rect x="336" y="218" width="250" height="34" rx="5" fill="#121815" stroke="#e8c25a"/>
+  <text class="s" x="346" y="240" style="fill:#e8c25a">4. compara com o hash guardado</text>
+
+  <g stroke="#9fb0a6" stroke-width="1.5">
+    <line x1="461" y1="104" x2="461" y2="112"/>
+    <line x1="461" y1="166" x2="461" y2="172"/>
+    <line x1="461" y1="208" x2="461" y2="216"/>
+  </g>
+
+  <!-- DB -->
+  <rect x="640" y="80" width="220" height="110" rx="10" fill="#121815" stroke="#e8c25a"/>
+  <text class="t" x="656" y="104" style="fill:#e8c25a">Banco (SQLite)</text>
+  <text class="s" x="656" y="126">hash + salt da tarefa</text>
+  <text class="s" x="656" y="144">nunca a flag em claro</text>
+  <text class="s" x="656" y="166">tentativa errada guarda</text>
+  <text class="s" x="656" y="182">o texto; a certa, não</text>
+  <line x1="636" y1="190" x2="590" y2="230" stroke="#e8c25a" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+  <!-- Answer -->
+  <path d="M336 266 H135 V184" fill="none" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="s" x="30" y="296" style="fill:#5ee08a">volta só: "Flag correta!" ou "Ainda não."</text>
+
+  <!-- Bottom note -->
+  <rect x="20" y="310" width="860" height="100" rx="10" fill="none" stroke="#34413b" stroke-dasharray="5 4"/>
+  <text class="t" x="36" y="336">Por que assim?</text>
+  <text class="s" x="36" y="360">Se a resposta estivesse no navegador (no HTML ou no JavaScript), bastaria abrir o código-fonte</text>
+  <text class="s" x="36" y="378">da página para "resolver" tudo sem fazer nada. Com só o hash no servidor, a única forma de acertar</text>
+  <text class="s" x="36" y="396">é chegar ao texto certo, e quem abre o banco não encontra a flag escrita em lugar nenhum.</text>
+</svg>

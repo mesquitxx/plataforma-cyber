@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">DNS rebinding passo a passo</title>
+  <desc id="d">Quatro participantes: o navegador da vítima, o DNS do atacante, o site do atacante e um serviço local em 127.0.0.1. Passo 1: o navegador pergunta o endereço de ataque.example e o DNS responde com o IP do site do atacante, com validade curtíssima. Passo 2: o navegador baixa a página com o JavaScript do atacante. Passo 3: o script pede de novo ataque.example; a validade expirou e o DNS agora responde 127.0.0.1. Passo 4: o navegador manda a requisição ao serviço local, achando que é o mesmo site, com o cabeçalho Host: ataque.example. Passo 5: um serviço que não confere o Host obedece e devolve os dados; um serviço que confere o Host, como esta plataforma, responde 403.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+    .life { stroke: #34413b; stroke-width: 1.5; stroke-dasharray: 4 4; }
+  </style>
+  <defs>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+
+  <!-- Participants (centers: 110, 340, 560, 780) -->
+  <rect class="box" x="30" y="20" width="160" height="46" rx="8" style="stroke:#5cc8d8"/>
+  <text class="t" x="44" y="40">Navegador</text>
+  <text class="s" x="44" y="56">da vítima</text>
+  <rect class="box" x="260" y="20" width="160" height="46" rx="8" style="stroke:#f08c7a"/>
+  <text class="t" x="274" y="40" style="fill:#f08c7a">DNS do</text>
+  <text class="s" x="274" y="56">atacante</text>
+  <rect class="box" x="480" y="20" width="160" height="46" rx="8" style="stroke:#f08c7a"/>
+  <text class="t" x="494" y="40" style="fill:#f08c7a">Site do</text>
+  <text class="s" x="494" y="56">atacante</text>
+  <rect class="box" x="700" y="20" width="170" height="46" rx="8" style="stroke:#5ee08a"/>
+  <text class="t" x="714" y="40" style="fill:#5ee08a">Serviço local</text>
+  <text class="s" x="714" y="56">127.0.0.1:porta</text>
+
+  <line class="life" x1="110" y1="66" x2="110" y2="400"/>
+  <line class="life" x1="340" y1="66" x2="340" y2="400"/>
+  <line class="life" x1="560" y1="66" x2="560" y2="400"/>
+  <line class="life" x1="785" y1="66" x2="785" y2="400"/>
+
+  <!-- 1 -->
+  <line x1="110" y1="100" x2="336" y2="100" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="s" x="120" y="94">1. ataque.example = ?</text>
+  <line x1="340" y1="124" x2="114" y2="124" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
+  <text class="s" x="120" y="140" style="fill:#f08c7a">IP do site do atacante, validade (TTL) de segundos</text>
+
+  <!-- 2 -->
+  <line x1="110" y1="172" x2="556" y2="172" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="s" x="360" y="166">2. baixa a página</text>
+  <line x1="560" y1="194" x2="114" y2="194" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
+  <text class="s" x="360" y="210" style="fill:#f08c7a">página + JavaScript do atacante</text>
+
+  <!-- 3 -->
+  <line x1="110" y1="242" x2="336" y2="242" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="s" x="120" y="236">3. TTL venceu: ataque.example = ?</text>
+  <line x1="340" y1="266" x2="114" y2="266" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
+  <text class="s" x="120" y="282" style="fill:#f08c7a">agora: 127.0.0.1  (o "rebind")</text>
+
+  <!-- 4 -->
+  <line x1="110" y1="316" x2="781" y2="316" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="s" x="300" y="310">4. GET /dados   Host: ataque.example   ("mesmo site", acha o navegador)</text>
+
+  <!-- 5 -->
+  <line x1="785" y1="346" x2="114" y2="346" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
+  <text class="s" x="300" y="362" style="fill:#f08c7a">5a. sem checar o Host: obedece e devolve os dados</text>
+  <line x1="785" y1="384" x2="114" y2="384" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="s" x="300" y="400" style="fill:#5ee08a">5b. checando o Host (como o proxy.ts): 403 Forbidden</text>
+
+  <rect x="30" y="420" width="840" height="38" rx="8" fill="none" stroke="#34413b" stroke-dasharray="5 4"/>
+  <text class="s" x="44" y="444">O navegador compara nomes, não endereços: para ele, 2 e 4 são o mesmo site, e o script lê a resposta.</text>
+</svg>

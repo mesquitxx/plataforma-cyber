@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
+  <title id="t">Os estados de um módulo</title>
+  <desc id="d">Um módulo começa Bloqueado (algum pré-requisito pendente, mas a página continua legível) ou Disponível (todos os pré-requisitos concluídos). Concluir os pré-requisitos o torna Disponível. Qualquer ação numa tarefa o deixa Em andamento. Quando todas as tarefas ficam concluídas, ele passa a Concluído. Desmarcar uma tarefa manual o devolve para Em andamento. Embaixo, os tipos de tarefa: flag e quiz são corrigidos pelo servidor; leitura, exercício e passo de lab são marcados à mão.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c25a"/></marker>
+  </defs>
+  <rect width="900" height="400" fill="#121815"/>
+
+  <!-- States -->
+  <rect class="box" x="20" y="40" width="180" height="78" rx="10" stroke="#6b7a72"/>
+  <text class="t" x="36" y="68" style="fill:#9fb0a6">Bloqueado</text>
+  <text class="s" x="36" y="88">pré-requisito</text>
+  <text class="s" x="36" y="104">pendente (legível)</text>
+
+  <rect class="box" x="250" y="40" width="180" height="78" rx="10" stroke="#e6ede8"/>
+  <text class="t" x="266" y="68">Disponível</text>
+  <text class="s" x="266" y="88">pré-requisitos</text>
+  <text class="s" x="266" y="104">concluídos</text>
+
+  <rect class="box" x="480" y="40" width="180" height="78" rx="10" stroke="#5cc8d8"/>
+  <text class="t" x="496" y="68" style="fill:#5cc8d8">Em andamento</text>
+  <text class="s" x="496" y="88">alguma tarefa</text>
+  <text class="s" x="496" y="104">foi tentada</text>
+
+  <rect class="box" x="710" y="40" width="170" height="78" rx="10" stroke="#5ee08a"/>
+  <text class="t" x="726" y="68" style="fill:#5ee08a">Concluído</text>
+  <text class="s" x="726" y="88">todas as tarefas</text>
+  <text class="s" x="726" y="104">concluídas</text>
+
+  <line x1="200" y1="79" x2="246" y2="79" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <line x1="430" y1="79" x2="476" y2="79" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <line x1="660" y1="79" x2="706" y2="79" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <path d="M795 118 v34 h-225 v-30" fill="none" stroke="#e8c25a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#y)"/>
+  <text class="s" x="590" y="170" style="fill:#e8c25a">desmarcar uma tarefa manual</text>
+  <text class="s" x="20" y="150">"Bloqueado" é um aviso, não uma tranca:</text>
+  <text class="s" x="20" y="166">você pode ler o módulo mesmo assim.</text>
+
+  <!-- Task types -->
+  <text class="t" x="20" y="222">Tipos de tarefa</text>
+  <rect class="box" x="20" y="238" width="420" height="138" rx="10" stroke="#5ee08a"/>
+  <text class="t" x="36" y="264" style="fill:#5ee08a">Corrigidas pelo servidor</text>
+  <text class="s" x="36" y="290">flag  →  certa conclui; errada deixa</text>
+  <text class="s" x="36" y="306">         "em andamento" (nunca desfaz)</text>
+  <text class="s" x="36" y="332">quiz  →  acertar ≥ 70% conclui; o gabarito</text>
+  <text class="s" x="36" y="348">         nunca vai ao navegador</text>
+
+  <rect class="box" x="460" y="238" width="420" height="138" rx="10" stroke="#5cc8d8"/>
+  <text class="t" x="476" y="264" style="fill:#5cc8d8">Marcadas à mão</text>
+  <text class="s" x="476" y="290">leitura · exercício · passo de lab</text>
+  <text class="s" x="476" y="316">você marca e desmarca no quadro</text>
+  <text class="s" x="476" y="332">"Tarefas do módulo"</text>
+  <text class="s" x="476" y="358">módulo sem tarefas: botão "Marcar módulo..."</text>
+</svg>

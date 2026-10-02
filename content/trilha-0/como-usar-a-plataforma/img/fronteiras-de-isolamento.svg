@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t d">
+  <title id="t">As fronteiras de isolamento da plataforma</title>
+  <desc id="d">Dentro do Windows roda o WSL. No WSL, o navegador fala com a plataforma em 127.0.0.1:3000. A plataforma é um processo comum, fora de contêiner, e só controla o Docker chamando scripts/lab.sh com uma lista fechada de labs e ações. No Docker, a única porta de lab é a do guac-proxy, em 127.0.0.1:8080; atrás dele, numa rede interna, ficam o Guacamole e o Kali, e o alvo fica numa rede interna de laboratório, alcançável só pelo Kali. O sandbox Linux não tem rede nenhuma. Setas cortadas mostram o que é bloqueado: outros aparelhos da rede de casa não alcançam as portas, e os alvos não alcançam a internet nem o PC.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 14.5px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+    .x { stroke: #f08c7a; stroke-width: 3; }
+  </style>
+  <defs>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+  </defs>
+  <rect width="900" height="520" fill="#121815"/>
+
+  <!-- Outside world -->
+  <rect x="20" y="14" width="400" height="44" rx="8" fill="none" stroke="#f08c7a" stroke-dasharray="5 4"/>
+  <text class="t" x="34" y="34" style="fill:#f08c7a">Outros aparelhos da rede de casa</text>
+  <text class="s" x="34" y="50">celular, notebook de visita, TV...</text>
+  <rect x="480" y="14" width="400" height="44" rx="8" fill="none" stroke="#f08c7a" stroke-dasharray="5 4"/>
+  <text class="t" x="494" y="34" style="fill:#f08c7a">Internet</text>
+  <text class="s" x="494" y="50">os alvos nunca chegam até ela</text>
+
+  <!-- Windows / WSL -->
+  <rect x="20" y="78" width="860" height="428" rx="12" fill="none" stroke="#34413b" stroke-width="1.5"/>
+  <text class="s" x="34" y="96">Windows</text>
+  <rect x="36" y="106" width="828" height="388" rx="12" fill="none" stroke="#5cc8d8" stroke-width="1.5"/>
+  <text class="s" x="50" y="124" style="fill:#5cc8d8">WSL (Ubuntu)</text>
+
+  <!-- blocked from LAN -->
+  <line x1="256" y1="58" x2="256" y2="170" stroke="#f08c7a" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#r)"/>
+  <line class="x" x1="244" y1="88" x2="268" y2="112"/><line class="x" x1="268" y1="88" x2="244" y2="112"/>
+
+  <!-- Browser and platform -->
+  <rect class="box" x="56" y="152" width="170" height="54" rx="8"/>
+  <text class="t" x="70" y="176">Navegador</text>
+  <text class="s" x="70" y="194">você</text>
+  <line x1="226" y1="179" x2="282" y2="179" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <rect class="box" x="286" y="140" width="250" height="78" rx="8" style="stroke:#5ee08a"/>
+  <text class="t" x="300" y="164" style="fill:#5ee08a">Plataforma</text>
+  <text class="s" x="300" y="184">127.0.0.1:3000 · processo comum,</text>
+  <text class="s" x="300" y="200">fora de contêiner · confere Host</text>
+
+  <line x1="411" y1="218" x2="411" y2="254" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <rect class="box" x="286" y="258" width="250" height="54" rx="8" style="stroke:#e8c25a"/>
+  <text class="t" x="300" y="282" style="fill:#e8c25a">scripts/lab.sh</text>
+  <text class="s" x="300" y="300">lista fechada de labs e ações</text>
+
+  <!-- Docker -->
+  <rect x="56" y="330" width="790" height="150" rx="10" fill="none" stroke="#34413b" stroke-dasharray="4 4"/>
+  <text class="s" x="432" y="348">Docker · sem docker.sock, sem privileged</text>
+  <line x1="411" y1="312" x2="411" y2="356" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+
+  <rect class="box" x="70" y="362" width="170" height="64" rx="8"/>
+  <text class="t" x="84" y="386">guac-proxy</text>
+  <text class="s" x="84" y="404">127.0.0.1:8080</text>
+  <text class="s" x="84" y="418">única porta de lab</text>
+  <path d="M141 206 V358" fill="none" stroke="#5cc8d8" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#c)"/>
+  <text class="s" x="150" y="236">tela do Kali</text>
+  <text class="s" x="150" y="250">(iframe)</text>
+
+  <rect x="260" y="362" width="370" height="104" rx="8" fill="none" stroke="#5cc8d8" stroke-dasharray="4 3"/>
+  <text class="s" x="272" y="378" style="fill:#5cc8d8">redes internas (sem internet, sem rota para o PC)</text>
+  <rect class="box" x="272" y="388" width="100" height="62" rx="6"/>
+  <text class="t" x="282" y="414">Guaca-</text>
+  <text class="t" x="282" y="432">mole</text>
+  <rect class="box" x="392" y="388" width="90" height="62" rx="6"/>
+  <text class="t" x="410" y="424">Kali</text>
+  <rect class="box" x="502" y="388" width="116" height="62" rx="6" style="stroke:#f08c7a"/>
+  <text class="t" x="514" y="414" style="fill:#f08c7a">alvo</text>
+  <text class="s" x="514" y="432">ex.: DVWA</text>
+  <line x1="240" y1="419" x2="268" y2="419" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <line x1="372" y1="419" x2="388" y2="419" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <line x1="482" y1="419" x2="498" y2="419" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+
+  <rect class="box" x="650" y="362" width="182" height="104" rx="8"/>
+  <text class="t" x="664" y="386">linux-sandbox</text>
+  <text class="s" x="664" y="406">network_mode: none</text>
+  <text class="s" x="664" y="422">sem portas, sem sudo</text>
+  <text class="s" x="664" y="438">shell: npm run</text>
+  <text class="s" x="664" y="454">lab:sandbox</text>
+
+  <!-- blocked to internet -->
+  <path d="M560 388 V250 H700 V62" fill="none" stroke="#f08c7a" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#r)"/>
+  <line class="x" x1="688" y1="128" x2="712" y2="152"/><line class="x" x1="712" y1="128" x2="688" y2="152"/>
+  <text class="s" x="724" y="146" style="fill:#f08c7a">bloqueado</text>
+  <text class="s" x="572" y="242" style="fill:#f08c7a">alvo → internet</text>
+</svg>
