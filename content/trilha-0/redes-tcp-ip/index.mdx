@@ -1,0 +1,1912 @@
+---
+slug: redes-tcp-ip
+track: trilha-0
+title: "Redes TCP/IP na prática"
+prerequisites: [como-usar-a-plataforma]
+lab: null
+tasks:
+  - slug: missao-1-sua-maquina-na-rede
+    title: "Missão 1 — Seu computador visto pela rede"
+    type: flag
+    prompt: "MTU da interface lo, prefixo do 127.0.0.1 e o nome do serviço da porta do DNS local, no formato FLAG{MTU-prefixo-nome}."
+    hint: "ip link show lo mostra o mtu; ip -br addr mostra o /N; ss -tuln mostra a porta do DNS local e getent services traduz o número."
+    flag:
+      hash: "scrypt$16384$8$1$3a8f83ee9fb91f718d819de8171907d5621b125a79736cd5d7a5bdae2c23c7aa"
+      salt: "7ae1fe6972bf9e0d92f72c9170e4d1e3"
+  - slug: missao-2-escopo-do-cliente
+    title: "Missão 2 — O escopo do cliente"
+    type: flag
+    prompt: "Broadcast da sub-rede, total de hosts autorizados e quantos IPs da lista estão no escopo, no formato FLAG{broadcast-hosts-lista}."
+    hint: "Um /27 deixa 5 bits para os hosts. Endereço de rede e broadcast nunca são hosts, e o contrato exclui um endereço."
+    flag:
+      hash: "scrypt$16384$8$1$c7ea4ed33c17b47d84f4a074f97388fde70e47fe5ec3b340ff091f11317a5a8d"
+      salt: "fe240698043d062296398d53aff5a14f"
+  - slug: missao-3-raio-x-de-um-pacote
+    title: "Missão 3 — Raio-X de um pacote"
+    type: flag
+    prompt: "Porta de origem, porta de destino e TTL do quadro SYN, em decimal, no formato FLAG{origem-destino-TTL}."
+    hint: "Use o mapa de bytes: a porta de origem está em 0x22–0x23, a de destino em 0x24–0x25 e o TTL em 0x16. Depois converta de hexadecimal para decimal."
+    flag:
+      hash: "scrypt$16384$8$1$1f08f2661d7b1688561664c1853e7c6009df5a423c375ba3c5b508b717975da4"
+      salt: "2600bb465c67ef1de5c26c3385a4287e"
+  - slug: quiz-final
+    title: "Quiz — Redes TCP/IP na prática"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Você envia um GET HTTP pela rede. Qual é a ordem do encapsulamento, de dentro para fora?"
+        options:
+          - "Ethernet dentro de IP, dentro de TCP, dentro de HTTP"
+          - "HTTP dentro de TCP, dentro de IP, dentro de Ethernet"
+          - "TCP dentro de HTTP, dentro de Ethernet, dentro de IP"
+          - "HTTP dentro de IP, dentro de TCP, dentro de Ethernet"
+        answer: 1
+        explanation: "Cada camada põe o seu cabeçalho na frente do que recebeu de cima: os dados HTTP ganham um cabeçalho TCP (segmento), que ganha um IP (pacote), que ganha um Ethernet (quadro). No quadro da Missão 3: 14 + 20 + 32 bytes de cabeçalhos antes dos dados."
+      - question: "Quantos hosts utilizáveis cabem na sub-rede `192.168.0.0/24`?"
+        options:
+          - "256"
+          - "255"
+          - "254"
+          - "24"
+        answer: 2
+        explanation: "Um /24 deixa 8 bits para os hosts: 2^8 = 256 combinações. Tirando o endereço de rede (.0) e o broadcast (.255), sobram 254."
+      - question: "Qual destes endereços NÃO é privado segundo a RFC 1918?"
+        options:
+          - "`10.200.1.1`"
+          - "`172.20.0.5`"
+          - "`192.168.99.1`"
+          - "`172.32.0.5`"
+        answer: 3
+        explanation: "As faixas privadas são 10.0.0.0/8, 172.16.0.0/12 (de 172.16.0.0 a 172.31.255.255) e 192.168.0.0/16. 172.32.0.5 está logo fora do /12: é um endereço público."
+      - question: "Um `curl` para uma porta falha em 0 ms com \"Could not connect\"; outro, para outra máquina, falha depois de 3 segundos com \"Connection timed out\". O que cada resultado sugere?"
+        options:
+          - "Os dois indicam máquina desligada"
+          - "O primeiro recebeu um RST (porta fechada, a máquina respondeu); no segundo, nada voltou (firewall descartando, ou máquina inalcançável)"
+          - "O primeiro é um firewall; o segundo é uma porta fechada"
+          - "Os dois indicam que o DNS falhou"
+        answer: 1
+        explanation: "Porta fechada responde na hora com RST: \"recusado\". Um firewall que descarta em silêncio não responde nada, e o programa só desiste no tempo limite. É exatamente o que você viu na seção 2.5 e o que o nmap chama de closed e filtered."
+      - question: "Por que o ataque de envenenamento de cache de Kaminsky (2008) era tão prático contra resolvedores DNS da época?"
+        options:
+          - "Porque o DNS usa TCP com senha fraca"
+          - "Porque a resposta só precisava acertar um ID de transação de 16 bits, e muitos servidores usavam sempre a mesma porta de origem"
+          - "Porque os servidores raiz não tinham cache"
+          - "Porque o DNS não tinha TTL"
+        answer: 1
+        explanation: "Sobre UDP, o resolvedor aceita a primeira resposta com o ID e a porta certos. Com 16 bits de ID (65.536 valores) e porta fixa, um atacante adivinhava rápido. A correção imediata foi sortear também a porta de origem, somando cerca de 16 bits de incerteza."
+      - question: "Para que existe o campo TTL do cabeçalho IP?"
+        options:
+          - "Para medir a velocidade da conexão"
+          - "Para dizer por quanto tempo uma resposta de DNS vale"
+          - "Para impedir que um pacote circule para sempre: cada roteador diminui 1 e descarta o pacote quando chega a 0"
+          - "Para indicar a porta de destino"
+        answer: 2
+        explanation: "Sem o TTL, um erro de rota faria pacotes girarem em círculo eternamente. O TTL do DNS (módulo 0.1) é outra coisa: validade de uma resposta em cache. De quebra, o TTL que chega dá uma pista do sistema de origem (64 no Linux, 128 no Windows)."
+      - question: "Por que o ARP spoofing funciona numa rede local?"
+        options:
+          - "Porque o ARP exige senha, e a senha padrão é conhecida"
+          - "Porque o ARP não autentica nada: qualquer aparelho pode anunciar \"o IP do gateway está no meu MAC\", e os outros acreditam"
+          - "Porque o roteador encaminha o ARP para a internet"
+          - "Porque o TCP não confere portas"
+        answer: 1
+        explanation: "O ARP foi desenhado em 1982 (RFC 826) para redes de confiança. Ele aceita respostas, inclusive não solicitadas, sem verificar quem as mandou. Assim o atacante se coloca no meio do caminho (MITRE T1557.002)."
+      - question: "No caso YouTube × Pakistan Telecom (2008), por que o anúncio de `208.65.153.0/24` atraiu o tráfego do mundo, se o YouTube anunciava `208.65.152.0/22`?"
+        options:
+          - "Porque /24 é um número maior, e números maiores são mais rápidos"
+          - "Porque os roteadores escolhem a rota de prefixo mais específico (mais longo), e o /24 está dentro do /22"
+          - "Porque o Paquistão desligou os servidores do YouTube"
+          - "Porque o DNS do YouTube apontou para o Paquistão"
+        answer: 1
+        explanation: "Pela regra do prefixo mais longo, um /24 vence um /22 que o contém. Foi por isso que o YouTube reagiu anunciando dois /25, ainda mais específicos."
+      - question: "Por que um aparelho na internet não consegue abrir uma conexão direto para o seu `192.168.0.10`?"
+        options:
+          - "Porque endereços privados não existem na internet e o NAT do roteador só sabe desfazer traduções de conexões que começaram do lado de dentro"
+          - "Porque a porta 3000 é secreta"
+          - "Porque o DNS esconde o seu IP"
+          - "Porque o TTL acaba antes"
+        answer: 0
+        explanation: "192.168.0.0/16 não é roteado na internet, e o NAT só tem na tabela as conexões que você abriu. Isso protege por acaso, mas não é firewall: um redirecionamento de porta, o UPnP ou um IPv6 público sem filtro mudam tudo (seção 8)."
+      - question: "Num Wi-Fi público, você acessa `https://banco.example`. O que alguém escutando a rede consegue ver?"
+        options:
+          - "Tudo, inclusive a senha"
+          - "Nada de nada"
+          - "Os endereços IP e portas, os tamanhos e horários dos pacotes e, em geral, o nome do site; mas não o conteúdo, que vai cifrado pelo TLS"
+          - "Só a senha, mas não o site"
+        answer: 2
+        explanation: "O TLS cifra a camada de aplicação (o HTTP inteiro, com caminho, cookies e senha). Os cabeçalhos IP e TCP precisam ir em claro para o pacote chegar, e o nome costuma vazar pela consulta DNS e pela abertura do TLS."
+glossary:
+  - term: network
+    definition: "Rede: dois ou mais aparelhos ligados de forma a trocar dados, por cabo, rádio (Wi-Fi) ou interfaces virtuais."
+  - term: protocol
+    definition: "Protocolo: conjunto de regras que define o formato das mensagens e a ordem da conversa entre aparelhos, para que fabricantes diferentes se entendam."
+  - term: packet
+    definition: "Pacote: um pedaço de dados com um cabeçalho de endereçamento, que viaja pela rede de forma independente. Na camada IP, a unidade de transmissão."
+  - term: bit
+    definition: "A menor unidade de informação: 0 ou 1. Endereços IPv4 têm 32 bits; IPv6, 128."
+  - term: byte
+    definition: "Grupo de 8 bits, escrito com dois dígitos hexadecimais (de 00 a ff). Tamanhos de pacotes e cabeçalhos são contados em bytes."
+  - term: hexadecimal
+    definition: "Sistema de numeração de base 16 (0–9 e a–f). Cada dígito vale 4 bits, então um byte vira dois dígitos. É como ferramentas de rede mostram os bytes crus."
+  - term: TCP/IP model
+    definition: "Modelo TCP/IP: a organização da internet em quatro camadas (enlace, internet, transporte e aplicação), cada uma com seus protocolos e seu cabeçalho."
+  - term: OSI model
+    definition: "Modelo OSI: modelo teórico de sete camadas, usado como vocabulário (\"camada 2\", \"camada 7\"). A internet real segue o TCP/IP, de quatro."
+  - term: encapsulation
+    definition: "Encapsulamento: cada camada acrescenta o próprio cabeçalho ao que recebe de cima (segmento dentro de pacote dentro de quadro); no destino, cada camada retira o seu."
+  - term: header
+    definition: "Cabeçalho: os bytes de controle que uma camada põe na frente dos dados (endereços, portas, tamanhos, flags). Não confundir com o cabeçalho HTTP, que é texto."
+  - term: payload
+    definition: "Carga útil: os dados que um pacote transporta, depois dos cabeçalhos."
+  - term: Ethernet
+    definition: "Família de padrões de rede local com cabo (IEEE 802.3), cujo formato de quadro também é usado nas redes virtuais do WSL e do Docker."
+  - term: frame
+    definition: "Quadro: a unidade da camada de enlace, com cabeçalho Ethernet (MACs de destino e origem e o tipo) e, dentro, um pacote IP."
+  - term: MAC address
+    definition: "Endereço MAC: identificador de 48 bits de uma placa de rede (ex.: 00:15:5d:12:34:56), usado só dentro da rede local. Os 3 primeiros bytes costumam indicar o fabricante."
+  - term: switch
+    definition: "Aparelho que liga os computadores de uma rede local e entrega cada quadro na porta física do MAC de destino."
+  - term: router
+    definition: "Roteador: aparelho que liga redes diferentes e decide, pelo endereço IP de destino, para onde encaminhar cada pacote."
+  - term: default gateway
+    definition: "Gateway padrão: o roteador para onde vão todos os pacotes cujo destino não está na rede local. A rota \"default\" da tabela de rotas."
+  - term: routing table
+    definition: "Tabela de rotas: a lista que diz, para cada faixa de destino, por qual interface e qual roteador sair. Vista com ip route."
+  - term: ARP
+    definition: "Address Resolution Protocol: descobre o MAC de um IP da rede local perguntando a todos (\"quem tem 192.168.0.1?\"). Não tem autenticação nenhuma."
+  - term: IPv4
+    definition: "Versão 4 do Internet Protocol (RFC 791): endereços de 32 bits escritos em quatro números de 0 a 255, como 192.168.0.10."
+  - term: IPv6
+    definition: "Versão 6 do Internet Protocol (RFC 8200): endereços de 128 bits escritos em hexadecimal, como 2001:db8::1. Criado porque os endereços IPv4 acabaram."
+  - term: CIDR
+    definition: "Classless Inter-Domain Routing: a notação endereço/N (ex.: 10.20.30.64/27), em que N é quantos bits iniciais identificam a rede."
+  - term: subnet
+    definition: "Sub-rede: faixa de endereços com o mesmo prefixo de rede, em que os aparelhos se falam direto, sem passar por roteador."
+  - term: subnet mask
+    definition: "Máscara de sub-rede: o prefixo escrito como endereço, com 1 nos bits de rede e 0 nos de host (/24 = 255.255.255.0)."
+  - term: broadcast
+    definition: "Envio para todos de uma rede local. Em IPv4, o endereço com todos os bits de host em 1 (ex.: .255 num /24); não pode ser usado por um host."
+  - term: private IP address
+    definition: "Endereço IP privado: das faixas da RFC 1918 (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), livres para uso interno e não roteadas na internet."
+  - term: public IP address
+    definition: "Endereço IP público: único na internet inteira e alcançável por ela; é o que os servidores veem quando você se conecta."
+  - term: NAT
+    definition: "Network Address Translation: o roteador troca o IP (e a porta) de origem privado pelo seu público na ida e desfaz a troca na volta, consultando uma tabela."
+  - term: CGNAT
+    definition: "Carrier-Grade NAT: NAT feito pelo provedor, que dá ao seu roteador um endereço da faixa 100.64.0.0/10 em vez de um IP público."
+  - term: DHCP
+    definition: "Dynamic Host Configuration Protocol: o serviço que entrega automaticamente IP, máscara, gateway e DNS a quem entra na rede."
+  - term: TTL (IP)
+    definition: "Time To Live do pacote IP: contador que cada roteador diminui em 1; ao chegar a 0, o pacote é descartado. Evita loops eternos. Não confundir com o TTL do DNS."
+  - term: hop
+    definition: "Salto: cada roteador por onde um pacote passa no caminho até o destino. Cada salto consome 1 do TTL."
+  - term: ICMP
+    definition: "Internet Control Message Protocol: mensagens de controle e erro da camada IP, como \"destino inalcançável\", \"TTL esgotado\" e o eco do ping."
+  - term: ping
+    definition: "Programa que manda um pedido de eco ICMP e mede se e em quanto tempo a resposta volta. Sem resposta não prova máquina desligada: o ICMP pode estar bloqueado."
+  - term: traceroute
+    definition: "Técnica (e programa) que descobre os roteadores do caminho mandando pacotes com TTL 1, 2, 3... e lendo quem avisa que o TTL esgotou."
+  - term: MTU
+    definition: "Maximum Transmission Unit: o maior pacote que uma interface envia de uma vez (1500 bytes na Ethernet comum; 65536 na loopback do Linux)."
+  - term: TCP
+    definition: "Transmission Control Protocol (RFC 9293): transporte com conexão, entrega garantida e em ordem, por meio de números de sequência, confirmações e retransmissão."
+  - term: UDP
+    definition: "User Datagram Protocol (RFC 768): transporte sem conexão e sem garantia de entrega; leve e rápido. Usado pelo DNS, por jogos, voz e o QUIC."
+  - term: three-way handshake
+    definition: "Aperto de mão em três etapas que abre uma conexão TCP: SYN, SYN-ACK e ACK. Cada lado escolhe e confirma o número de sequência inicial do outro."
+  - term: TCP flags
+    definition: "Bits de controle do cabeçalho TCP: SYN (abrir), ACK (confirmar), FIN (encerrar), RST (abortar), PSH (entregar já), entre outros."
+  - term: RST
+    definition: "Flag TCP de reset: aborta a conexão. Um RST em resposta a um SYN significa \"não há ninguém escutando nesta porta\" (porta fechada)."
+  - term: sequence number
+    definition: "Número de sequência: contador de bytes do TCP que permite remontar os dados em ordem e saber o que falta. O inicial é sorteado."
+  - term: socket
+    definition: "A ponta de uma conexão vista pelo sistema: endereço IP + porta + protocolo. Uma conexão TCP é identificada pelos dois sockets (origem e destino)."
+  - term: ephemeral port
+    definition: "Porta efêmera: porta de origem temporária que o sistema sorteia para o lado cliente de uma conexão. No Linux, por padrão, de 32768 a 60999."
+  - term: well-known port
+    definition: "Porta conhecida (System Port): de 0 a 1023, registradas pela IANA para serviços padrão, como 22 (SSH), 53 (DNS), 80 (HTTP) e 443 (HTTPS)."
+  - term: listening
+    definition: "Escutando: estado de um programa que abriu uma porta e espera conexões (LISTEN no ss). Toda porta escutando faz parte da superfície de ataque."
+  - term: firewall
+    definition: "Filtro que decide, por regras (endereço, porta, protocolo, direção), quais pacotes passam. Pode recusar com aviso (reject) ou descartar em silêncio (drop)."
+  - term: DNS resolver
+    definition: "Resolvedor DNS: quem faz o trabalho de transformar um nome em IP. O do seu computador (stub) pergunta a um recursivo, que percorre a hierarquia e guarda em cache."
+  - term: root server
+    definition: "Servidor raiz: o topo da hierarquia do DNS (o \".\"). São 13 identidades, de a.root-servers.net a m.root-servers.net, com milhares de cópias pelo mundo."
+  - term: authoritative name server
+    definition: "Servidor autoritativo: o que guarda os registros oficiais de um domínio (a zona) e tem a palavra final sobre eles."
+  - term: DNS record
+    definition: "Registro DNS: uma informação publicada sobre um nome, como A (IPv4), AAAA (IPv6), CNAME (apelido), MX (e-mail), NS (servidores do domínio), PTR (IP → nome) e TXT."
+  - term: cache poisoning
+    definition: "Envenenamento de cache: fazer um resolvedor guardar uma resposta falsa, que ele passa a entregar a todos os clientes até o TTL vencer."
+  - term: URL
+    definition: "Uniform Resource Locator: o endereço completo de um recurso, como https://example.com:443/caminho, com esquema, nome, porta e caminho."
+  - term: TLS
+    definition: "Transport Layer Security: protocolo que cifra e autentica a conversa de um aplicativo, com certificados provando a identidade do servidor. A versão atual é a 1.3."
+  - term: HTTPS
+    definition: "HTTP dentro de TLS, normalmente na porta 443. Quem escuta a rede vê IPs, portas e tamanhos, mas não o conteúdo."
+  - term: HTTP method
+    definition: "Método HTTP: o verbo do pedido, como GET (ler), POST (enviar dados), PUT e DELETE."
+  - term: BGP
+    definition: "Border Gateway Protocol: o protocolo com que as redes da internet anunciam umas às outras quais faixas de IP alcançam. É o mapa de rotas da internet."
+  - term: autonomous system
+    definition: "Sistema autônomo (AS): uma rede sob a mesma administração (provedor, empresa), com um número próprio (ex.: AS36561), que fala BGP com as outras."
+  - term: longest prefix match
+    definition: "Regra do prefixo mais longo: entre várias rotas que cobrem um destino, o roteador usa a mais específica (um /24 vence um /22)."
+  - term: BGP hijacking
+    definition: "Sequestro de BGP: anunciar faixas de IP que não são suas (por erro ou ataque), desviando o tráfego delas para a sua rede."
+  - term: RPKI
+    definition: "Resource Public Key Infrastructure: certificados que dizem qual AS pode anunciar cada faixa de IP; a validação de origem (ROV) descarta anúncios inválidos."
+  - term: spoofing
+    definition: "Falsificação: mandar dados se passando por outro, como um pacote com IP de origem falso ou uma resposta DNS forjada."
+  - term: ARP spoofing
+    definition: "Mandar respostas ARP falsas para associar o seu MAC ao IP de outro (geralmente o gateway), e assim receber o tráfego da vítima. Também chamado de ARP poisoning."
+  - term: man-in-the-middle
+    definition: "Ataque em que alguém se coloca no caminho entre duas partes para ler ou alterar a conversa. O MITRE ATT&CK o chama de adversary-in-the-middle (T1557)."
+  - term: sniffing
+    definition: "Escuta de rede: capturar os pacotes que passam por uma interface. Legítimo para diagnóstico; um ataque quando usado para roubar dados (MITRE T1040)."
+  - term: packet capture
+    definition: "Captura de pacotes: gravar o tráfego cru de uma interface num arquivo (formato pcap/pcapng) para analisar depois, com ferramentas como o Wireshark."
+  - term: Wireshark
+    definition: "Analisador de tráfego de código aberto: captura pacotes e mostra cada campo de cada camada. Vem com o dumpcap, o capturador de linha de comando."
+  - term: port scanning
+    definition: "Varredura de portas: testar várias portas de um alvo para ver quais estão abertas, fechadas ou filtradas (MITRE T1046). O nmap é a ferramenta clássica."
+  - term: DDoS
+    definition: "Distributed Denial of Service: negação de serviço distribuída, em que muitas máquinas inundam um alvo até ele não conseguir atender ninguém."
+  - term: egress filtering
+    definition: "Filtragem de saída: regras de firewall que limitam o que pode sair de uma rede, e não só o que entra. Os labs da plataforma são o caso extremo: nada sai."
+  - term: DNSSEC
+    definition: "DNS Security Extensions: assinaturas digitais nos registros DNS, que permitem ao resolvedor verificar que a resposta veio do dono do domínio e não foi alterada."
+  - term: DoH
+    definition: "DNS over HTTPS (RFC 8484): consultas DNS dentro de HTTPS, cifradas para quem escuta a rede. O DoT (RFC 7858) faz o mesmo direto sobre TLS."
+  - term: QUIC
+    definition: "Protocolo de transporte sobre UDP (RFC 9000), com criptografia embutida; é a base do HTTP/3."
+  - term: VLAN
+    definition: "Virtual LAN: divisão de uma rede física em redes locais separadas por software, usada para isolar grupos de aparelhos."
+  - term: SMB
+    definition: "Server Message Block: o protocolo de compartilhamento de arquivos e impressoras do Windows, na porta TCP 445."
+  - term: ransomware
+    definition: "Programa malicioso que cifra os arquivos da vítima e cobra um resgate pela chave."
+---
+
+import camadas from "./img/camadas-e-encapsulamento.svg";
+import cidr from "./img/anatomia-ipv4-cidr.svg";
+import caminho from "./img/caminho-ate-a-internet.svg";
+import handshake from "./img/tcp-handshake.svg";
+import dnsFlow from "./img/resolucao-dns.svg";
+import jornada from "./img/jornada-da-requisicao.svg";
+import mapaQuadro from "./img/mapa-do-quadro.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Todo ataque que você vai estudar nesta plataforma é, no fundo, uma conversa de rede.
+Uma SQL injection é um texto que viaja dentro de um pedido HTTP; um *reverse shell* é
+uma conexão TCP que a vítima abre para o atacante; um vazamento de senhas num Wi-Fi
+público é alguém lendo pacotes que passavam por ali. Quem não entende como os dados
+andam pela <GlossaryTerm term="network">rede</GlossaryTerm> enxerga as ferramentas de
+ataque como mágica, e a defesa como uma lista de regras decoradas.
+
+No módulo 0.1 você viu, de passagem, que a plataforma escuta em `127.0.0.1:3000` e
+recusa pedidos com um `Host` estranho. Aqui você vai entender o que está por trás de
+cada pedaço dessa frase: o que é um <GlossaryTerm term="IP address">endereço IP</GlossaryTerm>,
+o que é uma <GlossaryTerm term="port">porta</GlossaryTerm>, como um nome vira um
+endereço e o que acontece, camada por camada, entre o Enter e a página aparecer. E vai
+olhar tudo isso com os próprios olhos: no seu computador, num pacote de verdade
+capturado byte a byte, e em incidentes reais em que um detalhe de rede tirou do ar o
+YouTube ou o Facebook.
+
+**Ao final, você vai saber:**
+
+- explicar o modelo TCP/IP em quatro camadas e o encapsulamento, e dizer em que camada
+  vive cada protocolo;
+- ler um endereço IPv4 em notação CIDR, calcular rede, broadcast e quantidade de hosts,
+  e decidir se um IP está ou não dentro de um escopo;
+- diferenciar TCP de UDP, ler um handshake e explicar a diferença entre uma porta
+  fechada e uma porta filtrada;
+- explicar como o DNS resolve um nome e por que ele pode ser envenenado;
+- descrever o caminho completo de uma requisição HTTPS, do DNS à resposta;
+- inspecionar interfaces, rotas, vizinhos e portas do seu computador pelo terminal;
+- decodificar à mão os cabeçalhos Ethernet, IP e TCP de um pacote real;
+- reconhecer onde cada camada é atacada e quais defesas existem para cada uma.
+
+**Pré-requisito:** 0.1 — Como usar esta plataforma (abrir o terminal do Ubuntu, iniciar
+a plataforma com `npm run dev`, enviar flags e os conceitos de loopback, porta e
+`127.0.0.1` apresentados lá).
+
+**Tempo estimado:** de 3 a 4 horas, incluindo as três missões. É o módulo mais denso da
+Trilha 0: faça em mais de uma sessão, se preferir.
+
+<Callout variant="info" title="Ainda não fez o módulo 0.3?">
+Este módulo não pressupõe que você saiba usar o terminal. Todo comando vem pronto para
+copiar e colar, com cada parte explicada. O 0.3 ensina o terminal a fundo depois; aqui
+o terminal é só a janela por onde você olha a rede.
+</Callout>
+
+<Callout variant="ethics">
+Tudo o que você vai fazer aqui é **olhar o seu próprio computador** e analisar um pacote
+capturado no laboratório. Os ataques de rede da seção 3 (falsificar respostas ARP ou DNS,
+varrer portas, desviar tráfego) são explicados para você entender e se defender, não
+executados. Fazer qualquer um deles numa rede que não é sua, inclusive a do trabalho, da
+faculdade ou do café, sem autorização por escrito, é crime no Brasil (art. 154-A do
+Código Penal). Varredura e captura de tráfego só no laboratório, a partir da Trilha 2.
+</Callout>
+
+## 2. Teoria aprofundada — a rede por dentro
+
+### 2.1 Por que a rede funciona em pacotes, e por que precisa de protocolos
+
+O sistema telefônico antigo reservava um fio inteiro, de ponta a ponta, durante toda a
+ligação. A internet faz o contrário: quebra tudo em pedaços pequenos, os
+<GlossaryTerm term="packet">pacotes</GlossaryTerm>, e manda cada um com o endereço de
+destino escrito por fora. Cada pacote pode seguir um caminho diferente, e milhões de
+conversas dividem os mesmos cabos ao mesmo tempo. Se um trecho cai, os pacotes
+seguintes desviam. Essa ideia, a comutação de pacotes, é o que permitiu a uma rede sem
+dono central crescer até o tamanho do planeta.
+
+O preço é que ninguém garante nada por padrão: pacotes podem chegar fora de ordem,
+duplicados ou nem chegar. E aparelhos de fabricantes diferentes, rodando sistemas
+diferentes, precisam concordar no formato exato de cada byte. Esse acordo é o
+<GlossaryTerm term="protocol">protocolo</GlossaryTerm>: as regras de uma conversa, como
+"primeiro você diz olá, depois eu confirmo, e o endereço vai nos bytes 26 a 29". Os
+protocolos da internet são publicados abertamente em documentos chamados RFCs (*Request
+for Comments*), mantidos pela IETF; você vai ver os números de vários deles neste módulo,
+e eles são a fonte primária de tudo o que se segue.
+
+Uma analogia útil, com limites: o pacote é uma carta. Dentro do envelope está a
+mensagem; por fora, o endereço. Mas a carta da internet é colocada dentro de **outro**
+envelope, que vai dentro de **outro**, cada um escrito por um funcionário diferente do
+correio, que só lê o envelope dele. Essa é a ideia das camadas.
+
+### 2.2 O modelo TCP/IP: quatro camadas, cada uma com uma pergunta
+
+O <GlossaryTerm term="TCP/IP model">modelo TCP/IP</GlossaryTerm> divide o trabalho de
+mandar dados em quatro camadas. Cada camada resolve **uma** pergunta e confia que a de
+baixo resolve a dela:
+
+| Camada | Pergunta que responde | Protocolos | Endereço que usa |
+|---|---|---|---|
+| 4 · Aplicação | O que o programa quer dizer? | HTTP, DNS, SSH, SMB | nomes, URLs |
+| 3 · Transporte | Para qual programa, e com que garantia? | TCP, UDP | portas |
+| 2 · Internet | Para qual máquina, e por qual caminho? | IP, ICMP | endereço IP |
+| 1 · Enlace | Até o próximo aparelho do caminho | Ethernet, Wi-Fi, ARP | endereço MAC |
+
+Você também vai ouvir falar do <GlossaryTerm term="OSI model">modelo OSI</GlossaryTerm>,
+de sete camadas. Ele é um modelo teórico que nunca virou a internet real, mas o
+vocabulário dele ficou: quando alguém diz "ataque de camada 2", está falando do enlace;
+"firewall de camada 7" é o que entende a aplicação. A correspondência prática: as camadas
+1 e 2 do OSI são o nosso enlace, a 3 é a internet, a 4 é o transporte e as 5, 6 e 7 são
+a nossa aplicação.
+
+#### Encapsulamento: envelopes dentro de envelopes
+
+Ao enviar, cada camada pega o que recebeu de cima e coloca na frente um
+<GlossaryTerm term="header">cabeçalho</GlossaryTerm> (*header*), os bytes de controle dela:
+endereços, portas, tamanhos. O que vem depois do cabeçalho é a
+<GlossaryTerm term="payload">carga útil</GlossaryTerm> (*payload*). Esse empilhamento se
+chama <GlossaryTerm term="encapsulation">encapsulamento</GlossaryTerm>. Ao receber,
+acontece o contrário: cada camada lê e retira o seu cabeçalho e entrega o resto para
+cima.
+
+<Figure
+  src={camadas}
+  alt="À esquerda, as quatro camadas TCP/IP: aplicação, transporte, internet e enlace, com protocolos e endereços de cada uma. À direita, os 77 bytes de um GET HTTP real ganham um cabeçalho TCP de 32 bytes (segmento), um IP de 20 bytes (pacote) e um Ethernet de 14 bytes (quadro de 143 bytes)."
+  caption="Encapsulamento de um pedido real capturado no laboratório: cada camada põe o seu cabeçalho na frente. O que vai pelo fio é o quadro de 143 bytes; o pedido em si são só os 77 do final."
+/>
+
+Os números do diagrama não são inventados: são de um pedido `GET /login.php` que o Kali
+mandou ao DVWA, capturado durante a escrita deste módulo (você vai abrir esse pacote na
+Missão 3). Repare na proporção: dos 143 bytes, 66 são só envelope.
+
+Duas consequências importantes para segurança:
+
+- **Cada camada só confia no envelope dela.** O switch olha o MAC e não sabe nada de
+  IP; o roteador olha o IP e não abre o TCP; o servidor web lê o HTTP e não vê o MAC.
+  Muitos ataques exploram exatamente isso: mentir numa camada que a de cima não confere.
+- **O que não é cifrado viaja legível.** Se a aplicação manda texto puro (HTTP sem o
+  "S"), qualquer um que capture o quadro lê a senha no payload, como você vai ver na
+  Missão 3.
+
+### 2.3 Camada de enlace: Ethernet, MAC e ARP
+
+A camada de enlace leva o quadro só até o **próximo** aparelho: do seu computador ao
+roteador de casa, do roteador ao do provedor. O formato mais comum é o
+<GlossaryTerm term="Ethernet">Ethernet</GlossaryTerm>, usado nos cabos, imitado pelo
+Wi-Fi e pelas redes virtuais do WSL e do Docker. A unidade dessa camada é o
+<GlossaryTerm term="frame">quadro</GlossaryTerm> (*frame*), e o endereço é o
+<GlossaryTerm term="MAC address">endereço MAC</GlossaryTerm>: 48 bits escritos em seis
+pares de dígitos <GlossaryTerm term="hexadecimal">hexadecimais</GlossaryTerm>, como
+`00:15:5d:12:34:56`.
+
+Um parêntese sobre bases numéricas, porque você vai precisar na Missão 3. O computador
+guarda tudo em <GlossaryTerm term="bit">bits</GlossaryTerm> (0 ou 1), agrupados de 8 em
+8 em <GlossaryTerm term="byte">bytes</GlossaryTerm>. Escrever 8 bits é cansativo
+(`01000000`), então as ferramentas de rede usam o hexadecimal, a base 16, em que os
+dígitos vão de `0` a `9` e depois `a` (10) a `f` (15). Cada dígito hexadecimal vale
+exatamente 4 bits, então um byte é sempre dois dígitos: `00` a `ff` (0 a 255). Para
+converter, multiplique o dígito da esquerda por 16 e some o da direita: `40` = 4 × 16 +
+0 = **64**; `3c` = 3 × 16 + 12 = **60**. Com dois bytes (quatro dígitos), a casa da
+esquerda vale 4096 e a seguinte 256: `0050` = 5 × 16 = **80**.
+
+Os três primeiros bytes de um MAC de fábrica identificam o fabricante, num registro
+público do IEEE. O `00:15:5d` acima, por exemplo, está registrado para a **Microsoft
+Corporation**: é a placa virtual do Hyper-V, que o WSL usa (conferido no
+[registro OUI do IEEE](https://standards-oui.ieee.org/oui/oui.txt)). MACs também podem
+ser gerados por software: o Docker sorteia os dos contêineres.
+
+Quem entrega o quadro na porta física certa é o <GlossaryTerm term="switch">switch</GlossaryTerm>:
+ele aprende em qual tomada está cada MAC e manda cada quadro só para lá.
+
+#### ARP: de IP para MAC, sem perguntar quem responde
+
+Aqui está um problema: o seu programa sabe o **IP** do destino (por exemplo, o roteador
+`192.168.0.1`), mas o quadro Ethernet precisa do **MAC**. Quem faz a ponte é o
+<GlossaryTerm term="ARP">ARP</GlossaryTerm> (*Address Resolution Protocol*, RFC 826, de
+1982). O funcionamento é ingênuo de propósito:
+
+1. O computador grita para a rede local inteira (um broadcast de enlace): "quem tem o
+   IP `192.168.0.1`? Responda para `00:15:5d:...`".
+2. O dono do IP responde: "`192.168.0.1` está no MAC `00:15:5d:12:34:56`".
+3. O computador guarda a resposta numa tabela (o cache ARP) por alguns minutos.
+
+Veja a tabela de vizinhos real do WSL usado na escrita (o comando `ip neigh` mostra o
+cache ARP; o IP foi trocado por um genérico):
+
+```console
+$ ip neigh
+172.24.0.1 dev eth0 lladdr 00:15:5d:12:34:56 REACHABLE
+```
+
+`lladdr` (*link-layer address*) é o MAC; `REACHABLE` diz que a entrada foi confirmada
+há pouco. O WSL só tem um vizinho: o Windows, que é o roteador dele.
+
+O ponto central para segurança: **o ARP não tem autenticação nenhuma.** Qualquer
+aparelho da rede local pode responder, e pode até mandar respostas que ninguém pediu.
+Os computadores acreditam. Essa ingenuidade, razoável numa rede de 1982 em que todos se
+conheciam, é a base do *ARP spoofing* da seção 3.
+
+### 2.4 Camada de internet: o IP, os endereços e as rotas
+
+#### IPv4 por dentro
+
+O <GlossaryTerm term="IPv4">IPv4</GlossaryTerm> (*Internet Protocol* versão 4, RFC 791,
+de 1981) dá a cada interface um endereço de **32 bits**. Para humanos, os 32 bits são
+escritos em quatro grupos de 8 (os octetos), cada um convertido para decimal e separado
+por pontos: `192.168.10.77`. Cada octeto vai, portanto, de 0 a 255.
+
+Um endereço IP tem duas partes: a da **rede** (igual para todas as máquinas do mesmo
+segmento) e a do **host** (a máquina dentro dele). Onde fica a divisa? Antigamente, numa
+regra fixa por "classes"; hoje, na notação <GlossaryTerm term="CIDR">CIDR</GlossaryTerm>
+(*Classless Inter-Domain Routing*): o endereço seguido de uma barra e de quantos bits
+iniciais são da rede. `192.168.10.77/26` quer dizer: os 26 primeiros bits são a rede, os
+6 restantes são o host.
+
+<Figure
+  src={cidr}
+  alt="O endereço 192.168.10.77/26 em binário, com os 26 bits de rede em ciano e os 6 de host em amarelo; a máscara 255.255.255.192; e os quatro casos dos bits de host: todos em 0 dão a rede 192.168.10.64, o primeiro host é .65, o último é .126 e todos em 1 dão o broadcast .127; 62 hosts utilizáveis."
+  caption="O /26 divide os 32 bits em 26 de rede e 6 de host. Zerando os bits de host, sai o endereço de rede; ligando todos, o broadcast; o que fica entre eles são os hosts."
+/>
+
+A mesma divisa também pode ser escrita como <GlossaryTerm term="subnet mask">máscara de sub-rede</GlossaryTerm>:
+um endereço com 1 em todos os bits de rede e 0 nos de host. `/26` vira
+`11111111.11111111.11111111.11000000`, ou seja, `255.255.255.192`. As mais comuns você vai
+reconhecer de vista: `/8` = `255.0.0.0`, `/16` = `255.255.0.0`, `/24` = `255.255.255.0`.
+
+Todas as máquinas com o mesmo prefixo formam uma <GlossaryTerm term="subnet">sub-rede</GlossaryTerm>
+e se falam direto, pelo enlace. Dentro de cada sub-rede, dois endereços são especiais e
+nunca vão para uma máquina:
+
+- **bits de host todos em 0:** o endereço **de rede**, o "nome" da sub-rede (`192.168.10.64`);
+- **bits de host todos em 1:** o <GlossaryTerm term="broadcast">broadcast</GlossaryTerm>,
+  que significa "todos desta sub-rede" (`192.168.10.127`).
+
+Daí a conta que você vai fazer muitas vezes na carreira: **hosts = 2^(32 − prefixo) − 2**.
+Para um `/24`: 2^8 − 2 = 254. Para o `/26` do diagrama: 2^6 − 2 = 62.
+
+<Callout variant="tip" title="O atalho do bloco">
+Num prefixo entre /25 e /30, o último octeto anda em blocos de 2^(32 − prefixo): de 128
+em 128 (/25), de 64 em 64 (/26), de 32 em 32 (/27), de 16 em 16 (/28). Um /26 começa
+sempre em .0, .64, .128 ou .192. Para achar a sub-rede de `.77` num /26: o maior
+múltiplo de 64 que não passa de 77 é 64; a rede é `.64` e o broadcast é `.64 + 64 − 1 = .127`.
+</Callout>
+
+#### Faixas especiais: nem todo endereço é igual
+
+Alguns blocos são reservados por RFCs e você precisa reconhecê-los de cara:
+
+| Faixa | Para quê | Fonte |
+|---|---|---|
+| `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` | Endereços privados, de uso interno | RFC 1918 |
+| `127.0.0.0/8` | Loopback: a própria máquina | RFC 6890 |
+| `169.254.0.0/16` | *Link-local*: o que o sistema se dá quando não acha DHCP | RFC 6890 |
+| `100.64.0.0/10` | Espaço compartilhado do CGNAT dos provedores | RFC 6598 |
+| `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24` | Só para documentação e exemplos | RFC 5737 |
+
+Os <GlossaryTerm term="private IP address">endereços privados</GlossaryTerm> podem ser
+usados à vontade dentro de qualquer casa ou empresa, mas **não são roteados na internet**:
+milhões de redes usam `192.168.0.0/24` ao mesmo tempo, sem conflito, justamente porque
+nenhum roteador da internet aceita esses destinos. Já um
+<GlossaryTerm term="public IP address">endereço público</GlossaryTerm> é único no mundo.
+Atenção à pegadinha clássica: `172.16.0.0/12` vai de `172.16.0.0` a `172.31.255.255`;
+`172.32.0.1` já é público.
+
+As faixas de documentação existem para que livros e tutoriais tenham exemplos que nunca
+apontem para a máquina de ninguém. Este módulo as usa sempre que precisa de um IP
+público fictício.
+
+#### Roteadores, gateway e a tabela de rotas
+
+Quando o destino está fora da sua sub-rede, o pacote precisa de um
+<GlossaryTerm term="router">roteador</GlossaryTerm>: um aparelho com uma perna em cada rede,
+que decide para onde encaminhar cada pacote olhando o IP de destino. Cada computador
+tem uma <GlossaryTerm term="routing table">tabela de rotas</GlossaryTerm>; a do WSL usado
+na escrita (IPs trocados por genéricos):
+
+```console
+$ ip route
+default via 172.24.0.1 dev eth0 proto kernel onlink
+172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 linkdown
+172.24.0.0/20 dev eth0 proto kernel scope link src 172.24.5.20
+```
+
+Leia de baixo para cima:
+
+- `172.24.0.0/20 dev eth0 ... scope link`: tudo da faixa `172.24.0.0/20` está **ligado
+  direto** na interface `eth0`; basta o ARP achar o MAC.
+- `172.17.0.0/16 dev docker0 ... linkdown`: a rede padrão do Docker, sem nada ligado
+  agora.
+- `default via 172.24.0.1`: **todo o resto** vai para `172.24.0.1`. Esse é o
+  <GlossaryTerm term="default gateway">gateway padrão</GlossaryTerm>, a porta de saída
+  para o mundo.
+
+Quando várias rotas cobrem o mesmo destino, vale a regra do
+<GlossaryTerm term="longest prefix match">prefixo mais longo</GlossaryTerm>: a mais
+específica vence. A rota `default` é um `/0`, a menos específica possível, então só é
+usada quando nenhuma outra serve. Guarde essa regra: ela explica, sozinha, o caso
+YouTube da seção 4.
+
+#### TTL: o prazo de validade do pacote
+
+E se dois roteadores mal configurados apontarem um para o outro? O pacote giraria para
+sempre, consumindo a rede. Para evitar isso, o cabeçalho IP tem o campo
+<GlossaryTerm term="TTL (IP)">TTL</GlossaryTerm> (*Time To Live*). A RFC 791 manda que todo
+roteador diminua o TTL em pelo menos 1; ao chegar a zero, o pacote é destruído. Cada
+roteador do caminho é um <GlossaryTerm term="hop">salto</GlossaryTerm> (*hop*).
+
+Não confunda com o <GlossaryTerm term="TTL">TTL do DNS</GlossaryTerm> do módulo 0.1, que é
+a validade de uma resposta em cache. Mesmo nome, ideias parecidas (prazo de validade),
+camadas diferentes.
+
+O valor inicial depende do sistema: no Linux, a
+[documentação do kernel](https://docs.kernel.org/networking/ip-sysctl.html) define 64
+como padrão (você confirma com `cat /proc/sys/net/ipv4/ip_default_ttl`); no Windows, a
+[documentação da Microsoft](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc739819(v=ws.10))
+registra o padrão 128. Isso vira uma pista para quem ataca (seção 3.2).
+
+#### ICMP e o ping
+
+Quando algo dá errado com um pacote, os roteadores avisam a origem pelo
+<GlossaryTerm term="ICMP">ICMP</GlossaryTerm> (*Internet Control Message Protocol*):
+"destino inalcançável", "TTL esgotado no caminho". O ICMP também tem um pedido de eco,
+que o <GlossaryTerm term="ping">ping</GlossaryTerm> usa para perguntar "você está aí?".
+Saída real no WSL, pingando a própria loopback:
+
+```console
+$ ping -c 2 127.0.0.1
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.632 ms
+64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.042 ms
+
+--- 127.0.0.1 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1033ms
+rtt min/avg/max/mdev = 0.042/0.337/0.632/0.295 ms
+```
+
+`-c 2` manda só dois pedidos (sem ele, o ping continua até você apertar `Ctrl+C`).
+`ttl=64` é o TTL com que a resposta chegou: como não passou por nenhum roteador, chegou
+intacto. `time` é o tempo de ida e volta. O `56(84)` diz que cada pedido leva 56 bytes de
+dados, 84 com os cabeçalhos ICMP (8) e IP (20).
+
+Usando o TTL de propósito, dá para descobrir os roteadores do caminho: mande um pacote
+com TTL 1 e o primeiro roteador responde "TTL esgotado"; com TTL 2, responde o segundo; e
+assim por diante. Essa é a técnica do <GlossaryTerm term="traceroute">traceroute</GlossaryTerm>.
+
+#### MTU: o tamanho máximo
+
+Cada interface tem uma <GlossaryTerm term="MTU">MTU</GlossaryTerm> (*Maximum Transmission
+Unit*): o maior pacote que ela envia de uma vez. Na Ethernet comum, 1500 bytes. Dados
+maiores são divididos em vários pacotes. Você vai ler a MTU da sua loopback na Missão 1.
+
+#### NAT: por que o seu IP de casa não é o seu IP na internet
+
+Os endereços IPv4 são só 2^32, cerca de 4,3 bilhões, menos que o número de aparelhos
+conectados. A solução que segurou a internet foi o <GlossaryTerm term="NAT">NAT</GlossaryTerm>
+(*Network Address Translation*, RFC 3022): a casa inteira usa endereços privados, e o
+roteador troca o IP (e a porta) de origem pelo seu único IP público na ida, anotando a
+troca numa tabela para desfazê-la quando a resposta volta.
+
+No seu computador há **dois** NATs empilhados, porque o WSL tem uma rede virtual própria
+e o Windows faz o papel de roteador dele. Saída real do `ipconfig` do Windows, chamado
+de dentro do WSL (endereços trocados por genéricos e adaptadores irrelevantes omitidos):
+
+```console
+$ ipconfig.exe
+Configuração de IP do Windows
+
+Adaptador Ethernet vEthernet (WSL (Hyper-V firewall)):
+
+   Endereço IPv4. . . . . . . .  . . . . . . . : 172.24.0.1
+   Máscara de Sub-rede . . . . . . . . . . . . : 255.255.240.0
+   Gateway Padrão. . . . . . . . . . . . . . . :
+
+Adaptador de Rede sem Fio Wi-Fi:
+
+   Endereço IPv6 . . . . . . . . . . : 2001:db8:a4c2:7640::15
+   Endereço IPv4. . . . . . . .  . . . . . . . : 192.168.0.10
+   Máscara de Sub-rede . . . . . . . . . . . . : 255.255.255.0
+   Gateway Padrão. . . . . . . . . . . . . . . : 192.168.0.1
+```
+
+O Windows tem uma perna na rede do WSL (`172.24.0.1`, o gateway do WSL) e outra no Wi-Fi
+de casa (`192.168.0.10`, cujo gateway é o roteador `192.168.0.1`). A máscara
+`255.255.240.0` é um `/20`, a mesma que o WSL mostrou do lado dele.
+
+<Figure
+  src={caminho}
+  alt="Ubuntu do WSL (172.24.5.20/20) ligado ao Windows (172.24.0.1 do lado do WSL, 192.168.0.10 no Wi-Fi), que faz o NAT 1; o roteador de casa (192.168.0.1 dentro, 203.0.113.45 fora), que faz o NAT 2; e a internet com o servidor 198.51.100.7:443. Uma tabela mostra a origem do pacote mudando em cada trecho e o destino fixo."
+  caption="Dois NATs entre o WSL e a internet. O destino nunca muda; a origem é reescrita em cada NAT, que guarda a troca para desfazê-la na volta."
+/>
+
+Algumas operadoras ainda acrescentam um terceiro NAT, o <GlossaryTerm term="CGNAT">CGNAT</GlossaryTerm>,
+dando ao roteador de casa um endereço da faixa `100.64.0.0/10` em vez de um IP público.
+
+Um efeito colateral do NAT que importa muito para segurança: como só existe tradução
+para conexões que começaram **de dentro**, um aparelho da internet não consegue abrir uma
+conexão nova para o seu `192.168.0.10`. Isso protege por acaso, mas **não é um firewall**,
+como a seção 8 mostra.
+
+#### DHCP e IPv6, o essencial
+
+Ninguém digitou esses endereços. Quando um aparelho entra numa rede, ele pede
+configuração pelo <GlossaryTerm term="DHCP">DHCP</GlossaryTerm> (*Dynamic Host
+Configuration Protocol*): recebe IP, máscara, gateway e servidor DNS. No WSL, quem faz esse
+papel é o próprio Windows.
+
+O <GlossaryTerm term="IPv6">IPv6</GlossaryTerm> (RFC 8200) é a resposta definitiva à falta
+de endereços: 128 bits, escritos em oito grupos hexadecimais separados por `:`, com `::`
+abreviando uma sequência de zeros (`2001:db8::1`). Com tantos endereços, cada aparelho
+pode ter um IP público próprio, sem NAT, o que muda a conta de segurança: no IPv6, quem
+protege a rede de casa é o firewall do roteador, não a tradução. Três prefixos para
+reconhecer: `::1` é a loopback, `fe80::/10` é *link-local* e `2001:db8::/32` é só para
+documentação (RFC 3849). Repare no `ipconfig` acima: o Wi-Fi tem um endereço IPv6 (aqui
+trocado por um de documentação), além do IPv4.
+
+### 2.5 Camada de transporte: portas, TCP e UDP
+
+O IP leva o pacote até a **máquina**. Mas nela rodam dezenas de programas usando a rede
+ao mesmo tempo. Quem decide qual programa recebe cada pacote é a camada de transporte,
+pelo número da porta, de 0 a 65535, que você conheceu no 0.1.
+
+#### Sockets e faixas de portas
+
+Uma ponta de conexão é um <GlossaryTerm term="socket">socket</GlossaryTerm>: endereço IP +
+porta + protocolo. Uma conexão TCP é identificada pelos **dois** sockets, o de origem e o
+de destino. Por isso o seu navegador pode ter dez abas abertas no mesmo site: cada uma
+usa uma porta de origem diferente.
+
+A RFC 6335 divide as portas em três faixas:
+
+| Faixa | Nome | Uso |
+|---|---|---|
+| 0 a 1023 | *System Ports* (*well-known*) | Serviços padrão registrados pela IANA: 22 SSH, 53 DNS, 80 HTTP, 443 HTTPS, 445 SMB |
+| 1024 a 49151 | *User Ports* (*registered*) | Serviços registrados de aplicativos: 3306 MySQL, 5432 PostgreSQL... |
+| 49152 a 65535 | *Dynamic Ports* | Nunca registradas; para uso temporário |
+
+As da primeira faixa são as <GlossaryTerm term="well-known port">portas conhecidas</GlossaryTerm>.
+O lado **cliente** de uma conexão não precisa de porta fixa: o sistema sorteia uma
+<GlossaryTerm term="ephemeral port">porta efêmera</GlossaryTerm> para cada conexão. O Linux
+não segue exatamente a faixa da RFC: o padrão dele, confirmado no WSL, vai de 32768 a 60999.
+
+```console
+$ cat /proc/sys/net/ipv4/ip_local_port_range
+32768	60999
+```
+
+O sistema guarda o nome padrão de cada porta conhecida no arquivo `/etc/services`, e o
+comando `getent services` consulta essa lista (saída real):
+
+```console
+$ getent services 445
+microsoft-ds          445/tcp
+```
+
+`microsoft-ds` é o nome histórico da porta do <GlossaryTerm term="SMB">SMB</GlossaryTerm>,
+o compartilhamento de arquivos do Windows, que vai aparecer no caso WannaCry.
+
+Um programa que abriu uma porta e espera conexões está
+<GlossaryTerm term="listening">escutando</GlossaryTerm> (*listening*). Você vai listar as
+portas escutando no seu computador na Missão 1.
+
+#### TCP: conexão, ordem e garantia
+
+O <GlossaryTerm term="TCP">TCP</GlossaryTerm> (*Transmission Control Protocol*, cuja
+especificação atual é a RFC 9293, de 2022) entrega uma promessa por cima de uma rede
+que não promete nada: os bytes chegam **todos, em ordem e sem duplicatas**. Para isso:
+
+- cada byte enviado é numerado pelo <GlossaryTerm term="sequence number">número de sequência</GlossaryTerm>;
+- o outro lado confirma o que recebeu com um número de confirmação (*acknowledgment*,
+  ACK), que significa "recebi tudo até aqui; mande a partir do byte N";
+- o que não for confirmado a tempo é reenviado.
+
+O cabeçalho TCP tem também bits de controle, as <GlossaryTerm term="TCP flags">flags TCP</GlossaryTerm>:
+**SYN** (sincronizar, abrir), **ACK** (confirmar), **FIN** (terminei, fechar), **RST**
+(abortar), **PSH** (entregue já ao programa), entre outras.
+
+Antes de qualquer dado, os dois lados fazem o
+<GlossaryTerm term="three-way handshake">three-way handshake</GlossaryTerm> (aperto de mão
+em três etapas):
+
+1. **SYN:** o cliente pede a conexão e informa o número de sequência inicial dele, sorteado.
+2. **SYN, ACK:** o servidor aceita, confirma o número do cliente (+1) e informa o seu.
+3. **ACK:** o cliente confirma o número do servidor. A conexão está aberta.
+
+<Figure
+  src={handshake}
+  alt="Sequência real entre Kali 172.18.0.1:38488 e DVWA 172.18.0.2:80: SYN, SYN ACK, ACK; o GET de 77 bytes e o ACK 78; a resposta 200 OK de 1792 bytes e o ACK 1793; FIN ACK, FIN ACK e ACK. À direita: SYN para a porta 81 recebe RST ACK na hora (porta fechada); SYN para porta filtrada não recebe nada e o curl desiste depois de 3002 ms."
+  caption="Uma conexão TCP inteira, capturada de verdade: handshake, dados com confirmação e encerramento. À direita, as duas formas de não conectar, cada uma com uma assinatura diferente."
+/>
+
+O diagrama mostra uma conexão real, do laboratório, com os números de sequência
+relativos (contados a partir do inicial, como o Wireshark mostra). Siga a conta: o GET
+tem 77 bytes, então a confirmação do servidor é `ack=78` (o SYN conta como 1 byte, por
+isso não é 77). No fim, cada lado manda o seu FIN e confirma o FIN do outro.
+
+#### Porta fechada × porta filtrada: o RST
+
+O que acontece quando o SYN chega a uma porta em que ninguém escuta? O sistema do
+destino responde na hora com um <GlossaryTerm term="RST">RST</GlossaryTerm>: "não há
+ninguém aqui". O programa que tentou conectar recebe "conexão recusada". Mas se um
+<GlossaryTerm term="firewall">firewall</GlossaryTerm> no caminho descarta o SYN em
+silêncio, **nada** volta, e o programa só desiste quando o tempo acaba. As duas
+situações, de verdade, no WSL:
+
+```console
+$ curl -sS -m 3 http://127.0.0.1:9/
+curl: (7) Failed to connect to 127.0.0.1 port 9 after 0 ms: Could not connect to server
+$ curl -sS -m 3 http://172.24.0.1:9/
+curl: (28) Connection timed out after 3002 milliseconds
+```
+
+O `curl` (o programa que faz pedidos HTTP pelo terminal, que você usou no 0.1) tentou a
+porta 9 em dois lugares. `-sS` esconde a barra de progresso mas mostra erros; `-m 3`
+desiste em 3 segundos. Na própria máquina, a porta 9 está fechada: RST imediato, **0 ms**.
+No Windows (`172.24.0.1`), o firewall descarta o SYN, e o curl espera os 3 segundos
+inteiros. Essa diferença é exatamente o que o nmap usa, no módulo 2.4, para classificar
+portas em *closed* e *filtered*.
+
+#### UDP: sem conexão, sem garantia
+
+O <GlossaryTerm term="UDP">UDP</GlossaryTerm> (*User Datagram Protocol*, RFC 768) é o
+oposto: sem handshake, sem confirmação, sem reenvio. O programa manda um datagrama e
+pronto. Parece pior, mas é ideal quando a velocidade importa mais que a garantia, ou
+quando a conversa é uma pergunta e uma resposta: DNS, jogos, chamadas de voz, e o QUIC,
+base do HTTP/3. A ausência de handshake tem um custo de segurança: como ninguém confirma
+de onde veio o pedido, falsificar o remetente de um datagrama UDP é trivial. Guarde isso
+para o caso Kaminsky.
+
+### 2.6 Camada de aplicação: DNS e HTTP
+
+#### DNS: a lista telefônica distribuída
+
+Você conheceu o DNS no 0.1: ele traduz nomes em endereços IP. Agora, como ele faz isso.
+Não existe uma lista única com todos os nomes do mundo; existe uma **hierarquia**, lida da
+direita para a esquerda. `www.example.com.` (com o ponto final, que normalmente fica
+oculto) se lê: na raiz `.`, procure `com`; em `com`, procure `example`; em `example`,
+procure `www`.
+
+<Figure
+  src={dnsFlow}
+  alt="Seu PC pergunta www.example.com ao resolvedor recursivo por UDP 53. O recursivo pergunta à raiz, que indica o .com; ao .com, que indica os servidores de example.com; e ao autoritativo de example.com, que responde A 198.51.100.7 com TTL 300. O recursivo devolve a resposta e guarda em cache."
+  caption="A resolução percorre a hierarquia de cima para baixo, e o resolvedor recursivo guarda cada resposta em cache pelo tempo do TTL."
+/>
+
+Os papéis:
+
+- O <GlossaryTerm term="DNS resolver">resolvedor</GlossaryTerm> local do seu computador
+  primeiro olha o arquivo `/etc/hosts` (uma lista manual que passa por cima do DNS) e o
+  cache. Se não souber, pergunta a um resolvedor **recursivo**: o do roteador, o do
+  provedor ou um público, como o 1.1.1.1.
+- O recursivo pergunta a um <GlossaryTerm term="root server">servidor raiz</GlossaryTerm>.
+  São [13 identidades, de A a M, operadas por 12 organizações independentes, com mais de
+  2.000 instâncias](https://root-servers.org/) espalhadas pelo mundo. A raiz não sabe o
+  IP de `www.example.com`, mas sabe quem cuida do `.com`.
+- O servidor do domínio de topo (TLD) `.com` indica quem cuida de `example.com`.
+- O <GlossaryTerm term="authoritative name server">servidor autoritativo</GlossaryTerm>
+  de `example.com` tem a palavra final e responde.
+
+As respostas são <GlossaryTerm term="DNS record">registros DNS</GlossaryTerm>, de vários
+tipos:
+
+| Tipo | Significa | Exemplo |
+|---|---|---|
+| A | Endereço IPv4 do nome | `www.example.com. 300 IN A 198.51.100.7` |
+| AAAA | Endereço IPv6 do nome | `... AAAA 2001:db8::7` |
+| CNAME | "Este nome é apelido daquele" | `blog CNAME www.example.com.` |
+| MX | Servidor de e-mail do domínio | `example.com. MX 10 mail.example.com.` |
+| NS | Servidores autoritativos do domínio | `example.com. NS ns1.example.com.` |
+| PTR | Caminho inverso: IP → nome | `7.100.51.198.in-addr.arpa. PTR www.example.com.` |
+| TXT | Texto livre (verificações, políticas de e-mail) | `"v=spf1 -all"` |
+
+A consulta normal vai por **UDP na porta 53**: uma pergunta, uma resposta. A RFC 1035
+limitava as mensagens UDP a 512 bytes; respostas maiores (e as transferências de zona
+inteira) usam TCP na mesma porta. Veja uma resolução real, feita no Kali do laboratório
+com o `dig` (que ainda não existe no seu WSL; ele vem no Kali):
+
+```console
+$ dig dvwa
+
+; <<>> DiG 9.20.29-1-Debian <<>> dvwa
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 49542
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;dvwa.				IN	A
+
+;; ANSWER SECTION:
+dvwa.			600	IN	A	172.18.0.2
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.11#53(127.0.0.11) (UDP)
+;; WHEN: Fri Oct 02 16:45:28 UTC 2026
+;; MSG SIZE  rcvd: 42
+```
+
+Leia a resposta de cima para baixo: `status: NOERROR` (deu certo); `id: 49542` é o
+**ID de transação**, um número de 16 bits que casa pergunta e resposta (ele é a peça
+central do caso Kaminsky); `ANSWER SECTION` traz o registro A com TTL de 600 segundos;
+`SERVER: 127.0.0.11#53 (UDP)` mostra quem respondeu: o DNS embutido do Docker, que
+conhece os nomes dos contêineres da rede do lab. Quando o mesmo Kali pergunta por um nome
+da internet, a resposta é `status: SERVFAIL`: o lab não tem saída, nem para o DNS.
+
+#### HTTP: o pedido em texto
+
+O HTTP (que você conheceu no 0.1) é, na versão 1.1, **texto puro**. Cada pedido começa
+com uma linha com o <GlossaryTerm term="HTTP method">método</GlossaryTerm> (GET para ler,
+POST para enviar dados), o caminho e a versão, seguida dos cabeçalhos e de uma linha em
+branco. É exatamente este o payload do pacote da Missão 3:
+
+```http
+GET /login.php HTTP/1.1
+Host: dvwa
+User-Agent: curl/8.21.0
+Accept: */*
+
+```
+
+A <GlossaryTerm term="URL">URL</GlossaryTerm> (*Uniform Resource Locator*) que você digita
+junta todas as camadas num endereço só: em `https://example.com:443/login`, `https` é o
+protocolo de aplicação (e implica TLS), `example.com` vai para o DNS, `443` é a porta TCP
+(implícita em `https`, por isso quase nunca aparece) e `/login` é o caminho que vai na
+primeira linha do pedido.
+
+#### TLS e HTTPS: o envelope lacrado
+
+Se o HTTP é texto, quem captura o quadro lê tudo. A solução é o
+<GlossaryTerm term="TLS">TLS</GlossaryTerm> (*Transport Layer Security*; versão atual 1.3,
+RFC 8446), que fica entre o TCP e o HTTP: as duas pontas combinam chaves de criptografia
+e o servidor prova quem é com um certificado. O <GlossaryTerm term="HTTPS">HTTPS</GlossaryTerm>
+é o HTTP dentro do TLS. O que o TLS **não** esconde: os cabeçalhos IP e TCP (precisam ir
+em claro para o pacote chegar), os tamanhos e horários, e, em geral, o nome do site (pela
+consulta DNS e pela própria abertura do TLS). A Trilha 3 abre o TLS por dentro.
+
+### 2.7 A jornada completa de uma requisição
+
+Junte tudo. Você digita `https://example.com/` e aperta Enter. Medido de verdade com o
+`curl`, no WSL (a opção `-w` pede ao curl que imprima os tempos de cada etapa):
+
+```console
+$ curl -sS -o /dev/null -w '%{http_code} %{remote_ip}:%{remote_port} dns=%{time_namelookup}s tcp=%{time_connect}s tls=%{time_appconnect}s total=%{time_total}s\n' https://example.com/
+200 203.0.113.80:443 dns=0.009314s tcp=0.020716s tls=0.097290s total=0.117550s
+```
+
+(O IP real do servidor foi trocado por um de documentação. Os tempos são acumulados:
+o TCP terminou aos 21 ms, contando os 9 ms do DNS.)
+
+<Figure
+  src={jornada}
+  alt="Linha do tempo de 0 a 118 ms: URL separada em esquema, nome, porta e caminho; DNS de 0 a 9 ms; enlace com o MAC do gateway; TCP de 9 a 21 ms; TLS de 21 a 97 ms; HTTP GET e 200 de 97 a 118 ms. Embaixo, onde cada etapa pode ser atacada."
+  caption="Cada etapa depende da anterior: sem DNS não há IP, sem TCP não há TLS, sem TLS não há HTTPS. Mais da metade do tempo foi a negociação do TLS."
+/>
+
+Passo a passo, com as camadas:
+
+1. **URL:** o programa separa esquema, nome, porta e caminho.
+2. **DNS (aplicação, UDP 53):** o nome vira o IP `203.0.113.80` em 9 ms.
+3. **Rota e enlace:** o IP não está na sub-rede local, então a tabela de rotas manda
+   para o gateway; o ARP já tinha o MAC dele em cache. Cada NAT do caminho reescreve a
+   origem.
+4. **TCP (transporte):** SYN, SYN-ACK, ACK com a porta 443, em 11 ms.
+5. **TLS:** as pontas combinam a criptografia e conferem o certificado: 76 ms.
+6. **HTTP (aplicação):** o `GET /` vai cifrado, e volta `200`.
+
+Cada um desses passos é um lugar onde um atacante pode tentar interferir, e é por aí
+que a seção 3 começa.
+
+## 3. Na prática da segurança
+
+O módulo não ensina um ataque, mas toda a Trilha 2 em diante se apoia nele. Veja como
+quem ataca e quem defende usam o que você aprendeu.
+
+### 3.1 O escopo de um pentest se escreve em CIDR
+
+Um <GlossaryTerm term="pentest">pentest</GlossaryTerm> começa com um contrato que diz,
+entre outras coisas, **quais endereços podem ser testados**. Ele quase sempre vem em
+CIDR: "autorizado: `10.20.30.64/27`, exceto `10.20.30.94` (servidor de produção)". Errar
+essa conta tem consequência legal: um IP fora da faixa é a máquina de alguém que não
+autorizou nada, e atacá-la é exatamente o crime do art. 154-A. Por isso a Missão 2 é um
+exercício de escopo, e por isso um bom pentester confere a conta duas vezes, de
+preferência com uma ferramenta.
+
+### 3.2 O que o pentester lê numa máquina e numa rede
+
+Quando ganha acesso a uma máquina (num teste autorizado), o pentester faz a
+<GlossaryTerm term="enumeration">enumeração</GlossaryTerm> da rede dela, com os mesmos
+comandos da Missão 1:
+
+- **`ip addr`**: quantas interfaces a máquina tem. Duas interfaces em redes diferentes
+  podem significar uma ponte para uma rede interna que de fora não se via.
+- **`ip route`**: para onde ela sabe chegar; rotas para redes privadas que não são a
+  dela revelam outras sub-redes.
+- **`ip neigh`**: quem ela conversou há pouco na rede local.
+- **`ss -tuln`**: que serviços escutam, e em qual endereço. Um banco de dados em
+  `127.0.0.1` só é alcançável de dentro, o que já é um alvo para quem está dentro.
+- **`/etc/hosts` e `/etc/resolv.conf`**: nomes internos e o servidor DNS da empresa.
+
+O TTL também dá pistas. Uma resposta com TTL perto de 64 sugere Linux; perto de 128,
+Windows. É só uma pista: o valor pode ter sido mudado, e não se sabe quantos saltos o
+pacote deu. Um ping real do WSL a dois servidores públicos conhecidos:
+
+```console
+$ ping -c 2 -W 3 1.1.1.1
+64 bytes from 1.1.1.1: icmp_seq=1 ttl=56 time=36.2 ms
+$ ping -c 2 -W 3 8.8.8.8
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=115 time=13.2 ms
+```
+
+Se o primeiro partiu de 64, deu 8 saltos; se o segundo partiu de 128, deu 13. Mas não há
+como ter certeza do valor inicial só olhando: por isso as ferramentas tratam o TTL como
+mais um indício, junto com outros.
+
+### 3.3 Cada porta aberta é uma porta
+
+Lembra da <GlossaryTerm term="attack surface">superfície de ataque</GlossaryTerm> do 0.1?
+Na rede, ela se mede em portas escutando. A
+<GlossaryTerm term="port scanning">varredura de portas</GlossaryTerm> (*port scanning*,
+técnica [T1046 do MITRE ATT&CK](https://attack.mitre.org/techniques/T1046/), a base pública
+de técnicas de atacantes reais, apresentada no módulo 0.3) é mandar SYNs para muitas portas e
+classificar cada resposta: SYN-ACK = **aberta**, RST = **fechada**, silêncio = **filtrada**.
+É exatamente a diferença que você viu na seção 2.5. A ferramenta clássica, o nmap, é o
+módulo 2.4.
+
+Antes até de varrer, há o reconhecimento passivo: descobrir de fora quais faixas de IP
+uma organização usa ([T1590.005](https://attack.mitre.org/techniques/T1590/005/)), por
+registros públicos, DNS e BGP. Isso é OSINT (*open source intelligence*, inteligência
+a partir de fontes abertas), assunto da Trilha 2.
+
+### 3.4 Onde cada camada é atacada
+
+Cada camada tem a sua confiança ingênua, e cada uma tem o seu ataque clássico. Nada
+disto é executado neste módulo: é o mapa do que vem pela frente.
+
+| Camada | Confiança abusada | Ataque | Referência |
+|---|---|---|---|
+| Enlace | ARP aceita qualquer resposta | <GlossaryTerm term="ARP spoofing">ARP spoofing</GlossaryTerm>: o atacante diz "o gateway sou eu" e passa a receber o tráfego da vítima | [T1557.002](https://attack.mitre.org/techniques/T1557/002/) |
+| Enlace / qualquer | Tráfego em claro passa por muitos aparelhos | <GlossaryTerm term="sniffing">Sniffing</GlossaryTerm>: capturar e ler pacotes | [T1040](https://attack.mitre.org/techniques/T1040/) |
+| Internet | O IP de origem não é verificado | <GlossaryTerm term="spoofing">Spoofing</GlossaryTerm> de IP: mandar pacotes com remetente falso | — |
+| Internet (rotas) | BGP aceita anúncios de quem fala com ele | <GlossaryTerm term="BGP hijacking">Sequestro de BGP</GlossaryTerm>: anunciar faixas alheias | caso YouTube, seção 4 |
+| Transporte | Serviço responde a qualquer SYN | Varredura de portas; inundação de SYN | [T1046](https://attack.mitre.org/techniques/T1046/) |
+| Aplicação (DNS) | Resolvedor aceita a primeira resposta que casa | <GlossaryTerm term="cache poisoning">Envenenamento de cache</GlossaryTerm> | caso Kaminsky, seção 4 |
+| Todas | Capacidade finita | <GlossaryTerm term="DDoS">DDoS</GlossaryTerm>: inundar o alvo a partir de muitas máquinas | [T1498](https://attack.mitre.org/techniques/T1498/) |
+
+O ARP spoofing merece um olhar mais de perto, porque junta tudo deste módulo. Numa rede
+Wi-Fi de café, o atacante manda à vítima respostas ARP não pedidas: "`192.168.0.1` está
+no **meu** MAC". A vítima atualiza o cache e passa a entregar ao atacante os quadros que
+iam ao roteador. O atacante os repassa ao roteador de verdade, para ninguém notar, e fica
+no meio do caminho: é o <GlossaryTerm term="man-in-the-middle">man-in-the-middle</GlossaryTerm>
+(o MITRE ATT&CK hoje chama de *adversary-in-the-middle*,
+[T1557](https://attack.mitre.org/techniques/T1557/)). Daí em diante, tudo o que for HTTP,
+FTP ou qualquer protocolo em claro pode ser lido ou alterado. Repare no que **não**
+acontece: o TLS continua protegendo o conteúdo do HTTPS, porque o atacante não tem o
+certificado do site. Por isso a defesa número 1 contra quem está no meio do caminho é
+cifrar.
+
+### 3.5 Os mesmos olhos, do lado da defesa
+
+Quem defende usa exatamente as mesmas ferramentas, com outra pergunta:
+
+- `ss -tuln` periódico: apareceu alguma porta escutando que não deveria?
+- A tabela ARP com dois IPs apontando para o **mesmo MAC**, sendo um deles o gateway, é
+  o sinal clássico de ARP spoofing.
+- Uma resposta DNS com TTL estranho, ou um nome conhecido resolvendo para um IP que não é
+  da empresa, merece investigação.
+- A <GlossaryTerm term="packet capture">captura de pacotes</GlossaryTerm> (gravar o tráfego
+  cru num arquivo para analisar depois, como a da Missão 3) é a ferramenta de diagnóstico
+  e de perícia mais honesta que existe: o pacote mostra o que realmente passou, não o que
+  um programa diz que fez.
+
+<Callout variant="ethics">
+Olhar a própria tabela ARP, as próprias portas e as próprias rotas é auditoria. Capturar o
+tráfego de uma rede compartilhada, mesmo "só para ver", é interceptação de comunicação
+alheia, e varrer as portas de quem não autorizou é tentativa de acesso indevido. Na
+plataforma, captura e varredura só acontecem na rede interna dos laboratórios, que é sua.
+</Callout>
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os quatro casos abaixo são, cada um, uma camada do modelo dando errado em escala
+mundial. Cada data foi conferida na fonte indicada.
+
+### YouTube sequestrado pelo Paquistão (24 de fevereiro de 2008): o prefixo mais longo vence
+
+As redes da internet anunciam umas às outras, pelo <GlossaryTerm term="BGP">BGP</GlossaryTerm>
+(*Border Gateway Protocol*, RFC 4271), quais faixas de IP elas alcançam. Cada rede é um
+<GlossaryTerm term="autonomous system">sistema autônomo</GlossaryTerm> (AS), com um número.
+O YouTube (AS36561) anunciava normalmente `208.65.152.0/22`.
+
+Segundo o [estudo de caso do RIPE NCC](https://www.ripe.net/about-us/news/youtube-hijacking-a-ripe-ncc-ris-case-study/),
+o Paquistão buscava bloquear o YouTube dentro do país. Às **18:47 UTC de 24 de fevereiro
+de 2008**, a Pakistan Telecom (AS17557) começou a anunciar `208.65.153.0/24`, um pedaço
+**mais específico** da faixa do YouTube. O anúncio vazou pelo provedor dela, a PCCW
+Global (AS3491), e se espalhou pelo mundo. Pela regra do prefixo mais longo, roteadores
+de toda a internet passaram a preferir o `/24` falso ao `/22` legítimo, e o tráfego do
+YouTube foi parar no Paquistão.
+
+A reação, minuto a minuto, no mesmo relatório: às 20:07 UTC o YouTube passou a anunciar
+também o `/24`, empatando; às 20:18 UTC, anunciou dois `/25` (`208.65.153.0/25` e
+`208.65.153.128/25`), ainda mais específicos, ganhando a disputa; às 21:01 UTC a PCCW
+retirou os prefixos originados pela Pakistan Telecom.
+
+- **Impacto:** o tráfego do YouTube foi desviado em escala global por cerca de duas horas.
+  O próprio RIPE NCC ressalva que não dá para medir quantos usuários foram afetados.
+- **Lição:** o BGP acreditava em quem anunciava. A regra do prefixo mais longo, que você
+  aplicou na tabela de rotas do WSL, decide o caminho do mundo inteiro. A defesa moderna
+  é o RPKI (seção 8).
+- **Fonte:** [RIPE NCC — YouTube Hijacking: A RIPE NCC RIS case study](https://www.ripe.net/about-us/news/youtube-hijacking-a-ripe-ncc-ris-case-study/).
+
+### Kaminsky e o envenenamento do DNS (8 de julho de 2008): 16 bits não bastam
+
+Em **8 de julho de 2008**, o CERT/CC publicou a nota
+[VU#800113](https://www.kb.cert.org/vuls/id/800113), "Multiple DNS implementations
+vulnerable to cache poisoning", coordenada com vários fabricantes que lançaram correções
+ao mesmo tempo. A nota credita a Dan Kaminsky, da IOActive, a demonstração de que o
+ataque era eficaz e prático. A falha recebeu o <GlossaryTerm term="CVE">CVE</GlossaryTerm>-2008-1447,
+cujo registro cita o BIND e o servidor DNS do Windows, entre outras implementações.
+
+A mecânica junta três peças deste módulo. Primeira: o resolvedor recursivo aceita a
+**primeira** resposta que chega com o ID de transação certo. Segunda: o ID tem **16 bits**;
+nas palavras do CERT, mesmo sorteado com um bom gerador, um atacante precisa em média de
+**32.768 tentativas** para acertá-lo. Terceira: muitas implementações usavam **uma porta
+de origem fixa** para todas as consultas. Como o DNS vai por UDP, sem handshake,
+falsificar respostas é fácil: o atacante faz o resolvedor perguntar por nomes
+inexistentes (`a1.banco.example`, `a2.banco.example`...) e, a cada pergunta, despeja
+respostas falsas com IDs chutados, que incluem a informação envenenada sobre o domínio
+inteiro. Uma hora acerta, e o resolvedor passa a entregar o endereço do atacante a todos
+os seus clientes até o TTL vencer.
+
+A correção imediata recomendada pelo CERT foi **sortear a porta de origem a cada
+consulta**, o que soma cerca de 16 bits de incerteza: o atacante passa a ter de acertar
+porta e ID ao mesmo tempo.
+
+- **Impacto:** praticamente todo resolvedor DNS da internet precisou de atualização.
+- **Lição:** um protocolo sem autenticação (UDP + ID de 16 bits) só é seguro enquanto
+  ninguém se esforça para adivinhar. A defesa de verdade é assinar as respostas, o DNSSEC
+  (seção 8).
+- **Fontes:** [CERT/CC VU#800113](https://www.kb.cert.org/vuls/id/800113) e
+  [registro CVE-2008-1447](https://www.cve.org/CVERecord?id=CVE-2008-1447).
+
+### WannaCry (12 de maio de 2017): a porta 445 aberta para o mundo
+
+Em **14 de março de 2017**, a Microsoft publicou o boletim
+[MS17-010](https://learn.microsoft.com/en-us/security-updates/securitybulletins/2017/ms17-010),
+classificado como crítico, corrigindo falhas no SMBv1 que permitiam a um atacante sem
+autenticação executar código no servidor mandando pacotes especialmente montados.
+Quase dois meses depois, na manhã de **12 de maio de 2017** (os primeiros relatos, segundo
+a CISA, por volta das 4h no horário da costa leste dos EUA), começou a campanha do
+<GlossaryTerm term="ransomware">ransomware</GlossaryTerm> WannaCry. Ele se espalhava sozinho
+explorando o SMBv1 na **porta TCP 445**, tentando também as portas UDP 137 e 138 e TCP 139.
+
+O [alerta TA17-132A da CISA](https://www.cisa.gov/news-events/alerts/2017/05/12/indicators-associated-wannacry-ransomware)
+registrou dezenas de milhares de infecções em mais de 150 países. Entre as mitigações,
+duas são pura rede: aplicar o MS17-010 e **bloquear o SMB na fronteira da rede**, fechando
+a porta TCP 445 e as relacionadas (UDP 137–138, TCP 139).
+
+- **Impacto:** dezenas de milhares de máquinas cifradas em mais de 150 países.
+- **Lição:** uma porta que não precisava estar acessível de fora era a porta de entrada.
+  A correção existia havia dois meses; o firewall de borda teria contido o espalhamento
+  mesmo nas máquinas sem atualização.
+- **Fontes:** [CISA — TA17-132A](https://www.cisa.gov/news-events/alerts/2017/05/12/indicators-associated-wannacry-ransomware)
+  e [Microsoft — MS17-010](https://learn.microsoft.com/en-us/security-updates/securitybulletins/2017/ms17-010).
+
+### Facebook some da internet (4 de outubro de 2021): BGP derruba o DNS
+
+Em **4 de outubro de 2021**, o Facebook e os outros apps da empresa ficaram fora do ar por
+horas.
+Segundo o [post de engenharia do Facebook publicado no dia seguinte](https://engineering.fb.com/2021/10/05/networking-traffic/outage-details/),
+durante uma manutenção de rotina foi dado um comando para avaliar a capacidade da rede
+interna (o *backbone*) que, sem querer, **derrubou todas as conexões** entre os data
+centers; um bug na ferramenta de auditoria deixou o comando passar.
+
+Então veio o efeito em cascata, que é a parte deste módulo: os servidores DNS do
+Facebook são programados para **retirar os próprios anúncios BGP** quando não conseguem
+falar com os data centers (uma proteção sensata, que tira do ar um servidor isolado). Como
+todos ficaram isolados ao mesmo tempo, todos retiraram as rotas. Resultado, nas palavras
+do post: os servidores DNS ficaram **inalcançáveis, embora ainda estivessem funcionando**.
+Sem DNS, nenhum nome do Facebook resolvia, nem para os usuários nem para as ferramentas
+internas dos engenheiros. A restauração exigiu acesso físico aos data centers, que são
+feitos de propósito para serem difíceis de entrar.
+
+Visto de fora, pela [análise da Cloudflare do mesmo dia](https://blog.cloudflare.com/october-2021-facebook-outage/):
+o pico de mudanças de rota do Facebook começou por volta das **15:40 UTC**; às 15:58 UTC
+as rotas para as faixas dos servidores DNS já não eram anunciadas; a atividade BGP voltou
+por volta das 21:00 UTC, e o DNS respondia de novo às 21:20 UTC. Enquanto isso,
+resolvedores do mundo todo, repetindo perguntas sem resposta, chegaram a receber 30
+vezes mais consultas que o normal.
+
+- **Impacto:** cerca de seis horas fora do ar, pelos horários da Cloudflare. O Facebook afirmou
+  não ter evidência de que dados de usuários tenham sido comprometidos.
+- **Lição:** as camadas dependem umas das outras. Uma falha de rotas (internet) derrubou
+  o DNS (aplicação), e o DNS derrubou tudo. Dependências circulares (as ferramentas de
+  conserto dependiam da rede quebrada) transformam minutos em horas.
+- **Fontes:** [Facebook Engineering, 4/10/2021](https://engineering.fb.com/2021/10/04/networking-traffic/outage/),
+  [Facebook Engineering, 5/10/2021](https://engineering.fb.com/2021/10/05/networking-traffic/outage-details/)
+  e [Cloudflare, 4/10/2021](https://blog.cloudflare.com/october-2021-facebook-outage/).
+
+## 5. Mãos à obra — inspeção guiada
+
+Este módulo não tem laboratório próprio: o "alvo" é o seu próprio computador e um pacote
+real capturado no lab.
+
+**Objetivo:** ao terminar, você terá mapeado as interfaces, rotas, vizinhos e portas do
+seu WSL (Missão 1), calculado um escopo de pentest e decidido quais IPs de uma lista
+podem ser testados (Missão 2) e decodificado à mão, byte a byte, o primeiro pacote de uma
+conexão TCP real (Missão 3). Cada missão termina numa flag, e nenhuma precisa de internet.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra o terminal do Ubuntu, como no 0.1. Você pode usar o mesmo terminal em que a
+   plataforma está rodando? Não: ele está ocupado com o `npm run dev`. Abra um
+   **segundo** terminal (no menu Iniciar, "Ubuntu" de novo).
+2. Mantenha a plataforma ligada: a seção 5.5 conversa com ela.
+3. Nos blocos de terminal, o botão de copiar já tira o `$` e a saída. Os seus números
+   (IPs, MACs, portas efêmeras) vão ser diferentes dos do módulo, e isso é esperado: os do
+   módulo foram trocados por exemplos genéricos.
+
+### 5.2 Missão 1 — Seu computador visto pela rede (guiada)
+
+**Passo 1: as interfaces.** O comando `ip` é a ferramenta moderna do Linux para tudo o que
+é rede. `ip addr` lista os endereços; a opção `-br` (*brief*) resume uma interface por
+linha. Saída real (endereços trocados por genéricos):
+
+```console
+$ ip -br addr
+lo               UNKNOWN        127.0.0.1/8 10.255.255.254/32 ::1/128
+eth0             UP             172.24.5.20/20 fe80::215:5dff:fe12:3456/64
+docker0          DOWN           172.17.0.1/16 fe80::a0b1:c2ff:fed3:e4f5/64
+```
+
+Colunas: nome da <GlossaryTerm term="network interface">interface</GlossaryTerm>, estado e
+endereços com o prefixo.
+
+- **`lo`** é a <GlossaryTerm term="loopback">loopback</GlossaryTerm>: `127.0.0.1/8` em
+  IPv4 e `::1/128` em IPv6. O `10.255.255.254/32` é um endereço que o WSL acrescenta para
+  o DNS (você vai reencontrá-lo daqui a pouco).
+- **`eth0`** é a placa virtual do WSL, com um endereço privado e um IPv6 `fe80::`
+  (*link-local*).
+- **`docker0`** é a rede padrão do Docker, desligada (`DOWN`) porque nenhum contêiner a usa.
+
+**Desafio 1.1:** quantos endereços IPv4 existem na faixa da loopback? Responda pela
+conta da seção 2.4 antes de abrir a solução.
+
+<Solution title="Solução do desafio 1.1">
+`127.0.0.1/8` significa que só os 8 primeiros bits (o `127`) são de rede: sobram 24 bits
+de host, 2^24 = 16.777.216 endereços, todos de `127.0.0.0` a `127.255.255.255`. Todos
+eles levam de volta à própria máquina; `127.0.0.1` é só o mais usado. Experimente
+`ping -c 1 127.42.42.42`: responde.
+</Solution>
+
+**Passo 2: a MTU da loopback.** O `ip link` mostra a camada de enlace de cada interface,
+inclusive a MTU:
+
+```console
+$ ip link show lo
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+```
+
+Repare que o MAC da loopback é todo zero: ela não tem placa, não tem quadro de verdade.
+Rode o mesmo comando para a `eth0` (troque `lo` por `eth0`) e compare a MTU dela com o
+valor comum da Ethernet que você leu na seção 2.4. No ambiente da escrita, deu
+`mtu 1492`, um pouco abaixo dos 1500. É um número conhecido: o máximo das conexões
+PPPoE, usadas por muitos provedores de banda larga, que gastam 8 bytes com o próprio
+cabeçalho (RFC 2516). Sempre que há um envelope extra no caminho, sobra menos espaço
+para o pacote; o seu valor pode ser outro.
+
+**Passo 3: rotas e vizinhos.** Rode `ip route` e `ip neigh` e compare com as saídas da
+seção 2.3 e 2.4. Identifique o seu gateway padrão e confira que o MAC dele aparece no
+cache ARP.
+
+**Passo 4: quem está escutando.** O `ss` (do 0.1) com `-t` (TCP), `-u` (UDP), `-l` (só quem
+escuta) e `-n` (números em vez de nomes). Saída real, com a plataforma **desligada** (com
+ela ligada, aparece também a linha `127.0.0.1:3000`):
+
+```console
+$ ss -tuln
+Netid State  Recv-Q Send-Q  Local Address:Port Peer Address:Port
+udp   UNCONN 0      0           127.0.0.1:323       0.0.0.0:*
+udp   UNCONN 0      0          127.0.0.54:53        0.0.0.0:*
+udp   UNCONN 0      0       127.0.0.53%lo:53        0.0.0.0:*
+udp   UNCONN 0      0      10.255.255.254:53        0.0.0.0:*
+udp   UNCONN 0      0               [::1]:323          [::]:*
+tcp   LISTEN 0      4096       127.0.0.54:53        0.0.0.0:*
+tcp   LISTEN 0      4096    127.0.0.53%lo:53        0.0.0.0:*
+tcp   LISTEN 0      1000   10.255.255.254:53        0.0.0.0:*
+```
+
+Para UDP, o estado é `UNCONN` (UDP não tem conexão, então "escutando" aparece assim);
+para TCP, `LISTEN`. Repare que tudo escuta em endereços da loopback: nada aqui é
+alcançável de fora. A porta 323 é o relógio do sistema (o `chronyd`, que acerta a hora
+pela rede). E há um serviço escutando em três endereços diferentes, em TCP e UDP: o
+resolvedor DNS local, inclusive no `10.255.255.254`, aquele endereço extra da loopback. Confira
+com `cat /etc/resolv.conf`: é o servidor de nomes que o WSL configurou para você.
+
+**Passo 5: o nome de uma porta.** Use o `getent services` (seção 2.5) com o número da porta
+em que o DNS local escuta.
+
+**A flag:** monte `FLAG{MTU-prefixo-nome}` com três peças que você coletou:
+
+- a **MTU** da interface `lo` (passo 2);
+- o **prefixo** (só o número depois da barra) do endereço `127.0.0.1` (passo 1);
+- o **nome** que o `/etc/services` dá à porta em que o DNS local escuta (passo 5), em
+  minúsculas, exatamente como o `getent` mostra.
+
+<Hint title="Dica">
+São três comandos: `ip link show lo`, `ip -br addr` e `getent services` seguido do número
+da porta que se repete nas linhas do DNS no `ss -tuln`. A primeira coluna da saída do
+`getent` é o nome.
+</Hint>
+
+<FlagInput task="missao-1-sua-maquina-na-rede" />
+
+### 5.3 Missão 2 — O escopo do cliente (desafio)
+
+<Callout variant="hypothetical" title="o contrato da Empresa Exemplo">
+Você foi contratado para um pentest interno. O contrato, assinado, diz: **"Escopo
+autorizado: 10.20.30.64/27. Fora do escopo: 10.20.30.94 (servidor de produção do ERP)."**
+O cliente também mandou uma planilha antiga de inventário com nove IPs, e a sua chefe
+quer saber, antes de qualquer teste, quais deles você está autorizado a tocar.
+</Callout>
+
+Os IPs da planilha:
+
+```text
+10.20.30.37
+10.20.30.64
+10.20.30.65
+10.20.30.79
+10.20.30.93
+10.20.30.94
+10.20.30.95
+10.20.30.96
+10.20.31.70
+```
+
+**Desafio 2.1:** calcule, para `10.20.30.64/27`, a máscara, o endereço de rede, o
+broadcast, o primeiro e o último host, e a quantidade de hosts. Faça no papel, com o
+método da seção 2.4.
+
+<Hint title="Dica 1">
+/27 deixa 32 − 27 = 5 bits para os hosts. Pelo atalho do bloco, o último octeto anda de
+quanto em quanto? Em qual múltiplo desse bloco a rede começa, e onde ela termina?
+</Hint>
+
+<Solution title="Solução do desafio 2.1">
+5 bits de host → blocos de 2^5 = 32 no último octeto: as redes /27 começam em .0, .32,
+.64, .96... A nossa vai de `.64` (rede) a `.64 + 32 − 1 = .95` (broadcast). Máscara: 27 uns
+= `255.255.255.224` (o último octeto é `11100000` = 224). Hosts: de `.65` a `.94`, ou
+2^5 − 2 = **30**. Em binário, o último octeto da rede é `010 00000` e o do broadcast é
+`010 11111`: os três primeiros bits (`010`) são os últimos da parte de rede e não mudam.
+</Solution>
+
+**Desafio 2.2:** quantos hosts o contrato autoriza, de fato, a testar? E quais IPs da
+planilha estão dentro do escopo? Cuidado: a planilha tem pegadinhas de propósito, uma
+para cada regra que você aprendeu.
+
+<Hint title="Dica 2">
+Para cada IP da lista, pergunte, nesta ordem: o terceiro octeto é 30? O último octeto está
+entre a rede e o broadcast? É a própria rede ou o broadcast (que não são hosts)? É o IP
+excluído pelo contrato?
+</Hint>
+
+<Solution title="Solução do desafio 2.2 (o raciocínio; a conta final é sua)">
+Hosts autorizados: os 30 da sub-rede menos o excluído. Da planilha:
+
+| IP | Veredito | Por quê |
+|---|---|---|
+| `10.20.30.37` | fora | pertence à sub-rede anterior (.32–.63) |
+| `10.20.30.64` | fora | é o endereço de rede, não um host |
+| `10.20.30.65` | dentro | primeiro host |
+| `10.20.30.79` | dentro | entre .65 e .94 |
+| `10.20.30.93` | dentro | entre .65 e .94 |
+| `10.20.30.94` | fora | último host, mas **excluído pelo contrato** |
+| `10.20.30.95` | fora | é o broadcast |
+| `10.20.30.96` | fora | começa a próxima sub-rede |
+| `10.20.31.70` | fora | terceiro octeto diferente: outra rede |
+
+Confira com uma ferramenta, como faria no trabalho. O Python, que já vem no Ubuntu, tem
+um módulo de endereços; copie e cole o comando abaixo (ele cria a rede, lista as
+propriedades e testa cada IP, descontando o excluído):
+
+```console
+$ python3 -c 'import ipaddress as ip; n = ip.ip_network("10.20.30.64/27"); x = ip.ip_address("10.20.30.94"); print(n.netmask, n.network_address, n.broadcast_address, len(list(n.hosts()))); print([a for a in ["10.20.30.37", "10.20.30.64", "10.20.30.65", "10.20.30.79", "10.20.30.93", "10.20.30.94", "10.20.30.95", "10.20.30.96", "10.20.31.70"] if ip.ip_address(a) in n.hosts() and ip.ip_address(a) != x])'
+255.255.255.224 10.20.30.64 10.20.30.95 30
+['10.20.30.65', '10.20.30.79', '10.20.30.93']
+```
+
+Repare que até a ferramenta precisou ser instruída sobre o excluído: o contrato é a
+fonte da verdade, não a conta.
+</Solution>
+
+**A flag:** `FLAG{broadcast-hosts-lista}`, em que *broadcast* é o endereço de broadcast
+da sub-rede (escrito completo, com pontos), *hosts* é quantos hosts o contrato autoriza a
+testar e *lista* é quantos IPs da planilha estão no escopo.
+
+<FlagInput task="missao-2-escopo-do-cliente" />
+
+### 5.4 Missão 3 — Raio-X de um pacote (desafio)
+
+Durante a escrita deste módulo, o lab `dvwa` foi ligado e, no Kali, o tráfego para o
+DVWA foi gravado com o `dumpcap`, o capturador de linha de comando que vem com o
+<GlossaryTerm term="Wireshark">Wireshark</GlossaryTerm>, enquanto o `curl` buscava a página
+de login. Foram capturados dez quadros: a conexão inteira do diagrama da seção 2.5. Aqui
+estão dois deles, como bytes crus, no formato clássico de despejo hexadecimal: à
+esquerda, a posição do primeiro byte da linha (em hexadecimal); no meio, 16 bytes; à
+direita, os mesmos bytes como texto (`.` para o que não é letra).
+
+**Quadro 1 (74 bytes), o primeiro da conexão:**
+
+```text
+0000  c6 ad b8 24 d6 a1 b2 a3 65 9b 04 4f 08 00 45 00  ...$....e..O..E.
+0010  00 3c 56 81 40 00 40 06 8c 13 ac 12 00 01 ac 12  .<V.@.@.........
+0020  00 02 96 58 00 50 21 6a c5 b6 00 00 00 00 a0 02  ...X.P!j........
+0030  fa f0 58 56 00 00 02 04 05 b4 04 02 08 0a fa 6b  ..XV...........k
+0040  28 75 00 00 00 00 01 03 03 0a                    (u........
+```
+
+**Quadro 4 (143 bytes), o pedido HTTP:**
+
+```text
+0000  c6 ad b8 24 d6 a1 b2 a3 65 9b 04 4f 08 00 45 00  ...$....e..O..E.
+0010  00 81 56 83 40 00 40 06 8b cc ac 12 00 01 ac 12  ..V.@.@.........
+0020  00 02 96 58 00 50 21 6a c5 b7 b4 c8 ec 4f 80 18  ...X.P!j.....O..
+0030  00 3f 58 9b 00 00 01 01 08 0a fa 6b 28 75 a0 ef  .?X........k(u..
+0040  3c bc 47 45 54 20 2f 6c 6f 67 69 6e 2e 70 68 70  <.GET /login.php
+0050  20 48 54 54 50 2f 31 2e 31 0d 0a 48 6f 73 74 3a   HTTP/1.1..Host:
+0060  20 64 76 77 61 0d 0a 55 73 65 72 2d 41 67 65 6e   dvwa..User-Agen
+0070  74 3a 20 63 75 72 6c 2f 38 2e 32 31 2e 30 0d 0a  t: curl/8.21.0..
+0080  41 63 63 65 70 74 3a 20 2a 2f 2a 0d 0a 0d 0a     Accept: */*....
+```
+
+O mapa abaixo diz qual campo ocupa cada byte do quadro 1. Ele segue a mesma grade do
+despejo: linha `0010`, coluna `6`, é o byte `0x16`.
+
+<Figure
+  src={mapaQuadro}
+  alt="Grade de 16 colunas por 5 linhas com os 74 bytes do quadro SYN, coloridos: Ethernet de 0x00 a 0x0d (MAC de destino, MAC de origem, tipo), IPv4 de 0x0e a 0x21 (versão e IHL, DSCP, comprimento total, identificação, flags, TTL em 0x16, protocolo em 0x17, checksum, IP de origem em 0x1a a 0x1d, IP de destino em 0x1e a 0x21) e TCP de 0x22 a 0x49 (porta de origem 0x22–0x23, porta de destino 0x24–0x25, sequência, confirmação, tamanho do cabeçalho, flags em 0x2f, janela, checksum, urgência e 20 bytes de opções)."
+  caption="Onde está cada campo no quadro 1. Amarelo é Ethernet, ciano é IPv4, verde é TCP: o encapsulamento da seção 2.2, agora em bytes."
+/>
+
+**Parte guiada: o cabeçalho Ethernet e o início do IP.** Vamos juntos nos primeiros
+campos, que mostram o método:
+
+- `c6 ad b8 24 d6 a1`: MAC de **destino** (o DVWA). `b2 a3 65 9b 04 4f`: MAC de
+  **origem** (o Kali). Repare que nenhum é de fabricante: o segundo dígito hexadecimal do
+  primeiro byte (`6` e `2`) tem o bit de "administrado localmente" ligado, a marca dos MACs
+  gerados por software, aqui pelo Docker.
+- `08 00`: o tipo. `0800` significa "o que vem a seguir é IPv4".
+- `45`: dois campos de 4 bits. `4` é a versão (IPv4); `5` é o tamanho do cabeçalho IP em
+  palavras de 4 bytes: 5 × 4 = **20 bytes**, sem opções.
+- `00 3c`: comprimento total do pacote IP: 0x3c = 60 bytes. Confere: 74 do quadro − 14
+  do Ethernet = 60.
+- `ac 12 00 01` em `0x1a`: o IP de origem. Converta cada byte: `ac` = 10 × 16 + 12 = 172;
+  `12` = 18; `00` = 0; `01` = 1. **172.18.0.1**, o Kali.
+
+**Desafio 3.1:** decodifique, no quadro 1, o **protocolo** (byte `0x17`), o **IP de
+destino** e as **flags TCP** (byte `0x2f`).
+
+<Hint title="Dica 1">
+O protocolo `06` é o TCP (o mapa diz). Para as flags, escreva o byte `0x2f` em binário. Da
+direita para a esquerda, os bits valem: FIN, SYN, RST, PSH, ACK, URG.
+</Hint>
+
+<Solution title="Solução do desafio 3.1">
+`0x17` = `06`: TCP. IP de destino em `0x1e`–`0x21`: `ac 12 00 02` = **172.18.0.2**, o
+DVWA. Flags em `0x2f` = `02` = `00000010` em binário: só o segundo bit da direita está
+ligado, o **SYN**. É o primeiro passo do handshake, como o mapa e a seção 2.5 previam. No
+quadro 4, o mesmo byte vale `18` = `00011000`: PSH e ACK.
+</Solution>
+
+**Desafio 3.2:** leia o quadro 4. Sem converter nada, encontre o **método HTTP**, o
+**caminho** pedido e o nome no cabeçalho `Host`. Depois responda: a partir de qual
+posição (em hexadecimal) começam os dados HTTP, e por que é essa?
+
+<Hint title="Dica 2">
+A coluna da direita mostra os bytes como texto. Para a posição: some os cabeçalhos. O
+Ethernet tem 14 bytes, o IP tem 20, e o tamanho do cabeçalho TCP está nos 4 bits da
+esquerda do byte `0x2e` (em palavras de 4 bytes).
+</Hint>
+
+<Solution title="Solução do desafio 3.2">
+`GET /login.php HTTP/1.1`, `Host: dvwa`, em texto legível para qualquer um que capture
+o quadro: é por isso que HTTP sem TLS é perigoso. No quadro 4, o byte `0x2e` vale `80`:
+os 4 bits da esquerda são `8`, e 8 × 4 = 32 bytes de cabeçalho TCP (20 fixos + 12 de
+opções). Os dados começam em 14 + 20 + 32 = 66 = **0x42**: na linha `0040`, coluna `2`,
+exatamente onde aparece o `47` (a letra G). São os 66 bytes de envelope do diagrama da
+seção 2.2.
+</Solution>
+
+**Desafio 3.3 (a flag):** decodifique, no **quadro 1**, a **porta de origem**, a **porta
+de destino** e o **TTL**, todos em decimal. A flag é `FLAG{origem-destino-TTL}`.
+
+<Hint title="Dica 3">
+Use o mapa: porta de origem em `0x22`–`0x23`, porta de destino em `0x24`–`0x25`, TTL em
+`0x16`. Uma porta tem dois bytes: o primeiro vale 256 vezes mais. Para quatro dígitos
+hexadecimais, as casas valem 4096, 256, 16 e 1.
+</Hint>
+
+<Solution title="Solução do desafio 3.3 (o método, sem a flag)">
+A porta de destino, `00 50`, vira 0 × 4096 + 0 × 256 + 5 × 16 + 0 = 80: o HTTP, como
+esperado. Faça a mesma conta para os dois bytes da porta de origem; o resultado tem de
+estar na faixa efêmera do Linux (32768 a 60999), o que confere a sua conta. Para o TTL, um
+byte só: dígito da esquerda × 16 + o da direita. Ele tem de ser o padrão do Linux, já que
+o pacote saiu agora do Kali e não passou por roteador nenhum. Se quiser conferir uma
+conversão, o Python faz para você: `python3 -c 'print(int("0050", 16))'`.
+</Solution>
+
+<FlagInput task="missao-3-raio-x-de-um-pacote" />
+
+**Para pensar:** o que mais o quadro 1 revela? Nas opções TCP (a partir de `0x36`), o par
+`02 04 05 b4` é o MSS, o maior segmento que o Kali aceita receber: 0x05b4 = 1460, que é a
+MTU de 1500 menos 20 do IP e 20 do TCP. Em `0x26`, `21 6a c5 b6` é o número de sequência
+inicial, sorteado; no quadro 4, ele é `21 6a c5 b7`, exatamente 1 a mais, porque o SYN
+contou como um byte.
+
+### 5.5 Walkthrough: a jornada de um pedido à própria plataforma
+
+Sem flag: um passeio para ver as camadas da seção 2.7 no seu próprio computador, com a
+plataforma ligada. A opção `-v` (*verbose*) faz o `curl` narrar cada etapa. Saída real
+(as primeiras linhas):
+
+```console
+$ curl -sv -o /dev/null http://localhost:3000/glossario
+* Host localhost:3000 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:3000...
+* connect to ::1 port 3000 from ::1 port 52570 failed: Connection refused
+*   Trying 127.0.0.1:3000...
+* Established connection to localhost (127.0.0.1 port 3000) from 127.0.0.1 port 33240
+* using HTTP/1.x
+> GET /glossario HTTP/1.1
+> Host: localhost:3000
+> User-Agent: curl/8.18.0
+> Accept: */*
+>
+* Request completely sent off
+< HTTP/1.1 200 OK
+< X-Frame-Options: DENY
+< Content-Type: text/html; charset=utf-8
+```
+
+Leia como uma linha do tempo:
+
+1. **Resolução:** `localhost` virou **dois** endereços, `::1` (IPv6) e `127.0.0.1` (IPv4).
+2. **Primeira tentativa, IPv6:** `Trying [::1]:3000...` falhou com `Connection refused`.
+3. **Segunda tentativa, IPv4:** conectou em `127.0.0.1` porta 3000, **a partir da porta
+   33240**, uma porta efêmera.
+4. **HTTP:** as linhas com `>` são o pedido que saiu; as com `<`, a resposta que voltou.
+
+**Desafio 5.1 (para pensar):** por que a tentativa por `::1` foi recusada na hora, e não
+por tempo esgotado? Junte o que você sabe sobre RST e sobre onde a plataforma escuta
+(0.1 e Missão 1).
+
+<Solution title="Discussão do desafio 5.1">
+A plataforma escuta só em `127.0.0.1:3000` (IPv4), por causa do `-H 127.0.0.1` do
+`npm run dev`. Em `[::1]:3000` não há ninguém escutando, e a loopback não tem firewall
+descartando nada: o kernel responde ao SYN com um **RST** imediato, e o curl lê isso como
+"recusado". Então ele tenta o próximo endereço da lista. Rode o mesmo comando duas vezes
+e compare as portas de origem (`from ... port`): mudam a cada vez, porque são efêmeras.
+</Solution>
+
+**Desafio 5.2 (opcional, precisa de internet):** rode o comando de tempos da seção 2.7 para
+um site que você usa. Qual etapa foi a mais demorada? Depois, rode `ping -c 3` para o
+mesmo nome e compare o `time` do ping com o tempo do TCP do curl: devem ser parecidos,
+porque os dois medem uma ida e volta.
+
+### 5.6 Desligar
+
+Nada a desligar: nenhum laboratório foi usado. Se quiser, pare a plataforma com
+`Ctrl+C` no terminal do `npm run dev`.
+
+## 6. Variações e aprofundamento
+
+### 6.1 O traceroute na prática
+
+O seu WSL não traz um programa de traceroute instalado (o `tracepath`, o `traceroute` e o
+`mtr` são pacotes à parte, e o módulo 0.4 ensina a instalar programas). No Windows, o
+equivalente já vem pronto: `tracert.exe`, que você pode chamar de dentro do WSL como fez
+com o `ipconfig.exe`. Cada linha da saída é um salto, descoberto pelo truque do TTL da
+seção 2.4. Linhas com `*` são roteadores que não respondem ao "TTL esgotado", o que é
+comum e não significa que o caminho parou ali.
+
+### 6.2 IPv6 mais a fundo
+
+- **Sem broadcast:** o IPv6 usa *multicast* (envio a um grupo). O papel do ARP passa ao
+  NDP (*Neighbor Discovery Protocol*), sobre ICMPv6, que tem o mesmo problema de
+  confiança, e ataques equivalentes.
+- **Autoconfiguração:** um aparelho pode montar o próprio endereço a partir de anúncios
+  do roteador, sem DHCP. Um atacante na rede local que finja ser roteador IPv6 pode
+  desviar o tráfego de máquinas que nem sabiam que usavam IPv6.
+- **Dupla pilha:** a maioria dos sistemas fala IPv4 e IPv6 ao mesmo tempo. Uma regra de
+  firewall só para IPv4 deixa o IPv6 aberto. O `curl` da seção 5.5 tentou o IPv6
+  primeiro: muitos programas preferem o IPv6 quando ele existe.
+
+### 6.3 QUIC e HTTP/3: a web sobre UDP
+
+O <GlossaryTerm term="QUIC">QUIC</GlossaryTerm> (RFC 9000, de 2021) leva para dentro de UDP
+o que o TCP e o TLS faziam separados: conexão, confiabilidade e criptografia, num
+handshake mais curto. O HTTP/3 (RFC 9114) roda sobre ele, na porta UDP 443. Para segurança,
+duas consequências: firewalls e ferramentas que só olham TCP deixam de ver parte da web,
+e boa parte do cabeçalho de transporte também vai cifrada.
+
+### 6.4 DNS cifrado e DNS assinado
+
+São duas defesas diferentes, que costumam ser confundidas:
+
+- **Cifrado** (privacidade): <GlossaryTerm term="DoH">DoH</GlossaryTerm>, o DNS sobre HTTPS
+  (RFC 8484), e o DoT, DNS sobre TLS (RFC 7858). Quem escuta a rede não vê quais nomes você
+  consulta.
+- **Assinado** (autenticidade): <GlossaryTerm term="DNSSEC">DNSSEC</GlossaryTerm> (RFC
+  4033). O dono do domínio assina os registros, e o resolvedor confere a assinatura. Uma
+  resposta forjada, como as do ataque de Kaminsky, não tem assinatura válida.
+
+Um não substitui o outro: o DoH protege o caminho entre você e o resolvedor, mas, se o
+resolvedor tiver sido envenenado, entrega a mentira cifrada.
+
+### 6.5 VLANs e segmentação
+
+Uma <GlossaryTerm term="VLAN">VLAN</GlossaryTerm> (*Virtual LAN*) divide um mesmo switch em
+várias redes locais separadas, como se fossem switches diferentes. Empresas usam VLANs
+para separar, por exemplo, a rede dos funcionários da rede das câmeras e da rede dos
+servidores, cada uma com um firewall entre elas. Para quem ataca, isso significa que
+invadir uma máquina não dá acesso automático a tudo; para quem defende, é o princípio de
+não colocar todos os ovos na mesma rede local, onde o ARP spoofing alcança todo mundo.
+
+### 6.6 As redes da própria plataforma
+
+Os laboratórios da plataforma são uma aplicação direta deste módulo. Do Kali, durante a
+escrita, a tabela de rotas e um teste de saída para a internet (saída real):
+
+```console
+$ ip route
+172.18.0.0/16 dev eth1 proto kernel scope link src 172.18.0.1
+172.19.0.0/16 dev eth0 proto kernel scope link src 172.19.0.1
+$ ip route get 1.1.1.1
+RTNETLINK answers: Network is unreachable
+$ curl -sS -m 3 http://1.1.1.1/
+curl: (7) Failed to connect to 1.1.1.1:80 after 0 ms: Could not connect to server
+```
+
+Repare no que **falta**: não existe linha `default`. O Kali conhece duas sub-redes
+internas e mais nada. Para qualquer outro destino, o próprio kernel responde "rede
+inalcançável" antes de mandar um único pacote. Essa é a forma mais forte de
+<GlossaryTerm term="egress filtering">filtragem de saída</GlossaryTerm> (*egress
+filtering*): não há rota para fora. É ela que o `scripts/lab.sh verify` testa quando tenta,
+de dentro do lab, alcançar a internet e o seu computador.
+
+### 6.7 Modos de rede do WSL
+
+O WSL usa, por padrão, o modo NAT que você viu na seção 2.4: uma rede virtual própria,
+atrás do Windows. Ele também tem um modo espelhado (*mirrored*), ativado no arquivo
+`.wslconfig` do Windows, em que o Linux passa a ter os mesmos endereços do Windows. Neste
+módulo, o WSL estava no padrão; se no seu `ip -br addr` a `eth0` mostrar o mesmo IP do Wi-Fi
+do Windows, o seu está em modo espelhado, e as rotas serão diferentes das do texto.
+
+## 7. Erros comuns
+
+- **"O ping não respondeu, então a máquina está desligada."** Não necessariamente. Muitos
+  firewalls descartam o ICMP: no ambiente da escrita, o ping do WSL para o Windows
+  (`172.24.0.1`) teve 100% de perda, com o Windows ligado e funcionando como roteador do
+  próprio WSL. Ping sem resposta só diz que o ping não voltou.
+- **Confundir "recusado" com "tempo esgotado".** "Connection refused" é rápido e vem de
+  uma máquina que respondeu (porta fechada). "Timed out" é lento e significa que nada
+  voltou (filtro, máquina inexistente ou rota quebrada). São diagnósticos opostos.
+- **Esquecer o endereço de rede e o broadcast.** Um `/24` tem 256 endereços, mas 254
+  hosts. E o broadcast `.255` não é "o último host".
+- **Errar a faixa `172.16.0.0/12`.** Ela termina em `172.31.255.255`. `172.32.x.x` é
+  público.
+- **Achar que um IP privado é alcançável pela internet.** `192.168.0.10` existe em milhões
+  de casas; ninguém de fora chega ao seu sem um redirecionamento de porta.
+- **`127.0.0.1` "do Windows" e "do WSL".** No modo NAT, cada um tem a sua loopback. A
+  plataforma abre no navegador do Windows porque o WSL repassa o `localhost` do Windows
+  para o Linux, um recurso específico do WSL; não é regra das redes.
+- **O nome resolve para o IP errado.** Olhe primeiro o `/etc/hosts`: ele passa por cima do
+  DNS. Depois, lembre do cache: uma resposta antiga vale até o TTL vencer.
+- **Ler a coluna errada do `ss`.** Quem decide de onde um serviço é alcançável é o **Local
+  Address**. O `0.0.0.0:*` da coluna Peer só diz que qualquer origem é aceita por quem já
+  chegou.
+- **Comandos antigos que não existem mais.** `ifconfig`, `netstat`, `route` e `arp` são do
+  pacote `net-tools`, que não estava instalado no Ubuntu usado na escrita. Os substitutos: `ip addr`,
+  `ss`, `ip route` e `ip neigh`. Você vai ver os antigos em tutoriais e em máquinas velhas.
+- **`command not found` para `dig`, `traceroute` ou `tcpdump`.** Não vêm no WSL. Use
+  `getent hosts nome` para resolver nomes, `tracert.exe` para o caminho, e deixe a captura
+  para o Kali, que já traz as ferramentas.
+- **Converter hexadecimal como se fosse decimal.** `50` em hexadecimal é 80, não 50. Em
+  despejos de pacotes, **todo** número está em hexadecimal.
+- **Esquecer que portas têm dois bytes.** Ler só o segundo byte da porta de origem dá um
+  número menor que 256, o que não pode ser uma porta efêmera: sinal de que faltou o
+  primeiro byte, multiplicado por 256.
+
+## 8. Boas práticas e segurança
+
+Cada caso da seção 4 tinha uma defesa conhecida. Estas são as que valem para o seu
+computador, para a sua casa e, mais tarde, para as redes que você vai proteger.
+
+### 8.1 Escute só onde precisa, e confira
+
+- **Todo serviço que só você usa deve escutar em `127.0.0.1`**, como a plataforma e os
+  labs. Na dúvida, rode `ss -tuln` e procure linhas com `0.0.0.0`, `[::]` ou `*` no
+  endereço local: são serviços abertos para qualquer interface.
+- **Desligue o que não usa.** Uma porta fechada não precisa de firewall.
+- **No Docker, publique sempre com o endereço:** `"127.0.0.1:8080:8080"`, nunca só
+  `"8080:8080"` (o 0.1 explica). E saiba que, segundo a
+  [documentação do Docker](https://docs.docker.com/engine/network/packet-filtering-firewalls/),
+  o Docker e o `ufw` são incompatíveis: as portas publicadas pelo Docker são desviadas
+  antes de passar pelas regras do `ufw`. Um firewall no host não conserta uma porta mal
+  publicada.
+
+### 8.2 Firewall: negue por padrão, recuse com consciência
+
+A política certa é a lista do que é permitido (a allowlist do 0.1): **negar todas as
+conexões que chegam e liberar só as necessárias.** No Ubuntu, o `ufw` (*Uncomplicated
+Firewall*) faz isso com poucos comandos (sintaxe da
+[man page oficial](https://manpages.ubuntu.com/manpages/noble/man8/ufw.8.html); exemplo para
+um servidor Linux de verdade, não para o seu WSL, que já está atrás do Windows):
+
+```bash
+sudo ufw default deny incoming     # nada entra, a não ser o liberado abaixo
+sudo ufw default allow outgoing    # a máquina pode iniciar conexões
+sudo ufw allow proto tcp from 192.168.0.0/24 to any port 22   # SSH só da rede local
+sudo ufw enable
+sudo ufw status verbose
+```
+
+Repare na terceira linha: a regra usa **CIDR** para dizer quem pode entrar. E a escolha
+entre `deny` e `reject` é a da seção 2.5: `deny` descarta em silêncio (quem tenta vê
+"tempo esgotado"), `reject` responde recusando (o cliente fica sabendo na hora). Descartar
+dá menos informação a quem varre; recusar facilita o diagnóstico de quem usa a rede de boa
+fé.
+
+Para o Windows, o equivalente é o Firewall do Windows Defender, que já vem ligado: não o
+desligue "para testar" e esqueça.
+
+### 8.3 Filtre a saída, não só a entrada
+
+A maioria das redes só filtra o que entra. Mas o que **sai** também importa: um
+ransomware avisando o atacante, um vazamento de dados, um DNS indo para um resolvedor
+externo não autorizado. A filtragem de saída limita tudo isso. A recomendação da CISA no
+WannaCry, bloquear o SMB **na fronteira**, vale nos dois sentidos. E os labs desta
+plataforma levam a ideia ao extremo: nenhuma rota para fora (seção 6.6).
+
+### 8.4 Cifre tudo o que passa por redes que você não controla
+
+- Prefira sempre as versões cifradas dos protocolos: HTTPS em vez de HTTP; SSH em vez de
+  Telnet (os dois dão um terminal remoto, mas o Telnet manda tudo em claro, inclusive a
+  senha); SFTP em vez de FTP (transferência de arquivos); IMAPS em vez de IMAP (leitura de
+  e-mail). O quadro 4 da Missão 3 mostra o porquê.
+- Num Wi-Fi público, o TLS protege o conteúdo mesmo se alguém fizer ARP spoofing. Um
+  aviso de certificado inválido nessas redes **não** deve ser ignorado: pode ser exatamente
+  alguém no meio do caminho.
+- Para quem escreve sistemas: o que trafega entre servidores dentro da empresa também
+  deve ser cifrado. "A rede interna é segura" é uma suposição que um único ARP spoofing
+  derruba.
+
+### 8.5 Roteador de casa: o firewall que você já tem
+
+- **Troque a senha de administração de fábrica** e mantenha o firmware atualizado.
+- **Desligue o UPnP** se nenhum aparelho precisar dele: é o recurso que deixa qualquer
+  programa da rede abrir portas no roteador sozinho, desfazendo a proteção acidental do NAT.
+- **Não crie redirecionamentos de porta** (*port forwarding*) "para testar" e esqueça.
+  Confira a lista de vez em quando.
+- **Use a rede de convidados** para visitas e para aparelhos de IoT (câmeras, lâmpadas,
+  TV): é uma VLAN pronta, que separa esses aparelhos dos seus computadores.
+- **IPv6:** confira que o firewall IPv6 do roteador está ligado. Sem NAT, ele é a única
+  barreira.
+
+### 8.6 Para organizações: as defesas de cada caso real
+
+| Caso | Defesa | Como funciona |
+|---|---|---|
+| YouTube (BGP) | <GlossaryTerm term="RPKI">RPKI</GlossaryTerm> e validação de origem (ROV, RFC 6811) | Certificados dizem qual AS pode anunciar cada faixa; roteadores descartam anúncios de origem inválida |
+| Kaminsky (DNS) | Porta de origem aleatória; DNSSEC; resolvedores sempre atualizados | Mais incerteza para quem forja; assinatura que quem forja não tem |
+| WannaCry (portas) | Bloquear 445/139 na borda; desativar o SMBv1; aplicar correções | Menos superfície de ataque e a falha corrigida |
+| Facebook (dependências) | Acesso de emergência fora da rede principal; testar procedimentos de recuperação | O conserto não pode depender da coisa quebrada |
+
+### 8.7 Detectar: o que observar
+
+- **ARP:** dois IPs, um deles o gateway, apontando para o mesmo MAC no `ip neigh`.
+  Switches corporativos têm o *Dynamic ARP Inspection*, que confere as respostas ARP contra
+  uma lista confiável.
+- **Portas:** um `ss -tuln` diferente do de ontem.
+- **DNS:** nomes internos resolvendo para IPs externos; um pico de respostas
+  `NXDOMAIN` (nome inexistente) para nomes aleatórios do mesmo domínio, que é a assinatura
+  do ataque de Kaminsky.
+- **Saída:** uma máquina fazendo conexões para portas e países que nunca usou.
+
+## 9. Exercícios
+
+As três flags da seção 5 são as tarefas práticas deste módulo. Confira a teoria com o quiz
+(é preciso 70% para concluir) e, se quiser fixar mais, pense nos cenários e faça os
+exercícios extras.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar
+
+Os três cenários abaixo são inventados para treinar o raciocínio; não são casos reais.
+
+<Callout variant="hypothetical" title="a: o servidor que &quot;sumiu&quot;">
+Um colega diz: "o servidor `10.0.5.20` caiu, o ping não responde". Você roda
+`curl -m 5 http://10.0.5.20/` e recebe, em 1 ms, "Could not connect to server". O
+servidor caiu?
+</Callout>
+
+<Solution title="Discussão do cenário a">
+Provavelmente não. Uma recusa em 1 ms significa que **alguém respondeu** ao SYN com um RST:
+a máquina está de pé, mas nada escuta na porta 80 (o serviço web parou, ou mudou de
+porta). O ping sem resposta é coerente com um firewall que descarta ICMP. O próximo passo
+é olhar o serviço, não a máquina: `ss -tln` no servidor, se você tiver acesso, ou conferir
+outras portas. (Ressalva: um firewall configurado com "reject" também gera recusas rápidas;
+o diagnóstico é uma hipótese a confirmar.)
+</Solution>
+
+<Callout variant="hypothetical" title="b: o certificado no café">
+No Wi-Fi do café, o navegador avisa que o certificado do site do seu banco não é confiável.
+Ontem, em casa, o mesmo site abriu normalmente. O que pode estar acontecendo, e o que você
+faz?
+</Callout>
+
+<Solution title="Discussão do cenário b">
+Uma explicação possível é alguém no meio do caminho (ARP spoofing ou um ponto de acesso
+falso) tentando se passar pelo banco, sem ter o certificado verdadeiro. Também pode ser um
+portal de login do próprio Wi-Fi interceptando a conexão. Em qualquer caso: **não aceite o
+aviso**, saia da rede, use os dados móveis do celular se precisar acessar o banco. O aviso
+é o TLS fazendo exatamente o trabalho dele.
+</Solution>
+
+<Callout variant="hypothetical" title="c: o escopo por telefone">
+No meio de um pentest, o gerente de TI do cliente liga: "pode testar também o
+`10.20.40.0/24`, é tudo nosso". O contrato só fala em `10.20.30.64/27`. Você testa?
+</Callout>
+
+<Solution title="Discussão do cenário c">
+Não, até a ampliação do escopo chegar **por escrito**, assinada por quem tem autoridade para
+autorizar. Uma ligação não prova quem está falando nem se aquela pessoa pode autorizar, e
+a faixa pode incluir sistemas de terceiros (um provedor, um parceiro). A Trilha 1 trata do
+escopo e da autorização em detalhe; a regra prática é: o que não está no papel não está
+autorizado.
+</Solution>
+
+### Exercícios práticos extras (sem flag)
+
+1. Quantos hosts cabem em um `/28`? E qual é o broadcast da sub-rede `/28` que contém
+   `192.168.1.200`?
+2. Converta para decimal: `0x01bb`, `0x0d3d` e `0x80`. Algum deles é uma porta conhecida?
+3. No seu WSL, descubra o seu gateway com `ip route` e confira que ele aparece no
+   `ip neigh`. Depois, leia o nome que o `getent services` dá às portas 22, 443 e 3306.
+4. Com a plataforma ligada, abra uma página dela e rode logo em seguida
+   `ss -tn | grep 3000` (o `| grep 3000` filtra só as linhas com 3000; o módulo 0.3
+   explica). Por que aparecem conexões com a porta 3000 de um lado e números altos do
+   outro?
+
+<Solution title="Soluções dos exercícios extras">
+1: /28 deixa 4 bits: 2^4 − 2 = **14** hosts. Blocos de 16 no último octeto: 200 está no
+bloco que começa em 192 (12 × 16), então a rede é `192.168.1.192` e o broadcast é
+`192.168.1.207`.
+
+2: `0x01bb` = 1 × 256 + 11 × 16 + 11 = **443** (HTTPS); `0x0d3d` = 13 × 256 + 3 × 16 + 13 =
+**3389** (o RDP, a área de trabalho remota do Windows); `0x80` = **128** (o TTL padrão do
+Windows, não uma porta conhecida).
+
+3: o gateway é o endereço depois de `default via`. Os nomes: `ssh`, `https` e `mysql`.
+
+4: cada conexão tem duas pontas. A porta 3000 é a da plataforma (o servidor); os números
+altos são as portas efêmeras do cliente, uma por conexão (navegadores abrem várias ao
+mesmo tempo). Quando o cliente roda no mesmo Linux, como um navegador de teste dentro do
+WSL, cada conexão aparece **duas vezes**, uma vista de cada ponta. Saída real:
+
+```console
+$ ss -tn | grep 3000
+ESTAB 0      0           127.0.0.1:3000      127.0.0.1:35312
+ESTAB 0      0           127.0.0.1:35312     127.0.0.1:3000
+```
+
+A primeira linha é a conexão vista pelo servidor (local `:3000`, remoto `:35312`); a
+segunda, a mesma conexão vista pelo cliente.
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- A internet manda dados em **pacotes**, organizados em **quatro camadas**: enlace (MAC,
+  Ethernet, ARP), internet (IP, rotas, TTL, ICMP), transporte (portas, TCP, UDP) e
+  aplicação (DNS, HTTP). Cada camada **encapsula** a de cima com o seu cabeçalho.
+- Um endereço IPv4 tem 32 bits. O **CIDR** `/N` diz quantos são de rede. Hosts =
+  2^(32 − N) − 2; o endereço de rede (host todo em 0) e o **broadcast** (host todo em 1) não
+  são hosts. Privados: `10/8`, `172.16/12`, `192.168/16`.
+- Fora da sub-rede, o pacote vai ao **gateway**; entre várias rotas, vence o **prefixo mais
+  longo**. O **NAT** reescreve a origem; não é firewall.
+- **TCP:** handshake SYN, SYN-ACK, ACK; sequência e confirmação garantem a entrega. Porta
+  fechada responde **RST** (recusado, rápido); filtrada, **silêncio** (tempo esgotado).
+  **UDP:** sem conexão, fácil de falsificar.
+- **DNS:** hierarquia raiz → TLD → autoritativo, com cache pelo TTL e consultas UDP na porta
+  53, protegidas só por um ID de 16 bits (caso Kaminsky).
+- Cada camada tem a sua confiança ingênua: **ARP spoofing**, **spoofing de IP**, **sequestro
+  de BGP**, **envenenamento de DNS**. As defesas: cifrar (TLS), assinar (DNSSEC, RPKI),
+  filtrar (firewall de entrada **e de saída**) e escutar só onde precisa.
+
+### Cola rápida
+
+| Quero ver... | Comando |
+|---|---|
+| Minhas interfaces e endereços | `ip -br addr` |
+| A MTU e o MAC de uma interface | `ip link show lo` |
+| Minhas rotas e o gateway | `ip route` |
+| O cache ARP (vizinhos) | `ip neigh` |
+| Quem está escutando | `ss -tuln` |
+| Minhas conexões abertas | `ss -tn` |
+| O nome padrão de uma porta | `getent services 443` |
+| Resolver um nome | `getent hosts example.com` |
+| Meu servidor DNS | `cat /etc/resolv.conf` |
+| Se um host responde ao ping | `ping -c 3 127.0.0.1` |
+| O caminho de uma requisição | `curl -sv -o /dev/null http://localhost:3000/` |
+| A configuração do Windows | `ipconfig.exe` |
+| Uma conta de sub-rede | `python3 -c 'import ipaddress; n = ipaddress.ip_network("192.168.0.0/24"); print(n.broadcast_address, n.num_addresses - 2)'` |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [RFC 9293 — Transmission Control Protocol](https://www.rfc-editor.org/rfc/rfc9293),
+  [RFC 791 — Internet Protocol](https://www.rfc-editor.org/rfc/rfc791) e
+  [RFC 1035 — Domain names](https://www.rfc-editor.org/rfc/rfc1035): as especificações
+  oficiais. Densas, mas são a fonte primária de tudo deste módulo (em inglês).
+- [RFC 1918](https://www.rfc-editor.org/rfc/rfc1918), [RFC 6335](https://www.rfc-editor.org/rfc/rfc6335)
+  e [RFC 5737](https://www.rfc-editor.org/rfc/rfc5737): endereços privados, faixas de
+  portas e endereços de documentação.
+- [Manual do iproute2: `ip`](https://man7.org/linux/man-pages/man8/ip.8.html) e
+  [`ss`](https://man7.org/linux/man-pages/man8/ss.8.html), as ferramentas de rede do Linux.
+- [Documentação do curl](https://curl.se/docs/manpage.html), inclusive as variáveis do `-w`
+  usadas na seção 2.7.
+- [RIPE NCC — YouTube Hijacking](https://www.ripe.net/about-us/news/youtube-hijacking-a-ripe-ncc-ris-case-study/)
+  e [Cloudflare — Facebook outage](https://blog.cloudflare.com/october-2021-facebook-outage/):
+  dois relatos claros de como o BGP funciona quando dá errado (em inglês).
+- [root-servers.org](https://root-servers.org/): o mapa dos servidores raiz do DNS.
+
+**O que vem a seguir:** o módulo 0.3, "Linux: primeiros passos no terminal", ensina a
+usar de verdade o terminal por onde você olhou a rede aqui. Mais adiante, na Trilha 2, o
+nmap (2.4) transforma o RST e o silêncio da seção 2.5 em varredura, e o Wireshark (2.6)
+abre, com interface gráfica, os mesmos quadros que você decodificou à mão.

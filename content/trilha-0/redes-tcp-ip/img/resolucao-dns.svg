@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
+  <title id="t">Como o DNS resolve www.example.com</title>
+  <desc id="d">Cinco participantes. Seu computador, cujo resolvedor local olha primeiro o arquivo /etc/hosts e o próprio cache. Um resolvedor recursivo (do roteador, do provedor ou público), que faz o trabalho pesado e guarda as respostas em cache. O servidor raiz, o servidor do domínio de topo .com e o servidor autoritativo de example.com. Passo 1: o computador pergunta ao recursivo o endereço (registro A) de www.example.com, por UDP na porta 53. Passo 2: o recursivo pergunta à raiz, que não sabe a resposta mas indica os servidores do .com. Passo 3: o recursivo pergunta ao .com, que indica os servidores de example.com. Passo 4: o recursivo pergunta ao autoritativo, que responde com o registro A, 198.51.100.7, e um TTL de 300 segundos. Passo 5: o recursivo devolve a resposta ao computador e guarda tudo em cache pelo tempo do TTL; a próxima pergunta igual é respondida na hora, sem os passos 2 a 4.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .m { font-size: 12px; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+    .life { stroke: #34413b; stroke-width: 1.5; stroke-dasharray: 4 4; }
+  </style>
+  <defs>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c25a"/></marker>
+  </defs>
+  <rect width="900" height="500" fill="#121815"/>
+
+  <!-- centers: 85, 265, 460, 630, 800 -->
+  <rect class="box" x="15" y="16" width="140" height="58" rx="8" style="stroke:#5cc8d8"/>
+  <text class="t" x="27" y="38" style="fill:#5cc8d8">Seu PC</text>
+  <text class="s" x="27" y="54">/etc/hosts,</text>
+  <text class="s" x="27" y="68">cache local</text>
+  <rect class="box" x="185" y="16" width="160" height="58" rx="8" style="stroke:#5ee08a"/>
+  <text class="t" x="197" y="38" style="fill:#5ee08a">Recursivo</text>
+  <text class="s" x="197" y="54">roteador, provedor</text>
+  <text class="s" x="197" y="68">ou público · cache</text>
+  <rect class="box" x="395" y="16" width="130" height="58" rx="8" style="stroke:#e8c25a"/>
+  <text class="t" x="407" y="38" style="fill:#e8c25a">Raiz  .</text>
+  <text class="s" x="407" y="54">13 nomes,</text>
+  <text class="s" x="407" y="68">a.root ... m.root</text>
+  <rect class="box" x="565" y="16" width="130" height="58" rx="8" style="stroke:#e8c25a"/>
+  <text class="t" x="577" y="38" style="fill:#e8c25a">TLD .com</text>
+  <text class="s" x="577" y="54">domínio de</text>
+  <text class="s" x="577" y="68">topo</text>
+  <rect class="box" x="725" y="16" width="160" height="58" rx="8" style="stroke:#c9a6ff"/>
+  <text class="t" x="737" y="38" style="fill:#c9a6ff">Autoritativo</text>
+  <text class="s" x="737" y="54">de example.com</text>
+  <text class="s" x="737" y="68">(dono da zona)</text>
+
+  <line class="life" x1="85" y1="74" x2="85" y2="410"/>
+  <line class="life" x1="265" y1="74" x2="265" y2="410"/>
+  <line class="life" x1="460" y1="74" x2="460" y2="410"/>
+  <line class="life" x1="630" y1="74" x2="630" y2="410"/>
+  <line class="life" x1="805" y1="74" x2="805" y2="410"/>
+
+  <line x1="85" y1="110" x2="261" y2="110" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="m" x="92" y="104">1 www.example.com A?</text>
+  <text class="s" x="92" y="126">UDP 53</text>
+
+  <line x1="265" y1="160" x2="456" y2="160" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="m" x="275" y="154">2 www.example.com?</text>
+  <line x1="460" y1="184" x2="269" y2="184" stroke="#e8c25a" stroke-width="2" marker-end="url(#y)"/>
+  <text class="s" x="275" y="200">"não sei; pergunte ao .com"</text>
+
+  <line x1="265" y1="232" x2="626" y2="232" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="m" x="275" y="226">3 www.example.com?</text>
+  <line x1="630" y1="256" x2="269" y2="256" stroke="#e8c25a" stroke-width="2" marker-end="url(#y)"/>
+  <text class="s" x="275" y="272">"pergunte aos NS de example.com"</text>
+
+  <line x1="265" y1="304" x2="801" y2="304" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="m" x="275" y="298">4 www.example.com A?</text>
+  <line x1="805" y1="328" x2="269" y2="328" stroke="#c9a6ff" stroke-width="2" marker-end="url(#y)"/>
+  <text class="m" x="275" y="344" style="fill:#c9a6ff">A 198.51.100.7  TTL 300</text>
+
+  <line x1="265" y1="380" x2="89" y2="380" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="m" x="92" y="374">5 resposta</text>
+  <text class="s" x="92" y="398">(guardada em cache)</text>
+
+  <rect class="box" x="15" y="426" width="870" height="60" rx="8"/>
+  <text class="s" x="30" y="450">Passos 2 a 4 só acontecem se ninguém tiver a resposta em cache. Quem responde primeiro,</text>
+  <text class="s" x="30" y="468">com o ID de transação certo, é aceito: é aí que mora o envenenamento de cache (seção 4).</text>
+</svg>

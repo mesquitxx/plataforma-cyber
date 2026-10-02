@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" role="img" aria-labelledby="t d">
+  <title id="t">Anatomia de um endereço IPv4 com CIDR: 192.168.10.77/26</title>
+  <desc id="d">O endereço 192.168.10.77 escrito em binário, octeto por octeto: 11000000, 10101000, 00001010 e 01001101. O /26 diz que os primeiros 26 bits são a parte da rede (em ciano) e os 6 últimos são a parte do host (em amarelo). A máscara correspondente é 255.255.255.192, ou 26 uns seguidos de 6 zeros. Zerando os bits de host obtém-se o endereço de rede, 192.168.10.64; ligando todos eles obtém-se o broadcast, 192.168.10.127. Os hosts utilizáveis vão de .65 a .126: 2 elevado a 6, menos 2, dá 62 endereços.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .b { font-size: 17px; font-weight: 700; letter-spacing: 1px; }
+    .n { fill: #5cc8d8; }
+    .h { fill: #e8c25a; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <rect width="900" height="440" fill="#121815"/>
+
+  <text class="t" x="30" y="34">192.168.10.77/26 = endereço + tamanho do prefixo</text>
+
+  <!-- Decimal octets -->
+  <text class="t" x="150" y="76">192</text>
+  <text class="t" x="330" y="76">168</text>
+  <text class="t" x="520" y="76">10</text>
+  <text class="t" x="700" y="76">77</text>
+  <text class="s" x="30" y="76">decimal</text>
+
+  <!-- Binary -->
+  <text class="s" x="30" y="112">endereço</text>
+  <text class="b n" x="120" y="112">11000000</text>
+  <text class="b" x="225" y="112">.</text>
+  <text class="b n" x="300" y="112">10101000</text>
+  <text class="b" x="405" y="112">.</text>
+  <text class="b n" x="480" y="112">00001010</text>
+  <text class="b" x="585" y="112">.</text>
+  <text class="b n" x="660" y="112">01</text><text class="b h" x="686" y="112">001101</text>
+
+  <text class="s" x="30" y="148">máscara</text>
+  <text class="b n" x="120" y="148">11111111</text>
+  <text class="b" x="225" y="148">.</text>
+  <text class="b n" x="300" y="148">11111111</text>
+  <text class="b" x="405" y="148">.</text>
+  <text class="b n" x="480" y="148">11111111</text>
+  <text class="b" x="585" y="148">.</text>
+  <text class="b n" x="660" y="148">11</text><text class="b h" x="686" y="148">000000</text>
+  <text class="s" x="772" y="140">= 255.255.</text>
+  <text class="s" x="772" y="156">  255.192</text>
+
+  <!-- Brace-like bars -->
+  <rect x="120" y="164" width="562" height="6" rx="3" fill="#5cc8d8"/>
+  <rect x="686" y="176" width="80" height="6" rx="3" fill="#e8c25a"/>
+  <text class="s n" x="120" y="194" style="fill:#5cc8d8">26 bits de rede: iguais em todas as máquinas desta sub-rede</text>
+  <text class="s" x="560" y="212" style="fill:#e8c25a">6 bits de host: 2^6 = 64 combinações</text>
+
+  <!-- Results -->
+  <rect class="box" x="30" y="236" width="840" height="170" rx="8"/>
+  <text class="t" x="50" y="264">Os bits de host decidem tudo:</text>
+
+  <text class="s" x="50" y="294">host todo em 0</text>
+  <text class="b" x="230" y="294">01<tspan class="h">000000</tspan></text>
+  <text class="t" x="420" y="294" style="fill:#5cc8d8">192.168.10.64</text>
+  <text class="s" x="600" y="294">endereço de rede (nome da sub-rede)</text>
+
+  <text class="s" x="50" y="324">primeiro host</text>
+  <text class="b" x="230" y="324">01<tspan class="h">000001</tspan></text>
+  <text class="t" x="420" y="324" style="fill:#5ee08a">192.168.10.65</text>
+  <text class="s" x="600" y="324">costuma ser o gateway</text>
+
+  <text class="s" x="50" y="354">último host</text>
+  <text class="b" x="230" y="354">01<tspan class="h">111110</tspan></text>
+  <text class="t" x="420" y="354" style="fill:#5ee08a">192.168.10.126</text>
+  <text class="s" x="600" y="354">62 hosts utilizáveis (64 − 2)</text>
+
+  <text class="s" x="50" y="384">host todo em 1</text>
+  <text class="b" x="230" y="384">01<tspan class="h">111111</tspan></text>
+  <text class="t" x="420" y="384" style="fill:#f08c7a">192.168.10.127</text>
+  <text class="s" x="600" y="384">broadcast (todos da sub-rede)</text>
+</svg>

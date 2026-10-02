@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">O caminho do seu WSL até um servidor na internet, com dois NATs</title>
+  <desc id="d">Quatro caixas da esquerda para a direita. O Ubuntu do WSL, com a interface eth0 no endereço privado 172.24.5.20/20 e o gateway 172.24.0.1. O Windows, que tem uma interface virtual 172.24.0.1 voltada para o WSL e a interface Wi-Fi 192.168.0.10/24 voltada para a casa, e faz o primeiro NAT. O roteador de casa, com o lado de dentro 192.168.0.1 e o lado de fora no IP público 203.0.113.45, que faz o segundo NAT. E a internet, com o provedor e o servidor 198.51.100.7 na porta 443. Embaixo, uma tabela mostra o mesmo pacote em três trechos: o destino 198.51.100.7:443 nunca muda; a origem muda de 172.24.5.20 para 192.168.0.10 e depois para 203.0.113.45, cada NAT trocando também a porta de origem. Na volta, cada NAT consulta a própria tabela para desfazer a troca. Alguns provedores acrescentam um terceiro NAT, o CGNAT, na faixa 100.64.0.0/10.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+
+  <!-- WSL -->
+  <rect class="box" x="20" y="30" width="190" height="130" rx="8" style="stroke:#5ee08a"/>
+  <text class="t" x="34" y="54" style="fill:#5ee08a">Ubuntu (WSL)</text>
+  <text class="s" x="34" y="78">eth0</text>
+  <text class="s" x="34" y="94">172.24.5.20/20</text>
+  <text class="s" x="34" y="118">gateway</text>
+  <text class="s" x="34" y="134">172.24.0.1</text>
+
+  <!-- Windows -->
+  <rect class="box" x="245" y="30" width="200" height="130" rx="8" style="stroke:#5cc8d8"/>
+  <text class="t" x="259" y="54" style="fill:#5cc8d8">Windows</text>
+  <text class="s" x="259" y="78">vEthernet (WSL)</text>
+  <text class="s" x="259" y="94">172.24.0.1</text>
+  <text class="s" x="259" y="118">Wi-Fi</text>
+  <text class="s" x="259" y="134">192.168.0.10/24</text>
+  <text class="t" x="290" y="186" style="fill:#e8c25a">NAT 1</text>
+
+  <!-- Router -->
+  <rect class="box" x="480" y="30" width="200" height="130" rx="8" style="stroke:#e8c25a"/>
+  <text class="t" x="494" y="54" style="fill:#e8c25a">Roteador de casa</text>
+  <text class="s" x="494" y="78">LAN (dentro)</text>
+  <text class="s" x="494" y="94">192.168.0.1</text>
+  <text class="s" x="494" y="118">WAN (fora, público)</text>
+  <text class="s" x="494" y="134">203.0.113.45</text>
+  <text class="t" x="545" y="186" style="fill:#e8c25a">NAT 2</text>
+
+  <!-- Internet -->
+  <rect class="box" x="715" y="30" width="165" height="130" rx="8" style="stroke:#c9a6ff"/>
+  <text class="t" x="729" y="54" style="fill:#c9a6ff">Internet</text>
+  <text class="s" x="729" y="78">provedor,</text>
+  <text class="s" x="729" y="94">roteadores BGP</text>
+  <text class="s" x="729" y="118">servidor</text>
+  <text class="s" x="729" y="134">198.51.100.7:443</text>
+
+  <line x1="210" y1="95" x2="241" y2="95" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <line x1="445" y1="95" x2="476" y2="95" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <line x1="680" y1="95" x2="711" y2="95" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+
+  <!-- Table -->
+  <rect class="box" x="20" y="210" width="860" height="190" rx="8"/>
+  <text class="t" x="40" y="238">O mesmo pacote em cada trecho</text>
+  <text class="s" x="40" y="266">trecho</text>
+  <text class="s" x="300" y="266">origem (muda)</text>
+  <text class="s" x="560" y="266">destino (não muda)</text>
+  <line x1="40" y1="276" x2="860" y2="276" stroke="#34413b"/>
+  <text class="s" x="40" y="302">WSL → Windows</text>
+  <text class="t" x="300" y="302" style="fill:#5ee08a">172.24.5.20:33240</text>
+  <text class="t" x="560" y="302">198.51.100.7:443</text>
+  <text class="s" x="40" y="332">Windows → roteador</text>
+  <text class="t" x="300" y="332" style="fill:#5cc8d8">192.168.0.10:51034</text>
+  <text class="t" x="560" y="332">198.51.100.7:443</text>
+  <text class="s" x="40" y="362">roteador → internet</text>
+  <text class="t" x="300" y="362" style="fill:#e8c25a">203.0.113.45:40112</text>
+  <text class="t" x="560" y="362">198.51.100.7:443</text>
+  <text class="s" x="40" y="390">Cada NAT anota a troca numa tabela e a desfaz quando a resposta volta.</text>
+
+  <text class="s" x="20" y="430">Endereços e portas ilustrativos. Alguns provedores somam um terceiro NAT, o CGNAT</text>
+  <text class="s" x="20" y="448">(faixa 100.64.0.0/10): aí nem o "WAN" do roteador é um IP público.</text>
+</svg>

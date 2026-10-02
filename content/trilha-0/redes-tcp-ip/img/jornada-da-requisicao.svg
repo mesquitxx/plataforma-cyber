@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">A jornada de uma requisição HTTPS, medida de verdade</title>
+  <desc id="d">Uma linha do tempo de 0 a 118 milissegundos, medida com o curl numa requisição real a https://example.com/. Etapa 0: o programa separa a URL em esquema https, nome example.com, porta 443 e caminho /. Etapa 1, DNS, de 0 a 9 milissegundos: o nome vira um endereço IP, numa pergunta UDP à porta 53. Etapa 2, enlace: para sair da rede local, o pacote vai ao MAC do gateway, que o ARP descobre e deixa em cache. Etapa 3, TCP, de 9 a 21 milissegundos: o handshake SYN, SYN ACK, ACK com o servidor na porta 443. Etapa 4, TLS, de 21 a 97 milissegundos: as duas pontas combinam a criptografia e o servidor prova a identidade com um certificado. Etapa 5, HTTP, de 97 a 118 milissegundos: o GET vai cifrado e o status 200 volta. Cada etapa depende da anterior, e cada uma é um lugar onde um atacante pode tentar interferir.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .x { font-size: 12px; font-weight: 700; fill: #121815; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <rect width="900" height="470" fill="#121815"/>
+
+  <text class="t" x="30" y="34">curl https://example.com/  ·  tempos reais (ms, acumulados)</text>
+
+  <!-- scale: 0 ms at x=200, 118 ms at x=860 → 5.59 px/ms -->
+  <line x1="200" y1="66" x2="860" y2="66" stroke="#34413b" stroke-width="1.5"/>
+  <text class="s" x="196" y="58">0</text>
+  <text class="s" x="244" y="58">9</text>
+  <text class="s" x="306" y="58">21</text>
+  <text class="s" x="732" y="58">97</text>
+  <text class="s" x="842" y="58">118</text>
+
+  <text class="s" x="30" y="100">0 · URL</text>
+  <text class="s" x="200" y="100">https  ·  example.com  ·  :443  ·  /</text>
+
+  <text class="s" x="30" y="140">1 · DNS</text>
+  <rect x="200" y="124" width="52" height="26" rx="3" fill="#c9a6ff"/>
+  <text class="s" x="262" y="142">nome → IP (UDP 53)</text>
+
+  <text class="s" x="30" y="180">2 · Enlace</text>
+  <rect x="200" y="164" width="660" height="26" rx="3" fill="#e8c25a" opacity="0.25"/>
+  <text class="s" x="210" y="182">todo pacote sai rumo ao MAC do gateway (ARP, já em cache)</text>
+
+  <text class="s" x="30" y="220">3 · TCP</text>
+  <rect x="252" y="204" width="67" height="26" rx="3" fill="#5ee08a"/>
+  <text class="s" x="330" y="222">SYN → SYN,ACK → ACK (porta 443)</text>
+
+  <text class="s" x="30" y="260">4 · TLS</text>
+  <rect x="319" y="244" width="425" height="26" rx="3" fill="#5cc8d8"/>
+  <text class="x" x="330" y="262">combina chaves · certificado prova quem é o servidor</text>
+
+  <text class="s" x="30" y="300">5 · HTTP</text>
+  <rect x="744" y="284" width="116" height="26" rx="3" fill="#f08c7a"/>
+  <text class="x" x="752" y="302">GET / → 200</text>
+
+  <rect class="box" x="30" y="336" width="840" height="114" rx="8"/>
+  <text class="t" x="48" y="362">Onde cada etapa pode ser atacada (seção 3)</text>
+  <text class="s" x="48" y="386">DNS: resposta falsa (spoofing, envenenamento)  ·  Enlace: ARP spoofing</text>
+  <text class="s" x="48" y="406">TCP: varredura de portas, inundação  ·  Rotas: sequestro de BGP</text>
+  <text class="s" x="48" y="426">TLS: é ela que torna inútil, para o conteúdo, ouvir ou desviar os pacotes</text>
+</svg>

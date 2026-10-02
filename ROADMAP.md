@@ -168,7 +168,9 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   Pentester, agora com OSINT e engenharia social).
 - Labs usados: `linux-sandbox`, `kali`, `dvwa`, `rede-de-alvos` e `juice-shop`.
 - Andamento: 0.1 "Como usar esta plataforma" (sem lab; duas missões de
-  reconhecimento e verificação do isolamento) e 0.3 (piloto da Fase 4) escritos.
+  reconhecimento e verificação do isolamento), 0.2 "Redes TCP/IP na prática"
+  (sem lab; inspeção do próprio WSL, cálculo de escopo em CIDR e decodificação
+  de um pacote real capturado no lab `dvwa`) e 0.3 (piloto da Fase 4) escritos.
 
 ## Fase 10 — Conteúdo: Trilhas 3–5
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.

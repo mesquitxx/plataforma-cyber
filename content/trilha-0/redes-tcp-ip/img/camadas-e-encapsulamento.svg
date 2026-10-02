@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">As quatro camadas do modelo TCP/IP e o encapsulamento</title>
+  <desc id="d">À esquerda, as quatro camadas do modelo TCP/IP, de cima para baixo: aplicação (HTTP, DNS), transporte (TCP, UDP, com portas), internet (IP, com endereços IP) e enlace (Ethernet, Wi-Fi, com endereços MAC). À direita, o encapsulamento de um pedido real capturado no laboratório: os 77 bytes do pedido HTTP GET recebem um cabeçalho TCP de 32 bytes e viram um segmento; o segmento recebe um cabeçalho IP de 20 bytes e vira um pacote; o pacote recebe um cabeçalho Ethernet de 14 bytes e vira um quadro de 143 bytes, que é o que vai pelo fio. Na chegada, cada camada tira o seu cabeçalho e entrega o resto para a camada de cima.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .x { font-size: 12px; font-weight: 700; fill: #121815; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+
+  <!-- Layers -->
+  <text class="t" x="30" y="34">Camadas TCP/IP</text>
+  <rect class="box" x="30" y="50" width="300" height="70" rx="8" style="stroke:#c9a6ff"/>
+  <text class="t" x="44" y="74" style="fill:#c9a6ff">4 · Aplicação</text>
+  <text class="s" x="44" y="94">HTTP, DNS, SSH, SMB...</text>
+  <text class="s" x="44" y="110">o que o programa quer dizer</text>
+
+  <rect class="box" x="30" y="132" width="300" height="70" rx="8" style="stroke:#5ee08a"/>
+  <text class="t" x="44" y="156" style="fill:#5ee08a">3 · Transporte</text>
+  <text class="s" x="44" y="176">TCP, UDP · portas</text>
+  <text class="s" x="44" y="192">para qual programa, com que garantia</text>
+
+  <rect class="box" x="30" y="214" width="300" height="70" rx="8" style="stroke:#5cc8d8"/>
+  <text class="t" x="44" y="238" style="fill:#5cc8d8">2 · Internet (rede)</text>
+  <text class="s" x="44" y="258">IP, ICMP · endereços IP</text>
+  <text class="s" x="44" y="274">para qual máquina, por qual caminho</text>
+
+  <rect class="box" x="30" y="296" width="300" height="70" rx="8" style="stroke:#e8c25a"/>
+  <text class="t" x="44" y="320" style="fill:#e8c25a">1 · Enlace</text>
+  <text class="s" x="44" y="340">Ethernet, Wi-Fi, ARP · MAC</text>
+  <text class="s" x="44" y="356">até o próximo aparelho do caminho</text>
+
+  <text class="s" x="30" y="396">Envio: cada camada põe um cabeçalho (desce).</text>
+  <text class="s" x="30" y="414">Recebimento: cada camada tira o seu (sobe).</text>
+
+  <!-- Encapsulation, real sizes from the lab capture -->
+  <text class="t" x="370" y="34">Encapsulamento de um GET real</text>
+
+  <rect x="650" y="62" width="220" height="40" rx="4" fill="#c9a6ff"/>
+  <text class="x" x="662" y="87">GET /login.php · 77 B</text>
+  <text class="s" x="370" y="87">dados (HTTP)</text>
+
+  <line x1="760" y1="104" x2="760" y2="128" stroke="#9fb0a6" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="520" y="134" width="130" height="40" rx="4" fill="#5ee08a"/>
+  <text class="x" x="532" y="159">TCP · 32 B</text>
+  <rect x="650" y="134" width="220" height="40" rx="4" fill="#c9a6ff" opacity="0.55"/>
+  <text class="x" x="662" y="159">dados</text>
+  <text class="s" x="370" y="159">segmento</text>
+
+  <line x1="700" y1="176" x2="700" y2="200" stroke="#9fb0a6" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="410" y="206" width="110" height="40" rx="4" fill="#5cc8d8"/>
+  <text class="x" x="422" y="231">IP · 20 B</text>
+  <rect x="520" y="206" width="350" height="40" rx="4" fill="#5ee08a" opacity="0.55"/>
+  <text class="x" x="532" y="231">segmento (TCP + dados)</text>
+  <text class="s" x="370" y="196">pacote</text>
+
+  <line x1="640" y1="248" x2="640" y2="272" stroke="#9fb0a6" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="370" y="278" width="110" height="40" rx="4" fill="#e8c25a"/>
+  <text class="x" x="380" y="303">Eth · 14 B</text>
+  <rect x="480" y="278" width="390" height="40" rx="4" fill="#5cc8d8" opacity="0.55"/>
+  <text class="x" x="492" y="303">pacote (IP + TCP + dados)</text>
+  <text class="s" x="370" y="338">quadro: 14 + 20 + 32 + 77 = 143 bytes no fio</text>
+
+  <rect class="box" x="370" y="360" width="500" height="80" rx="8"/>
+  <text class="s" x="384" y="384">Nomes da "unidade" em cada camada:</text>
+  <text class="s" x="384" y="404">aplicação = mensagem · transporte = segmento (TCP)</text>
+  <text class="s" x="384" y="420">ou datagrama (UDP) · internet = pacote · enlace = quadro</text>
+</svg>

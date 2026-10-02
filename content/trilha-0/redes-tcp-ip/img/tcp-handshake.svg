@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="t d">
+  <title id="t">Uma conexão TCP real, do handshake ao encerramento, e as duas formas de não conectar</title>
+  <desc id="d">À esquerda, a sequência real capturada no laboratório entre o Kali, 172.18.0.1 porta 38488, e o DVWA, 172.18.0.2 porta 80, com números de sequência relativos. Handshake: SYN com seq 0; SYN ACK com seq 0 e ack 1; ACK com ack 1. Dados: o Kali envia PSH ACK com os 77 bytes do GET; o DVWA confirma com ack 78; o DVWA envia PSH ACK com 1792 bytes da resposta 200 OK; o Kali confirma com ack 1793. Encerramento: FIN ACK do Kali, FIN ACK do DVWA e o ACK final. À direita, dois casos sem conexão. Porta fechada: o SYN para a porta 81 recebe imediatamente um RST ACK, e o curl diz que não conseguiu conectar em 22 milissegundos. Porta filtrada por firewall: o SYN some, nada volta, e o programa desiste depois do tempo limite.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .m { font-size: 12px; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+    .life { stroke: #34413b; stroke-width: 1.5; stroke-dasharray: 4 4; }
+  </style>
+  <defs>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+  </defs>
+  <rect width="900" height="560" fill="#121815"/>
+
+  <!-- Participants: centers 90 and 470 -->
+  <rect class="box" x="20" y="16" width="140" height="44" rx="8" style="stroke:#5cc8d8"/>
+  <text class="t" x="32" y="36" style="fill:#5cc8d8">Kali</text>
+  <text class="s" x="32" y="52">172.18.0.1:38488</text>
+  <rect class="box" x="400" y="16" width="140" height="44" rx="8" style="stroke:#5ee08a"/>
+  <text class="t" x="412" y="36" style="fill:#5ee08a">DVWA</text>
+  <text class="s" x="412" y="52">172.18.0.2:80</text>
+  <line class="life" x1="90" y1="60" x2="90" y2="530"/>
+  <line class="life" x1="470" y1="60" x2="470" y2="530"/>
+
+  <text class="s" x="380" y="84">handshake</text>
+  <line x1="90" y1="100" x2="466" y2="100" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="m" x="110" y="94">1 SYN  seq=0</text>
+  <line x1="470" y1="132" x2="94" y2="132" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="m" x="110" y="126">2 SYN,ACK  seq=0 ack=1</text>
+  <line x1="90" y1="164" x2="466" y2="164" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="m" x="110" y="158">3 ACK  ack=1</text>
+
+  <text class="s" x="410" y="196">dados</text>
+  <line x1="90" y1="214" x2="466" y2="214" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="m" x="110" y="208">4 PSH,ACK  seq=1  77 B: GET /login.php</text>
+  <line x1="470" y1="246" x2="94" y2="246" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="m" x="110" y="240">5 ACK  ack=78</text>
+  <line x1="470" y1="278" x2="94" y2="278" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="m" x="110" y="272">6 PSH,ACK  seq=1  1792 B: 200 OK</text>
+  <line x1="90" y1="310" x2="466" y2="310" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="m" x="110" y="304">7 ACK  ack=1793</text>
+
+  <text class="s" x="370" y="342">encerramento</text>
+  <line x1="90" y1="360" x2="466" y2="360" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="m" x="110" y="354">8 FIN,ACK  seq=78</text>
+  <line x1="470" y1="392" x2="94" y2="392" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="m" x="110" y="386">9 FIN,ACK  seq=1793 ack=79</text>
+  <line x1="90" y1="424" x2="466" y2="424" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="m" x="110" y="418">10 ACK  ack=1794</text>
+
+  <text class="s" x="20" y="462">ack = "recebi tudo até aqui; mande a partir do byte N".</text>
+  <text class="s" x="20" y="480">SYN e FIN contam como 1 byte: por isso 77 bytes viram ack=78.</text>
+  <text class="s" x="20" y="498">Captura real (dumpcap) no lab dvwa; seq relativo ao inicial.</text>
+
+  <!-- Right: no connection -->
+  <rect class="box" x="580" y="16" width="300" height="240" rx="8" style="stroke:#f08c7a"/>
+  <text class="t" x="596" y="42" style="fill:#f08c7a">Porta fechada (real)</text>
+  <text class="s" x="596" y="62">Kali → DVWA porta 81</text>
+  <line x1="610" y1="80" x2="610" y2="200" class="life"/>
+  <line x1="850" y1="80" x2="850" y2="200" class="life"/>
+  <line x1="610" y1="110" x2="846" y2="110" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="m" x="622" y="104">SYN</text>
+  <line x1="850" y1="150" x2="614" y2="150" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
+  <text class="m" x="622" y="140" style="fill:#f08c7a">RST,ACK  (na hora)</text>
+  <text class="s" x="596" y="226">curl: Failed to connect ...</text>
+  <text class="s" x="596" y="244">after 22 ms → "recusado"</text>
+
+  <rect class="box" x="580" y="276" width="300" height="240" rx="8" style="stroke:#e8c25a"/>
+  <text class="t" x="596" y="302" style="fill:#e8c25a">Porta filtrada (real)</text>
+  <text class="s" x="596" y="322">WSL → Windows: descarte silencioso</text>
+  <line x1="610" y1="340" x2="610" y2="460" class="life"/>
+  <line x1="850" y1="340" x2="850" y2="460" class="life"/>
+  <line x1="610" y1="370" x2="740" y2="370" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
+  <text class="m" x="622" y="364">SYN</text>
+  <text class="t" x="748" y="376" style="fill:#e8c25a">✕</text>
+  <text class="m" x="622" y="414">... nada volta ...</text>
+  <text class="s" x="596" y="486">curl: Connection timed out</text>
+  <text class="s" x="596" y="504">after 3002 ms → "sem resposta"</text>
+</svg>
