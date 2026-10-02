@@ -344,9 +344,11 @@ expect blocked "9.app" "something listens on 0.0.0.0:3000 or [::]:3000 in WSL" \
 
 # 9c. (Phase 8, trade-off T9) Only the platform may frame Guacamole.
 guac_headers="$(curl -fsS -o /dev/null -D - --max-time 5 http://127.0.0.1:8080/guacamole/ | tr -d '\r')"
-expect ok "9.csp" "Guacamole sends CSP frame-ancestors limited to the platform" bash -c '
-    csp="$(printf "%s\n" "$1" | grep -i "^content-security-policy:")"
-    echo "$csp" | grep -q "frame-ancestors http://127.0.0.1:3000 http://localhost:3000" && ! echo "$csp" | grep -q "\*"' _ "$guac_headers"
+# 'self' because Guacamole frames its own pages (labs/base/guac-proxy/nginx.conf).
+expected_csp="frame-ancestors 'self' http://127.0.0.1:3000 http://localhost:3000"
+expect ok "9.csp" "Guacamole sends CSP $expected_csp (nothing else may frame it)" bash -c '
+    csp="$(printf "%s\n" "$1" | grep -i "^content-security-policy:" | cut -d: -f2- | sed "s/^ *//")"
+    [ "$csp" = "$2" ]' _ "$guac_headers" "$expected_csp"
 expect ok "9.hdr" "Guacamole sends X-Content-Type-Options: nosniff" \
     bash -c 'printf "%s\n" "$1" | grep -iq "^x-content-type-options: nosniff"' _ "$guac_headers"
 
