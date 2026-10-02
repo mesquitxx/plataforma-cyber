@@ -120,6 +120,14 @@ lab_compose() {
     lab_compose_of "${LAB_ACTIVE:?LAB_ACTIVE is not set}" "$@"
 }
 
+# Images of <lab> that are not in the local Docker store, one per line.
+missing_images() {
+    local image
+    lab_compose_of "$1" config --images | while read -r image; do
+        docker image inspect "$image" >/dev/null 2>&1 || echo "$image"
+    done
+}
+
 lab_env_value() {
     grep -E "^$1=" "$LAB_ENV" | head -n1 | cut -d= -f2-
 }

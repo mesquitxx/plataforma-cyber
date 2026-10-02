@@ -1,0 +1,192 @@
+# Linha de base da Fase 8 (antes do hardening T8/T9/T10)
+# scripts/audit.sh --no-labs, com o lab dvwa no ar
+
+Isolation audit — 2026-10-01 21:01:34
+WSL 3.0.1.0 · kernel 6.18.40.1-microsoft-standard-WSL2 · Docker 29.8.1 · Compose 5.5.1 · Node v22.23.3
+
+== A. Host (WSL)
+PASS  A1         every listening TCP/UDP socket in WSL is loopback-only
+PASS  A2         Docker daemon has no TCP endpoint (no -H tcp://, no daemon.json hosts)
+PASS  A2         docker CLI talks to the daemon over the Unix socket
+PASS  A3         docker.sock is 660 root:docker
+PASS  A3         only mesquitxx is in the docker group (docker = root in WSL)
+PASS  A4         labs/.env is readable only by its owner (600)
+PASS  A4         labs/.env and data/ are git-ignored and untracked
+PASS  A5         npm dev/start bind to 127.0.0.1:3000 only
+SKIP  A6         platform is not running: headers not checked (npm run dev, then audit again)
+
+== B. Windows
+INFO  B1         .wslconfig networkingMode = nat (default)
+PASS  B1         WSL networking is NAT (not mirrored/bridged)
+PASS  B2         no netsh portproxy rule (would forward LAN ports into WSL)
+PASS  B3         Windows listens on 3000/8080 only on loopback
+INFO  B4         Windows addresses probed from the LAN side: 26.253.220.74=Radmin VPN;192.168.237.107=Wi-Fi
+
+== C. Labs (one at a time)
+SKIP  C          labs not audited (--no-labs)
+
+== D. Dependencies (npm audit, production only)
+PASS  D1         no critical/high advisory in production dependencies (critical 0, high 0, moderate 0, low 0)
+
+== Summary
+Audit: 12 passed, 0 failed.
+Manual, still required: from another device (phone on the same Wi-Fi), open
+http://<PC-LAN-IP>:3000/ and http://<PC-LAN-IP>:8080/guacamole/ — both must fail.
+
+# scripts/lab.sh verify dvwa (verificação estendida, arquitetura da Fase 6)
+
+Lab isolation check (lab: dvwa) — 2026-10-01 20:58:32
+WSL eth0: 192.168.76.109 | Windows host: 192.168.64.1 | guac_front gateway: 172.21.0.1 | canary port: 37960
+Edge container (only one with a non-internal network): guacamole
+
+RES   EXPECT   ID             ATTEMPT
+PASS  ok       0.dvwa         probe control: dvwa -> dvwa-db:3306 (TCP)
+PASS  ok       0.dvwa         probe control: dvwa resolves 'kali'
+PASS  ok       0.kali         probe control: kali -> dvwa:80 (TCP)
+PASS  ok       0.kali         probe control: kali -> dvwa (ICMP)
+PASS  ok       0.kali         probe control: kali resolves 'guacd' (accepted trade-off)
+PASS  ok       0.dvwa         probe control: dvwa UDP DNS query to 127.0.0.11
+PASS  ok       0.kali         probe control: kali UDP DNS query to 127.0.0.11
+PASS  ok       0.guacd        probe control: guacd UDP DNS query to 127.0.0.11
+PASS  ok       0.guac-db      probe control: guac-db UDP DNS query to 127.0.0.11
+PASS  ok       0.dvwa-db      probe control: dvwa-db UDP DNS query to 127.0.0.11
+PASS  ok       0.guacamole    probe control: guacamole UDP DNS query to 127.0.0.11
+PASS  ok       0.ctl          probe control: host -> UDP canary 192.168.76.109:37960
+PASS  blocked  1.dvwa         dvwa -> internet TCP 1.1.1.1:443
+PASS  blocked  1.dvwa         dvwa -> internet TCP 8.8.8.8:53
+PASS  blocked  1.dvwa         dvwa -> internet UDP DNS query to 1.1.1.1:53
+PASS  blocked  1.dvwa         dvwa -> internet TCP [2606:4700:4700::1111]:443 (IPv6)
+PASS  blocked  1.dvwa         dvwa -> internet ICMP 1.1.1.1
+PASS  blocked  2.dvwa         dvwa -> DNS resolution of example.com
+PASS  blocked  3.dvwa         dvwa has an IPv6 address or route outside loopback
+PASS  blocked  3.dvwa         dvwa has an HTTP/FTP proxy variable
+PASS  blocked  1.kali         kali -> internet TCP 1.1.1.1:443
+PASS  blocked  1.kali         kali -> internet TCP 8.8.8.8:53
+PASS  blocked  1.kali         kali -> internet UDP DNS query to 1.1.1.1:53
+PASS  blocked  1.kali         kali -> internet TCP [2606:4700:4700::1111]:443 (IPv6)
+PASS  blocked  1.kali         kali -> internet ICMP 1.1.1.1
+PASS  blocked  2.kali         kali -> DNS resolution of example.com
+PASS  blocked  3.kali         kali has an IPv6 address or route outside loopback
+PASS  blocked  3.kali         kali has an HTTP/FTP proxy variable
+PASS  blocked  1.guacd        guacd -> internet TCP 1.1.1.1:443
+PASS  blocked  1.guacd        guacd -> internet TCP 8.8.8.8:53
+PASS  blocked  1.guacd        guacd -> internet UDP DNS query to 1.1.1.1:53
+PASS  blocked  1.guacd        guacd -> internet TCP [2606:4700:4700::1111]:443 (IPv6)
+PASS  blocked  1.guacd        guacd -> internet ICMP 1.1.1.1
+PASS  blocked  2.guacd        guacd -> DNS resolution of example.com
+PASS  blocked  3.guacd        guacd has an IPv6 address or route outside loopback
+PASS  blocked  3.guacd        guacd has an HTTP/FTP proxy variable
+PASS  blocked  1.guac-db      guac-db -> internet TCP 1.1.1.1:443
+PASS  blocked  1.guac-db      guac-db -> internet TCP 8.8.8.8:53
+PASS  blocked  1.guac-db      guac-db -> internet UDP DNS query to 1.1.1.1:53
+PASS  blocked  1.guac-db      guac-db -> internet TCP [2606:4700:4700::1111]:443 (IPv6)
+PASS  blocked  1.guac-db      guac-db -> internet ICMP 1.1.1.1
+PASS  blocked  2.guac-db      guac-db -> DNS resolution of example.com
+PASS  blocked  3.guac-db      guac-db has an IPv6 address or route outside loopback
+PASS  blocked  3.guac-db      guac-db has an HTTP/FTP proxy variable
+PASS  blocked  1.dvwa-db      dvwa-db -> internet TCP 1.1.1.1:443
+PASS  blocked  1.dvwa-db      dvwa-db -> internet TCP 8.8.8.8:53
+PASS  blocked  1.dvwa-db      dvwa-db -> internet UDP DNS query to 1.1.1.1:53
+PASS  blocked  1.dvwa-db      dvwa-db -> internet TCP [2606:4700:4700::1111]:443 (IPv6)
+SKIP  -        1.dvwa-db      dvwa-db -> internet ICMP (no ping in the image; TCP/UDP above cover it)
+PASS  blocked  2.dvwa-db      dvwa-db -> DNS resolution of example.com
+PASS  blocked  3.dvwa-db      dvwa-db has an IPv6 address or route outside loopback
+PASS  blocked  3.dvwa-db      dvwa-db has an HTTP/FTP proxy variable
+FAIL  blocked  1.guacamole    guacamole -> internet TCP 1.1.1.1:443 (got: ok)
+FAIL  blocked  1.guacamole    guacamole -> internet TCP 8.8.8.8:53 (got: ok)
+FAIL  blocked  1.guacamole    guacamole -> internet UDP DNS query to 1.1.1.1:53 (got: ok)
+PASS  blocked  1.guacamole    guacamole -> internet TCP [2606:4700:4700::1111]:443 (IPv6)
+SKIP  -        1.guacamole    guacamole -> internet ICMP (no ping in the image; TCP/UDP above cover it)
+FAIL  blocked  2.guacamole    guacamole -> DNS resolution of example.com (got: ok)
+PASS  blocked  3.guacamole    guacamole has an IPv6 address or route outside loopback
+PASS  blocked  3.guacamole    guacamole has an HTTP/FTP proxy variable
+PASS  blocked  3.dvwa         dvwa has a default route
+PASS  blocked  3.kali         kali has a default route
+PASS  blocked  3.guacd        guacd has a default route
+PASS  blocked  3.guac-db      guac-db has a default route
+PASS  blocked  3.dvwa-db      dvwa-db has a default route
+PASS  ok       8.lab_net      network lab_net is internal
+PASS  ok       8.desktop_net  network desktop_net is internal
+PASS  ok       8.guac_back    network guac_back is internal
+PASS  ok       8.dvwa_back    network dvwa_back is internal
+PASS  blocked  3.cl-lab       host bridge cl-lab has an IPv4 address
+PASS  blocked  3.cl-desktop   host bridge cl-desktop has an IPv4 address
+PASS  blocked  3.cl-guacback  host bridge cl-guacback has an IPv4 address
+PASS  blocked  3.cl-dvwaback  host bridge cl-dvwaback has an IPv4 address
+PASS  ok       4.ctl          host -> canary 192.168.76.109:37960 (control)
+PASS  blocked  4.dvwa         dvwa -> host canary 192.168.76.109:37960 (WSL eth0)
+PASS  blocked  4.dvwa         dvwa -> host canary 172.21.0.1:37960 (guac_front gw)
+PASS  blocked  4.dvwa         dvwa -> host docker0 172.17.0.1:37960
+PASS  blocked  4.dvwa         dvwa -> WSL DNS 10.255.255.254:53
+PASS  blocked  4.dvwa         dvwa -> host UDP canary 192.168.76.109:37960
+PASS  blocked  4.dvwa         dvwa -> host UDP canary 172.21.0.1:37960
+PASS  blocked  4.kali         kali -> host canary 192.168.76.109:37960 (WSL eth0)
+PASS  blocked  4.kali         kali -> host canary 172.21.0.1:37960 (guac_front gw)
+PASS  blocked  4.kali         kali -> host docker0 172.17.0.1:37960
+PASS  blocked  4.kali         kali -> WSL DNS 10.255.255.254:53
+PASS  blocked  4.kali         kali -> host UDP canary 192.168.76.109:37960
+PASS  blocked  4.kali         kali -> host UDP canary 172.21.0.1:37960
+PASS  blocked  4.guacd        guacd -> host canary 192.168.76.109:37960 (WSL eth0)
+PASS  blocked  4.guacd        guacd -> host canary 172.21.0.1:37960 (guac_front gw)
+PASS  blocked  4.guacd        guacd -> host docker0 172.17.0.1:37960
+PASS  blocked  4.guacd        guacd -> WSL DNS 10.255.255.254:53
+PASS  blocked  4.guacd        guacd -> host UDP canary 192.168.76.109:37960
+PASS  blocked  4.guacd        guacd -> host UDP canary 172.21.0.1:37960
+PASS  blocked  4.guac-db      guac-db -> host canary 192.168.76.109:37960 (WSL eth0)
+PASS  blocked  4.guac-db      guac-db -> host canary 172.21.0.1:37960 (guac_front gw)
+PASS  blocked  4.guac-db      guac-db -> host docker0 172.17.0.1:37960
+PASS  blocked  4.guac-db      guac-db -> WSL DNS 10.255.255.254:53
+PASS  blocked  4.guac-db      guac-db -> host UDP canary 192.168.76.109:37960
+PASS  blocked  4.guac-db      guac-db -> host UDP canary 172.21.0.1:37960
+PASS  blocked  4.dvwa-db      dvwa-db -> host canary 192.168.76.109:37960 (WSL eth0)
+PASS  blocked  4.dvwa-db      dvwa-db -> host canary 172.21.0.1:37960 (guac_front gw)
+PASS  blocked  4.dvwa-db      dvwa-db -> host docker0 172.17.0.1:37960
+PASS  blocked  4.dvwa-db      dvwa-db -> WSL DNS 10.255.255.254:53
+PASS  blocked  4.dvwa-db      dvwa-db -> host UDP canary 192.168.76.109:37960
+PASS  blocked  4.dvwa-db      dvwa-db -> host UDP canary 172.21.0.1:37960
+PASS  blocked  5.dvwa         dvwa -> Windows host 192.168.64.1:135
+PASS  blocked  5.dvwa         dvwa -> Windows host 192.168.64.1:445
+PASS  blocked  5.dvwa         dvwa -> Windows host 192.168.64.1:3389
+PASS  blocked  7.dvwa         dvwa resolves 'host.docker.internal'
+PASS  blocked  7.dvwa         dvwa resolves 'guacamole'
+PASS  blocked  7.dvwa         dvwa resolves 'guac-proxy'
+PASS  blocked  7.dvwa         dvwa resolves 'guacd'
+PASS  blocked  7.dvwa         dvwa resolves 'guac-db'
+PASS  blocked  7.kali         kali resolves 'guacamole'
+PASS  blocked  7.kali         kali resolves 'guac-proxy'
+PASS  blocked  7.kali         kali resolves 'guac-db'
+PASS  blocked  7.kali         kali resolves 'dvwa-db'
+PASS  ok       9.pub          only published port is 127.0.0.1:8080 (found: 127.0.0.1:8080->8080/tcp )
+PASS  ok       9.pub          the published port belongs to guacamole
+PASS  blocked  9.ss           something listens on 0.0.0.0:8080 or [::]:8080 in WSL
+PASS  blocked  9.eth0         Guacamole reachable on WSL eth0 192.168.76.109:8080 (non-loopback)
+PASS  ok       9.win          Windows listens on 8080 only on loopback
+PASS  blocked  9.app          something listens on 0.0.0.0:3000 or [::]:3000 in WSL
+FAIL  ok       9.csp          Guacamole sends CSP frame-ancestors limited to the platform (got: blocked)
+FAIL  ok       9.hdr          Guacamole sends X-Content-Type-Options: nosniff (got: blocked)
+PASS  blocked  10             cyberlab-guacamole-1 is privileged
+PASS  blocked  10             cyberlab-guacamole-1 mounts the Docker socket
+PASS  blocked  10             cyberlab-dvwa-1 is privileged
+PASS  blocked  10             cyberlab-dvwa-1 mounts the Docker socket
+PASS  blocked  10             cyberlab-guac-db-1 is privileged
+PASS  blocked  10             cyberlab-guac-db-1 mounts the Docker socket
+PASS  blocked  10             cyberlab-guacd-1 is privileged
+PASS  blocked  10             cyberlab-guacd-1 mounts the Docker socket
+PASS  blocked  10             cyberlab-dvwa-db-1 is privileged
+PASS  blocked  10             cyberlab-dvwa-db-1 mounts the Docker socket
+PASS  blocked  10             cyberlab-kali-1 is privileged
+PASS  blocked  10             cyberlab-kali-1 mounts the Docker socket
+PASS  ok       11             kali -> dvwa (HTTP http://dvwa/login.php)
+PASS  ok       12a            host -> Guacamole http://127.0.0.1:8080/guacamole/
+PASS  ok       12b            guacd -> kali:5901 (VNC)
+PASS  ok       12c            Guacamole login with labs/.env password
+PASS  blocked  12d            Guacamole login with default guacadmin/guacadmin
+PASS  ok       12e            Kali screen streams through 127.0.0.1:8080 (WebSocket tunnel as 'plataforma')
+PASS  ok       13a            Guacamole login as 'plataforma' (restricted user)
+PASS  ok       13b            'plataforma' sees exactly one connection: Kali (attack box)
+PASS  blocked  13c            'plataforma' reads the Kali connection parameters (VNC password)
+PASS  blocked  13d            'plataforma' creates a connection
+PASS  blocked  13e            'plataforma' creates a user
+
+Result: 139 passed, 6 failed, 2 skipped (not counted).
+Manual test pending: from another device on your network, open http://<PC-LAN-IP>:8080 — it must fail.

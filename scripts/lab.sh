@@ -109,13 +109,6 @@ refuse_if_other_lab() {
     fi
 }
 
-missing_images() {
-    local image
-    lab_compose_of "$1" config --images | while read -r image; do
-        docker image inspect "$image" >/dev/null 2>&1 || echo "$image"
-    done
-}
-
 # The platform's own Guacamole user: READ on the "Kali (attack box)"
 # connection and nothing else (no system, user or group permissions). Its
 # password lives in labs/.env (PLATFORM_GUAC_PASSWORD) and is re-applied on
