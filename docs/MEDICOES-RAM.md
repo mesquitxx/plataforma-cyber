@@ -9,7 +9,7 @@ na Fase 6.
 | Item | Valor |
 |---|---|
 | RAM física | 16 GB (Windows enxerga **14.021 MB**; o resto é reservado pelo hardware) |
-| Limite da VM do WSL2 | 7.945 MB (padrão do WSL; sem `.wslconfig`) + 4 GB de swap |
+| Limite da VM do WSL2 | 7.945 MB (padrão do WSL; sem `.wslconfig`) + 4 GB de swap — **desde então, `memory=6GB` (ver Fase 8)** |
 | Docker | Engine 29.8.1 nativo no WSL (sem Docker Desktop), Compose v5.5.1 |
 | Rede do WSL | `nat` |
 | Imagens | `cyberlab/kali-xfce:local` 3,85 GB · guacamole 1.6.0 1,12 GB · dvwa 852 MB · mariadb 11 458 MB · postgres 16 420 MB · guacd 1.6.0 377 MB |
@@ -95,6 +95,16 @@ Guacamole aberta no painel (Chromium headless), parada.
   `used` do WSL (2.405 MB) inclui o `npm run dev` e o Chromium do teste, então
   não é comparável ao da tabela da Fase 1.
 
+## Fase 8 — proxy do Guacamole e `.wslconfig`
+
+- **`guac-proxy` (nginx, T8):** 2,7 MiB ociosos com o lab `dvwa` no ar
+  (`docker stats`, 2026-10-01), com teto de 64 MiB. Não muda o total da pilha.
+- **`.wslconfig`** (conferido em 2026-10-01): `memory=6GB`, `swap=4GB`,
+  `processors=4` e, em `[experimental]`, `sparseVhd=true` e
+  `autoMemoryReclaim=gradual`. O `sparseVhd` só vale para discos criados
+  depois; o disco atual é tratado por `scripts/windows/compact-wsl.ps1`
+  (ver [`MANUTENCAO.md`](MANUTENCAO.md)).
+
 ## Fase 7 — labs novos (estimativas; medição pendente)
 
 Os labs da Fase 7 (`juice-shop`, `webgoat`, `vulhub`, `rede-de-alvos`) **ainda
@@ -127,7 +137,7 @@ para os 16 GB. O lab em si não é o problema.
 rode no PowerShell do Windows `wsl --shutdown` e reabra o Ubuntu. A memória
 volta para o Windows.
 
-**Recomendação (decisão sua, NÃO aplicada):** criar
+**Recomendação (aplicada pelo MESQUITA; conferida na Fase 8):** criar
 `C:\Users\<você>\.wslconfig` com:
 
 ```ini

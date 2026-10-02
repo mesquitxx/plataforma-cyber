@@ -148,8 +148,12 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   ambiente e à infraestrutura do Guacamole; "teste do teste" automatizado
   (`--self-test`). Relatórios datados em `docs/auditorias/`.
 - **Hardening:** proxy nginx (`guac-proxy`) na frente do Guacamole, que passa
-  a viver só em rede interna, sem internet (T8); `frame-ancestors` no Guacamole
-  (T9, fecha a troca T2); cabeçalhos de segurança na plataforma (T10).
+  a viver só em rede interna, sem internet (T8; resíduo T8b documentado e
+  medido); `frame-ancestors` no Guacamole (T9, fecha a troca T2); cabeçalhos
+  de segurança na plataforma (T10).
+- **Resultado:** `kali` 123/123, `dvwa` 173/173, `linux-sandbox` 17/17, 0 FAIL
+  ([relatório](docs/auditorias/2026-10-02-fase-8.md)); os labs da Fase 7 seguem
+  pendentes do `pull`.
 - **Backup e restauração** do SQLite (`npm run db:backup` / `db:restore`), com
   cópia no Windows, backup diário automático ao rodar `npm run dev`, e backup do
   `/home/kali` e do `labs/.env` (`scripts/lab.sh backup-home`).

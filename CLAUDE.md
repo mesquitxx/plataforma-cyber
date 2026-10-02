@@ -133,6 +133,24 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
   `GET /api/labs/status` (só leitura). Interface: `/laboratorios`, painel do
   lab em cada módulo e lab ativo na barra superior. Detalhes e trocas de
   segurança em `docs/LABORATORIO.md`.
+- Endurecimento (Fase 8) — `scripts/audit.sh` audita host, Windows, todos os
+  labs e dependências; `scripts/lab-verify-isolation.sh` (o `verify`) cobre
+  TCP/UDP/ICMP/IPv6 de todo contêiner e a tela de verdade
+  (`scripts/guac-screen-probe.py`). A única porta de lab é do `guac-proxy`
+  (nginx, `labs/base/guac-proxy/`), único contêiner em rede não interna, sem
+  NAT; o Guacamole fica só em rede interna. `next.config.ts` envia os
+  cabeçalhos anti-*clickjacking*. Trocas T8–T10 em `docs/LABORATORIO.md`.
+- Backup (Fase 8) — `npm run db:backup`/`db:restore` (regras puras em
+  `lib/backup.ts`; o migrador compartilhado fica em `db/migrate.ts`), `predev`
+  faz o backup diário, `scripts/lab.sh backup-home`/`restore-home` cuidam do
+  `/home/kali` e do `labs/.env`. Backups em `data/backups/` e em
+  `Documentos\plataforma-cyber-backups\` no Windows. Disco:
+  `scripts/disk-cleanup.sh` e `scripts/windows/compact-wsl.ps1`. Tudo em
+  `docs/MANUTENCAO.md`.
+- `lib/roadmap.ts` — fase e versão mostradas na barra lateral e a fase de
+  conteúdo de cada trilha; `npm test` confere com `package.json` e
+  `ROADMAP.md`, e `lib/docs-consistency.test.ts` confere links, contagens e
+  documentos.
 - Os scripts `dev`/`start` fixam `-H 127.0.0.1 -p 3000`; o padrão do Next.js é
   `0.0.0.0`, então **nunca** rode `next dev` sem esses parâmetros.
 - Docs do Next.js da versão instalada: `node_modules/next/dist/docs/`. Consulte
@@ -149,6 +167,8 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
   isolamento dos labs (pela plataforma e pelo terminal) e as trocas de
   segurança aceitas.
 - [`docs/MEDICOES-RAM.md`](docs/MEDICOES-RAM.md) — consumo real de RAM medido.
+- [`docs/MANUTENCAO.md`](docs/MANUTENCAO.md) — backup e restauração do progresso
+  e do `/home/kali`, limpeza de disco e compactação do disco do WSL.
 - [`docs/PADRAO-DE-MODULO.md`](docs/PADRAO-DE-MODULO.md) — régua obrigatória de
   qualidade de todo módulo.
 - [`docs/TEMPLATE-MODULO.mdx`](docs/TEMPLATE-MODULO.mdx) — modelo reutilizável

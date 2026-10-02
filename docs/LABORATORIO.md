@@ -200,7 +200,7 @@ Windows partem do próprio Kali).
 | 5 | Alvo não alcança o Windows | Portas 135/445/3389 do IP do Windows |
 | 7 | Alvo não enxerga a infraestrutura | DVWA não resolve `guacamole`, `guac-proxy`, `guacd`, `guac-db`, `host.docker.internal`; Kali não resolve os bancos, o proxy nem a interface web; **(Fase 8)** o `guac-proxy` resolve só o `guacamole` (não o `guacd`, os bancos, o Kali nem os alvos) |
 | 8 | Redes marcadas como internas | `docker network inspect` → `Internal: true`; **(Fase 8)** `guac_front` com masquerade desligado |
-| 9 | Só loopback | Única porta publicada é `127.0.0.1:8080`, e ela é do `guac-proxy`; nada em `0.0.0.0:8080` no WSL; a 8080 não responde no IP `eth0` do WSL; no Windows, a 8080 só escuta em `127.0.0.1`/`::1`; **(Fase 6)** nada em `0.0.0.0:3000` (a plataforma); **(Fase 8)** a 8080 envia `Content-Security-Policy: frame-ancestors` só da plataforma e `nosniff` |
+| 9 | Só loopback | Única porta publicada é `127.0.0.1:8080`, e ela é do `guac-proxy`; nada em `0.0.0.0:8080` no WSL; a 8080 não responde no IP `eth0` do WSL; no Windows, a 8080 só escuta em `127.0.0.1`/`::1`; **(Fase 6)** nada em `0.0.0.0:3000` (a plataforma); **(Fase 8)** a 8080 envia exatamente `frame-ancestors 'self' http://127.0.0.1:3000 http://localhost:3000` e `nosniff` |
 | 10 | **(Fase 6)** Nenhum contêiner perigoso | Nenhum contêiner do lab é `privileged` nem monta `docker.sock` |
 | 11 | **Controle positivo:** o lab funciona | Kali acessa `http://dvwa/` (lab `dvwa`) |
 | 12 | **Controle positivo:** a tela funciona | Guacamole responde; `guacd` alcança o VNC do Kali; login com a senha do `.env` funciona e com `guacadmin/guacadmin` falha (por último: é um login errado, ver T8c); **(Fase 8, 12e)** a tela **de verdade**: `scripts/guac-screen-probe.py` loga como `plataforma`, abre o túnel WebSocket e exige `size` e imagens do desktop |
@@ -214,7 +214,8 @@ ou que falta uma ferramenta no contêiner.
 43/43 PASS, `linux-sandbox` 17/17 PASS (também pela interface).
 
 **Resultado na Fase 8** (verificação estendida, depois do hardening): ver o
-relatório em [`auditorias/2026-10-01-fase-8.md`](auditorias/2026-10-01-fase-8.md).
+relatório em [`auditorias/2026-10-02-fase-8.md`](auditorias/2026-10-02-fase-8.md):
+`kali` 123/123, `dvwa` 173/173, `linux-sandbox` 17/17, 0 FAIL.
 Antes do hardening, a mesma verificação dava 139 PASS e 6 FAIL no `dvwa`:
 Guacamole com internet (TCP, UDP e DNS) e sem `frame-ancestors`
 ([linha de base](auditorias/2026-10-01-linha-de-base.txt)).
@@ -434,11 +435,15 @@ nmap -sV dvwa                # funciona: 80/tcp aberto
   (`BAN_ADDRESS_DURATION`). Com senhas aleatórias de 20+ caracteres e acesso
   só por `127.0.0.1`, isso não muda o risco na prática.
 - **T9 — `frame-ancestors` no Guacamole.** O `guac-proxy` envia
-  `Content-Security-Policy: frame-ancestors http://127.0.0.1:3000
+  `Content-Security-Policy: frame-ancestors 'self' http://127.0.0.1:3000
   http://localhost:3000`, mais `X-Content-Type-Options: nosniff` e
   `Referrer-Policy: no-referrer`. Testado num Chromium: uma página em outra
   origem (`127.0.0.1:9999`) não consegue embutir o Guacamole, e a plataforma
-  continua mostrando o desktop. Fecha a T2.
+  continua mostrando o desktop. Fecha a T2. O `'self'` é necessário: o
+  próprio Guacamole embute páginas suas (`app/element/templates/blank.html`), e o
+  `frame-ancestors` vale para **todos** os ancestrais; sem ele, o teste de
+  navegador pegou o iframe interno bloqueado e o desktop falhando. `'self'` é só
+  a origem `127.0.0.1:8080`: outros sites continuam barrados.
 - **T10 — Cabeçalhos de segurança na plataforma.** `next.config.ts` envia, em
   todas as rotas, `X-Frame-Options: DENY`, `Content-Security-Policy:
   frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`,
