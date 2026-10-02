@@ -17,6 +17,10 @@
 #   rebuild <lab>   rebuild locally built images with fresh packages (internet)
 #   purge <lab>     down, then delete every volume of the lab, including
 #                   /home/kali and the Guacamole database
+#   backup-home     save /home/kali (without caches) and labs/.env to
+#                   data/backups/lab-<time>/ and to the Windows backup folder
+#   restore-home <backup dir> --yes [--with-env]
+#                   put a backup-home back into /home/kali (and labs/.env)
 #
 # Exit codes: 0 ok, 1 failure, 2 usage, 3 missing image, 4 another operation
 # is running, 5 another lab is running, 6 command refused for the platform.
@@ -24,7 +28,7 @@ set -euo pipefail
 source "$(dirname "$0")/lab-common.sh"
 
 usage() {
-    sed -n '6,22p' "$0" >&2
+    sed -n '6,27p' "$0" >&2
     exit 2
 }
 
@@ -45,16 +49,19 @@ case "$command" in
         lab_containers
         exit 0
         ;;
-    up | down | switch | reset | verify | pull | rebuild | purge) ;;
+    up | down | switch | reset | verify | pull | rebuild | purge | backup-home | restore-home) ;;
     *) usage ;;
 esac
 
-lab_is_known "$lab" || { echo "Unknown lab: '${lab}'. Known: ${LAB_SLUGS[*]}" >&2; exit 2; }
+case "$command" in
+    backup-home | restore-home) ;;  # no lab argument
+    *) lab_is_known "$lab" || { echo "Unknown lab: '${lab}'. Known: ${LAB_SLUGS[*]}" >&2; exit 2; } ;;
+esac
 
 case "$command" in
-    pull | rebuild | purge)
+    pull | rebuild | purge | backup-home | restore-home)
         if [ "${CYBERLAB_CALLER:-}" = platform ]; then
-            echo "'$command' only runs from a terminal (it uses the internet or deletes Kali's files)." >&2
+            echo "'$command' only runs from a terminal (it uses the internet, or reads or replaces Kali's files)." >&2
             exit 6
         fi
         ;;
@@ -302,6 +309,114 @@ cmd_rebuild() {
     echo "==> Rebuilding local images for lab '$lab' with fresh packages (internet)"
     lab_compose_of "$lab" build --pull
 }
+
+# ---------- /home/kali and labs/.env backups (Phase 8, decision D3) ----------
+
+KALI_HOME_VOLUME="${LAB_PROJECT}_kali_home"
+KALI_IMAGE="cyberlab/kali-xfce:local"
+KEEP_HOME_BACKUPS=3
+
+# The Kali files must not change while they are copied: no desktop lab runs.
+refuse_if_desktop_running() {
+    local running
+    for running in $(lab_running_labs); do
+        if [ "${LAB_KIND[$running]}" = desktop ]; then
+            echo "Lab '$running' is running (it uses /home/kali). Stop it first: scripts/lab.sh down $running" >&2
+            exit 5
+        fi
+    done
+}
+
+rotate_home_backups() {  # keeps the newest KEEP_HOME_BACKUPS lab-* folders
+    local dir="$1" old
+    [ -d "$dir" ] || return 0
+    for old in $(ls -1d "$dir"/lab-[0-9]*-[0-9]* 2>/dev/null | sort -r | tail -n +$((KEEP_HOME_BACKUPS + 1))); do
+        rm -rf -- "$old"
+    done
+}
+
+cmd_backup_home() {
+    refuse_if_desktop_running
+    docker volume inspect "$KALI_HOME_VOLUME" >/dev/null 2>&1 \
+        || { echo "No /home/kali volume yet: start a desktop lab once." >&2; exit 1; }
+    docker image inspect "$KALI_IMAGE" >/dev/null 2>&1 \
+        || { echo "Missing $KALI_IMAGE: scripts/lab.sh pull kali" >&2; exit 3; }
+    local stamp dir
+    stamp="$(date +%Y%m%d-%H%M%S)"
+    dir="$LAB_ROOT/data/backups/lab-$stamp"
+    umask 077
+    mkdir -p "$dir"
+    echo "==> Saving /home/kali (without .cache and Burp's bundled browser, both rebuilt on their own)"
+    # Disposable container: no network, read-only root, the volume read-only,
+    # and only the capability to read files of any owner.
+    docker run --rm --pull never --network none --read-only \
+        --cap-drop ALL --cap-add DAC_READ_SEARCH --security-opt no-new-privileges:true \
+        --user 0:0 --entrypoint tar -v "$KALI_HOME_VOLUME":/home/kali:ro "$KALI_IMAGE" \
+        -C /home/kali --exclude=./.cache --exclude=./.BurpSuite/burpbrowser --numeric-owner -czf - . \
+        > "$dir/kali-home.tar.gz"
+    tar -tzf "$dir/kali-home.tar.gz" >/dev/null || { echo "The archive is unreadable" >&2; rm -rf "$dir"; exit 1; }
+    if [ -f "$LAB_ENV" ]; then
+        cp "$LAB_ENV" "$dir/labs.env"
+        chmod 600 "$dir/labs.env"
+    fi
+    (cd "$dir" && sha256sum -- * > SHA256SUMS)
+    rotate_home_backups "$LAB_ROOT/data/backups"
+    echo "Saved: data/backups/lab-$stamp/ ($(du -sh "$dir" | cut -f1); $(tar -tzf "$dir/kali-home.tar.gz" | wc -l) entries)"
+    local win
+    win="$(windows_backup_dir)"
+    if [ -z "$win" ]; then
+        echo "Warning: Windows is not reachable: the backup stays only in data/backups/" >&2
+        return
+    fi
+    mkdir -p "$win"
+    cp -r "$dir" "$win/"
+    rotate_home_backups "$win"
+    echo "Copied to Windows: $win/lab-$stamp/"
+}
+
+cmd_restore_home() {
+    local source="${lab:-}" with_env=false yes=false arg
+    for arg in "${@}"; do
+        case "$arg" in --yes) yes=true ;; --with-env) with_env=true ;; esac
+    done
+    [ -n "$source" ] && [ -d "$source" ] || source="$LAB_ROOT/data/backups/${lab:-}"
+    if [ -z "${lab:-}" ] || [ ! -f "$source/kali-home.tar.gz" ]; then
+        echo "Usage: scripts/lab.sh restore-home <backup dir (e.g. lab-20261001-213000)> --yes [--with-env]" >&2
+        exit 2
+    fi
+    if ! $yes; then
+        echo "This REPLACES everything in /home/kali with $source." >&2
+        echo "To confirm, add --yes (and --with-env to also restore labs/.env)." >&2
+        exit 2
+    fi
+    refuse_if_desktop_running
+    (cd "$source" && sha256sum --quiet -c SHA256SUMS) || { echo "Checksums do not match: refusing" >&2; exit 1; }
+    docker volume inspect "$KALI_HOME_VOLUME" >/dev/null 2>&1 \
+        || { echo "No /home/kali volume yet: run scripts/lab.sh up kali and down once, then retry." >&2; exit 1; }
+    echo "==> Replacing /home/kali with $source/kali-home.tar.gz"
+    docker run --rm -i --pull never --network none --read-only --security-opt no-new-privileges:true \
+        --user 0:0 --entrypoint sh -v "$KALI_HOME_VOLUME":/home/kali "$KALI_IMAGE" \
+        -c 'find /home/kali -mindepth 1 -delete && tar -xzpf - --numeric-owner -C /home/kali' \
+        < "$source/kali-home.tar.gz"
+    echo "/home/kali restored."
+    if $with_env && [ -f "$source/labs.env" ]; then
+        if [ -f "$LAB_ENV" ] && ! cmp -s "$source/labs.env" "$LAB_ENV"; then
+            cp "$LAB_ENV" "$LAB_ENV.before-restore-$(date +%Y%m%d-%H%M%S)"
+            echo "Previous labs/.env kept as labs/.env.before-restore-*"
+            if docker volume inspect "${LAB_PROJECT}_guac_db_data" >/dev/null 2>&1; then
+                echo "Note: the Guacamole database was created with the old passwords. If the Kali" >&2
+                echo "login fails, recreate it (Kali's files stay): docker volume rm ${LAB_PROJECT}_guac_db_data" >&2
+            fi
+        fi
+        install -m 600 "$source/labs.env" "$LAB_ENV"
+        echo "labs/.env restored."
+    fi
+}
+
+case "$command" in
+    backup-home) cmd_backup_home; exit 0 ;;
+    restore-home) shift 2 2>/dev/null || shift; cmd_restore_home "$@"; exit 0 ;;
+esac
 
 case "$command" in
     up) cmd_up ;;

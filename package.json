@@ -3,6 +3,7 @@
   "version": "0.6.0",
   "private": true,
   "scripts": {
+    "predev": "tsx scripts/db-backup.ts --auto --if-older-than 24 --windows",
     "dev": "NEXT_TELEMETRY_DISABLED=1 next dev -H 127.0.0.1 -p 3000",
     "build": "NEXT_TELEMETRY_DISABLED=1 next build",
     "start": "NEXT_TELEMETRY_DISABLED=1 next start -H 127.0.0.1 -p 3000",
@@ -10,6 +11,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db-migrate.ts",
+    "db:backup": "tsx scripts/db-backup.ts",
+    "db:restore": "tsx scripts/db-restore.ts",
     "db:check": "tsx scripts/db-check.ts",
     "db:seed": "tsx scripts/db-seed.ts",
     "content:ingest": "tsx scripts/content-ingest.ts",

@@ -128,6 +128,15 @@ missing_images() {
     done
 }
 
+# The Windows backup folder as a WSL path (Phase 8, decision D2): the same
+# one scripts/backup-paths.ts uses. Empty if Windows is not reachable.
+windows_backup_dir() {
+    if [ -n "${BACKUP_WINDOWS_DIR:-}" ]; then echo "$BACKUP_WINDOWS_DIR"; return; fi
+    local documents
+    documents="$(powershell.exe -NoProfile -NonInteractive -Command "[Environment]::GetFolderPath('MyDocuments')" </dev/null 2>/dev/null | tr -d '\r')"
+    [ -n "$documents" ] && echo "$(wslpath -u "$documents")/plataforma-cyber-backups"
+}
+
 lab_env_value() {
     grep -E "^$1=" "$LAB_ENV" | head -n1 | cut -d= -f2-
 }
