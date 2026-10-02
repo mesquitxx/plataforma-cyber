@@ -26,6 +26,15 @@ skipped() {
     skip=$((skip + 1))
 }
 
+# observe <id> <description> <command...>: measures an accepted, documented
+# residual (prints INFO reachable/blocked, never counted).
+observe() {
+    local id="$1" desc="$2"
+    shift 2
+    if "$@" >/dev/null 2>&1; then got=reachable; else got=blocked; fi
+    printf '%-4s  %-7s  %-13s  %s\n' INFO - "$id" "$desc: $got"
+}
+
 # expect <ok|blocked> <id> <description> <command...>
 # The description states the attempt; the EXPECT column says whether it must
 # succeed (ok) or fail (blocked).
@@ -276,6 +285,19 @@ for svc in "${sealed[@]}"; do
     expect blocked "4.$svc" "$svc -> host UDP canary $front_gw:$canary_port"        udp_reached "udp-$svc-front"
 done
 
+# 4b. (Phase 8, T8b) The edge proxy sits on the only non-internal network,
+#     so, like any container there, it reaches WSL's own addresses (eth0, its
+#     bridge gateway and the DNS tunnel 10.255.255.254, on the VM's loopback
+#     with global scope). Accepted residual T8b (docs/LABORATORIO.md): nothing
+#     else listens outside loopback in WSL (scripts/audit.sh, test A1).
+#     Measured here, not counted, so a change shows up.
+if [ "$edge" = guac-proxy ]; then
+    expect blocked "4.proxy" "guac-proxy -> host docker0 172.17.0.1:$canary_port"    tcp_from guac-proxy 172.17.0.1 "$canary_port"
+    observe "4.proxy" "T8b residual: guac-proxy -> WSL eth0 canary $wsl_ip:$canary_port (TCP)" tcp_from guac-proxy "$wsl_ip" "$canary_port"
+    observe "4.proxy" "T8b residual: guac-proxy -> bridge gateway canary $front_gw:$canary_port (TCP)" tcp_from guac-proxy "$front_gw" "$canary_port"
+    observe "4.proxy" "T8b residual: guac-proxy -> WSL DNS tunnel 10.255.255.254:53 (UDP query)" udp_dns_from guac-proxy 10.255.255.254
+fi
+
 # 5. Windows host (from the target; from Kali when the lab has no target).
 from_svc="${targets[0]:-kali}"
 for port in 135 445 3389; do
@@ -350,9 +372,6 @@ admin_pw="$(lab_env_value GUAC_ADMIN_PASSWORD)"
 expect ok      "12c" "Guacamole login with labs/.env password" \
     curl -fsS -o /dev/null --max-time 5 --data-urlencode username=guacadmin \
         --data-urlencode "password=$admin_pw" http://127.0.0.1:8080/guacamole/api/tokens
-expect blocked "12d" "Guacamole login with default guacadmin/guacadmin" \
-    curl -fsS -o /dev/null --max-time 5 -d username=guacadmin -d password=guacadmin \
-        http://127.0.0.1:8080/guacamole/api/tokens
 # (Phase 8) The desktop itself: WebSocket tunnel, screen size and image data.
 expect ok      "12e" "Kali screen streams through 127.0.0.1:8080 (WebSocket tunnel as 'plataforma')" \
     "$LAB_ROOT/scripts/guac-screen-probe.py" http://127.0.0.1:8080/guacamole "$(lab_env_value PLATFORM_GUAC_PASSWORD)"
@@ -380,6 +399,12 @@ expect blocked "13e" "'plataforma' creates a user" \
         -d '{"username":"x","password":"x","attributes":{}}' \
         "$api/session/data/postgresql/users?token=$platform_token"
 [ -n "$platform_token" ] && curl -fsS -o /dev/null -X DELETE "$api/session?token=$platform_token"
+
+# Last, because it is a failed login: Guacamole bans an address after 5 of
+# them in 60 s, and every request comes from the proxy (labs/base/compose.yaml).
+expect blocked "12d" "Guacamole login with default guacadmin/guacadmin" \
+    curl -fsS -o /dev/null --max-time 5 -d username=guacadmin -d password=guacadmin \
+        http://127.0.0.1:8080/guacamole/api/tokens
 
 echo
 echo "Result: $pass passed, $fail failed, $skip skipped (not counted)."

@@ -97,7 +97,11 @@ padrão `guacadmin` **não** funciona.
         └── iframe ──► http://127.0.0.1:8080/guacamole/
                               │
                     ┌─────────▼─────────┐  guac_front (única rede não interna,
-                    │ guacamole (web)   │  exigida pelo Docker para publicar porta)
+                    │ guac-proxy (nginx)│  exigida pelo Docker para publicar porta;
+                    └─────────┬─────────┘  sem NAT/masquerade desde a Fase 8)
+                   guac_edge  │  (interna)
+                    ┌─────────▼─────────┐
+                    │ guacamole (web)   │
                     └───┬───────────────┘
             guac_back   │  (interna)
           ┌─────────────┼──────────────┐
@@ -115,7 +119,7 @@ padrão `guacadmin` **não** funciona.
 ```
 
 **Arquivos Compose (Fase 6):** `labs/base/compose.yaml` traz Guacamole + Kali e
-as redes `guac_front`, `guac_back`, `desktop_net` e `lab_net`. Sozinho, ele é o
+as redes `guac_front`, `guac_edge` (Fase 8), `guac_back`, `desktop_net` e `lab_net`. Sozinho, ele é o
 lab `kali`. `labs/dvwa/compose.yaml` entra por cima (segundo `-f`) com o DVWA,
 o banco e a `dvwa_back`. Todos usam o projeto Compose `cyberlab`, com os mesmos
 nomes de rede, bridge e volume da Fase 1: os dados antigos continuaram valendo.
@@ -128,7 +132,8 @@ memória do app.
 
 | Serviço | Papel | Redes |
 |---|---|---|
-| `guacamole` | Interface web (Tomcat) — o que aparece no iframe | `guac_front`, `guac_back` |
+| `guac-proxy` | **(Fase 8)** nginx sem root: única porta publicada (`127.0.0.1:8080`), repassa `/guacamole/` e acrescenta `frame-ancestors` | `guac_front`, `guac_edge` |
+| `guacamole` | Interface web (Tomcat) — o que aparece no iframe | `guac_edge`, `guac_back` |
 | `guacd` | Proxy que converte VNC para o protocolo do Guacamole | `guac_back`, `desktop_net` |
 | `guac-db` | PostgreSQL com usuários e conexões do Guacamole | `guac_back` |
 | `kali` | Attack box: XFCE + TigerVNC + nmap, Burp, sqlmap, Wireshark, Firefox | `desktop_net`, `lab_net` |
@@ -140,8 +145,9 @@ memória do app.
   contêiner não tem rota para fora. Isso vale para Kali, DVWA e os bancos.
 - **`inhibit_ipv4`** nas bridges internas: o host não ganha IP nessas redes,
   então nem o "IP de gateway" da bridge serve como porta para o PC.
-- **Uma única porta publicada:** `127.0.0.1:8080` (Guacamole). O VNC (5901), o
-  DVWA (80) e os bancos não são publicados. A plataforma escuta só em
+- **Uma única porta publicada:** `127.0.0.1:8080`, no `guac-proxy` desde a
+  Fase 8 (antes, no próprio Guacamole). O VNC (5901), o DVWA (80), o Tomcat
+  do Guacamole e os bancos não são publicados. A plataforma escuta só em
   `127.0.0.1:3000`.
 - **Segmentação:** o DVWA não enxerga `guacd`, `guac-db` nem `guacamole` (nem
   resolve os nomes). O Kali enxerga o `guacd` (necessário para a tela), mas
@@ -149,6 +155,16 @@ memória do app.
 - **Sem `privileged` e sem `docker.sock`** em nenhum contêiner; todos, exceto
   o Kali, rodam com `no-new-privileges`. A plataforma **não** roda em contêiner.
 - **`restart: "no"`:** o lab nunca sobe sozinho com o Windows.
+
+**Garantias novas da Fase 8:**
+- **Nenhum contêiner tem internet**, nem a infraestrutura do Guacamole: o
+  Guacamole saiu da `guac_front`, e o `guac-proxy`, único contêiner nela, não
+  tem NAT (`enable_ip_masquerade: false`) nem resolvedor externo (`dns:
+  127.0.0.1`). Resíduo medido e aceito: T8b.
+- **Só a plataforma embute o Guacamole** (`frame-ancestors`, T9) e **ninguém
+  embute a plataforma** (`X-Frame-Options: DENY`, T10).
+- **Auditoria reexecutável** do host, do Windows e de todos os labs:
+  `scripts/audit.sh` (ver "Auditoria completa" abaixo).
 
 **Garantias novas da Fase 6:**
 - **Lista fechada:** o `lab.sh` só aceita os labs do registro em
@@ -176,17 +192,18 @@ Windows partem do próprio Kali).
 
 | ID | O que prova | Como |
 |---|---|---|
-| 1 | Sem internet por TCP | Alvo e Kali tentam `1.1.1.1:443` e `8.8.8.8:53` |
+| 0 | **Controles das sondas** | As ferramentas de sonda funcionam em cada contêiner (TCP, DNS, ICMP, consulta DNS por UDP ao DNS embutido do Docker `127.0.0.11`) e o canário UDP do host recebe datagramas do próprio host |
+| 1 | Sem internet (TCP, UDP, ICMP, IPv6) | **Todos** os contêineres (alvos, bancos, Kali, `guacd`, `guac-db`, `guacamole`, `guac-proxy`) tentam `1.1.1.1:443`, `8.8.8.8:53`, uma consulta DNS por UDP direto a `1.1.1.1:53`, `ping 1.1.1.1` (onde há `ping`) e `[2606:4700:4700::1111]:443` |
 | 2 | Sem internet por DNS (sem exfiltração via DNS) | `getent hosts example.com` |
-| 3 | Sem rota de saída | Nenhuma rota padrão em `/proc/net/route`; bridges internas sem IPv4 no host |
-| 4 | Alvo não alcança o PC | **Canário**: o script abre uma porta no IP `eth0` do WSL e no gateway da `guac_front`. O próprio host conecta (controle); alvo e Kali não. Também testa `docker0` e o DNS do WSL (`10.255.255.254`). |
+| 3 | Sem rota de saída | Nenhuma rota padrão em `/proc/net/route` (exceto o `guac-proxy`, cuja rota não tem NAT); nenhum IPv6 fora do loopback; nenhuma variável `*_proxy`; bridges internas sem IPv4 no host |
+| 4 | Alvo não alcança o PC | **Canário** TCP e UDP: o script abre uma porta no IP `eth0` do WSL e no gateway da `guac_front`. O próprio host conecta (controle); alvos, bancos, Kali, `guacd`, `guac-db` e `guacamole` não. Também testa `docker0` e o DNS do WSL (`10.255.255.254`). **(Fase 8)** O resíduo T8b do `guac-proxy` é medido e impresso como `INFO` (não conta). |
 | 5 | Alvo não alcança o Windows | Portas 135/445/3389 do IP do Windows |
-| 7 | Alvo não enxerga a infraestrutura | DVWA não resolve `guacamole`, `guacd`, `guac-db`, `host.docker.internal`; Kali não resolve os bancos nem a interface web |
-| 8 | Redes marcadas como internas | `docker network inspect` → `Internal: true` |
-| 9 | Só loopback | Única porta publicada é `127.0.0.1:8080`; nada em `0.0.0.0:8080` no WSL; a 8080 não responde no IP `eth0` do WSL; no Windows, a 8080 só escuta em `127.0.0.1`/`::1`; **(Fase 6)** nada em `0.0.0.0:3000` (a plataforma) |
+| 7 | Alvo não enxerga a infraestrutura | DVWA não resolve `guacamole`, `guac-proxy`, `guacd`, `guac-db`, `host.docker.internal`; Kali não resolve os bancos, o proxy nem a interface web; **(Fase 8)** o `guac-proxy` resolve só o `guacamole` (não o `guacd`, os bancos, o Kali nem os alvos) |
+| 8 | Redes marcadas como internas | `docker network inspect` → `Internal: true`; **(Fase 8)** `guac_front` com masquerade desligado |
+| 9 | Só loopback | Única porta publicada é `127.0.0.1:8080`, e ela é do `guac-proxy`; nada em `0.0.0.0:8080` no WSL; a 8080 não responde no IP `eth0` do WSL; no Windows, a 8080 só escuta em `127.0.0.1`/`::1`; **(Fase 6)** nada em `0.0.0.0:3000` (a plataforma); **(Fase 8)** a 8080 envia `Content-Security-Policy: frame-ancestors` só da plataforma e `nosniff` |
 | 10 | **(Fase 6)** Nenhum contêiner perigoso | Nenhum contêiner do lab é `privileged` nem monta `docker.sock` |
 | 11 | **Controle positivo:** o lab funciona | Kali acessa `http://dvwa/` (lab `dvwa`) |
-| 12 | **Controle positivo:** a tela funciona | Guacamole responde; `guacd` alcança o VNC do Kali; login com a senha do `.env` funciona e com `guacadmin/guacadmin` falha |
+| 12 | **Controle positivo:** a tela funciona | Guacamole responde; `guacd` alcança o VNC do Kali; login com a senha do `.env` funciona e com `guacadmin/guacadmin` falha (por último: é um login errado, ver T8c); **(Fase 8, 12e)** a tela **de verdade**: `scripts/guac-screen-probe.py` loga como `plataforma`, abre o túnel WebSocket e exige `size` e imagens do desktop |
 | 13 | **(Fase 6)** Usuário `plataforma` restrito | Loga; vê só a conexão "Kali (attack box)"; **não** lê os parâmetros dela (senha VNC), **não** cria conexão nem usuário |
 
 Os controles positivos (11, 12, 13a/b e as sondas do grupo 0) são essenciais.
@@ -196,18 +213,49 @@ ou que falta uma ferramenta no contêiner.
 **Resultado na Fase 6:** `dvwa` 66/66 PASS (também pela interface), `kali`
 43/43 PASS, `linux-sandbox` 17/17 PASS (também pela interface).
 
-### Teste do teste (opcional)
-Para ver o script **pegar** uma quebra de isolamento, ligue o DVWA de propósito
-à rede padrão do Docker (que tem internet), rode o script e desfaça:
+**Resultado na Fase 8** (verificação estendida, depois do hardening): ver o
+relatório em [`auditorias/2026-10-01-fase-8.md`](auditorias/2026-10-01-fase-8.md).
+Antes do hardening, a mesma verificação dava 139 PASS e 6 FAIL no `dvwa`:
+Guacamole com internet (TCP, UDP e DNS) e sem `frame-ancestors`
+([linha de base](auditorias/2026-10-01-linha-de-base.txt)).
+
+### Teste do teste
+Para ver o script **pegar** uma quebra de isolamento, com o `dvwa` no ar:
 
 ```bash
-docker network connect bridge cyberlab-dvwa-1
-scripts/lab-verify-isolation.sh      # esperado: FAILs no DVWA, código 1
-docker network disconnect bridge cyberlab-dvwa-1
+scripts/audit.sh --self-test
 ```
 
-Na Fase 1 e de novo na Fase 6, esse teste deu 7 FAILs (internet, DNS, rota e
-canários) e voltou a passar tudo depois de desfeito.
+Ele liga o DVWA de propósito à rede padrão do Docker (que tem internet), exige
+que o `verify` falhe nos testes do DVWA, **sempre** desfaz (mesmo com Ctrl+C) e
+exige que tudo volte a passar. Na Fase 8: 11 FAILs pegos (internet por TCP,
+UDP, ICMP e DNS, rota, canários TCP/UDP, DNS do WSL) e tudo PASS depois.
+(Nas fases 1 e 6 o teste era manual e deu 7 FAILs.)
+
+## Auditoria completa (Fase 8)
+
+```bash
+scripts/audit.sh                    # tudo: host, Windows, todos os labs, npm audit
+scripts/audit.sh --no-labs          # sem ligar labs (A, B e D)
+scripts/audit.sh --labs "dvwa kali" # só alguns labs
+scripts/audit.sh --self-test        # teste do teste (precisa do dvwa no ar)
+```
+
+Só pelo terminal; exige que nenhum lab esteja rodando (exceto com
+`--no-labs`/`--self-test`), porque liga e desliga cada lab, um por vez. Rode
+com a plataforma no ar (`npm run dev`) para incluir os testes A6 e a sonda da
+porta 3000.
+
+| Bloco | O que prova |
+|---|---|
+| **A. Host (WSL)** | A1: **todo** socket TCP/UDP em escuta no WSL é loopback (o único fora de `127.0.0.0/8` é o DNS do próprio WSL, `10.255.255.254`, que fica na interface `lo`). A2: o daemon Docker não tem endpoint TCP (2375/2376), só o socket Unix. A3: `docker.sock` é `660 root:docker` e só o seu usuário está no grupo `docker`. A4: `labs/.env` com modo `600`; `labs/.env` e `data/` fora do git. A5: `dev`/`start` presos a `127.0.0.1:3000`. A6: com a plataforma no ar, cabeçalhos do T10 e recusa (403) de `Host` e `Origin` estranhos. |
+| **B. Windows** | B1: `networkingMode` do `.wslconfig` é NAT (no modo `mirrored`, um socket em `0.0.0.0` no WSL vira um socket da rede local). B2: nenhuma regra `netsh portproxy`. B3: 3000/8080 escutam só em loopback no Windows. B4: **sonda pela rede**: o Windows tenta abrir as portas nos seus próprios IPs de rede (Wi-Fi, Ethernet **e VPNs**, como o Radmin VPN) — devem estar fechadas; controle: a mesma sonda vê a porta aberta em `127.0.0.1`. |
+| **C. Labs** | Cada lab do registro: `up` → `verify` → sonda da 8080 pela rede → `down`. Lab sem imagem baixada = **PENDENTE**, nunca PASS. |
+| **D. Dependências** | `npm audit --omit=dev`: nenhum alerta crítico/alto nas dependências de produção (envia a lista de dependências ao registro do npm, como o `npm install`; autorizado pelo MESQUITA). |
+
+A sonda B4 **não substitui** o teste do celular: o Windows conectando no próprio
+IP não passa pelo firewall como um aparelho de fora passaria. Ela pega o erro
+mais provável (algo escutando em `0.0.0.0`), e o celular dá a prova final.
 
 ### Testes da plataforma (Fase 6)
 Feitos com o app no ar, de ponta a ponta num Chromium headless (Playwright
@@ -277,9 +325,8 @@ nmap -sV dvwa                # funciona: 80/tcp aberto
 
 ### Fase 1
 - **Kali construído com internet e executado sem ela:** atualizar exige rebuild.
-- **O contêiner web do Guacamole tem saída para a internet:** a rede
-  `guac_front` precisa ser não interna para publicar a porta. Ele não fica
-  exposto ao alvo; restringir essa saída fica para o hardening (Fase 10).
+- ~~**O contêiner web do Guacamole tem saída para a internet**~~ —
+  **resolvida na Fase 8 (T8):** ele saiu da rede não interna.
 - **O `guacd` faz ponte entre `guac_back` e `desktop_net`:** o Kali (que é seu)
   alcança o `guacd`; o DVWA não.
 - **VNC sem TLS:** o tráfego fica dentro da `desktop_net` interna.
@@ -310,7 +357,9 @@ nmap -sV dvwa                # funciona: 80/tcp aberto
 
   **Risco que sobra:** uma execução remota de código no próprio Next daria
   acesso ao Docker, mas ela já daria acesso ao seu usuário, que já tem o Docker.
-- **T2 — Kali embutido por iframe.** O Guacamole 1.6.0 não envia
+- **T2 — Kali embutido por iframe.** *(Resolvida na Fase 8 pelo T9: o
+  `guac-proxy` envia `frame-ancestors`, e outro site não consegue mais embutir
+  o Guacamole. O texto abaixo fica como histórico.)* O Guacamole 1.6.0 não envia
   `X-Frame-Options` nem CSP (verificado), então **outro site aberto no
   navegador também poderia embuti-lo** (*clickjacking*). Restringir com
   `frame-ancestors` exigiria mexer no Tomcat da imagem oficial. O filtro
@@ -342,6 +391,65 @@ nmap -sV dvwa                # funciona: 80/tcp aberto
 - **T5 — Verificar o isolamento pela interface.** Roda o mesmo script, que abre
   por alguns segundos uma porta canário no IP `eth0` do WSL; só muda quem o
   dispara.
+
+### Fase 8 (aprovadas pelo MESQUITA antes da implementação)
+- **T8 — Proxy na frente do Guacamole, sem NAT.** O Docker só publica porta a
+  partir de uma rede **não** interna (confirmado de novo na Fase 8 com o Docker
+  29.8: uma rede `--internal` não publica, e o modo de gateway `isolated` exige
+  rede interna). Então um contêiner mínimo, o `guac-proxy`
+  (`nginxinc/nginx-unprivileged`, oficial da NGINX, fixado por digest), é o
+  **único** na `guac_front`. O Guacamole (Tomcat, que guarda a senha do banco)
+  foi para a `guac_edge` interna, que só o proxy compartilha. O proxy roda como
+  uid 101, com sistema de arquivos só de leitura, `cap_drop: ALL`,
+  `no-new-privileges` e `mem_limit: 64m` (usa ~3 MB).
+  **Masquerade desligado** (`com.docker.network.bridge.enable_ip_masquerade:
+  "false"`): sem NAT, os pacotes do proxy não voltam da internet, e a porta
+  publicada continua funcionando, porque o `docker-proxy` conecta a partir do
+  host. Era a condição do MESQUITA ("se a tela continuar funcionando"), e foi
+  provada pelo teste 12e e pelo navegador (desktop do Kali no iframe, 1024×576).
+  **DNS:** o DNS embutido do Docker encaminha nomes desconhecidos pelo
+  resolvedor do host, então o proxy resolvia `example.com` mesmo sem NAT. O
+  resolvedor externo dele aponta para `127.0.0.1` do próprio contêiner (onde
+  nada responde): `guacamole` continua resolvendo e nomes de fora não.
+- **T8b — Resíduo aceito: o proxy alcança os endereços do próprio WSL.** Como
+  qualquer contêiner numa rede não interna, o `guac-proxy` alcança o IP `eth0`
+  do WSL, o gateway da `guac_front` e o DNS do WSL (`10.255.255.254`, que fica
+  na `lo` do WSL com escopo global e responde consultas de fora). Ou seja: um
+  nginx comprometido ainda conseguiria resolver nomes (canal de DNS),
+  embora não abra conexões para a internet. **Por que o risco é baixo:** o
+  proxy só recebe tráfego do seu navegador em `127.0.0.1`, não guarda segredo
+  nenhum, não alcança Kali, alvos, `guacd` nem bancos, e nada mais escuta fora
+  do loopback no WSL (auditoria A1). Antes da Fase 8, o Guacamole inteiro tinha
+  internet. **Como fechar de vez (decisão sua, não feita):**
+  `dnsTunneling=false` na seção `[wsl2]` do `.wslconfig` (muda o DNS do WSL
+  inteiro; testar VPN e `apt` depois) ou uma regra `iptables` no host (exige
+  `sudo` a cada boot do WSL). A verificação imprime o estado como `INFO` em
+  cada execução, então uma mudança aparece.
+- **T8c — Janela de bloqueio do Guacamole em 60 s.** A extensão de força bruta
+  do Guacamole bloqueia **o endereço** depois de 5 logins errados, e todas as
+  requisições chegam de um só endereço (o proxy; antes, o `docker-proxy`). Cada
+  verificação faz de propósito um login errado (12d), então cinco
+  verificações em 5 min bloqueavam a própria plataforma. As 5 tentativas
+  continuam; a janela e o bloqueio caíram de 300 para 60 s
+  (`BAN_ADDRESS_DURATION`). Com senhas aleatórias de 20+ caracteres e acesso
+  só por `127.0.0.1`, isso não muda o risco na prática.
+- **T9 — `frame-ancestors` no Guacamole.** O `guac-proxy` envia
+  `Content-Security-Policy: frame-ancestors http://127.0.0.1:3000
+  http://localhost:3000`, mais `X-Content-Type-Options: nosniff` e
+  `Referrer-Policy: no-referrer`. Testado num Chromium: uma página em outra
+  origem (`127.0.0.1:9999`) não consegue embutir o Guacamole, e a plataforma
+  continua mostrando o desktop. Fecha a T2.
+- **T10 — Cabeçalhos de segurança na plataforma.** `next.config.ts` envia, em
+  todas as rotas, `X-Frame-Options: DENY`, `Content-Security-Policy:
+  frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: no-referrer` e `Permissions-Policy` (câmera, microfone,
+  localização, pagamento, USB desligados). Sem isso, uma página maliciosa
+  poderia embutir a plataforma e induzir um clique em "Resetar" ou "Trocar
+  lab" (*clickjacking*), e a Server Action sairia com o `Origin` legítimo.
+- **T10b — CSP completa fica de fora.** Uma CSP com `script-src` por *nonce*
+  exigiria gerar o nonce em cada requisição no `proxy.ts` e tornaria todas as
+  páginas dinâmicas. Numa aplicação que só fala com `127.0.0.1` e não exibe
+  conteúdo de terceiros, o ganho não paga o custo.
 
 ### Fase 7 (aprovadas pelo MESQUITA antes da implementação)
 - **T6 — Imagens de terceiros adicionais (Juice Shop, WebGoat, Vulhub).** São

@@ -4,7 +4,9 @@
 # Never run it by hand: scripts/lab.sh owns the file combinations (Phase 6).
 #
 # Isolation rules (see CLAUDE.md and docs/LABORATORIO.md):
-# - The only published port is Guacamole on 127.0.0.1:8080.
+# - The only published port is 127.0.0.1:8080, on guac-proxy (nginx), the only
+#   container on a non-internal network (Phase 8, trade-offs T8 and T9). That
+#   network has IP masquerade off, so not even the proxy reaches the internet.
 # - Kali and the targets live only on internal networks: no gateway, no internet.
 # - Internal bridges get no IPv4 address on the host (inhibit_ipv4), so
 #   containers cannot reach host services through the bridge gateway.
@@ -22,6 +24,39 @@ x-hardening: &hardening
     - no-new-privileges:true
 
 services:
+  # The front door (Phase 8): forwards /guacamole/ to the Guacamole web
+  # container, adds frame-ancestors, and is the only thing on guac_front.
+  guac-proxy:
+    <<: *hardening
+    image: nginxinc/nginx-unprivileged:stable-alpine@sha256:ed04ec1ff34502c339ee5c3ae3f855442398edc1d05591e2b98981dcbbd20b1e
+    # Plain nginx, without the image's entrypoint scripts (they rewrite files
+    # under /etc/nginx, which is read-only here).
+    entrypoint: ["nginx", "-g", "daemon off;"]
+    depends_on:
+      guacamole:
+        condition: service_started
+    volumes:
+      - ./guac-proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: [ALL]
+    user: "101:101"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/guacamole/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    ports:
+      - "127.0.0.1:8080:8080"
+    # Docker's embedded DNS forwards unknown names to the host's resolver,
+    # which would let the proxy resolve (and leak data through) internet
+    # names. Its upstream is set to the container's own loopback, where
+    # nothing answers: container names (guacamole) still resolve.
+    dns: [127.0.0.1]
+    networks: [guac_front, guac_edge]
+    mem_limit: 64m
+
   guacamole:
     <<: *hardening
     image: guacamole/guacamole:1.6.0@sha256:f344085e618bb05e22b964b0208dbd06d3468275bac70206f93805245e067b40
@@ -37,9 +72,14 @@ services:
       POSTGRESQL_DATABASE: guacamole
       POSTGRESQL_USERNAME: guacamole
       POSTGRESQL_PASSWORD: ${GUAC_DB_PASSWORD:?set GUAC_DB_PASSWORD in labs/.env}
-    ports:
-      - "127.0.0.1:8080:8080"
-    networks: [guac_front, guac_back]
+      # Brute-force ban (guacamole-auth-ban): every request comes from one
+      # address (the proxy), so a ban locks the platform out too. Keep the 5
+      # attempts, but count and ban for 60 s instead of 300 s, so repeated
+      # isolation checks (each makes one deliberate bad login) never lock it.
+      BAN_ADDRESS_DURATION: "60"
+    # No published port and no internet since Phase 8: only guac-proxy
+    # reaches it (guac_edge), and it reaches only guacd and the database.
+    networks: [guac_edge, guac_back]
     mem_limit: 768m
 
   guacd:
@@ -100,11 +140,23 @@ services:
 
 networks:
   # The only non-internal network: Docker cannot publish ports from internal
-  # networks. Only the Guacamole web container is attached to it.
+  # networks. Only guac-proxy is attached to it (Phase 8, T8). Without IP
+  # masquerade (NAT) its packets cannot come back from the internet; the
+  # published port still works, because docker-proxy connects to the
+  # container from the host (proved by scripts/lab.sh verify, tests 1 and 12e).
   guac_front:
     enable_ipv6: false
     driver_opts:
       com.docker.network.bridge.name: cl-guacfront
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  # guac-proxy <-> Guacamole web only: the proxy never sees guacd, the
+  # database or Kali.
+  guac_edge:
+    internal: true
+    enable_ipv6: false
+    driver_opts:
+      com.docker.network.bridge.name: cl-guacedge
+      com.docker.network.bridge.inhibit_ipv4: "true"
   guac_back:
     internal: true
     enable_ipv6: false

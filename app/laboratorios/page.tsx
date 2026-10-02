@@ -11,6 +11,7 @@ const GUARANTEES = [
   "Um laboratório ativo por vez (regra de RAM): para trocar, o atual é desligado antes.",
   "Tudo escuta só em 127.0.0.1: a única porta de um lab é a do Guacamole, 127.0.0.1:8080.",
   "Alvos e Kali ficam em redes internas, sem internet e sem rota para o PC ou o Windows.",
+  "Nem o Guacamole tem internet: um proxy na frente dele publica a porta, e só esta plataforma pode embutir a tela.",
   "A plataforma nunca baixa nada: imagens novas só com scripts/lab.sh pull <lab>, no terminal.",
   "Só o servidor local controla o Docker, por uma lista fechada de labs e ações.",
 ];
