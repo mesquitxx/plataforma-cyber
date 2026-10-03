@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
+  <title id="t">Os objetos do Git: commits, trees e blobs ligados por hash</title>
+  <desc id="d">À esquerda, dois arquivos de referência: HEAD contém ref: refs/heads/main, e refs/heads/main contém o hash d9073d6. Ele aponta para o commit d9073d6, com a mensagem Anota o módulo 0.4, que aponta para a tree 34f64db e para o commit pai 8572b8e. O commit pai aponta para a sua própria tree 01a9fb5. Cada tree lista os arquivos daquela versão: a tree nova aponta para o blob 5171deb (README com 4 linhas) e a tree antiga para o blob 8b33437 (README com 3 linhas). Embaixo, a regra: o nome de cada objeto é o SHA-1 do seu conteúdo, então mudar um byte de um blob muda o hash do blob, da tree que o lista e de todos os commits seguintes.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 13.5px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#b48cf0"/></marker>
+  </defs>
+  <rect width="900" height="500" fill="#121815"/>
+  <text class="t" x="30" y="34">Por dentro da pasta .git: tudo é um objeto com nome = hash do conteúdo</text>
+
+  <!-- refs -->
+  <rect class="box" x="30" y="70" width="190" height="60" rx="10" style="stroke:#b48cf0"/>
+  <text class="m" x="44" y="94" style="fill:#b48cf0">.git/HEAD</text>
+  <text class="s" x="44" y="116">ref: refs/heads/main</text>
+  <rect class="box" x="30" y="160" width="190" height="60" rx="10" style="stroke:#b48cf0"/>
+  <text class="m" x="44" y="184" style="fill:#b48cf0">refs/heads/main</text>
+  <text class="s" x="44" y="206">d9073d6dae72...</text>
+  <line x1="125" y1="130" x2="125" y2="156" stroke="#b48cf0" stroke-width="1.8" marker-end="url(#v)"/>
+  <text class="s" x="30" y="250">branch = arquivo de 41</text>
+  <text class="s" x="30" y="266">bytes com um hash</text>
+
+  <!-- commits -->
+  <rect class="box" x="270" y="150" width="230" height="96" rx="10" style="stroke:#5ee08a"/>
+  <text class="m" x="284" y="174" style="fill:#5ee08a">commit d9073d6</text>
+  <text class="s" x="284" y="194">tree   34f64db</text>
+  <text class="s" x="284" y="210">parent 8572b8e</text>
+  <text class="s" x="284" y="226">"Anota o módulo 0.4"</text>
+  <line x1="220" y1="190" x2="266" y2="190" stroke="#b48cf0" stroke-width="1.8" marker-end="url(#v)"/>
+
+  <rect class="box" x="630" y="150" width="240" height="96" rx="10" style="stroke:#5ee08a"/>
+  <text class="m" x="644" y="174" style="fill:#5ee08a">commit 8572b8e</text>
+  <text class="s" x="644" y="194">tree   01a9fb5</text>
+  <text class="s" x="644" y="210">(sem parent: o 1º)</text>
+  <text class="s" x="644" y="226">"Primeiro commit..."</text>
+  <line x1="500" y1="180" x2="626" y2="180" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+  <text class="s" x="520" y="172">parent</text>
+
+  <!-- trees -->
+  <rect class="box" x="270" y="290" width="230" height="64" rx="10" style="stroke:#e8c25a"/>
+  <text class="m" x="284" y="314" style="fill:#e8c25a">tree 34f64db</text>
+  <text class="s" x="284" y="336">100644 blob 5171deb README.md</text>
+  <line x1="385" y1="246" x2="385" y2="286" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+
+  <rect class="box" x="630" y="290" width="240" height="64" rx="10" style="stroke:#e8c25a"/>
+  <text class="m" x="644" y="314" style="fill:#e8c25a">tree 01a9fb5</text>
+  <text class="s" x="644" y="336">100644 blob 8b33437 README.md</text>
+  <line x1="750" y1="246" x2="750" y2="286" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+
+  <!-- blobs -->
+  <rect class="box" x="270" y="384" width="230" height="56" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="284" y="406" style="fill:#5cc8d8">blob 5171deb</text>
+  <text class="s" x="284" y="426">README com 4 linhas</text>
+  <line x1="385" y1="354" x2="385" y2="380" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+
+  <rect class="box" x="630" y="384" width="240" height="56" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="644" y="406" style="fill:#5cc8d8">blob 8b33437</text>
+  <text class="s" x="644" y="426">README com 3 linhas</text>
+  <line x1="750" y1="354" x2="750" y2="380" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+
+  <text class="s" x="30" y="472">nome = SHA-1 do conteúdo → mudar 1 byte do blob muda o blob, a tree que o lista e todo commit seguinte</text>
+</svg>

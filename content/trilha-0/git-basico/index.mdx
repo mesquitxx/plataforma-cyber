@@ -1,0 +1,2107 @@
+---
+slug: git-basico
+track: trilha-0
+title: "Git e versionamento básico"
+prerequisites: [linux-processos-e-pacotes]
+lab: null
+tasks:
+  - slug: missao-1-escopo-alterado
+    title: "Missão 1 — Quem mexeu no escopo?"
+    type: flag
+    prompt: "Os 7 primeiros caracteres do hash do commit que tirou um host do escopo, dentro de FLAG{ }."
+    hint: "git log --oneline mostra um commit por linha; git log -- escopo.md filtra só os que mexeram nesse arquivo."
+    flag:
+      hash: "scrypt$16384$8$1$31ea69d26cc74756e5f79e2fd503b72497c0ddccc6b222fbf440edd3193fe113"
+      salt: "4757e691ecd60b8e435b0e97ca67b550"
+  - slug: missao-2-segredo-apagado
+    title: "Missão 2 — O segredo que foi \"apagado\""
+    type: flag
+    prompt: "Os 7 primeiros caracteres do hash do commit que ADICIONOU o arquivo .env ao histórico, dentro de FLAG{ }."
+    hint: "O .env não existe mais na pasta, mas git log -- .env ainda o encontra. Qual opção filtra só a adição (Added)?"
+    flag:
+      hash: "scrypt$16384$8$1$67d1e92d4cbdd0b3f4452df974421f655de55049a33c5227b3ab90f702309213"
+      salt: "b5f1a96fae8cdb40980324da0c5f7106"
+  - slug: missao-3-git-recuperado
+    title: "Missão 3 — A pasta .git recuperada"
+    type: flag
+    prompt: "Os 7 primeiros caracteres do hash do blob do config.php que só existe na branch esquecida, dentro de FLAG{ }."
+    hint: "git branch mostra as branches; git diff main <branch> mostra o que muda; git rev-parse <branch>:config.php dá o hash do blob."
+    flag:
+      hash: "scrypt$16384$8$1$96512013218c940cf7ddd5ffc7088db575fb54ed6792a9f9d15c2ee75d69c0bb"
+      salt: "e533fb7a3f9d8245fcc04edb20cdada0"
+  - slug: quiz-final
+    title: "Quiz — Git e versionamento básico"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Você editou `README.md` e `achados.md`, mas rodou só `git add README.md` e depois `git commit`. O que entra no commit?"
+        options:
+          - "Os dois arquivos, porque o commit grava a pasta inteira"
+          - "Só o `README.md`: o commit grava o que está na staging area"
+          - "Nenhum, porque faltou `git add .`"
+          - "Só o `achados.md`, o último editado"
+        answer: 1
+        explanation: "O commit é uma foto da staging area (o index), não da pasta. O `achados.md` continua modificado na working tree, esperando um `git add`. É isso que permite fazer commits pequenos e com um assunto só."
+      - question: "Por que se diz que um commit é um *snapshot*, e não uma lista de diferenças?"
+        options:
+          - "Porque o Git guarda uma cópia zipada da pasta a cada commit"
+          - "Porque cada commit aponta para uma tree com o estado completo dos arquivos; arquivos iguais reaproveitam o mesmo blob"
+          - "Porque o Git só guarda a última versão de cada arquivo"
+          - "Porque o diff é calculado pelo GitHub, não pelo Git"
+        answer: 1
+        explanation: "O commit aponta para uma tree que lista todos os arquivos daquela versão. Como o nome de cada blob é o hash do conteúdo, um arquivo que não mudou aparece com o mesmo hash e não é gravado de novo. O diff que você vê no `git show` é calculado na hora, comparando duas trees."
+      - question: "O que é, fisicamente, uma branch como `main` dentro da pasta `.git`?"
+        options:
+          - "Uma cópia completa de todos os arquivos"
+          - "Uma pasta com os commits daquela branch"
+          - "Um arquivo pequeno em `.git/refs/heads/` com o hash de um commit"
+          - "Uma linha no arquivo `.git/config`"
+        answer: 2
+        explanation: "Uma branch é só um ponteiro: o arquivo `.git/refs/heads/main` guarda 40 caracteres hexadecimais e uma quebra de linha. Criar uma branch é barato justamente por isso. O `HEAD` aponta para a branch atual."
+      - question: "Qual a diferença entre `git diff` e `git diff --staged`?"
+        options:
+          - "Nenhuma; `--staged` é só um apelido"
+          - "`git diff` compara working tree com staging area; `--staged` compara staging area com o último commit"
+          - "`git diff` compara com o remoto; `--staged` compara com o local"
+          - "`--staged` mostra só os arquivos novos"
+        answer: 1
+        explanation: "Depois de um `git add`, o `git diff` simples fica vazio (a working tree igualou o index), e é o `git diff --staged` que mostra o que vai entrar no commit. Conferir esse segundo diff antes de cada commit evita gravar um segredo sem querer."
+      - question: "Um token foi commitado e, no commit seguinte, o arquivo foi apagado com `git rm`. O token está seguro?"
+        options:
+          - "Sim, o `git rm` apaga o arquivo do histórico"
+          - "Sim, desde que ninguém tenha dado `git pull` antes"
+          - "Não: o commit antigo continua apontando para o blob com o token, e qualquer clone tem esse histórico"
+          - "Não, mas basta adicionar o arquivo ao `.gitignore`"
+        answer: 2
+        explanation: "Apagar num commit novo só muda o estado daqui para frente; os commits antigos são imutáveis e continuam lá (foi o que você explorou na Missão 2). O `.gitignore` não age sobre o passado. O primeiro passo é revogar o token."
+      - question: "Por que um servidor web que publica a pasta `.git` de um site é um problema grave?"
+        options:
+          - "Porque deixa o site mais lento"
+          - "Porque a pasta `.git` contém todo o histórico, inclusive arquivos e credenciais que nem estão mais no site"
+          - "Porque permite alterar o site pelo `git push`"
+          - "Não é problema: os objetos do Git são criptografados"
+        answer: 1
+        explanation: "Os objetos são só comprimidos (zlib), não criptografados. Quem consegue ler a `.git` reconstrói o código e o histórico inteiro, como você fez localmente na Missão 3. A defesa é não publicar a pasta e bloquear `/.git` no servidor web."
+      - question: "Qual a diferença entre `git fetch` e `git pull`?"
+        options:
+          - "`fetch` traz os commits do remoto sem mexer nos seus arquivos; `pull` faz o fetch e em seguida integra (merge ou rebase)"
+          - "`fetch` envia; `pull` recebe"
+          - "São iguais"
+          - "`pull` só funciona com SSH"
+        answer: 0
+        explanation: "O `fetch` atualiza só as referências remotas (como `origin/main`), e você pode inspecioná-las com `git log main..origin/main` antes de integrar. O `pull` faz as duas coisas de uma vez."
+      - question: "Seu repositório de anotações de pentest está como privado no GitHub. Isso basta para guardar credenciais de clientes nele?"
+        options:
+          - "Sim, repositório privado é criptografado"
+          - "Não: no caso Uber, invasores entraram com senhas reutilizadas em contas sem MFA e acharam uma chave AWS num repositório privado"
+          - "Sim, desde que o nome do repositório não revele o cliente"
+          - "Sim, se o repositório tiver poucos colaboradores"
+        answer: 1
+        explanation: "Privado só significa que o acesso depende das contas autorizadas. Se uma conta cai (senha vazada, sem MFA) ou um clone vaza, vai tudo junto. Segredo não vai para o Git, privado ou não."
+      - question: "Você descobriu que uma chave de API real foi para um repositório público. Qual é o PRIMEIRO passo?"
+        options:
+          - "Apagar o arquivo e fazer um commit novo"
+          - "Reescrever o histórico com git-filter-repo"
+          - "Revogar ou trocar a chave no serviço que a emitiu"
+          - "Tornar o repositório privado"
+        answer: 2
+        explanation: "A documentação do GitHub manda revogar ou rotacionar o segredo primeiro: clones, forks e caches podem já ter a chave, e nenhuma reescrita de histórico alcança essas cópias. Depois de revogada, a chave vazada não vale nada."
+      - question: "Você adicionou `.env` ao `.gitignore`, mas o `.env` continua aparecendo nos commits. Por quê?"
+        options:
+          - "Porque o `.gitignore` só funciona depois de um `git push`"
+          - "Porque o `.gitignore` só vale para arquivos ainda não rastreados; é preciso tirá-lo do index com `git rm --cached .env`"
+          - "Porque o nome certo é `.gitignore.txt`"
+          - "Porque o `.gitignore` precisa estar dentro de `.git/`"
+        answer: 1
+        explanation: "Arquivos que já estão sendo rastreados ignoram o `.gitignore`. O `git rm --cached` tira o arquivo do index sem apagá-lo do disco; a partir daí, o `.gitignore` passa a valer. Os commits antigos continuam com ele."
+glossary:
+  - term: Git
+    definition: "Sistema de controle de versão distribuído, criado em 2005 para o desenvolvimento do kernel Linux. Guarda o histórico de um projeto como uma sequência de fotos (commits) identificadas por hash."
+  - term: version control
+    definition: "Controle de versão: registrar cada mudança de um conjunto de arquivos (quem, quando, o quê e por quê), para poder comparar, voltar atrás e trabalhar em paralelo sem perder nada."
+  - term: distributed version control
+    definition: "Controle de versão distribuído: cada cópia do repositório tem o histórico inteiro, e não só a última versão. Funciona offline e qualquer clone pode virar o backup dos outros."
+  - term: working tree
+    definition: "A pasta do projeto como você a vê e edita, com os arquivos de uma versão. Fica ao lado da pasta .git."
+  - term: staging area
+    definition: "Área de preparação (também chamada index, guardada em .git/index): o conteúdo exato que vai entrar no próximo commit. O git add copia mudanças para ela."
+  - term: commit
+    definition: "Uma foto (snapshot) gravada no histórico: aponta para a tree com o estado de todos os arquivos, para o commit anterior (parent), e registra autor, data e mensagem. É imutável e identificado pelo seu hash."
+  - term: commit message
+    definition: "O texto que explica um commit. A primeira linha é um resumo curto; boas mensagens dizem o porquê da mudança, não só o quê."
+  - term: Git object
+    definition: "Unidade de armazenamento do Git dentro de .git/objects: blob, tree, commit ou tag. O nome de cada objeto é o hash do seu conteúdo."
+  - term: blob
+    definition: "Objeto do Git que guarda o conteúdo de um arquivo, sem nome e sem permissões. Dois arquivos com o mesmo conteúdo são o mesmo blob."
+  - term: tree object
+    definition: "Objeto do Git que representa uma pasta: lista nomes, permissões e o hash de cada blob ou subpasta (outra tree)."
+  - term: content-addressable storage
+    definition: "Armazenamento endereçado por conteúdo: cada dado é guardado e encontrado pelo hash do próprio conteúdo. Se o conteúdo muda, o endereço muda."
+  - term: SHA-1
+    definition: "Função de hash que gera 160 bits (40 dígitos hexadecimais). É a que o Git usa por padrão para nomear objetos, numa versão que detecta tentativas de colisão."
+  - term: hash collision
+    definition: "Colisão: dois conteúdos diferentes que produzem o mesmo hash. Em 2017, o ataque SHAttered produziu a primeira colisão pública de SHA-1."
+  - term: branch
+    definition: "Linha de desenvolvimento do Git. Fisicamente, é um arquivo em .git/refs/heads/ com o hash do commit mais recente daquela linha; anda sozinho a cada commit."
+  - term: HEAD
+    definition: "Referência do Git que indica onde você está: normalmente aponta para uma branch (ref: refs/heads/main), que aponta para um commit."
+  - term: detached HEAD
+    definition: "Estado em que o HEAD aponta direto para um commit, e não para uma branch. Commits feitos assim ficam sem branch e podem se perder; crie uma branch com git switch -c para guardá-los."
+  - term: merge
+    definition: "Juntar o histórico de uma branch em outra. Pode ser um fast-forward (só avança o ponteiro) ou criar um commit de merge com dois pais."
+  - term: fast-forward
+    definition: "Merge em que a branch de destino não andou desde a separação: o Git só move o ponteiro para frente, sem criar commit novo."
+  - term: merge conflict
+    definition: "Conflito de merge: as duas branches mudaram as mesmas linhas de um arquivo de jeitos diferentes. O Git marca o trecho com <<<<<<<, ======= e >>>>>>> e espera você decidir."
+  - term: diff
+    definition: "A diferença entre duas versões de um texto, linha por linha: linhas com - saíram, linhas com + entraram. Também é o nome do comando git diff."
+  - term: hunk
+    definition: "Cada bloco de mudanças de um diff, que começa com uma linha @@ -a,b +c,d @@ indicando onde ele fica no arquivo antigo e no novo."
+  - term: clone
+    definition: "Cópia completa de um repositório, com todo o histórico, criada por git clone. Cada clone é um repositório independente."
+  - term: remote
+    definition: "Outro repositório com o qual o seu troca commits (por exemplo, no GitHub), registrado com um nome curto e uma URL."
+  - term: origin
+    definition: "Nome padrão que o git clone dá ao remote de onde o repositório foi clonado. É só uma convenção; pode ser renomeado."
+  - term: fetch
+    definition: "Buscar do remote os commits e branches novos, sem mexer nos seus arquivos nem nas suas branches locais (git fetch)."
+  - term: pull
+    definition: "git pull: um fetch seguido da integração (merge ou rebase) das mudanças do remote na sua branch atual."
+  - term: push
+    definition: "git push: enviar seus commits para um remote e avançar a branch de lá. É recusado se o remote tiver commits que você ainda não tem."
+  - term: bare repository
+    definition: "Repositório sem working tree, só com o conteúdo da pasta .git. É o formato usado em servidores para receber push (git init --bare)."
+  - term: .gitignore
+    definition: "Arquivo com padrões de nomes que o Git deve ignorar ao procurar arquivos novos (ex.: .env, *.pcap, loot/). Não age sobre arquivos já rastreados nem sobre o histórico."
+  - term: Git hook
+    definition: "Script em .git/hooks/ que o Git executa em certos momentos (antes do commit, antes do push...). Não é copiado pelo clone e pode ser pulado com --no-verify."
+  - term: stash
+    definition: "Gaveta temporária do Git: git stash guarda as mudanças não commitadas e limpa a working tree; git stash pop as traz de volta."
+  - term: tag
+    definition: "Nome fixo dado a um commit (ex.: v1.0, relatorio-entregue). Diferente de uma branch, não anda com novos commits."
+  - term: reflog
+    definition: "Diário local de para onde o HEAD e as branches apontaram. Permite recuperar commits depois de um reset ou de uma branch apagada, enquanto o Git não os descartar."
+  - term: rebase
+    definition: "Reaplicar commits de uma branch em cima de outro ponto do histórico, criando commits novos (com hashes novos). Deixa o histórico linear, mas reescreve o que já existia."
+  - term: force push
+    definition: "git push --force: substituir a branch do remote mesmo que isso descarte commits de lá. Necessário depois de reescrever o histórico; perigoso em branches compartilhadas."
+  - term: secret
+    definition: "Segredo: qualquer dado que dá acesso a algo (senha, token, chave privada, chave de API). Quem tem o segredo tem o acesso."
+  - term: hardcoded credential
+    definition: "Credencial escrita direto no código ou num arquivo de configuração versionado, em vez de vir de uma variável de ambiente ou de um cofre de segredos."
+  - term: secret rotation
+    definition: "Trocar um segredo por um novo e invalidar o antigo. É a única forma de neutralizar um segredo que vazou."
+  - term: secret scanning
+    definition: "Varredura de segredos: procurar automaticamente, em código e no histórico, padrões que parecem senhas, tokens e chaves."
+  - term: push protection
+    definition: "Recurso do GitHub que bloqueia um push quando detecta um segredo nos commits enviados. Para contas pessoais, vem ligado por padrão ao enviar para repositórios públicos."
+  - term: GitHub
+    definition: "Serviço da Microsoft que hospeda repositórios Git na internet, públicos ou privados, com recursos de colaboração e segurança. GitLab e Gitea são alternativas."
+  - term: SSH key
+    definition: "Par de chaves (privada e pública) usado para se autenticar por SSH sem senha. A pública vai para o servidor; a privada nunca sai do seu computador."
+  - term: known_hosts
+    definition: "Arquivo ~/.ssh/known_hosts, onde o SSH guarda a chave pública de cada servidor já visitado, para avisar se ela mudar."
+  - term: personal access token
+    definition: "Token pessoal que substitui a senha da conta em operações do Git por HTTPS no GitHub. Deve ter validade e permissões mínimas."
+  - term: git-filter-repo
+    definition: "Ferramenta recomendada pelo próprio projeto Git para reescrever o histórico, por exemplo para remover de todos os commits um arquivo com dados sensíveis."
+  - term: gitleaks
+    definition: "Ferramenta de código aberto que procura segredos em repositórios Git (no histórico inteiro), em pastas e na entrada padrão."
+  - term: submodule
+    definition: "Repositório Git incluído dentro de outro, numa pasta, apontando para um commit específico do repositório de fora."
+  - term: commit signing
+    definition: "Assinar commits com uma chave GPG ou SSH, para provar quem os criou. O campo de autor sozinho pode ser preenchido com qualquer nome."
+  - term: chain of custody
+    definition: "Cadeia de custódia: o registro de quem coletou, guardou e manipulou uma evidência, e quando. Serve para provar que ela não foi alterada."
+---
+
+import tresAreas from "./img/tres-areas.svg";
+import objetos from "./img/objetos-do-git.svg";
+import branchesMerge from "./img/branches-e-merge.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Todo pentest produz uma montanha de texto: o escopo combinado com o cliente, a saída de
+cada varredura, os comandos que funcionaram, os que não funcionaram, os achados, os
+rascunhos do relatório. Num teste de duas semanas, essa montanha muda várias vezes por
+dia, e quase sempre alguém pergunta depois: "quando o cliente tirou aquele servidor do
+escopo?", "o que estava no relatório que mandamos na terça?". Quem guarda tudo em
+pastas com nomes como `relatorio-final-v3-AGORA-SIM.md` não sabe responder.
+
+O <GlossaryTerm term="Git">Git</GlossaryTerm> é a ferramenta que resolve isso. Ele é um
+sistema de <GlossaryTerm term="version control">version control</GlossaryTerm>
+(controle de versão): registra cada mudança dos seus arquivos, com quem fez, quando e
+por quê, e deixa você comparar e voltar a qualquer ponto. É o padrão absoluto do
+desenvolvimento de software, e por isso aparece o tempo todo em segurança dos dois
+lados:
+
+- **quem defende e quem testa** usa Git para versionar anotações, scripts e
+  relatórios, e para provar o que foi feito e quando;
+- **quem ataca** sabe que o histórico do Git guarda tudo, inclusive o que alguém achou
+  que tinha apagado. Senhas e chaves esquecidas em repositórios estão por trás de
+  incidentes reais, como os da Uber e da Toyota que você vai ver na seção 4.
+
+Este módulo ensina o Git por dentro, não só a decorar comandos. Você vai entender o que
+acontece na pasta `.git` a cada `commit`, e é esse entendimento que explica por que
+"apagar" um segredo no commit seguinte não apaga nada.
+
+**Ao final, você vai saber:**
+
+- explicar as três áreas do Git (working tree, staging area e repositório) e o caminho
+  de uma mudança até o histórico;
+- criar um repositório, fazer commits pequenos e bem descritos, e ler o histórico com
+  `git status`, `git log`, `git diff` e `git show`;
+- explicar o que são blobs, trees, commits e branches e por que o hash de cada um
+  protege o histórico contra alterações;
+- criar branches, fazer merge e resolver um conflito;
+- trabalhar com um repositório remoto (clone, fetch, pull, push), inclusive privado no
+  GitHub, com chave SSH;
+- encontrar um segredo "apagado" no histórico, analisar uma pasta `.git` recuperada e
+  saber como se defender dos dois problemas.
+
+**Pré-requisito:** 0.4 — Linux: processos, pacotes e edição (você vai instalar o git
+com `apt`, editar arquivos no `nano` e usar variáveis de ambiente). O 0.4 depende do
+0.3, de onde vêm a navegação, o `cat`, o `grep`, o pipe e as permissões.
+
+**Tempo estimado:** de 3 a 4 horas, incluindo as missões. As missões rodam no **seu
+WSL**, numa pasta descartável; não há laboratório para ligar.
+
+<Callout variant="ethics">
+Tudo aqui roda em repositórios **fictícios**, gerados no seu próprio computador. As
+técnicas de leitura de histórico são as mesmas que um atacante usa contra repositórios
+públicos e servidores mal configurados, mas acessar sistemas, contas ou repositórios
+privados de terceiros sem autorização por escrito é crime no Brasil (a Trilha 1 trata da
+lei). Achou um segredo exposto de alguém? O caminho ético é avisar o dono, não usar.
+</Callout>
+
+## 2. Teoria aprofundada — o Git por dentro
+
+### 2.1 O problema que o Git resolve
+
+Imagine o caderno de campo de um pentest como uma pasta de arquivos de texto. Sem
+controle de versão, você só tem a versão de **agora**. Se o arquivo `escopo.md` dizia
+três servidores ontem e hoje diz dois, ninguém sabe quando mudou, quem mudou e por quê.
+Se você apagou um parágrafo importante, ele sumiu. Se duas pessoas editam o mesmo
+relatório, uma sobrescreve a outra.
+
+O jeito ingênuo de resolver isso é copiar a pasta inteira a cada mudança importante.
+O controle de versão faz a mesma coisa, só que de forma automática, econômica e
+verificável:
+
+- cada "cópia" é um <GlossaryTerm term="commit">commit</GlossaryTerm>, uma foto do
+  estado dos arquivos, com autor, data e uma
+  <GlossaryTerm term="commit message">commit message</GlossaryTerm> (mensagem) que
+  explica o motivo;
+- arquivos que não mudaram não são copiados de novo;
+- dá para comparar quaisquer duas fotos, voltar a uma delas ou seguir por duas linhas
+  diferentes ao mesmo tempo e depois juntá-las.
+
+Os primeiros sistemas de controle de versão eram **centralizados**: o histórico vivia
+num servidor e cada pessoa tinha só a última versão. Sem o servidor, ninguém conseguia
+ver o histórico nem gravar nada. O Git, criado por Linus Torvalds em 2005 para o
+desenvolvimento do kernel Linux, é um sistema de
+<GlossaryTerm term="distributed version control">distributed version control</GlossaryTerm>
+(controle de versão distribuído): **cada cópia tem o histórico inteiro**. Você trabalha
+offline, cada cópia é um backup completo das outras e, ponto importante para segurança,
+**quem tem uma cópia tem tudo o que já passou por ela**.
+
+O lugar onde o Git guarda esse histórico é um
+<GlossaryTerm term="repository">repositório</GlossaryTerm>. No 0.4 você viu
+repositórios de pacotes do `apt`; aqui a palavra tem o sentido de "depósito de
+versões": uma pasta oculta chamada `.git`, dentro da pasta do projeto.
+
+### 2.2 As três áreas: working tree, staging area e repositório
+
+A ideia que mais confunde quem começa, e que explica quase todo o resto, é que o Git
+trabalha com **três lugares** dentro do seu computador:
+
+1. A <GlossaryTerm term="working tree">working tree</GlossaryTerm>: a pasta como você
+   a vê, com os arquivos que você abre no `nano`. Para o Git, é só um rascunho.
+2. A <GlossaryTerm term="staging area">staging area</GlossaryTerm> (área de preparação,
+   também chamada **index**, guardada no arquivo `.git/index`): o conteúdo **exato** do
+   próximo commit. O comando `git add` copia uma mudança da working tree para cá.
+3. O repositório (a pasta `.git`): o histórico de commits. O comando `git commit`
+   transforma o que está na staging area num commit novo, permanente.
+
+<Figure
+  src={tresAreas}
+  alt="Quatro caixas da esquerda para a direita: working tree, staging area, repositório local e remoto. Setas verdes para a direita com git add, git commit e git push; setas laranja de volta com git restore --staged e git fetch, e uma legenda com git switch e git restore trazendo versões do repositório para a working tree. Embaixo, git diff compara working tree com staging area, e git diff --staged compara staging area com o último commit."
+  caption="O caminho de uma mudança: git add (working tree → staging area), git commit (staging area → repositório) e git push (repositório → remoto). O git diff e o git diff --staged comparam as áreas antes de gravar."
+/>
+
+Por que existe a etapa do meio? Porque ela deixa você **escolher** o que entra em cada
+foto. Você pode ter mexido em cinco arquivos e querer gravar só dois, com uma mensagem
+que explique só aquela mudança. Um histórico de commits pequenos, cada um com um assunto
+só, é o que permite responder depois "quando e por que isto mudou". E, para segurança, a
+staging area é a **última barreira** antes de um segredo entrar no histórico: é ali que
+você confere o que vai ser gravado.
+
+O comando que mostra em que área está cada coisa é o `git status`. Você vai usá-lo o
+tempo todo. Veja a sequência real de um repositório recém-criado: primeiro o arquivo é
+desconhecido (*untracked*), depois do `git add` ele está pronto para o commit (*Changes
+to be committed*):
+
+```console
+$ git status
+On branch main
+
+No commits yet
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	README.md
+
+nothing added to commit but untracked files present (use "git add" to track)
+$ git add README.md
+$ git status
+On branch main
+
+No commits yet
+
+Changes to be committed:
+  (use "git rm --cached <file>..." to unstage)
+	new file:   README.md
+```
+
+Repare que o próprio Git diz o comando para cada próximo passo: `git add` para incluir,
+`git rm --cached` para tirar da staging area. Ler o `git status` com atenção resolve
+metade das dúvidas.
+
+### 2.3 Como o Git guarda as coisas: objetos e hashes
+
+Aqui está o coração do módulo. Por dentro, o Git é um banco de dados muito simples, uma
+pasta de **objetos**, e cada <GlossaryTerm term="Git object">Git object</GlossaryTerm>
+tem como nome o <GlossaryTerm term="hash">hash</GlossaryTerm> do próprio conteúdo
+(no 0.1 você viu o que é um hash: uma "impressão digital" de tamanho fixo calculada a
+partir dos dados; um byte diferente muda o resultado inteiro).
+
+Esse jeito de guardar se chama
+<GlossaryTerm term="content-addressable storage">content-addressable storage</GlossaryTerm>
+(armazenamento endereçado por conteúdo): você não escolhe o nome do objeto, o conteúdo
+escolhe. O hash usado por padrão é o <GlossaryTerm term="SHA-1">SHA-1</GlossaryTerm>,
+que produz 40 dígitos hexadecimais.
+
+São três tipos de objeto que importam agora:
+
+- **<GlossaryTerm term="blob">blob</GlossaryTerm>** guarda o **conteúdo** de um arquivo,
+  e só isso: sem nome, sem data, sem permissões. Dois arquivos com o mesmo conteúdo, em
+  qualquer pasta, viram o mesmo blob.
+- **<GlossaryTerm term="tree object">tree</GlossaryTerm>** representa uma pasta: uma
+  lista de nomes, cada um com suas permissões e o hash de um blob (arquivo) ou de outra
+  tree (subpasta).
+- **commit** aponta para a tree da pasta raiz naquele momento, para o commit anterior
+  (o *parent*, pai) e guarda autor, data e mensagem.
+
+Você pode ver cada um com o comando `git cat-file -p`, que imprime um objeto. Estas são
+saídas reais de um repositório com dois commits (você vai criar um igual na seção 5).
+Primeiro o commit:
+
+```console
+$ git log --oneline
+d9073d6 Anota o módulo 0.4
+8572b8e Primeiro commit: README do caderno
+$ git cat-file -p d9073d6
+tree 34f64dba32d094962d82aba84bb1ee1349808002
+parent 8572b8e726dd5f0f66a3a7a05d38404d26dfe8ad
+author Ana Pentester <ana@exemplo.com.br> 1791035330 -0300
+committer Ana Pentester <ana@exemplo.com.br> 1791035330 -0300
+
+Anota o módulo 0.4
+```
+
+O commit é um texto curto. O número `1791035330` é a data em segundos desde 1970 (o
+formato que o Linux usa internamente), e `-0300` é o fuso de Brasília. Não há arquivo
+nenhum dentro do commit, só o hash de uma tree. Seguindo a tree:
+
+```console
+$ git cat-file -p 'd9073d6^{tree}'
+100644 blob 5171deb7844dba988026924d092c14ee42d2a440	README.md
+$ git cat-file -p 5171deb
+# Meu caderno de estudos
+
+- 0.3: terminal
+- 0.4: processos e pacotes
+```
+
+A tree diz: "nesta pasta há um arquivo `README.md`, com permissão `100644` (arquivo
+comum, o `rw-r--r--` do 0.3), cujo conteúdo é o blob `5171deb...`". E o blob é o texto
+puro do arquivo.
+
+<Figure
+  src={objetos}
+  alt="HEAD aponta para refs/heads/main, que contém o hash d9073d6. O commit d9073d6 aponta para a tree 34f64db e para o commit pai 8572b8e. Cada tree aponta para um blob do README: 5171deb com 4 linhas e 8b33437 com 3 linhas."
+  caption="Como os objetos se ligam: refs apontam para commits, commits apontam para trees e para o commit pai, trees apontam para blobs. Todo nome é o hash do conteúdo."
+/>
+
+**Como o nome do blob é calculado?** O Git monta um cabeçalho com o tipo e o tamanho
+(`blob 69`, um byte nulo `\0`), cola o conteúdo do arquivo e calcula o SHA-1 do
+conjunto. Você pode refazer a conta com ferramentas comuns do Linux e conferir que bate
+com o `git hash-object`, o comando do Git que calcula o hash de um arquivo (saída
+real):
+
+```console
+$ wc -c < README.md
+69
+$ git hash-object README.md
+5171deb7844dba988026924d092c14ee42d2a440
+$ printf 'blob 69\0' | cat - README.md | sha1sum
+5171deb7844dba988026924d092c14ee42d2a440  -
+```
+
+Não há mágica: o nome de cada objeto é só uma conta sobre o conteúdo. Isso tem três
+consequências que você vai usar no resto do módulo:
+
+1. **Nada se perde por acidente.** Um commit novo nunca altera os objetos antigos; ele
+   só cria objetos novos e aponta para eles. Por isso o histórico guarda tudo.
+2. **Arquivos iguais não ocupam espaço duas vezes.** Se você faz um commit mexendo em um
+   arquivo de cem, os outros 99 continuam apontando para os mesmos blobs.
+3. **Alterar o passado é detectável.** Mudar um byte de um arquivo antigo muda o hash do
+   blob; isso muda a tree que lista o blob; isso muda o commit que aponta para a tree; e,
+   como cada commit guarda o hash do pai, muda **todos os commits seguintes**. Quem tem
+   uma cópia do histórico percebe na hora que o seu não bate.
+
+Os objetos ficam em `.git/objects/`, numa pasta com os dois primeiros dígitos do hash e
+um arquivo com o resto, comprimidos com zlib (compressão, **não** criptografia):
+
+```console
+$ find .git/objects -type f | sort
+.git/objects/01/a9fb589bb10298f83c353309118e29e105c5f3
+.git/objects/34/f64dba32d094962d82aba84bb1ee1349808002
+.git/objects/51/71deb7844dba988026924d092c14ee42d2a440
+.git/objects/85/72b8e726dd5f0f66a3a7a05d38404d26dfe8ad
+.git/objects/8b/3343764870565be68dbbae98b286ff93c15157
+.git/objects/d9/073d6dae72a9436cd51d9f5eea5221febbda7b
+```
+
+Seis objetos para dois commits: dois commits, duas trees e dois blobs (as duas versões
+do `README.md`).
+
+#### SHA-1 ainda é seguro para isso?
+
+Em **23 de fevereiro de 2017**, pesquisadores do CWI Amsterdam e do Google anunciaram o
+**SHAttered**: dois arquivos PDF diferentes com o mesmo SHA-1, a primeira
+<GlossaryTerm term="hash collision">hash collision</GlossaryTerm> (colisão) pública
+dessa função. Segundo os autores, o cálculo equivaleu a cerca de 6.500 anos de CPU e 110
+anos de GPU ([shattered.io](https://shattered.io/);
+[anúncio no blog de segurança do Google](https://security.googleblog.com/2017/02/announcing-first-sha1-collision.html)).
+Uma colisão é exatamente o que um atacante precisaria para trocar um objeto do Git por
+outro com o mesmo nome.
+
+O Git reagiu: na versão **2.13** (o GitHub
+[anunciou o lançamento em 10 de maio de 2017](https://github.blog/open-source/git/git-2-13-has-been-released/)),
+passou a usar por padrão uma implementação de SHA-1 que **detecta** tentativas de
+colisão e rejeita os objetos suspeitos. O Git também já aceita repositórios com SHA-256
+(`git init --object-format=sha256`), e o documento oficial de mudanças planejadas para o
+**Git 3.0** diz que SHA-256 será o padrão de repositórios novos, ainda sem data de
+lançamento ([BreakingChanges](https://git-scm.com/docs/BreakingChanges)). Para o seu
+uso, o recado é: o hash do Git é confiável para detectar alterações, e a migração para
+uma função mais forte já está em andamento.
+
+### 2.4 Branches e HEAD: ponteiros, não cópias
+
+Se cada commit aponta para o pai, o histórico forma uma cadeia que só anda para trás:
+do commit mais novo você chega a todos os antigos, nunca o contrário. Para o Git saber
+onde a cadeia **começa** (qual é o commit mais recente), existem as referências.
+
+Uma <GlossaryTerm term="branch">branch</GlossaryTerm> (ramo) é a referência mais comum:
+**um arquivo de texto com o hash de um commit**. Só isso. Quando você faz um commit
+novo, o Git cria o objeto e reescreve esse arquivo com o hash novo; a branch "anda" para
+frente. E o <GlossaryTerm term="HEAD">HEAD</GlossaryTerm> é a referência que diz em que
+branch você está (saída real):
+
+```console
+$ cat .git/HEAD
+ref: refs/heads/main
+$ cat .git/refs/heads/main
+d9073d6dae72a9436cd51d9f5eea5221febbda7b
+```
+
+Leia assim: "estou na branch `main`, e a `main` está no commit `d9073d6`". Como criar uma
+branch é só criar um arquivo de 41 bytes, branches são baratas: você pode abrir uma
+para cada experimento, cada rascunho de relatório, cada tentativa arriscada, sem copiar
+nenhum arquivo.
+
+Se você mandar o Git ir direto para um commit antigo (`git switch --detach 8572b8e`),
+o HEAD passa a conter um hash em vez de `ref: ...`. Esse estado se chama
+<GlossaryTerm term="detached HEAD">detached HEAD</GlossaryTerm> ("HEAD solto"). Serve
+para olhar o passado; mas commits feitos ali não pertencem a nenhuma branch e ficam
+fáceis de perder. Se quiser guardá-los, crie uma branch ali mesmo com `git switch -c`.
+
+Quando duas linhas de trabalho precisam se juntar, você faz um
+<GlossaryTerm term="merge">merge</GlossaryTerm>. Há dois casos:
+
+- **<GlossaryTerm term="fast-forward">Fast-forward</GlossaryTerm>:** se a branch de
+  destino não andou desde que a outra nasceu, não há nada a combinar. O Git só move o
+  ponteiro para frente.
+- **Commit de merge:** se as duas andaram, o Git cria um commit novo com **dois pais**,
+  combinando as mudanças. Se as duas mexeram nas mesmas linhas de um arquivo, ele não
+  adivinha qual vale: para com um
+  <GlossaryTerm term="merge conflict">merge conflict</GlossaryTerm> (conflito) e pede
+  que você decida.
+
+<Figure
+  src={branchesMerge}
+  alt="À esquerda, fast-forward: main em d9073d6 e estudo-nmap em ab5a9f8; o merge move main até ab5a9f8 sem commit novo. À direita, merge commit: depois de ab5a9f8, main ganhou 094f7e3 e revisao ganhou 08fcdc9; o merge cria 3d5c2ba com dois pais."
+  caption="Fast-forward só move o ponteiro; quando as duas linhas andaram, o merge cria um commit com dois pais. Se as duas mudaram as mesmas linhas, o Git para num conflito."
+/>
+
+Os hashes do diagrama são reais: são do repositório que você vai montar no
+walkthrough da seção 5.6.
+
+### 2.5 Ler mudanças: o diff
+
+Um <GlossaryTerm term="diff">diff</GlossaryTerm> é a diferença entre duas versões de um
+texto, linha por linha. Como o Git guarda fotos completas, o diff não está guardado em
+lugar nenhum: o comando `git diff` **calcula** a diferença na hora, comparando duas
+trees. Saber ler um diff é essencial, porque é assim que você revisa o que vai gravar e
+é assim que se investiga o que alguém mudou. Este é o diff real do arquivo de escopo do
+teste fictício da seção 5, comparando o primeiro commit (`8a22f80`) com o último
+(`6b3e942`). Em que commit, entre esses dois, a mudança aconteceu é a pergunta da
+Missão 1:
+
+```console
+$ git diff 8a22f80 6b3e942 -- escopo.md
+diff --git a/escopo.md b/escopo.md
+index bd64445..f8a6ccd 100644
+--- a/escopo.md
++++ b/escopo.md
+@@ -1,5 +1,6 @@
+ # Escopo autorizado
+ 
+ - Rede: 192.168.0.0/24
+-- Hosts: 192.168.0.10, 192.168.0.20, 192.168.0.30
++- Hosts: 192.168.0.10, 192.168.0.20
++- Fora do escopo: 192.168.0.30 (pedido do cliente em 03/09)
+ - Janela: 08h às 18h, dias úteis
+```
+
+Parte por parte:
+
+- `diff --git a/escopo.md b/escopo.md`: compara a versão antiga (`a/`) com a nova (`b/`).
+- `index bd64445..f8a6ccd`: o hash do blob antigo e do novo. É o mesmo hash que você
+  calculou com `git hash-object`.
+- `--- a/...` e `+++ b/...`: qual lado é marcado com `-` e qual com `+`.
+- `@@ -1,5 +1,6 @@`: o cabeçalho do <GlossaryTerm term="hunk">hunk</GlossaryTerm>
+  (bloco de mudanças). No arquivo antigo, o bloco começa na linha 1 e tem 5 linhas; no
+  novo, começa na linha 1 e tem 6.
+- Linhas com `-` saíram, linhas com `+` entraram, linhas com espaço no começo são
+  contexto (não mudaram). Uma linha **alterada** aparece como uma `-` seguida de uma `+`.
+
+As três formas de `git diff` que você mais vai usar:
+
+| Comando | Compara | Pergunta que responde |
+| --- | --- | --- |
+| `git diff` | working tree × staging area | O que eu mudei e ainda não dei `add`? |
+| `git diff --staged` | staging area × último commit | O que vai entrar no próximo commit? |
+| `git diff A B` | commit (ou branch) A × B | O que mudou entre essas duas versões? |
+
+### 2.6 Remotos: o mesmo histórico em outro lugar
+
+Até aqui, tudo acontece numa pasta só. Para ter backup e trabalhar com outras pessoas,
+você liga o seu repositório a um <GlossaryTerm term="remote">remote</GlossaryTerm>,
+outro repositório Git com o qual o seu troca commits. Ele pode estar numa pasta do
+mesmo computador, num servidor da empresa ou num serviço como o
+<GlossaryTerm term="GitHub">GitHub</GlossaryTerm>.
+
+- `git clone URL` cria um <GlossaryTerm term="clone">clone</GlossaryTerm>: uma cópia
+  completa, com **todo o histórico**, e registra o remote de onde veio com o nome
+  <GlossaryTerm term="origin">origin</GlossaryTerm>.
+- `git fetch` faz um <GlossaryTerm term="fetch">fetch</GlossaryTerm>: busca commits e
+  branches novos do remote e os guarda como referências remotas (`origin/main`), sem
+  mexer nos seus arquivos.
+- `git pull` faz um <GlossaryTerm term="pull">pull</GlossaryTerm>: um fetch seguido da
+  integração na sua branch (um merge, ou um rebase se você pedir).
+- `git push` faz um <GlossaryTerm term="push">push</GlossaryTerm>: envia os seus commits
+  e avança a branch do remote. O Git **recusa** o push se o remote tiver commits que você
+  ainda não tem, para você não apagar o trabalho de outra pessoa por acidente.
+
+O repositório de um servidor não precisa de working tree: ninguém edita arquivos lá, só
+envia e busca commits. Por isso ele costuma ser um
+<GlossaryTerm term="bare repository">bare repository</GlossaryTerm> (repositório "nu"),
+criado com `git init --bare`: só o conteúdo que ficaria na pasta `.git`. Na seção 5 você
+cria um numa pasta do seu WSL e treina push, pull e conflito sem internet.
+
+Para conversar com um remote na internet, o Git usa dois transportes principais:
+
+- **HTTPS**, autenticando com usuário e um
+  <GlossaryTerm term="personal access token">personal access token</GlossaryTerm>
+  (token pessoal, que substitui a senha da conta);
+- **<GlossaryTerm term="SSH">SSH</GlossaryTerm>** (visto no 0.4), autenticando com uma
+  <GlossaryTerm term="SSH key">SSH key</GlossaryTerm>: um par de chaves em que a pública
+  fica cadastrada no servidor e a privada nunca sai do seu computador.
+
+### 2.7 O que o Git garante, e o que não garante
+
+Juntando tudo, o Git oferece garantias fortes, mas específicas:
+
+- **Integridade:** o histórico é encadeado por hashes. Uma alteração no passado muda
+  todos os hashes seguintes e fica evidente para quem tem outra cópia.
+- **Memória total:** nada que entrou num commit some com um commit novo. Isso é ótimo
+  para auditoria, e péssimo para quem commitou uma senha.
+- **Não há autenticação de autor.** O nome e o e-mail do commit vêm da configuração de
+  quem o criou: qualquer pessoa pode escrever qualquer nome ali. Provar a autoria exige
+  <GlossaryTerm term="commit signing">commit signing</GlossaryTerm> (assinatura de
+  commits, ver a seção 6).
+- **Não há sigilo.** Os objetos são só comprimidos. Quem lê a pasta `.git` lê tudo.
+
+Guarde essas quatro frases: as seções 3, 4 e 8 são consequências diretas delas.
+
+## 3. Na prática da segurança
+
+### 3.1 O caderno do pentester sob controle de versão
+
+Num teste de intrusão, o trabalho de campo vira um relatório, e o relatório precisa
+resistir a perguntas difíceis: "quando vocês testaram este servidor?", "ele estava no
+escopo naquele dia?", "o que foi feito exatamente?". Um repositório Git por projeto
+responde a todas elas:
+
+- **Linha do tempo automática.** Cada commit tem data e autor. Um commit por etapa
+  ("Registra varredura do 192.168.0.10", "Escopo: cliente retirou o 192.168.0.30")
+  vira, sem esforço extra, o diário do teste.
+- **Escopo rastreável.** Testar fora do escopo é o erro mais grave que um pentester pode
+  cometer (a Trilha 1 explica por quê). Se o escopo muda no meio do teste, o `git log --
+  escopo.md` mostra quando e o diff mostra o quê. Você vai fazer exatamente isso na
+  Missão 1.
+- **Evidência com integridade.** Como os hashes encadeiam o histórico, uma cópia do
+  repositório (ou só o hash do último commit, anotado no relatório) permite mostrar
+  depois que as anotações não foram alteradas. Isso ajuda a sustentar a
+  <GlossaryTerm term="chain of custody">chain of custody</GlossaryTerm> (cadeia de
+  custódia: o registro de quem coletou e manipulou cada evidência, e quando). Mas lembre
+  da seção 2.7: o Git prova que o conteúdo não mudou, não **quem** o escreveu.
+- **Scripts e ferramentas versionados.** Seus scripts de recon (0.6) e ferramentas
+  (0.7) evoluem; com Git, você sabe qual versão rodou em cada teste.
+
+O que **não** vai para o repositório, nunca: credenciais encontradas, dumps de banco,
+capturas de tráfego, cópias de dados do cliente. Esses arquivos, que na gíria da área
+se chamam *loot* ("espólio"), ficam numa pasta fora do Git ou listada no
+<GlossaryTerm term=".gitignore">.gitignore</GlossaryTerm>, um arquivo com os padrões de
+nomes que o Git deve ignorar (seção 8). O repositório guarda o **que você fez**; os
+dados sensíveis ficam em armazenamento cifrado, pelo tempo que o contrato mandar.
+
+### 3.2 O histórico como fonte de segredos
+
+A seção 2 mostrou que um commit novo nunca apaga os objetos antigos. Agora pense no
+erro mais comum de quem desenvolve: escrever uma senha ou uma chave direto no código, uma
+<GlossaryTerm term="hardcoded credential">hardcoded credential</GlossaryTerm> (credencial
+"chumbada" no código). Alguém percebe, apaga a linha e faz um commit "Remove senha". O
+arquivo atual está limpo, mas o commit anterior ainda aponta para o blob com a senha, e
+**cada clone tem uma cópia desse blob**.
+
+Por isso, quando um pentester ou um atacante tem acesso a um repositório (público,
+vazado ou de um cliente que autorizou a análise), ele não olha só os arquivos atuais. Ele
+lê o histórico inteiro procurando um <GlossaryTerm term="secret">secret</GlossaryTerm>
+(segredo: senha, token, chave privada, chave de API). As perguntas que se faz ao
+histórico são sempre as mesmas, e o Git tem um comando para cada uma:
+
+| Pergunta | Comando |
+| --- | --- |
+| Que arquivos já existiram e sumiram? | `git log --diff-filter=D --name-only` |
+| Em que commits este arquivo aparece? | `git log --oneline -- caminho` |
+| Qual commit adicionou ou removeu este texto? | `git log -S 'texto' --oneline` |
+| Como era o arquivo naquele commit? | `git show <commit>:caminho` |
+| Tudo o que mudou, em todas as branches | `git log -p --all` |
+
+O mesmo raciocínio, automatizado, é o que fazem as ferramentas de
+<GlossaryTerm term="secret scanning">secret scanning</GlossaryTerm> (varredura de
+segredos), como o <GlossaryTerm term="gitleaks">gitleaks</GlossaryTerm>: elas percorrem o
+histórico procurando padrões de senhas, tokens e chaves. Defensores as rodam para achar
+os segredos antes de qualquer outra pessoa (seção 8). Na Missão 2 você faz essa busca na
+mão, num repositório fictício.
+
+### 3.3 A pasta .git publicada por engano
+
+Muitos sites são publicados assim: alguém faz `git clone` ou `git pull` direto na pasta
+que o servidor web serve. Os arquivos do site ficam lá, e a pasta `.git` também. Se o
+servidor web não for configurado para recusar caminhos que começam com `/.git`, a pasta
+inteira fica acessível pela internet, com o código, o histórico e tudo o que um dia foi
+commitado, inclusive arquivos de configuração com senhas que nem estão mais no site.
+
+É por isso que o caminho `/.git/HEAD` aparece nas wordlists de
+<GlossaryTerm term="directory brute forcing">directory brute forcing</GlossaryTerm> (a
+lista do log fictício do 0.6 tinha esse item): é um dos primeiros arquivos que um
+reconhecimento web confere. Para quem faz o teste autorizado, achá-lo é um achado
+crítico no relatório; para quem defende, o importante é entender por que ele é grave:
+como os objetos só são comprimidos, quem lê a pasta reconstrói o repositório com os
+próprios comandos do Git.
+
+Na Missão 3 você faz a parte de **análise**: recebe uma pasta `.git` copiada de um
+servidor (sem os arquivos do site, como numa cópia feita por uma equipe de resposta a
+incidentes) e descobre, só com o Git, o que ela revela. A correção do servidor está na
+seção 8.
+
+### 3.4 Metadados: o que os commits contam sobre as pessoas
+
+Todo commit carrega o nome e o e-mail de quem o criou, além de data e fuso horário. Num
+repositório público de uma empresa, um único comando lista quem trabalha no projeto, o
+formato dos e-mails corporativos e até o horário de trabalho de cada pessoa:
+
+```console
+$ git log --all --format='%an <%ae> %ad' --date=short | sort -u
+```
+
+Isso é OSINT (inteligência de fontes abertas, assunto do módulo de OSINT da Trilha 2):
+informação pública que ajuda a montar uma campanha de engenharia social ou uma lista de
+usuários para testar. A defesa é simples: o GitHub oferece um e-mail `noreply` para usar
+nos commits, e a configuração `user.email` decide o que vai em cada commit (seção 8).
+
+### 3.5 Clonar um repositório não é um ato inofensivo
+
+Um repositório não é só texto. O Git executa
+<GlossaryTerm term="Git hook">Git hooks</GlossaryTerm> (scripts em `.git/hooks/` que
+rodam em certos momentos, como antes de cada commit), e algumas configurações também
+podem disparar programas. Normalmente, nada disso vem no clone: os hooks de um
+repositório baixado não são copiados para o seu. Mas falhas no próprio Git já quebraram
+essa barreira.
+
+A **CVE-2024-32002**, publicada em **14 de maio de 2024** com severidade crítica (CVSS
+9.0), mostrou como: um repositório com um
+<GlossaryTerm term="submodule">submodule</GlossaryTerm> (um repositório incluído dentro de
+outro) preparado de um jeito específico podia, em sistemas de arquivos que não
+diferenciam maiúsculas de minúsculas e que suportam symlinks, fazer o Git gravar um
+arquivo dentro da pasta `.git` durante o `git clone` e executar um hook **antes de você
+conseguir ler o código**. Foi corrigida nas versões 2.45.1, 2.44.1, 2.43.4, 2.42.2,
+2.41.1, 2.40.2 e 2.39.4 ([advisory oficial do projeto Git](https://github.com/git/git/security/advisories/GHSA-8h77-4q3w-gfgv)).
+
+A lição vale para além dessa falha: **mantenha o Git atualizado** (é um pacote como
+qualquer outro, e o `apt` do 0.4 cuida disso) e trate repositórios de origem
+desconhecida, como as "provas de conceito" de exploits que circulam no GitHub, com a
+mesma desconfiança que um executável baixado da internet: abra numa máquina descartável.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Uber (2016): uma chave da AWS num repositório privado
+
+Segundo a análise publicada pela FTC (a agência de proteção ao consumidor dos EUA) no
+Federal Register de **25 de abril de 2018**, **entre 13 de outubro e 15 de novembro de
+2016** invasores acessaram o armazenamento de dados da Uber na Amazon (S3) usando uma
+chave de acesso da AWS que tinha sido **colocada num repositório privado do GitHub**.
+
+Como eles chegaram a um repositório privado? A Uber dava acesso aos seus repositórios
+pelas contas pessoais de GitHub dos engenheiros, em geral ligadas a e-mails pessoais;
+os invasores entraram nessas contas com **senhas que já tinham vazado em outros
+incidentes**, e a empresa não exigia autenticação multifator (MFA) para acessar os
+repositórios. Com a chave, baixaram arquivos com cerca de **25,6 milhões** de nomes e
+e-mails, **22,1 milhões** de nomes e telefones e **607 mil** números de carteira de
+motorista.
+
+A Uber descobriu o incidente em **14 de novembro de 2016**, pagou US$ 100 mil aos
+invasores pelo seu programa de *bug bounty* e só avisou os afetados em **21 de novembro
+de 2017**, mais de um ano depois. Em 12 de abril de 2018, a FTC anunciou um acordo
+ampliado com a empresa por causa desse caso.
+
+- **Impacto:** dados de dezenas de milhões de motoristas e passageiros; acordo com a FTC
+  e um caso que virou referência sobre ocultação de incidentes.
+- **Lição:** "privado" não é um cofre. O segredo estava num repositório privado, e bastou
+  uma conta sem MFA com senha reutilizada. Segredo não vai para o Git, e contas de
+  acesso ao código precisam de MFA.
+- **Fontes:** [análise da FTC no Federal Register (2018-08600)](https://www.govinfo.gov/content/pkg/FR-2018-04-25/html/2018-08600.htm)
+  e [comunicado da FTC de 12/04/2018](https://www.ftc.gov/news-events/news/press-releases/2018/04/uber-agrees-expanded-settlement-ftc-related-privacy-security-claims).
+
+### Toyota T-Connect (2017–2022): cinco anos de chave pública no GitHub
+
+Em **7 de outubro de 2022**, a Toyota publicou um comunicado oficial: em **dezembro de
+2017**, uma empresa contratada para desenvolver o site do T-Connect (serviço de carro
+conectado) tinha enviado parte do código-fonte para uma conta do GitHub **configurada
+como pública**, contra as regras de manuseio. Esse código incluía uma **chave de acesso
+ao servidor de dados** de clientes.
+
+A Toyota diz que confirmou a exposição em **15 de setembro de 2022**, tornou o código
+privado no mesmo dia e trocou a chave do servidor em **17 de setembro de 2022**. Até ali,
+de dezembro de 2017 a 15 de setembro de 2022, terceiros podiam acessar o código. Estavam
+em risco **296.019** registros com e-mail e número de cadastro de clientes; segundo a
+empresa, nomes, telefones e cartões não estavam nesse servidor. A Toyota afirmou que não
+conseguia confirmar acesso de terceiros pelos registros do servidor, mas também não
+podia descartá-lo.
+
+- **Impacto:** quase 300 mil clientes notificados e uma credencial válida exposta por
+  quase cinco anos.
+- **Lição:** um segredo no código tem a vida do código, não a do projeto. E a cadeia de
+  fornecedores conta: a chave vazou pelo repositório de uma contratada.
+- **Fonte:** [comunicado oficial da Toyota, 07/10/2022 (em japonês)](https://global.toyota/jp/newsroom/corporate/38095972.html).
+
+### GitHub (2023): a chave do próprio GitHub num repositório público
+
+Num post com data de **23 de março de 2023**, o GitHub contou que a **chave privada RSA
+do seu host SSH**, a chave que prova a cada `git push` por SSH que você está falando com
+o GitHub de verdade, tinha sido **exposta brevemente num repositório público do
+GitHub**. Por precaução, por volta das **05:00 UTC de 24 de março de 2023**, a empresa
+trocou essa chave.
+
+Quem usava SSH com RSA passou a ver um aviso de que a identificação do servidor tinha
+mudado, porque o <GlossaryTerm term="known_hosts">known_hosts</GlossaryTerm> (o arquivo
+`~/.ssh/known_hosts`, onde o SSH guarda a chave de cada servidor já visitado) ainda tinha
+a antiga. A orientação foi remover a entrada antiga com `ssh-keygen -R github.com` e
+conferir a impressão digital nova (`SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s`)
+antes de aceitar. Quem usava chaves ECDSA ou Ed25519 não foi afetado.
+
+- **Impacto:** todo mundo que acessava o GitHub por SSH com a chave RSA teve que
+  atualizar o `known_hosts`. Segundo o GitHub, a chave não dava acesso à infraestrutura
+  nem a dados de clientes, e não havia motivo para acreditar que tivesse sido abusada; a
+  troca foi feita para eliminar qualquer chance de alguém em posição de
+  <GlossaryTerm term="man-in-the-middle">man-in-the-middle</GlossaryTerm> se passar pelo
+  GitHub ou espionar operações do Git por SSH.
+- **Lição:** nem a empresa que constrói a varredura de segredos está imune a commitar um
+  segredo. A resposta certa foi a do manual: **trocar o segredo** imediatamente. E o
+  aviso do SSH sobre chave mudada não é para ser ignorado: confira a impressão digital
+  na fonte oficial.
+- **Fonte:** [We updated our RSA SSH host key — blog do GitHub](https://github.blog/news-insights/company-news/we-updated-our-rsa-ssh-host-key/).
+
+## 5. Mãos à obra — exercícios no seu WSL
+
+Este módulo não tem laboratório próprio. O git não está instalado no `linux-sandbox` do
+0.3, e não precisa: o Git é uma ferramenta do seu dia a dia, então você vai praticar no
+**seu WSL**, numa pasta descartável chamada `~/treino-git`. Nada aqui usa a rede, abre
+portas ou mexe em outros repositórios seus.
+
+**Objetivo:** ao terminar, você terá criado o seu primeiro repositório, investigado o
+histórico de um caderno de pentest fictício (Missões 1 e 2), analisado uma pasta `.git`
+copiada de um servidor (Missão 3) e treinado branch, merge, conflito e remote num
+repositório "servidor" local. Cada missão termina numa flag; as três flags são
+**hashes** que o Git calcula no seu computador, então só aparecem se você fizer o
+exercício.
+
+### 5.1 Preparação (passo a passo)
+
+1. **Confira se o git está instalado.** Abra o terminal do Ubuntu no WSL:
+
+   ```console
+   $ git --version
+   git version 2.53.0
+   ```
+
+   Qualquer versão a partir da 2.32 serve para este módulo (a sua pode ser diferente
+   desta). Se aparecer `command not found`, instale pelo `apt`, como no 0.4:
+
+   ```bash
+   sudo apt update && sudo apt install git
+   ```
+
+2. **Diga ao Git quem você é.** Cada commit grava um nome e um e-mail. Sem isso, o
+   primeiro commit falha (você vai ver o erro na seção 7). A opção `--global` grava a
+   configuração no arquivo `~/.gitconfig` e vale para todos os seus repositórios:
+
+   ```bash
+   git config --global user.name "Seu Nome"
+   git config --global user.email "seu-email@exemplo.com"
+   git config --global init.defaultBranch main
+   git config --global core.editor nano
+   ```
+
+   As duas últimas linhas fazem os repositórios novos começarem na branch `main` (o nome
+   que o Git 3.0 vai adotar por padrão) e fazem o Git abrir o `nano` quando precisar de
+   um editor, em vez do vim. Confira com `git config --global --list`.
+
+<Callout variant="warning" title="Esse e-mail fica público se o repositório for público">
+O e-mail entra em cada commit e qualquer pessoa com um clone o lê (seção 3.4). Se você
+vai publicar algo no GitHub, use o e-mail `noreply` que o GitHub oferece nas
+configurações de e-mail da conta.
+</Callout>
+
+3. **Gere os repositórios das missões.** O bloco abaixo cria, em `~/treino-git`, dois
+   repositórios **fictícios**: `anotacoes-pentest` (o caderno de campo de um teste
+   inventado) e `site-recuperado` (uma pasta `.git` sozinha). Copie o bloco inteiro,
+   cole no terminal e aperte Enter.
+
+```bash
+mkdir -p ~/treino-git && cd ~/treino-git && rm -rf anotacoes-pentest site-recuperado && (
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+export GIT_AUTHOR_NAME="Ana Pentester" GIT_AUTHOR_EMAIL="ana@exemplo.com.br"
+export GIT_COMMITTER_NAME="Ana Pentester" GIT_COMMITTER_EMAIL="ana@exemplo.com.br"
+quando() { export GIT_AUTHOR_DATE="2026-09-$1 -0300" GIT_COMMITTER_DATE="2026-09-$1 -0300"; }
+novo() { git init -q --template= --object-format=sha1 -b main "$1"; }
+salva() { quando "$1"; git add -A && git commit -q -m "$2"; }
+
+novo anotacoes-pentest && cd anotacoes-pentest || exit
+printf '# Teste de intrusão — ACME Exemplo Ltda.\n\nCaderno de campo do teste autorizado (contrato fictício 2026-017).\nUm commit por etapa; nada de dados reais do cliente aqui.\n' > README.md
+printf '# Escopo autorizado\n\n- Rede: 192.168.0.0/24\n- Hosts: 192.168.0.10, 192.168.0.20, 192.168.0.30\n- Janela: 08h às 18h, dias úteis\n' > escopo.md
+salva "01 09:12:00" "Inicia caderno do teste: README e escopo"
+mkdir recon
+printf 'PORT     STATE SERVICE\n22/tcp   open  ssh\n80/tcp   open  http\n3306/tcp open  mysql\n' > recon/nmap-192.168.0.10.txt
+salva "01 10:40:00" "Registra varredura inicial do 192.168.0.10"
+mkdir scripts
+printf '#!/bin/sh\n# Consulta a API do cliente com o token do .env\n. ./.env\ncurl -s -H "Authorization: Bearer $API_TOKEN" "$API_URL/v1/status"\n' > scripts/consulta-api.sh
+printf 'API_URL=https://api.acme-exemplo.com.br\nAPI_TOKEN=tok-ficticio-3b9e1c0d5a7f\n' > .env
+salva "01 11:05:00" "Prepara os scripts de automação"
+printf '# Achados\n\n1. Painel /admin em 192.168.0.10 aceita a senha padrão.\n' > achados.md
+salva "02 14:30:00" "Anota achado: painel admin com senha padrão"
+git rm -q .env
+salva "02 14:52:00" "Limpeza de arquivos temporários"
+printf '# Escopo autorizado\n\n- Rede: 192.168.0.0/24\n- Hosts: 192.168.0.10, 192.168.0.20\n- Fora do escopo: 192.168.0.30 (pedido do cliente em 03/09)\n- Janela: 08h às 18h, dias úteis\n' > escopo.md
+salva "03 09:01:00" "Escopo: cliente retirou o 192.168.0.30"
+printf '.env\n*.pcap\nloot/\n' > .gitignore
+salva "03 09:20:00" "Adiciona .gitignore"
+git switch -q -c rascunho-relatorio
+printf '# Relatório — rascunho\n\n## Resumo executivo\n\nUm achado crítico até agora.\n' > relatorio.md
+salva "04 16:00:00" "Começa o rascunho do relatório"
+git switch -q main
+printf 'PORT   STATE SERVICE\n22/tcp open  ssh\n443/tcp open  https\n' > recon/nmap-192.168.0.20.txt
+salva "04 17:10:00" "Registra varredura do 192.168.0.20"
+cd ..
+
+novo site-recuperado && cd site-recuperado || exit
+printf '<h1>ACME Exemplo</h1>\n<p>Em construção.</p>\n' > index.html
+printf '<?php\n$db_host = "127.0.0.1";\n$db_user = "site";\n$db_pass = getenv("DB_PASS");\n' > config.php
+salva "10 08:00:00" "Primeira versão do site"
+git switch -q -c deploy-antigo
+printf '<?php\n$db_host = "127.0.0.1";\n$db_user = "root";\n$db_pass = "acme@2019";\n' > config.php
+salva "11 19:45:00" "Deploy de emergência: config direto no código"
+printf 'Painel em /painel-acme-2019/\n' > LEIA-ME-DEPLOY.txt
+salva "11 19:50:00" "Anota onde ficou o painel"
+git switch -q main
+printf '<h1>ACME Exemplo</h1>\n<p>Bem-vindo!</p>\n' > index.html
+salva "12 10:00:00" "Página inicial nova"
+rm -f index.html config.php && cd ..
+) && ls -A ~/treino-git ~/treino-git/site-recuperado
+```
+
+   Você não precisa entender cada linha agora, mas vale saber o que o bloco faz, porque
+   ele usa justamente a teoria da seção 2. As variáveis de ambiente `GIT_AUTHOR_*` e
+   `GIT_COMMITTER_*` fixam autor e **data** de cada commit, e `GIT_CONFIG_GLOBAL=/dev/null`
+   faz o Git ignorar a sua configuração pessoal só durante a geração. Como o hash de um
+   commit é calculado a partir do conteúdo, do autor, da data e do pai, **todo mundo
+   que roda este bloco obtém exatamente os mesmos hashes**. É por isso que as flags
+   podem ser hashes. Tudo roda dentro de parênteses, um subshell (0.6), para essas
+   variáveis não sobrarem no seu terminal.
+
+4. **Confira o resultado** (saída real):
+
+```console
+$ ls -A ~/treino-git ~/treino-git/site-recuperado
+/home/aluno/treino-git:
+anotacoes-pentest
+site-recuperado
+
+/home/aluno/treino-git/site-recuperado:
+.git
+```
+
+   Se algo der errado em qualquer missão, rode o bloco de novo: ele apaga e recria os
+   dois repositórios do zero (só eles; outras pastas de `~/treino-git` ficam intactas).
+
+### 5.2 Seu primeiro repositório (guiado, sem flag)
+
+Antes de investigar o histórico dos outros, crie o seu. Este é o ciclo que você vai
+repetir milhares de vezes: **editar → `git status` → `git add` → `git diff --staged` →
+`git commit`**.
+
+**Etapa 1: criar o repositório.**
+
+```console
+$ cd ~/treino-git
+$ git init meu-caderno
+Initialized empty Git repository in /home/aluno/treino-git/meu-caderno/.git/
+$ cd meu-caderno
+$ ls -A
+.git
+```
+
+O `git init` só criou a pasta oculta `.git` (lembra do 0.3? nome com ponto, só aparece
+com `ls -a`). Ela **é** o repositório; a pasta `meu-caderno` em volta é a working tree.
+
+**Etapa 2: o primeiro commit.** Crie o `README.md` com o `nano` (ou com o `printf`
+abaixo), coloque-o na staging area e grave:
+
+```console
+$ printf '# Meu caderno de estudos\n\n- 0.3: terminal\n' > README.md
+$ git add README.md
+$ git commit -m "Primeiro commit: README do caderno"
+[main (root-commit) 8572b8e] Primeiro commit: README do caderno
+ 1 file changed, 3 insertions(+)
+ create mode 100644 README.md
+```
+
+`root-commit` indica o primeiro commit, sem pai. O `8572b8e` é o começo do hash; **o
+seu será outro**, porque o seu nome, o seu e-mail e o horário entram na conta. A opção
+`-m` passa a mensagem direto; sem ela, o Git abre o editor para você escrevê-la.
+
+**Etapa 3: mudar, ver a diferença e gravar de novo.**
+
+```console
+$ printf '# Meu caderno de estudos\n\n- 0.3: terminal\n- 0.4: processos e pacotes\n' > README.md
+$ git status
+On branch main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+$ git diff
+diff --git a/README.md b/README.md
+index 8b33437..5171deb 100644
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,4 @@
+ # Meu caderno de estudos
+ 
+ - 0.3: terminal
++- 0.4: processos e pacotes
+$ git add README.md
+$ git diff
+$ git diff --staged
+diff --git a/README.md b/README.md
+index 8b33437..5171deb 100644
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,4 @@
+ # Meu caderno de estudos
+ 
+ - 0.3: terminal
++- 0.4: processos e pacotes
+$ git commit -m "Anota o módulo 0.4"
+[main d9073d6] Anota o módulo 0.4
+ 1 file changed, 1 insertion(+)
+```
+
+Repare no detalhe que mais confunde iniciantes: depois do `git add`, o `git diff`
+simples ficou **vazio**. Não é que a mudança sumiu; ela saiu da working tree e foi para
+a staging area, e quem a mostra agora é o `git diff --staged`. Os hashes dos blobs no
+`index 8b33437..5171deb` são iguais aos seus: blobs dependem só do conteúdo, e o seu
+`README.md` é igual a este.
+
+**Etapa 4: o histórico.**
+
+```console
+$ git log --oneline
+d9073d6 Anota o módulo 0.4
+8572b8e Primeiro commit: README do caderno
+```
+
+Agora volte à seção 2.3 e repita no seu repositório o `git cat-file -p` em cada objeto
+e a conta do `sha1sum`. Os hashes dos seus commits serão diferentes dos de lá; os dos
+blobs, iguais. Explique para você mesmo por quê, antes de seguir.
+
+<Hint title="Por que os commits mudam e os blobs não?">
+O blob depende só do conteúdo do arquivo. O commit inclui autor, e-mail e a data em
+segundos: basta um desses ser diferente para o hash do commit mudar.
+</Hint>
+
+### 5.3 Missão 1 — Quem mexeu no escopo? (guiada)
+
+**Cenário:** você entrou no meio de um teste de intrusão fictício. A colega que
+começou deixou o caderno `anotacoes-pentest`. Antes de rodar qualquer coisa, você
+precisa confirmar o escopo **atual** e descobrir se ele mudou.
+
+**Etapa 1: o estado atual.**
+
+```console
+$ cd ~/treino-git/anotacoes-pentest
+$ git status
+On branch main
+nothing to commit, working tree clean
+$ cat escopo.md
+```
+
+`working tree clean` significa que os arquivos da pasta são exatamente os do último
+commit. Leia o `escopo.md`: há uma linha "Fora do escopo". Quando isso entrou?
+
+**Etapa 2: o histórico.**
+
+```console
+$ git log --oneline
+```
+
+Você deve ver **8 commits**, um por linha, do mais novo para o mais antigo. O primeiro
+da lista é `6b3e942 Registra varredura do 192.168.0.20` e o último é
+`8a22f80 Inicia caderno do teste: README e escopo`: os mesmos hashes para todo mundo,
+porque o gerador fixou autor e datas. Se forem diferentes, o bloco foi colado com
+alguma alteração; rode-o de novo. Leia as mensagens: elas contam a história do teste.
+
+**Etapa 3: filtrar por arquivo.** Num histórico de verdade, com centenas de commits,
+você não lê tudo; pergunta só sobre o arquivo que interessa. O `--` separa as opções do
+caminho:
+
+```console
+$ git log --oneline -- escopo.md
+```
+
+Rode e veja quantos commits mexeram no escopo. Depois use `git show <hash>` no mais
+recente deles e leia o diff, como na seção 2.5: que host saiu, e por quê?
+
+**A flag:** os 7 primeiros caracteres do hash do commit que **tirou um host do escopo**,
+no formato `FLAG{xxxxxxx}`.
+
+<Hint title="Dica">
+São dois commits no `git log -- escopo.md`: um criou o arquivo, o outro o alterou. O que
+interessa é o que tem uma linha `-` com o 192.168.0.30.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ git log --oneline -- escopo.md
+58ffadb Escopo: cliente retirou o 192.168.0.30
+8a22f80 Inicia caderno do teste: README e escopo
+```
+
+O `git show 58ffadb` mostra o diff da seção 2.5: a lista de hosts perdeu o
+192.168.0.30, que passou para a linha "Fora do escopo", a pedido do cliente. A flag é o
+hash curto desse commit dentro de `FLAG{ }`.
+</Solution>
+
+<FlagInput task="missao-1-escopo-alterado" />
+
+<Callout variant="tip" title="Isso é o que um pentester faz de verdade">
+Antes de testar um host, confira se ele ainda está no escopo **hoje**. Neste caderno, a
+varredura do 192.168.0.30 seria um teste não autorizado desde 3 de setembro.
+</Callout>
+
+### 5.4 Missão 2 — O segredo que foi "apagado" (desafio)
+
+**Cenário:** o `.gitignore` deste caderno lista o `.env`, o arquivo onde costumam ficar
+variáveis com tokens. Mas o `scripts/consulta-api.sh` lê um `.env` que não está na
+pasta:
+
+```console
+$ ls -A
+.git  .gitignore  README.md  achados.md  escopo.md  recon  scripts
+$ cat .gitignore
+.env
+*.pcap
+loot/
+$ head -3 scripts/consulta-api.sh
+#!/bin/sh
+# Consulta a API do cliente com o token do .env
+. ./.env
+```
+
+Sua suspeita: alguém commitou o `.env` antes de criar o `.gitignore` e depois o apagou.
+Se for verdade, o token (fictício) continua no histórico, e qualquer pessoa com um clone
+deste caderno pode lê-lo.
+
+**Seu objetivo:** provar a suspeita. Encontre o commit que **adicionou** o `.env`, o
+commit que o **removeu** e leia o conteúdo do arquivo como ele era. Repare que nenhuma
+mensagem de commit cita o `.env`: ler o `git log --oneline` não basta. Use a tabela da
+seção 3.2.
+
+**A flag:** os 7 primeiros caracteres do hash do commit que **adicionou** o `.env`, no
+formato `FLAG{xxxxxxx}`.
+
+<Hint title="Dica 1">
+O `git log -- caminho` funciona mesmo para um arquivo que não existe mais na pasta. Ele
+mostra todo commit que mexeu naquele caminho.
+</Hint>
+
+<Hint title="Dica 2">
+A opção `--diff-filter` filtra o tipo de mudança: `A` (*added*, adicionado), `D`
+(*deleted*, apagado), `M` (*modified*). Para ler um arquivo como ele era num commit, use
+`git show <commit>:caminho`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ git log --oneline -- .env
+8db591b Limpeza de arquivos temporários
+e8f07c1 Prepara os scripts de automação
+$ git log --oneline --diff-filter=A -- .env
+e8f07c1 Prepara os scripts de automação
+$ git log --oneline --diff-filter=D -- .env
+8db591b Limpeza de arquivos temporários
+$ git show --stat e8f07c1
+commit e8f07c1b94ff3df7fa30ba644946360e0a92b487
+Author: Ana Pentester <ana@exemplo.com.br>
+Date:   Tue Sep 1 11:05:00 2026 -0300
+
+    Prepara os scripts de automação
+
+ .env                    | 2 ++
+ scripts/consulta-api.sh | 4 ++++
+ 2 files changed, 6 insertions(+)
+$ git show e8f07c1:.env
+API_URL=https://api.acme-exemplo.com.br
+API_TOKEN=tok-ficticio-3b9e1c0d5a7f
+```
+
+O `.env` entrou no commit `e8f07c1`, junto com o script, e saiu no `8db591b`, que tem
+uma mensagem genérica. Mesmo "apagado", o token está a um comando de distância. Outro
+caminho para a mesma resposta é procurar pelo texto: `git log -S API_TOKEN --oneline`
+lista os dois commits que adicionaram e removeram essa string.
+</Solution>
+
+<FlagInput task="missao-2-segredo-apagado" />
+
+Repare em três lições que esta missão deixa, e que voltam na seção 8:
+
+1. O `.gitignore` foi criado **depois** do `.env` entrar no histórico, e ele não age
+   sobre o passado.
+2. O commit que "limpou" o arquivo só mudou o estado daqui para frente. Para tirar o
+   token do histórico seria preciso **reescrever** o histórico, e mesmo assim os clones
+   antigos continuariam com ele.
+3. Se este fosse um token real, a única resposta que resolve é **revogá-lo** no serviço
+   que o emitiu.
+
+### 5.5 Missão 3 — A pasta .git recuperada (desafio)
+
+**Cenário:** a equipe de resposta a incidentes da ACME Exemplo (fictícia) descobriu que
+o servidor do site publicava a pasta `.git` e copiou só essa pasta para análise. Você
+recebeu a cópia em `~/treino-git/site-recuperado`. Ela não tem nenhum arquivo do site,
+só o `.git`. Sua tarefa é descobrir o que essa pasta revelaria a quem a baixasse.
+
+**Etapa guiada: recuperar os arquivos.**
+
+```console
+$ cd ~/treino-git/site-recuperado
+$ ls -A
+.git
+$ git status
+On branch main
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	deleted:    config.php
+	deleted:    index.html
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+
+Para o Git, a working tree está vazia porque os arquivos foram "apagados". Mas o último
+commit tem tudo. O próprio `git status` sugere o comando que traz os arquivos de volta a
+partir do repositório:
+
+```console
+$ git restore .
+$ ls
+config.php  index.html
+```
+
+O site atual (branch `main`) está de volta, e o `config.php` dele está bem feito: lê a
+senha do banco de uma variável de ambiente (`getenv("DB_PASS")`), sem senha no código.
+Até aqui, nada grave.
+
+**Desafio:** a pasta `.git` não guarda só a `main`. Descubra **que outras branches
+existem**, **o que elas têm que a `main` não tem** e, em particular, como era o
+`config.php` lá. Depois, pegue o hash do **blob** desse `config.php` (lembre da seção
+2.3: o blob tem nome próprio, igual em qualquer repositório).
+
+**A flag:** os 7 primeiros caracteres do hash do blob do `config.php` da branch
+esquecida, no formato `FLAG{xxxxxxx}`.
+
+<Hint title="Dica 1">
+`git branch` lista as branches locais; com `-v`, mostra também o último commit de cada
+uma. Para ver os commits que estão numa branch e não na `main`, use `git log
+main..<branch>`.
+</Hint>
+
+<Hint title="Dica 2">
+`git diff main <branch> --stat` resume que arquivos mudam; `git diff main <branch> --
+config.php` mostra o diff completo, e a linha `index` do diff já traz os hashes dos dois
+blobs. Outro caminho: `git rev-parse <branch>:config.php`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ git branch -v
+  deploy-antigo 9135bb0 Anota onde ficou o painel
+* main          7bbea8d Página inicial nova
+$ git log --oneline --all --graph
+* 7bbea8d Página inicial nova
+| * 9135bb0 Anota onde ficou o painel
+| * 0934949 Deploy de emergência: config direto no código
+|/  
+* fa00aae Primeira versão do site
+$ git log --oneline main..deploy-antigo
+9135bb0 Anota onde ficou o painel
+0934949 Deploy de emergência: config direto no código
+$ git diff --stat main deploy-antigo
+ LEIA-ME-DEPLOY.txt | 1 +
+ config.php         | 4 ++--
+ index.html         | 2 +-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+$ git diff main deploy-antigo -- config.php
+diff --git a/config.php b/config.php
+index 922ab88..5f8ec2b 100644
+--- a/config.php
++++ b/config.php
+@@ -1,4 +1,4 @@
+ <?php
+ $db_host = "127.0.0.1";
+-$db_user = "site";
+-$db_pass = getenv("DB_PASS");
++$db_user = "root";
++$db_pass = "acme@2019";
+$ git rev-parse deploy-antigo:config.php
+5f8ec2b6e1e543475c9821ee915a1af20b92cc2d
+```
+
+A branch `deploy-antigo` guarda um "deploy de emergência" com o usuário `root` do banco e
+a senha escrita no código, mais um arquivo que revela o caminho de um painel
+administrativo. Nada disso está no site atual, e tudo isso estava ao alcance de quem
+baixasse a pasta `.git`. A flag é o começo do hash do blob, `5f8ec2b`, dentro de `FLAG{ }`.
+
+Para conferir que é mesmo o hash do **conteúdo**, calcule de novo a partir do texto:
+`git show deploy-antigo:config.php | git hash-object --stdin` dá o mesmo valor.
+</Solution>
+
+<FlagInput task="missao-3-git-recuperado" />
+
+<Callout variant="info" title="O que entraria num relatório">
+Num teste autorizado, este achado seria crítico: diretório `.git` publicado pelo
+servidor web, com histórico contendo credencial de banco (usuário `root`) e o caminho de
+um painel administrativo. A recomendação teria três partes: bloquear `/.git` no servidor
+(seção 8.5), trocar a senha do banco e tirar o repositório da pasta publicada.
+</Callout>
+
+### 5.6 Walkthrough: branch, merge e conflito (sem flag)
+
+Volte ao seu `meu-caderno`. Aqui você reproduz o diagrama da seção 2.4. Os hashes da
+saída abaixo são da execução real deste módulo; os seus serão outros.
+
+**Fast-forward.** Crie uma branch, faça um commit nela e junte na `main`:
+
+```console
+$ cd ~/treino-git/meu-caderno
+$ git switch -c estudo-nmap
+Switched to a new branch 'estudo-nmap'
+$ printf '# nmap\n\n- -sV descobre versões\n' > nmap.md
+$ git add nmap.md
+$ git commit -m "Anotações de nmap"
+[estudo-nmap ab5a9f8] Anotações de nmap
+ 1 file changed, 3 insertions(+)
+ create mode 100644 nmap.md
+$ git switch main
+Switched to branch 'main'
+$ ls
+README.md
+$ git merge estudo-nmap
+Updating d9073d6..ab5a9f8
+Fast-forward
+ nmap.md | 3 +++
+ 1 file changed, 3 insertions(+)
+ create mode 100644 nmap.md
+```
+
+Repare: ao voltar para a `main`, o `nmap.md` **sumiu da pasta**. O `git switch` troca a
+working tree para a foto daquela branch. Depois do merge, a `main` só andou até o commit
+da outra branch: `Fast-forward`.
+
+**Conflito.** Agora mude a **mesma linha** em duas branches diferentes:
+
+```console
+$ git switch -c revisao
+Switched to a new branch 'revisao'
+$ sed -i 's/- 0.3: terminal/- 0.3: terminal (refazer missão 3)/' README.md
+$ git commit -am "Marca a missão 3 para refazer"
+[revisao 08fcdc9] Marca a missão 3 para refazer
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ git switch main
+Switched to branch 'main'
+$ sed -i 's/- 0.3: terminal/- 0.3: terminal (concluído)/' README.md
+$ git commit -am "Marca o 0.3 como concluído"
+[main 094f7e3] Marca o 0.3 como concluído
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ git merge revisao
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+Automatic merge failed; fix conflicts and then commit the result.
+$ cat README.md
+# Meu caderno de estudos
+
+<<<<<<< HEAD
+- 0.3: terminal (concluído)
+=======
+- 0.3: terminal (refazer missão 3)
+>>>>>>> revisao
+- 0.4: processos e pacotes
+```
+
+O `-a` do `git commit -am` faz o `add` de todos os arquivos já rastreados antes do
+commit (atalho útil, mas que pula a revisão do `git diff --staged`). O `sed` é só para
+editar sem abrir o editor; no dia a dia, use o `nano`.
+
+O conflito é o Git dizendo: "as duas versões mexeram nesta linha; escolha você". Entre
+`<<<<<<< HEAD` e `=======` está a versão da branch atual; entre `=======` e
+`>>>>>>> revisao`, a da outra. Para resolver: abra o arquivo no `nano`, deixe o texto
+como deve ficar, **apague as três linhas de marcação**, salve, e conclua:
+
+```console
+$ nano README.md
+$ git add README.md
+$ git commit --no-edit
+[main 3d5c2ba] Merge branch 'revisao'
+$ git log --oneline --graph -5
+*   3d5c2ba Merge branch 'revisao'
+|\  
+| * 08fcdc9 Marca a missão 3 para refazer
+* | 094f7e3 Marca o 0.3 como concluído
+|/  
+* ab5a9f8 Anotações de nmap
+* d9073d6 Anota o módulo 0.4
+```
+
+O `--no-edit` aceita a mensagem padrão do merge. O desenho do `--graph` é o mesmo do
+diagrama da seção 2.4: um commit com dois pais. Se quiser desistir de um merge no meio
+do conflito, `git merge --abort` volta tudo ao estado anterior.
+
+### 5.7 Walkthrough: um remote local e o push recusado (sem flag)
+
+Você não precisa da internet para entender remotes. Um bare repository numa pasta do
+WSL faz o papel do GitHub, e um segundo clone faz o papel de "outro computador" (ou de
+um colega).
+
+```console
+$ cd ~/treino-git
+$ git init --bare remoto.git
+Initialized empty Git repository in /home/aluno/treino-git/remoto.git/
+$ cd meu-caderno
+$ git remote add origin ../remoto.git
+$ git remote -v
+origin	../remoto.git (fetch)
+origin	../remoto.git (push)
+$ git push -u origin main
+To ../remoto.git
+ * [new branch]      main -> main
+branch 'main' set up to track 'origin/main'.
+```
+
+O `-u` liga a sua `main` à `main` do remote (o *upstream*), para os próximos `git push` e
+`git pull` não precisarem de argumentos. Agora simule outro computador:
+
+```console
+$ cd ~/treino-git
+$ git clone remoto.git outro-pc
+Cloning into 'outro-pc'...
+done.
+$ cd outro-pc
+$ echo '- 0.5: Windows' >> README.md
+$ git commit -qam "Anota o 0.5 (no outro PC)"
+$ git push
+To /home/aluno/treino-git/remoto.git
+   3d5c2ba..18b7e7a  main -> main
+```
+
+De volta ao `meu-caderno`, faça um commit sem ter buscado o do "outro PC", e tente
+enviar:
+
+```console
+$ cd ~/treino-git/meu-caderno
+$ echo '- 0.6: Bash' >> nmap.md
+$ git commit -qam "Mais notas de nmap"
+$ git push
+To ../remoto.git
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to '../remoto.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref. If you want to integrate the remote changes, use
+hint: 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+```
+
+O push foi **recusado**, e isso é proteção: aceitar apagaria o commit do outro PC. O
+caminho é trazer o trabalho de lá e integrar. Nas versões recentes, o `git pull` pede
+que você diga **como** integrar quando as duas linhas divergiram; `--no-rebase` escolhe
+o merge:
+
+```console
+$ git pull --no-rebase --no-edit
+Merge made by the 'ort' strategy.
+ README.md | 1 +
+ 1 file changed, 1 insertion(+)
+$ git push
+To ../remoto.git
+   18b7e7a..6585e10  main -> main
+```
+
+<Hint title="Desafio rápido: e se você quiser olhar antes de integrar?">
+Use `git fetch` em vez de `git pull`. Depois, `git log --oneline main..origin/main`
+mostra os commits que chegaram do remote e ainda não estão na sua `main`, e
+`git diff main origin/main` mostra o que eles mudam. Só então rode `git merge
+origin/main`.
+</Hint>
+
+### 5.8 Walkthrough: o fluxo com um repositório privado no GitHub (opcional)
+
+Esta parte usa a internet e a **sua** conta do GitHub, então é opcional, e os comandos
+abaixo seguem a documentação oficial do GitHub; diferente do resto da seção 5, **não foram
+executados durante a escrita deste módulo** (isso exigiria publicar algo numa conta real).
+É o fluxo para guardar, por exemplo, o `meu-caderno` como backup privado.
+
+1. **Crie uma chave SSH só para o GitHub**, com senha (*passphrase*):
+
+   ```bash
+   ssh-keygen -t ed25519 -C "seu-email@exemplo.com"
+   ```
+
+   Aceite o caminho padrão (`~/.ssh/id_ed25519`) e digite uma senha. Ela protege a chave
+   privada se alguém copiar o arquivo. Para não digitá-la a toda hora, carregue a chave
+   no agente do SSH: `eval "$(ssh-agent -s)"` e depois `ssh-add ~/.ssh/id_ed25519`.
+
+2. **Cadastre a chave pública** (`cat ~/.ssh/id_ed25519.pub`, a que termina em `.pub`)
+   no GitHub, em *Settings → SSH and GPG keys*. A privada (sem `.pub`) nunca sai do seu
+   computador.
+
+3. **Teste a conexão** com `ssh -T git@github.com`. Na primeira vez, o SSH mostra a
+   impressão digital do servidor e pergunta se você confia: **compare** com as
+   impressões digitais publicadas na documentação do GitHub antes de responder `yes`
+   (seção 4, caso de 2023). Se tudo der certo, a resposta é
+   `Hi USUARIO! You've successfully authenticated, but GitHub does not provide shell
+   access.`
+
+4. **Crie um repositório vazio e privado** no site (botão *New repository*, opção
+   *Private*, sem README) e ligue o seu a ele:
+
+   ```bash
+   cd ~/treino-git/meu-caderno
+   git remote add github git@github.com:USUARIO/meu-caderno.git
+   git push -u github main
+   ```
+
+   Aqui o remote se chama `github` porque o nome `origin` já está em uso pelo
+   `remoto.git`. Num repositório novo, o normal é chamá-lo de `origin`.
+
+<Callout variant="warning" title="Antes do primeiro push, sempre">
+Rode `git log -p` e procure o que não pode sair do seu computador. Depois do push, o
+conteúdo existe numa máquina que não é sua. Repositório privado diminui quem vê, mas não
+transforma o GitHub num cofre (seção 4, caso Uber).
+</Callout>
+
+### 5.9 Limpeza
+
+Tudo deste módulo está em `~/treino-git`. Quando terminar (ou para recomeçar do zero),
+apague a pasta inteira. Confira o caminho antes, como você aprendeu no 0.3:
+
+```bash
+ls ~/treino-git && rm -rf ~/treino-git
+```
+
+Se você seguiu a seção 5.8, o repositório no GitHub continua lá. Apague-o pelo site
+(*Settings → Delete this repository*) se ele era só um teste.
+
+## 6. Variações e aprofundamento
+
+### 6.1 Parar de versionar um arquivo: `.gitignore` e `git rm --cached`
+
+O `.gitignore` só vale para arquivos que o Git ainda **não** rastreia. Um arquivo que já
+entrou num commit continua sendo rastreado, mesmo listado no `.gitignore`. Veja a
+sequência real: o `.env` foi commitado por engano, o `.gitignore` foi criado depois, e o
+`git status -s` (formato curto) nem menciona o `.env`, porque para o Git ele está
+rastreado e sem mudanças:
+
+```console
+$ echo 'senha=123' > .env
+$ git add .env
+$ git commit -qm "oops"
+$ echo .env > .gitignore
+$ git status -s
+?? .gitignore
+$ git rm --cached .env
+rm '.env'
+$ git add .gitignore
+$ git commit -m "Para de versionar o .env"
+[main f20e335] Para de versionar o .env
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+ delete mode 100644 .env
+ create mode 100644 .gitignore
+$ git status -s --ignored
+!! .env
+$ git log --oneline --all -- .env
+f20e335 Para de versionar o .env
+9cd11ce oops
+```
+
+O `git rm --cached` tira o arquivo do index **sem apagá-lo do disco**; a partir dali, o
+`.gitignore` passa a valer (`!!` no `git status --ignored` quer dizer "ignorado"). E a
+última linha repete a lição da Missão 2: o commit `oops` continua no histórico com a
+senha.
+
+Padrões úteis num `.gitignore` de pentest:
+
+```text
+# segredos e configurações locais
+.env
+*.key
+id_rsa*
+# dados do cliente e capturas: ficam fora do Git
+loot/
+*.pcap
+*.pcapng
+# lixo de editores e do sistema
+*.swp
+.DS_Store
+```
+
+### 6.2 Guardar sem commitar: stash
+
+Você está no meio de uma mudança e precisa trocar de branch, mas o Git recusa porque a
+troca sobrescreveria o que você não gravou (seção 7). O
+<GlossaryTerm term="stash">stash</GlossaryTerm> é uma gaveta: `git stash` guarda as
+mudanças não commitadas e limpa a working tree; `git stash pop` as devolve. Saída real:
+
+```console
+$ echo "- rascunho" >> README.md
+$ git stash
+Saved working directory and index state WIP on main: 6585e10 Merge branch 'main' of ../remoto
+$ git stash pop
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Dropped refs/stash@{0} (1ec9654b84cdd2c25e738bfe5d0454450b5ea55f)
+```
+
+Cuidado: o stash fica **dentro do repositório**, como um commit escondido. Um segredo
+guardado no stash continua em `.git/`.
+
+### 6.3 Marcar um momento: tags
+
+Uma <GlossaryTerm term="tag">tag</GlossaryTerm> é um nome fixo para um commit. Diferente
+de uma branch, ela não anda. Num pentest, faz sentido marcar o estado exato do caderno
+quando o relatório foi entregue:
+
+```bash
+git tag -a relatorio-v1 -m "Versão entregue ao cliente em 05/09"
+git show relatorio-v1
+```
+
+A opção `-a` cria uma tag "anotada", um objeto próprio com autor, data e mensagem. Meses
+depois, `git diff relatorio-v1 main` mostra tudo o que mudou desde a entrega.
+
+### 6.4 Desfazer o "desfazer": reset e reflog
+
+O `git reset --hard <commit>` move a branch atual para outro commit e descarta as
+mudanças não gravadas. É um dos poucos comandos do Git que **destroem** trabalho, então
+use com atenção. Mesmo assim, os commits que "sumiram" com um reset não somem na hora:
+o <GlossaryTerm term="reflog">reflog</GlossaryTerm> registra cada posição por onde o
+HEAD passou. Saída real de um reset desfeito:
+
+```console
+$ git reset --hard HEAD~1
+HEAD is now at 7635990 Mais notas de nmap
+$ git reflog -4
+7635990 HEAD@{0}: reset: moving to HEAD~1
+6585e10 HEAD@{1}: reset: moving to HEAD
+6585e10 HEAD@{2}: pull --no-rebase --no-edit: Merge made by the 'ort' strategy.
+7635990 HEAD@{3}: commit: Mais notas de nmap
+$ git reset --hard HEAD@{1}
+HEAD is now at 6585e10 Merge branch 'main' of ../remoto
+```
+
+`HEAD~1` significa "o pai do commit atual". O `HEAD@{1}` significa "onde o HEAD estava
+um movimento atrás", e trouxe o merge de volta. O reflog é **local** (não vai no push nem
+no clone) e as entradas antigas expiram: por padrão, em 90 dias, ou em 30 dias quando o
+commit não é mais alcançável por nenhuma branch, justamente o caso de um commit desfeito
+com reset (opções `gc.reflogExpire` e `gc.reflogExpireUnreachable`). Para a segurança, a consequência é: num computador onde um segredo foi
+commitado, ele pode continuar recuperável pelo reflog mesmo depois de "removido".
+
+### 6.5 Rebase: histórico linear, hashes novos
+
+O <GlossaryTerm term="rebase">rebase</GlossaryTerm> é a alternativa ao merge: em vez de
+criar um commit com dois pais, ele **reaplica** os seus commits em cima da outra branch,
+como se você tivesse começado a trabalhar depois. O histórico fica linear e mais fácil
+de ler. O preço: como o pai muda, o hash de cada commit reaplicado muda (seção 2.3).
+Os commits antigos são substituídos por cópias novas.
+
+Isso leva à regra de ouro: **não faça rebase de commits que já foram enviados e que
+outras pessoas usam.** Para publicar um histórico reescrito, é preciso um
+<GlossaryTerm term="force push">force push</GlossaryTerm> (`git push --force`), que
+substitui a branch do remote e descarta commits de lá. Em branch compartilhada, isso
+apaga o trabalho dos outros. Se precisar, prefira `git push --force-with-lease`, que
+recusa a operação se o remote tiver mudado desde o seu último fetch.
+
+### 6.6 Investigar quem e quando: blame e bisect
+
+- `git blame arquivo` mostra, linha por linha, qual commit e autor mudaram aquela linha
+  por último. Para um defensor, é o caminho mais curto de "esta linha de configuração
+  insegura" até "o commit, a data e o motivo".
+- `git bisect` faz uma busca binária no histórico: você marca um commit bom e um ruim, e
+  o Git vai escolhendo commits no meio até achar o primeiro que introduziu o problema.
+  Em 1.000 commits, chega lá em cerca de 10 passos.
+
+### 6.7 Provar autoria: commits assinados
+
+A seção 2.7 disse que o autor de um commit é só texto. Qualquer pessoa pode fazer
+`git commit --author="Outra Pessoa <outra@exemplo.com>"`. A
+assinatura de commits resolve isso: o commit leva uma assinatura feita com uma chave
+privada, que qualquer um confere com a chave pública. Desde a versão 2.34, o Git aceita
+chaves SSH para assinar, além de GPG. Saída real, com uma chave de teste:
+
+```console
+$ git config gpg.format ssh
+$ git config user.signingkey ~/.ssh/teste_sign.pub
+$ git commit -S -m "Commit assinado"
+$ git verify-commit HEAD
+Good "git" signature for ana@exemplo.com.br with ED25519 key SHA256:Zs9S0wtFE3z8T1Fl/V968Z0RviAP5D5C1n597zv4p88
+```
+
+A verificação local exige um arquivo de "assinantes permitidos"
+(`gpg.ssh.allowedSignersFile`), com uma linha `email chave-pública` por pessoa. O GitHub
+mostra um selo *Verified* nos commits assinados com uma chave cadastrada na conta.
+
+### 6.8 Submódulos, forjas e o resto do ecossistema
+
+- **Submódulos** incluem um repositório dentro de outro, fixado num commit. São úteis e
+  também foram o vetor da CVE-2024-32002 (seção 3.5). Ao clonar um projeto com
+  submódulos, você precisa de `git clone --recurse-submodules` ou de `git submodule
+  update --init`.
+- **Forjas** são os serviços que hospedam repositórios e somam recursos: GitHub, GitLab
+  e Gitea (que pode rodar na sua própria máquina). O Git é o mesmo em todos; mudam a
+  interface, as permissões e os recursos de segurança.
+- **SHA-256:** `git init --object-format=sha256` cria um repositório com a função de
+  hash mais forte. Um repositório SHA-256 não troca commits com um SHA-1 (os nomes de
+  todos os objetos são diferentes), e confira se o serviço onde você hospeda aceita esse
+  formato antes de adotá-lo. O documento de mudanças do Git 3.0 diz que SHA-256 vai virar
+  o padrão de repositórios novos e que não há plano de abandonar o formato SHA-1.
+
+## 7. Erros comuns
+
+- **`Author identity unknown` / `fatal: empty ident name (...) not allowed`:** você não
+  configurou nome e e-mail. Saída real no WSL:
+
+  ```text
+  Author identity unknown
+
+  *** Please tell me who you are.
+
+  Run
+
+    git config --global user.email "you@example.com"
+    git config --global user.name "Your Name"
+
+  to set your account's default identity.
+  Omit --global to set the identity only in this repository.
+
+  fatal: empty ident name (for <aluno@maquina>) not allowed
+  ```
+
+  Faça o passo 2 da seção 5.1. Sem `--global`, a identidade vale só para o repositório
+  atual (útil para separar trabalho e uso pessoal).
+
+- **`no changes added to commit`:** você editou, mas não deu `git add`. O commit grava a
+  staging area, não a pasta. Rode `git status` e siga o que ele sugere.
+
+- **`Your local changes to the following files would be overwritten by checkout`:** você
+  tentou trocar de branch com mudanças não gravadas que a outra branch também altera. O
+  Git recusa para não perder o seu trabalho. Escolha: commitar, guardar com `git stash`
+  (seção 6.2) ou descartar com `git restore arquivo`.
+
+- **`HEAD detached at 8572b8e`:** você foi para um commit, não para uma branch (seção
+  2.4). Para voltar, `git switch main`. Se fez commits ali e quer guardá-los, crie uma
+  branch antes de sair: `git switch -c nome-novo`. Se já saiu, o reflog ainda os acha.
+
+- **`CONFLICT (content): Merge conflict in ...`:** não é um erro, é uma pergunta. Edite o
+  arquivo, **apague as marcações** `<<<<<<<`, `=======` e `>>>>>>>`, depois `git add` e
+  `git commit`. Esquecer as marcações no arquivo é o erro clássico: o Git aceita o commit
+  e o arquivo fica quebrado. Na dúvida, `git merge --abort`.
+
+- **`! [rejected] main -> main (fetch first)`:** o remote tem commits que você não tem.
+  Faça `git pull` (ou `git fetch` e `git merge`) e depois o push. **Não** resolva com
+  `--force`.
+
+- **`fatal: Need to specify how to reconcile divergent branches`:** o `git pull` quer saber
+  se deve integrar com merge ou rebase. Use `git pull --no-rebase` (merge) ou configure
+  uma vez, por exemplo `git config --global pull.rebase false`.
+
+- **`Permission denied (publickey)` ao falar com o GitHub:** a chave SSH não está
+  cadastrada na conta, não está carregada no agente (`ssh-add -l` lista as carregadas) ou
+  a URL do remote é HTTPS e não SSH. Confira com `git remote -v` e `ssh -T
+  git@github.com`.
+
+- **O vim abriu e você não sabe sair:** o Git abriu o editor para uma mensagem de commit
+  ou de merge. Saia com `Esc`, depois `:q!` e Enter (o 0.4 explica), e configure
+  `core.editor nano`.
+
+- **Linhas inteiras aparecem mudadas no diff, sem mudança visível:** quase sempre é o fim
+  de linha. O Windows termina cada linha com dois caracteres invisíveis, CRLF (*carriage
+  return* + *line feed*), e o Linux só com um, LF.
+  Editar o mesmo repositório pelos dois lados do WSL causa isso. Trabalhe no repositório
+  só pelo Linux, ou estude a opção `core.autocrlf` antes de mexer nela.
+
+- **"Apaguei o arquivo com a senha e fiz commit, então está resolvido":** o erro mais caro
+  deste módulo. Releia a Missão 2 e a seção 8.4.
+
+## 8. Boas práticas e segurança
+
+### 8.1 Um bom histórico: commits pequenos e mensagens que explicam
+
+- **Um assunto por commit.** "Registra varredura do 192.168.0.20" é um bom commit;
+  "várias coisas" não é. Commits pequenos são fáceis de revisar, de reverter e de usar
+  como evidência.
+- **Mensagem com o porquê.** A primeira linha resume (até uns 50 caracteres); se
+  precisar, deixe uma linha em branco e explique o motivo. O diff já mostra o quê.
+- **Revise antes de gravar, sempre:** `git status` e `git diff --staged`. É a última
+  chance de ver um segredo antes de ele entrar no histórico. Evite o `git add .` e o
+  `git commit -a` às cegas: eles gravam tudo o que estiver na pasta.
+
+### 8.2 Segredos ficam fora do código, desde o primeiro commit
+
+- **Crie o `.gitignore` antes do primeiro commit**, com `.env`, chaves e a pasta de dados
+  (seção 6.1). Ignorar depois não apaga o passado.
+- **Leia segredos do ambiente**, como o `config.php` da `main` na Missão 3 fazia com
+  `getenv("DB_PASS")`, e não como o do `deploy-antigo`. No shell, a variável vem de um
+  `.env` local (ignorado) ou do sistema que roda o programa.
+- **Versione um modelo, não o segredo:** um `.env.example` com os nomes das variáveis e
+  valores falsos documenta o que é preciso sem expor nada.
+- **Repositório privado não é cofre** (caso Uber). O lugar de senhas é um gerenciador de
+  senhas ou um cofre de segredos, não o Git.
+
+### 8.3 Uma trava automática: o hook de pre-commit
+
+Um hook `pre-commit` roda antes de cada commit e, se terminar com código diferente de
+zero (o *exit code* do 0.3), **cancela o commit**. Este exemplo recusa arquivos com nome
+de segredo e linhas novas com cara de segredo. Ele foi testado: recusou um `.env` e um
+`DB_PASS=`, e aceitou um arquivo comum.
+
+<CodeBlock
+  lang="bash"
+  title=".git/hooks/pre-commit"
+  code={`#!/bin/sh
+# Recusa o commit se algo na staging area parecer um segredo.
+if git diff --cached --name-only | grep -E '(^|/)\\.env$|\\.pem$|id_(rsa|ed25519)$'; then
+    echo "pre-commit: arquivo sensível na staging area; commit recusado." >&2
+    exit 1
+fi
+if git diff --cached -U0 | grep -E '^\\+.*(PRIVATE KEY|_TOKEN=|_PASS=)'; then
+    echo "pre-commit: parece haver um segredo no conteúdo; commit recusado." >&2
+    exit 1
+fi`}
+/>
+
+Linha por linha:
+
+- `git diff --cached --name-only` lista os nomes dos arquivos na staging area
+  (`--cached` é sinônimo de `--staged`); o `grep -E` procura nomes como `.env`, `*.pem`
+  ou `id_rsa`. Se achar, o `if` é verdadeiro, a mensagem vai para o stderr (`>&2`) e o
+  `exit 1` cancela o commit.
+- `git diff --cached -U0` mostra só as linhas alteradas, sem contexto; o segundo `grep`
+  procura linhas **adicionadas** (começam com `+`) com `PRIVATE KEY`, `_TOKEN=` ou
+  `_PASS=`.
+
+Instale com `nano .git/hooks/pre-commit` e torne executável com `chmod +x
+.git/hooks/pre-commit` (permissões do 0.3). Saída real ao tentar commitar um `.env`:
+
+```console
+$ git add .env
+$ git commit -m teste
+.env
+pre-commit: arquivo sensível na staging area; commit recusado.
+```
+
+Limites que você precisa conhecer: o hook mora em `.git/hooks/`, então **não vai junto
+no clone** (cada pessoa instala o seu), e `git commit --no-verify` o pula. Ele é uma rede
+de proteção contra distração, não uma garantia. Para algo mais completo, ferramentas
+como o gitleaks têm centenas de regras e podem rodar como hook, via o framework
+pre-commit.
+
+### 8.4 Se um segredo vazou: revogar primeiro
+
+A ordem importa, e a documentação do GitHub sobre remoção de dados sensíveis é clara:
+
+1. **Revogue ou troque o segredo** (<GlossaryTerm term="secret rotation">secret
+   rotation</GlossaryTerm>) no serviço que o emitiu. Este é o passo que resolve: depois
+   dele, a cópia vazada não vale nada. Foi o que a Toyota fez em 17/09/2022 e o GitHub fez
+   com a chave SSH em 2023.
+2. **Investigue** se o segredo foi usado: logs de acesso do serviço, desde a data do
+   commit (o `git log` diz qual é).
+3. **Só então, se ainda fizer sentido, reescreva o histórico.** O próprio projeto Git
+   desaconselha o antigo `git filter-branch` e recomenda o
+   <GlossaryTerm term="git-filter-repo">git-filter-repo</GlossaryTerm>. O comando
+   documentado pelo GitHub para tirar um arquivo de todos os commits é:
+
+   ```bash
+   git-filter-repo --sensitive-data-removal --invert-paths --path CAMINHO/DO/ARQUIVO
+   ```
+
+   Depois, é preciso um force push de todas as branches e tags
+   (`git push --force --mirror origin`), e todo mundo que tem um clone precisa
+   descartá-lo e clonar de novo.
+4. **Entenda o limite da reescrita:** ela muda os hashes de todos os commits a partir do
+   que tinha o segredo, e **não alcança** clones, forks e cópias em cache que já existem.
+   Por isso o passo 1 vem primeiro.
+
+### 8.5 Nunca publicar a pasta .git
+
+A causa do problema da Missão 3 é publicar a pasta do repositório inteira no servidor
+web. A correção tem duas camadas
+(*defense in depth*, defesa em profundidade: se uma falhar, a outra segura):
+
+- **Na publicação:** o site deve receber só os arquivos de produção, gerados a partir do
+  repositório (um `git archive`, um pipeline de build), nunca um `git clone` dentro da
+  pasta pública.
+- **No servidor web:** recusar qualquer caminho que comece com `/.git`, para o caso de
+  alguém repetir o erro. No nginx, uma `location` com expressão regular:
+
+  ```text
+  location ~ /\.git {
+      return 404;
+  }
+  ```
+
+  No Apache, com o módulo `mod_alias`:
+
+  ```text
+  RedirectMatch 404 /\.git
+  ```
+
+  Responder 404 (não encontrado) em vez de 403 (proibido) não revela que a pasta existe.
+  Depois de aplicar, confira que `/.git/HEAD` responde 404 no **seu** servidor.
+
+### 8.6 Proteja as contas e as chaves de acesso ao código
+
+- **MFA na conta do GitHub** (e de qualquer forja). Foi a ausência dele, somada a senhas
+  reutilizadas, que abriu o caminho no caso Uber.
+- **Chave SSH com senha** (*passphrase*), uma por computador, removida da conta quando o
+  computador sair de uso.
+- **Tokens com validade e escopo mínimo.** Um personal access token deve vencer e poder
+  só o necessário (por exemplo, só um repositório, só leitura). É o
+  <GlossaryTerm term="least privilege">least privilege</GlossaryTerm> do 0.3 aplicado a
+  credenciais.
+- **Deixe o push protection ligado.** Para contas pessoais, o
+  <GlossaryTerm term="push protection">push protection</GlossaryTerm> do GitHub vem
+  ligado por padrão e **bloqueia o push** de segredos para repositórios públicos.
+- **Confira a impressão digital** quando o SSH perguntar se confia no servidor, e
+  desconfie de qualquer aviso de chave mudada (caso GitHub, 2023).
+
+### 8.7 Procure antes que outra pessoa procure
+
+Defensor bom faz a busca da Missão 2 nos próprios repositórios, de forma automática. O
+gitleaks varre o histórico inteiro:
+
+```bash
+gitleaks git -v caminho/do/repositorio
+```
+
+Desde a versão 8.19.0, os antigos comandos `detect` e `protect` estão obsoletos; use
+`gitleaks git` (histórico) e `gitleaks dir` (pastas). Rode antes de tornar um repositório
+público, e periodicamente nos privados.
+
+### 8.8 Mantenha o Git atualizado e desconfie de repositórios estranhos
+
+- Atualize o Git com o resto do sistema (`sudo apt update && sudo apt upgrade`, do 0.4).
+  Falhas como a CVE-2024-32002 são corrigidas em versões novas do próprio Git; quem não
+  atualiza continua vulnerável.
+- Repositórios de origem duvidosa (exploits, "ferramentas" de terceiros) devem ser
+  clonados numa máquina ou contêiner descartável e lidos **antes** de rodar qualquer coisa.
+- O advisory da CVE-2024-32002 citava, como contorno para quem não podia atualizar,
+  desligar os symlinks: `git config --global core.symlinks false`. Atualizar é melhor.
+
+## 9. Exercícios
+
+As três flags deste módulo estão na seção 5: Missão 1 (escopo alterado), Missão 2
+(segredo apagado) e Missão 3 (pasta `.git` recuperada). O quiz abaixo é corrigido na
+plataforma e também conta para concluir o módulo.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar
+
+1. Uma colega diz: "não tem problema eu commitar a senha do banco de testes, o repositório
+   é privado e o banco é só de teste". Liste dois motivos, deste módulo, para discordar.
+
+<Solution title="Resposta">
+Primeiro, privado não é cofre: contas podem ser invadidas (caso Uber) e clones circulam
+para fora do controle de quem criou. Segundo, o segredo nunca mais sai do histórico sem
+reescrita, e "banco de testes" costuma ter senha igual à de outros ambientes ou dados
+copiados da produção. O certo é ler a senha do ambiente e versionar um `.env.example`.
+</Solution>
+
+2. O e-mail de entrega do relatório registra o hash `6b3e942` como "o último commit do
+   caderno". Meses depois, no clone de um colega, o último commit tem a mesma mensagem e
+   outro hash. O que isso indica?
+
+<Solution title="Resposta">
+Que os históricos são diferentes: algum commit naquele ponto ou antes dele não é igual
+nos dois (conteúdo, autor, data ou pai). Pode ser uma reescrita (rebase, filter-repo) ou
+uma alteração deliberada. O hash encadeado não diz quem está certo, mas prova que as
+cópias divergem; compare as duas com `git log` e `git diff` antes de seguir.
+</Solution>
+
+3. Num teste autorizado, você achou um `/.git/HEAD` acessível no site do cliente. O que
+   entra no relatório e o que você recomenda?
+
+<Solution title="Resposta">
+O achado (pasta `.git` publicada pelo servidor web), a evidência (requisição e resposta
+de `/.git/HEAD`, com data e hora) e o impacto (código e histórico expostos, possivelmente
+com credenciais). Recomendações: publicar só os arquivos de produção, bloquear `/.git` no
+servidor (seção 8.5), revisar o histórico em busca de segredos e trocar todos os que
+aparecerem. Tudo dentro do escopo e das regras combinadas.
+</Solution>
+
+### Exercícios práticos extras (sem flag)
+
+1. No `anotacoes-pentest`, descubra o que a branch `rascunho-relatorio` tem de diferente
+   da `main`, sem trocar de branch.
+
+<Solution title="Solução">
+```console
+$ git log --oneline main..rascunho-relatorio
+171ca4d Começa o rascunho do relatório
+$ git diff --stat main rascunho-relatorio
+ recon/nmap-192.168.0.20.txt | 3 ---
+ relatorio.md                | 5 +++++
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+```
+
+O primeiro comando mostra o commit que só existe na branch do rascunho. No `diff`, o
+`relatorio.md` aparece como novo, e a varredura do 192.168.0.20 aparece como removida,
+porque ela entrou na `main` **depois** que o rascunho se separou.
+</Solution>
+
+2. No `meu-caderno`, instale o hook da seção 8.3, tente commitar um arquivo `.env` e depois
+   um `config.txt` com uma linha `DB_PASS=abc`. Os dois devem ser recusados. Em seguida,
+   descubra como o `--no-verify` muda o resultado, e desfaça o commit com
+   `git reset --hard HEAD~1`.
+
+<Solution title="O que você deve observar">
+Os dois commits são recusados, com a mensagem do hook no stderr. Com `git commit
+--no-verify`, o hook não roda e o commit passa: é por isso que o hook é uma rede de
+proteção, não uma garantia. O `git reset --hard HEAD~1` volta a branch um commit, mas o
+objeto continua recuperável pelo reflog até expirar (seção 6.4).
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O Git guarda **fotos** (commits), não diferenças. Cada commit aponta para uma tree, que
+  aponta para blobs; todo objeto tem como nome o hash do seu conteúdo.
+- Três áreas: working tree → `git add` → staging area → `git commit` → repositório. O
+  `git diff --staged` mostra o que vai ser gravado; confira sempre.
+- Branch e HEAD são **ponteiros**, arquivos pequenos com um hash. Merge é fast-forward
+  quando só uma linha andou, e um commit com dois pais quando as duas andaram.
+- Remotes trocam commits: `clone`, `fetch`, `pull`, `push`. O push recusado protege o
+  trabalho de outra pessoa; não force.
+- O histórico **não esquece**: o que foi commitado continua lá, em todo clone. Segredo
+  vazado se resolve **revogando**; reescrever o histórico vem depois e não alcança as
+  cópias existentes.
+- Uma pasta `.git` publicada entrega o histórico inteiro. Publique só os arquivos de
+  produção e bloqueie `/.git` no servidor.
+- O autor de um commit é só texto; para provar autoria, assine os commits.
+
+### Cola rápida
+
+| Tarefa | Comando |
+| --- | --- |
+| Criar um repositório | `git init pasta` |
+| Ver o estado | `git status` |
+| Preparar e gravar | `git add arquivo` e `git commit -m "mensagem"` |
+| Revisar antes de gravar | `git diff` e `git diff --staged` |
+| Histórico | `git log --oneline --graph --all` |
+| Um commit por dentro | `git show <commit>` e `git cat-file -p <hash>` |
+| Arquivo num commit antigo | `git show <commit>:caminho` |
+| Quem mexeu neste arquivo | `git log --oneline -- caminho` |
+| Quem adicionou este texto | `git log -S 'texto' --oneline` |
+| Criar e trocar de branch | `git switch -c nome` e `git switch nome` |
+| Juntar uma branch | `git merge nome` |
+| Remote | `git remote add origin URL`, `git push -u origin main`, `git pull` |
+| Parar de versionar | `git rm --cached arquivo` + `.gitignore` |
+| Desfazer um reset | `git reflog` e `git reset --hard HEAD@{N}` |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Pro Git](https://git-scm.com/book/pt-br/v2), o livro oficial e gratuito, com tradução
+  em português. O capítulo 10 ("Git Internals", Por Dentro do Git) aprofunda a seção
+  2.3 deste módulo.
+- [Documentação de referência do Git](https://git-scm.com/docs): a página de cada comando,
+  a mesma do `git help comando`.
+- [Removing sensitive data from a repository](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository),
+  do GitHub: o passo a passo completo da seção 8.4.
+- [gitleaks](https://github.com/gitleaks/gitleaks): documentação e regras do scanner de
+  segredos.

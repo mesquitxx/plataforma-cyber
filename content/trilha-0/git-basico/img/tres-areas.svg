@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">As três áreas do Git e o repositório remoto</title>
+  <desc id="d">Quatro caixas da esquerda para a direita: working tree (os arquivos que você edita), staging area ou index (o próximo commit em preparação), repositório local (a pasta .git, com o histórico de commits) e repositório remoto (por exemplo, o GitHub). Setas verdes para a direita mostram o caminho de uma mudança: git add leva da working tree para a staging area, git commit leva da staging area para o repositório, git push leva do repositório local para o remoto. Setas laranja para a esquerda mostram o caminho de volta: git fetch traz commits do remoto para o repositório local, git switch ou git restore trazem uma versão do repositório para a working tree, git restore --staged tira um arquivo da staging area. Embaixo, os três comandos de comparação: git diff compara working tree com staging area, git diff --staged compara staging area com o último commit, e git status resume tudo.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .c { font-size: 12.5px; font-weight: 700; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f0a35a"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="34">Onde mora cada versão: três áreas no seu PC e uma no servidor</text>
+
+  <rect x="20" y="56" width="640" height="300" rx="12" fill="none" stroke="#34413b" stroke-dasharray="6 5" stroke-width="1.5"/>
+  <text class="s" x="34" y="76">seu computador (pasta do projeto)</text>
+
+  <rect class="box" x="36" y="96" width="180" height="150" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="50" y="122" style="fill:#5cc8d8">working tree</text>
+  <text class="s" x="50" y="146">os arquivos que você</text>
+  <text class="s" x="50" y="162">vê e edita (nano, vim)</text>
+  <text class="s" x="50" y="194">README.md</text>
+  <text class="s" x="50" y="210">escopo.md</text>
+  <text class="s" x="50" y="226">recon/...</text>
+
+  <rect class="box" x="250" y="96" width="180" height="150" rx="10" style="stroke:#e8c25a"/>
+  <text class="m" x="264" y="122" style="fill:#e8c25a">staging area</text>
+  <text class="s" x="264" y="146">(index) o próximo</text>
+  <text class="s" x="264" y="162">commit em preparação</text>
+  <text class="s" x="264" y="194">.git/index</text>
+  <text class="s" x="264" y="210">você escolhe o que</text>
+  <text class="s" x="264" y="226">entra na foto</text>
+
+  <rect class="box" x="464" y="96" width="180" height="150" rx="10" style="stroke:#5ee08a"/>
+  <text class="m" x="478" y="122" style="fill:#5ee08a">repositório</text>
+  <text class="s" x="478" y="146">local: a pasta .git</text>
+  <text class="s" x="478" y="162">com todo o histórico</text>
+  <text class="s" x="478" y="194">c1 ← c2 ← c3</text>
+  <text class="s" x="478" y="210">commits imutáveis,</text>
+  <text class="s" x="478" y="226">cada um com seu hash</text>
+
+  <rect class="box" x="700" y="96" width="180" height="150" rx="10" style="stroke:#b48cf0"/>
+  <text class="m" x="714" y="122" style="fill:#b48cf0">remoto</text>
+  <text class="s" x="714" y="146">outra cópia completa</text>
+  <text class="s" x="714" y="162">(GitHub, servidor,</text>
+  <text class="s" x="714" y="178">pasta .git "bare")</text>
+  <text class="s" x="714" y="210">nome usual: origin</text>
+
+  <!-- forward -->
+  <line x1="216" y1="130" x2="246" y2="130" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <line x1="430" y1="130" x2="460" y2="130" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <line x1="644" y1="130" x2="696" y2="130" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="c" x="196" y="280" style="fill:#5ee08a">git add</text>
+  <line x1="231" y1="268" x2="231" y2="250" stroke="#5ee08a" stroke-width="1"/>
+  <text class="c" x="404" y="280" style="fill:#5ee08a">git commit</text>
+  <line x1="445" y1="268" x2="445" y2="250" stroke="#5ee08a" stroke-width="1"/>
+  <text class="c" x="636" y="280" style="fill:#5ee08a">git push</text>
+  <line x1="670" y1="268" x2="670" y2="250" stroke="#5ee08a" stroke-width="1"/>
+
+  <!-- backward -->
+  <line x1="696" y1="212" x2="648" y2="212" stroke="#f0a35a" stroke-width="2" marker-end="url(#o)"/>
+  <line x1="246" y1="200" x2="220" y2="200" stroke="#f0a35a" stroke-width="2" marker-end="url(#o)"/>
+  <text class="c" x="36" y="306" style="fill:#f0a35a">volta: git restore --staged    (staging area → working tree)</text>
+  <text class="c" x="36" y="324" style="fill:#f0a35a">       git switch / git restore (repositório → working tree)</text>
+  <text class="c" x="36" y="342" style="fill:#f0a35a">       git fetch (remoto → repositório) · git pull = fetch + merge</text>
+
+  <!-- compare -->
+  <rect class="box" x="20" y="372" width="860" height="80" rx="10"/>
+  <text class="m" x="36" y="396">Comparar antes de gravar</text>
+  <text class="s" x="36" y="418">git diff           working tree  × staging area   (o que você mudou e ainda não deu add)</text>
+  <text class="s" x="36" y="436">git diff --staged  staging area  × último commit  (o que vai entrar no próximo commit)</text>
+</svg>

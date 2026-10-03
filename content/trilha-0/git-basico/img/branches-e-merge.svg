@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
+  <title id="t">Branch, merge fast-forward e merge commit</title>
+  <desc id="d">Duas situações lado a lado. À esquerda, fast-forward: a branch estudo-nmap tem um commit a mais (ab5a9f8) e a main não andou desde que ela nasceu (d9073d6). O merge só move o ponteiro main para frente, até ab5a9f8; nenhum commit novo é criado. À direita, merge commit: depois de ab5a9f8, a main ganhou o commit 094f7e3 e a branch revisao ganhou o 08fcdc9, os dois mexendo na mesma linha do README. Como as duas linhas divergiram, o merge cria um commit novo, 3d5c2ba, com dois pais; se as duas mudanças tocam as mesmas linhas, o Git para com um conflito e pede que você escolha o resultado antes desse commit.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 13.5px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+    .n { fill: #1c2521; stroke: #5ee08a; stroke-width: 2; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#b48cf0"/></marker>
+  </defs>
+  <rect width="900" height="430" fill="#121815"/>
+  <text class="t" x="30" y="34">Branch é um ponteiro; merge junta duas linhas do histórico</text>
+
+  <!-- left -->
+  <rect class="box" x="20" y="54" width="420" height="356" rx="12"/>
+  <text class="m" x="36" y="80" style="fill:#5cc8d8">1. Fast-forward (a main não andou)</text>
+  <text class="s" x="36" y="110">antes do merge:</text>
+  <circle class="n" cx="80" cy="160" r="22"/><text class="s" x="58" y="198">8572b8e</text>
+  <circle class="n" cx="200" cy="160" r="22"/><text class="s" x="178" y="198">d9073d6</text>
+  <circle class="n" cx="320" cy="160" r="22"/><text class="s" x="298" y="198">ab5a9f8</text>
+  <line x1="178" y1="160" x2="102" y2="160" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+  <line x1="298" y1="160" x2="222" y2="160" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+  <text class="m" x="176" y="128" style="fill:#b48cf0">main</text>
+  <text class="m" x="270" y="128" style="fill:#b48cf0">estudo-nmap</text>
+
+  <text class="s" x="36" y="248">git merge estudo-nmap → "Fast-forward":</text>
+  <circle class="n" cx="80" cy="310" r="22"/>
+  <circle class="n" cx="200" cy="310" r="22"/>
+  <circle class="n" cx="320" cy="310" r="22"/>
+  <line x1="178" y1="310" x2="102" y2="310" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+  <line x1="298" y1="310" x2="222" y2="310" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+  <text class="m" x="270" y="278" style="fill:#b48cf0">main, estudo-nmap</text>
+  <text class="s" x="36" y="362">o ponteiro main só andou para frente;</text>
+  <text class="s" x="36" y="380">nenhum commit novo foi criado</text>
+
+  <!-- right -->
+  <rect class="box" x="460" y="54" width="420" height="356" rx="12"/>
+  <text class="m" x="476" y="80" style="fill:#e8c25a">2. Merge commit (as duas andaram)</text>
+  <circle class="n" cx="520" cy="230" r="22"/><text class="s" x="498" y="268">ab5a9f8</text>
+  <circle class="n" cx="650" cy="160" r="22"/><text class="s" x="628" y="130">094f7e3</text>
+  <circle class="n" cx="650" cy="300" r="22"/><text class="s" x="628" y="338">08fcdc9</text>
+  <circle cx="790" cy="230" r="24" fill="#1c2521" stroke="#e8c25a" stroke-width="2.4"/><text class="s" x="766" y="270">3d5c2ba</text>
+  <line x1="630" y1="170" x2="540" y2="220" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+  <line x1="630" y1="290" x2="540" y2="240" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
+  <line x1="768" y1="220" x2="672" y2="168" stroke="#e8c25a" stroke-width="1.8" marker-end="url(#g)"/>
+  <line x1="768" y1="240" x2="672" y2="292" stroke="#e8c25a" stroke-width="1.8" marker-end="url(#g)"/>
+  <text class="m" x="590" y="108" style="fill:#b48cf0">main (antes)</text>
+  <text class="m" x="600" y="360" style="fill:#b48cf0">revisao</text>
+  <text class="m" x="756" y="196" style="fill:#b48cf0">main</text>
+  <text class="s" x="476" y="384">commit de merge: dois pais. Se as duas</text>
+  <text class="s" x="476" y="400">mexeram na mesma linha → CONFLICT</text>
+</svg>
