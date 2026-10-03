@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t d">
+  <title id="t">Onde um erro aparece e onde ele some: código de saída, pipefail e set -e</title>
+  <desc id="d">Em cima, um pipeline de três comandos: grep, que falha com código 2; sort, que termina com 0; head, que termina com 0. Sem pipefail, o código do pipeline é o do último comando, 0, e o erro do grep some. Com pipefail, o código é o do último comando que falhou, 2. Embaixo, os lugares onde o set -e é ignorado e o script continua mesmo depois de uma falha: o teste de um if ou elif, o teste de um while ou until, qualquer comando de uma lista com &amp;&amp; ou || exceto o último, um comando precedido de exclamação, e qualquer comando de um pipeline exceto o último. Fora desses lugares, uma falha encerra o script na hora. No canto, o caso real da Missão 3: o script quebrado imprimiu dois erros do grep e mesmo assim devolveu código 0.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 13.5px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="520" fill="#121815"/>
+  <text class="t" x="30" y="34">1. Num pipeline, de quem é o código de saída?</text>
+
+  <rect class="box" x="30" y="54" width="170" height="60" rx="10" style="stroke:#f08c7a"/>
+  <text class="m" x="44" y="78">grep ... arq</text>
+  <text class="s" x="44" y="98" style="fill:#f08c7a">falhou: código 2</text>
+  <rect class="box" x="230" y="54" width="150" height="60" rx="10"/>
+  <text class="m" x="244" y="78">sort</text>
+  <text class="s" x="244" y="98" style="fill:#5ee08a">código 0</text>
+  <rect class="box" x="410" y="54" width="150" height="60" rx="10"/>
+  <text class="m" x="424" y="78">head -n 1</text>
+  <text class="s" x="424" y="98" style="fill:#5ee08a">código 0</text>
+  <g stroke="#5ee08a" stroke-width="1.5">
+    <line x1="200" y1="84" x2="226" y2="84" marker-end="url(#g)"/>
+    <line x1="380" y1="84" x2="406" y2="84" marker-end="url(#g)"/>
+  </g>
+  <text class="s" x="200" y="74">|</text>
+  <text class="s" x="383" y="74">|</text>
+
+  <rect class="box" x="580" y="54" width="300" height="28" rx="6"/>
+  <text class="s" x="602" y="73">sem pipefail: $? = 0 <tspan style="fill:#f08c7a">(o erro some)</tspan></text>
+  <rect class="box" x="580" y="88" width="300" height="28" rx="6" style="stroke:#5ee08a"/>
+  <text class="s" x="602" y="107">com pipefail: $? = 2 <tspan style="fill:#5ee08a">(o erro aparece)</tspan></text>
+
+  <text class="s" x="30" y="146">Regra (man bash): sem pipefail, vale o código do ÚLTIMO comando. Com pipefail, vale o do último</text>
+  <text class="s" x="30" y="162">que falhou, ou 0 se todos deram certo. O stderr do grep ainda aparece na tela, mas quem testa $? não vê.</text>
+
+  <text class="t" x="30" y="206">2. Onde o set -e fica cego (o script segue mesmo após uma falha)</text>
+
+  <rect class="box" x="30" y="226" width="400" height="236" rx="10" style="stroke:#e8c25a"/>
+  <text class="m" x="46" y="252" style="fill:#e8c25a">set -e é ignorado em:</text>
+  <text class="s" x="46" y="278">if checar; then ...        o teste do if/elif</text>
+  <text class="s" x="46" y="302">while checar; do ...       o teste do while/until</text>
+  <text class="s" x="46" y="326">checar &amp;&amp; echo ok          tudo antes do último</text>
+  <text class="s" x="46" y="342">checar || echo falhou        &amp;&amp; ou || da lista</text>
+  <text class="s" x="46" y="366">! checar                   o que vem depois de !</text>
+  <text class="s" x="46" y="390">checar | sort              todo comando do pipeline</text>
+  <text class="s" x="46" y="406">                           menos o último</text>
+  <text class="s" x="46" y="434" style="fill:#f08c7a">e tudo o que roda DENTRO de uma função</text>
+  <text class="s" x="46" y="450" style="fill:#f08c7a">chamada num desses lugares</text>
+
+  <rect class="box" x="460" y="226" width="410" height="110" rx="10" style="stroke:#5ee08a"/>
+  <text class="m" x="476" y="252" style="fill:#5ee08a">no resto, falhou = parou</text>
+  <text class="s" x="476" y="276">checar                     sozinho na linha</text>
+  <text class="s" x="476" y="296">x=$(checar)                atribuição simples</text>
+  <text class="s" x="476" y="320">o script sai com o código da falha</text>
+
+  <rect class="box" x="460" y="352" width="410" height="110" rx="10" style="stroke:#f08c7a"/>
+  <text class="m" x="476" y="378" style="fill:#f08c7a">caso real: a Missão 3 quebrada</text>
+  <text class="s" x="476" y="400">grep: logs/acesso: No such file ...</text>
+  <text class="s" x="476" y="416">grep: 2024-09.log: No such file ...</text>
+  <text class="s" x="476" y="432">     90 198.51.100.140</text>
+  <text class="s" x="476" y="450">codigo: 0   ← dois erros e "sucesso"</text>
+
+  <text class="s" x="30" y="494">Conclusão: set -euo pipefail ajuda muito, mas não substitui testar o código de saída onde importa.</text>
+</svg>

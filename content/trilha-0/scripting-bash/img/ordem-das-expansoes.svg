@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="t d">
+  <title id="t">O caminho de uma linha até virar comando: a ordem das expansões do Bash</title>
+  <desc id="d">A linha é primeiro quebrada em palavras pelos espaços e operadores. Depois vêm, nesta ordem: expansão de chaves; um bloco feito da esquerda para a direita com til, parâmetros e variáveis, aritmética, substituição de comando e de processo; word splitting, que quebra de novo o resultado das expansões sem aspas usando o IFS; expansão de caminhos, que troca curingas por nomes de arquivo; e remoção das aspas. Só então o comando roda. Embaixo, um exemplo: com dir igual a logs, a linha ls $dir/*.log vira, depois da expansão de variável, ls logs/*.log, e depois da expansão de caminhos, três argumentos, um deles com espaço, acesso 2024-09.log. Já for f in $(ls logs/*.log) quebra esse nome em dois no word splitting, porque o resultado da substituição de comando não está entre aspas.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 13.5px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .c { font-size: 12.5px; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="560" fill="#121815"/>
+  <text class="t" x="30" y="34">Do que você digita ao comando que roda: a ordem das expansões</text>
+
+  <!-- step boxes -->
+  <rect class="box" x="30" y="56" width="120" height="74" rx="10"/>
+  <text class="m" x="42" y="80">0 palavras</text>
+  <text class="s" x="42" y="100">quebra nos</text>
+  <text class="s" x="42" y="116">espaços e | ;</text>
+
+  <rect class="box" x="170" y="56" width="110" height="74" rx="10"/>
+  <text class="m" x="182" y="80">1 chaves</text>
+  <text class="s" x="182" y="100">{a,b} {1..5}</text>
+
+  <rect class="box" x="300" y="56" width="200" height="74" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="312" y="80" style="fill:#5cc8d8">2 esquerda→direita</text>
+  <text class="s" x="312" y="98">~  $var  ${var:-x}</text>
+  <text class="s" x="312" y="114">$(( ))  $( )  &lt;( )</text>
+
+  <rect class="box" x="520" y="56" width="120" height="74" rx="10" style="stroke:#f08c7a"/>
+  <text class="m" x="532" y="80" style="fill:#f08c7a">3 word</text>
+  <text class="m" x="532" y="96" style="fill:#f08c7a">  splitting</text>
+  <text class="s" x="532" y="116">usa o IFS</text>
+
+  <rect class="box" x="660" y="56" width="100" height="74" rx="10" style="stroke:#e8c25a"/>
+  <text class="m" x="672" y="80" style="fill:#e8c25a">4 globs</text>
+  <text class="s" x="672" y="100">* ? [ ]</text>
+  <text class="s" x="672" y="116">vira nomes</text>
+
+  <rect class="box" x="780" y="56" width="90" height="74" rx="10"/>
+  <text class="m" x="792" y="80">5 tira</text>
+  <text class="m" x="792" y="96">  aspas</text>
+  <text class="s" x="792" y="116">e executa</text>
+
+  <g stroke="#5ee08a" stroke-width="1.5">
+    <line x1="150" y1="93" x2="166" y2="93" marker-end="url(#g)"/>
+    <line x1="280" y1="93" x2="296" y2="93" marker-end="url(#g)"/>
+    <line x1="500" y1="93" x2="516" y2="93" marker-end="url(#g)"/>
+    <line x1="640" y1="93" x2="656" y2="93" marker-end="url(#g)"/>
+    <line x1="760" y1="93" x2="776" y2="93" marker-end="url(#g)"/>
+  </g>
+  <text class="s" x="520" y="152" style="fill:#f08c7a">3 e 4 só agem no que NÃO está entre aspas duplas.</text>
+  <text class="s" x="520" y="168" style="fill:#f08c7a">É aqui que nascem os bugs de nome com espaço.</text>
+
+  <!-- example 1 -->
+  <text class="m" x="30" y="214">Exemplo A, com aspas onde importa:   dir=logs;  ls "$dir"/*.log</text>
+  <rect class="box" x="30" y="226" width="840" height="120" rx="10"/>
+  <text class="c" x="46" y="252">digitado        ls "$dir"/*.log</text>
+  <text class="c" x="46" y="274">passo 2         ls "logs"/*.log          <tspan class="s">a variável vira o valor (entre aspas: não será quebrado)</tspan></text>
+  <text class="c" x="46" y="296">passo 4         ls [logs/acesso 2024-09.log] [logs/acesso-2024-07.log] [logs/acesso-2024-08.log]</text>
+  <text class="c" x="46" y="318" style="fill:#5ee08a">resultado       3 argumentos; o nome com espaço continua UM argumento</text>
+  <text class="s" x="46" y="336">(o glob devolve cada nome inteiro: nomes de arquivo nunca passam pelo word splitting)</text>
+
+  <!-- example 2 -->
+  <text class="m" x="30" y="382">Exemplo B, o bug da Missão 3:   for f in $(ls logs/*.log)</text>
+  <rect class="box" x="30" y="394" width="840" height="140" rx="10" style="stroke:#f08c7a"/>
+  <text class="c" x="46" y="420">passo 2         o ls roda e devolve TEXTO, um nome por linha:</text>
+  <text class="s" x="46" y="440">                logs/acesso 2024-09.log⏎logs/acesso-2024-07.log⏎logs/acesso-2024-08.log</text>
+  <text class="c" x="46" y="464">passo 3         sem aspas, o texto é quebrado em espaços, tabs e quebras de linha (IFS):</text>
+  <text class="c" x="46" y="486" style="fill:#f08c7a">                [logs/acesso] [2024-09.log] [logs/acesso-2024-07.log] [logs/acesso-2024-08.log]</text>
+  <text class="c" x="46" y="512" style="fill:#f08c7a">resultado       4 "arquivos", dois inexistentes: grep: logs/acesso: No such file or directory</text>
+</svg>

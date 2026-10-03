@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t d">
+  <title id="t">Fluxo do script urls-web.sh: da varredura às URLs</title>
+  <desc id="d">À esquerda, o arquivo varredura.gnmap, com linhas Status e Ports. Primeiro, o script valida a entrada: sem argumento, para com erro. Depois, o grep deixa passar só as linhas Ports. Um laço while externo lê cada linha separando no tab o campo Host do campo Ports e recorta o IP com expansões de parâmetro. A lista de portas, separada por vírgula e espaço, vira uma porta por linha. Um laço while interno lê cada porta separando nas barras: número, estado e o resto. Se o estado não é open, continue pula para a próxima. Um case decide: 80 vira http://IP/, 443 vira https://IP/, 8080 vira http://IP:8080/, 8443 vira https://IP:8443/, qualquer outra porta é ignorada. A saída é uma URL por linha, que pode seguir por um pipe para sort ou wc.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 13.5px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+  </defs>
+  <rect width="900" height="520" fill="#121815"/>
+  <text class="t" x="30" y="34">urls-web.sh: um laço dentro do outro, e um case no meio</text>
+
+  <!-- input file -->
+  <rect class="box" x="30" y="56" width="272" height="110" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="44" y="80" style="fill:#5cc8d8">varredura.gnmap</text>
+  <text class="s" x="44" y="102">Host: 192.168.0.3 ()⇥Status: Up</text>
+  <text class="s" x="44" y="120">Host: 192.168.0.3 ()⇥Ports:</text>
+  <text class="s" x="44" y="138"> 21/open/tcp//ftp///, 22/closed/...</text>
+  <text class="s" x="44" y="156">⇥ = tab, o separador de campos</text>
+
+  <!-- validation -->
+  <rect class="box" x="330" y="56" width="250" height="56" rx="10"/>
+  <text class="m" x="344" y="80">1 validar a entrada</text>
+  <text class="s" x="344" y="100">${1:?uso...}  sem arquivo: para</text>
+  <line x1="580" y1="84" x2="626" y2="84" stroke="#f08c7a" stroke-width="1.5" marker-end="url(#r)"/>
+  <text class="s" x="634" y="80" style="fill:#f08c7a">erro no stderr,</text>
+  <text class="s" x="634" y="96" style="fill:#f08c7a">código ≠ 0</text>
+
+  <rect class="box" x="330" y="128" width="250" height="56" rx="10"/>
+  <text class="m" x="344" y="152">2 grep 'Ports:'</text>
+  <text class="s" x="344" y="172">descarta as linhas Status e #</text>
+
+  <line x1="302" y1="110" x2="326" y2="84" stroke="#5ee08a" stroke-width="1.5" marker-end="url(#g)"/>
+  <line x1="455" y1="112" x2="455" y2="124" stroke="#5ee08a" stroke-width="1.5" marker-end="url(#g)"/>
+
+  <!-- outer loop -->
+  <rect x="30" y="206" width="840" height="290" rx="12" fill="none" stroke="#5ee08a" stroke-dasharray="6 5" stroke-width="1.5"/>
+  <text class="m" x="46" y="230" style="fill:#5ee08a">laço externo: while IFS=$'\t' read -r host_field ports_field   (uma volta por host)</text>
+  <line x1="455" y1="184" x2="455" y2="202" stroke="#5ee08a" stroke-width="1.5" marker-end="url(#g)"/>
+
+  <rect class="box" x="50" y="246" width="370" height="64" rx="10"/>
+  <text class="m" x="64" y="270">3 recortar o IP</text>
+  <text class="s" x="64" y="290">${host_field#Host: }  → "192.168.0.3 ()"</text>
+  <text class="s" x="64" y="306">${ip%% *}             → "192.168.0.3"</text>
+
+  <rect class="box" x="450" y="246" width="400" height="64" rx="10"/>
+  <text class="m" x="464" y="270">4 uma porta por linha</text>
+  <text class="s" x="464" y="290">${ports//, /$'\n'}  troca ", " por quebra</text>
+  <text class="s" x="464" y="306">de linha e entrega ao laço interno (&lt;&lt;&lt;)</text>
+  <line x1="420" y1="278" x2="446" y2="278" stroke="#5ee08a" stroke-width="1.5" marker-end="url(#g)"/>
+
+  <!-- inner loop -->
+  <rect x="50" y="328" width="800" height="150" rx="12" fill="none" stroke="#e8c25a" stroke-dasharray="4 4" stroke-width="1.5"/>
+  <text class="m" x="64" y="350" style="fill:#e8c25a">laço interno: while IFS=/ read -r port state _   (uma volta por porta)</text>
+
+  <rect class="box" x="70" y="364" width="250" height="96" rx="10"/>
+  <text class="m" x="84" y="388">5 só as abertas</text>
+  <text class="s" x="84" y="408">"8080/open/tcp//http-proxy///"</text>
+  <text class="s" x="84" y="424">port=8080  state=open  _=resto</text>
+  <text class="s" x="84" y="444" style="fill:#f08c7a">state ≠ open → continue</text>
+
+  <rect class="box" x="350" y="364" width="260" height="96" rx="10" style="stroke:#e8c25a"/>
+  <text class="m" x="364" y="388" style="fill:#e8c25a">6 case $port in</text>
+  <text class="s" x="364" y="408">80)   http://IP/</text>
+  <text class="s" x="364" y="424">443)  https://IP/</text>
+  <text class="s" x="364" y="440">8080) http://IP:8080/</text>
+  <text class="s" x="364" y="456">8443) https://IP:8443/   *) nada</text>
+  <line x1="320" y1="412" x2="346" y2="412" stroke="#5ee08a" stroke-width="1.5" marker-end="url(#g)"/>
+
+  <rect class="box" x="640" y="364" width="190" height="96" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="654" y="388" style="fill:#5cc8d8">7 saída</text>
+  <text class="s" x="654" y="408">uma URL por linha</text>
+  <text class="s" x="654" y="424">no stdout:</text>
+  <text class="s" x="654" y="444">| sort  | wc -l  | tee</text>
+  <line x1="610" y1="412" x2="636" y2="412" stroke="#5ee08a" stroke-width="1.5" marker-end="url(#g)"/>
+</svg>

