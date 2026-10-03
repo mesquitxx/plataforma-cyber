@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">O ciclo de vida de um processo</title>
+  <desc id="d">Parte 1: o shell (PID 8) faz fork e cria uma cópia de si (PID 17); a cópia faz exec e vira o programa sleep, com o mesmo PID; ao terminar, faz exit e vira um zumbi até o pai ler o código de saída com wait, quando some da tabela. Parte 2: os estados que o ps mostra: R (rodando), S (dormindo, esperando algo), T (parado por SIGSTOP ou Ctrl+Z, volta com SIGCONT) e Z (zumbi, terminou e espera o wait do pai).</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c25a"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+
+  <!-- Part 1: fork, exec, exit, wait -->
+  <text class="t" x="30" y="36">1. Do Enter ao fim: fork, exec, exit e wait</text>
+
+  <rect class="box" x="30" y="60" width="150" height="62" rx="10"/>
+  <text class="m" x="46" y="87">bash</text>
+  <text class="s" x="46" y="108">PID 8 (o pai)</text>
+
+  <rect class="box" x="250" y="60" width="150" height="62" rx="10"/>
+  <text class="m" x="266" y="87">bash (cópia)</text>
+  <text class="s" x="266" y="108">PID 17, PPID 8</text>
+
+  <rect class="box" x="470" y="60" width="150" height="62" rx="10"/>
+  <text class="m" x="486" y="87">sleep 1000</text>
+  <text class="s" x="486" y="108">PID 17 (o mesmo)</text>
+
+  <rect class="box" x="690" y="60" width="180" height="62" rx="10" style="stroke:#f08c7a"/>
+  <text class="m" x="706" y="87" style="fill:#f08c7a">zumbi (Z)</text>
+  <text class="s" x="706" y="108">só o código de saída</text>
+
+  <line x1="180" y1="91" x2="246" y2="91" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="s" x="192" y="82" style="fill:#5ee08a">fork</text>
+  <line x1="400" y1="91" x2="466" y2="91" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="s" x="412" y="82" style="fill:#5ee08a">exec</text>
+  <line x1="620" y1="91" x2="686" y2="91" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
+  <text class="s" x="632" y="82" style="fill:#f08c7a">exit</text>
+
+  <path d="M780 122 v40 H105 v-36" fill="none" stroke="#5cc8d8" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#c)"/>
+  <text class="s" x="250" y="182" style="fill:#5cc8d8">wait: o pai lê o código de saída (0, 1, 143...) e o zumbi some da tabela</text>
+
+  <text class="s" x="30" y="214">fork copia o processo inteiro; exec troca o programa da cópia mantendo o PID, o dono,</text>
+  <text class="s" x="30" y="232">as variáveis exportadas e os canais 0, 1 e 2 (é assim que o ambiente e os pipes são herdados).</text>
+
+  <!-- Part 2: states -->
+  <text class="t" x="30" y="282">2. Os estados que o ps mostra na coluna STAT</text>
+
+  <rect class="box" x="60" y="310" width="170" height="60" rx="10" style="stroke:#5ee08a"/>
+  <text class="m" x="76" y="337" style="fill:#5ee08a">R  rodando</text>
+  <text class="s" x="76" y="357">na CPU ou na fila</text>
+
+  <rect class="box" x="360" y="310" width="190" height="60" rx="10"/>
+  <text class="m" x="376" y="337">S  dormindo</text>
+  <text class="s" x="376" y="357">esperando tempo/dados</text>
+
+  <rect class="box" x="60" y="400" width="170" height="56" rx="10" style="stroke:#e8c25a"/>
+  <text class="m" x="76" y="425" style="fill:#e8c25a">T  parado</text>
+  <text class="s" x="76" y="444">congelado</text>
+
+  <rect class="box" x="680" y="310" width="190" height="60" rx="10" style="stroke:#f08c7a"/>
+  <text class="m" x="696" y="337" style="fill:#f08c7a">Z  zumbi</text>
+  <text class="s" x="696" y="357">terminou; falta o wait</text>
+
+  <line x1="230" y1="328" x2="356" y2="328" stroke="#9fb0a6" stroke-width="1.5" marker-end="url(#y)"/>
+  <line x1="356" y1="352" x2="234" y2="352" stroke="#9fb0a6" stroke-width="1.5" marker-end="url(#y)"/>
+  <text class="s" x="244" y="321">espera algo</text>
+  <text class="s" x="244" y="368">chegou</text>
+
+  <line x1="120" y1="370" x2="120" y2="396" stroke="#e8c25a" stroke-width="2" marker-end="url(#y)"/>
+  <line x1="170" y1="400" x2="170" y2="374" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <text class="s" x="250" y="420" style="fill:#e8c25a">↓ SIGSTOP ou Ctrl+Z</text>
+  <text class="s" x="250" y="440" style="fill:#5ee08a">↑ SIGCONT (bg, fg)</text>
+
+  <line x1="550" y1="340" x2="676" y2="340" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
+  <text class="s" x="566" y="332" style="fill:#f08c7a">exit ou</text>
+  <text class="s" x="566" y="362" style="fill:#f08c7a">sinal fatal</text>
+  <text class="s" x="520" y="410">Um zumbi não usa CPU nem memória:</text>
+  <text class="s" x="520" y="426">é só uma linha na tabela de processos.</text>
+  <text class="s" x="520" y="442">kill não o tira de lá; quem resolve é</text>
+  <text class="s" x="520" y="458">o pai (wait) ou a morte do pai.</text>
+</svg>

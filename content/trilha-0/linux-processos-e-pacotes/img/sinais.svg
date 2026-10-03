@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" role="img" aria-labelledby="t d">
+  <title id="t">Como um sinal chega a um processo</title>
+  <desc id="d">À esquerda, quem envia: o teclado (Ctrl+C manda SIGINT 2, Ctrl+Z manda SIGTSTP 20, Ctrl+\ manda SIGQUIT 3), o comando kill (sem opção manda SIGTERM 15; kill -9 manda SIGKILL 9) e o fechamento do terminal (SIGHUP 1). No meio, o kernel entrega o sinal. À direita, o processo pode tratar o sinal com uma rotina própria (trap), ignorá-lo, ou deixar a ação padrão, que quase sempre é terminar. SIGKILL e SIGSTOP passam direto: o kernel aplica sem perguntar ao processo. Quem morre por um sinal N devolve ao shell o código 128+N: 130 para SIGINT, 137 para SIGKILL, 143 para SIGTERM.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+  </defs>
+  <rect width="900" height="450" fill="#121815"/>
+  <text class="t" x="30" y="36">Quem envia, quem entrega, o que o processo pode fazer</text>
+
+  <!-- senders -->
+  <rect class="box" x="30" y="60" width="260" height="98" rx="10"/>
+  <text class="m" x="46" y="84">Teclado (no terminal)</text>
+  <text class="s" x="46" y="106">Ctrl+C  → SIGINT  (2)</text>
+  <text class="s" x="46" y="124">Ctrl+Z  → SIGTSTP (20)</text>
+  <text class="s" x="46" y="142">Ctrl+\  → SIGQUIT (3)</text>
+
+  <rect class="box" x="30" y="172" width="260" height="98" rx="10"/>
+  <text class="m" x="46" y="196">Comando kill</text>
+  <text class="s" x="46" y="218">kill PID     → SIGTERM (15)</text>
+  <text class="s" x="46" y="236" style="fill:#f08c7a">kill -9 PID  → SIGKILL (9)</text>
+  <text class="s" x="46" y="254" style="fill:#e8c25a">kill -STOP   → SIGSTOP (19)</text>
+
+  <rect class="box" x="30" y="284" width="260" height="62" rx="10"/>
+  <text class="m" x="46" y="308">Terminal fechado</text>
+  <text class="s" x="46" y="330">→ SIGHUP (1) para os jobs</text>
+
+  <!-- kernel -->
+  <rect class="box" x="360" y="150" width="140" height="110" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="396" y="196" style="fill:#5cc8d8">kernel</text>
+  <text class="s" x="378" y="218">confere se você</text>
+  <text class="s" x="378" y="234">pode sinalizar</text>
+
+  <g stroke="#9fb0a6" stroke-width="1.5" fill="none">
+    <path d="M290 110 C330 110 330 180 356 186" marker-end="url(#g)"/>
+    <path d="M290 220 H356" marker-end="url(#g)"/>
+    <path d="M290 315 C330 315 330 250 356 244" marker-end="url(#g)"/>
+  </g>
+
+  <!-- outcomes -->
+  <rect class="box" x="570" y="60" width="300" height="72" rx="10" style="stroke:#5ee08a"/>
+  <text class="m" x="586" y="84" style="fill:#5ee08a">1. Tratar (trap / handler)</text>
+  <text class="s" x="586" y="104">roda uma rotina própria: salvar,</text>
+  <text class="s" x="586" y="120">limpar arquivos, ou até ignorar</text>
+
+  <rect class="box" x="570" y="146" width="300" height="56" rx="10"/>
+  <text class="m" x="586" y="170">2. Ignorar</text>
+  <text class="s" x="586" y="190">ex.: nohup ignora SIGHUP</text>
+
+  <rect class="box" x="570" y="216" width="300" height="56" rx="10"/>
+  <text class="m" x="586" y="240">3. Ação padrão</text>
+  <text class="s" x="586" y="260">quase sempre: terminar</text>
+
+  <rect class="box" x="570" y="296" width="300" height="56" rx="10" style="stroke:#f08c7a"/>
+  <text class="m" x="586" y="320" style="fill:#f08c7a">SIGKILL e SIGSTOP</text>
+  <text class="s" x="586" y="340">não podem ser tratados nem ignorados</text>
+
+  <g stroke="#5ee08a" stroke-width="1.5" fill="none">
+    <path d="M500 186 C535 186 535 96 566 96" marker-end="url(#g)"/>
+    <path d="M500 200 C535 200 535 174 566 174" marker-end="url(#g)"/>
+    <path d="M500 220 C535 220 535 244 566 244" marker-end="url(#g)"/>
+  </g>
+  <path d="M500 250 C535 250 535 324 566 324" fill="none" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
+
+  <rect x="30" y="378" width="840" height="52" rx="8" fill="none" stroke="#e8c25a" stroke-dasharray="4 4"/>
+  <text class="s" x="46" y="400" style="fill:#e8c25a">Morreu pelo sinal N? O shell recebe o código 128 + N:</text>
+  <text class="s" x="46" y="418" style="fill:#e8c25a">Ctrl+C → 130 (128+2)   ·   kill -9 → 137 (128+9)   ·   kill → 143 (128+15)</text>
+</svg>

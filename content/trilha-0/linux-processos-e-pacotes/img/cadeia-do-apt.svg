@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">A cadeia de um pacote: do autor ao seu disco</title>
+  <desc id="d">O autor do programa (upstream) publica o código; o mantenedor da distribuição empacota um .deb; o repositório publica os pacotes com índices e um arquivo InRelease assinado com a chave da distribuição. No seu computador, apt update baixa os índices e confere a assinatura com a chave em /usr/share/keyrings; apt install baixa o .deb, confere o hash contra o índice assinado e entrega ao dpkg, que copia os arquivos e roda os scripts do pacote como root. Pontos de ataque marcados: código malicioso já no upstream (caso xz), erro do mantenedor (caso OpenSSL da Debian), repositório de terceiros ou chave mal configurada, e instalação manual de .deb sem verificação.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #9fb0a6; }
+    .w { font-size: 12px; fill: #f08c7a; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="36">Do autor ao seu disco: onde a confiança é conferida (e onde já falhou)</text>
+
+  <!-- top row: supply side -->
+  <rect class="box" x="30" y="66" width="200" height="74" rx="10"/>
+  <text class="m" x="46" y="92">upstream</text>
+  <text class="s" x="46" y="112">o autor publica o</text>
+  <text class="s" x="46" y="128">código (tarball)</text>
+
+  <rect class="box" x="300" y="66" width="230" height="74" rx="10"/>
+  <text class="m" x="316" y="92">mantenedor</text>
+  <text class="s" x="316" y="112">aplica patches e gera</text>
+  <text class="s" x="316" y="128">o pacote .deb</text>
+
+  <rect class="box" x="600" y="66" width="270" height="74" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="616" y="92" style="fill:#5cc8d8">repositório</text>
+  <text class="s" x="616" y="112">.debs + índices + InRelease</text>
+  <text class="s" x="616" y="128">assinado (GPG) pela distro</text>
+
+  <line x1="230" y1="103" x2="296" y2="103" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <line x1="530" y1="103" x2="596" y2="103" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+
+  <text class="w" x="30" y="162">⚠ código malicioso no</text>
+  <text class="w" x="30" y="178">  próprio upstream (xz, 2024)</text>
+  <text class="w" x="300" y="162">⚠ erro num patch da distro</text>
+  <text class="w" x="300" y="178">  (OpenSSL Debian, 2006–2008)</text>
+  <text class="w" x="600" y="162">⚠ repositório de terceiros com</text>
+  <text class="w" x="600" y="178">  chave valendo para tudo</text>
+
+  <!-- bottom row: your machine -->
+  <rect x="20" y="210" width="860" height="200" rx="12" fill="none" stroke="#34413b" stroke-dasharray="6 5"/>
+  <text class="s" x="36" y="232">o seu computador</text>
+
+  <rect class="box" x="600" y="250" width="270" height="74" rx="10"/>
+  <text class="m" x="616" y="276">apt update</text>
+  <text class="s" x="616" y="296">baixa os índices e confere</text>
+  <text class="s" x="616" y="312">a assinatura (Signed-By)</text>
+
+  <rect class="box" x="300" y="250" width="230" height="74" rx="10"/>
+  <text class="m" x="316" y="276">apt install X</text>
+  <text class="s" x="316" y="296">resolve dependências,</text>
+  <text class="s" x="316" y="312">baixa e confere o hash</text>
+
+  <rect class="box" x="30" y="250" width="200" height="74" rx="10" style="stroke:#e8c25a"/>
+  <text class="m" x="46" y="276" style="fill:#e8c25a">dpkg (como root)</text>
+  <text class="s" x="46" y="296">copia os arquivos e</text>
+  <text class="s" x="46" y="312">roda os scripts</text>
+
+  <path d="M850 140 V246" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <line x1="596" y1="287" x2="534" y2="287" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+  <line x1="296" y1="287" x2="234" y2="287" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+
+  <text class="w" x="30" y="352">⚠ dpkg -i arquivo.deb baixado de qualquer lugar: nenhuma assinatura é conferida</text>
+  <text class="s" x="30" y="376">A assinatura prova que o pacote veio da distribuição e não foi alterado no caminho.</text>
+  <text class="s" x="30" y="394">Ela não prova que o código é bom: se o problema veio de cima, ele chega assinado.</text>
+
+  <text class="s" x="30" y="444">Os scripts do pacote (preinst, postinst) rodam como root: instalar um pacote é confiar nele por inteiro.</text>
+</svg>

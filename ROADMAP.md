@@ -170,7 +170,9 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
 - Andamento: 0.1 "Como usar esta plataforma" (sem lab; duas missões de
   reconhecimento e verificação do isolamento), 0.2 "Redes TCP/IP na prática"
   (sem lab; inspeção do próprio WSL, cálculo de escopo em CIDR e decodificação
-  de um pacote real capturado no lab `dvwa`) e 0.3 (piloto da Fase 4) escritos.
+  de um pacote real capturado no lab `dvwa`), 0.3 (piloto da Fase 4) e 0.4
+  "Linux: processos, pacotes e edição" (sem lab; três missões no `linux-sandbox` do
+  0.3 e walkthrough de `apt` e `vim` no WSL) escritos.
 
 ## Fase 10 — Conteúdo: Trilhas 3–5
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.

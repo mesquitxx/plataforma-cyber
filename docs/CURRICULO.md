@@ -103,7 +103,7 @@ scripting. Sem labs de ataque; prática guiada no próprio ambiente.
 - **Objetivos:** processos (`ps`, `top`, sinais, `kill`, jobs); usuários e
   grupos; variáveis de ambiente e `PATH`; gerenciador de pacotes (`apt`);
   edição no terminal (`nano` e noções de `vim`).
-- **Lab:** a definir na Fase 7 (provavelmente o `linux-sandbox`).
+- **Lab:** não (exercícios no `linux-sandbox` do 0.3 e no próprio WSL, sem lab novo).
 - Criado na Fase 4, ao dividir o antigo "Terminal Linux essencial" em dois.
 
 ### 0.5 — Windows para quem vem do Linux

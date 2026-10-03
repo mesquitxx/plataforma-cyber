@@ -1,0 +1,2372 @@
+---
+slug: linux-processos-e-pacotes
+track: trilha-0
+title: "Linux: processos, pacotes e edição"
+prerequisites: [terminal-linux]
+lab: null
+tasks:
+  - slug: missao-1-processo-teimoso
+    title: "Missão 1 — O processo teimoso"
+    type: flag
+    prompt: "A letra do estado do sleep depois do SIGSTOP, o código de saída do sleep encerrado com SIGTERM e o do teimoso.sh encerrado com SIGKILL, no formato FLAG{letra-código-código}."
+    hint: "A letra está na linha State de /proc/PID/status (maiúscula). Os códigos aparecem com wait %1; echo $? logo depois de cada kill."
+    flag:
+      hash: "scrypt$16384$8$1$84bb0c4c91068f837c39dfde717163d9857ab1d7b384ff2adebb830e1ab8b376"
+      salt: "81151a64158e4a695b9b3542cb18b153"
+  - slug: missao-2-path-envenenado
+    title: "Missão 2 — O PATH envenenado"
+    type: flag
+    prompt: "No shell de login aberto depois de criar ~/bin: quantos diretórios há no PATH, quantas linhas o type -a ls mostra e o código de saída de um comando inexistente, no formato FLAG{diretórios-linhas-código}."
+    hint: "Abra um novo shell de login com bash -l. Conte com echo \"$PATH\" | tr ':' '\\n' | wc -l; depois type -a ls; depois digite um comando que não existe e veja o $?."
+    flag:
+      hash: "scrypt$16384$8$1$15994ba7a934e73c6af3a60cb4a6773441cef933daea82ae0671b26ddb1fb5f7"
+      salt: "ffdba1bd845331123b7d236d740a736b"
+  - slug: missao-3-pacote-e-editor
+    title: "Missão 3 — Pacote e editor"
+    type: flag
+    prompt: "O nome do pacote dono do /usr/bin/top e os 8 primeiros caracteres do sha256sum do escopo.conf corrigido, no formato FLAG{pacote-8caracteres}."
+    hint: "dpkg -S responde de qual pacote é um arquivo. Para o hash: sha256sum escopo.conf | cut -c1-8, só depois de o md5sum bater com o valor de conferência."
+    flag:
+      hash: "scrypt$16384$8$1$82fdcc45da44f7b254d65a3e3a748e1c48bd30c43d55c5d6a094eb93c658d525"
+      salt: "ec3fbb1468dea5ea5dcc6ad2790b6f7a"
+  - slug: quiz-final
+    title: "Quiz — Linux: processos, pacotes e edição"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual a diferença prática entre `kill PID` e `kill -9 PID`?"
+        options:
+          - "Nenhuma: os dois matam o processo na hora"
+          - "`kill PID` manda SIGTERM, que o programa pode tratar (salvar, limpar) ou até ignorar; `kill -9` manda SIGKILL, que o kernel aplica sem consultar o programa"
+          - "`kill -9` só funciona para o root"
+          - "`kill PID` pausa o processo e `kill -9` o encerra"
+        answer: 1
+        explanation: "Sem opção, o kill manda SIGTERM (15), um pedido educado que o processo pode tratar com um handler ou ignorar, como o teimoso.sh da Missão 1. SIGKILL (9) não pode ser tratado nem ignorado: o kernel encerra o processo sem dar chance de arrumar nada. Por isso a ordem certa é TERM primeiro e KILL só se for preciso."
+      - question: "Um script termina e o `echo $?` mostra `137`. O que isso indica?"
+        options:
+          - "Que o script encontrou 137 erros"
+          - "Que o comando não foi encontrado"
+          - "Que o processo morreu pelo sinal 9 (SIGKILL), porque 137 = 128 + 9"
+          - "Que faltou permissão de execução"
+        answer: 2
+        explanation: "Quando um processo morre por um sinal N, o shell devolve 128 + N. 137 é SIGKILL (9), 143 é SIGTERM (15) e 130 é SIGINT (2, o Ctrl+C). O 127 é outra coisa: comando não encontrado."
+      - question: "O `ps` mostra um processo com `STAT` igual a `Z` e o nome `<defunct>`. O que é e como ele some?"
+        options:
+          - "Um vírus; some com `kill -9`"
+          - "Um processo zumbi: já terminou e só espera o pai ler o código de saída (wait); some quando o pai faz isso ou quando o próprio pai termina"
+          - "Um processo parado com Ctrl+Z; some com `fg`"
+          - "Um processo de outro usuário, invisível para você"
+        answer: 1
+        explanation: "Zumbi é só uma linha na tabela de processos guardando o código de saída. Não usa CPU nem memória, e kill não adianta, porque ele já morreu. Quando o pai faz wait (ou morre e o filho é adotado pelo PID 1, que faz wait), a linha some."
+      - question: "Você digitou `sleep 1000` (sem `&`) e apertou `Ctrl+Z`. O que aconteceu com o processo?"
+        options:
+          - "Foi encerrado"
+          - "Foi parado (estado T) e virou um job; continua existindo até você usar `fg`, `bg` ou encerrá-lo"
+          - "Continuou rodando em segundo plano"
+          - "Foi transformado em daemon"
+        answer: 1
+        explanation: "Ctrl+Z manda SIGTSTP: o processo congela (T, Stopped) e o shell devolve o prompt. `bg` o faz continuar em segundo plano e `fg` o traz de volta para a frente. Quem esquece um job parado deixa um processo vivo para trás."
+      - question: "Você roda `SEGREDO=abc` e depois `bash -c 'echo $SEGREDO'`. A saída é vazia. Por quê?"
+        options:
+          - "Porque o bash -c não lê variáveis"
+          - "Porque SEGREDO é uma variável de shell, não exportada: só variáveis exportadas são copiadas para o ambiente dos processos filhos"
+          - "Porque faltou sudo"
+          - "Porque o nome tem letras maiúsculas"
+        answer: 1
+        explanation: "Uma variável criada com NOME=valor fica só no shell atual. `export SEGREDO` a coloca no ambiente, e o ambiente é herdado pelos filhos no fork/exec. Para um único comando, `SEGREDO=abc comando` também funciona."
+      - question: "Em que ordem o Bash procura o que executar quando você digita um nome como `ls`?"
+        options:
+          - "PATH, depois builtin, depois alias"
+          - "Só no PATH"
+          - "Alias, função, builtin, tabela hash e, por fim, os diretórios do PATH da esquerda para a direita"
+          - "Primeiro em /bin, depois na pasta atual"
+        answer: 2
+        explanation: "É por isso que um alias ou uma função podem mudar o que um comando faz, e que um diretório posto no começo do PATH vence os diretórios do sistema. `type -a nome` mostra todas as possibilidades na ordem."
+      - question: "Por que é perigoso ter `.` (a pasta atual) ou um diretório gravável no começo do PATH?"
+        options:
+          - "Porque deixa o shell mais lento"
+          - "Porque qualquer um que consiga escrever ali pode criar um programa com o nome de um comando comum (ls, sudo) e ele será executado no seu lugar, com as suas permissões"
+          - "Porque o kernel bloqueia programas fora de /usr/bin"
+          - "Não é perigoso"
+        answer: 1
+        explanation: "É o sequestro de PATH (MITRE T1574.007), visto na Missão 2. Num script que roda como root, o estrago é total. Diretórios do usuário, quando entram no PATH, devem ir no fim, e scripts privilegiados devem definir um PATH fixo."
+      - question: "Qual a diferença entre `apt update` e `apt upgrade`?"
+        options:
+          - "São sinônimos"
+          - "`update` baixa as listas de pacotes dos repositórios (e confere a assinatura delas); `upgrade` instala as versões novas dos pacotes já instalados"
+          - "`update` atualiza o kernel e `upgrade` atualiza o resto"
+          - "`upgrade` baixa as listas e `update` instala"
+        answer: 1
+        explanation: "Sem um `update` recente, o apt nem sabe que existem versões novas. A rotina de segurança é `sudo apt update && sudo apt upgrade`, ou deixar o unattended-upgrades fazer isso sozinho, como no log do WSL da seção 5."
+      - question: "Você encontrou um binário suspeito em `/usr/bin/xyz`. Qual comando diz de qual pacote ele veio?"
+        options:
+          - "`dpkg -L /usr/bin/xyz`"
+          - "`dpkg -S /usr/bin/xyz`"
+          - "`apt show xyz`"
+          - "`which xyz`"
+        answer: 1
+        explanation: "`dpkg -S arquivo` procura o arquivo na lista dos pacotes instalados (S de search). `dpkg -L pacote` faz o inverso: lista os arquivos de um pacote. Se nenhum pacote reconhece um binário em /usr/bin, ele foi posto ali à mão e merece investigação."
+      - question: "Você abriu o `vim` sem querer e não consegue sair. O que digita para sair sem salvar nada?"
+        options:
+          - "`Ctrl+C` várias vezes"
+          - "`exit` e Enter"
+          - "`Esc` e depois `:q!` e Enter"
+          - "`Ctrl+X`"
+        answer: 2
+        explanation: "Esc garante o modo normal; `:` abre a linha de comando; `q!` sai descartando as mudanças. `:wq` sairia salvando. `Ctrl+X` é a saída do nano, não do vim."
+      - question: "Qual era o mecanismo do Shellshock (CVE-2014-6271)?"
+        options:
+          - "Uma senha padrão no Bash"
+          - "O Bash executava comandos que vinham depois de uma definição de função dentro do valor de uma variável de ambiente, e servidores (como CGI no Apache) copiavam dados da requisição para variáveis de ambiente"
+          - "Um estouro de memória no kernel"
+          - "Um erro de permissão em /etc/shadow"
+        answer: 1
+        explanation: "Variáveis de ambiente cruzam fronteiras: um servidor web copia cabeçalhos HTTP para variáveis e chama um script. Se o Bash executa código escondido no valor de uma variável, quem controla o cabeçalho controla o servidor. A correção chegou por atualização de pacote."
+      - question: "Como o backdoor do xz-utils (CVE-2024-3094) foi notado, em março de 2024?"
+        options:
+          - "Por um antivírus comercial"
+          - "Um engenheiro reparou que logins por ssh no Debian instável estavam gastando CPU demais e ficando lentos (além de erros do valgrind), e investigou o porquê"
+          - "O autor do backdoor confessou"
+          - "Pelo aviso de um repositório oficial"
+        answer: 1
+        explanation: "Andres Freund notou o sshd consumindo CPU e um login que levava cerca de 0,3 s passando a cerca de 0,8 s. Olhar processos e desconfiar de consumo estranho, exatamente o que o top e o ps mostram, pegou um ataque à cadeia de suprimentos antes de ele chegar às versões estáveis das distribuições."
+glossary:
+  - term: PID
+    definition: "Process ID: o número que o kernel dá a cada processo. É por ele que você se refere a um processo em kill, em /proc/PID e no ps."
+  - term: PPID
+    definition: "Parent Process ID: o PID do processo pai, aquele que criou este. Com ele se monta a árvore de processos."
+  - term: init
+    definition: "O primeiro processo do sistema (PID 1), que o kernel inicia no boot. É o ancestral de todos os outros e adota os órfãos. Numa máquina comum é o systemd; num contêiner, pode ser algo mínimo, como o docker-init."
+  - term: systemd
+    definition: "O init e gerenciador de serviços da maioria das distribuições atuais (Debian, Ubuntu, Fedora). Inicia, para e vigia serviços; comandado com systemctl."
+  - term: process state
+    definition: "O estado de um processo, na coluna STAT do ps: R (rodando), S (dormindo, esperando algo), D (esperando disco, não interrompível), T (parado) ou Z (zumbi)."
+  - term: zombie process
+    definition: "Processo zumbi: já terminou, mas o pai ainda não leu o código de saída com wait. Ocupa só uma linha na tabela de processos; kill não o remove."
+  - term: orphan process
+    definition: "Processo órfão: aquele cujo pai terminou antes dele. É adotado pelo PID 1 (ou por um processo designado para isso)."
+  - term: signal
+    definition: "Sinal: aviso curto que o kernel entrega a um processo (terminar, parar, continuar, o terminal fechou...). Cada sinal tem nome e número; kill -l lista todos."
+  - term: SIGTERM
+    definition: "Sinal 15, o padrão do kill: pede ao processo que termine. O programa pode tratá-lo (salvar, limpar) ou ignorá-lo."
+  - term: SIGKILL
+    definition: "Sinal 9 (kill -9): encerra o processo na hora. Não pode ser tratado nem ignorado, então o programa não tem chance de salvar nada."
+  - term: SIGINT
+    definition: "Sinal 2, enviado pelo Ctrl+C no terminal: interrompe o programa em primeiro plano."
+  - term: SIGHUP
+    definition: "Sinal 1 (hang up): avisa que o terminal foi fechado. Por padrão, encerra os jobs daquele terminal. Muitos daemons o usam como pedido para reler a configuração."
+  - term: SIGSTOP
+    definition: "Sinal 19 em x86: congela o processo (estado T) sem encerrá-lo. Como o SIGKILL, não pode ser tratado nem ignorado. SIGCONT (18) o faz continuar."
+  - term: SIGTSTP
+    definition: "Sinal 20 em x86, enviado pelo Ctrl+Z: pede ao programa em primeiro plano que pare. Diferente do SIGSTOP, pode ser tratado."
+  - term: signal handler
+    definition: "Rotina que um programa registra para executar quando recebe um sinal, em vez da ação padrão. No Bash, se define com trap."
+  - term: job control
+    definition: "Recurso do shell interativo que permite pôr comandos em segundo plano (&), pará-los (Ctrl+Z) e trazê-los de volta (fg, bg). Depende de um TTY."
+  - term: job
+    definition: "Um comando (ou pipeline) iniciado pelo shell atual, numerado pelo próprio shell: %1, %2... Lista-se com jobs."
+  - term: foreground
+    definition: "Primeiro plano: o processo que está usando o terminal e recebe o teclado (e o Ctrl+C). Só há um por vez."
+  - term: background
+    definition: "Segundo plano: o processo roda sem prender o terminal, iniciado com & no fim do comando ou mandado para lá com bg."
+  - term: process group
+    definition: "Grupo de processos: o conjunto formado por um job e seus filhos. kill %1 e o Ctrl+C sinalizam o grupo inteiro, não um processo só."
+  - term: load average
+    definition: "Média de processos rodando ou esperando CPU (e disco, no Linux) no último 1, 5 e 15 minutos. Compare com o número de CPUs (nproc)."
+  - term: procfs
+    definition: "O sistema de arquivos virtual montado em /proc: o kernel mostra ali cada processo como uma pasta (/proc/PID) com status, linha de comando, ambiente e arquivos abertos."
+  - term: nice
+    definition: "Valor de gentileza de um processo, de -20 a 19: quanto maior, menor a prioridade na CPU. Usuários comuns só podem aumentar o próprio nice (nice, renice)."
+  - term: group
+    definition: "Grupo: um conjunto de usuários que recebe permissões em conjunto (o trio do meio do rwx). Listado em /etc/group."
+  - term: GID
+    definition: "Group ID: o número de um grupo para o kernel, como o UID é para o usuário."
+  - term: primary group
+    definition: "Grupo primário: o grupo principal de um usuário (o gid= do id). É o grupo dos arquivos que ele cria."
+  - term: supplementary group
+    definition: "Grupo suplementar: cada grupo extra de um usuário (os groups= do id). Dá as permissões daquele grupo sem mudar o grupo primário."
+  - term: service account
+    definition: "Conta de serviço: usuário criado para rodar um programa (servidor web, banco), sem pessoa por trás e geralmente sem shell de login (nologin)."
+  - term: su
+    definition: "Substitute user: abre um shell como outro usuário (o root, por padrão), pedindo a senha DAQUELE usuário."
+  - term: sudoers
+    definition: "O arquivo /etc/sudoers (e /etc/sudoers.d/), que diz quem pode usar o sudo, como quem e para quais comandos. Edita-se com visudo."
+  - term: sudo-rs
+    definition: "Reimplementação do sudo na linguagem Rust, adotada como padrão pelo Ubuntu a partir da versão 25.10. Usa os mesmos comandos e o mesmo /etc/sudoers."
+  - term: shell variable
+    definition: "Variável de shell: criada com NOME=valor e visível só no shell atual. Vira variável de ambiente (herdada pelos filhos) com export."
+  - term: export
+    definition: "Comando embutido do shell que marca uma variável para entrar no ambiente dos processos filhos."
+  - term: PATH environment variable
+    definition: "Variável de ambiente com a lista de diretórios, separados por dois-pontos, onde o shell procura os programas pelo nome, da esquerda para a direita."
+  - term: PATH hijacking
+    definition: "Sequestro de PATH: pôr um programa falso com o nome de um comando comum num diretório que vem antes, no PATH, do diretório do programa verdadeiro (MITRE T1574.007)."
+  - term: alias
+    definition: "Apelido de comando definido no shell (alias ll='ls -l'). O shell troca o texto antes de procurar o programa."
+  - term: command hash table
+    definition: "Tabela em que o Bash guarda o caminho dos programas já encontrados no PATH, para não procurar de novo. Vê-se e limpa-se com hash e hash -r."
+  - term: login shell
+    definition: "Shell aberto num login (terminal, ssh, bash -l). Lê /etc/profile e ~/.profile; um shell comum lê só o ~/.bashrc."
+  - term: shell startup file
+    definition: "Arquivo que o shell executa ao iniciar, como ~/.profile e ~/.bashrc. Tudo o que estiver nele roda a cada sessão, o que o torna um alvo de persistência."
+  - term: package
+    definition: "Pacote: arquivo que reúne um programa já compilado, seus arquivos de configuração, a lista de dependências e scripts de instalação. No Debian e no Ubuntu, um .deb."
+  - term: package manager
+    definition: "Gerenciador de pacotes: o sistema que instala, atualiza e remove pacotes, resolvendo dependências e conferindo assinaturas. No Debian e no Ubuntu: dpkg (base) e apt (por cima)."
+  - term: repository
+    definition: "Repositório: servidor que publica pacotes e os índices que os descrevem, assinados pela distribuição. Configurado em /etc/apt/sources.list.d/."
+  - term: dependency
+    definition: "Dependência: outro pacote que um pacote precisa para funcionar (bibliotecas, por exemplo). O apt as instala junto, automaticamente."
+  - term: dpkg
+    definition: "Debian Package: o gerenciador de baixo nível, que instala um .deb e mantém o banco dos pacotes instalados. Não baixa nada nem resolve dependências."
+  - term: apt
+    definition: "Advanced Package Tool: o gerenciador de alto nível do Debian e do Ubuntu. Baixa pacotes dos repositórios, resolve dependências, confere assinaturas e entrega ao dpkg."
+  - term: upstream
+    definition: "O projeto original de um programa (quem o escreve), em contraste com a distribuição que o empacota."
+  - term: package maintainer
+    definition: "Mantenedor: a pessoa ou equipe da distribuição que transforma o código do upstream num pacote, aplica correções e publica as atualizações."
+  - term: tarball
+    definition: "Arquivo .tar.gz (ou .tar.xz) com o código-fonte de um programa, como os projetos costumam publicar suas versões."
+  - term: digital signature
+    definition: "Assinatura digital: valor criado com uma chave privada que prova quem publicou um arquivo e que ele não foi alterado. O apt confere a do arquivo InRelease de cada repositório."
+  - term: patch
+    definition: "Correção: um conjunto de mudanças aplicado ao código de um programa. Atualizações de segurança chegam como pacotes com patches."
+  - term: unattended-upgrades
+    definition: "Pacote do Debian e do Ubuntu que instala atualizações de segurança automaticamente, sem ninguém digitar apt upgrade."
+  - term: backdoor
+    definition: "Porta dos fundos: código escondido que dá a alguém acesso que contorna a autenticação normal de um sistema."
+  - term: exploit
+    definition: "Código ou técnica que aproveita uma vulnerabilidade para fazer o sistema fazer o que não deveria (executar comandos, virar root)."
+  - term: SSH
+    definition: "Secure Shell: protocolo para abrir um terminal remoto cifrado (porta 22). O servidor é o sshd. É assim que se administra a maioria dos servidores Linux."
+  - term: CGI
+    definition: "Common Gateway Interface: forma antiga de um servidor web chamar um programa ou script para gerar a página, passando os dados da requisição em variáveis de ambiente."
+  - term: valgrind
+    definition: "Ferramenta para desenvolvedores que roda um programa sob observação e aponta erros de memória."
+  - term: text editor
+    definition: "Editor de texto: programa para criar e alterar arquivos de texto puro, como configurações e scripts. No terminal, os mais comuns são nano e vim."
+  - term: nano
+    definition: "Editor de texto de terminal simples, com os atalhos sempre visíveis no rodapé (^ significa Ctrl, M- significa Alt)."
+  - term: vim
+    definition: "Editor de texto de terminal poderoso e modal (Vi IMproved). Está em quase todo servidor, às vezes só como vi."
+  - term: modal editor
+    definition: "Editor modal: as mesmas teclas fazem coisas diferentes conforme o modo (no vim: normal, inserção e linha de comando)."
+  - term: shell escape
+    definition: "Recurso de um programa que deixa rodar comandos do sistema de dentro dele (como :! no vim). Se o programa roda como root, o comando também roda."
+  - term: GTFOBins
+    definition: "Catálogo público de programas Unix comuns que podem ser usados para escapar de restrições ou escalar privilégios quando mal configurados (sudo, SUID)."
+  - term: terminal multiplexer
+    definition: "Multiplexador de terminal (tmux, screen): mantém sessões de shell vivas independentemente da janela, divide a tela e permite reconectar depois."
+  - term: core dump
+    definition: "Cópia da memória de um processo gravada em arquivo quando ele morre por certos sinais ou erros; serve para depurar e pode conter dados sensíveis."
+  - term: here document
+    definition: "Here-doc: forma de passar várias linhas de texto como entrada de um comando, entre <<'MARCA' e uma linha só com MARCA."
+  - term: typosquatting
+    definition: "Publicar pacotes (ou sites) com nomes quase iguais aos de outros famosos, esperando que alguém erre a digitação e instale o falso."
+  - term: rootkit
+    definition: "Malware que altera o kernel ou as bibliotecas do sistema para esconder processos, arquivos e conexões do próprio administrador."
+  - term: lock file
+    definition: "Arquivo de trava: impede que dois programas mexam no mesmo recurso ao mesmo tempo (como duas instalações do apt). Não se apaga à mão."
+  - term: systemd unit
+    definition: "Arquivo de configuração do systemd que descreve um serviço (ssh.service), um agendamento ou outro recurso: o que rodar, como quem e quando."
+  - term: sudoedit
+
+    definition: "Forma segura de editar um arquivo do sistema: o editor roda como você, sobre uma cópia, e só a gravação final é feita como root. O mesmo que sudo -e."
+---
+
+import ciclo from "./img/ciclo-de-vida-do-processo.svg";
+import arvore from "./img/arvore-de-processos.svg";
+import sinais from "./img/sinais.svg";
+import resolucao from "./img/resolucao-do-path.svg";
+import cadeia from "./img/cadeia-do-apt.svg";
+import modosVim from "./img/modos-do-vim.svg";
+import telaNano from "./img/nano-escopo-conf.png";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No módulo 0.3 você aprendeu a andar pelo sistema de arquivos: onde está, quem é, o que
+pode ler. Este módulo olha para o que está **vivo** na máquina. Um servidor não é só um
+monte de arquivos: é um conjunto de programas rodando ao mesmo tempo, cada um com um
+dono, um pai, variáveis herdadas e permissões; instalados por um sistema de pacotes e
+configurados por arquivos de texto que alguém editou num terminal.
+
+É exatamente isso que um pentester examina depois de conseguir acesso. Que programas
+estão rodando, e como quem? Existe algum processo do root que eu consiga influenciar?
+O que as variáveis de ambiente revelam? Que versões de pacotes estão instaladas e quais
+têm falhas conhecidas? E é também o que quem defende vigia: em março de 2024, um
+engenheiro estranhou um processo gastando CPU demais e acabou descobrindo um dos ataques
+mais sofisticados já feitos contra o Linux, escondido num pacote (seção 4).
+
+**Ao final, você vai saber:**
+
+- explicar o que é um processo por dentro (PID, PPID, estados, `fork`/`exec`/`wait`) e
+  ler o `ps`, o `top` e o `/proc`;
+- mandar sinais com `kill`, entender por que `kill -9` é o último recurso e ler os
+  códigos de saída 130, 137 e 143;
+- usar o controle de jobs (`&`, `Ctrl+Z`, `jobs`, `fg`, `bg`) e manter um programa vivo
+  depois de fechar o terminal (`nohup`);
+- ler e administrar usuários e grupos, e entender `su`, `sudo` e `sudo -l`;
+- explicar como o shell acha um comando pelo `PATH`, e como esse mecanismo é sequestrado;
+- instalar, consultar e atualizar pacotes com `apt` e `dpkg`, e saber onde a confiança é
+  conferida (e onde já falhou);
+- editar arquivos no terminal com `nano` e sobreviver ao `vim`;
+- reconhecer como atacantes usam cada uma dessas peças, e como se proteger.
+
+**Pré-requisito:** 0.3 — Linux: primeiros passos no terminal (navegação, permissões,
+pipes e o sandbox `linux-sandbox`, que você vai reutilizar aqui).
+
+**Tempo estimado:** de 3 a 4 horas, incluindo as três missões. É um módulo longo porque
+junta cinco assuntos; faça uma pausa entre as missões, se quiser.
+
+<Callout variant="ethics">
+Os comandos deste módulo são de administração comum, mas a seção 3 mostra como um invasor
+os usa. Matar processos, ler o ambiente de outros programas ou plantar um "ls" falso só
+são aceitáveis no **seu** ambiente (o sandbox e o seu WSL) ou em sistemas com autorização
+por escrito. Fazer isso no computador do trabalho, da faculdade ou de um cliente sem
+autorização é crime no Brasil, como a Trilha 1 detalha.
+</Callout>
+
+## 2. Teoria aprofundada — o sistema por dentro
+
+### 2.1 O que é um processo, de verdade
+
+Você já sabe, do 0.3, que um <GlossaryTerm term="process">processo</GlossaryTerm> é um
+programa em execução. Agora vamos abrir a caixa. O programa é o arquivo no disco (o
+`/usr/bin/sleep`); o processo é uma **instância viva** dele, com:
+
+- um número único, o <GlossaryTerm term="PID">PID</GlossaryTerm> (*Process ID*);
+- um pai, cujo número é o <GlossaryTerm term="PPID">PPID</GlossaryTerm> (*Parent
+  Process ID*): todo processo foi criado por outro;
+- um dono (o <GlossaryTerm term="UID">UID</GlossaryTerm>) e grupos, que o
+  <GlossaryTerm term="kernel">kernel</GlossaryTerm> usa para decidir cada permissão;
+- memória própria, um diretório atual, arquivos abertos (incluindo stdin, stdout e
+  stderr) e um **ambiente**, a lista de variáveis herdadas do pai.
+
+Você pode rodar o mesmo programa dez vezes: são dez processos, com dez PIDs, cada um com
+sua memória. É como uma receita de bolo (o programa) e os bolos assando no forno (os
+processos).
+
+#### Como um processo nasce: fork, exec, exit e wait
+
+No 0.3 você viu que o shell usa duas <GlossaryTerm term="system call">system calls</GlossaryTerm>
+para rodar um comando. Elas são o ciclo de vida inteiro, e entender esse ciclo explica
+metade deste módulo:
+
+<Figure
+  src={ciclo}
+  alt="Diagrama em duas partes. Na primeira, o bash (PID 8) faz fork e cria uma cópia (PID 17, PPID 8); a cópia faz exec e vira o sleep 1000 com o mesmo PID 17; ao terminar, faz exit e vira um zumbi; uma seta tracejada volta ao pai, indicando o wait que lê o código de saída. Na segunda parte, os estados R (rodando), S (dormindo), T (parado) e Z (zumbi), com as transições entre eles."
+  caption="fork copia o processo; exec troca o programa da cópia mantendo o PID e o ambiente; exit deixa um zumbi até o pai fazer wait. Embaixo, os estados que o ps mostra."
+/>
+
+1. **`fork`**: o shell (PID 8) pede ao kernel uma cópia de si mesmo. A cópia ganha um PID
+   novo (17) e tem o shell como pai (PPID 8). Ela herda **tudo**: o dono, o diretório
+   atual, os arquivos abertos e as variáveis exportadas.
+2. **`exec`**: a cópia troca o próprio programa pelo `sleep`. O PID continua 17; o que
+   muda é o código que roda dentro dele. Por isso o ambiente e os redirecionamentos que
+   o shell preparou chegam ao programa.
+3. **`exit`**: o `sleep` termina e devolve um número, o
+   <GlossaryTerm term="exit code">exit code</GlossaryTerm>. O processo não desaparece na
+   hora: vira um <GlossaryTerm term="zombie process">zumbi</GlossaryTerm>, uma linha na
+   tabela de processos que guarda só esse número.
+4. **`wait`**: o pai lê o código (é daí que vem o `$?`) e o kernel apaga a linha.
+
+Dois casos especiais saem daí. Se o pai **nunca** faz `wait`, o filho fica zumbi
+indefinidamente. Se o pai **morre antes** do filho, o filho vira um
+<GlossaryTerm term="orphan process">órfão</GlossaryTerm> e é adotado pelo processo
+número 1, o <GlossaryTerm term="init">init</GlossaryTerm>, que faz o `wait` por ele.
+Numa máquina comum, o init é o <GlossaryTerm term="systemd">systemd</GlossaryTerm>; no
+sandbox, que é um <GlossaryTerm term="container">contêiner</GlossaryTerm>, é um programa
+mínimo chamado `docker-init`. Os dois casos, criados de propósito no sandbox (saída real):
+
+```console
+$ bash -c "sleep 1 & exec sleep 30" &
+$ ps -o pid,ppid,stat,cmd --ppid $! -p $!
+    PID    PPID STAT CMD
+    180     172 S    sleep 30
+    182     180 Z    [sleep] <defunct>
+$ bash -c "sleep 300 &"
+$ ps -o pid,ppid,stat,cmd -C sleep
+    PID    PPID STAT CMD
+      7       1 S    sleep infinity
+    180     172 S    sleep 30
+    182     180 Z    [sleep] <defunct>
+    185       1 S    sleep 300
+```
+
+No primeiro comando, o processo 180 criou um filho (`sleep 1`) e depois virou, com
+`exec`, um `sleep 30`, que não sabe que tem um filho e nunca faz `wait`. O filho terminou
+e ficou zumbi (`Z`, `<defunct>`). No segundo, o `bash -c` terminou logo depois de lançar
+o `sleep 300`, que foi adotado pelo PID 1 (PPID 1).
+
+#### Os estados de um processo
+
+A coluna `STAT` do `ps` mostra o <GlossaryTerm term="process state">estado</GlossaryTerm>
+de cada processo. A primeira letra é a que importa:
+
+| Letra | Estado | Significado |
+|---|---|---|
+| `R` | *Running* | Rodando na CPU ou na fila para rodar |
+| `S` | *Sleeping* | Dormindo: esperando algo (tempo, teclado, rede). A maioria dos processos está aqui |
+| `D` | *Disk sleep* | Esperando o disco, sem poder ser interrompido nem por sinal |
+| `T` | *Stopped* | Parado (congelado) por um sinal ou pelo `Ctrl+Z` |
+| `Z` | *Zombie* | Terminou; falta o pai fazer `wait` |
+
+Letras extras vêm depois: `s` indica o líder de uma sessão (o shell), `+` indica que o
+processo está em primeiro plano no terminal, `<` e `N` indicam prioridade alta ou baixa.
+Um `Ss` é um shell; um `R+` é o comando que você acabou de digitar.
+
+#### A árvore de processos
+
+Como todo processo tem um pai, eles formam uma árvore. No sandbox, logo depois de entrar,
+ela é assim (saída real de `ps -ef --forest`, que desenha os filhos com `\_`):
+
+```console
+$ ps -ef --forest
+UID          PID    PPID  C STIME TTY          TIME CMD
+aluno          8       0  2 03:43 pts/0    00:00:00 bash -l
+aluno         17       8  0 03:43 pts/0    00:00:00  \_ sleep 1000
+aluno         20       8  0 03:43 pts/0    00:00:00  \_ ps -ef --forest
+aluno          1       0  0 03:43 ?        00:00:00 /sbin/docker-init -- sleep i
+aluno          7       1  0 03:43 ?        00:00:00 sleep infinity
+aluno         19       1  0 03:43 pts/0    00:00:00 sleep 300
+```
+
+<Figure
+  src={arvore}
+  alt="Árvore de processos do sandbox. À esquerda, PID 1 docker-init, com os filhos PID 7 sleep infinity e PID 19 sleep 300 (órfão adotado). À direita, PID 8 bash -l (o seu shell, PPID 0, vindo do docker exec), com os filhos PID 17 sleep 1000 e PID 20 ps. Uma caixa tracejada mostra que o bash -c que criou o sleep 300 terminou, e o filho foi adotado pelo PID 1."
+  caption="Todo processo tem um pai. O seu shell entra de fora do contêiner (PPID 0); o órfão sleep 300 foi adotado pelo PID 1. Em servidores, ver quem é pai de quem denuncia invasões."
+/>
+
+Repare que o seu shell tem PPID 0: ele não nasceu dentro do contêiner, entrou de fora
+pelo `docker exec` que o `npm run lab:sandbox` usa. Numa máquina normal, tudo descende do
+PID 1. Em resposta a incidentes, a árvore é ouro: um `sh` cujo pai é o servidor web,
+por exemplo, quase sempre significa que alguém executou comandos através do site.
+
+### 2.2 Vendo processos: ps, top e /proc
+
+#### ps: uma foto
+
+O `ps` tira uma foto dos processos naquele instante. As duas formas mais usadas são
+`ps aux` (estilo BSD, sem hífen) e `ps -ef` (estilo Unix). A primeira, logo depois de
+entrar no sandbox (saída real; num terminal estreito, o `ps` corta as linhas longas na
+largura da tela, por isso o `/sbin/docker-` incompleto):
+
+```console
+$ ps aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+aluno          1  2.7  0.0   1108   768 ?        Ss   03:57   0:00 /sbin/docker-
+aluno          7  0.0  0.0   3020  1764 ?        S    03:57   0:00 sleep infinit
+aluno          8  6.1  0.0   6240  5384 pts/0    Ss   03:57   0:00 bash -l
+aluno         17  0.0  0.0   6796  4012 pts/0    R+   03:57   0:00 ps aux
+```
+
+Para ver as linhas inteiras, acrescente `ww` (`ps auxww`).
+
+| Coluna | Significado |
+|---|---|
+| `USER` | Dono do processo (quem ele "é" para o kernel) |
+| `PID` | O número do processo |
+| `%CPU`, `%MEM` | Fatia de CPU e de memória que ele usa |
+| `VSZ`, `RSS` | Memória virtual reservada e memória realmente ocupada (em KiB) |
+| `TTY` | Terminal ligado a ele (`?` = nenhum, típico de serviços) |
+| `STAT` | O estado (seção anterior) |
+| `START`, `TIME` | Quando começou e quanto tempo de CPU já usou |
+| `COMMAND` | A linha de comando completa, **com todos os argumentos** |
+
+Para escolher as colunas, use `-o`: `ps -o pid,ppid,stat,cmd` foi usado acima. Para
+achar processos pelo nome, `pgrep` devolve os PIDs e `pgrep -a` mostra também a linha de
+comando; `pgrep -f` procura na linha de comando inteira, não só no nome.
+
+Guarde a última coluna da tabela: o `ps` mostra a linha de comando **de todo mundo** para
+**todo mundo**. Isso tem consequência de segurança séria (seção 3).
+
+#### top: um filme
+
+O `top` atualiza a lista a cada poucos segundos, ordenada por uso de CPU. Dentro dele:
+`M` ordena por memória, `P` por CPU, `k` pede um PID para mandar um sinal e `q` sai. Para
+capturar uma tela em texto, `top -b -n 1` (modo *batch*, uma vez). Saída real do
+sandbox, enquanto o zumbi do exemplo acima ainda existia:
+
+```console
+$ top -b -n 1 | head -12
+top - 03:38:48 up 11 min,  0 users,  load average: 0.03, 0.07, 0.08
+Tasks:   8 total,   1 running,   6 sleeping,   0 stopped,   1 zombie
+%Cpu(s):  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :   5929.3 total,   4475.1 free,    776.9 used,    825.7 buff/cache
+MiB Swap:   4096.0 total,   4096.0 free,      0.0 used.   5152.4 avail Mem
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+      1 aluno     20   0    1108    768    724 S   0.0   0.0   0:00.04 docker-+
+      7 aluno     20   0    3020   1800   1696 S   0.0   0.0   0:00.00 sleep
+    172 aluno     20   0    4496   3444   3164 S   0.0   0.1   0:00.03 bash
+    180 aluno     20   0    3020   1964   1856 S   0.0   0.0   0:00.00 sleep
+    182 aluno     20   0       0      0      0 Z   0.0   0.0   0:00.00 sleep
+```
+
+O cabeçalho resume a máquina. A linha `Tasks` conta processos por estado (repare no
+`1 zombie`). A memória mostrada é a do WSL inteiro, porque o contêiner compartilha o
+kernel. E o <GlossaryTerm term="load average">load average</GlossaryTerm> são três
+médias (1, 5 e 15 minutos) de quantos processos estavam rodando ou esperando: compare
+com o número de CPUs (`nproc`, que no sandbox responde `4`). Um load de 0,03 numa
+máquina de 4 CPUs é ociosidade; um load de 12 é fila. Um processo desconhecido no topo
+do `top`, usando 100% de CPU, é o sintoma clássico de um minerador de criptomoedas
+plantado por um invasor (o <GlossaryTerm term="cryptojacking">cryptojacking</GlossaryTerm>).
+
+#### /proc: o kernel mostrando tudo como arquivo
+
+No 0.3, você leu que "no Linux, tudo é arquivo" e que até processos aparecem em `/proc`.
+Esse diretório é o <GlossaryTerm term="procfs">procfs</GlossaryTerm>: não existe no
+disco; cada vez que você lê um arquivo ali, o kernel gera o conteúdo na hora. Cada
+processo tem uma pasta com o número dele. Saída real, olhando o órfão `sleep 300`
+(PID 185):
+
+```console
+$ head -9 /proc/185/status
+Name:	sleep
+Umask:	0022
+State:	S (sleeping)
+Tgid:	185
+Ngid:	0
+Pid:	185
+PPid:	1
+TracerPid:	0
+Uid:	1000	1000	1000	1000
+$ ls -l /proc/185/exe /proc/185/cwd
+lrwxrwxrwx 1 aluno aluno 0 Oct  3 03:38 /proc/185/cwd -> /home/aluno
+lrwxrwxrwx 1 aluno aluno 0 Oct  3 03:38 /proc/185/exe -> /usr/bin/sleep
+$ tr "\0" " " < /proc/185/cmdline; echo
+sleep 300
+```
+
+| Arquivo | O que mostra |
+|---|---|
+| `/proc/PID/status` | Nome, estado, PPID, donos (`Uid`), sinais ignorados e tratados |
+| `/proc/PID/cmdline` | A linha de comando, com os argumentos separados pelo byte zero (daí o `tr "\0" " "`) |
+| `/proc/PID/environ` | As variáveis de ambiente do processo (só o dono e o root leem) |
+| `/proc/PID/exe` | Link para o programa que está rodando |
+| `/proc/PID/cwd` | Link para o diretório atual do processo |
+| `/proc/PID/fd/` | Os arquivos abertos (0, 1, 2 e os outros) |
+
+A linha `Uid` tem quatro números porque o kernel guarda mais de uma identidade por
+processo: a **real** (quem iniciou) e a **efetiva** (com quem o kernel compara as
+permissões), além de duas auxiliares. Normalmente são iguais. Num programa
+<GlossaryTerm term="SUID">SUID</GlossaryTerm> do root, como o `passwd` que você viu no
+0.3, a real é a sua e a efetiva é 0. É por isso que um programa SUID com falha é tão
+valioso para um atacante: o código roda com a identidade efetiva do root.
+
+### 2.3 Sinais: como se fala com um processo
+
+Um <GlossaryTerm term="signal">sinal</GlossaryTerm> é um aviso curto que o kernel entrega
+a um processo: "termine", "pare", "continue", "o seu terminal fechou". Cada sinal tem um
+nome e um número. O `kill -l` lista todos (saída real, primeiras linhas):
+
+```console
+$ kill -l | head -4
+ 1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+ 6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
+11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
+16) SIGSTKFLT	17) SIGCHLD	18) SIGCONT	19) SIGSTOP	20) SIGTSTP
+```
+
+<Figure
+  src={sinais}
+  alt="Diagrama em três colunas. À esquerda, quem envia: o teclado (Ctrl+C manda SIGINT 2, Ctrl+Z SIGTSTP 20, Ctrl+\ SIGQUIT 3), o kill (sem opção SIGTERM 15, kill -9 SIGKILL 9, kill -STOP SIGSTOP 19) e o terminal fechado (SIGHUP 1). No meio, o kernel, que confere se você pode sinalizar. À direita, o que o processo pode fazer: tratar, ignorar ou sofrer a ação padrão; SIGKILL e SIGSTOP não podem ser tratados nem ignorados. Embaixo, a regra 128 + N: Ctrl+C dá 130, kill -9 dá 137 e kill dá 143."
+  caption="O kernel entrega o sinal e o processo decide o que fazer, menos com SIGKILL e SIGSTOP. Quem morre pelo sinal N devolve 128 + N ao shell."
+/>
+
+Os que você vai usar de verdade:
+
+| Sinal | Nº | Quem manda | Ação padrão |
+|---|---|---|---|
+| <GlossaryTerm term="SIGHUP">SIGHUP</GlossaryTerm> | 1 | O terminal foi fechado | Terminar (muitos serviços o usam como "releia a configuração") |
+| <GlossaryTerm term="SIGINT">SIGINT</GlossaryTerm> | 2 | `Ctrl+C` | Terminar |
+| SIGQUIT | 3 | `Ctrl+\` | Terminar e gravar um <GlossaryTerm term="core dump">core dump</GlossaryTerm> (cópia da memória) |
+| <GlossaryTerm term="SIGKILL">SIGKILL</GlossaryTerm> | 9 | `kill -9` | Terminar, **sem escolha** |
+| <GlossaryTerm term="SIGTERM">SIGTERM</GlossaryTerm> | 15 | `kill` (o padrão) | Terminar |
+| SIGCONT | 18 | `kill -CONT`, `fg`, `bg` | Continuar um processo parado |
+| <GlossaryTerm term="SIGSTOP">SIGSTOP</GlossaryTerm> | 19 | `kill -STOP` | Parar, **sem escolha** |
+| <GlossaryTerm term="SIGTSTP">SIGTSTP</GlossaryTerm> | 20 | `Ctrl+Z` | Parar |
+
+Os números da tabela valem para Linux em x86 e ARM, que é o que você usa; em outras
+arquiteturas alguns mudam, e por isso scripts portáveis usam os **nomes**
+(`kill -TERM`, `kill -KILL`).
+
+#### O processo escolhe, menos em dois casos
+
+Para quase todos os sinais, o processo tem três opções: deixar acontecer a **ação
+padrão** (quase sempre terminar), **ignorar** o sinal ou **tratá-lo** com um
+<GlossaryTerm term="signal handler">signal handler</GlossaryTerm>, uma rotina própria
+que roda quando o sinal chega. Um banco de dados, ao receber SIGTERM, termina de gravar o
+que estava gravando, fecha os arquivos e só então sai. É por isso que `kill` sem opção é
+o jeito **educado** de encerrar um programa.
+
+A exceção são **SIGKILL e SIGSTOP**: o manual do Linux é direto, eles "não podem ser
+capturados, bloqueados nem ignorados" ([`man 7 signal`](https://man7.org/linux/man-pages/man7/signal.7.html)).
+O kernel aplica sem perguntar. Isso garante que o administrador sempre consegue parar
+qualquer processo, mas tem preço: um `kill -9` num banco de dados no meio de uma escrita
+pode deixar arquivos corrompidos, porque o programa não teve chance de arrumar nada.
+
+#### Quem pode mandar sinal em quem
+
+O kernel confere: um usuário comum só sinaliza **os próprios** processos; o root
+sinaliza qualquer um. Por isso `kill` num processo de outro usuário devolve
+`Operation not permitted`, e é por isso também que o primeiro objetivo de quem invade
+costuma ser virar root.
+
+#### O código 128 + N
+
+Quando um processo morre por causa de um sinal, o shell não recebe um código "normal": o
+manual do Bash define que o status é **128 + N**, onde N é o número do sinal. Daí:
+
+- `130` = 128 + 2: morreu com `Ctrl+C` (SIGINT);
+- `137` = 128 + 9: morreu com `kill -9` (SIGKILL) — também é o código que você vê quando
+  o sistema mata um programa por falta de memória;
+- `143` = 128 + 15: morreu com `kill` comum (SIGTERM).
+
+Saber disso transforma um número sem sentido num diagnóstico. Você vai medir os três
+na Missão 1.
+
+### 2.4 Jobs: primeiro plano, segundo plano e o terminal
+
+O shell interativo tem um recurso chamado <GlossaryTerm term="job control">job control</GlossaryTerm>
+(controle de jobs). Cada comando que você inicia é um <GlossaryTerm term="job">job</GlossaryTerm>,
+numerado pelo próprio shell (`%1`, `%2`...). Só um job por vez fica em
+<GlossaryTerm term="foreground">primeiro plano</GlossaryTerm> (*foreground*), recebendo o
+teclado; os outros ficam em <GlossaryTerm term="background">segundo plano</GlossaryTerm>
+(*background*) ou parados.
+
+| Comando | O que faz |
+|---|---|
+| `comando &` | Inicia já em segundo plano; o shell mostra `[1] PID` e devolve o prompt |
+| `Ctrl+Z` | Para (congela) o job em primeiro plano |
+| `jobs` | Lista os jobs deste shell, com o estado |
+| `bg` / `bg %2` | Faz um job parado continuar, em segundo plano |
+| `fg` / `fg %2` | Traz um job para o primeiro plano |
+| `kill %1` | Manda SIGTERM ao job 1 |
+| `wait %1` | Espera o job 1 terminar e devolve o código dele em `$?` |
+
+Saída real de uma sessão completa no sandbox, com `Ctrl+Z` e `Ctrl+C` apertados de
+verdade (eles aparecem na tela como `^Z` e `^C`):
+
+```console
+$ sleep 1000
+^Z
+[1]+  Stopped                 sleep 1000
+$ jobs
+[1]+  Stopped                 sleep 1000
+$ bg
+[1]+ sleep 1000 &
+$ jobs
+[1]+  Running                 sleep 1000 &
+$ fg
+sleep 1000
+^C
+$ echo "codigo: $?"
+codigo: 130
+```
+
+Um detalhe que pega muita gente: `kill %1` e o `Ctrl+C` não sinalizam um processo só,
+mas o <GlossaryTerm term="process group">grupo de processos</GlossaryTerm> inteiro do
+job, isto é, o programa e os filhos que ele criou. Já `kill PID` atinge só aquele PID.
+Você vai ver a diferença na Missão 1.
+
+#### Por que fechar o terminal mata os seus programas
+
+Quando você fecha a janela do terminal (ou uma conexão remota cai), o kernel manda
+**SIGHUP** (*hang up*, "desligar o telefone", herança dos terminais ligados por linha
+telefônica) para o shell, que o repassa aos jobs. A ação padrão é terminar. Para um
+comando sobreviver ao fechamento do terminal, há três caminhos:
+
+- **`nohup comando &`**: inicia o comando **ignorando** SIGHUP. Dá para ver no `/proc`
+  (saída real): a linha `SigIgn` é uma máscara de bits dos sinais ignorados; o valor `1`
+  é o bit do sinal 1, o SIGHUP.
+
+  ```console
+  $ sleep 300 &
+  [3] 248
+  $ grep SigIgn /proc/$!/status
+  SigIgn:	0000000000000000
+  $ nohup sleep 300 > /dev/null 2>&1 &
+  [4] 250
+  $ grep SigIgn /proc/$!/status
+  SigIgn:	0000000000000001
+  ```
+
+- **`disown %1`**: tira o job da lista do shell, que então não lhe repassa o SIGHUP.
+- **Um <GlossaryTerm term="terminal multiplexer">multiplexador de terminal</GlossaryTerm>**
+  (`tmux`, `screen`): um programa que mantém sessões de shell vivas
+  independentemente da janela, e permite voltar a elas depois. É o que se usa em trabalho real; fica para o módulo 2.5.
+
+Isso conversa diretamente com o 0.3: a shell "sem TTY" que um invasor costuma receber
+mostra `no job control in this shell`. Sem um <GlossaryTerm term="TTY">TTY</GlossaryTerm>,
+não há `Ctrl+Z`, `fg` nem `bg`, e um `Ctrl+C` costuma derrubar a conexão inteira.
+
+#### Prioridade: nice e renice
+
+Todo processo tem um valor <GlossaryTerm term="nice">nice</GlossaryTerm> ("gentil"), de
+-20 a 19. Quanto **maior**, mais gentil o processo é com os outros, e menos CPU recebe
+quando há disputa. Um usuário comum pode tornar os próprios processos mais gentis, mas
+nunca menos: só o root baixa o nice. Saída real:
+
+```console
+$ nice -n 10 sleep 60 &
+[5] 252
+$ ps -o pid,ni,cmd -p $!
+    PID  NI CMD
+    252  10 sleep 60
+$ renice -n 15 -p $!
+252 (process ID) old priority 10, new priority 15
+$ renice -n 5 -p $!
+renice: failed to set priority for 252 (process ID): Permission denied
+```
+
+Útil para rodar uma tarefa pesada (um *scan*, um script que quebra senhas) sem travar a
+máquina.
+
+### 2.5 Usuários e grupos, por dentro
+
+O 0.3 apresentou o UID, o `/etc/passwd` e o `/etc/shadow`. Falta a outra metade das
+permissões: os grupos. Um <GlossaryTerm term="group">grupo</GlossaryTerm> é um conjunto
+de usuários que recebe permissões em conjunto, o trio do meio do `rwx`. Cada grupo tem
+um número, o <GlossaryTerm term="GID">GID</GlossaryTerm>, e fica listado em
+`/etc/group`, no formato `nome:x:GID:membros`:
+
+```console
+$ getent group shadow sudo nogroup
+shadow:x:42:
+sudo:x:27:
+nogroup:x:65534:
+```
+
+(O `getent` consulta as bases do sistema, `passwd` e `group`, do jeito que os programas
+consultam; é melhor que um `grep` no arquivo, porque também enxerga usuários vindos de
+outras fontes, como um servidor de diretório.)
+
+Cada usuário tem:
+
+- um <GlossaryTerm term="primary group">grupo primário</GlossaryTerm>, o `gid=` do `id`,
+  definido no `/etc/passwd`. Os arquivos que ele cria pertencem a esse grupo;
+- zero ou mais <GlossaryTerm term="supplementary group">grupos suplementares</GlossaryTerm>,
+  os `groups=` do `id`, listados no quarto campo do `/etc/group`.
+
+No sandbox, o `aluno` só tem o próprio grupo. No WSL, o usuário criado na instalação do
+Ubuntu ganha vários (saída real, com o nome de usuário trocado por `usuario`):
+
+```console
+$ id
+uid=1000(usuario) gid=1000(usuario) groups=1000(usuario),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),100(users),986(docker)
+```
+
+Alguns desses grupos são **poder puro**, e um pentester os procura logo depois do `id`:
+
+| Grupo | O que dá |
+|---|---|
+| `sudo` (Debian/Ubuntu) ou `wheel` (outras) | Usar o `sudo` para virar root |
+| `adm` | Ler os logs do sistema em `/var/log` |
+| `docker` | Controlar o Docker, o que equivale a ser root: a documentação oficial avisa que o grupo "concede privilégios de nível root" ([Docker docs](https://docs.docker.com/engine/install/linux-postinstall/)) |
+| `shadow` | Ler o `/etc/shadow` (os hashes das senhas) |
+| `disk` | Ler e escrever o disco cru, passando por cima das permissões |
+
+#### Administrando contas
+
+A administração exige root. As saídas abaixo são reais, tiradas de um contêiner Debian
+descartável (sem rede, apagado no fim), porque o sandbox não tem root de propósito:
+
+```console
+# groupadd pentesters
+# useradd -m -s /bin/bash maria
+# id maria
+uid=1000(maria) gid=1001(maria) groups=1001(maria)
+# usermod -aG pentesters maria
+# id maria
+uid=1000(maria) gid=1001(maria) groups=1001(maria),1000(pentesters)
+# grep -E "^(maria|pentesters)" /etc/passwd /etc/group /etc/shadow
+/etc/passwd:maria:x:1000:1001::/home/maria:/bin/bash
+/etc/group:pentesters:x:1000:maria
+/etc/group:maria:x:1001:
+/etc/shadow:maria:!:20729:0:99999:7:::
+```
+
+- `useradd -m -s /bin/bash maria` cria a conta, a home (`-m`) e define o shell (`-s`).
+- `usermod -aG pentesters maria` **acrescenta** (`-a`) um grupo suplementar (`-G`).
+- O `!` no `/etc/shadow` significa que a conta ainda não tem senha válida: ninguém entra
+  com senha até o root rodar `passwd maria`.
+- `userdel -r maria` apaga a conta e a home.
+
+Uma mudança de grupo só vale para os processos criados **depois** dela: quem já está
+logado precisa sair e entrar de novo. Lembre do `fork`: os grupos são copiados na
+criação do processo.
+
+#### Contas de serviço e nologin
+
+Nem todo usuário é uma pessoa. Programas como servidores web e bancos rodam com
+<GlossaryTerm term="service account">contas de serviço</GlossaryTerm>, criadas sem shell
+de login, para que um invasor que roube a conta não consiga simplesmente entrar com ela:
+
+```console
+# useradd -r -s /usr/sbin/nologin svc-backup
+# getent passwd svc-backup
+svc-backup:x:999:999::/home/svc-backup:/usr/sbin/nologin
+# su - svc-backup -c id
+su: warning: cannot change directory to /home/svc-backup: No such file or directory
+This account is currently not available.
+```
+
+#### su e sudo
+
+Há duas formas de agir como outro usuário:
+
+- <GlossaryTerm term="su">`su`</GlossaryTerm> (*substitute user*) abre um shell como
+  outro usuário, o root por padrão, pedindo a senha **daquele** usuário. Exige que todos
+  saibam a senha do root.
+- <GlossaryTerm term="sudo">`sudo`</GlossaryTerm> executa **um** comando como root
+  pedindo a **sua** senha, se a política permitir. A política fica no arquivo
+  <GlossaryTerm term="sudoers">sudoers</GlossaryTerm> (`/etc/sudoers` e
+  `/etc/sudoers.d/`), legível só pelo root (no WSL: `-r--r----- 1 root root ... /etc/sudoers`)
+    e editado com `visudo`, que confere a sintaxe antes de gravar. No sudoers padrão do
+  Debian ([arquivo do pacote](https://sources.debian.org/src/sudo/1.9.16p2-3+deb13u2/debian/etc/sudoers/)),
+  a linha que importa é:
+
+  ```text
+  %sudo	ALL=(ALL:ALL) ALL
+  ```
+
+  "Membros do grupo `sudo` (`%`), em qualquer máquina (`ALL`), podem rodar como qualquer
+  usuário e grupo (`(ALL:ALL)`) qualquer comando (`ALL`)." Daí a importância do grupo
+  `sudo` na tabela acima.
+
+O `sudo -l` lista o que você pode fazer. É um dos primeiros comandos de qualquer
+enumeração, porque regras mal escritas são um caminho clássico para root (Trilha 6). No
+WSL, sem digitar a senha (opção `-n`, não interativo):
+
+```console
+$ sudo -n -l
+sudo: interactive authentication is required
+```
+
+<Callout variant="info" title="O sudo do Ubuntu é escrito em Rust">
+No Ubuntu do seu WSL, `sudo --version` responde `sudo-rs`. O Ubuntu anunciou em maio de
+2025 que adotaria o <GlossaryTerm term="sudo-rs">sudo-rs</GlossaryTerm>, uma
+reimplementação em Rust (uma linguagem de programação que impede, já na compilação, a maioria dos erros de memória), como padrão a partir da versão 25.10, para eliminar uma classe
+inteira de falhas de memória num programa que roda como root
+([anúncio oficial](https://discourse.ubuntu.com/t/adopting-sudo-rs-by-default-in-ubuntu-25-10/60583)).
+Para você, nada muda: os comandos e o `/etc/sudoers` são os mesmos. Pelo mesmo motivo,
+`ls --version` no WSL mostra `uutils coreutils`, a versão em Rust dos comandos básicos.
+</Callout>
+
+### 2.6 Variáveis de ambiente e o PATH
+
+O 0.3 usou <GlossaryTerm term="environment variable">variáveis de ambiente</GlossaryTerm>
+como `$HOME` e mostrou que o shell troca `$NOME` pelo valor antes de executar. Falta
+entender **de onde** elas vêm e **para onde** vão.
+
+#### Variável de shell × variável de ambiente
+
+Quando você digita `SEGREDO=abc123`, cria uma <GlossaryTerm term="shell variable">variável de shell</GlossaryTerm>:
+ela existe só dentro do shell atual. O **ambiente** é outra coisa: uma lista de pares
+`NOME=valor` que o kernel copia para cada processo filho no `fork`/`exec`. O comando
+<GlossaryTerm term="export">`export`</GlossaryTerm> põe uma variável de shell no
+ambiente. Saída real:
+
+```console
+$ SEGREDO=abc123
+$ bash -c 'echo "filho ve: [$SEGREDO]"'
+filho ve: []
+$ export SEGREDO
+$ bash -c 'echo "filho ve: [$SEGREDO]"'
+filho ve: [abc123]
+$ VISITA=oi bash -c 'echo "so para este comando: [$VISITA]"'
+so para este comando: [oi]
+$ echo "depois: [$VISITA]"
+depois: []
+```
+
+A última forma, `NOME=valor comando`, põe a variável no ambiente **só daquele
+comando**. A herança só desce: um filho nunca altera o ambiente do pai (pelo mesmo
+motivo que o `cd` precisa ser builtin, como você viu no 0.3).
+
+Para ver o ambiente: `env` (ou `printenv`) lista tudo; `printenv HOME` mostra uma
+variável. Algumas que você vai encontrar sempre:
+
+| Variável | Conteúdo |
+|---|---|
+| `HOME` | A sua pasta pessoal |
+| `USER`, `LOGNAME` | O nome do usuário |
+| `SHELL` | O shell de login |
+| `PWD`, `OLDPWD` | O diretório atual e o anterior (o `cd -` usa este) |
+| `PATH` | Onde procurar programas |
+| `LANG` | Idioma e codificação (ex.: `C.UTF-8`) |
+| `EDITOR` | O editor que programas como o `crontab -e` devem abrir |
+
+Variáveis de ambiente também são onde muitos programas esperam receber **segredos**:
+senhas de banco, <GlossaryTerm term="token">tokens</GlossaryTerm> de API. Isso é cômodo
+e perigoso, como o caso Codecov do 0.3 mostrou e a seção 3 aprofunda.
+
+#### Como o shell acha um comando
+
+Quando você digita um nome sem barra, como `ls`, o Bash procura nesta ordem:
+
+<Figure
+  src={resolucao}
+  alt="No alto, a ordem de busca do Bash: 1 alias, 2 função, 3 builtin, 4 tabela hash, 5 os diretórios do PATH em ordem; se nada for achado, command not found com código 127. No meio, o PATH normal do aluno com cinco diretórios, em que /usr/bin tem o ls e vence. Embaixo, o PATH depois do sequestro, com /home/aluno/bin na frente: o ls falso ali roda primeiro."
+  caption="O primeiro que responder vence. Quem consegue pôr um diretório na frente do PATH escolhe qual programa roda quando você digita um nome comum."
+/>
+
+1. **<GlossaryTerm term="alias">Alias</GlossaryTerm>:** um apelido. O `~/.bashrc` do
+   Debian define `alias ls='ls --color=auto'`. O alias só troca o texto; a busca continua
+   pelo nome.
+2. **Função** do shell (assunto do módulo 0.6).
+3. **<GlossaryTerm term="builtin">Builtin</GlossaryTerm>**, como `cd`, `export`,
+   `kill` e `jobs`.
+4. **A <GlossaryTerm term="command hash table">tabela hash</GlossaryTerm>** de comandos:
+   o Bash lembra onde achou cada programa ("`ls is hashed`", no 0.3) para não procurar
+   de novo. `hash` mostra a tabela, `hash -r` a esvazia.
+5. **Os diretórios do <GlossaryTerm term="PATH environment variable">PATH</GlossaryTerm>**, da esquerda para a
+   direita. O primeiro diretório com um arquivo executável com esse nome vence. Se
+   nenhum tiver, o Bash responde `command not found` e o código **127**.
+
+Um nome **com barra** (`/usr/bin/ls`, `./script.sh`) pula toda a busca: é executado
+aquele arquivo, e pronto. É por isso que, no 0.3, você rodava scripts com `./`: a pasta
+atual não está no `PATH`, de propósito.
+
+O comando `type -a` mostra todas as respostas possíveis, na ordem (saída real do sandbox):
+
+```console
+$ echo "$PATH"
+/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+$ type -a ls
+ls is aliased to `ls --color=auto'
+ls is /usr/bin/ls
+ls is /bin/ls
+```
+
+Por que o `ls` aparece duas vezes? No Debian moderno, `/bin` é um
+<GlossaryTerm term="symlink">symlink</GlossaryTerm> para `usr/bin` (você viu isso no
+`ls -ld /bin` do 0.3), então os dois diretórios do `PATH` levam ao mesmo arquivo. Vence o
+primeiro: `/usr/bin/ls`.
+
+#### De onde vem o PATH: os arquivos de inicialização
+
+O `PATH` não nasce do nada: alguém o define a cada sessão. Os
+<GlossaryTerm term="shell startup file">arquivos de inicialização</GlossaryTerm> do Bash
+são scripts executados quando o shell começa:
+
+- Um <GlossaryTerm term="login shell">login shell</GlossaryTerm> (o primeiro shell de uma
+  sessão: um terminal novo, um `ssh`, um `bash -l`) lê `/etc/profile` e depois o
+  **primeiro** que existir entre `~/.bash_profile`, `~/.bash_login` e `~/.profile`.
+- Um shell interativo comum (um `bash` digitado dentro de outro) lê o `~/.bashrc`.
+
+No sandbox, o `/etc/profile` define o `PATH` do usuário comum, e o `~/.profile` do Debian
+tem um trecho que você vai explorar na Missão 2:
+
+```bash
+# set PATH so it includes user's private bin if it exists
+if [ -d "$HOME/bin" ] ; then
+    PATH="$HOME/bin:$PATH"
+fi
+```
+
+Ou seja: **se existir uma pasta `~/bin`, ela entra na frente de todas as outras no
+próximo login**. É conveniente para quem quer instalar ferramentas próprias, e é
+exatamente o que um invasor precisa para trocar um comando do sistema por um falso.
+
+### 2.7 Pacotes: como o software chega à máquina
+
+No Windows, você costuma baixar um instalador de um site. No Linux, o caminho normal é
+outro: um <GlossaryTerm term="package manager">gerenciador de pacotes</GlossaryTerm>
+baixa o programa de um <GlossaryTerm term="repository">repositório</GlossaryTerm> da
+distribuição, confere a assinatura, instala as
+<GlossaryTerm term="dependency">dependências</GlossaryTerm> (outros pacotes de que ele
+precisa) e registra tudo, para atualizar ou remover depois.
+
+Um <GlossaryTerm term="package">pacote</GlossaryTerm> do Debian e do Ubuntu é um arquivo
+`.deb`, que contém o programa compilado, a lista de dependências e **scripts de
+instalação** (`preinst`, `postinst`...) que rodam como root.
+
+#### Duas camadas: dpkg e apt
+
+- <GlossaryTerm term="dpkg">**dpkg**</GlossaryTerm> é a base. Instala um `.deb` que já
+  está no disco e mantém o banco do que está instalado. Não baixa nada e não resolve
+  dependências.
+- <GlossaryTerm term="apt">**apt**</GlossaryTerm> fica por cima. Sabe quais repositórios
+  existem, baixa os índices, calcula as dependências, baixa os `.deb`, confere as
+  assinaturas e os entrega ao `dpkg`.
+
+O `dpkg` é ótimo para **consultar** (não precisa de root nem de rede). Saídas reais do
+sandbox:
+
+```console
+$ dpkg -S /usr/bin/top
+procps: /usr/bin/top
+$ dpkg -S /usr/bin/passwd
+passwd: /usr/bin/passwd
+$ dpkg -l procps nano | tail -2
+ii  nano           8.4-1+deb13u1 amd64        small, friendly text editor inspired by Pico
+ii  procps         2:4.0.4-9     amd64        /proc file system utilities
+$ dpkg -L procps | head -5
+/.
+/etc
+/etc/init.d
+/etc/init.d/procps
+/etc/sysctl.d
+$ dpkg -l | grep -c "^ii"
+94
+```
+
+| Comando | Responde |
+|---|---|
+| `dpkg -S arquivo` | De qual pacote é esse arquivo? (*search*) |
+| `dpkg -L pacote` | Quais arquivos esse pacote instalou? (*list*) |
+| `dpkg -l [padrão]` | Quais pacotes estão instalados, com versão (`ii` = instalado) |
+| `dpkg -s pacote` | Detalhes de um pacote instalado (versão, dependências, mantenedor) |
+
+O sandbox tem só 94 pacotes; uma instalação de servidor tem centenas, e um desktop,
+milhares. Cada um é código que roda na máquina e pode ter falhas: é por isso que a
+**versão** dos pacotes é uma das primeiras coisas que um pentester levanta.
+
+#### De onde vêm os pacotes
+
+Os repositórios ficam em `/etc/apt/sources.list.d/`. No Ubuntu do WSL (saída real,
+comentários omitidos):
+
+```text
+Types: deb
+URIs: http://archive.ubuntu.com/ubuntu/
+Suites: resolute resolute-updates resolute-backports
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+Types: deb
+URIs: http://security.ubuntu.com/ubuntu/
+Suites: resolute-security
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+```
+
+Esse formato em blocos se chama *deb822*. Cada bloco diz o endereço (`URIs`), as
+"suítes" (a versão do sistema, `resolute` no Ubuntu 26.04, mais as atualizações e as
+correções de segurança) e, a linha mais importante, `Signed-By`: a **chave** que deve ter
+assinado aquele repositório.
+
+#### Onde a confiança é conferida
+
+<Figure
+  src={cadeia}
+  alt="Fluxo em duas linhas. Em cima, o upstream publica o código, o mantenedor gera o .deb e o repositório publica pacotes, índices e o InRelease assinado. Embaixo, no seu computador, apt update baixa os índices e confere a assinatura, apt install resolve dependências, baixa e confere o hash, e o dpkg copia os arquivos e roda os scripts como root. Avisos em vermelho marcam onde já houve ataques: código malicioso no upstream (xz, 2024), erro num patch da distribuição (OpenSSL Debian, 2006 a 2008), repositório de terceiros com chave valendo para tudo e dpkg -i de um .deb baixado de qualquer lugar."
+  caption="A assinatura garante que o pacote veio da distribuição sem alteração no caminho; não garante que o código é bom. Os pontos em vermelho são os elos que já falharam no mundo real."
+/>
+
+O caminho de um programa até o seu disco tem vários elos:
+
+1. O <GlossaryTerm term="upstream">upstream</GlossaryTerm>, o projeto original, publica o
+   código, normalmente como um <GlossaryTerm term="tarball">tarball</GlossaryTerm>
+   (`.tar.gz`, `.tar.xz`).
+2. O <GlossaryTerm term="package maintainer">mantenedor</GlossaryTerm> da distribuição
+   gera o `.deb`, às vezes aplicando <GlossaryTerm term="patch">patches</GlossaryTerm>
+   (correções) próprios.
+3. O repositório publica os pacotes e os índices. Os índices trazem o
+   <GlossaryTerm term="hash">hash</GlossaryTerm> de cada `.deb`, e o arquivo `InRelease`,
+   que lista os índices, leva uma <GlossaryTerm term="digital signature">assinatura digital</GlossaryTerm>
+   feita com a chave privada da distribuição.
+4. No seu computador, `apt update` baixa os índices e confere a assinatura com a chave do
+   `Signed-By`. `apt install` baixa o `.deb` e confere se o hash bate com o índice
+   assinado. Só então o `dpkg` instala, **como root**.
+
+A assinatura prova duas coisas: que o pacote veio da distribuição e que ninguém o alterou
+no caminho (um espelho comprometido, um Wi-Fi malicioso). Ela **não** prova que o código
+é bom. Se o problema entrou antes, no upstream ou num patch do mantenedor, o pacote
+chega perfeitamente assinado. Os casos da seção 4 são exatamente isso.
+
+#### Os verbos do apt
+
+| Comando | O que faz | Precisa de root? |
+|---|---|---|
+| `apt update` | Baixa as listas de pacotes (os índices) e confere as assinaturas | Sim |
+| `apt upgrade` | Instala as versões novas dos pacotes já instalados | Sim |
+| `apt full-upgrade` | Como o `upgrade`, mas pode remover pacotes para resolver conflitos | Sim |
+| `apt install X` | Instala X e as dependências | Sim |
+| `apt remove X` / `apt purge X` | Remove X (o `purge` apaga também a configuração) | Sim |
+| `apt autoremove` | Remove dependências que nada mais usa | Sim |
+| `apt search termo` | Procura pacotes pelo nome e pela descrição | Não |
+| `apt show X` | Mostra detalhes de um pacote (instalado ou não) | Não |
+| `apt list --installed` / `--upgradable` | Lista os instalados / os que têm versão nova | Não |
+| `apt-cache policy X` | Versão instalada, candidata e de qual repositório vem | Não |
+
+O erro mais comum de iniciante: rodar `apt upgrade` sem um `apt update` antes. Sem as
+listas novas, o apt nem sabe que existe uma versão nova. A rotina é
+`sudo apt update && sudo apt upgrade`.
+
+### 2.8 Editando arquivos no terminal
+
+Num servidor, não há bloco de notas. Configurações, scripts e anotações se editam no
+próprio terminal, com um <GlossaryTerm term="text editor">editor de texto</GlossaryTerm>.
+Dois dominam: o `nano`, simples, e o `vim`, poderoso e onipresente.
+
+#### nano: os atalhos estão na tela
+
+O <GlossaryTerm term="nano">nano</GlossaryTerm> abre o arquivo e mostra, no rodapé, os
+atalhos principais. Na notação dele, `^` significa `Ctrl` e `M-` significa `Alt`. Os do
+rodapé do nano 8.4, a versão do sandbox:
+
+| Atalho | Ação |
+|---|---|
+| `^O` | *Write Out*: grava (pergunta o nome; Enter confirma) |
+| `^X` | *Exit*: sai (se houver mudanças, pergunta se quer gravar) |
+| `^F` (ou `^W`) | *Where Is*: procura um texto |
+| `^\` (ou `M-R`) | *Replace*: procura e substitui |
+| `^K` | *Cut*: recorta a linha inteira |
+| `^U` | *Paste*: cola o que foi recortado |
+| `M-U` / `M-E` | Desfaz / refaz |
+| `M-\` / `M-/` | Vai para a primeira / última linha |
+| `^/` | *Go To Line*: vai para uma linha pelo número |
+| `^C` | *Location*: mostra em que linha você está |
+| `^G` | *Help*: a ajuda completa |
+
+No nano, você digita e o texto aparece: não há "modo". As setas movem o cursor. É o
+editor certo para quem está começando, e o que você vai usar na Missão 3.
+
+#### vim: o editor modal
+
+O <GlossaryTerm term="vim">vim</GlossaryTerm> (*Vi IMproved*) é a evolução do `vi`, e
+alguma versão dele existe em praticamente todo servidor Unix. É um
+<GlossaryTerm term="modal editor">editor modal</GlossaryTerm>: as mesmas teclas fazem
+coisas diferentes conforme o modo. É isso que prende os iniciantes, e é também o que o
+torna rápido para quem domina.
+
+<Figure
+  src={modosVim}
+  alt="Três caixas. No centro, o modo NORMAL, onde o vim abre e as teclas são comandos (dd apaga linha, u desfaz, /texto busca, G vai ao fim, x apaga caractere). À esquerda, INSERÇÃO, alcançado com i, a ou o, em que as teclas viram texto; Esc volta ao normal. À direita, LINHA DE COMANDO, alcançada com dois-pontos, com :w, :q, :wq e :q!; Enter ou Esc volta ao normal. Embaixo: perdido? Esc, Esc, :q! e Enter."
+  caption="O vim abre no modo normal, em que as teclas são comandos. i entra no modo de inserção, Esc volta, e : abre a linha de comando para gravar e sair."
+/>
+
+O mínimo para sobreviver:
+
+| Você quer | Digite (a partir do modo normal) |
+|---|---|
+| Começar a escrever | `i` (insere antes do cursor), `a` (depois), `o` (numa linha nova abaixo) |
+| Parar de escrever | `Esc` |
+| Gravar | `:w` e Enter |
+| Gravar e sair | `:wq` e Enter (ou `ZZ`) |
+| Sair sem gravar | `:q!` e Enter |
+| Apagar a linha | `dd` |
+| Desfazer | `u` |
+| Procurar | `/texto` e Enter; `n` vai para a próxima |
+| Ir para a última / primeira linha | `G` / `gg` |
+
+Um teste real no WSL: o arquivo tinha três linhas; a sequência `j` (desce uma linha),
+`dd` (apaga a linha), `G` (vai ao fim), `o` (abre uma linha nova e entra em inserção),
+o texto, `Esc` e `:wq` produziu (o `cat -A` mostra `$` no fim de cada linha):
+
+```console
+$ cat -A vimteste.txt
+linha um$
+linha tres$
+string nova$
+```
+
+O próprio vim traz um curso interativo de cerca de meia hora: `vimtutor`. Vale cada
+minuto, mesmo que o seu editor do dia a dia seja outro.
+
+<Callout variant="tip" title="Saindo do vim">
+Se você abriu o vim sem querer (o `git` e o `crontab -e` às vezes o abrem sozinhos), não
+se desespere: aperte `Esc` duas vezes, digite `:q!` e Enter. Você sai sem gravar nada.
+Para nunca mais cair nele por acidente, defina o editor padrão no `~/.bashrc`:
+`export EDITOR=nano`.
+</Callout>
+
+## 3. Na prática da segurança
+
+Tudo o que a seção 2 explicou tem dois lados. Esta seção mostra como um invasor (ou um
+pentester autorizado) usa cada peça, e o que isso ensina a quem defende.
+
+### 3.1 Enumerar processos: o que está rodando e como quem
+
+Logo depois do "quem sou eu" do 0.3, a pergunta seguinte é **o que roda nesta máquina**.
+O MITRE ATT&CK registra isso como **[T1057 — Process Discovery](https://attack.mitre.org/techniques/T1057/)**,
+e cita o `ps` como a ferramenta típica no Linux. O pentester procura:
+
+- **Processos do root** (`ps aux | grep '^root'`): serviços que rodam com privilégio
+  máximo. Se algum deles lê um arquivo ou um diretório que você consegue alterar, você
+  influencia o root.
+- **Serviços e versões**: um `mysqld`, um `apache2`, um `java` com um caminho que
+  revela a aplicação. Cada um é um candidato a falha conhecida.
+- **Senhas na linha de comando.** Lembre que o `ps` mostra a linha de comando de todo
+  mundo, para todo mundo. Quem passa uma senha como argumento a entrega a qualquer
+  usuário da máquina. Demonstração real no sandbox:
+
+  ```console
+  $ bash -c 'sleep 60; true' backup-db --senha=Inverno2026 &
+  [1] 269
+  $ ps aux | grep senha
+  aluno        269  0.0  0.0   4496  3444 pts/0    S    03:42   0:00 bash -c sleep 60; true backup-db --senha=Inverno2026
+  aluno        271  0.0  0.0   3940  2040 pts/0    S+   03:42   0:00 grep senha
+  ```
+
+  Num servidor de verdade, essa linha seria visível para **todos** os usuários, porque
+  o `/proc/PID/cmdline` é legível por qualquer um (`-r--r--r--`). Repare também na
+  segunda linha: o próprio `grep senha` aparece, porque a linha de comando dele também
+  contém "senha" (seção 7).
+
+- **Segredos no ambiente.** O `/proc/PID/environ` é mais protegido (`-r--------`: só o
+  dono e o root), mas quem já é o dono do processo, ou o root, lê tudo:
+
+  ```console
+  $ API_TOKEN=tk_exemplo_123 sleep 60 &
+  [2] 245
+  $ tr '\0' '\n' < /proc/$!/environ | grep TOKEN
+  API_TOKEN=tk_exemplo_123
+  $ ls -l /proc/$!/cmdline /proc/$!/environ
+  -r--r--r-- 1 aluno aluno 0 Oct  3 03:42 /proc/245/cmdline
+  -r-------- 1 aluno aluno 0 Oct  3 03:42 /proc/245/environ
+  ```
+
+  Num pentest, depois de comprometer uma conta de serviço, ler o `environ` dos processos
+  dela costuma render senhas de banco de dados e chaves de API. O ataque ao Codecov, que
+  você viu no 0.3, foi exatamente isto em escala: o script adulterado mandava a saída do
+  `env` para o atacante.
+
+### 3.2 Disfarce: o processo que finge ser outro
+
+O nome de um processo é só um texto, e o atacante escolhe. Malware de mineração de
+criptomoedas costuma se chamar `kworker`, `systemd-journal` ou algo parecido com um
+processo legítimo, para passar despercebido num `ps` apressado. É a técnica
+**[T1036.005 — Match Legitimate Resource Name or Location](https://attack.mitre.org/techniques/T1036/005/)**,
+e o objetivo, no caso dos mineradores, é o
+**[T1496.001 — Compute Hijacking](https://attack.mitre.org/techniques/T1496/001/)**:
+usar a CPU da vítima para minerar.
+
+O defensor desmascara com o que você aprendeu: o `/proc/PID/exe` aponta para o programa
+**de verdade** (um "kworker" cujo `exe` aponta para `/tmp/.x/kworker` é um alerta
+vermelho), o `ps -ef --forest` mostra quem é o pai, e o `dpkg -S` diz se aquele binário
+pertence a algum pacote. Um binário em `/usr/bin` que nenhum pacote reconhece foi posto
+ali à mão.
+
+### 3.3 Sequestro de PATH
+
+O mecanismo da seção 2.6 vira técnica de ataque com nome próprio, o
+<GlossaryTerm term="PATH hijacking">PATH hijacking</GlossaryTerm> (sequestro de PATH):
+**[T1574.007 — Path Interception by PATH Environment Variable](https://attack.mitre.org/techniques/T1574/007/)**.
+O MITRE a descreve assim: o `PATH` contém uma lista de diretórios que o sistema percorre
+"em sequência" procurando o programa chamado, e o atacante põe o seu programa num
+diretório que vem antes. Dois cenários clássicos:
+
+1. **Contra um usuário.** O invasor consegue escrever na home da vítima, cria um `~/bin`
+   com um `sudo` falso que grava a senha digitada e depois chama o `sudo` verdadeiro.
+   Graças ao trecho do `~/.profile` (seção 2.6), no próximo login o falso vence. A vítima
+   não nota nada: o comando funciona.
+2. **Contra um script privilegiado.** Um script que roda como root (por um agendamento,
+   por exemplo) chama `tar` ou `cp` sem caminho completo, e o `PATH` dele inclui um
+   diretório gravável. O invasor põe ali um `tar` falso e ganha um processo de root. Esse
+   é um vetor estudado na Trilha 6.
+
+A Missão 2 reproduz o primeiro cenário no sandbox, com um `ls` inofensivo.
+
+### 3.4 Persistência pelos arquivos de inicialização
+
+Se o `~/.bashrc` e o `~/.profile` rodam a cada sessão, quem consegue escrever neles
+consegue executar código toda vez que a vítima abrir um terminal. É a técnica
+**[T1546.004 — Unix Shell Configuration Modification](https://attack.mitre.org/techniques/T1546/004/)**.
+O MITRE destaca o `~/.bashrc` justamente porque ele roda não só no login, mas a cada
+shell interativo novo. Uma linha como `export PATH=...` ou um `alias sudo=...` escondida
+no meio de um `.bashrc` de 100 linhas passa fácil. Quem defende confere esses arquivos
+(`tail`, `grep -n alias`, `grep -n PATH`) quando investiga uma conta suspeita.
+
+### 3.5 Pacotes: inventário de falhas e atalho para root
+
+Para o pentester, a lista de pacotes é um inventário de possíveis falhas:
+`dpkg -l | grep -i openssl` mostra a versão exata, que se compara com os
+<GlossaryTerm term="CVE">CVEs</GlossaryTerm> publicados. Um sistema sem atualizações há
+meses quase sempre tem uma falha local conhecida, como o PwnKit da seção 4.
+
+E o próprio gerenciador de pacotes é um caminho para root: se uma regra do `sudoers`
+permite a alguém rodar `apt` ou `dpkg` como root, essa pessoa pode instalar um pacote
+cujo script `postinst` faz o que ela quiser, como root. O mesmo vale para o grupo
+`docker` (seção 2.5). Por isso as regras de `sudo` precisam ser lidas com desconfiança.
+
+### 3.6 Editores como escape
+
+Editores rodam comandos. O `vim` tem `:!comando`, que executa o comando num shell e volta
+ao editor. Teste real no WSL: dentro do vim, `:!id -un` mostrou o nome do usuário e a
+mensagem `Press ENTER or type command to continue`. O nano também tem um `^T`
+(*Execute*) no rodapé, que executa um comando do sistema de dentro do editor.
+
+Isso vira problema quando o editor roda com mais poder do que você. Se uma regra do
+`sudoers` deixa um usuário rodar `sudo vim /etc/algum.conf` "só para editar aquele
+arquivo", o `:!sh` dentro desse vim abre um **shell de root**. É o que se chama de
+<GlossaryTerm term="shell escape">shell escape</GlossaryTerm>, e o catálogo público
+<GlossaryTerm term="GTFOBins">[GTFOBins](https://gtfobins.org/)</GlossaryTerm> lista
+centenas de programas comuns que permitem isso. Você vai usá-lo muito na Trilha 6; a
+defesa está na seção 8 (o `sudoedit`).
+
+<Callout variant="ethics">
+Nesta seção, tudo foi feito no sandbox e no seu WSL. Ler o `environ` de processos alheios,
+plantar programas falsos no `PATH` de alguém ou abusar de regras do `sudo` num sistema que
+não é seu, sem autorização escrita, é invasão de dispositivo, mesmo que "só para testar".
+</Callout>
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os quatro casos abaixo ligam um assunto deste módulo a um incidente público. Cada data
+foi conferida na fonte indicada.
+
+### Shellshock (setembro de 2014): código escondido numa variável de ambiente
+
+Em **24 de setembro de 2014**, Florian Weimer publicou na lista
+oss-security a falha CVE-2014-6271, descoberta por Stéphane Chazelas: o Bash executava o
+código que vinha **depois** de uma definição de função dentro do valor de uma variável de
+ambiente. O Bash permitia exportar funções para processos filhos guardando-as em
+variáveis cujo valor começava com `() {`. Ao iniciar, o Bash lia essas variáveis para
+recriar as funções e, por um erro de parsing, executava também o que vinha depois do `}`.
+
+Por que isso era grave? Porque variáveis de ambiente **cruzam fronteiras**. Segundo o
+registro do NVD, a falha afetava o Bash até a versão 4.3 e era explorável remotamente
+por vetores como os módulos <GlossaryTerm term="CGI">CGI</GlossaryTerm> do Apache (que
+copiam dados da requisição HTTP, como o cabeçalho `User-Agent`, para variáveis de ambiente
+antes de chamar um script), o `ForceCommand` do OpenSSH e clientes DHCP. Quem controlava
+um cabeçalho HTTP controlava o servidor. A primeira correção ficou incompleta, e um
+segundo identificador, o CVE-2014-7169, foi publicado no dia seguinte, 25 de setembro.
+
+Hoje, o teste clássico num Bash corrigido só imprime o texto inofensivo (saída real do
+sandbox):
+
+```console
+$ env x="() { :;}; echo VULNERAVEL" bash -c "echo teste"
+teste
+```
+
+Num Bash vulnerável, a mesma linha imprimiria `VULNERAVEL` antes de `teste`. A correção
+mudou o formato: funções exportadas agora viajam em variáveis com nome especial, como
+`BASH_FUNC_ola%%`, e só elas são interpretadas.
+
+- **Impacto:** execução remota de comandos em servidores web e outros serviços que
+  passavam dados externos ao Bash por variáveis de ambiente.
+- **Lição:** o ambiente é **entrada**, e entrada externa é sempre suspeita. E a defesa
+  real foi uma só: atualizar o pacote `bash`.
+- **Fontes:** [anúncio na oss-security, 24/09/2014](https://www.openwall.com/lists/oss-security/2014/09/24/10);
+  NVD, [CVE-2014-6271](https://nvd.nist.gov/vuln/detail/CVE-2014-6271) e
+  [CVE-2014-7169](https://nvd.nist.gov/vuln/detail/CVE-2014-7169).
+
+### PwnKit (janeiro de 2022): de usuário comum a root, desde 2009
+
+Em **25 de janeiro de 2022**, a empresa Qualys publicou o CVE-2021-4034, apelidado de
+PwnKit, no `pkexec`, um programa do pacote polkit (o componente que decide quais ações administrativas um usuário comum pode fazer) que é <GlossaryTerm term="SUID">SUID</GlossaryTerm>
+do root e vem instalado por padrão nas grandes distribuições. O erro existia desde a
+criação do `pkexec`, em **maio de 2009**.
+
+O mecanismo junta três assuntos deste módulo. Quando o `pkexec` era chamado **sem
+nenhum argumento**, ele lia além do fim da lista de argumentos e caía no primeiro item da
+lista de **variáveis de ambiente**, que fica logo depois na memória. Com isso, o atacante
+conseguia reintroduzir uma variável "insegura" (como a `GCONV_PATH`, que diz de onde
+carregar módulos de conversão de texto) que normalmente é removida do ambiente de
+programas SUID, pelo carregador do sistema (`ld.so`), antes de eles começarem. Resultado:
+o programa SUID carregava código do atacante, como root. A Qualys demonstrou um
+<GlossaryTerm term="exploit">exploit</GlossaryTerm> (o código que aproveita a falha) funcionando
+no Ubuntu, no Debian e no Fedora.
+
+- **Linha do tempo:** aviso enviado à Red Hat em 18 de novembro de 2021; distribuições
+  avisadas em 11 de janeiro de 2022; publicação coordenada em 25 de janeiro de 2022.
+- **Impacto:** qualquer usuário local, ou um invasor com qualquer shell, virava root nas
+  principais distribuições Linux.
+- **Lição:** a defesa foi `apt update && apt upgrade` (o pacote do polkit corrigido).
+  Enquanto não havia correção, a Qualys recomendou tirar o SUID do programa
+  (`chmod 0755 /usr/bin/pkexec`): um exemplo de menor privilégio na prática.
+- **Fonte:** [aviso da Qualys](https://www.qualys.com/2022/01/25/cve-2021-4034/pwnkit.txt).
+
+### O backdoor do xz-utils (março de 2024): pego por um processo lento
+
+O xz-utils é um pacote de compressão presente em quase todo Linux. A biblioteca dele, a
+`liblzma`, é usada indiretamente pelo servidor <GlossaryTerm term="SSH">SSH</GlossaryTerm>
+(`sshd`) em várias distribuições.
+
+- **24 de fevereiro de 2024:** a versão 5.6.0 foi publicada por um colaborador que usava o
+  nome Jia Tan. Ele mandara o primeiro patch ao projeto em outubro de 2021 e, aos poucos,
+  ganhara a confiança do mantenedor até virar também mantenedor.
+- **9 de março de 2024:** a versão 5.6.1 foi publicada pelo mesmo colaborador.
+- **29 de março de 2024:** Andres Freund, engenheiro que testava desempenho no Debian
+  instável (*sid*), publicou na oss-security que os
+  <GlossaryTerm term="tarball">tarballs</GlossaryTerm> dessas duas versões tinham um
+  <GlossaryTerm term="backdoor">backdoor</GlossaryTerm>. O CVE-2024-3094 recebeu nota
+  10,0, a máxima.
+
+O que chamou a atenção de Freund foi exatamente o assunto deste módulo: ele notou
+"logins com ssh gastando muita CPU" e erros do <GlossaryTerm term="valgrind">valgrind</GlossaryTerm>
+(uma ferramenta que aponta erros de memória). Nas medições do relato, um login que levava
+0,299 s passou a levar 0,807 s. Investigando o porquê de meio segundo a mais, ele achou
+código escondido: o processo de construção do pacote extraía um objeto pronto de um
+arquivo de teste disfarçado e o usava para modificar funções da biblioteca. O código
+malicioso só se ativava em x86-64, Linux, e quando construído como pacote `.deb` ou
+`.rpm` (o formato de pacote do Fedora e do Red Hat), isto é, foi feito para entrar nas distribuições.
+
+O backdoor quase chegou às versões estáveis. No Debian, o boletim DSA-5649 (também de 29
+de março) informou que os pacotes comprometidos estavam só nas versões *testing*,
+*unstable* e *experimental*, e que nenhuma versão estável era conhecida como afetada.
+
+- **Impacto:** potencial acesso a qualquer servidor SSH das distribuições que chegassem a
+  adotar as versões 5.6.0 e 5.6.1; contido antes disso.
+- **Lição:** foi um <GlossaryTerm term="supply chain attack">supply chain attack</GlossaryTerm>
+  no elo mais alto da cadeia, o upstream. A assinatura do repositório não ajuda nesse
+  caso: o pacote estava assinado. O que pegou o ataque foi alguém que desconfiou de um
+  processo consumindo CPU demais e foi atrás.
+- **Fontes:** [relato de Andres Freund na oss-security](https://www.openwall.com/lists/oss-security/2024/03/29/4);
+  [página do projeto XZ Utils sobre o backdoor](https://tukaani.org/xz-backdoor/);
+  datas das versões nas páginas de release
+  [v5.6.0](https://github.com/tukaani-project/xz/releases/tag/v5.6.0) e
+    [v5.6.1](https://github.com/tukaani-project/xz/releases/tag/v5.6.1);
+  [linha do tempo de Russ Cox](https://research.swtch.com/xz-timeline), para a chegada
+  de Jia Tan ao projeto;
+  [boletim DSA-5649 do Debian](https://lists.debian.org/debian-security-announce/2024/msg00057.html);
+  [NVD, CVE-2024-3094](https://nvd.nist.gov/vuln/detail/CVE-2024-3094).
+
+### O OpenSSL do Debian (2006 a 2008): o erro do mantenedor
+
+Em **13 de maio de 2008**, o Debian publicou o boletim DSA-1571 (CVE-2008-0166): Luciano
+Bello descobriu que o gerador de números aleatórios do pacote `openssl` do Debian era
+**previsível**. A causa foi uma mudança **específica do Debian** no pacote, presente desde
+a versão 0.9.8c-1, enviada em **17 de setembro de 2006**. Chaves criadas nesse período
+(chaves SSH, de OpenVPN (um programa de VPN, a rede privada cifrada), de DNSSEC, certificados) podiam ser adivinhadas, porque havia
+poucas possibilidades. A mudança nasceu de uma discussão de 2006 sobre avisos do valgrind
+no gerador ([bug #363516](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=363516));
+no dia do boletim, o autor do pedido original registrou na conversa que a mudança aplicada
+"não era nem um pouco igual" à que ele havia proposto.
+
+- **Impacto:** quase dois anos de chaves fracas nos sistemas Debian. O boletim
+  recomendou "fortemente" que todo material criptográfico gerado por essas versões do
+  OpenSSL no Debian fosse "recriado do zero".
+- **Lição:** o elo do meio da cadeia, o mantenedor, também pode errar, e o pacote chega
+  assinado do mesmo jeito. Atualizar o pacote corrigiu o gerador, mas não as chaves já
+  criadas: atualização resolve o futuro, não o passado.
+- **Fonte:** [boletim DSA-1571](https://lists.debian.org/debian-security-announce/2008/msg00152.html).
+
+## 5. Mãos à obra — exercícios no sandbox e no seu WSL
+
+Este módulo não tem laboratório próprio. Você vai usar o **linux-sandbox** do 0.3 (sem
+rede, sem root, descartável) para as três missões com flag, e o **seu WSL** para o
+walkthrough de `apt` e `vim`, que precisa de root e de internet.
+
+**Objetivo:** ao terminar, você terá congelado, retomado e encerrado processos com
+sinais, medindo os códigos de saída; derrubado um processo que se recusa a morrer
+(Missão 1); armado e observado um sequestro de `PATH` (Missão 2); descoberto de qual
+pacote vem um programa e corrigido um arquivo de configuração com o nano (Missão 3).
+Cada missão termina numa flag.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra um terminal do Ubuntu no WSL e entre na pasta do projeto:
+
+   ```bash
+   cd ~/projetos/plataforma-cyber
+   ```
+
+2. Entre no sandbox (se a imagem ainda não existir, veja a seção 5.1 do 0.3):
+
+   ```bash
+   npm run lab:sandbox
+   ```
+
+   O prompt muda para `aluno@sandbox:~$`. Se o sandbox já estava ligado desde o 0.3 e
+   você quiser começar do zero, use `npm run lab:sandbox -- reset`.
+
+<Callout variant="warning" title="Um laboratório por vez">
+O sandbox conta na regra de um lab por vez. Se o Kali ou outro alvo estiver no ar, o
+script recusa e mostra qual está rodando; desligue-o em **Laboratórios** ou com
+`scripts/lab.sh down <lab>`.
+</Callout>
+
+3. Os números de PID que você vai ver serão diferentes dos do módulo (eles dependem da
+   ordem em que os processos nasceram). Os códigos de saída, os estados e as contagens
+   das flags não mudam.
+
+### 5.2 Missão 1 — O processo teimoso (guiada, depois desafio)
+
+**Parte guiada: congelar, retomar e encerrar.** Inicie um processo em segundo plano e
+veja-o na lista (saída real):
+
+```console
+$ sleep 1000 &
+[1] 17
+$ jobs
+[1]+  Running                 sleep 1000 &
+$ ps -o pid,ppid,stat,cmd
+    PID    PPID STAT CMD
+      8       0 Ss   bash -l
+     17       8 S    sleep 1000
+     18       8 R+   ps -o pid,ppid,stat,cmd
+```
+
+O `[1] 17` quer dizer "job 1, PID 17". O `sleep` é filho do seu shell (PPID 8) e está
+dormindo (`S`). A variável especial `$!` guarda o PID do último job em segundo plano;
+use-a para não digitar números.
+
+Agora mande SIGSTOP e leia o estado direto no `/proc`. Anote a **letra** que aparece
+depois de `State:`; ela é a primeira parte da flag:
+
+```console
+$ kill -STOP %1
+
+[1]+  Stopped                 sleep 1000
+$ grep State /proc/$!/status
+```
+
+Retome com SIGCONT e confira que ele voltou a dormir:
+
+```console
+$ kill -CONT %1
+$ grep State /proc/$!/status
+State:	S (sleeping)
+```
+
+Por fim, encerre-o do jeito educado (SIGTERM, o padrão do `kill`) e peça ao shell o
+código de saída. O `wait %1` espera o job terminar e põe o código dele em `$?`. Anote o
+número: é a segunda parte da flag.
+
+```console
+$ kill %1
+$ wait %1; echo "codigo: $?"
+[1]+  Terminated              sleep 1000
+```
+
+**Desafio: o processo que ignora o SIGTERM.** Crie um script que trata o SIGTERM com um
+`trap` (o comando do Bash que registra um signal handler) e se recusa a sair. Copie o
+bloco inteiro, cole no sandbox e aperte Enter:
+
+```bash
+cat > teimoso.sh <<'FIM'
+#!/bin/bash
+trap 'echo "teimoso: recebi SIGTERM e vou ignorar"' TERM
+while true; do sleep 1; done
+FIM
+chmod +x teimoso.sh
+```
+
+O `<<'FIM'` é um <GlossaryTerm term="here document">here-doc</GlossaryTerm>
+(*here document*): tudo até a linha `FIM` vira a entrada do `cat`, e o `>` grava isso no
+arquivo. As aspas em `'FIM'` impedem o shell de expandir `$` e aspas no meio do texto. Rode o
+script em segundo plano e tente encerrá-lo com `kill %1` (saída real):
+
+```console
+$ ./teimoso.sh &
+[1] 23
+$ kill %1
+$ Terminated
+teimoso: recebi SIGTERM e vou ignorar
+```
+
+A mensagem prova que o handler rodou. Confira com `jobs`: ele continua `Running`.
+E o `Terminated` solto? Repare que ele aparece **antes** da mensagem do teimoso.
+
+Seu objetivo agora: (1) explicar quem foi o `Terminated`; (2) encerrar o teimoso de um
+jeito que ele não consiga ignorar; (3) ler o código de saída dele com `wait %1; echo $?`.
+Esse código é a terceira parte da flag.
+
+<Hint title="Dica 1">
+Releia "O processo escolhe, menos em dois casos" (seção 2.3). Só dois sinais não podem
+ser tratados; um deles encerra.
+</Hint>
+
+<Hint title="Dica 2">
+Sobre o `Terminated`: `kill %1` não sinaliza um processo só, mas o grupo de processos do
+job (seção 2.4). Quem mais faz parte do grupo do teimoso, a cada segundo?
+</Hint>
+
+<Solution title="Solução da Missão 1">
+```console
+$ jobs
+[1]+  Running                 ./teimoso.sh &
+$ kill -9 %1
+$ wait %1; echo "codigo: $?"
+[1]+  Killed                  ./teimoso.sh
+codigo: 137
+```
+O `kill %1` mandou SIGTERM para o **grupo** do job: o script (que tratou o sinal e
+seguiu vivo) e o `sleep 1` filho dele, que não trata nada e morreu. O `Terminated` é o
+Bash do script avisando que o filho `sleep` foi encerrado. Depois, o `kill -9` (SIGKILL)
+não dá escolha a ninguém: código 137 = 128 + 9.
+
+As três partes da flag são: a letra de `State:` depois do SIGSTOP, o código do `sleep`
+encerrado com SIGTERM (128 + 15) e o 137. Monte no formato `FLAG{letra-código-código}`.
+</Solution>
+
+<FlagInput task="missao-1-processo-teimoso" />
+
+### 5.3 Missão 2 — O PATH envenenado (desafio)
+
+Você vai fazer, contra você mesmo, o que um invasor faria com a home de uma vítima:
+plantar um `ls` falso e deixar o `~/.profile` do Debian colocá-lo na frente no próximo
+login. O `ls` falso é inofensivo: avisa que rodou e chama o verdadeiro.
+
+**Passo 1 (guiado): o estado inicial.** Conte os diretórios do `PATH` e veja quais `ls`
+o shell conhece (saída real):
+
+```console
+$ echo "$PATH"
+/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+$ echo "$PATH" | tr ':' '\n' | wc -l
+5
+$ type -a ls
+ls is aliased to `ls --color=auto'
+ls is /usr/bin/ls
+ls is /bin/ls
+```
+
+O `tr ':' '\n'` troca cada dois-pontos por uma quebra de linha, e o `wc -l` conta as
+linhas: 5 diretórios.
+
+**Passo 2 (guiado): plantar a armadilha.** Crie a pasta `~/bin` e, dentro dela, o `ls`
+falso:
+
+```bash
+mkdir ~/bin
+cat > ~/bin/ls <<'FIM'
+#!/bin/bash
+echo "[armadilha] este ls falso rodou como $(whoami)" >&2
+exec /usr/bin/ls "$@"
+FIM
+chmod +x ~/bin/ls
+```
+
+O script escreve um aviso no stderr e depois faz `exec` do `ls` verdadeiro, passando
+todos os argumentos (`"$@"`). É o mesmo truque de um ataque real: o comando "funciona",
+então a vítima não estranha.
+
+Agora rode `ls missao-1` no shell atual. A armadilha **não** dispara (saída real):
+
+```console
+$ ls missao-1
+instrucoes.txt  lista-de-compras.txt  rascunho.txt
+```
+
+**Desafio 2.1:** por que não disparou? E o que precisaria acontecer para disparar, sem
+você mexer no `PATH` à mão?
+
+<Hint title="Dica 1">
+Quem coloca o `~/bin` no `PATH`? Releia "De onde vem o PATH" (seção 2.6): em que momento
+o `~/.profile` é lido?
+</Hint>
+
+<Solution title="Solução do desafio 2.1">
+O `PATH` deste shell foi montado no login, quando o `~/bin` ainda não existia. O trecho
+do `~/.profile` só roda num **novo** login shell. Na vida real, a vítima cai na
+armadilha na próxima vez em que abrir um terminal. Para simular isso sem sair, abra um
+login shell dentro do atual:
+
+```console
+$ bash -l
+$ echo "$PATH" | tr ':' '\n' | head -3
+/home/aluno/bin
+/usr/local/bin
+/usr/bin
+$ ls missao-1
+[armadilha] este ls falso rodou como aluno
+instrucoes.txt  lista-de-compras.txt  rascunho.txt
+```
+</Solution>
+
+**Desafio 2.2 (a flag):** **dentro desse novo login shell** (o `bash -l`), descubra:
+
+1. quantos diretórios há agora no `PATH`;
+2. quantas linhas o `type -a ls` mostra;
+3. o código de saída (`$?`) de um comando que não existe (invente um, como `lss`).
+
+Monte a flag como `FLAG{diretórios-linhas-código}`.
+
+<Hint title="Dica 2">
+Use os mesmos comandos do passo 1. Para o último número, digite o comando inexistente e,
+em seguida, `echo $?`. A seção 2.6 diz que código o Bash devolve nesse caso.
+</Hint>
+
+<Solution title="Solução do desafio 2.2">
+```console
+$ lss
+bash: lss: command not found
+$ echo "codigo: $?"
+codigo: 127
+```
+O `PATH` ganhou um diretório na frente (o `/home/aluno/bin`), o `type -a ls` passou a
+mostrar o alias e **três** caminhos (o falso primeiro), e um comando inexistente devolve
+127. Conte você mesmo os dois primeiros números com os comandos do passo 1.
+</Solution>
+
+<FlagInput task="missao-2-path-envenenado" />
+
+**Desafio 2.3 (para pensar):** o alias `ls --color=auto` protege contra a armadilha? E
+`\ls` (a barra invertida desliga o alias)? O que realmente pula a armadilha?
+
+<Solution title="Discussão do desafio 2.3">
+Nenhum dos dois protege. O alias só troca o texto por `ls --color=auto`, e depois a busca
+pelo nome `ls` continua no `PATH`. A barra invertida desliga o alias, mas a busca no
+`PATH` é a mesma. Saída real:
+
+```console
+$ \ls missao-1
+[armadilha] este ls falso rodou como aluno
+instrucoes.txt	lista-de-compras.txt  rascunho.txt
+$ /usr/bin/ls missao-1
+instrucoes.txt	lista-de-compras.txt  rascunho.txt
+```
+Só o caminho completo pula a busca. É por isso que scripts sensíveis (os que rodam como
+root, principalmente) devem definir um `PATH` fixo no começo ou chamar os programas pelo
+caminho completo.
+</Solution>
+
+**Limpeza (obrigatória):** saia do login shell interno e desarme a armadilha. Sem isso,
+todo login futuro no sandbox continua envenenado:
+
+```bash
+exit
+rm -r ~/bin
+```
+
+(Ou, para voltar o sandbox inteiro ao estado inicial, `npm run lab:sandbox -- reset` no
+WSL.)
+
+### 5.4 Missão 3 — Pacote e editor (desafio)
+
+**Parte 1: de onde vem o `top`?** Você aprendeu, na seção 2.7, a perguntar ao `dpkg` a
+qual pacote pertence um arquivo. Descubra o nome do pacote que instalou o
+`/usr/bin/top`: ele é a primeira parte da flag.
+
+<Hint title="Dica 1">
+É uma das quatro opções do `dpkg` da tabela da seção 2.7: a que responde "de qual pacote
+é esse arquivo?".
+</Hint>
+
+Antes de seguir, tente instalar um programa no sandbox e **leia** o erro (saída real):
+
+```console
+$ apt install htop
+Error: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)
+Error: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), are you root?
+$ echo "codigo: $?"
+codigo: 100
+```
+
+O apt nem chegou a tentar a internet: antes de tudo, ele precisa travar o banco do dpkg
+com um <GlossaryTerm term="lock file">lock file</GlossaryTerm> (arquivo de trava, que
+impede duas instalações ao mesmo tempo), e só o root pode fazer
+isso. O `are you root?` é a pista. No sandbox, de propósito, não há root nem rede; no WSL,
+a seção 5.5 mostra o caminho certo.
+
+**Parte 2: corrigir um arquivo de escopo com o nano.** Imagine que você recebeu o arquivo
+de configuração de uma ferramenta de pentest com erros, e o contrato com o cliente
+(fictício) autoriza só a rede `10.0.0.0/24`, em modo cuidadoso. Crie o arquivo exatamente
+como está abaixo (copie o bloco inteiro e cole no sandbox):
+
+```bash
+mkdir -p ~/missao-0.4 && cd ~/missao-0.4
+cat > escopo.conf <<'FIM'
+# escopo.conf - pentest autorizado (laboratorio)
+cliente = Empresa Exemplo
+inicio = 2026-10-05
+fim = 2026-10-09
+alvo = 10.0.0.0/24
+alvo = 10.0.1.0/24
+excluir = 10.0.0.1
+modo = agressivo
+FIM
+md5sum escopo.conf
+```
+
+O `md5sum` final deve mostrar `15643c55877d9ddf129f5bfd7fb04d89`. Se mostrar outro
+valor, o arquivo não foi criado igual: apague-o (`rm escopo.conf`) e cole de novo.
+
+Agora abra o arquivo com `nano escopo.conf`. A tela é esta (captura real do sandbox, num
+terminal de 80 colunas):
+
+<Figure
+  src={telaNano}
+  alt="Tela do nano 8.4 com o arquivo escopo.conf aberto: no alto, a barra com a versão e o nome do arquivo; no meio, as oito linhas do arquivo, com o comentário em ciano; a mensagem [ Read 8 lines ]; e, no rodapé, duas linhas de atalhos: ^G Help, ^O Write Out, ^F Where Is, ^K Cut, ^T Execute, ^C Location, ^X Exit, ^R Read File, ^\ Replace, ^U Paste, ^J Justify e ^/ Go To Line."
+  caption="O nano mostra os atalhos no rodapé: ^ é Ctrl. O [ Read 8 lines ] confirma que ele leu as 8 linhas do arquivo."
+/>
+
+Faça **três** correções, usando os atalhos da seção 2.8:
+
+1. Troque `modo = agressivo` por `modo = cuidadoso`.
+2. Apague a linha `alvo = 10.0.1.0/24`: essa rede **não** está no contrato.
+3. Mova a linha `cliente = Empresa Exemplo` para o **fim** do arquivo, logo depois da
+   linha do `modo` (recorte e cole).
+
+Grave (`^O` e Enter) e saia (`^X`). Confira o resultado com `cat -A escopo.conf`, que
+mostra um `$` no fim de cada linha e denuncia espaços sobrando. O arquivo certo tem sete
+linhas e o `md5sum escopo.conf` mostra `aff6b879e1cbbb219ac529e69790281f`.
+
+<Hint title="Dica 2">
+Para o item 1, `^\` (Replace) pede o texto a procurar, o texto novo e confirma com `Y`.
+Para os itens 2 e 3, leve o cursor até a linha (as setas, ou `^F` para procurar) e use
+`^K`: ele recorta a linha inteira. Para colar no fim, vá para a última linha com `M-/`
+(Alt+/), que deixa o cursor na linha vazia depois do texto, e use `^U`.
+</Hint>
+
+<Hint title="Dica 3">
+O md5 não bateu? Rode `cat -A escopo.conf` e compare com a ordem pedida. Os erros mais
+comuns: um espaço a mais no fim da linha (aparece antes do `$`), uma linha em branco
+sobrando (aparece só um `$`) ou o `^U` usado na linha errada, colando o `cliente` acima
+do `modo`.
+</Hint>
+
+Quando o md5 bater, calcule a segunda parte da flag: os 8 primeiros caracteres do
+**SHA-256** do arquivo corrigido.
+
+```bash
+sha256sum escopo.conf | cut -c1-8
+```
+
+A flag é `FLAG{pacote-8caracteres}`, com o nome do pacote da parte 1.
+
+<Solution title="Solução da Missão 3">
+O pacote:
+
+```console
+$ dpkg -S /usr/bin/top
+procps: /usr/bin/top
+```
+
+O arquivo corrigido, conferido com `cat -A` (saída real, depois da edição no nano):
+
+```console
+$ cat -A escopo.conf
+# escopo.conf - pentest autorizado (laboratorio)$
+inicio = 2026-10-05$
+fim = 2026-10-09$
+alvo = 10.0.0.0/24$
+excluir = 10.0.0.1$
+modo = cuidadoso$
+cliente = Empresa Exemplo$
+$ md5sum escopo.conf
+aff6b879e1cbbb219ac529e69790281f  escopo.conf
+```
+
+Uma sequência de teclas que faz as três correções: `^\`, `agressivo`, Enter,
+`cuidadoso`, Enter, `Y`; `^F`, `10.0.1.0`, Enter, `^K`; `^F`, `cliente`, Enter, `^K`;
+`M-/`, `^U`; `^O`, Enter, `^X`. Depois, o `sha256sum | cut -c1-8` dá os 8 caracteres.
+
+Por que o hash serve de prova? Se um único byte do arquivo mudar (um espaço, uma linha
+em branco), o hash muda inteiro, como você viu com o `sha256sum` no 0.3. Só o arquivo
+exatamente certo produz a flag.
+</Solution>
+
+<FlagInput task="missao-3-pacote-e-editor" />
+
+Para sair: `exit` deixa o sandbox, e `npm run lab:sandbox -- down` o desliga (libera a
+vaga de um lab por vez).
+
+### 5.5 Walkthrough no WSL: apt, sudo e vim (sem flag)
+
+O sandbox não tem root nem rede, de propósito. Para ver o `apt` de verdade, use o seu
+WSL. Tudo abaixo é seguro: os primeiros comandos só **consultam** e não mudam nada.
+
+**Consultar sem instalar.** O `apt-get -s` (*simulate*) mostra o que aconteceria, sem
+root e sem mudar nada (saída real):
+
+```console
+$ apt-get -s install htop
+NOTE: This is only a simulation!
+      apt-get needs root privileges for real execution.
+      Keep also in mind that locking is deactivated,
+      so don't depend on the relevance to the real current situation!
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Solving dependencies...
+Suggested packages:
+  lm-sensors strace
+The following NEW packages will be installed:
+  htop
+0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Inst htop (3.4.1-5build2 Ubuntu:26.04/resolute [amd64])
+Conf htop (3.4.1-5build2 Ubuntu:26.04/resolute [amd64])
+$ apt-cache policy htop
+htop:
+  Installed: (none)
+  Candidate: 3.4.1-5build2
+  Version table:
+     3.4.1-5build2 500
+        500 http://archive.ubuntu.com/ubuntu resolute/main amd64 Packages
+```
+
+`Inst` e `Conf` são as duas etapas que o dpkg faria: instalar os arquivos e configurar o
+pacote (rodar os scripts). O `apt-cache policy` mostra que o htop não está instalado
+(`(none)`), qual versão seria instalada e de qual repositório ela viria.
+
+**Instalar de verdade (opcional).** Se quiser o `htop`, uma versão mais amigável do
+`top`, rode e digite a sua senha:
+
+```bash
+sudo apt update
+sudo apt install htop
+```
+
+**Ler o histórico do apt.** Tudo o que o apt instala fica registrado em
+`/var/log/apt/history.log`, legível sem root. No WSL de referência, um trecho real
+mostra uma atualização de segurança que **ninguém** digitou:
+
+```text
+Start-Date: 2026-10-02  06:31:16
+Commandline: /usr/bin/unattended-upgrade
+Upgrade: openssl-provider-legacy:amd64 (3.5.5-1ubuntu3.6, 3.5.5-1ubuntu3.7), libssl3t64:amd64 (3.5.5-1ubuntu3.6, 3.5.5-1ubuntu3.7), openssl:amd64 (3.5.5-1ubuntu3.6, 3.5.5-1ubuntu3.7)
+End-Date: 2026-10-02  06:31:18
+```
+
+Foi o <GlossaryTerm term="unattended-upgrades">unattended-upgrades</GlossaryTerm>, que o
+Ubuntu traz ativado e que instala sozinho as correções de segurança, aqui do OpenSSL.
+Veja o seu com `tail -20 /var/log/apt/history.log`. Para cada entrada, pergunte: quem
+pediu (`Commandline`, `Requested-By`)? O que mudou?
+
+**Seus grupos e o sudo.** Rode `id` e `sudo -l` (este pede a sua senha). Compare os
+grupos com a tabela da seção 2.5: em qual deles está o seu poder de root? E o grupo
+`docker`, se aparecer?
+
+**Minidesafio de vim.** Crie um arquivo de treino em `/tmp` e edite-o com o vim:
+
+```bash
+printf 'linha um\nlinha dois\nlinha tres\n' > /tmp/vimteste.txt
+vim /tmp/vimteste.txt
+```
+
+Objetivo: apagar a linha `linha dois`, acrescentar uma linha `string nova` no fim, gravar
+e sair. Depois, abra de novo, apague tudo com `dd` várias vezes e saia **sem** gravar.
+Confira com `cat -A /tmp/vimteste.txt` que o arquivo tem as três linhas do exemplo da
+seção 2.8.
+
+<Solution title="Solução do minidesafio">
+Primeira edição: `j` (desce), `dd` (apaga a linha), `G` (vai ao fim), `o` (abre uma linha
+nova em modo de inserção), `string nova`, `Esc`, `:wq` e Enter. Segunda edição: `dd`
+algumas vezes, depois `:q!` e Enter: o `!` descarta as mudanças. Ao final, apague o
+arquivo de treino com `rm /tmp/vimteste.txt`. Se quiser ir além, rode `vimtutor`.
+</Solution>
+
+## 6. Variações e aprofundamento
+
+### 6.1 Serviços e o systemd
+
+Os processos que você viu foram iniciados à mão. Numa máquina real, quem inicia os
+serviços (servidor web, SSH, banco de dados) é o init, e quase sempre ele é o systemd. Um
+serviço é um <GlossaryTerm term="daemon">daemon</GlossaryTerm>, um processo que roda em
+segundo plano sem terminal, descrito por uma <GlossaryTerm term="systemd unit">unit</GlossaryTerm>
+(um arquivo de configuração do systemd, como `ssh.service`). No WSL de
+referência, o PID 1 é o systemd:
+
+```console
+$ ps -p 1 -o pid,comm
+    PID COMMAND
+      1 systemd
+```
+
+Os comandos do dia a dia:
+
+| Comando | O que faz |
+|---|---|
+| `systemctl status ssh` | Estado do serviço, PID e últimas linhas de log |
+| `sudo systemctl start` / `stop` / `restart ssh` | Inicia, para, reinicia |
+| `sudo systemctl enable` / `disable ssh` | Liga ou desliga a partida automática no boot |
+| `systemctl list-units --type=service --state=running` | Serviços rodando agora |
+| `journalctl -u ssh` | Os logs daquele serviço |
+
+Para o pentester, os serviços revelam o que a máquina faz; para o atacante, uma *unit*
+nova criada por ele é uma forma de persistência, que reinicia o malware a cada boot.
+
+### 6.2 Arquivos abertos e quem escuta na rede
+
+O `/proc/PID/fd/` mostra os arquivos abertos de um processo, e o `lsof` (*list open
+files*) faz isso para o sistema inteiro. Como no Linux uma conexão de rede também é um
+"arquivo", o `lsof -i` e o `ss -tlnp` (do 0.2) respondem qual processo está escutando
+em cada porta. Um processo desconhecido escutando numa porta alta é outro sinal clássico
+de invasão: pode ser um programa esperando conexões para entregar um shell a quem
+chegar, como você vai ver no módulo 2.7.
+
+### 6.3 O sudo por dentro: ambiente limpo e PATH seguro
+
+O sudo não repassa o seu ambiente ao comando: com a opção `env_reset`, ligada por
+padrão, ele roda o comando "num ambiente mínimo", só com `TERM`, `PATH`, `HOME`, `MAIL`,
+`SHELL`, `LOGNAME`, `USER` e as variáveis `SUDO_*`, segundo o
+[manual do sudoers](https://www.sudo.ws/docs/man/sudoers.man/). E o sudoers padrão do
+Debian define
+`Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"`:
+com isso, o `PATH` do comando é esse, não o seu. As duas regras existem por causa dos ataques das seções
+3.3 e 4: se o sudo herdasse o seu `PATH`, um `~/bin/apt` falso viraria root na hora. É
+também por isso que `sudo cd` não funciona: `cd` é builtin, e o sudo só sabe executar
+programas.
+
+### 6.4 Outros gerenciadores de pacotes
+
+O `apt` não é o único caminho por onde software entra numa máquina:
+
+- **Outras distribuições:** `dnf`/`rpm` (Fedora, Red Hat), `pacman` (Arch), `apk`
+  (Alpine, comum em contêineres). A lógica é a mesma: repositório, assinatura,
+  dependências.
+- **Snap e Flatpak:** pacotes que trazem as próprias dependências e rodam com algum
+  isolamento.
+- **Gerenciadores de linguagem:** `pip` (Python), `npm` (JavaScript), `cargo` (Rust).
+  Eles instalam código de repositórios abertos, onde **qualquer um** publica. Pacotes
+  com nomes quase iguais aos de pacotes famosos, à espera de um erro de digitação (o
+  <GlossaryTerm term="typosquatting">typosquatting</GlossaryTerm>), e pacotes legítimos
+  sequestrados são ataques frequentes. A própria plataforma usa o `npm`; é por isso que o
+  `scripts/audit.sh` confere as dependências.
+- **Repositórios de terceiros (PPA, repositórios de fornecedores):** o seu WSL tem pelo
+  menos dois (`docker.list` e `nodesource.sources`, vistos em
+  `/etc/apt/sources.list.d/`). Cada um é mais uma chave em que você confia; a seção 8
+  mostra como limitar essa confiança.
+
+### 6.5 vim além da sobrevivência
+
+Quem passa a usar o vim no dia a dia descobre que ele é uma linguagem: verbo + movimento.
+`dw` apaga uma palavra (*delete word*), `d$` apaga até o fim da linha, `3dd` apaga três
+linhas, `.` repete a última mudança, `:%s/agressivo/cuidadoso/g` substitui em todo o
+arquivo (o `%` é "todas as linhas", o `g` é "todas as ocorrências da linha"). Não
+precisa decorar: o `vimtutor` ensina isso aos poucos.
+
+### 6.6 Esconder processos e o que fazer sobre isso
+
+Atacantes mais sofisticados tentam sumir do `ps`, por exemplo com
+<GlossaryTerm term="rootkit">rootkits</GlossaryTerm>, programas que alteram o próprio
+kernel ou as bibliotecas do sistema para mentir sobre processos e arquivos. Contra isso, o
+defensor cruza fontes: o `ps`, o `/proc` lido diretamente, o consumo de CPU no `top` e,
+idealmente, ferramentas que rodam fora da máquina suspeita. Foi o cruzamento de um
+sintoma (CPU e lentidão) com a curiosidade que pegou o xz.
+
+## 7. Erros comuns
+
+Quase todos os "não funciona" deste módulo caem numa destas categorias. As mensagens
+abaixo são reais.
+
+- **`bash: kill: (999999) - No such process`:** o PID não existe mais (ou foi digitado
+  errado). Confira com `pgrep -a nome` antes de mandar o sinal. Esse erro devolve código 1.
+- **`Operation not permitted` ao matar um processo:** ele é de outro usuário. Só o dono
+  e o root sinalizam um processo.
+- **`kill -9` como primeira opção:** funciona, mas o programa não tem chance de salvar
+  nada. Use `kill` comum, espere alguns segundos e só então `kill -9`.
+- **O `pkill -f` (ou o `pgrep -f`) achou o que não devia:** o `-f` procura na linha de
+  comando inteira, e o padrão pode casar com o próprio shell ou com o script que está
+  rodando o comando. Durante a escrita deste módulo, um `pkill -f "sleep 60"` encerrou o
+  próprio shell que o executava, porque a linha de comando dele continha o texto
+  `sleep 60`. Confira antes com `pgrep -af padrão`.
+- **O `grep` aparece no resultado:** `ps aux | grep senha` mostra também o próprio
+  `grep senha`. Use `pgrep -af senha`, ou o truque `grep [s]enha`, que não casa com a
+  própria linha.
+- **"Sumiu meu programa!" depois de um `Ctrl+Z`:** ele está parado, não morto. `jobs`
+  mostra; `fg` o traz de volta. Ao tentar sair do shell com jobs parados, o Bash avisa
+  `There are stopped jobs.` (um segundo `exit` sai mesmo assim, e o Bash encerra os jobs).
+- **`kill %1` num job parado "não fez nada":** um processo parado (T) só reage ao SIGTERM
+  quando volta a rodar. Saída real:
+
+  ```console
+  $ kill %1
+
+  [1]+  Stopped                 sleep 500
+  ```
+
+  O sinal fica pendente. Use `kill %1` seguido de `fg` (ou `kill -CONT %1`), ou
+  `kill -9 %1`, que age mesmo com o processo parado.
+- **O programa morreu quando fechei o terminal:** SIGHUP. Use `nohup comando &` ou
+  `tmux`.
+- **`renice: failed to set priority ... Permission denied`:** você tentou baixar o nice
+  (aumentar a prioridade). Usuário comum só aumenta o nice.
+- **A variável não chega ao programa:** faltou `export`. Ou você exportou num terminal e
+  está rodando o programa em outro: o ambiente é por processo.
+- **`PATH=~/bin` e mais nada funciona:** você **substituiu** o `PATH` em vez de
+  acrescentar. O certo é `PATH="$HOME/bin:$PATH"`. Para consertar o shell quebrado, feche
+  o terminal e abra outro, ou rode os programas pelo caminho completo (`/usr/bin/nano`).
+- **`command not found` (código 127) logo depois de instalar:** o Bash guardou na
+  tabela hash um caminho antigo, ou o programa foi para um diretório fora do `PATH`. Rode
+  `hash -r` e confira com `type -a`.
+- **`Could not open lock file ... are you root?`:** faltou `sudo`. Se a mensagem for
+  `Could not get lock ... It is held by process 1234`, outro apt (muitas vezes o
+  unattended-upgrades) está rodando: espere terminar. **Nunca** apague o arquivo de lock à
+  mão.
+- **`apt upgrade` não atualizou nada:** faltou `apt update` antes.
+- **`usermod -G` tirou meus grupos:** sem o `-a`, o `-G` **substitui** a lista de
+  grupos suplementares. Saída real:
+
+  ```console
+  # usermod -aG pentesters maria; id maria
+  uid=1000(maria) gid=1002(maria) groups=1002(maria),1000(pentesters)
+  # usermod -G auditoria maria; id maria
+  uid=1000(maria) gid=1002(maria) groups=1002(maria),1001(auditoria)
+  ```
+
+  O `pentesters` sumiu. Use sempre `usermod -aG`. Num servidor, esquecer o `-a` ao
+  adicionar o seu próprio usuário a um grupo pode tirar você do grupo `sudo`.
+- **Preso no vim:** `Esc`, `Esc`, `:q!` e Enter. Ou `:wq` para gravar.
+- **O nano gravou e o arquivo "não mudou":** você editou uma cópia em outra pasta, ou o
+  arquivo é de outro dono e o nano avisou `Permission denied` na gravação. Confira
+  `pwd` e `ls -l`.
+
+## 8. Boas práticas e segurança
+
+Cada caso real da seção 4 e cada técnica da seção 3 têm uma defesa concreta. Estas são
+as práticas para adotar no seu WSL e em qualquer servidor que você administrar.
+
+### 8.1 Processos
+
+1. **Encerre com educação.** `kill` (SIGTERM), espere, e só então `kill -9`. Em
+   serviços, prefira o caminho oficial: `sudo systemctl stop servico`.
+2. **Segredos fora da linha de comando.** Nunca passe senha como argumento
+   (`--senha=...`): qualquer usuário a vê no `ps`. Prefira que o programa pergunte a
+   senha, ou leia de um arquivo com permissão `600`.
+3. **Segredos no ambiente, com cuidado.** O `environ` é mais protegido que o `cmdline`,
+   mas os filhos herdam tudo, e logs de erro às vezes despejam o ambiente inteiro.
+   Exporte o segredo só para o comando que precisa dele (`VAR=valor comando`), não para
+   a sessão inteira.
+4. **Esconda os processos alheios (em servidores).** O `/proc` aceita a opção
+   `hidepid`: com ela, cada usuário só enxerga os próprios processos, e o vazamento da
+   seção 3.1 deixa de existir entre usuários. A opção está documentada em
+   [`man 5 proc`](https://man7.org/linux/man-pages/man5/proc.5.html) e é configurada na
+   montagem do `/proc`.
+5. **Vigie o consumo.** CPU alta sem explicação, processos com nomes de sistema rodando
+   de `/tmp` e shells filhos de servidores web merecem investigação. Use
+   `ls -l /proc/PID/exe` e `ps -ef --forest`.
+
+### 8.2 Usuários, grupos e sudo
+
+1. **Menor privilégio nos grupos.** Revise quem está em `sudo`, `adm`, `docker`,
+   `shadow` e `disk` (`getent group sudo docker`). Entrar no grupo `docker` equivale a
+   ganhar root.
+2. **Regras de sudo específicas.** Em vez de `ALL`, liste os comandos exatos, com
+   caminho completo. Desconfie de qualquer regra que permita editores, gerenciadores de
+   pacotes, interpretadores (`python`, `perl`) ou `find`/`less`: quase todos têm shell
+   escape (GTFOBins).
+3. **Edite arquivos do sistema com `sudoedit`.** O
+   <GlossaryTerm term="sudoedit">`sudoedit`</GlossaryTerm> (o mesmo que `sudo -e`) copia o
+   arquivo para um lugar temporário, abre o **seu** editor como **você** e só a gravação
+   final é feita como root. Assim, um `:!sh` dentro do editor roda como você, não como
+   root:
+
+   ```bash
+   sudoedit /etc/hosts
+   ```
+
+4. **Contas de serviço sem shell.** `useradd -r -s /usr/sbin/nologin`, como na seção
+   2.5. E nada de reaproveitar contas de pessoas para rodar serviços.
+5. **Edite o sudoers só com `visudo`**, que confere a sintaxe: um erro de digitação
+   gravado direto no `/etc/sudoers` pode tirar o sudo de todo mundo.
+
+### 8.3 PATH e arquivos de inicialização
+
+1. **Nunca ponha `.` nem diretórios graváveis por outros no `PATH`.** E diretórios
+   pessoais (`~/bin`, `~/.local/bin`), se entrarem, devem ser seus e de mais ninguém
+   (`ls -ld ~/bin` com `drwxr-xr-x` e você como dono).
+2. **Scripts que rodam como root definem o próprio `PATH`** no começo
+   (`PATH=/usr/sbin:/usr/bin:/sbin:/bin`) ou chamam os programas pelo caminho completo.
+3. **Confira o que roda no seu login.** Leia, de vez em quando, o fim do `~/.bashrc` e
+   do `~/.profile` (`tail -20 ~/.bashrc`), e desconfie de `alias` e `PATH` que você não
+   pôs lá.
+4. **Antes de digitar a senha num comando, confira qual programa é.** `type -a sudo`
+   deve mostrar só caminhos do sistema. No WSL de referência, a resposta é
+   `sudo is /usr/bin/sudo` e `sudo is /bin/sudo` (o mesmo arquivo, pelo symlink do
+   `/bin`); um `sudo` em `~/bin` ou em `/tmp` na frente deles é uma armadilha.
+
+### 8.4 Pacotes
+
+1. **Atualize, e deixe atualizar.** `sudo apt update && sudo apt upgrade` com
+   regularidade, e o unattended-upgrades ativo para as correções de segurança (o log da
+   seção 5.5 mostra que ele funciona). Shellshock e PwnKit foram resolvidos assim.
+2. **Prefira os repositórios oficiais.** Cada repositório extra é mais um elo na sua
+   cadeia de confiança. Antes de adicionar um, pergunte se o pacote oficial não basta.
+3. **Amarre cada chave ao seu repositório.** Em fontes no formato deb822, a linha
+   `Signed-By` aponta para a chave **daquele** repositório. Assim, a chave de um
+   fornecedor não serve para assinar pacotes que fingem vir do Ubuntu. Confira os seus
+   com `grep -r Signed-By /etc/apt/sources.list.d/`.
+4. **Desconfie de `.deb` avulsos.** `dpkg -i arquivo.deb` não confere assinatura nenhuma,
+   e os scripts do pacote rodam como root. Só instale assim o que veio de uma fonte que
+   você confere (checksum publicado, site oficial).
+5. **Inventário é defesa.** `dpkg -l` e `apt list --upgradable` respondem "o que está
+   instalado e o que está desatualizado", a mesma pergunta que o pentester faz. Faça
+   antes dele.
+6. **Atualizar não refaz o passado.** Depois de uma falha como a do OpenSSL do Debian,
+   além de atualizar, troque as chaves e senhas que possam ter sido expostas.
+
+### 8.5 O olhar de quem defende
+
+Os comandos da seção 3 viram auditoria quando o objetivo é proteger:
+
+- `ps aux --sort=-%cpu | head` — quem está consumindo CPU, e faz sentido?
+- `ps -ef --forest` — algum shell filho de um serviço?
+- `ls -l /proc/*/exe 2>/dev/null | grep -E '/tmp|/dev/shm|deleted'` — algum processo
+  rodando de pasta temporária ou de um arquivo já apagado?
+- `getent group sudo docker adm` — quem tem poder?
+- `grep -rn "PATH\|alias" ~/.bashrc ~/.profile` — algo plantado no login?
+- `tail -50 /var/log/apt/history.log` — o que foi instalado, quando e por quem?
+
+## 9. Exercícios
+
+As três flags da seção 5 são as tarefas oficiais deste módulo. Confira a teoria com o
+quiz e, se quiser fixar mais, faça os exercícios extras.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar
+
+Os três cenários abaixo são inventados para treinar o raciocínio; não são casos reais.
+Pense na resposta antes de abrir a discussão.
+
+<Callout variant="hypothetical" title="a regra de sudo generosa">
+Num pentest autorizado, você conseguiu uma shell como o usuário `deploy`. O `sudo -l`
+mostra: `(root) NOPASSWD: /usr/bin/vim /etc/nginx/nginx.conf`. O administrador achou
+que estava dando só o direito de editar a configuração do nginx. O que você reporta, e
+como o administrador deveria ter feito?
+</Callout>
+
+<Solution title="Discussão do cenário a">
+A regra permite rodar o **vim inteiro** como root, sem senha. Dentro dele, `:!sh` abre
+um shell de root (seção 3.6; o GTFOBins documenta o vim). O achado é uma escalação de
+privilégios direta. A correção é deixar o usuário editar o arquivo com o `sudoedit`
+(regra `deploy ALL=(root) sudoedit /etc/nginx/nginx.conf`), em que o editor roda como o
+próprio usuário, ou dar ao usuário permissão de escrita só naquele arquivo por um grupo.
+O MITRE cataloga o abuso de regras do sudoers como
+[T1548.003](https://attack.mitre.org/techniques/T1548/003/).
+</Solution>
+
+<Callout variant="hypothetical" title="a CPU que não baixa">
+Um servidor web de um cliente está lento há dias. No `top`, um processo chamado
+`kworkerd`, do usuário `www-data`, usa 380% de CPU. O administrador diz que "kworker é
+coisa do kernel". Como você investiga, só com o que aprendeu neste módulo?
+</Callout>
+
+<Solution title="Discussão do cenário b">
+Processos do kernel aparecem entre colchetes (`[kworker/0:1]`) e pertencem ao root, não
+ao `www-data`. Os passos: `ls -l /proc/PID/exe` (para onde aponta o binário de
+verdade?), `tr '\0' ' ' < /proc/PID/cmdline` (com quais argumentos, talvez o endereço de
+um *pool* de mineração?), `ps -o ppid= -p PID` e `ps -ef --forest` (quem é o pai: o
+servidor web?), `ls -l /proc/PID/cwd` (de que pasta roda) e, se o binário estiver em
+`/usr/bin`, `dpkg -S` (é de algum pacote?). Tudo indica cryptojacking
+(T1496.001) entrando pelo site. Antes de matar o processo (SIGSTOP o congela sem
+destruir evidências), registre tudo com `tee`, como no 0.3.
+</Solution>
+
+<Callout variant="hypothetical" title="o instalador do fornecedor">
+O manual de uma ferramenta manda rodar: `curl -fsSL https://exemplo.com/key.gpg | sudo
+gpg --dearmor -o /etc/apt/trusted.gpg.d/exemplo.gpg` e depois adicionar o repositório
+`deb https://exemplo.com/apt stable main`. Por que isso é pior do que parece, e como
+fazer melhor?
+</Callout>
+
+<Solution title="Discussão do cenário c">
+Chaves em `/etc/apt/trusted.gpg.d/` valem para **todos** os repositórios: o fornecedor
+(ou quem comprometer o fornecedor) passa a poder assinar pacotes que o apt aceitará como
+se viessem de qualquer fonte, inclusive substituindo pacotes do Ubuntu. O melhor é
+guardar a chave num arquivo próprio, fora desse diretório (por exemplo
+`/etc/apt/keyrings/exemplo.gpg`), e amarrá-la só ao repositório dele com `Signed-By`
+(seção 8.4). E, como no cenário do `curl | bash` do 0.3: baixe e confira a chave (a
+impressão digital publicada pelo fornecedor) antes de confiar nela.
+</Solution>
+
+### Exercícios práticos extras (sem flag)
+
+1. No sandbox, inicie três `sleep` em segundo plano e encerre **todos** com um único
+   comando, sem digitar PIDs.
+2. Mostre só o nome, o PID e o PPID do seu shell atual, usando a variável especial `$$`
+   (que guarda o PID do próprio shell).
+3. Descubra quantos arquivos o pacote `procps` instalou (contando as pastas, como o
+   `dpkg -L` lista).
+4. No WSL, descubra se o `vim` está instalado pelo pacote `vim` ou por outro, e de qual
+   repositório ele veio.
+
+<Solution title="Soluções dos exercícios extras">
+```bash
+sleep 100 & sleep 200 & sleep 300 &
+kill $(jobs -p)
+ps -o comm,pid,ppid -p $$
+dpkg -L procps | wc -l
+```
+
+Saída real dos três primeiros (o shell avisa os `Terminated` logo depois do comando
+seguinte):
+
+```console
+$ kill $(jobs -p)
+$ ps -o comm,pid,ppid -p $$
+COMMAND             PID    PPID
+bash                  8       0
+[1]   Terminated              sleep 100
+[2]-  Terminated              sleep 200
+[3]+  Terminated              sleep 300
+$ dpkg -L procps | wc -l
+249
+```
+No exercício 1, `jobs -p` lista os PIDs dos jobs, e o `$( )` os entrega ao `kill`
+(também funciona `pkill -x sleep`, que encerra **todos** os `sleep` do usuário, inclusive
+os que não são deste shell: mais perigoso). No exercício 4, `readlink -f` segue os symlinks até o binário real. No WSL de referência
+(saída real):
+
+```console
+$ dpkg -S "$(readlink -f "$(command -v vim)")"
+vim: /usr/bin/vim.basic
+$ apt-cache policy vim | head -6
+vim:
+  Installed: 2:9.1.2141-1ubuntu4.9
+  Candidate: 2:9.1.2141-1ubuntu4.9
+  Version table:
+ *** 2:9.1.2141-1ubuntu4.9 500
+        500 http://security.ubuntu.com/ubuntu resolute-security/main amd64 Packages
+```
+
+O binário é o `vim.basic`, do pacote `vim`, e a versão instalada veio do repositório de
+segurança: já recebeu uma correção depois do lançamento do Ubuntu.
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Um **processo** tem PID, PPID, dono, ambiente e estado (R, S, D, T, Z). Nasce por
+  `fork` + `exec`, termina com `exit` e some quando o pai faz `wait`. O `/proc/PID` mostra
+  tudo isso como arquivos.
+- **Sinais** avisam processos. `kill` manda SIGTERM, que pode ser tratado; `kill -9`
+  manda SIGKILL, que não pode. Morrer pelo sinal N devolve **128 + N**: 130, 137, 143.
+- **Jobs:** `&`, `Ctrl+Z`, `jobs`, `fg`, `bg`. Fechar o terminal manda SIGHUP; `nohup`
+  protege.
+- **Grupos** dão poder: `sudo`, `adm`, `docker` e `shadow` são os primeiros a conferir.
+  `usermod -aG`, nunca `-G` sozinho. `sudo -l` mostra o que você pode.
+- Só variáveis **exportadas** chegam aos filhos. O shell procura um comando em alias,
+  função, builtin, hash e, por fim, no **PATH**, da esquerda para a direita. Quem põe um
+  diretório na frente escolhe o programa.
+- **apt** (alto nível) e **dpkg** (base). A assinatura prova a origem, não a qualidade:
+  xz e OpenSSL chegaram assinados. Atualizar resolveu Shellshock e PwnKit.
+- **nano** para editar sem sustos; no **vim**, `i` para escrever, `Esc` para parar,
+  `:wq` para gravar e sair, `:q!` para fugir.
+- Defesas: segredos fora da linha de comando, `PATH` sem diretórios graváveis, regras de
+  sudo estreitas com `sudoedit`, repositórios oficiais com `Signed-By` e atualizações em
+  dia.
+
+### Cola rápida
+
+| Tarefa | Comando |
+|---|---|
+| Ver processos | `ps aux` · `ps -ef --forest` · `ps -o pid,ppid,stat,cmd` · `top` |
+| Achar pelo nome | `pgrep -a nome` · `pgrep -af padrão` |
+| Detalhes de um processo | `cat /proc/PID/status` · `ls -l /proc/PID/exe` |
+| Sinais | `kill PID` · `kill -9 PID` · `kill -STOP`/`-CONT` · `kill -l` |
+| Jobs | `cmd &` · `Ctrl+Z` · `jobs` · `fg` · `bg` · `wait %1` · `nohup cmd &` |
+| Prioridade | `nice -n 10 cmd` · `renice -n 15 -p PID` |
+| Usuários e grupos | `id` · `groups` · `getent group nome` · `sudo -l` |
+| Administrar contas (root) | `useradd -m -s /bin/bash` · `usermod -aG grupo` · `passwd` · `userdel -r` |
+| Ambiente | `env` · `printenv VAR` · `export VAR=valor` · `VAR=valor cmd` |
+| Achar um comando | `type -a cmd` · `echo "$PATH"` · `hash -r` |
+| Pacotes (consulta) | `dpkg -S arquivo` · `dpkg -L pacote` · `dpkg -l` · `apt show` · `apt-cache policy` |
+| Pacotes (root) | `sudo apt update && sudo apt upgrade` · `sudo apt install X` · `sudo apt remove X` |
+| nano | `^O` grava · `^X` sai · `^F` procura · `^\` substitui · `^K` recorta · `^U` cola |
+| vim | `i` escreve · `Esc` para · `:w` · `:wq` · `:q!` · `dd` · `u` · `/texto` |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [`man 7 signal`](https://man7.org/linux/man-pages/man7/signal.7.html) e
+  [`man 5 proc`](https://man7.org/linux/man-pages/man5/proc.5.html) — a referência
+  oficial dos sinais e do `/proc` (em inglês).
+- [Manual do GNU Bash](https://www.gnu.org/software/bash/manual/bash.html) — busca de
+  comandos, controle de jobs, arquivos de inicialização e `trap`.
+- [Debian Reference, capítulo 2](https://www.debian.org/doc/manuals/debian-reference/ch02.en.html)
+  — gerenciamento de pacotes no Debian, em profundidade (em inglês).
+- [Cheatsheet do nano](https://www.nano-editor.org/dist/latest/cheatsheet.html) e
+  [documentação do vim](https://www.vim.org/docs.php); no terminal, `vimtutor`.
+- [GTFOBins](https://gtfobins.org/) — os programas que escapam de restrições; vai ser
+  leitura obrigatória na Trilha 6.
+- [MITRE ATT&CK](https://attack.mitre.org/) — as técnicas citadas neste módulo (T1057,
+  T1036.005, T1496.001, T1574.007, T1546.004, T1548.003), com exemplos de grupos reais.
+
+**O que vem a seguir:** com este módulo, a base de Linux está completa. O módulo 0.5,
+"Windows para quem vem do Linux", traduz estes conceitos (processos, usuários, serviços)
+para o Windows; o 0.6, "Scripting: Bash", transforma os comandos que você já conhece em
+scripts.

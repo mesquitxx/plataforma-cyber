@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-labelledby="t d">
+  <title id="t">Como o shell decide o que executar, e o sequestro do PATH</title>
+  <desc id="d">Quando você digita ls, o Bash procura nesta ordem: alias, função, builtin, a tabela hash de caminhos já encontrados e, por fim, cada diretório do PATH, da esquerda para a direita; o primeiro que tiver um executável com esse nome vence; se nenhum tiver, o erro é command not found, código 127. Embaixo, o sequestro: depois que o diretório /home/aluno/bin entra na frente do PATH, um ls falso colocado ali vence o /usr/bin/ls verdadeiro. Um caminho com barra, como /usr/bin/ls, pula toda a busca.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+  </defs>
+  <rect width="900" height="460" fill="#121815"/>
+  <text class="t" x="30" y="36">1. Você digita "ls": a ordem em que o Bash procura</text>
+
+  <rect class="box" x="30" y="58" width="140" height="56" rx="10"/>
+  <text class="m" x="46" y="82">1 alias</text>
+  <text class="s" x="46" y="102">ls --color=auto</text>
+  <rect class="box" x="200" y="58" width="120" height="56" rx="10"/>
+  <text class="m" x="216" y="82">2 função</text>
+  <text class="s" x="216" y="102">do shell</text>
+  <rect class="box" x="350" y="58" width="120" height="56" rx="10"/>
+  <text class="m" x="366" y="82">3 builtin</text>
+  <text class="s" x="366" y="102">cd, kill...</text>
+  <rect class="box" x="500" y="58" width="120" height="56" rx="10"/>
+  <text class="m" x="516" y="82">4 hash</text>
+  <text class="s" x="516" y="102">já achados</text>
+  <rect class="box" x="650" y="58" width="220" height="56" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="666" y="82" style="fill:#5cc8d8">5 PATH, em ordem</text>
+  <text class="s" x="666" y="102">o primeiro achado vence</text>
+  <g stroke="#5ee08a" stroke-width="1.5">
+    <line x1="170" y1="86" x2="196" y2="86" marker-end="url(#g)"/>
+    <line x1="320" y1="86" x2="346" y2="86" marker-end="url(#g)"/>
+    <line x1="470" y1="86" x2="496" y2="86" marker-end="url(#g)"/>
+    <line x1="620" y1="86" x2="646" y2="86" marker-end="url(#g)"/>
+  </g>
+  <text class="s" x="540" y="136" style="fill:#f08c7a">nenhum? "command not found", código 127</text>
+  <text class="s" x="30" y="136">O alias só troca o texto (ls vira ls --color=auto);</text>
+  <text class="s" x="30" y="152">depois a busca continua pelo nome ls.</text>
+
+  <text class="t" x="30" y="200">2. PATH normal do aluno: /usr/bin/ls vence</text>
+  <g>
+    <rect class="box" x="30" y="216" width="150" height="40" rx="8"/><text class="s" x="42" y="241">/usr/local/bin</text>
+    <rect class="box" x="190" y="216" width="150" height="40" rx="8" style="stroke:#5ee08a"/><text class="s" x="202" y="241" style="fill:#5ee08a">/usr/bin  ✔ ls</text>
+    <rect class="box" x="350" y="216" width="110" height="40" rx="8"/><text class="s" x="362" y="241">/bin</text>
+    <rect class="box" x="470" y="216" width="170" height="40" rx="8"/><text class="s" x="482" y="241">/usr/local/games</text>
+    <rect class="box" x="650" y="216" width="130" height="40" rx="8"/><text class="s" x="662" y="241">/usr/games</text>
+  </g>
+
+  <text class="t" x="30" y="300" style="fill:#f08c7a">3. Depois do sequestro: ~/bin entrou na frente</text>
+  <g>
+    <rect class="box" x="30" y="316" width="170" height="40" rx="8" style="stroke:#f08c7a"/><text class="s" x="42" y="341" style="fill:#f08c7a">/home/aluno/bin ✘</text>
+    <rect class="box" x="210" y="316" width="150" height="40" rx="8"/><text class="s" x="222" y="341">/usr/local/bin</text>
+    <rect class="box" x="370" y="316" width="150" height="40" rx="8"/><text class="s" x="382" y="341">/usr/bin  (ls)</text>
+    <rect class="box" x="530" y="316" width="90" height="40" rx="8"/><text class="s" x="542" y="341">/bin</text>
+    <text class="s" x="632" y="341">...</text>
+  </g>
+  <path d="M115 360 v20" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
+  <text class="s" x="30" y="400" style="fill:#f08c7a">ls falso em ~/bin roda primeiro: faz o que o atacante quiser e chama o ls real para disfarçar.</text>
+  <text class="s" x="30" y="424">Defesa: nunca pôr diretório gravável (ou ".") antes dos do sistema; conferir com type -a;</text>
+  <text class="s" x="30" y="442">em caso de dúvida, chamar pelo caminho completo (/usr/bin/ls), que pula toda a busca.</text>
+</svg>

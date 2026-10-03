@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
+  <title id="t">A árvore de processos do sandbox</title>
+  <desc id="d">Todo processo tem um pai (PPID). No sandbox, o PID 1 é o docker-init, pai do sleep infinity que mantém o contêiner vivo. O seu shell entra de fora, pelo docker exec, e por isso tem PPID 0; os comandos que você roda são filhos dele. Quando um pai termina antes do filho, o filho vira órfão e é adotado pelo PID 1, como o sleep 300 do exemplo.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c25a"/></marker>
+  </defs>
+  <rect width="900" height="400" fill="#121815"/>
+  <text class="t" x="30" y="36">Quem é filho de quem (PID / PPID), num sandbox real</text>
+
+  <!-- PID 1 -->
+  <rect class="box" x="40" y="62" width="300" height="58" rx="10" style="stroke:#5ee08a"/>
+  <text class="m" x="56" y="87" style="fill:#5ee08a">PID 1  docker-init</text>
+  <text class="s" x="56" y="107">o "init" do contêiner (PPID 0)</text>
+
+  <rect class="box" x="80" y="160" width="250" height="52" rx="10"/>
+  <text class="m" x="96" y="183">PID 7  sleep infinity</text>
+  <text class="s" x="96" y="201">PPID 1: mantém o lab vivo</text>
+
+  <rect class="box" x="80" y="250" width="250" height="52" rx="10" style="stroke:#e8c25a"/>
+  <text class="m" x="96" y="273" style="fill:#e8c25a">PID 19  sleep 300</text>
+  <text class="s" x="96" y="291">PPID 1: órfão adotado</text>
+
+  <path d="M60 120 V186 H76" fill="none" stroke="#9fb0a6" stroke-width="1.5"/>
+  <path d="M60 186 V276 H76" fill="none" stroke="#e8c25a" stroke-width="1.5"/>
+
+  <!-- shell from docker exec -->
+  <rect class="box" x="480" y="62" width="380" height="58" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="496" y="87" style="fill:#5cc8d8">PID 8  bash -l   (o seu shell)</text>
+  <text class="s" x="496" y="107">PPID 0: entrou de fora, pelo docker exec</text>
+
+  <rect class="box" x="520" y="160" width="300" height="52" rx="10"/>
+  <text class="m" x="536" y="183">PID 17  sleep 1000 &amp;</text>
+  <text class="s" x="536" y="201">PPID 8: job em segundo plano</text>
+
+  <rect class="box" x="520" y="250" width="300" height="52" rx="10"/>
+  <text class="m" x="536" y="273">PID 20  ps -ef --forest</text>
+  <text class="s" x="536" y="291">PPID 8: o comando atual</text>
+
+  <path d="M500 120 V186 H516" fill="none" stroke="#9fb0a6" stroke-width="1.5"/>
+  <path d="M500 186 V276 H516" fill="none" stroke="#9fb0a6" stroke-width="1.5"/>
+
+  <!-- adoption -->
+  <rect x="380" y="232" width="110" height="80" rx="8" fill="none" stroke="#e8c25a" stroke-dasharray="4 4"/>
+  <text class="s" x="388" y="252" style="fill:#e8c25a">bash -c</text>
+  <text class="s" x="388" y="270" style="fill:#e8c25a">"sleep 300 &amp;"</text>
+  <text class="s" x="388" y="288" style="fill:#e8c25a">terminou →</text>
+  <text class="s" x="388" y="304" style="fill:#e8c25a">filho órfão</text>
+  <line x1="380" y1="276" x2="334" y2="276" stroke="#e8c25a" stroke-width="2" marker-end="url(#y)"/>
+
+  <text class="s" x="30" y="344">Numa máquina comum, o PID 1 é o systemd (ou outro init) e tudo descende dele: serviços, login,</text>
+  <text class="s" x="30" y="362">terminal, shell. Ver a árvore (ps -ef --forest) mostra quem iniciou o quê: um shell "filho"</text>
+  <text class="s" x="30" y="380">do servidor web, por exemplo, é um sinal clássico de invasão.</text>
+</svg>
