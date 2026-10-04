@@ -121,7 +121,7 @@ export const LAB_CATALOG: LabDefinition[] = [
     plannedPhase: null,
     targets: [DVWA_TARGET, JUICE_SHOP_TARGET],
     localPort: 8080,
-    ram: "a medir no terminal após o pull (estimativa: ≈ 0,8 GB ocioso · ≈ 1,6 GB no pico)",
+    ram: "≈ 1,0 GB em uso (medido na Fase 9) · ≈ 1,6 GB no pico (estimado)",
     reset:
       "Recria o DVWA (apaga o banco dele) e o Juice Shop (estado em memória). O que está em /home/kali continua lá.",
     isolationNotes: DESKTOP_ISOLATION,

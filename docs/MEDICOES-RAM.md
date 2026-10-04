@@ -117,9 +117,30 @@ com ≈ 1,35 GB). O pico de cada lab é ditado pelo Kali, que é o mesmo em todo
 | Lab | Alvo(s) | Estimativa ociosa | Estimativa de pico | Observação |
 |---|---|---:|---:|---|
 | `juice-shop` | Juice Shop (Node.js) | ≈ 0,7 GB | ≈ 1,5 GB | Estado em memória; reset = recriar o contêiner. |
-| `rede-de-alvos` | DVWA + Juice Shop | ≈ 0,8 GB | ≈ 1,6 GB | Dois alvos na mesma `lab_net`. |
+| `rede-de-alvos` | DVWA + Juice Shop | ≈ 0,8 GB | ≈ 1,6 GB | Dois alvos na mesma `lab_net`. **Medido em uso: ≈ 0,97 GiB** (abaixo). |
 | `webgoat` | WebGoat (JVM) | ≈ 0,9 GB | ≈ 1,7 GB | A JVM pesa mais no ocioso. |
 | `vulhub` | Apache 2.4.49 (provisório) | ≈ 0,5 GB | ≈ 1,4 GB | Alvo leve; imagem construída localmente. |
+
+**`rede-de-alvos` — medido em 2026-10-04** (módulo 2.4, `docker stats` via
+`scripts/lab-measure-ram.sh`), em duas fotos com o lab em uso:
+
+| Contêiner | Depois das varreduras do módulo | Com o `nmap -sn` da /16 rodando |
+|---|---:|---:|
+| `kali` | 368 MiB | 359 MiB |
+| `guacamole` | 241 MiB | 255 MiB |
+| `juice-shop` | 145 MiB | 143 MiB |
+| `dvwa-db` | 130 MiB | 128 MiB |
+| `guac-db` | 50 MiB | 49 MiB |
+| `dvwa` | 43 MiB | 41 MiB |
+| `guacd` | 15 MiB | 19 MiB |
+| `guac-proxy` | 4 MiB | 4 MiB |
+| **Total** | **≈ 0,97 GiB** | **≈ 0,97 GiB** |
+
+O total fica perto da estimativa ociosa (≈ 0,8 GB) porque o nmap gasta pouca
+memória. O **pico** (Firefox e Burp no Kali) não foi medido: segue a estimativa
+de ≈ 1,6 GB. Na mesma hora, o `vmmemWSL` estava em 5,2 GB por causa do cache de
+página do WSL (builds do Next.js e o `pull`), não dos contêineres — ver o achado
+abaixo.
 
 Todas as estimativas ficam **bem abaixo** dos ~7,9 GB da VM do WSL, respeitando
 a regra de **um lab por vez**. Para medir de verdade, com o lab no ar:

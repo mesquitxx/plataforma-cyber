@@ -544,9 +544,55 @@ scripts/lab.sh down juice-shop
 ```
 
 > **Pendente de execução no terminal (precisa de internet para o `pull`):** os
-> resultados PASS/FAIL e as medições de RAM dos labs da Fase 7 serão anexados
-> aqui e em [`MEDICOES-RAM.md`](MEDICOES-RAM.md) depois da primeira subida. Até
-> lá, os números de RAM no catálogo são **estimativas**, não medições.
+> resultados PASS/FAIL e as medições de RAM de `juice-shop`, `webgoat` e
+> `vulhub` serão anexados aqui e em [`MEDICOES-RAM.md`](MEDICOES-RAM.md) depois
+> da primeira subida. Até lá, os números de RAM desses labs no catálogo são
+> **estimativas**, não medições.
+
+### `rede-de-alvos` — primeira validação (2026-10-04, módulo 2.4)
+
+Feita na primeira subida do lab, depois do `scripts/lab.sh pull rede-de-alvos`.
+
+**Resultado do `verify`:** 198 PASS, **1 FAIL**, 3 SKIP (ICMP sem `ping` nas
+imagens), código de saída 1. O FAIL é um **controle de sonda**:
+
+```text
+FAIL  ok  0.juice-shop  probe control: juice-shop UDP DNS query to 127.0.0.11 (got: blocked)
+```
+
+**Causa:** a imagem `bkimminich/juice-shop` é *distroless*: não tem `sh`
+(`docker exec ... sh` responde `exec: "sh": executable file not found`). Todas
+as sondas que o `verify` roda **de dentro** do juice-shop (`lab_compose exec`
+com `sh`/`bash`) falham antes de mandar qualquer pacote. Por isso os PASS
+"blocked" do juice-shop (seções 1 a 4 e 7 do relatório) **não provam nada**: é
+exatamente o caso que o controle de sonda existe para pegar, e ele pegou. As
+sondas **contra** o juice-shop (do Kali, controles 0 e 11) e as das seções 9 e
+10 (`privileged`, `docker.sock`) continuam válidas.
+
+**Verificação manual equivalente (feita):** um contêiner temporário,
+sem privilégios e sem baixar nada (`--pull never`), compartilhando o *namespace*
+de rede do juice-shop, repetiu as sondas com controles positivos funcionando:
+
+```bash
+docker run --rm --pull never --network container:cyberlab-juice-shop-1 \
+  --security-opt no-new-privileges:true debian:trixie-slim bash -c '...'
+```
+
+| Sonda (da rede do juice-shop) | Resultado |
+|---|---|
+| Controle: DNS por UDP em `127.0.0.11` | alcança (a sonda funciona) |
+| Controle: TCP `dvwa:80` | alcança (a sonda funciona) |
+| Internet: TCP `1.1.1.1:443`, TCP `8.8.8.8:53`, DNS UDP `1.1.1.1` | bloqueado |
+| Resolver `example.com`, `guacd`, `guacamole`, `host.docker.internal` | não resolve |
+| Host: WSL `eth0`, `docker0`, DNS do WSL | bloqueado |
+| Rota padrão / IPv6 fora do loopback | nenhuma |
+
+Conclusão: o juice-shop está isolado como os outros alvos. **Pendente
+(proposta, não implementada):** ensinar o `scripts/lab-verify-isolation.sh` a
+sondar alvos sem shell por esse contêiner auxiliar (`--network container:`),
+para o `verify` do `juice-shop` e do `rede-de-alvos` voltar a dar 0 FAIL. Por
+ser mudança na ferramenta de auditoria, fica para aprovação do MESQUITA. Até
+lá, o `verify` desses dois labs termina com este FAIL conhecido.
 
 ## Memória
 Consumo medido e recomendações para o WSL: [`MEDICOES-RAM.md`](MEDICOES-RAM.md).
