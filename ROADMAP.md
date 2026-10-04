@@ -179,14 +179,18 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   datas fixos, flags derivadas de hashes, e walkthroughs de merge, remote local e
   GitHub privado) escritos. Trilha 1: 1.1 "O que é pentest e tipos de teste" (sem lab;
   três missões no WSL sobre pedidos de clientes, o diário de um pentest e a saída de um
-  scanner, todos fictícios, e walkthrough de relatórios públicos) e 1.2 "Metodologia"
+  scanner, todos fictícios, e walkthrough de relatórios públicos), 1.2 "Metodologia"
   (sem lab; três missões no WSL sobre a kill chain de uma invasão, a cobertura de um
   plano do OWASP WSTG e o mapeamento de uma cadeia para o MITRE ATT&CK, todos fictícios,
-  e walkthrough das páginas do ATT&CK e do WSTG) e 1.3 "Escopo, regras de engajamento e
+  e walkthrough das páginas do ATT&CK e do WSTG), 1.3 "Escopo, regras de engajamento e
   autorização" (sem lab; três missões no WSL sobre quem pode autorizar cada ativo, a
   auditoria de uma minuta de autorização e as decisões de parar, continuar ou pedir adendo
   durante um teste, todas fictícias, o `preflight.sh` que confere IPs e nomes contra o
-  escopo, e walkthrough das regras públicas da AWS, do PTES e do NIST) escritos.
+  escopo, e walkthrough das regras públicas da AWS, do PTES e do NIST) e 1.4 "Lei brasileira
+  e ética" (sem lab; três missões no WSL sobre o enquadramento de condutas no Código Penal,
+  a auditoria LGPD de uma pasta de evidências com `grep` e os dilemas de um teste em
+  andamento, todas fictícias, e walkthrough do texto compilado das leis no Planalto e das
+  decisões da ANPD) escritos.
 
 ## Fase 10 — Conteúdo: Trilhas 3–5
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.
