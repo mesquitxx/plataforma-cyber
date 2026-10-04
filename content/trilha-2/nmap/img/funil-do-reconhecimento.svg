@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" role="img" aria-labelledby="t d">
+  <title id="t">O funil do reconhecimento ativo</title>
+  <desc id="d">Cinco faixas empilhadas, cada uma mais estreita que a anterior, mostram as etapas do reconhecimento e o que cada uma entrega à seguinte. Primeira: escopo, a carta de autorização, que entrega a lista de redes e hosts permitidos. Segunda: host discovery com nmap -sn, que entrega os hosts vivos. Terceira: varredura de portas com nmap -sS e -p-, que entrega as portas abertas. Quarta: serviços e versões com nmap -sV, que entrega o que roda em cada porta e em que versão. Quinta: scripts NSE com -sC ou --script, que entregam detalhes como títulos, cabeçalhos, robots.txt e falhas conhecidas. Embaixo, a saída: uma lista priorizada de alvos para as próximas fases. À direita, uma seta indica que a cada etapa o barulho na rede e o risco para o alvo aumentam.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 11.5px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .y { fill: #e8c46a; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8c46a"/></marker>
+  </defs>
+  <rect width="900" height="450" fill="#121815"/>
+  <text class="t" x="30" y="32">O funil: cada etapa recebe a saída da anterior</text>
+
+  <rect x="40" y="55" width="700" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="60" y="78">0. Escopo (carta de autorização)</text>
+  <text class="s" x="60" y="97">→ redes e hosts permitidos, exclusões, janela de teste</text>
+
+  <rect x="80" y="121" width="620" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="100" y="144">1. Host discovery — nmap -sn</text>
+  <text class="s" x="100" y="163">→ quais endereços têm alguém respondendo</text>
+
+  <rect x="120" y="187" width="540" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="140" y="210">2. Portas — nmap -sS / -p-</text>
+  <text class="s" x="140" y="229">→ portas open, closed, filtered</text>
+
+  <rect x="160" y="253" width="460" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="180" y="276">3. Serviços e versões — nmap -sV</text>
+  <text class="s" x="180" y="295">→ o que roda em cada porta, e em que versão</text>
+
+  <rect x="200" y="319" width="380" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="220" y="342">4. Scripts NSE — -sC / --script</text>
+  <text class="s" x="220" y="361">→ títulos, cabeçalhos, robots.txt...</text>
+
+  <rect x="250" y="390" width="280" height="44" rx="8" fill="#16201b" stroke="#e8c46a"/>
+  <text class="b y" x="268" y="417">alvos priorizados para atacar</text>
+
+  <line x1="790" y1="70" x2="790" y2="370" stroke="#e8c46a" stroke-width="3" marker-end="url(#ar)"/>
+  <text class="b y" x="760" y="400">mais barulho</text>
+  <text class="b y" x="760" y="416">e mais risco</text>
+  <text class="b y" x="760" y="432">para o alvo</text>
+</svg>

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" role="img" aria-labelledby="t d">
+  <title id="t">A rede de alvos e o escopo do teste</title>
+  <desc id="d">No centro, o contêiner kali com duas interfaces. À esquerda, a interface eth0 está na desktop_net, onde fica só o guacd, que leva a tela do Kali ao navegador: é infraestrutura da plataforma e está fora do escopo, marcada com borda tracejada vermelha. À direita, a interface eth1 está na lab_net, autorizada pela carta: lá ficam o dvwa, com Apache e PHP na porta 80, e o juice-shop, com Node.js na porta 3000. Embaixo, um aviso: os endereços mudam de computador para computador; o que define o escopo é a rede, e você descobre qual interface é qual antes de varrer.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .r { fill: #f08a7a; }
+  </style>
+  <rect width="900" height="440" fill="#121815"/>
+  <text class="t" x="30" y="32">Rede de alvos: duas redes no Kali, só uma no escopo</text>
+
+  <!-- out of scope: desktop_net -->
+  <rect x="30" y="60" width="270" height="300" rx="10" fill="#1f1714" stroke="#f08a7a" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text class="h r" x="48" y="86">desktop_net — FORA do escopo</text>
+  <text class="s" x="48" y="106">ex.: 10.10.0.0/16</text>
+  <rect x="60" y="150" width="210" height="90" rx="8" fill="#241c19" stroke="#5a3a33"/>
+  <text class="b" x="76" y="176">guacd (10.10.0.2)</text>
+  <text class="s" x="76" y="198">leva a tela do Kali</text>
+  <text class="s" x="76" y="214">até o navegador</text>
+  <text class="s" x="48" y="290">infraestrutura da plataforma,</text>
+  <text class="s" x="48" y="306">não está na carta de autorização:</text>
+  <text class="b r" x="48" y="330">não varrer</text>
+
+  <!-- kali -->
+  <rect x="345" y="140" width="210" height="130" rx="10" fill="#17241d" stroke="#5ee08a" stroke-width="1.8"/>
+  <text class="h g" x="363" y="166">kali (attack box)</text>
+  <text class="b" x="363" y="194">eth0 10.10.0.1</text>
+  <text class="s" x="363" y="210">→ desktop_net</text>
+  <text class="b" x="363" y="236">eth1 192.168.0.2</text>
+  <text class="s" x="363" y="252">→ lab_net</text>
+  <line x1="345" y1="196" x2="270" y2="196" stroke="#f08a7a" stroke-width="2" stroke-dasharray="5 4"/>
+  <line x1="555" y1="238" x2="600" y2="238" stroke="#5ee08a" stroke-width="2.5"/>
+
+  <!-- in scope: lab_net -->
+  <rect x="600" y="60" width="270" height="300" rx="10" fill="#14201a" stroke="#5ee08a" stroke-width="1.5"/>
+  <text class="h g" x="618" y="86">lab_net — NO escopo</text>
+  <text class="s" x="618" y="106">ex.: 192.168.0.0/16</text>
+  <rect x="625" y="125" width="220" height="90" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="b" x="641" y="151">dvwa (192.168.0.3)</text>
+  <text class="s" x="641" y="173">80/tcp — Apache + PHP</text>
+  <text class="s" x="641" y="189">banco em outra rede (dvwa_back)</text>
+  <rect x="625" y="235" width="220" height="90" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="b" x="641" y="261">juice-shop (192.168.0.1)</text>
+  <text class="s" x="641" y="283">3000/tcp — Node.js</text>
+  <text class="s" x="641" y="299">estado em memória</text>
+
+  <rect x="30" y="378" width="840" height="46" rx="8" fill="#16201b" stroke="#2c3a33"/>
+  <text class="b" x="48" y="398">Os endereços do seu lab serão outros (o Docker escolhe as faixas). O escopo é a REDE:</text>
+  <text class="b" x="48" y="415">descubra qual interface está na lab_net (ip -br addr, getent hosts dvwa) antes de varrer.</text>
+</svg>

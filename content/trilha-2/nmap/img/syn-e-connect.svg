@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="t d">
+  <title id="t">SYN scan e connect scan: os pacotes de cada estado de porta</title>
+  <desc id="d">Uma grade com duas linhas e três colunas. A linha de cima é o SYN scan (sudo nmap -sS); a de baixo, o connect scan (nmap -sT). As colunas são porta aberta, porta fechada e porta filtrada. Em cada célula, o Kali fica à esquerda e o alvo à direita. SYN scan, porta aberta: o Kali manda SYN, o alvo responde SYN/ACK e o kernel do Kali manda RST, sem completar o handshake; resultado open. SYN scan, porta fechada: SYN e o alvo responde RST/ACK; resultado closed. SYN scan, porta filtrada: SYN, nenhuma resposta, SYN de novo, nenhuma resposta; resultado filtered. Connect scan, porta aberta: SYN, SYN/ACK, ACK completando o handshake e depois RST do Kali para derrubar a conexão; resultado open, e a aplicação viu uma conexão completa. Connect scan, porta fechada: SYN e RST/ACK, e a chamada connect devolve Connection refused; resultado closed. Connect scan, porta filtrada: SYN sem resposta até o tempo esgotar; resultado filtered.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 11.5px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .r { fill: #f08a7a; }
+    .y { fill: #e8c46a; }
+    .l { stroke: #4a5a52; stroke-width: 1.5; }
+    .ao { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#a1); }
+    .ai { stroke: #5ee08a; stroke-width: 2; marker-end: url(#a2); }
+    .ar { stroke: #f08a7a; stroke-width: 2; marker-end: url(#a3); }
+    .lost { stroke: #9fb0a6; stroke-width: 2; stroke-dasharray: 5 4; }
+  </style>
+  <defs>
+    <marker id="a1" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+    <marker id="a2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5ee08a"/></marker>
+    <marker id="a3" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#f08a7a"/></marker>
+  </defs>
+  <rect width="900" height="560" fill="#121815"/>
+  <text class="t" x="30" y="30">O que viaja na rede em cada caso (Kali à esquerda, alvo à direita)</text>
+
+  <!-- column headers -->
+  <text class="h" x="120" y="58">porta ABERTA</text>
+  <text class="h" x="405" y="58">porta FECHADA</text>
+  <text class="h" x="690" y="58">porta FILTRADA</text>
+
+  <!-- row labels -->
+  <rect x="20" y="70" width="860" height="225" rx="8" fill="#16201b" stroke="#2c3a33"/>
+  <text class="b y" x="30" y="88">SYN scan (sudo nmap -sS) — meia conexão, exige raw socket</text>
+  <rect x="20" y="310" width="860" height="225" rx="8" fill="#16201b" stroke="#2c3a33"/>
+  <text class="b y" x="30" y="328">connect scan (nmap -sT) — conexão completa, pela chamada connect() do sistema</text>
+
+  <!-- ===== SYN row ===== -->
+  <!-- open -->
+  <line class="l" x1="60" y1="100" x2="60" y2="255"/><line class="l" x1="250" y1="100" x2="250" y2="255"/>
+  <text class="s" x="45" y="112">kali</text><text class="s" x="232" y="112">alvo</text>
+  <line class="ao" x1="62" y1="130" x2="246" y2="150"/><text class="b" x="120" y="132">SYN</text>
+  <line class="ai" x1="248" y1="170" x2="64" y2="190"/><text class="b" x="150" y="172">SYN/ACK</text>
+  <line class="ar" x1="62" y1="210" x2="246" y2="230"/><text class="b" x="95" y="212">RST (kernel do Kali)</text>
+  <text class="b g" x="60" y="280">open — handshake nunca completa</text>
+  <!-- closed -->
+  <line class="l" x1="345" y1="100" x2="345" y2="255"/><line class="l" x1="535" y1="100" x2="535" y2="255"/>
+  <text class="s" x="330" y="112">kali</text><text class="s" x="517" y="112">alvo</text>
+  <line class="ao" x1="347" y1="130" x2="531" y2="150"/><text class="b" x="405" y="132">SYN</text>
+  <line class="ar" x1="533" y1="170" x2="349" y2="190"/><text class="b" x="435" y="172">RST/ACK</text>
+  <text class="b" x="345" y="280">closed — o host respondeu</text>
+  <!-- filtered -->
+  <line class="l" x1="630" y1="100" x2="630" y2="255"/><line class="l" x1="820" y1="100" x2="820" y2="255"/>
+  <text class="s" x="615" y="112">kali</text><text class="s" x="802" y="112">alvo</text>
+  <line class="lost" x1="632" y1="130" x2="740" y2="142"/><text class="b" x="680" y="128">SYN</text>
+  <text class="b r" x="748" y="148">✕ descartado</text>
+  <line class="lost" x1="632" y1="190" x2="740" y2="202"/><text class="b" x="660" y="188">SYN (de novo)</text>
+  <text class="b r" x="748" y="208">✕</text>
+  <text class="s" x="632" y="240">nenhuma resposta (ou ICMP</text>
+  <text class="s" x="632" y="254">unreachable de um filtro)</text>
+  <text class="b r" x="630" y="280">filtered — não dá para saber</text>
+
+  <!-- ===== connect row ===== -->
+  <!-- open -->
+  <line class="l" x1="60" y1="340" x2="60" y2="495"/><line class="l" x1="250" y1="340" x2="250" y2="495"/>
+  <text class="s" x="45" y="352">kali</text><text class="s" x="232" y="352">alvo</text>
+  <line class="ao" x1="62" y1="366" x2="246" y2="380"/><text class="b" x="120" y="366">SYN</text>
+  <line class="ai" x1="248" y1="396" x2="64" y2="410"/><text class="b" x="150" y="398">SYN/ACK</text>
+  <line class="ao" x1="62" y1="428" x2="246" y2="442"/><text class="b" x="120" y="428">ACK</text>
+  <line class="ar" x1="62" y1="462" x2="246" y2="476"/><text class="b" x="120" y="462">RST</text>
+  <text class="b g" x="60" y="518">open — a aplicação viu uma</text>
+  <text class="b g" x="60" y="532">conexão completa</text>
+  <!-- closed -->
+  <line class="l" x1="345" y1="340" x2="345" y2="495"/><line class="l" x1="535" y1="340" x2="535" y2="495"/>
+  <text class="s" x="330" y="352">kali</text><text class="s" x="517" y="352">alvo</text>
+  <line class="ao" x1="347" y1="366" x2="531" y2="380"/><text class="b" x="405" y="366">SYN</text>
+  <line class="ar" x1="533" y1="400" x2="349" y2="414"/><text class="b" x="435" y="402">RST/ACK</text>
+  <text class="s" x="347" y="450">connect() devolve</text>
+  <text class="s" x="347" y="464">"Connection refused"</text>
+  <text class="b" x="345" y="518">closed</text>
+  <!-- filtered -->
+  <line class="l" x1="630" y1="340" x2="630" y2="495"/><line class="l" x1="820" y1="340" x2="820" y2="495"/>
+  <text class="s" x="615" y="352">kali</text><text class="s" x="802" y="352">alvo</text>
+  <line class="lost" x1="632" y1="370" x2="740" y2="382"/><text class="b" x="680" y="368">SYN</text>
+  <text class="b r" x="748" y="388">✕ descartado</text>
+  <text class="s" x="632" y="450">connect() espera até</text>
+  <text class="s" x="632" y="464">o tempo esgotar</text>
+  <text class="b r" x="630" y="518">filtered</text>
+</svg>

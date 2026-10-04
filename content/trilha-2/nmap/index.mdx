@@ -1,0 +1,1527 @@
+---
+slug: nmap
+track: trilha-2
+title: "Reconhecimento e nmap"
+prerequisites: [redes-tcp-ip, kali-linux, osint-e-reconhecimento-passivo]
+lab: rede-de-alvos
+tasks:
+  - slug: missao-1-quem-esta-na-rede
+    title: "Missão 1 — Quem está na rede"
+    type: flag
+    prompt: "Quantos hosts responderam na lab_net (contando o Kali) e o nome reverso (rDNS) completo do alvo que não é o DVWA, no formato FLAG{quantidade-nome}."
+    hint: "Varra a faixa da lab_net com nmap -sn. O nmap mostra o nome reverso de cada host antes do endereço entre parênteses. Não varra a desktop_net: ela está fora do escopo."
+    flag:
+      hash: "scrypt$16384$8$1$d6f2529eee9bf1b609dab9d755affa299276a72f21ae76e21927520d729277a1"
+      salt: "3378c08914e3fe17e0d559aeffb85d19"
+  - slug: missao-2-o-que-roda-em-cada-porta
+    title: "Missão 2 — O que roda em cada porta"
+    type: flag
+    prompt: "A versão exata do servidor web do DVWA, como o -sV mostra, e o protocolo que a porta aberta do Juice Shop realmente fala (em minúsculas), no formato FLAG{versao-protocolo}."
+    hint: "Primeiro descubra todas as portas abertas de cada alvo (nem tudo está no top 1000? confira com -p-). Depois use -sV. Se o nmap não reconhecer um serviço, leia a impressão digital que ele imprime: a resposta está lá."
+    flag:
+      hash: "scrypt$16384$8$1$0c9d333a3d65b199389a7814f3c158ea42b341b035e7b493e5fe2fca909e2b4e"
+      salt: "4fdca32f17f01872a432a7f14acc37b9"
+  - slug: missao-3-os-scripts-falam
+    title: "Missão 3 — Os scripts falam"
+    type: flag
+    prompt: "O caminho que o robots.txt do Juice Shop proíbe (sem a barra) e a versão do PHP que o DVWA anuncia num cabeçalho, ambos obtidos com scripts NSE, no formato FLAG{caminho-versao}."
+    hint: "Os scripts http-robots.txt e http-headers resolvem. No DVWA eles rodam direto. Na porta do Juice Shop eles não rodam sozinhos: descubra por quê na seção 2.9 e como forçá-los."
+    flag:
+      hash: "scrypt$16384$8$1$95fd9f5cb86805a90af50141def2e0e300fcc1d61b2ee94d9e9507e4b92b8811"
+      salt: "24eb7db775c9684cc23f1f402c4855f6"
+  - slug: quiz-final
+    title: "Quiz — Reconhecimento e nmap"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "O nmap marcou uma porta como filtered. O que isso prova?"
+        options:
+          - "Que a porta está aberta, mas protegida por senha"
+          - "Que não há programa escutando na porta"
+          - "Que o nmap não conseguiu saber se ela está aberta: os pacotes de teste não tiveram resposta (ou voltou um ICMP unreachable de um filtro). Algo no caminho, em geral um firewall, impede a sonda de chegar à porta"
+          - "Que o host está desligado"
+        answer: 2
+        explanation: "Filtered é o estado da dúvida: a sonda foi engolida no caminho (ou um filtro devolveu ICMP unreachable). Closed é diferente: o host respondeu RST, ou seja, ele está lá e não há ninguém escutando. No lab, um endereço vazio da lab_net varrido com -Pn --disable-arp-ping apareceu como filtered, com reason no-response."
+      - question: "Por que o SYN scan (-sS) precisa de root (sudo), e o connect scan (-sT) não?"
+        options:
+          - "Porque o SYN scan é ilegal sem root"
+          - "Porque o SYN scan monta os pacotes à mão, com raw sockets, que o kernel só permite a quem tem privilégio (CAP_NET_RAW); o connect scan pede a conexão ao sistema operacional pela chamada connect(), que qualquer usuário pode usar"
+          - "Porque o connect scan não usa TCP"
+          - "Porque o SYN scan varre mais portas"
+        answer: 1
+        explanation: "Montar um SYN e não completar o handshake exige escrever o pacote na mão, e isso é raw socket. O connect() é a mesma chamada que o navegador usa para abrir um site: completa o handshake e não precisa de privilégio. No Kali do lab, nmap sem sudo faz connect scan e mostra 'closed tcp ports (conn-refused)'; com sudo, faz SYN scan e mostra 'closed tcp ports (reset)'."
+      - question: "Na varredura padrão, o nmap mostrou 3000/tcp open ppp no Juice Shop. O que a palavra ppp significa ali?"
+        options:
+          - "Que o Juice Shop fala o protocolo PPP"
+          - "Que o nmap detectou o serviço pela resposta"
+          - "Que a porta está filtrada"
+          - "Nada sobre o que roda na porta: sem -sV, a coluna SERVICE é só o nome que o arquivo nmap-services associa ao número da porta. O -sV mostrou que lá roda HTTP"
+        answer: 3
+        explanation: "Sem detecção de versão, o nmap não conversa com o serviço: só consulta a tabela nmap-services, onde 3000/tcp está registrada como ppp. É um palpite pelo número. Só o -sV (ou um script) olha a resposta de verdade — e, no lab, a impressão digital mostrou HTTP/1.1 200 OK."
+      - question: "Você pediu --script http-title na porta 3000 do Juice Shop e nenhum resultado apareceu. Qual a explicação e a saída?"
+        options:
+          - "O Juice Shop bloqueia scripts; não há saída"
+          - "O script precisa de root"
+          - "Cada script tem uma portrule que decide se ele roda naquela porta; os scripts http pedem uma porta reconhecida como HTTP, e o nmap acha que a 3000 é ppp. O prefixo + (--script +http-title) força o script a rodar mesmo assim"
+          - "É preciso usar -T5"
+        answer: 2
+        explanation: "A documentação do NSE explica que um + antes do nome força o script a rodar 'regardless of the conditions in their portrule or hostrule'. No lab, --script http-title não imprimiu nada na 3000, e --script +http-title imprimiu 'OWASP Juice Shop'."
+      - question: "No lab, o nmap mostrou muitas portas UDP do DVWA como open|filtered, embora nenhum serviço UDP rode nele. Por quê?"
+        options:
+          - "Porque o DVWA tem serviços UDP escondidos"
+          - "Porque, numa porta UDP fechada, o host responde ICMP port unreachable, mas o Linux limita a taxa dessas mensagens de erro; as portas que ficaram sem resposta não podem ser distinguidas de portas abertas ou filtradas"
+          - "Porque o UDP não tem portas"
+          - "Porque faltou -sV"
+        answer: 1
+        explanation: "O UDP não tem handshake: uma porta aberta muitas vezes não responde nada, e uma fechada responde ICMP tipo 3, código 3. O kernel Linux limita os erros ICMP (no lab, net.ipv4.icmp_ratelimit = 1000 ms), então parte das portas fechadas fica sem resposta e vira open|filtered. É por isso que varrer UDP é lento e ambíguo."
+      - question: "Depois de um sudo nmap -sS e de um nmap -sT na porta 80 do DVWA, quantas linhas novas apareceram no log de acesso do Apache?"
+        options:
+          - "Nenhuma: o Apache só registra requisições HTTP, e nenhuma das duas varreduras mandou uma. Já o script http-enum deixou mais de duas mil linhas com o User-Agent do NSE"
+          - "Uma por varredura"
+          - "Milhares"
+          - "Só a do connect scan"
+        answer: 0
+        explanation: "Medido no lab: o SYN scan nem completa o handshake, e o connect scan completa e derruba com RST sem mandar dados. Para o Apache, não houve requisição. A detecção de varreduras de porta precisa acontecer na rede (firewall, IDS); o log da aplicação só pega o que fala HTTP, como o NSE."
+      - question: "Um firewall pode recusar pacotes com DROP (descartar em silêncio) ou REJECT (responder recusando). Como cada um aparece para quem varre?"
+        options:
+          - "Os dois aparecem como open"
+          - "DROP aparece como closed e REJECT como open"
+          - "DROP deixa a sonda sem resposta (filtered, e a varredura fica lenta por causa das retransmissões); REJECT com TCP reset faz a porta parecer closed, e com ICMP unreachable ela aparece como filtered"
+          - "Não há diferença"
+        answer: 2
+        explanation: "O nmap só vê o que volta. Sem resposta: filtered, depois de esperar e retransmitir. RST: closed. ICMP unreachable (tipo 3, códigos 1, 2, 3, 9, 10 ou 13): filtered. A escolha muda o que o atacante aprende e quanto tempo ele perde."
+      - question: "Configurar ServerTokens Prod no Apache e expose_php = Off no PHP protege o servidor?"
+        options:
+          - "Sim: sem a versão, nenhum ataque funciona"
+          - "Não: é só atrito. Tira a versão dos cabeçalhos e corta o trabalho de quem procura alvos pela versão anunciada, mas a própria documentação do Apache diz que esconder o cabeçalho não traz benefício real de segurança. O que protege é atualizar e reduzir a superfície"
+          - "Sim, desde que o firewall esteja desligado"
+          - "Só protege contra o nmap"
+        answer: 1
+        explanation: "O DVWA do lab anuncia 'Apache/2.4.68 (Debian)' e 'X-Powered-By: PHP/8.5.10' porque o Debian configura ServerTokens OS e o PHP vem com expose_php ligado. Esconder ajuda pouco: a detecção de versão também olha o comportamento do serviço. Vale como higiene, não como defesa."
+      - question: "Como o Mirai encontrava os dispositivos que infectava, em 2016?"
+        options:
+          - "Por e-mails de phishing"
+          - "Por um zero-day no Windows"
+          - "Varrendo endereços IPv4 aleatórios à procura de Telnet aberto (portas 23 e 2323) e tentando uma lista curta de usuários e senhas de fábrica"
+          - "Comprando acesso de funcionários"
+        answer: 2
+        explanation: "O alerta TA16-288A da CISA descreve a varredura contínua da internet e a lista de 62 usuários e senhas padrão, e recomenda vigiar as portas 23 e 2323. A combinação 'porta aberta + senha de fábrica' bastou para montar um exército de câmeras e gravadores."
+      - question: "Quanto tempo depois da divulgação do Heartbleed (7 de abril de 2014) os pesquisadores do artigo 'The Matter of Heartbleed' viram a primeira tentativa de exploração na rede que monitoravam?"
+        options:
+          - "Cerca de 21 horas e meia"
+          - "Uma semana"
+          - "Seis meses"
+          - "Nunca houve tentativas"
+        answer: 0
+        explanation: "A primeira atividade veio da Universidade da Letônia, em 8 de abril às 15:18 UTC, 21 horas e 29 minutos depois da divulgação. No total, o estudo registrou tentativas vindas de 692 origens. Quem varre a internet acha o seu servidor vulnerável antes que você termine de ler o boletim."
+      - question: "No lab rede-de-alvos, o Kali tem duas interfaces. Por que a carta do exercício manda varrer só a lab_net?"
+        options:
+          - "Porque a outra é lenta"
+          - "Porque a desktop_net leva a tela do Kali até o navegador (é onde está o guacd): é infraestrutura da plataforma, não está na carta de autorização. Estar ao alcance da sua rede não coloca nada no escopo"
+          - "Porque o nmap não funciona na eth0"
+          - "Porque a desktop_net tem internet"
+        answer: 1
+        explanation: "É a regra do 1.3 aplicada: alcance não é autorização. Num engajamento real, a sua attack box também pode estar em redes que não são do cliente (a VPN da sua empresa, por exemplo). Antes de varrer, confira qual interface está em qual rede."
+      - question: "Para que serve salvar a varredura com -oA, em vez de só olhar a tela?"
+        options:
+          - "Para a varredura ficar mais rápida"
+          - "Para guardar a evidência em três formatos de uma vez: normal (-oN, para ler e anexar), XML (-oX, para ferramentas e para o ndiff comparar varreduras) e grepable (-oG, obsoleto, mas fácil de filtrar com grep)"
+          - "Para esconder a varredura"
+          - "Porque sem -oA o nmap não mostra nada"
+        answer: 1
+        explanation: "A varredura é evidência do engajamento (1.5) e base de comparação. O ndiff, ferramenta do próprio projeto nmap, compara dois arquivos XML e mostra o que apareceu (+) e o que sumiu (-) entre eles: é assim que se monitora a superfície de ataque ao longo do tempo."
+glossary:
+  - term: active reconnaissance
+    definition: "Reconhecimento ativo: coletar informação sobre um alvo mandando tráfego para ele (varreduras, conexões, requisições). Diferente do passivo, deixa rastro e exige autorização."
+  - term: passive reconnaissance
+    definition: "Reconhecimento passivo: coletar informação sem tocar no alvo, a partir de fontes públicas ou de terceiros (buscadores, registros de domínio, Shodan). É o assunto do OSINT."
+  - term: Nmap
+    definition: "Network Mapper: o scanner de rede livre criado por Gordon Lyon (Fyodor), lançado em 1º de setembro de 1997 na revista Phrack. Descobre hosts, portas, serviços, versões e sistemas operacionais, e roda scripts (NSE)."
+  - term: host discovery
+    definition: "Descoberta de hosts: a etapa que descobre quais endereços de uma faixa têm uma máquina respondendo, antes de varrer portas. No nmap, -sn faz só ela; -Pn a pula."
+  - term: port state
+    definition: "Estado de porta: a classificação que o nmap dá a cada porta pelo que voltou da sonda. São seis: open, closed, filtered, unfiltered, open|filtered e closed|filtered."
+  - term: filtered port
+    definition: "Porta filtrada: o nmap não sabe se ela está aberta, porque algo (em geral um firewall) impediu a sonda de chegar. Sinal típico: nenhuma resposta, ou um ICMP unreachable."
+  - term: open|filtered
+    definition: "Estado em que o nmap não consegue distinguir entre aberta e filtrada, porque a sonda não teve resposta e uma porta aberta também poderia ficar calada. Comum no UDP."
+  - term: SYN scan
+    definition: "Varredura que manda só o SYN e lê a resposta: SYN/ACK é aberta, RST é fechada, silêncio é filtrada. Nunca completa o handshake. Exige raw socket (root). No nmap, -sS."
+  - term: half-open scan
+    definition: "Meia conexão: outro nome do SYN scan, porque a conexão TCP nunca chega ao terceiro passo do handshake."
+  - term: connect scan
+    definition: "Varredura que pede ao sistema operacional uma conexão completa (chamada connect()) em cada porta. Não precisa de privilégio, mas é mais lenta e a aplicação vê a conexão. No nmap, -sT."
+  - term: UDP scan
+    definition: "Varredura de portas UDP (-sU no nmap). Como o UDP não tem handshake, porta aberta costuma não responder e porta fechada responde ICMP port unreachable: é lenta e ambígua."
+  - term: ACK scan
+    definition: "Varredura que manda só pacotes ACK (-sA). Não diz se a porta está aberta: serve para mapear regras de firewall (unfiltered quando volta RST, filtered quando não volta nada)."
+  - term: nmap-services
+    definition: "Arquivo do nmap que associa números de porta a nomes de serviço e à frequência com que cada porta aparece aberta. Define o top 1000 padrão e o nome mostrado na coluna SERVICE sem -sV."
+  - term: service detection
+    definition: "Detecção de serviço e versão (-sV): o nmap conversa com a porta aberta, manda sondas do arquivo nmap-service-probes e compara as respostas com padrões conhecidos para dizer o que roda ali e em que versão."
+  - term: banner grabbing
+    definition: "Coleta de banner: ler o que um serviço anuncia sobre si mesmo (a saudação de um SSH, o cabeçalho Server de um HTTP). É a forma mais simples de identificar software e versão."
+  - term: service fingerprint
+    definition: "Impressão digital de serviço: o conjunto de respostas de um serviço às sondas do nmap. Quando o -sV não reconhece o serviço, imprime a impressão digital (linhas SF:) para o usuário ler e enviar ao projeto."
+  - term: OS fingerprinting
+    definition: "Identificação do sistema operacional pela forma como a pilha TCP/IP responde a pacotes incomuns (janelas, opções, números de sequência). No nmap, -O, com root."
+  - term: NSE
+    definition: "Nmap Scripting Engine: o motor de scripts do nmap, em Lua. Os scripts estendem a varredura (títulos HTTP, cabeçalhos, enumeração, falhas conhecidas) e são organizados em categorias."
+  - term: NSE category
+    definition: "Categoria de script do NSE (default, safe, intrusive, vuln, brute, discovery, exploit, dos...). Diz o propósito e o risco de cada script; -sC roda a categoria default."
+  - term: portrule
+    definition: "Função de um script NSE que decide se ele roda numa porta (por número, protocolo ou serviço detectado). Um + antes do nome do script ignora essa regra."
+  - term: Lua
+    definition: "Linguagem de script leve, criada no Brasil (PUC-Rio), feita para ser embutida em outros programas. É a linguagem dos scripts do NSE."
+  - term: timing template
+    definition: "Modelo de temporização do nmap, de -T0 (paranoid) a -T5 (insane), que ajusta paralelismo, tempos de espera e retransmissões de uma vez. O padrão é -T3 (normal)."
+  - term: reverse DNS
+    definition: "DNS reverso (rDNS): a consulta que parte do endereço IP e devolve um nome (registro PTR). O nmap faz por padrão e mostra o nome ao lado do IP; -n desliga."
+  - term: ICMP rate limiting
+    definition: "Limitação da taxa de mensagens ICMP de erro pelo kernel. No Linux, net.ipv4.icmp_ratelimit (1000 ms por padrão) controla, entre outras, as respostas port unreachable, o que deixa varreduras UDP lentas."
+  - term: ndiff
+    definition: "Ferramenta do projeto nmap que compara dois resultados em XML e mostra o que apareceu (+) e sumiu (-): portas, serviços, versões. Base do monitoramento contínuo da superfície de ataque."
+  - term: Internet-wide scanning
+    definition: "Varredura da internet inteira (todo o espaço IPv4) em minutos ou horas, com ferramentas assíncronas como ZMap e masscan. Usada por pesquisadores, buscadores como o Shodan e atacantes."
+  - term: ZMap
+    definition: "Scanner de código aberto da Universidade de Michigan (USENIX Security 2013) que varre todo o IPv4 numa porta em menos de 45 minutos a partir de uma máquina, mandando pacotes sem guardar estado por conexão."
+  - term: masscan
+    definition: "Scanner de portas assíncrono de Robert Graham, com pilha TCP/IP própria, feito para varrer a internet inteira muito rápido. Troca a precisão e os detalhes do nmap por velocidade."
+  - term: idle scan
+    definition: "Varredura indireta (-sI no nmap), publicada por Antirez em 1998, que usa o contador IP ID de uma terceira máquina ociosa (o zumbi) para descobrir portas sem que o alvo veja o endereço de quem varre."
+  - term: decoy scan
+    definition: "Varredura com iscas (-D no nmap): o nmap manda cópias das sondas com endereços de origem falsos, para o alvo ver vários 'varredores' e não saber qual é o real."
+  - term: botnet
+    definition: "Rede de máquinas comprometidas controladas por um atacante, usada para ataques em massa (DDoS, spam, varreduras). O Mirai é o exemplo clássico com dispositivos IoT."
+  - term: IoT
+    definition: "Internet of Things: dispositivos do dia a dia ligados à rede (câmeras, roteadores, gravadores, eletrodomésticos). Muitas vezes saem de fábrica com serviços abertos e senhas padrão."
+  - term: Telnet
+    definition: "Protocolo antigo de terminal remoto (porta 23) que transmite tudo em texto claro, inclusive a senha. Substituído pelo SSH, mas ainda presente em muitos equipamentos embarcados."
+  - term: default credentials
+    definition: "Credenciais de fábrica: usuário e senha que vêm configurados no equipamento ou software (admin/admin, root/12345). Se não forem trocadas, qualquer um que ache o serviço entra."
+  - term: Heartbleed
+    definition: "Falha na extensão Heartbeat do OpenSSL (CVE-2014-0160), divulgada em 7 de abril de 2014, que permitia ler pedaços da memória do servidor (inclusive chaves privadas) por uma requisição forjada."
+  - term: default deny
+    definition: "Política de firewall de negar tudo por padrão e liberar só o que foi explicitamente permitido. O oposto (liberar tudo e bloquear o que se lembra) sempre esquece algo."
+  - term: network segmentation
+    definition: "Segmentação de rede: dividir a rede em zonas separadas por filtros, para que cada máquina só alcance o que precisa. Reduz o que uma varredura (e um invasor) consegue ver a partir de um ponto."
+  - term: Suricata
+    definition: "IDS/IPS de código aberto mantido pela OISF. Inspeciona o tráfego e dispara alertas por regras, como as do conjunto aberto Emerging Threats, que tem uma categoria inteira para varreduras."
+---
+
+import redeEEscopo from "./img/rede-e-escopo.svg";
+import synEConnect from "./img/syn-e-connect.svg";
+import funilDoReconhecimento from "./img/funil-do-reconhecimento.svg";
+import nmapNoKali from "./img/nmap-no-kali.png";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em 21 de outubro de 2016, o Twitter, o GitHub, o PayPal e outros serviços ficaram inacessíveis
+para muita gente. O alvo direto era a Dyn, uma empresa de DNS; a arma era o Mirai, uma rede de
+câmeras e gravadores invadidos. E o Mirai não tinha nenhum exploit sofisticado. Ele fazia, em
+escala gigantesca, o que você vai aprender neste módulo: **varria** a internet atrás de uma porta
+aberta e testava as senhas de fábrica do que encontrava. Ninguém ataca o que não encontrou, e
+encontrar é o que este módulo ensina.
+
+Este é o primeiro módulo em que você **toca** um alvo. O
+<GlossaryTerm term="reconnaissance">reconhecimento</GlossaryTerm> do 2.2 foi
+<GlossaryTerm term="passive reconnaissance">passivo</GlossaryTerm>: você estudou o alvo por fontes
+públicas, sem mandar um pacote para ele. Agora começa o
+<GlossaryTerm term="active reconnaissance">reconhecimento ativo</GlossaryTerm>: a sua attack box
+manda pacotes para as máquinas do escopo e lê o que volta. A ferramenta clássica é o
+<GlossaryTerm term="Nmap">nmap</GlossaryTerm>, que existe desde 1997 e é o ponto de partida de
+praticamente todo pentest de rede. O nmap responde quatro perguntas, nesta ordem: **quem está
+vivo** na rede, **que portas** cada máquina tem abertas, **o que roda** em cada porta (e em que
+versão) e **o que mais** dá para descobrir sobre esses serviços.
+
+<Figure
+  src={funilDoReconhecimento}
+  alt="Funil com cinco etapas empilhadas: escopo, host discovery, portas, serviços e versões, scripts NSE, terminando em alvos priorizados. Uma seta lateral indica que o barulho e o risco aumentam a cada etapa."
+  caption="O reconhecimento ativo é um funil: cada etapa recebe a saída da anterior e entrega algo mais preciso. E cada etapa faz mais barulho que a anterior."
+/>
+
+**Ao final, você vai saber:**
+
+- explicar como uma varredura descobre o estado de uma porta, pacote por pacote, e o que cada um
+  dos seis estados do nmap prova e o que só sugere;
+- descobrir os hosts vivos de uma rede e dizer por que o nmap usa ARP numa rede local e TCP
+  sem privilégio;
+- escolher entre SYN scan e connect scan, varrer todas as portas e UDP, e saber o custo de cada
+  escolha;
+- identificar serviços e versões com `-sV`, e o que fazer quando o nmap não reconhece o serviço;
+- usar os scripts do NSE com segurança, entender as categorias e por que um script às vezes não
+  roda;
+- salvar e ler os resultados como evidência do engajamento;
+- ver a sua varredura pelos olhos de quem defende, e saber o que reduz e o que detecta
+  varreduras.
+
+**Pré-requisitos:**
+
+- **0.2 — Redes TCP/IP na prática** — portas, TCP e UDP, as flags e o three-way handshake, ICMP,
+  ARP e CIDR. Vamos relembrar o essencial na seção 2, mas é lá que tudo foi explicado.
+- **2.1 — Kali Linux e organização do ambiente** — a attack box, as duas redes do Kali, o `sudo`
+  e a bancada do engajamento, que aqui recebe as primeiras evidências.
+- **2.2 — OSINT e reconhecimento passivo** — o reconhecimento que vem antes deste: o que já se
+  sabe sem tocar no alvo.
+
+**Tempo estimado:** 5 a 6 horas, incluindo as três missões no laboratório.
+
+<Callout variant="ethics">
+Varrer é tocar. Uma varredura manda pacotes para a máquina de outra pessoa, aparece nos logs dela
+e, com os scripts errados, pode derrubar um serviço frágil. Nos módulos 1.3 e 1.4 você viu que o
+que separa um pentest de uma invasão é a autorização por escrito. Neste módulo, o alvo é a
+`lab_net` do laboratório local, e só ela: a outra rede do Kali, onde está a infraestrutura da
+plataforma, fica fora do escopo de propósito, para você treinar a disciplina desde a primeira
+varredura. Nunca aponte o nmap para uma rede que não é sua sem autorização — nem "só para ver".
+</Callout>
+
+## 2. Teoria aprofundada — a varredura por dentro
+
+### 2.1 Por que varrer funciona: a rede responde a quem pergunta
+
+Uma rede só funciona porque as máquinas respondem. Quando um pacote chega a uma porta TCP, o
+sistema operacional do destino **tem** de dizer alguma coisa: "pode entrar" se há um programa
+escutando, "não tem ninguém aqui" se não há. Isso não é uma falha: é o protocolo funcionando como
+foi desenhado, para que as conexões legítimas aconteçam rápido e as erradas terminem logo.
+
+A <GlossaryTerm term="port scanning">varredura de portas</GlossaryTerm> explora exatamente esse
+comportamento. Em vez de abrir uma conexão porque quer usar um serviço, o scanner pergunta a cada
+porta "tem alguém aí?" e anota a resposta. O que torna isso uma técnica de ataque não é o pacote
+— é a sistematização: perguntar a milhares de portas, em centenas de máquinas, e montar um mapa do
+que existe. Esse mapa é a <GlossaryTerm term="attack surface">superfície de ataque</GlossaryTerm>:
+tudo o que um atacante pode tentar usar.
+
+Uma analogia: um prédio comercial. O passivo (2.2) é ler a placa da portaria e o site das
+empresas. O ativo é andar pelos corredores batendo em cada porta. Uma porta que abre é um
+escritório funcionando (porta **aberta**). Uma porta em que alguém grita "não tem ninguém!" é uma
+sala vazia, mas o corredor existe (porta **fechada**). Uma porta em que nada acontece pode estar
+vazia, trancada com um segurança que manda não responder, ou nem existir — você não sabe (porta
+**filtrada**). O nmap é o seu jeito de bater em todas as portas, muito rápido, e anotar tudo.
+
+### 2.2 Relembrando o TCP: o handshake e as flags
+
+No 0.2 você viu que uma conexão <GlossaryTerm term="TCP">TCP</GlossaryTerm> começa com o
+<GlossaryTerm term="three-way handshake">three-way handshake</GlossaryTerm>, marcado pelas
+<GlossaryTerm term="TCP flags">flags</GlossaryTerm> do cabeçalho:
+
+1. o cliente manda **SYN** ("quero conversar, meu número de sequência é X");
+2. o servidor responde **SYN/ACK** ("aceito, recebi o X, o meu é Y");
+3. o cliente manda **ACK** ("recebi o Y") — e a conexão está aberta.
+
+Se não há programa escutando na porta, o servidor responde ao SYN com **RST/ACK**: a flag
+<GlossaryTerm term="RST">RST</GlossaryTerm> é o "não". E se um firewall no caminho descarta o SYN,
+nada volta — o cliente espera, tenta de novo e desiste.
+
+Essas três reações (SYN/ACK, RST, silêncio) são toda a matéria-prima de uma varredura TCP. O resto
+é engenharia: como perguntar rápido, a muitas portas, sem confundir as respostas.
+
+### 2.3 Os seis estados de porta do nmap
+
+O nmap traduz as respostas em seis <GlossaryTerm term="port state">estados de porta</GlossaryTerm>.
+As definições abaixo seguem a documentação oficial
+([Port Scanning Basics](https://nmap.org/book/man-port-scanning-basics.html)):
+
+| Estado | O que significa | Sinal típico (TCP) |
+|---|---|---|
+| `open` | um programa está aceitando conexões na porta | SYN/ACK |
+| `closed` | a porta é acessível (o host respondeu), mas ninguém escuta nela | RST |
+| `filtered` | o nmap não sabe se está aberta: filtros impedem a sonda de chegar | nada, ou ICMP unreachable |
+| `unfiltered` | a porta é acessível, mas não dá para saber se está aberta ou fechada | RST num ACK scan |
+| `open|filtered` | não dá para distinguir entre aberta e filtrada | nenhuma resposta numa sonda em que porta aberta também se cala (UDP) |
+| `closed|filtered` | não dá para distinguir entre fechada e filtrada | raro; só no idle scan |
+
+Dois detalhes que separam quem lê de quem entende:
+
+- **`closed` é informação útil.** Uma porta fechada prova que o host existe e que nada filtra
+  aquela porta. Se um servidor tem 999 portas `closed` e uma `open`, não há firewall filtrando
+  aquelas portas — o que, por si só, já diz algo sobre a defesa.
+- **<GlossaryTerm term="filtered port">`filtered`</GlossaryTerm> é dúvida, não proteção
+  garantida.** Atrás de uma porta filtrada pode haver um serviço aberto que o firewall só libera
+  para certos endereços. Filtrada para você não quer dizer filtrada para todo mundo.
+
+### 2.4 Host discovery: quem está vivo?
+
+Varrer 65.535 portas em cada endereço de uma rede inteira desperdiçaria horas em endereços vazios.
+Por isso o nmap começa pelo <GlossaryTerm term="host discovery">host discovery</GlossaryTerm>:
+descobrir quais endereços têm alguém respondendo. Como ele pergunta depende de quem você é e de
+onde o alvo está ([Host Discovery](https://nmap.org/book/man-host-discovery.html)):
+
+- **Com privilégio (root), em outra rede:** o padrão manda quatro sondas — um
+  <GlossaryTerm term="ICMP">ICMP</GlossaryTerm> echo request (o `ping`), um SYN na porta 443, um ACK
+  na porta 80 e um ICMP timestamp request. Basta uma resposta qualquer para o host contar como vivo.
+- **Sem privilégio:** o nmap não pode montar pacotes; ele só pede ao sistema conexões (SYN pela
+  chamada `connect`) às portas 80 e 443. Até um RST ("porta fechada") prova que o host existe.
+- **Na mesma rede local (Ethernet), com privilégio:** o nmap usa
+  <GlossaryTerm term="ARP">ARP</GlossaryTerm>. Antes de mandar qualquer pacote IP para um vizinho,
+  a máquina precisa do endereço MAC dele, e pergunta por ARP. Quem responde está vivo, e nenhum
+  firewall de host consegue esconder isso sem se desligar da rede. É o método mais rápido e mais
+  confiável que existe dentro de uma rede local.
+
+Duas opções controlam essa etapa:
+
+- `-sn` faz **só** o host discovery, sem varrer portas — a "lista de presença" da rede.
+- `-Pn` **pula** o host discovery e trata todo endereço como vivo. Serve para hosts que não
+  respondem a nenhuma sonda de descoberta (um servidor que filtra ICMP e as portas 80 e 443), mas
+  deixa a varredura lenta numa faixa cheia de endereços vazios. Detalhe da documentação: numa rede
+  local, mesmo com `-Pn`, o nmap ainda faz ARP, a menos que você peça `--disable-arp-ping`.
+
+### 2.5 Raw sockets: por que o modo de varrer depende do `sudo`
+
+Um programa comum conversa com a rede pelo sistema operacional: pede "conecte-me a tal porta" e o
+kernel faz o handshake inteiro. Ele não escolhe as flags nem monta o pacote. Para mandar um SYN
+**e não completar** o handshake, o nmap precisa montar o pacote à mão, com um
+<GlossaryTerm term="raw socket">raw socket</GlossaryTerm> — e o kernel só deixa isso para quem tem
+privilégio (no Linux, a capability `CAP_NET_RAW`, que o root tem).
+
+Você viu no 2.1 que o Kali desta plataforma tirou as capabilities do binário do nmap (o contêiner
+não tem `NET_ADMIN`). Consequência prática, que você vai medir no lab:
+
+- `nmap ...` como usuário `kali` → *connect scan*, host discovery por TCP;
+- `sudo nmap ...` → *SYN scan*, host discovery por ARP na `lab_net`.
+
+O nmap não avisa a troca em letras grandes. Quem não sabe disso acha que fez um SYN scan quando
+fez um connect scan — e se surpreende com o que aparece nos logs do alvo.
+
+### 2.6 Os tipos de varredura
+
+<Figure
+  src={synEConnect}
+  alt="Grade com duas linhas (SYN scan e connect scan) e três colunas (porta aberta, fechada e filtrada), mostrando em cada célula os pacotes trocados entre o Kali e o alvo."
+  caption="SYN scan e connect scan veem os mesmos três estados, mas por caminhos diferentes: no SYN scan a conexão nunca se completa; no connect scan ela se completa e é derrubada com RST."
+/>
+
+**<GlossaryTerm term="SYN scan">SYN scan</GlossaryTerm> (`-sS`).** O padrão quando há
+privilégio. Manda o SYN e lê a resposta: SYN/ACK é `open`, RST é `closed`, silêncio (mesmo depois
+de retransmitir) ou ICMP unreachable é `filtered`. Quando chega um SYN/ACK, o nmap não completa o
+handshake — e quem manda o RST que encerra a conversa é o **kernel** da sua máquina, que recebeu
+um SYN/ACK de uma conexão que ele não abriu
+([TCP SYN Scan](https://nmap.org/book/synscan.html)). Por nunca completar a conexão, também é
+chamado de <GlossaryTerm term="half-open scan">half-open scan</GlossaryTerm>. É rápido, porque
+cada porta custa um pacote de ida e um de volta.
+
+**<GlossaryTerm term="connect scan">Connect scan</GlossaryTerm> (`-sT`).** O padrão sem
+privilégio. O nmap chama `connect()`, o sistema completa o handshake e, se deu certo, o nmap pede
+para derrubar a conexão na hora com um RST. Mesmo resultado, mais pacotes, menos controle sobre os
+tempos — e uma diferença importante: a **aplicação** do outro lado viu uma conexão completa. A
+documentação avisa que conexões assim têm mais chance de aparecer nos logs do alvo
+([TCP Connect Scan](https://nmap.org/book/scan-methods-connect-scan.html)). Você vai testar no lab
+se isso vale para o Apache do DVWA.
+
+**<GlossaryTerm term="UDP scan">UDP scan</GlossaryTerm> (`-sU`).** O
+<GlossaryTerm term="UDP">UDP</GlossaryTerm> não tem handshake: você manda um datagrama e, se o
+programa do outro lado não gostar, ele simplesmente não responde. Por isso a lógica é outra
+([UDP Scan](https://nmap.org/book/scan-methods-udp-scan.html)):
+
+- qualquer resposta UDP → `open` (raro: só quando a sonda é um pedido válido do protocolo);
+- ICMP port unreachable (tipo 3, código 3) → `closed`;
+- outros ICMP unreachable → `filtered`;
+- nenhuma resposta → <GlossaryTerm term="open|filtered">`open|filtered`</GlossaryTerm>.
+
+E há um agravante: muitos sistemas limitam quantas mensagens ICMP de erro mandam por segundo, a
+<GlossaryTerm term="ICMP rate limiting">limitação de taxa do ICMP</GlossaryTerm>. No
+Linux, o parâmetro `net.ipv4.icmp_ratelimit` vale 1000 (milissegundos) por padrão — você vai ver
+esse valor no lab. A documentação calcula que um limite de uma mensagem por segundo faz uma
+varredura das 65.536 portas UDP passar de 18 horas. Por isso varreduras UDP se limitam às portas
+mais comuns (`--top-ports`).
+
+**<GlossaryTerm term="ACK scan">ACK scan</GlossaryTerm> (`-sA`).** Manda só ACK, um pacote que
+não faz sentido sem conexão. Um host sem filtro responde RST, aberta ou fechada a porta: por isso
+o ACK scan não descobre portas abertas. Ele descobre **regras de firewall**: RST de volta é
+`unfiltered` (o filtro deixou passar), silêncio é `filtered`. Serve para mapear o que um firewall
+sem estado deixa passar.
+
+**Varreduras "estranhas" (`-sN`, `-sF`, `-sX`).** Null (nenhuma flag), FIN (só FIN) e Xmas (FIN,
+PSH e URG) mandam combinações que uma conexão normal não usa. Pela especificação do TCP (RFC 793),
+uma porta fechada responde RST a esses pacotes e uma aberta os descarta em silêncio
+([Null, FIN e Xmas](https://nmap.org/book/scan-methods-null-fin-xmas-scan.html)). Funcionam
+contra a maioria dos sistemas Unix; o Windows e muitos equipamentos Cisco respondem RST em
+qualquer caso, e aí todas as portas parecem fechadas. São ferramentas de nicho, para passar por
+filtros sem estado; você só precisa saber que existem.
+
+### 2.7 Quais portas: o top 1000, `-p` e `-p-`
+
+Sem dizer as portas, o nmap varre **as 1.000 portas mais comuns** de cada protocolo, segundo o
+arquivo <GlossaryTerm term="nmap-services">`nmap-services`</GlossaryTerm>
+([Port Specification](https://nmap.org/book/man-port-specification.html)). Esse arquivo guarda,
+para cada porta, um nome de serviço e a frequência com que ela foi encontrada aberta em varreduras
+reais. O top 1000 é um ótimo começo e um péssimo fim: um serviço numa porta incomum simplesmente
+não aparece.
+
+| Opção | O que varre |
+|---|---|
+| (nada) | as 1.000 portas mais frequentes |
+| `-F` | as 100 mais frequentes (rápido) |
+| `--top-ports 20` | as 20 mais frequentes |
+| `-p 80,443,8080` | só essas |
+| `-p 1-1024` | a faixa |
+| `-p-` | todas, de 1 a 65535 |
+
+E atenção à coluna **SERVICE** da saída: sem detecção de versão, ela é só o nome que o
+`nmap-services` dá ao número da porta. O nmap não conversou com o serviço. Você vai ver isso no
+lab de um jeito que não esquece.
+
+### 2.8 Detecção de serviço e versão (`-sV`)
+
+Saber que a porta 80 está aberta é pouco. O que interessa é **o que** responde ali: Apache ou
+nginx? Que versão? É a versão que liga a varredura às falhas conhecidas — os
+<GlossaryTerm term="CVE">CVEs</GlossaryTerm> que você vai explorar na Trilha 5.
+
+A <GlossaryTerm term="service detection">detecção de serviço</GlossaryTerm> (`-sV`) conversa com
+cada porta aberta. Primeiro ela só escuta: muitos serviços se apresentam assim que a conexão abre
+(um SSH diz `SSH-2.0-OpenSSH_...`). Isso é o
+<GlossaryTerm term="banner grabbing">banner grabbing</GlossaryTerm>. Se nada vier, o nmap manda
+sondas do arquivo `nmap-service-probes` — um `GET / HTTP/1.0`, um pedido de ajuda genérico, um
+pedido RPC... — e compara cada resposta com milhares de padrões
+([Version Detection](https://nmap.org/book/man-version-detection.html)). O `--version-intensity`,
+de 0 a 9 (padrão 7), controla quantas sondas ele tenta.
+
+Quando nenhum padrão bate, mas o serviço respondeu, o nmap marca o nome com `?` e imprime a
+<GlossaryTerm term="service fingerprint">impressão digital do serviço</GlossaryTerm>: linhas que
+começam com `SF:` contendo as respostas brutas de cada sonda, e um convite para enviá-la ao
+projeto. Muita gente pula esse bloco porque parece lixo. Não é: são as respostas do serviço, e
+quem sabe lê-las identifica o serviço na mão. A Missão 2 depende disso.
+
+### 2.9 O Nmap Scripting Engine (NSE)
+
+O <GlossaryTerm term="NSE">NSE</GlossaryTerm> transforma o nmap de scanner em plataforma. São
+centenas de scripts escritos em <GlossaryTerm term="Lua">Lua</GlossaryTerm> (uma linguagem
+criada no Brasil, na PUC-Rio) que rodam depois da varredura e fazem o que um humano faria com cada
+serviço: ler o título da página, listar cabeçalhos, buscar o `robots.txt`, testar uma falha
+conhecida. O Kali do lab tem 613 deles em `/usr/share/nmap/scripts`.
+
+Cada script pertence a uma ou mais
+<GlossaryTerm term="NSE category">categorias</GlossaryTerm>
+([Usage and Examples](https://nmap.org/book/nse-usage.html)), e as categorias dizem o risco:
+
+| Categoria | Para quê | Risco para o alvo |
+|---|---|---|
+| `default` | o conjunto padrão, rodado por `-sC` | baixo |
+| `safe` | não foi feito para derrubar nem sobrecarregar | baixo |
+| `discovery` | descobrir mais sobre a rede e os serviços | baixo a médio |
+| `version` | estender o `-sV` | baixo |
+| `vuln` | procurar falhas conhecidas | varia |
+| `intrusive` | arriscado demais para ser `safe` | alto |
+| `brute` | adivinhar senhas por força bruta | alto (bloqueia contas, gera logs) |
+| `exploit` | explorar uma falha | alto |
+| `dos` | pode causar negação de serviço | muito alto |
+
+Dois mecanismos que pegam iniciantes:
+
+- **`-sC` é `--script=default`.** Rodar `--script vuln` ou `--script "*"` sem ler o que cada
+  script faz é a forma mais rápida de sair do escopo — de "levantar informação" para "atacar".
+  Escopo autoriza técnicas, não só endereços (1.3).
+- **A <GlossaryTerm term="portrule">portrule</GlossaryTerm>.** Cada script tem uma regra que
+  decide se ele roda numa porta — em geral, "a porta é de um serviço HTTP?". Se o nmap não
+  reconheceu o serviço como HTTP, os scripts HTTP não rodam, **nem se você pedir pelo nome**. A
+  saída é um `+` antes do nome do script (`--script +http-title`), que força a execução
+  "independentemente das condições da portrule", nas palavras da documentação.
+
+### 2.10 Sistema operacional, tempo e saída
+
+**Detecção de SO (`-O`).** Cada sistema operacional implementa o TCP/IP com pequenas diferenças:
+tamanho de janela inicial, ordem das opções TCP, como responde a pacotes absurdos. O
+<GlossaryTerm term="OS fingerprinting">OS fingerprinting</GlossaryTerm> manda uma bateria de
+sondas estranhas e compara as respostas com um banco de assinaturas. Precisa de root (sem ele, o
+nmap responde "TCP/IP fingerprinting (for OS scan) requires root privileges"), é muito mais eficaz
+quando acha pelo menos uma porta aberta e uma fechada, e erra com frequência em ambientes
+virtualizados. Num contêiner, a pilha TCP/IP é a do kernel do hospedeiro (2.1) — no lab, o nmap vai
+admitir que não sabe.
+
+**Timing (`-T0` a `-T5`).** Os <GlossaryTerm term="timing template">timing templates</GlossaryTerm>
+ajustam de uma vez paralelismo, tempos de espera e retransmissões
+([Timing and Performance](https://nmap.org/book/man-performance.html)): `paranoid` (0) e `sneaky`
+(1) esperam 5 minutos e 15 segundos entre sondas, para fugir de detecção; `polite` (2) espera 0,4
+segundo; `normal` (3) é o padrão; `aggressive` (4) é o recomendado para redes modernas e
+confiáveis; `insane` (5) corta o máximo de retransmissões para 2 e perde precisão.
+
+**Saída.** O nmap mostra o resultado na tela, mas um pentest precisa de evidência
+([Output](https://nmap.org/book/man-output.html)):
+
+- `-oN arquivo` — a saída normal, para ler e anexar;
+- `-oX arquivo` — XML, para ferramentas;
+- `-oG arquivo` — a <GlossaryTerm term="grepable output">saída grepable</GlossaryTerm>, uma
+  linha por host, que a documentação chama de **obsoleta** (o XML é mais completo), mas que
+  continua prática com `grep`;
+- `-oA base` — as três de uma vez (`base.nmap`, `base.xml`, `base.gnmap`).
+
+E duas opções para entender o que aconteceu: `--reason` mostra **por que** cada porta recebeu o
+estado (qual pacote voltou), e `--packet-trace` imprime cada pacote enviado e recebido. Para
+aprender, nada se compara a elas.
+
+## 3. Como o ataque funciona — a mecânica
+
+O reconhecimento ativo de um atacante (ou de um pentester) segue o funil da abertura. Vamos
+percorrê-lo com a saída real do lab, pacote a pacote, para que cada etapa fique concreta. Os
+endereços foram trocados por exemplos: no seu lab, a `lab_net` terá outra faixa.
+
+### 3.1 Etapa 0: saber de onde você varre
+
+Antes do primeiro pacote, o atacante olha para a própria máquina: em que redes ela está, e qual
+delas leva ao alvo. Uma attack box com duas interfaces varre a rede errada com facilidade.
+
+```console
+$ ip -br addr
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+eth0@if71        UP             10.10.0.1/16
+eth1@if72        UP             192.168.0.2/16
+$ getent hosts dvwa juice-shop
+192.168.0.3     dvwa
+192.168.0.1     juice-shop
+```
+
+Os alvos resolvem para endereços da rede da `eth1`: essa é a `lab_net`. A `eth0` é a
+`desktop_net`, da infraestrutura. Repare também na máscara: `/16` são 65.536 endereços. O Docker
+cria redes desse tamanho por padrão, e isso vai importar daqui a pouco.
+
+### 3.2 Etapa 1: host discovery, por dentro
+
+Com privilégio e numa rede local, a descoberta é por ARP. O `--packet-trace` mostra a conversa
+inteira:
+
+```console
+$ sudo nmap -sn -n --packet-trace 192.168.0.3
+SENT (0.0243s) ARP who-has 192.168.0.3 tell 192.168.0.2
+RCVD (0.0243s) ARP reply 192.168.0.3 is-at 02:00:00:00:00:03
+Nmap scan report for 192.168.0.3
+Host is up (0.000044s latency).
+MAC Address: 02:00:00:00:00:03 (Unknown)
+```
+
+Uma pergunta, uma resposta: o host existe. Sem privilégio, o mesmo comando vira duas tentativas de
+conexão:
+
+```console
+$ nmap -sn -n --packet-trace 192.168.0.3
+CONN (0.0005s) TCP localhost > 192.168.0.3:80 => Operation now in progress
+CONN (0.0005s) TCP localhost > 192.168.0.3:443 => Operation now in progress
+CONN (0.0005s) TCP localhost > 192.168.0.3:80 => Connected
+Nmap scan report for 192.168.0.3
+Host is up (0.000053s latency).
+```
+
+`CONN` (em vez de `SENT`/`RCVD`) é o nmap dizendo que não montou pacote: pediu conexões ao
+sistema. A da porta 80 conectou, e isso bastou.
+
+O tamanho da faixa decide o custo. Medimos no lab, com `sudo nmap -sn -n`:
+
+| Faixa | Endereços | Tempo |
+|---|---:|---|
+| a `/24` onde estão os alvos | 256 | cerca de 2 segundos |
+| uma `/20` | 4.096 | 9,6 segundos |
+| a `/16` inteira | 65.536 | passou de 28 minutos (primeira vez) e de 34 minutos (segunda) sem terminar; interrompemos |
+
+Pela proporção, a `/16` deveria levar poucos minutos, e não levou: nas duas tentativas ela ficou
+muito mais lenta que as faixas menores. Não investigamos a causa a fundo; o ponto prático é outro.
+Quase todos aqueles endereços estão vazios, e cada endereço vazio custa espera e retransmissão.
+Na vida real, o escopo e o reconhecimento passivo dizem onde procurar antes de você varrer às
+cegas.
+
+### 3.3 Etapa 2: as portas, pacote por pacote
+
+Agora as portas do DVWA: a 80 (onde sabemos que há um site) e a 81 (onde não há nada). Com
+`sudo`, SYN scan:
+
+```console
+$ sudo nmap -n -Pn -p 80,81 --packet-trace dvwa
+SENT (0.6005s) TCP 192.168.0.2:63254 > 192.168.0.3:80 S ttl=37 id=54112 iplen=44  seq=2254370164 win=1024 <mss 1460>
+SENT (0.6006s) TCP 192.168.0.2:63254 > 192.168.0.3:81 S ttl=38 id=5285 iplen=44  seq=2254370164 win=1024 <mss 1460>
+RCVD (0.6005s) TCP 192.168.0.3:80 > 192.168.0.2:63254 SA ttl=64 id=0 iplen=44  seq=3905191100 win=64240 <mss 1460>
+RCVD (0.6006s) TCP 192.168.0.3:81 > 192.168.0.2:63254 RA ttl=64 id=0 iplen=40  seq=0 win=0
+80/tcp open   http
+81/tcp closed hosts2-ns
+```
+
+Leia como o nmap leu:
+
+- `S` é SYN. As duas sondas saem da mesma porta de origem (63254), com uma janela pequena (1024)
+  e o TTL meio aleatório (37, 38): marcas de pacote montado à mão, que um IDS reconhece.
+- A 80 respondeu `SA` (SYN/ACK): **open**. O nmap não manda o ACK — o RST que encerra a
+  meia-conexão sai do kernel do Kali, e por isso nem aparece no traço do nmap.
+- A 81 respondeu `RA` (RST/ACK): **closed**. O host existe, ninguém escuta ali.
+- O nome `hosts2-ns` da porta 81 vem do `nmap-services`. Ninguém perguntou nada ao serviço.
+
+Sem `sudo`, connect scan:
+
+```console
+$ nmap -n -Pn -p 80,81 --packet-trace dvwa
+CONN (0.5162s) TCP localhost > 192.168.0.3:80 => Operation now in progress
+CONN (0.5162s) TCP localhost > 192.168.0.3:81 => Operation now in progress
+CONN (0.5163s) TCP localhost > 192.168.0.3:80 => Connected
+CONN (0.5163s) TCP localhost > 192.168.0.3:81 => Connection refused
+80/tcp open   http
+81/tcp closed hosts2-ns
+```
+
+O mesmo resultado, por outro caminho: `Connected` é a conexão completa (open), `Connection
+refused` é o RST visto pelo sistema operacional (closed).
+
+E o terceiro estado? Na `lab_net` não há firewall, então o lab não tem uma porta filtrada de
+verdade. Dá para ver o mecanismo apontando para um endereço onde não há ninguém, com
+`--disable-arp-ping` para o nmap não descobrir isso pelo ARP:
+
+```console
+$ sudo nmap -n -Pn --disable-arp-ping -p 80 --reason 192.168.0.50
+PORT   STATE    SERVICE REASON
+80/tcp filtered http    no-response
+```
+
+Nenhuma resposta, mesmo depois de retransmitir: `filtered`, com motivo `no-response`. Para o nmap,
+um firewall que descarta pacotes e um endereço vazio têm a mesma cara. É por isso que `filtered`
+é dúvida.
+
+### 3.4 Etapa 3: o que roda nas portas
+
+Com as portas abertas na mão, o atacante pergunta "o quê, e em que versão?":
+
+```console
+$ nmap -sV -p 80 dvwa
+Nmap scan report for dvwa (192.168.0.3)
+Host is up (0.00010s latency).
+rDNS record for 192.168.0.3: cyberlab-dvwa-1.cyberlab_lab_net
+
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.68 ((Debian))
+```
+
+Por trás dessa linha, o nmap mandou sondas HTTP e encontrou na resposta o cabeçalho `Server:
+Apache/2.4.68 (Debian)`. Para o atacante, isso vira uma busca: há falhas conhecidas para o Apache
+2.4.68? E o `(Debian)` diz qual distribuição está por baixo, o que orienta todo o resto.
+
+### 3.5 Etapa 4: os scripts, e o rastro que eles deixam
+
+Por fim, os scripts. A categoria `default` no DVWA:
+
+```console
+$ nmap -sC -p 80 -n dvwa
+PORT   STATE SERVICE
+80/tcp open  http
+| http-robots.txt: 1 disallowed entry
+|_/
+| http-cookie-flags:
+|   /:
+|     PHPSESSID:
+|_      httponly flag not set
+| http-title: Login :: Damn Vulnerable Web Application (DVWA)
+|_Requested resource was login.php
+```
+
+(Os scripts rodam em paralelo, então a ordem dos blocos pode mudar de uma execução para outra.)
+
+Em três linhas de resultado, o nmap já disse o que é a aplicação, que há uma página de login, que o
+`robots.txt` existe, e que o cookie de sessão não tem a flag `HttpOnly` — um achado que a Trilha 4
+vai explicar. Isso já não é "bater na porta": são requisições HTTP de verdade, que a aplicação
+processa e registra. Na Missão 3 você vai olhar esse rastro.
+
+### 3.6 Da lista ao plano
+
+O produto final do reconhecimento não é a saída do nmap: é uma **lista priorizada**. Para cada
+serviço, o atacante anota o software, a versão, o que ele expõe e a próxima pergunta: "Apache
+2.4.68 com PHP: aplicação web, testar login e entradas (Trilha 4)", "porta 3000, HTTP, Node.js:
+outra aplicação web". Com a lista, ele escolhe por onde começar — e o pentester faz o mesmo, com
+autorização e anotando tudo (1.5).
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os três casos abaixo mostram a varredura em três papéis: como arma de um ataque em massa, como
+corrida entre atacantes e defensores, e como cultura da área.
+
+### O Mirai: uma varredura que derrubou parte da internet (setembro e outubro de 2016)
+
+**O que aconteceu.** O <GlossaryTerm term="botnet">botnet</GlossaryTerm> Mirai era feito de
+dispositivos <GlossaryTerm term="IoT">IoT</GlossaryTerm> — roteadores domésticos, câmeras de rede,
+gravadores de vídeo. O alerta TA16-288A da CISA, de 14 de outubro de 2016, descreve o método: o
+malware **varre continuamente a internet** atrás de dispositivos vulneráveis e tenta entrar com
+uma lista curta de 62 usuários e senhas de fábrica
+(<GlossaryTerm term="default credentials">default credentials</GlossaryTerm>). O serviço visado
+era o <GlossaryTerm term="Telnet">Telnet</GlossaryTerm>: o resumo do estudo publicado por um dos
+autores no blog da Cloudflare descreve a varredura de endereços aleatórios nas portas 23 e 2323,
+e a CISA recomenda vigiar exatamente essas duas portas. Não havia exploit: a "vulnerabilidade" era
+uma porta aberta com a senha que veio na caixa.
+
+As datas, uma por uma:
+
+- **20 de setembro de 2016:** o site do jornalista Brian Krebs sofreu um ataque de negação de
+  serviço (<GlossaryTerm term="DDoS">DDoS</GlossaryTerm>) que, segundo a CISA, passou de 620 Gbps.
+  Krebs registrou, no dia seguinte, que era quase o dobro do maior ataque já visto pela Akamai.
+- **Fim de setembro de 2016:** o provedor francês OVH foi atingido por um ataque de pelo menos
+  1,1 Tbps, segundo o mesmo alerta.
+- **1º de outubro de 2016:** Krebs noticiou que o código-fonte do Mirai tinha sido publicado no
+  fórum Hackforums por um usuário chamado "Anna-senpai" — e qualquer um passou a poder montar o
+  próprio botnet.
+- **21 de outubro de 2016:** três ondas de ataque contra a Dyn, provedora de DNS, deixaram
+  serviços como Twitter, GitHub, PayPal e Etsy inacessíveis para muitos usuários. A Dyn confirmou
+  que dispositivos infectados pelo Mirai eram uma das origens do tráfego.
+
+O artigo acadêmico de referência, "Understanding the Mirai Botnet" (USENIX Security, agosto de
+2017), mediu um pico de cerca de **600 mil** dispositivos infectados.
+
+**A lição.** Do lado do ataque, o Mirai é a prova de que **encontrar** pode ser o ataque inteiro:
+varrer a internet atrás de uma única porta e de senhas previsíveis bastou para montar uma arma
+capaz de derrubar grandes serviços. Do lado da defesa, as recomendações da CISA são o oposto exato
+da varredura: trocar as senhas padrão, desligar o que não precisa estar ligado (o alerta cita o
+UPnP) e **vigiar as portas 23 e 2323**. Superfície de ataque que não existe não pode ser
+encontrada.
+
+Fontes: [CISA — Alert TA16-288A](https://www.cisa.gov/news-events/alerts/2016/10/14/heightened-ddos-threat-posed-mirai-and-other-botnets);
+[KrebsOnSecurity — record DDoS (21/09/2016)](https://krebsonsecurity.com/2016/09/krebsonsecurity-hit-with-record-ddos/);
+[KrebsOnSecurity — Mirai source code released (01/10/2016)](https://krebsonsecurity.com/2016/10/source-code-for-iot-botnet-mirai-released/);
+[Help Net Security — Dyn DDoS attack: the aftermath](https://www.helpnetsecurity.com/2016/10/24/dyn-ddos-attack-aftermath/);
+[USENIX Security 2017 — Understanding the Mirai Botnet](https://www.usenix.org/conference/usenixsecurity17/technical-sessions/presentation/antonakakis);
+[Cloudflare — Inside Mirai, a retrospective analysis (Elie Bursztein)](https://blog.cloudflare.com/inside-mirai-the-infamous-iot-botnet-a-retrospective-analysis/).
+
+### Heartbleed: a corrida das varreduras (abril de 2014)
+
+**O que aconteceu.** Em 7 de abril de 2014, o projeto OpenSSL divulgou o
+<GlossaryTerm term="Heartbleed">Heartbleed</GlossaryTerm> (CVE-2014-0160): uma falha na extensão
+Heartbeat do TLS que deixava qualquer um ler pedaços da memória do servidor — inclusive chaves
+privadas e senhas. O artigo "The Matter of Heartbleed" (IMC 2014) reconstruiu o que veio depois,
+com dados de varredura e de tráfego real:
+
+- a divulgação começou às **17:49 UTC** de 7 de abril, com o anúncio da versão corrigida, e o
+  boletim de segurança saiu às 20:37 UTC;
+- estima-se que **24% a 55%** dos sites HTTPS populares estavam vulneráveis no início;
+- os pesquisadores fizeram varreduras regulares com o <GlossaryTerm term="ZMap">ZMap</GlossaryTerm>
+  para medir a correção ao longo do tempo;
+- a primeira tentativa de exploração que eles observaram veio de um host da Universidade da
+  Letônia, em **8 de abril às 15:18 UTC — 21 horas e 29 minutos** depois da divulgação;
+- no total, registraram 5.948 tentativas vindas de **692** origens diferentes.
+
+**A lição.** Quando uma falha grave vira pública, começa uma corrida: atacantes varrem a internet
+procurando quem ainda não corrigiu, e defensores varrem para medir e avisar. Quem tinha um
+inventário do que expunha (que servidores falam TLS, em que portas, com que versão) sabia em
+minutos onde corrigir. Quem não tinha descobriu pelo atacante. O próprio NSE tem um script para
+isso, o `ssl-heartbleed`, das categorias `vuln` e `safe` — a mesma ferramenta, dos dois lados.
+
+Fontes: [The Matter of Heartbleed (IMC 2014, PDF)](https://jhalderm.com/pub/papers/heartbleed-imc14.pdf);
+[NVD — CVE-2014-0160](https://nvd.nist.gov/vuln/detail/CVE-2014-0160);
+[NSEDoc — ssl-heartbleed](https://nmap.org/nsedoc/scripts/ssl-heartbleed.html).
+
+### O nmap no cinema: *Matrix Reloaded* (2003)
+
+**O que aconteceu.** Numa cena de *Matrix Reloaded*, de 2003, a personagem Trinity invade um
+sistema da cidade. Em vez da animação 3D que Hollywood costuma usar para "hackear", a tela mostra
+o nmap de verdade — a versão 2.54BETA25 — encontrando um SSH vulnerável,
+e depois a exploração de uma falha real do SSH1 de 2001, o "CRC32 compensation attack detector",
+registrada como CVE-2001-0144. O site do nmap tem uma página dedicada à cena e brinca: "vergonha
+para a cidade por estar vulnerável".
+
+**A lição.** O roteiro é fiel ao funil deste módulo: varrer, achar o serviço, identificar uma
+versão com falha conhecida, explorar. E a falha usada no filme tinha sido publicada dois anos
+antes. Serviços desatualizados expostos não são um problema de cinema.
+
+Fontes: [Nmap in the Movies](https://nmap.org/movies/);
+[NVD — CVE-2001-0144](https://nvd.nist.gov/vuln/detail/CVE-2001-0144).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá mapeado a rede de alvos dentro do escopo, descoberto que
+serviços e versões rodam em cada porta (inclusive um que o nmap não reconhece) e arrancado dos
+serviços detalhes que só os scripts mostram. Cada missão rende uma flag. No fim, você vai ver a
+sua própria varredura pelos olhos de quem defende.
+
+O laboratório é o **`rede-de-alvos`**: o Kali, o DVWA e o OWASP Juice Shop na mesma rede interna.
+Os dois alvos são aplicações vulneráveis de propósito, feitas para treinar, e não alcançam nada
+fora do lab.
+
+<Figure
+  src={redeEEscopo}
+  alt="Diagrama com o Kali no centro e duas redes: à esquerda a desktop_net, com o guacd, marcada como fora do escopo; à direita a lab_net, com o dvwa na porta 80 e o juice-shop na porta 3000, marcada como no escopo."
+  caption="O escopo deste lab: só a lab_net. A desktop_net leva a sua tela até o navegador e é infraestrutura da plataforma — está ao seu alcance, mas não na carta."
+/>
+
+### 5.1 Subir o lab e preparar a bancada (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Se a plataforma disser
+   que faltam imagens, rode no terminal do WSL `scripts/lab.sh pull rede-de-alvos` (é o único
+   momento com internet; o Juice Shop é uma imagem nova) e tente de novo. Pelo terminal, a
+   alternativa é `scripts/lab.sh up rede-de-alvos`.
+2. Quando o desktop do Kali aparecer, clique nele e abra um terminal, como no 2.1.
+3. Crie a pasta das evidências deste exercício, com as permissões da bancada:
+
+```console
+$ umask 077
+$ mkdir -p ~/engajamentos/lab-2.4_rede-de-alvos/evidencias/originais
+$ cd ~/engajamentos/lab-2.4_rede-de-alvos/evidencias/originais
+```
+
+<Callout variant="warning" title="Um laboratório por vez">
+Se outro lab estiver no ar, o botão vira **Trocar para este lab**. Este lab tem dois alvos e é um
+dos mais pesados da plataforma; feche o que não estiver usando no Windows antes de subir.
+</Callout>
+
+### 5.2 A carta de autorização do exercício
+
+<Callout variant="info" title="Autorização — exercício 2.4 (laboratório local)">
+**Ativos autorizados:** a rede `lab_net` do lab `rede-de-alvos` e os hosts nela.
+
+**Técnicas autorizadas:** host discovery, varredura de portas TCP e UDP, detecção de serviço,
+versão e sistema operacional, scripts NSE das categorias `default`, `safe` e `discovery`.
+
+**Fora do escopo:** a rede `desktop_net` e tudo nela (o `guacd` e o próprio Xvnc do Kali). Scripts
+das categorias `brute`, `dos`, `exploit` e `intrusive`.
+</Callout>
+
+Repare que a carta não dá endereços: os endereços do seu lab são escolhidos pelo Docker. A carta
+diz **a rede**, e cabe a você descobrir qual é a faixa dela antes de varrer — exatamente como num
+engajamento em que o cliente diz "a rede dos servidores" e você confirma a faixa com ele.
+
+### 5.3 Missão 1 — Quem está na rede (guiada)
+
+**Passo 1: qual interface é a do escopo?** Rode:
+
+```console
+$ ip -br addr
+$ getent hosts dvwa juice-shop
+```
+
+Compare os endereços dos alvos com as faixas das interfaces. A interface cuja faixa contém os
+alvos é a da `lab_net`. Anote no caderno: a interface, o endereço do Kali nela e a faixa em CIDR.
+No exemplo da seção 3.1, a `lab_net` era `192.168.0.0/16`, na `eth1`; no seu lab, os números serão
+outros.
+
+**Passo 2: a descoberta, sem privilégio.** Varra a `/24` onde estão os alvos (no exemplo,
+`192.168.0.0/24`; troque pela sua). É uma fatia da `/16`, e o porquê está na seção 3.2.
+
+```console
+$ nmap -sn 192.168.0.0/24
+Starting Nmap 7.99 ( https://nmap.org ) at 2026-10-04 15:56 +0000
+Nmap scan report for cyberlab-juice-shop-1.cyberlab_lab_net (192.168.0.1)
+Host is up (0.00058s latency).
+Nmap scan report for kali (192.168.0.2)
+Host is up (0.00050s latency).
+Nmap scan report for cyberlab-dvwa-1.cyberlab_lab_net (192.168.0.3)
+Host is up (0.00036s latency).
+Nmap done: 256 IP addresses (3 hosts up) scanned in 2.92 seconds
+```
+
+**Passo 3: a mesma descoberta, com privilégio.** Rode de novo com `sudo` (no Kali do lab ele
+não pede senha) e compare:
+
+```console
+$ sudo nmap -sn 192.168.0.0/24
+Nmap scan report for cyberlab-juice-shop-1.cyberlab_lab_net (192.168.0.1)
+Host is up (0.000041s latency).
+MAC Address: 02:00:00:00:00:01 (Unknown)
+Nmap scan report for cyberlab-dvwa-1.cyberlab_lab_net (192.168.0.3)
+Host is up (0.000039s latency).
+MAC Address: 02:00:00:00:00:03 (Unknown)
+Nmap scan report for kali (192.168.0.2)
+Host is up.
+Nmap done: 256 IP addresses (3 hosts up) scanned in 1.97 seconds
+```
+
+Duas diferenças: agora aparece o **MAC** de cada host (a resposta veio por ARP; a seção 3.2 mostra
+os pacotes), e o fabricante é `Unknown`, porque o Docker inventa os MACs. O `kali` não tem MAC
+porque é você mesmo.
+
+**Passo 4: leia os nomes.** Antes de cada endereço, entre parênteses, o nmap mostra o nome que
+encontrou pelo <GlossaryTerm term="reverse DNS">DNS reverso</GlossaryTerm> (rDNS): ele pergunta "de
+quem é este IP?" ao DNS, e o DNS embutido do Docker (2.1) responde com o nome do contêiner e da
+rede. Num engajamento real, nomes reversos como `srv-backup-01.empresa.local` contam muito sobre o
+papel de cada máquina — por isso o nmap os resolve por padrão (e `-n` desliga, para ganhar
+velocidade).
+
+**Sua tarefa:** quantos hosts responderam na `lab_net`, contando o Kali, e qual é o nome reverso
+completo do alvo que **não** é o DVWA? A flag é `FLAG{quantidade-nome}`, com o nome exatamente
+como o nmap mostra.
+
+<Hint title="Dica">
+A última linha do nmap diz quantos hosts responderam ("N hosts up"). O nome reverso é o texto antes
+do endereço entre parênteses, com todos os pontos e sublinhados. Para o Kali, o nmap mostra só
+`kali`, porque é a própria máquina.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Os três hosts da saída (Juice Shop, Kali e DVWA) respondem; o nome reverso do Juice Shop é
+`cyberlab-juice-shop-1.cyberlab_lab_net`: o nome do contêiner que o Docker Compose criou
+(`cyberlab-juice-shop-1`) seguido do nome da rede (`cyberlab_lab_net`). A flag junta os dois no
+formato pedido: `FLAG{3-cyberlab-juice-shop-1.cyberlab_lab_net}`.
+</Solution>
+
+<FlagInput task="missao-1-quem-esta-na-rede" />
+
+**Para pensar:** se você tivesse varrido a `/16` inteira, quanto tempo levaria? A seção 3.2 tem a
+medida real. E se você tivesse rodado `nmap -sn` também na faixa da `eth0`, teria encontrado o
+`guacd` — e saído do escopo na primeira varredura do módulo. Alcance não é autorização.
+
+### 5.4 Missão 2 — O que roda em cada porta (desafio)
+
+**Objetivo:** descobrir **todas** as portas TCP abertas dos dois alvos e identificar o que roda em
+cada uma, com a versão quando possível.
+
+Desta vez o caminho é seu. O que você precisa saber:
+
+- A varredura padrão olha só o top 1000. Um serviço numa porta incomum pode passar despercebido.
+  Como garantir que viu tudo? (Seção 2.7.)
+- Com `sudo`, a varredura de todas as portas de dois hosts numa rede local leva poucos segundos.
+  Sem `sudo`, também funciona, só que mais devagar.
+- Salve a evidência: `-oA` com um nome que diga o que é (seção 2.10).
+- A coluna SERVICE da varredura de portas não é detecção. Para saber o que roda de verdade, você
+  precisa do `-sV` (seção 2.8).
+
+<Hint title="Dica 1 — as portas">
+`sudo nmap -p- dvwa juice-shop` varre as 65.535 portas dos dois. Compare com a varredura padrão:
+apareceu alguma porta nova? A porta do Juice Shop está no top 1000? (A resposta está na diferença
+entre as duas saídas.)
+</Hint>
+
+<Hint title="Dica 2 — o serviço que o nmap não conhece">
+Num dos alvos, o `-sV` vai responder com um `?` e um bloco grande de linhas `SF:`. Não pule esse
+bloco: são as respostas que o serviço deu às sondas. Procure a resposta à sonda `GetRequest` e
+leia a primeira linha. Os caracteres `\x20` são espaços e `\r\n` são quebras de linha.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+A varredura de todas as portas confirma que cada alvo tem uma porta só:
+
+```console
+$ sudo nmap -p- -n -oA portas-todas dvwa juice-shop
+Nmap scan report for dvwa (192.168.0.3)
+Host is up (0.000014s latency).
+Not shown: 65534 closed tcp ports (reset)
+PORT   STATE SERVICE
+80/tcp open  http
+MAC Address: 02:00:00:00:00:03 (Unknown)
+
+Nmap scan report for juice-shop (192.168.0.1)
+Host is up (0.000014s latency).
+Not shown: 65534 closed tcp ports (reset)
+PORT     STATE SERVICE
+3000/tcp open  ppp
+MAC Address: 02:00:00:00:00:01 (Unknown)
+
+Nmap done: 2 IP addresses (2 hosts up) scanned in 2.79 seconds
+```
+
+A porta 3000 está no top 1000 (a varredura padrão já a achava), e o nmap a chama de `ppp` — só o
+nome do `nmap-services`. A detecção de versão:
+
+```console
+$ nmap -sV -p 80,3000 dvwa juice-shop
+Nmap scan report for dvwa (192.168.0.3)
+PORT     STATE  SERVICE VERSION
+80/tcp   open   http    Apache httpd 2.4.68 ((Debian))
+3000/tcp closed ppp
+
+Nmap scan report for juice-shop (192.168.0.1)
+PORT     STATE  SERVICE VERSION
+80/tcp   closed http
+3000/tcp open   ppp?
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port3000-TCP:V=7.99%I=7%D=10/4%Time=6AC279BE%P=x86_64-pc-linux-gnu%r(Ge
+SF:tRequest,2668,"HTTP/1\.1\x20200\x20OK\r\nAccess-Control-Allow-Origin:\x
+SF:20\*\r\nX-Content-Type-Options:\x20nosniff\r\nX-Frame-Options:\x20SAMEO
+SF:RIGIN\r\nFeature-Policy:\x20payment\x20'self'\r\nX-Recruiting:\x20/#/jo
+SF:bs\r\n...
+```
+
+No DVWA, a versão é **2.4.68**. No Juice Shop, o nmap não reconheceu o serviço (`ppp?`), mas a
+resposta à sonda `GetRequest` começa com `HTTP/1.1 200 OK`: a porta 3000 fala **http**. Mais
+adiante no bloco aparece até o `<title>OWASP Juice Shop</title>`. A flag é `FLAG{2.4.68-http}`.
+</Solution>
+
+<FlagInput task="missao-2-o-que-roda-em-cada-porta" />
+
+<Figure
+  src={nmapNoKali}
+  alt="Captura de tela do desktop do Kali dentro da plataforma, com um terminal mostrando a saída do nmap -sV: o DVWA com Apache httpd 2.4.68 na porta 80 e o Juice Shop com ppp? na porta 3000 e o aviso de serviço não reconhecido."
+  caption="O -sV no desktop do Kali do lab (captura real, sem sudo). O comando passou a saída por um sed que troca a faixa de IPs do Docker pela faixa de exemplo deste módulo; o resto é a saída do nmap como ela aparece."
+/>
+
+**Para pensar:** por que o nmap reconheceu o Apache e não o Juice Shop, se os dois falam HTTP? O
+Apache se apresenta pelo nome no cabeçalho `Server`, e o banco de padrões do nmap tem esse
+formato. O Juice Shop, uma aplicação Node.js, não manda `Server` nem `X-Powered-By` — e sem nome
+anunciado, o `-sV` não teve onde se apoiar. Esconder o nome atrapalhou o nmap, mas não escondeu
+que ali há uma aplicação web. Guarde essa observação para a seção 8.
+
+### 5.5 Missão 3 — Os scripts falam (desafio)
+
+**Objetivo:** usar scripts NSE para tirar dos dois serviços web duas informações que a varredura
+de portas e o `-sV` não mostraram: o que o `robots.txt` do Juice Shop pede para os buscadores não
+visitarem, e que versão de PHP o DVWA anuncia.
+
+O que você precisa saber:
+
+- O `robots.txt` é um arquivo na raiz de um site com instruções para robôs de busca. As linhas
+  `Disallow:` listam o que o site **não** quer indexado — e, por isso mesmo, costumam apontar
+  para o que é interessante.
+- Os scripts `http-robots.txt` e `http-headers` estão nas categorias autorizadas pela carta.
+  Leia a descrição de cada um antes de rodar: `nmap --script-help http-headers`.
+- Num dos dois alvos, os scripts vão funcionar de primeira. No outro, não vão dar nenhum resultado,
+  sem nenhuma mensagem de erro. A seção 2.9 explica por quê.
+
+<Hint title="Dica 1 — o DVWA">
+`nmap -p 80 --script http-headers dvwa` mostra todos os cabeçalhos da resposta. Um deles diz que
+linguagem gera as páginas e em que versão.
+</Hint>
+
+<Hint title="Dica 2 — o silêncio do Juice Shop">
+O script não rodou porque a portrule dele pede uma porta reconhecida como HTTP, e para o nmap a
+3000 é `ppp`. A documentação do NSE tem um caractere que, posto antes do nome do script, força a
+execução.
+</Hint>
+
+<Solution title="Solução da Missão 3">
+No DVWA, os scripts rodam direto:
+
+```console
+$ nmap -p 80 -n --script http-headers,http-robots.txt dvwa
+PORT   STATE SERVICE
+80/tcp open  http
+| http-robots.txt: 1 disallowed entry
+|_/
+| http-headers:
+|   Date: Sun, 04 Oct 2026 16:23:05 GMT
+|   Server: Apache/2.4.68 (Debian)
+|   X-Powered-By: PHP/8.5.10
+|   Set-Cookie: security=low; path=/
+|   Set-Cookie: PHPSESSID=0f1e2d3c4b5a69788796a5b4c3d2e1f0; expires=Mon, 05 Oct 2026 16:23:05 GMT; Max-Age=86400; path=/
+|   Expires: Tue, 23 Jun 2009 12:00:00 GMT
+|   Cache-Control: no-cache, must-revalidate
+|   Pragma: no-cache
+|   Connection: close
+|   Content-Type: text/html;charset=utf-8
+|
+|_  (Request type: HEAD)
+```
+
+No Juice Shop, pedir os scripts pelo nome não imprime nada:
+
+```console
+$ nmap -p 3000 -n --script http-title,http-robots.txt,http-headers juice-shop
+PORT     STATE SERVICE
+3000/tcp open  ppp
+```
+
+Com o `+`, que ignora a portrule:
+
+```console
+$ nmap -p 3000 -n --script +http-title,+http-robots.txt,+http-headers juice-shop
+PORT     STATE SERVICE
+3000/tcp open  ppp
+| http-headers:
+|   Access-Control-Allow-Origin: *
+|   X-Content-Type-Options: nosniff
+|   X-Frame-Options: SAMEORIGIN
+|   Feature-Policy: payment 'self'
+|   X-Recruiting: /#/jobs
+|   Accept-Ranges: bytes
+|   Cache-Control: public, max-age=0
+|   ...
+|_  (Request type: HEAD)
+|_http-title: OWASP Juice Shop
+| http-robots.txt: 1 disallowed entry
+|_/ftp
+```
+
+O `robots.txt` do Juice Shop proíbe `/ftp`, e o DVWA anuncia `PHP/8.5.10`. A flag é
+`FLAG{ftp-8.5.10}`. (Repare também no cabeçalho `X-Recruiting` do Juice Shop: um cabeçalho fora do
+padrão é sempre algo a anotar.)
+</Solution>
+
+<FlagInput task="missao-3-os-scripts-falam" />
+
+**Para pensar:** o `/ftp` está "escondido" só para robôs bem-comportados. Qualquer pessoa pode
+abrir `http://juice-shop:3000/ftp` no Firefox do Kali. O `robots.txt` não é controle de acesso — é
+um mapa do que o dono considera sensível. Você vai voltar a ele no 2.8 e na Trilha 4.
+
+### 5.6 Walkthrough: a sua varredura vista pelo defensor (sem flag)
+
+Até aqui você olhou do lado de quem varre. Agora, do lado do alvo. O DVWA manda o log de acesso
+do Apache para a saída do contêiner, e você pode lê-lo do **terminal do WSL** (não do Kali, que não
+tem acesso ao Docker):
+
+```console
+$ docker logs cyberlab-dvwa-1 2>&1 | tail -n 5
+```
+
+Fizemos o teste em três etapas, contando as linhas do log antes e depois de cada varredura:
+
+1. **`sudo nmap -sS -p 80 dvwa`** (SYN scan): **nenhuma** linha nova.
+2. **`nmap -sT -p 80 dvwa`** (connect scan): **nenhuma** linha nova, mesmo esperando 25 segundos.
+   A conexão completou, mas o nmap a derrubou sem mandar uma requisição, e o Apache só registra
+   requisições.
+3. **Os scripts NSE:** milhares de linhas. Um trecho real:
+
+```text
+192.168.0.2 - - [04/Oct/2026:16:07:26 +0000] "GET /nmaplowercheck1791130046 HTTP/1.1" 404 486 "-" "Mozilla/5.0 (compatible; Nmap Scripting Engine; https://nmap.org/book/nse.html)"
+192.168.0.2 - - [04/Oct/2026:16:07:26 +0000] "GET /HNAP1 HTTP/1.1" 404 486 "-" "Mozilla/5.0 (compatible; Nmap Scripting Engine; https://nmap.org/book/nse.html)"
+192.168.0.2 - - [04/Oct/2026:16:07:32 +0000] "GET /.git/HEAD HTTP/1.1" 404 486 "-" "Mozilla/5.0 (compatible; Nmap Scripting Engine; https://nmap.org/book/nse.html)"
+192.168.0.2 - - [04/Oct/2026:16:07:32 +0000] "PROPFIND / HTTP/1.1" 302 478 "-" "Mozilla/5.0 (compatible; Nmap Scripting Engine; https://nmap.org/book/nse.html)"
+```
+
+Só o script `http-enum`, que testa uma lista de caminhos conhecidos, gerou mais de 2.200
+requisições numa única execução, todas com o mesmo
+<GlossaryTerm term="user agent">User-Agent</GlossaryTerm>: `Mozilla/5.0 (compatible; Nmap
+Scripting Engine; https://nmap.org/book/nse.html)`, o valor padrão da biblioteca HTTP do NSE.
+
+Três conclusões, que a seção 8 transforma em defesa:
+
+- **Varredura de portas não aparece no log da aplicação.** Para enxergá-la, é preciso olhar a
+  **rede**: logs do firewall, um IDS.
+- **Scripts aparecem, e muito.** Um único `http-enum` grita no
+  <GlossaryTerm term="access log">access log</GlossaryTerm>. O User-Agent pode ser trocado
+  (`--script-args http.useragent=...`), mas o volume e o padrão de caminhos continuam lá.
+- **O "barulho" é escolha de quem varre.** O funil da abertura não é só ordem lógica; é também
+  ordem de discrição.
+
+Ao terminar, desligue o lab pelo botão **Parar** (ou `scripts/lab.sh down rede-de-alvos`). As
+suas evidências ficam em `~/engajamentos`, que sobrevive.
+
+## 6. Variações e aprofundamento
+
+### 6.1 Varrer a internet inteira: ZMap e masscan
+
+O nmap é desenhado para precisão em redes de tamanho humano. Para varrer **todo** o IPv4 numa
+porta, surgiram ferramentas de outra família, a da
+<GlossaryTerm term="Internet-wide scanning">varredura da internet inteira</GlossaryTerm>:
+
+- O **ZMap** (Universidade de Michigan, USENIX Security 2013) varre todo o espaço IPv4 público em
+  menos de 45 minutos a partir de uma única máquina com rede gigabit — e, segundo o README do
+  projeto, em menos de 5 minutos numa rede de 10 gigabits. O próprio projeto se define como um
+  scanner *stateless* de um pacote só: manda uma sonda por endereço e não mantém o estado de cada
+  conexão, como o nmap faz.
+- O <GlossaryTerm term="masscan">masscan</GlossaryTerm>, de Robert Graham, tem pilha TCP/IP
+  própria e promete, no README, varrer a internet em menos de 5 minutos a 10 milhões de pacotes por
+  segundo — em hardware e rede adequados.
+
+Elas respondem só "aberta ou não", sem detecção de versão, scripts nem a cautela do nmap. O fluxo
+comum é usar uma delas para achar portas abertas em faixas enormes e o nmap para detalhar o que
+foi encontrado. Foi com varreduras desse tipo que os pesquisadores do Heartbleed mediram a
+correção, e é com elas que serviços como o <GlossaryTerm term="Shodan">Shodan</GlossaryTerm> montam
+seus índices — que, para você, viram reconhecimento **passivo** (2.2): alguém já varreu por você.
+
+### 6.2 IPv6: o fim da varredura por força bruta
+
+Uma rede IPv6 típica é um `/64`: 2⁶⁴ endereços, cerca de 18 quintilhões. Nem o ZMap varre isso. No
+IPv6, a descoberta de hosts muda de natureza: o nmap usa Neighbor Discovery na rede local (o
+"ARP do IPv6"), e de fora o caminho é achar endereços por outros meios — DNS, certificados,
+padrões previsíveis de endereçamento, registros públicos. O nmap varre IPv6 com `-6`, mas você
+precisa saber o endereço antes.
+
+### 6.3 Fugir do firewall e do IDS: o que existe e o que esperar
+
+O nmap tem uma seção inteira de opções de evasão
+([Firewall/IDS Evasion and Spoofing](https://nmap.org/book/man-bypass-firewalls-ids.html)):
+
+- `-f` fragmenta os pacotes para dificultar a inspeção por filtros simples;
+- `-D` faz uma <GlossaryTerm term="decoy scan">varredura com iscas</GlossaryTerm>: o alvo vê
+  sondas vindas de vários endereços, e o seu fica no meio da multidão;
+- `-g` / `--source-port` usa uma porta de origem fixa (como 53), para passar por firewalls mal
+  configurados que confiam na porta de origem;
+- `--data-length` acrescenta bytes aleatórios aos pacotes.
+
+A própria documentação avisa: não existe opção mágica para passar por firewalls e IDS; é questão
+de habilidade e experiência. Num pentest, essas opções servem para testar se as defesas do cliente
+detectam o que deveriam, e só quando a carta autoriza testes de evasão.
+
+### 6.4 Idle scan: varrer sem aparecer
+
+O <GlossaryTerm term="idle scan">idle scan</GlossaryTerm> (`-sI`), publicado pelo pesquisador
+Antirez na lista Bugtraq em 1998, é a técnica mais engenhosa do nmap. Todo pacote IP tem um
+número de identificação (IP ID), e muitos sistemas antigos o incrementam de um em um. O atacante
+escolhe uma máquina ociosa (o "zumbi"), lê o IP ID dela, manda ao alvo um SYN **forjado com o
+endereço do zumbi** e lê o IP ID do zumbi de novo. Se a porta do alvo estava aberta, o alvo mandou
+SYN/ACK ao zumbi, o zumbi respondeu RST e o contador andou dois; se estava fechada, andou um. O alvo
+nunca vê o endereço do atacante. Sistemas modernos usam IP IDs aleatórios e quase não servem mais
+de zumbi, mas a técnica ensina muito sobre como inferir estado por canais laterais.
+
+### 6.5 Monitorar a própria superfície: ndiff
+
+Uma varredura é uma foto. Duas varreduras comparadas são um filme. O
+<GlossaryTerm term="ndiff">ndiff</GlossaryTerm>, do projeto nmap, compara dois arquivos XML e
+marca com `+` o que apareceu e com `-` o que sumiu ([Ndiff](https://nmap.org/book/ndiff-man.html)):
+
+```console
+$ ndiff ontem.xml hoje.xml
+```
+
+Um defensor que varre a própria rede toda noite e lê o ndiff descobre o servidor de teste que
+alguém esqueceu ligado antes do atacante. O Kali deste lab não traz o ndiff (é um pacote separado,
+que não entrou na imagem), mas a ideia funciona com o `diff` sobre a saída grepable — veja os
+exercícios.
+
+### 6.6 Escrever um script NSE
+
+Os scripts do NSE são texto: abra um deles e leia.
+
+```console
+$ less /usr/share/nmap/scripts/http-title.nse
+```
+
+Você vai encontrar a estrutura de todo script: `description` (o que faz), `categories` (o risco),
+`portrule` (quando roda — no `http-title`, `shortport.http`, a regra que deixou a porta 3000 de
+fora) e `action` (o que faz de fato). Com a base de programação que você tem, escrever um script
+simples é questão de uma tarde, e a [documentação do NSE](https://nmap.org/book/nse.html) ensina o
+caminho. Isso fica para quando a necessidade aparecer.
+
+## 7. Erros comuns
+
+- **"Host seems down", mas o host está ligado.** O host não respondeu a nenhuma sonda de
+  descoberta (comum em servidores que filtram ICMP). Use `-Pn` para pular a descoberta — e lembre
+  que, numa rede local, o ARP ainda roda.
+- **Achar que fez SYN scan sem `sudo`.** Sem privilégio, o nmap faz connect scan. A saída entrega:
+  `closed tcp ports (conn-refused)` é connect; `(reset)` é SYN. Os arquivos gravados com
+  `sudo nmap -oA` ficam com dono `root` — use `sudo chown kali:kali` neles depois, ou eles
+  atrapalham a sua bancada.
+- **Tratar `filtered` como `closed`.** Filtrada é dúvida. Um serviço pode estar atrás dela,
+  liberado só para outros endereços.
+- **Confiar na coluna SERVICE.** Sem `-sV`, ela só traduz o número da porta. A 3000 do Juice Shop
+  "é" `ppp`.
+- **Pular o bloco `SF:`.** Quando o `-sV` não reconhece o serviço, a resposta está ali.
+- **Script que "não funciona".** Antes de achar que o alvo é imune, confira se a portrule deixou o
+  script rodar. `--script-trace` e `-d` mostram o que acontece; o `+` força.
+- **Varrer a faixa inteira por reflexo.** A `/16` do lab passou de meia hora sem terminar; a `/24`
+  com os alvos levou 2 segundos. Use o que você sabe para cortar a faixa.
+- **Achar que o top 1000 é tudo.** Não é. Para um alvo do escopo, o `-p-` é obrigatório antes de
+  dizer "só tem isso aberto".
+- **Esquecer o DNS.** O nmap resolve o nome reverso de cada IP. Numa rede grande, com um DNS lento,
+  isso domina o tempo. `-n` desliga quando você não precisa dos nomes.
+- **`-T5` "porque é mais rápido".** Ele corta as retransmissões para 2 e perde portas em redes
+  instáveis. `-T4` é o equilíbrio recomendado.
+- **UDP que nunca termina.** Varrer as 65.535 portas UDP leva horas. Comece com
+  `--top-ports 20` ou `100`.
+- **Varrer fora do escopo.** Uma interface a mais na attack box é uma rede a mais ao alcance. Antes
+  de cada varredura, confira a faixa contra a carta.
+
+## 8. Defesa e mitigação
+
+Varredura não se "corrige" — a rede precisa responder. O que se faz é **reduzir** o que a varredura
+encontra, **controlar** o que ela aprende e **detectar** quando ela acontece.
+
+### 8.1 Menos superfície: o que não existe não é encontrado
+
+A defesa mais forte é a do Mirai ao contrário. Para cada porta aberta, pergunte: precisa existir?
+Precisa estar acessível para todo mundo? Na prática:
+
+- **Desligue o que não usa.** Serviço de teste, painel de administração, Telnet de fábrica.
+- **Escute só na interface necessária.** Um banco de dados que só a aplicação usa escuta em
+  `127.0.0.1` ou numa rede interna, nunca em `0.0.0.0` (a lição do Xvnc do 2.1).
+- **Faça o inventário você mesmo, antes do atacante.** Varra a sua rede de forma autorizada e
+  regular, salve em XML e compare com o ndiff. Porta nova sem dono é incidente até que se prove o
+  contrário.
+
+### 8.2 Firewall: negar por padrão, e escolher como recusar
+
+A política de <GlossaryTerm term="default deny">default deny</GlossaryTerm> nega tudo e libera só
+o que tem motivo. Com o `nftables` do Linux, um servidor web que só deve ser acessado nas portas 80
+e 443 fica assim (salvo num arquivo e carregado com `nft -f arquivo`):
+
+```text
+table inet filtro {
+    chain entrada {
+        type filter hook input priority 0; policy drop;
+        ct state established,related accept
+        iif "lo" accept
+        tcp dport { 80, 443 } accept
+    }
+}
+```
+
+`policy drop` descarta em silêncio tudo o que não casou com uma regra: para o nmap, as outras
+portas viram `filtered`, e a varredura fica lenta, porque cada sonda espera e retransmite. A
+alternativa é recusar ativamente, trocando o `drop` final por uma regra `reject with tcp reset`: as
+portas aparecem `closed`, a varredura termina rápido e as aplicações legítimas recebem um erro
+imediato em vez de esperar. Nenhuma das duas esconde as portas liberadas; a escolha muda o que o
+atacante aprende sobre o filtro e quanto tempo ele perde.
+
+### 8.3 Segmentação: a varredura vê só o seu pedaço
+
+A <GlossaryTerm term="network segmentation">segmentação de rede</GlossaryTerm> divide a rede em
+zonas com filtros entre elas. Uma máquina comprometida no setor de vendas não deveria nem
+conseguir mandar um ARP para o servidor de banco de dados. Esta plataforma é um exemplo pequeno: o
+banco do DVWA vive na `dvwa_back`, que o Kali não alcança, e por isso não apareceu em nenhuma das
+suas varreduras. O que não está no mesmo segmento não aparece no `nmap -sn`.
+
+### 8.4 Banners: higiene, não proteção
+
+O DVWA anunciou `Apache/2.4.68 (Debian)` e `PHP/8.5.10` porque a configuração do Debian traz
+`ServerTokens OS` (e `ServerSignature On`) e o PHP vem com `expose_php` ligado — conferimos dentro
+do contêiner. As configurações que reduzem o anúncio:
+
+```text
+# Apache (no Debian: /etc/apache2/conf-available/security.conf)
+ServerTokens Prod
+ServerSignature Off
+
+# PHP (php.ini)
+expose_php = Off
+```
+
+```js
+// Express (Node.js)
+app.disable("x-powered-by");
+```
+
+Mas leia o que as próprias documentações dizem. A do Apache: esconder o cabeçalho `Server` **não
+traz benefício real de segurança**, porque a informação é obtida por outros meios. A do Express:
+desligar o `X-Powered-By` não impede que um atacante sofisticado descubra que a aplicação usa
+Express. O lab mostrou as duas coisas: o Juice Shop não anuncia nada, o nmap não reconheceu o
+software, e mesmo assim ficou óbvio que era uma aplicação web. Esconder a versão corta o trabalho
+de quem procura alvos pela versão anunciada; o que protege de fato é **estar na versão corrigida**.
+
+### 8.5 Detectar a varredura
+
+- **Na rede, não na aplicação.** O walkthrough 5.6 provou: varreduras de porta não aparecem no
+  access log. Elas aparecem nos logs de um firewall que registra as conexões recusadas e num
+  <GlossaryTerm term="IDS">IDS</GlossaryTerm>, que vê o padrão "um endereço tocando dezenas de
+  portas em segundos".
+- **Regras de assinatura.** O <GlossaryTerm term="Suricata">Suricata</GlossaryTerm> e o conjunto
+  aberto de regras Emerging Threats têm uma categoria inteira para varreduras (`ET SCAN`). Uma
+  regra própria para o User-Agent que você viu no log seria assim:
+
+```text
+alert http any any -> $HOME_NET any (msg:"LOCAL NSE User-Agent"; flow:established,to_server; http.user_agent; content:"Nmap Scripting Engine"; sid:1000001; rev:1;)
+```
+
+  Ela pega o padrão — e falha no dia em que o atacante trocar o User-Agent. Regra de assinatura é
+  uma camada, não a defesa inteira.
+- **Armadilhas.** Um <GlossaryTerm term="honeypot">honeypot</GlossaryTerm> — um endereço ou porta
+  que nenhum uso legítimo toca — transforma qualquer conexão em alerta de alta confiança. Numa rede
+  interna, quem varre esbarra nele.
+- **Volume no access log.** Centenas de 404 em sequência vindos do mesmo endereço, procurando
+  `/.git/HEAD`, `/HNAP1`, `/admin`, são uma varredura de conteúdo, com ou sem o User-Agent do NSE.
+
+### 8.6 Quando a varredura é você
+
+O pentester também precisa de defesa: varra só o que está na carta, com as técnicas autorizadas,
+na janela combinada, e anote o horário de cada varredura (1.5). Se o cliente tem um SOC, combine
+antes se ele deve ou não ser avisado. E guarde a saída: ela é evidência, e é ela que permite ao
+cliente separar a sua varredura de uma varredura real que aconteça no mesmo dia.
+
+## 9. Exercícios
+
+As três flags deste módulo estão nas missões da seção 5. O quiz abaixo cobre a teoria; ele conta
+para concluir o módulo.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar
+
+**a)** Num pentest externo, o nmap diz que o único servidor do escopo está "down". O cliente
+garante que ele está no ar e atende o site da empresa. O que aconteceu, e o que você faz?
+
+<Solution title="Discussão do cenário a">
+O servidor provavelmente filtra as sondas de descoberta: ICMP bloqueado e, se você está sem
+privilégio, nem as portas 80 e 443 responderam a tempo (ou estão filtradas para a sua origem).
+Repita com `-Pn`, que pula a descoberta, e varra as portas que você sabe que deveriam estar abertas
+(`-p 80,443`). Se mesmo assim nada responde, confira com o cliente se o seu endereço de origem não
+está bloqueado — muitos testes externos exigem que o IP do pentester seja liberado antes.
+</Solution>
+
+**b)** A carta autoriza "varredura de vulnerabilidades" num servidor. Um colega propõe rodar
+`nmap --script vuln,exploit,brute -p- alvo` "para não perder nada". O que você responde?
+
+<Solution title="Discussão do cenário b">
+Que "varredura de vulnerabilidades" não autoriza exploração nem força bruta. A categoria `exploit`
+ataca de fato, e a `brute` tenta senhas e pode bloquear contas reais. Mesmo dentro da `vuln`, alguns
+scripts são intrusivos: leia a descrição de cada um (`--script-help`) e confira as categorias. Se
+quiser algo mais agressivo, o caminho é pedir um adendo à carta (1.3), não rodar e explicar depois.
+</Solution>
+
+**c)** Um cliente pergunta: "Se eu esconder as versões dos meus servidores, fico protegido do
+nmap?" O que você explica?
+
+<Solution title="Discussão do cenário c">
+Que esconder versões é higiene, não proteção (seção 8.4). Tira a informação mais fácil e atrapalha
+varreduras automatizadas que procuram versões específicas, mas o nmap continua achando as portas,
+e o `-sV` e os scripts identificam muita coisa pelo comportamento — o lab mostrou o Juice Shop sem
+nome nenhum e, mesmo assim, claramente HTTP. O que protege é reduzir o que está exposto (8.1),
+filtrar (8.2), segmentar (8.3) e manter tudo corrigido.
+</Solution>
+
+### Exercícios práticos extras (sem flag)
+
+1. Com o lab no ar, rode `sudo nmap -sU --top-ports 20 --reason dvwa` e conte quantas portas
+   aparecem como `closed` e quantas como `open|filtered`. Rode de novo: os números mudam? Por quê?
+2. Rode `sudo nmap -O dvwa`. O que o nmap diz sobre o sistema operacional, e por que isso faz
+   sentido para um contêiner?
+3. Grave a varredura de todas as portas dos dois alvos, com detecção de versão
+   (`sudo nmap -n -sV -p- -oA rede dvwa juice-shop`), e mostre, só com `grep` sobre o arquivo
+   `.gnmap`, as linhas com portas abertas.
+4. Grave duas varreduras com `-oG` (uma do `dvwa` e uma do `juice-shop`) e compare-as com `diff`.
+   Que linhas mudaram? É a ideia do ndiff, com ferramentas que você já conhece.
+5. Abra `/usr/share/nmap/scripts/http-robots.txt.nse` com o `less` e encontre a `portrule` e as
+   `categories`.
+
+<Solution title="Soluções dos exercícios extras">
+1. No lab, a primeira execução mostrou 10 portas `closed` (com `port-unreach`) e 10
+   `open|filtered` (com `no-response`), embora o DVWA não tenha serviço UDP algum. Repetindo, o
+   número de `open|filtered` foi 9, depois 0, depois 8 — e não eram sempre as mesmas portas. As
+   portas sem resposta são vítimas do limite de mensagens ICMP do kernel
+   (`net.ipv4.icmp_ratelimit = 1000` no contêiner): quais ficam sem resposta depende de quantas
+   mensagens o kernel ainda podia mandar naquele momento.
+2. "No exact OS matches for host", seguido da impressão digital TCP/IP. O contêiner não tem sistema
+   operacional próprio na rede: a pilha é a do kernel do WSL2, e o banco do nmap não tem uma
+   assinatura exata para essa combinação.
+3. `grep open rede.gnmap`. No lab, as linhas foram:
+   `Host: 192.168.0.3 ()	Ports: 80/open/tcp//http//Apache httpd 2.4.68 ((Debian))/	Ignored State: closed (65534)`
+   e `Host: 192.168.0.1 ()	Ports: 3000/open/tcp//ppp?///	Ignored State: closed (65534)`.
+   O cabeçalho do arquivo registra o comando como `/usr/lib/nmap/nmap`: o `/usr/bin/nmap` do Kali
+   do lab é um pequeno script que chama o binário real.
+4. O `diff` mostra as linhas `Host:` e `Ports:` diferentes e a linha de comando no cabeçalho. Para
+   comparar a mesma rede em dias diferentes, é exatamente o que você quer ver.
+5. `portrule = shortport.http` e `categories = {"default", "discovery", "safe"}`. A `shortport.http`
+   é a regra que deixou a porta 3000 de fora na Missão 3.
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Reconhecimento ativo toca o alvo: só com autorização e só no escopo — e estar ao alcance não é
+  estar no escopo.
+- Uma varredura TCP lê três reações: SYN/ACK (open), RST (closed) e silêncio ou ICMP unreachable
+  (filtered). Os seis estados do nmap dizem o que foi provado e o que é dúvida.
+- O host discovery usa ARP na rede local (com privilégio), quatro sondas fora dela, e connect em
+  80/443 sem privilégio. `-sn` só descobre; `-Pn` pula a descoberta.
+- SYN scan (`-sS`) precisa de raw socket (root) e nunca completa a conexão; connect scan (`-sT`)
+  usa o sistema e completa. No Kali do lab, `sudo` decide qual dos dois roda.
+- O padrão é o top 1000; `-p-` vê tudo. Sem `-sV`, a coluna SERVICE é só o nome da porta.
+- `-sV` conversa com o serviço; quando não reconhece, a resposta está no bloco `SF:`.
+- O NSE estende o nmap com scripts em categorias de risco; a portrule decide onde cada um roda e o
+  `+` força.
+- UDP é lento e ambíguo por causa do limite de ICMP do kernel.
+- Varredura de portas não aparece no log da aplicação; scripts aparecem, aos milhares. Detectar é
+  trabalho da rede (firewall, IDS, honeypot).
+- Defesa: menos superfície, default deny, segmentação, versões corrigidas. Esconder banners é
+  higiene, não proteção.
+- Mirai (2016), Heartbleed (2014) e *Matrix Reloaded* (2003) mostram a varredura como arma em
+  massa, como corrida e como o primeiro passo de qualquer ataque.
+
+### Cola rápida
+
+| Para... | Use |
+|---|---|
+| Ver em que redes você está | `ip -br addr`, `getent hosts alvo` |
+| Descobrir hosts vivos | `nmap -sn faixa` (com `sudo`, por ARP na rede local) |
+| Pular a descoberta | `-Pn` (na rede local, `--disable-arp-ping` também) |
+| SYN scan / connect scan | `sudo nmap -sS` / `nmap -sT` |
+| Todas as portas | `-p-` |
+| As N portas mais comuns | `--top-ports N`, `-F` (100) |
+| UDP | `sudo nmap -sU --top-ports 20` |
+| Serviço e versão | `-sV` |
+| Sistema operacional | `sudo nmap -O` |
+| Scripts padrão | `-sC` (= `--script=default`) |
+| Um script, forçando a portrule | `--script +nome` |
+| Ler sobre um script | `nmap --script-help nome` |
+| Entender os estados | `--reason`, `--packet-trace` |
+| Salvar a evidência | `-oA base` |
+| Sem DNS reverso | `-n` |
+| Temporização equilibrada | `-T4` |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Nmap Network Scanning](https://nmap.org/book/) — o livro oficial, de Gordon Lyon, com a maior
+  parte disponível no site.
+- [Nmap Reference Guide](https://nmap.org/book/man.html) — a página de manual completa, opção por
+  opção.
+- [NSEDoc](https://nmap.org/nsedoc/) — a documentação de cada script e biblioteca do NSE.
+- [ZMap: Fast Internet-wide Scanning (USENIX Security 2013)](https://www.usenix.org/conference/usenixsecurity13/technical-sessions/paper/durumeric)
+  — o artigo que mudou a escala das varreduras.
+- [CISA — Alert TA16-288A](https://www.cisa.gov/news-events/alerts/2016/10/14/heightened-ddos-threat-posed-mirai-and-other-botnets)
+  — o alerta sobre o Mirai, com as recomendações de defesa.

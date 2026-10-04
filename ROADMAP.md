@@ -197,7 +197,11 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   `script`/`scriptreplay` e Git) escritos. Trilha 2: 2.1 "Kali Linux e organização do
   ambiente" (lab `kali`; três missões no próprio Kali: o inventário da attack box e o serviço
   que ela expõe, a bancada de um engajamento fictício conferida por um hash das pastas e
-  permissões, e a prova de dentro do isolamento pelos nomes que o Kali resolve) escrito.
+  permissões, e a prova de dentro do isolamento pelos nomes que o Kali resolve) e 2.4
+  "Reconhecimento e nmap" (lab `rede-de-alvos`; três missões contra o DVWA e o Juice Shop na
+  `lab_net`, com a `desktop_net` fora do escopo: a descoberta de hosts, os serviços e versões,
+  inclusive um que o nmap não reconhece, e os scripts NSE forçados contra a portrule, e
+  walkthrough do rastro da varredura no log do Apache) escritos.
 
 ## Fase 10 — Conteúdo: Trilhas 3–5
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.
