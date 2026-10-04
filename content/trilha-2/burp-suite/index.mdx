@@ -1,0 +1,863 @@
+---
+slug: burp-suite
+track: trilha-2
+title: "Burp Suite"
+prerequisites: [redes-tcp-ip, kali-linux]
+lab: juice-shop
+tasks:
+  - slug: missao-1-proxy-e-escopo
+    title: "Missão 1 — O proxy e o escopo"
+    type: flag
+    prompt: "A versão que o endpoint de versão do Juice Shop devolve e o valor do campo customMetricsPrefix da configuração da aplicação, ambos lidos no HTTP history do Burp, no formato FLAG{versao-prefixo}."
+    hint: "Com o proxy ligado e o escopo definido, carregue a página inicial e procure no HTTP history as chamadas que o front-end faz sozinho para /rest/admin/application-version e /rest/admin/application-configuration. As duas respostas são JSON; leia os dois valores lá."
+    flag:
+      hash: "scrypt$16384$8$1$f3b0c7f0260ac3e0e657ddaf05125d6d1c6d4d162e3061b956f616d3778d3820"
+      salt: "b2a8d30d3e3aced7fb0677b72b78a254"
+  - slug: missao-2-repeater-zero-estrelas
+    title: "Missão 2 — Repeater e a validação do cliente"
+    type: flag
+    prompt: "A chave (key) do desafio que você resolveu ao enviar um feedback que a interface proibia e a nota que você conseguiu gravar, no formato FLAG{chave-nota}."
+    hint: "A interface não deixa enviar a nota mínima. Capture o envio de um feedback válido, mande para o Repeater, troque a nota pelo valor proibido (resolva o captcha da requisição) e reenvie. Depois ache, na lista de desafios do Juice Shop, a key do desafio que ficou como resolvido."
+    flag:
+      hash: "scrypt$16384$8$1$90fdeccdd21979ed5e9d8b7fd9f80c1538e3d27b0d2d3ac76de325a7345e9d4f"
+      salt: "11191ebb6f2254e6cfa9155bc4e20393"
+  - slug: missao-3-intruder-senha-fraca
+    title: "Missão 3 — Intruder e a senha fraca"
+    type: flag
+    prompt: "A senha do admin que o Intruder revelou e o código de status HTTP da resposta que se destacou das outras na tabela de resultados, no formato FLAG{senha-status}."
+    hint: "Mande o POST de login para o Intruder, marque o campo da senha como posição, use uma lista curta de senhas comuns e dispare um ataque Sniper. A tentativa certa se destaca na coluna de status (e de tamanho) das demais. A senha que funcionou é o primeiro valor; o status dela é o segundo."
+    flag:
+      hash: "scrypt$16384$8$1$281f69ff31baa6a299892a36701379a43692bb8325a4da3135c602fa644d7fd8"
+      salt: "f1c0140cf99b6f2aa9aab23d3ed1553e"
+  - slug: quiz-final
+    title: "Quiz — Burp Suite"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que, mesmo com a interface do site impedindo uma ação, o Burp consegue realizá-la?"
+        options:
+          - "Porque o Burp explora uma falha secreta do navegador"
+          - "Porque a regra que a interface aplica roda no navegador (no cliente), e o Burp fica entre o navegador e o servidor: ele reenvia a requisição já sem passar pela regra. Se o servidor não repetir a validação, ele aceita"
+          - "Porque o Burp tem privilégio de administrador no servidor"
+          - "Porque o Burp quebra a criptografia do servidor"
+        answer: 1
+        explanation: "A validação só no cliente é conforto de usuário, não controle de segurança. No lab, a interface do Juice Shop não deixa enviar 0 estrelas, mas o servidor aceitou o POST /api/Feedbacks com rating:0 reenviado pelo Repeater. Quem decide o que é válido tem de ser o servidor."
+      - question: "Qual é o endereço e a porta padrão em que o Burp Proxy escuta?"
+        options:
+          - "0.0.0.0:80, em todas as interfaces"
+          - "127.0.0.1:8080, só no loopback"
+          - "192.168.0.1:3128"
+          - "127.0.0.1:3000"
+        answer: 1
+        explanation: "A documentação da PortSwigger diz que o Burp cria um único listener na porta 8080 da interface de loopback. Por isso, no Firefox do Kali, o proxy manual aponta para 127.0.0.1:8080. Escutar só no loopback evita que outra máquina use o seu proxy."
+      - question: "No HTTP history você vê o navegador pedindo sozinho /rest/admin/application-version e /rest/admin/application-configuration. O que isso mostra?"
+        options:
+          - "Que o site está com defeito"
+          - "Que uma aplicação moderna é um cliente que conversa com uma API por conta própria: o Burp revela essas chamadas de fundo, que não aparecem na barra de endereços do navegador"
+          - "Que alguém invadiu o site"
+          - "Que o Burp inventou essas requisições"
+        answer: 1
+        explanation: "O Juice Shop é uma SPA (single-page application): o JavaScript no navegador chama a API REST para buscar versão, configuração, produtos. Essas chamadas não mudam a URL da barra, mas aparecem todas no HTTP history. Ver a API por trás da tela é metade do trabalho de testar uma aplicação web."
+      - question: "Para que serve definir o Target Scope (escopo) no Burp?"
+        options:
+          - "Para o Burp varrer portas, como o nmap"
+          - "Para dizer ao Burp quais hosts e URLs você quer testar, e então filtrar o site map e o histórico, e logar/interceptar só o que está no escopo — reduzindo ruído e o risco de tocar no que não foi autorizado"
+          - "Para acelerar o navegador"
+          - "Para criptografar o tráfego"
+        answer: 1
+        explanation: "A documentação descreve o scope como a forma de dizer ao Burp quais hosts e URLs testar, com filtros de exibição e a opção de registrar só o que está no escopo. É a regra do 1.3 na ferramenta: alcance não é autorização, e o escopo técnico ajuda a não sair dele por acidente."
+      - question: "Qual é a diferença entre o Repeater e o Intruder?"
+        options:
+          - "O Repeater é pago e o Intruder é grátis"
+          - "O Repeater reenvia uma requisição por vez, alterada à mão, para você estudar a resposta; o Intruder automatiza: repete a mesma requisição trocando payloads em posições marcadas, para testar muitas variações de uma vez"
+          - "O Repeater é para HTTPS e o Intruder para HTTP"
+          - "Não há diferença, são dois nomes da mesma ferramenta"
+        answer: 1
+        explanation: "A documentação define o Repeater como a ferramenta para modificar e reenviar uma mensagem interessante repetidamente, e o Intruder como a ferramenta para automatizar ataques customizados, inserindo payloads diferentes em posições predefinidas. Um é bisturi; o outro, linha de montagem."
+      - question: "No ataque Sniper do Intruder com uma lista de senhas, como a tentativa correta se destacou das outras na Missão 3?"
+        options:
+          - "Pela cor verde que o Burp pinta automaticamente"
+          - "Pelo status e pelo tamanho da resposta: as senhas erradas voltaram 401 com 26 bytes, e a certa voltou 200 com 784 bytes (um corpo maior, porque traz o token de sessão)"
+          - "Pela ordem alfabética"
+          - "Pelo tempo de resposta, que foi de vários segundos"
+        answer: 1
+        explanation: "Medido no lab: POST /rest/user/login com senha errada devolve 401 e 26 bytes; com admin123, devolve 200 e 784 bytes, porque o corpo agora inclui o token de autenticação. Ordenar os resultados do Intruder por status ou por tamanho faz o acerto saltar aos olhos."
+      - question: "Você só tem a Community Edition (gratuita) do Burp. O que isso muda no Intruder?"
+        options:
+          - "O Intruder não existe na Community"
+          - "O Intruder funciona, mas é uma versão demo com a velocidade limitada (throttled); para listas grandes, convém quebrar o ataque em partes menores. O Scanner automático e salvar o projeto é que são exclusivos da Professional"
+          - "Nada: a Community é idêntica à Professional"
+          - "A Community só permite interceptar, nada mais"
+        answer: 1
+        explanation: "A página oficial lista a Community com 'Burp Intruder (demo)' e, como exclusivos da Professional, o scanner de vulnerabilidades, salvar projetos e o Collaborator. O Intruder demo tem a taxa limitada — por isso a Missão 3 usa uma lista curta, que termina rápido mesmo assim."
+      - question: "Para interceptar HTTPS, o Burp pede que você instale e confie na CA dele. Por quê?"
+        options:
+          - "Para o Burp roubar as suas senhas"
+          - "Porque o Burp quebra o TLS em dois túneis e gera, para cada site, um certificado assinado pela própria autoridade certificadora (CA). Sem confiar nessa CA, o navegador recusaria o certificado e mostraria um aviso de segurança"
+          - "Porque sem isso o Burp fica mais lento"
+          - "Porque a CA do Burp é exigida por lei"
+        answer: 1
+        explanation: "A documentação explica que o Burp gera um certificado por host, assinado pela sua CA, e que essa CA é única por instalação, com a chave privada guardada localmente. Confiar nela faz o navegador aceitar o 'man-in-the-middle' que é você mesmo. No lab não foi preciso: o Juice Shop é acessado por HTTP, sem TLS."
+      - question: "Um aplicativo faz certificate pinning. O que acontece quando você tenta interceptá-lo com o Burp?"
+        options:
+          - "Nada muda, o Burp intercepta normalmente"
+          - "O app recusa o certificado da CA do Burp (ele só aceita um certificado específico, fixado), e a conexão não se estabelece — o Burp não consegue ler o tráfego daquele túnel sem contornar o pinning"
+          - "O Burp fica mais rápido"
+          - "O app envia a senha em texto claro"
+        answer: 1
+        explanation: "O pinning é uma defesa: o cliente carrega consigo o certificado (ou a chave) que espera do servidor e recusa qualquer outro, inclusive o da CA do Burp. É por isso que interceptar apps móveis costuma exigir passos extras. Não é mágica — é o cliente validando quem está do outro lado."
+      - question: "Por que 'detectar e bloquear o Burp' não é uma boa estratégia de defesa?"
+        options:
+          - "Porque o Burp é invisível"
+          - "Porque o cabeçalho ou o comportamento que denunciaria o Burp é controlado por quem ataca: dá para trocar o User-Agent, usar outro proxy (ZAP, mitmproxy) ou escrever requisições à mão com curl. A defesa real é validar e autorizar tudo no servidor"
+          - "Porque bloquear o Burp é ilegal"
+          - "Porque o Burp só funciona em laboratório"
+        answer: 1
+        explanation: "Qualquer sinal que parta do cliente pode ser forjado pelo cliente. Tentar reconhecer a ferramenta é um jogo de gato e rato que o atacante vence. O que protege é não confiar no cliente: validação, autorização e limites de tentativa no servidor, onde o atacante não manda."
+glossary:
+  - term: Burp Suite
+    definition: "Conjunto de ferramentas da PortSwigger para testar a segurança de aplicações web, montado em volta de um proxy de interceptação. Criado por Dafydd Stuttard; a v1.0 saiu em 2003. É a ferramenta padrão do pentest web."
+  - term: intercepting proxy
+    definition: "Proxy de interceptação: um intermediário que fica entre o navegador e o servidor e deixa você ver, pausar e alterar cada requisição e resposta antes que ela siga. É o coração do Burp."
+  - term: HTTP history
+    definition: "No Burp, o registro de todas as requisições e respostas que passaram pelo proxy, com método, URL, status, tamanho e tempo. Permite revisitar e reenviar qualquer uma."
+  - term: site map
+    definition: "Mapa do site montado pelo Burp a partir do que você navegou: a árvore de hosts, pastas e endpoints vistos, com as requisições e respostas de cada um. Fica na aba Target."
+  - term: target scope
+    definition: "Escopo do alvo: a lista de hosts e URLs que você declara querer testar no Burp. Serve para filtrar o histórico e o site map e para interceptar/registrar só o que está dentro dele."
+  - term: Repeater
+    definition: "Ferramenta do Burp para pegar uma requisição, alterá-la à mão e reenviá-la quantas vezes quiser, estudando cada resposta. O bisturi do teste manual."
+  - term: Intruder
+    definition: "Ferramenta do Burp que automatiza ataques: repete a mesma requisição inserindo payloads diferentes em posições marcadas, para testar muitas variações (senhas, IDs, campos) de uma vez."
+  - term: payload position
+    definition: "Posição de payload: o ponto de uma requisição que o Intruder marca (com §cifrões§) para substituir por cada item da lista de payloads a cada tentativa."
+  - term: Sniper attack
+    definition: "Tipo de ataque do Intruder que usa uma única lista de payloads e a insere em uma posição de cada vez. É o mais comum para testar um único campo, como uma senha."
+  - term: Cluster bomb attack
+    definition: "Tipo de ataque do Intruder que usa uma lista por posição e testa todas as combinações possíveis entre elas. Útil para pares como usuário e senha."
+  - term: client-side validation
+    definition: "Validação feita no cliente (no navegador, por JavaScript): confere a entrada antes de enviar. Melhora a experiência, mas não é segurança — o atacante pula o cliente e fala direto com o servidor."
+  - term: Match and replace
+    definition: "Recurso do Burp Proxy que altera automaticamente partes das mensagens que passam (um cabeçalho, um trecho do corpo), segundo regras, sem você editar uma a uma."
+  - term: Decoder
+    definition: "Ferramenta do Burp para decodificar e codificar valores (Base64, URL, HTML, hex) e aplicar hashes. Serve para ler parâmetros ofuscados e montar payloads."
+  - term: Comparer
+    definition: "Ferramenta do Burp que compara duas respostas (ou requisições) byte a byte ou palavra a palavra, destacando as diferenças. Útil para achar o que muda entre um acerto e um erro."
+  - term: Burp CA certificate
+    definition: "Certificado da autoridade certificadora (CA) própria do Burp, gerado por instalação. Instalá-lo como confiável no navegador permite ao Burp interceptar HTTPS sem disparar avisos de segurança."
+  - term: certificate pinning
+    definition: "Fixação de certificado: defesa em que o cliente só aceita um certificado (ou chave) específico do servidor e recusa qualquer outro, inclusive o de um proxy como o Burp. Comum em apps móveis."
+  - term: REST API
+    definition: "Interface web em que o cliente conversa com o servidor por requisições HTTP a endpoints que representam recursos (como /rest/user/login), em geral trocando JSON. É como as aplicações modernas separam a tela dos dados."
+  - term: single-page application
+    definition: "SPA: aplicação web em que o navegador carrega uma página e, a partir daí, o JavaScript monta as telas e busca os dados chamando uma API, sem recarregar a página inteira. O Juice Shop é uma."
+  - term: OWASP ZAP
+    definition: "Zed Attack Proxy: proxy de interceptação livre e de código aberto mantido pela OWASP. A principal alternativa gratuita ao Burp, com proxy, repetição e scanner."
+  - term: mitmproxy
+    definition: "Proxy de interceptação livre operado por linha de comando (e com interface web), feito para scripting e automação. Útil para interceptar clientes que não são navegadores."
+  - term: Turbo Intruder
+    definition: "Extensão do Burp, escrita em Python/Java, que envia requisições em altíssima velocidade sem a limitação do Intruder, para ataques que exigem muitas tentativas."
+  - term: Burp Collaborator
+    definition: "Serviço da versão Professional do Burp que fornece domínios e servidores externos para detectar interações fora de banda (DNS, HTTP) provocadas por um alvo, revelando falhas que não aparecem na resposta direta."
+  - term: WebSocket
+    definition: "Protocolo que mantém um canal aberto de mão dupla entre navegador e servidor sobre a mesma conexão HTTP, para troca contínua de mensagens (chats, notificações). O Burp também registra e edita WebSockets."
+  - term: HSTS
+    definition: "HTTP Strict Transport Security: cabeçalho que ordena ao navegador só falar com aquele site por HTTPS, por um prazo. Evita o rebaixamento para HTTP, mas não substitui a validação no servidor."
+---
+
+import fluxoDoProxy from "./img/fluxo-do-proxy.svg";
+import cicloDeTrabalho from "./img/ciclo-de-trabalho.svg";
+import httpsECa from "./img/https-e-ca.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em 21 de novembro de 2018, o jornalista Brian Krebs publicou que o site dos Correios dos Estados
+Unidos (USPS) tinha exposto os dados de cerca de **60 milhões** de usuários. Não houve um exploit
+sofisticado: qualquer pessoa logada no site podia pedir, a uma API interna, os dados de **qualquer
+outro** usuário — e, segundo a reportagem, isso se fazia só sabendo "ver e modificar os dados que um
+navegador comum como o Chrome ou o Firefox processa". A ferramenta que torna esse "ver e modificar"
+sistemático, confortável e poderoso tem nome: **Burp Suite**. Este módulo é sobre ela.
+
+Se o nmap (2.4) respondeu "o que existe na rede", o <GlossaryTerm term="Burp Suite">Burp
+Suite</GlossaryTerm> responde "o que essa aplicação web faz de verdade, por baixo da tela". Ele é um
+<GlossaryTerm term="intercepting proxy">proxy de interceptação</GlossaryTerm> (*intercepting
+proxy*): um intermediário que você coloca entre o seu navegador e o servidor, e que deixa você ver,
+pausar e **alterar** cada requisição e cada resposta antes que ela siga viagem. Com isso, tudo o que
+a interface do site "esconde" ou "proíbe" passa a estar na sua mão — porque a interface roda no
+navegador, e o navegador é só mais um cliente, que você controla.
+
+<Figure
+  src={fluxoDoProxy}
+  alt="Dentro do contêiner Kali, o Firefox manda cada requisição para o Burp Proxy, que escuta em 127.0.0.1:8080, lê e pode alterar, e só então repassa pela rede interna lab_net ao Juice Shop na porta 3000. A resposta volta pelo mesmo caminho. Uma nota lembra que o navegador é só um cliente, e que mandar o tráfego pelo Burp é um man-in-the-middle consentido na própria máquina."
+  caption="O Burp se coloca no caminho entre o navegador e o servidor. Cada requisição e cada resposta passa por ele, que pode lê-las e alterá-las antes de deixá-las seguir."
+/>
+
+**Ao final, você vai saber:**
+
+- explicar por que um proxy consegue alterar o que a interface do site proíbe, e por que isso é uma
+  falha de quem confia no cliente;
+- configurar o Firefox do Kali para passar pelo Burp e definir um escopo, trabalhando só dentro dele;
+- ler o <GlossaryTerm term="HTTP history">HTTP history</GlossaryTerm> e enxergar as chamadas de API
+  que uma aplicação moderna faz por conta própria;
+- usar o <GlossaryTerm term="Repeater">Repeater</GlossaryTerm> para reenviar uma requisição alterada
+  e o <GlossaryTerm term="Intruder">Intruder</GlossaryTerm> para automatizar muitas variações;
+- entender como o Burp lê HTTPS (e por que o <GlossaryTerm term="certificate pinning">certificate
+  pinning</GlossaryTerm> às vezes o impede);
+- defender uma aplicação contra tudo isso — validando e autorizando no servidor, não no navegador.
+
+**Pré-requisitos:**
+
+- **0.2 — Redes TCP/IP na prática** — o que é uma porta, o que é o <GlossaryTerm term="HTTP">HTTP</GlossaryTerm>,
+  o que viaja numa requisição (método, cabeçalhos, corpo) e o que é o <GlossaryTerm term="TLS">TLS</GlossaryTerm>
+  do HTTPS. Vamos relembrar o essencial, mas é lá que foi explicado.
+- **2.1 — Kali Linux e organização do ambiente** — a attack box, o desktop do Kali no navegador, o
+  Firefox e o `sudo`, e a bancada de evidências do engajamento.
+
+**Tempo estimado:** 5 a 6 horas, incluindo as três missões no laboratório.
+
+<Callout variant="ethics">
+Um proxy de interceptação é uma ferramenta de duas pontas: a mesma intercepção que revela a falha de
+um site autorizado serve para espionar e adulterar o tráfego de qualquer sistema. Interceptar e
+alterar requisições de um site que não é seu, sem autorização por escrito, é invasão — e, no Brasil,
+crime (1.4). Neste módulo o alvo é o Juice Shop do laboratório local, feito de propósito para ser
+atacado. Nunca aponte o Burp para um site de terceiros, nem "só para ver".
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O navegador é só um cliente
+
+A ideia que destrava tudo neste módulo é simples e desconfortável: **o servidor não controla o que
+chega até ele.** Quando você abre um site, o seu navegador recebe HTML, CSS e JavaScript e os
+executa. A tela bonita, o botão que fica cinza, o campo que "não deixa" digitar mais de 10
+caracteres, a estrela que você não consegue clicar — tudo isso é o navegador obedecendo ao código
+que recebeu. Mas quem manda a requisição de verdade para o servidor é um programa na **sua**
+máquina, e você pode trocar esse programa, ou simplesmente mexer no que ele manda.
+
+Pense num formulário de papel que um atendente confere antes de passar adiante. A
+<GlossaryTerm term="client-side validation">validação do lado do cliente</GlossaryTerm>
+(*client-side validation*) é esse atendente: ele é rápido e educado, avisa na hora que faltou um
+campo. Mas se você contornar o atendente e entregar o papel direto na mesa de trás, ninguém mais
+confere — a menos que a mesa de trás **também** confira. O Burp é o jeito de entregar o papel direto
+na mesa de trás. E a lição de segurança, que volta na seção 8, é: **a validação que importa é a do
+servidor**; a do cliente é só conforto.
+
+### 2.2 O que é um proxy de interceptação
+
+Um <GlossaryTerm term="proxy">proxy</GlossaryTerm> comum é um intermediário que encaminha o seu
+tráfego: você fala com ele, e ele fala com o servidor por você. Um **proxy de interceptação** faz o
+mesmo, com uma diferença crucial: ele **para** cada mensagem no meio do caminho e a entrega a você,
+para ler, alterar, deixar passar (*forward*) ou descartar (*drop*). É um
+<GlossaryTerm term="man-in-the-middle">man-in-the-middle</GlossaryTerm> — o "homem no meio" de uma
+conversa — só que operado por você, na sua própria máquina, com autorização. A mesma técnica que um
+atacante usaria para espionar uma rede, virada para dentro, como instrumento de teste.
+
+Por padrão, o Burp sobe esse proxy em `127.0.0.1:8080` — só no
+<GlossaryTerm term="loopback">loopback</GlossaryTerm>, para que nenhuma outra máquina use o seu
+proxy (é a documentação oficial que define esse listener único na porta 8080 da interface de
+loopback). Você então diz ao navegador "mande tudo para `127.0.0.1:8080`", e a partir daí cada clique
+vira uma linha no HTTP history do Burp.
+
+### 2.3 Relembrando o HTTP: o que o Burp mostra
+
+No 0.2 você viu que uma requisição <GlossaryTerm term="HTTP">HTTP</GlossaryTerm> tem três partes, e
+o Burp mostra todas elas, editáveis:
+
+```http
+POST /rest/user/login HTTP/1.1
+Host: juice-shop:3000
+Content-Type: application/json
+Content-Length: 52
+
+{"email":"admin@juice-sh.op","password":"secreta"}
+```
+
+- A **linha inicial**: o <GlossaryTerm term="HTTP method">método</GlossaryTerm> (`POST`), o caminho
+  (`/rest/user/login`) e a versão.
+- Os <GlossaryTerm term="HTTP header">cabeçalhos</GlossaryTerm> (`Host`, `Content-Type`,
+  `Content-Length`...): metadados da requisição.
+- O **corpo** (depois da linha em branco): aqui, um JSON com as credenciais.
+
+A resposta tem a mesma anatomia: uma linha com o
+<GlossaryTerm term="status code">código de status</GlossaryTerm> (`200`, `401`, `500`...), os
+cabeçalhos e o corpo. **Todo** campo é editável no Burp — e é aí que mora o poder. Trocar o `POST`
+por outro método, mexer num cabeçalho, alterar um valor no corpo: cada edição é um teste.
+
+Um detalhe que pega iniciantes: o `Content-Length` diz ao servidor quantos bytes tem o corpo. Se
+você editar o corpo à mão e esquecer de acertar esse número, o servidor pode travar esperando bytes
+que não vêm, ou cortar o corpo. O Burp tem a opção de recalcular o `Content-Length`
+automaticamente — deixe-a ligada.
+
+### 2.4 Por dentro das aplicações modernas: a API
+
+O Juice Shop é uma <GlossaryTerm term="single-page application">single-page application</GlossaryTerm>
+(SPA): o navegador carrega a página uma vez e, a partir daí, o JavaScript monta as telas e busca os
+dados chamando uma <GlossaryTerm term="REST API">REST API</GlossaryTerm> — endpoints como
+`/rest/user/login` ou `/api/Products`, que trocam JSON. Isso muda o que você vê no Burp: a barra de
+endereços do navegador quase não muda, mas o HTTP history enche de chamadas de fundo que a aplicação
+faz sozinha. **Essa é a aplicação de verdade.** Testar uma SPA é, em boa parte, entender e cutucar a
+API que está por trás da tela — e o Burp é o que torna essa API visível.
+
+### 2.5 As ferramentas do Burp e o ciclo de trabalho
+
+O Burp é um conjunto de ferramentas que conversam entre si. As que importam agora:
+
+<Figure
+  src={cicloDeTrabalho}
+  alt="Um ciclo de quatro etapas: 1 Proxy captura o tráfego e guarda no HTTP history; 2 Target e Scope organizam no site map e filtram o escopo; 3 Repeater reenvia uma requisição alterada à mão; 4 Intruder automatiza payloads em posições marcadas. Os achados do Repeater e do Intruder levam a uma nova navegação, fechando o ciclo. No centro, Decoder e Comparer ajudam em qualquer etapa."
+  caption="O fluxo típico: capturar no Proxy, organizar no Target/Scope, aprofundar no Repeater e automatizar no Intruder — voltando a navegar conforme você descobre coisas."
+/>
+
+- **Proxy.** Captura o tráfego. A sub-aba *Intercept* segura as mensagens para você editar antes de
+  deixá-las passar; o *HTTP history* guarda tudo o que já passou.
+- **Target.** Monta o <GlossaryTerm term="site map">site map</GlossaryTerm> (a árvore do que você
+  navegou) e guarda o <GlossaryTerm term="target scope">scope</GlossaryTerm> — a lista de hosts e
+  URLs que você declara querer testar, usada para filtrar o histórico e evitar tocar no que não foi
+  autorizado.
+- **Repeater.** Reenvia uma requisição alterada à mão, uma por vez. É onde você estuda uma falha com
+  calma.
+- **Intruder.** Automatiza: repete a requisição trocando payloads em
+  <GlossaryTerm term="payload position">posições marcadas</GlossaryTerm>. É onde você testa 50 senhas
+  ou 1.000 IDs.
+- **Decoder** e **Comparer.** O <GlossaryTerm term="Decoder">Decoder</GlossaryTerm> decodifica e
+  codifica valores (Base64, URL, hex); o <GlossaryTerm term="Comparer">Comparer</GlossaryTerm>
+  compara duas respostas e destaca as diferenças. Úteis em qualquer etapa.
+
+### 2.6 HTTPS: por que o Burp pede para instalar uma CA
+
+Interceptar HTTP é trivial: o texto viaja claro. Interceptar <GlossaryTerm term="HTTPS">HTTPS</GlossaryTerm>
+é o desafio, porque o TLS foi feito justamente para impedir um intermediário de ler a conversa. A
+solução do Burp é ser um man-in-the-middle **declarado**: ele quebra a conexão em dois túneis TLS.
+
+<Figure
+  src={httpsECa}
+  alt="Para ler HTTPS, o Burp quebra a conexão em dois túneis TLS. No túnel 1, entre navegador e Burp, o Burp gera um certificado por host assinado pela própria CA, que precisa estar instalada e confiável no navegador. No túnel 2, entre Burp e servidor real, o Burp faz TLS normal e valida o certificado verdadeiro. No meio, o Burp vê o texto claro. Uma nota explica que o certificate pinning recusa a CA do Burp e impede o túnel 1; outra lembra que no lab o Juice Shop é HTTP, sem TLS."
+  caption="Para ler HTTPS, o Burp monta dois túneis TLS e fica no meio. O túnel do navegador usa um certificado assinado pela CA do Burp, que você precisa instalar como confiável."
+/>
+
+No túnel do navegador, o Burp gera na hora um
+<GlossaryTerm term="Burp CA certificate">certificado</GlossaryTerm> para o site visitado, assinado
+pela sua própria autoridade certificadora (CA). Para o navegador aceitar sem reclamar, você instala
+essa CA como confiável (ela se baixa visitando `http://burpsuite` com o proxy ligado). A documentação
+ressalta que o Burp gera uma CA **única por instalação**, com a chave privada guardada localmente —
+então confiar nela é confiar na sua própria cópia, não numa chave compartilhada. No túnel do
+servidor, o Burp faz um TLS normal e valida o certificado verdadeiro.
+
+Há uma defesa que quebra esse esquema: o **certificate pinning**, em que o cliente só aceita um
+certificado específico e recusa o da CA do Burp. É comum em aplicativos de celular, e é por isso que
+interceptá-los dá mais trabalho. No laboratório, nada disso será preciso: o Juice Shop é acessado por
+HTTP simples, então o Burp já vê tudo em texto claro.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos percorrer o fluxo com requisições e respostas **reais** do lab, capturadas enquanto este
+módulo era escrito. Os endereços e tokens foram encurtados ou trocados por exemplos.
+
+### 3.1 Etapa 1: o proxy no caminho
+
+Primeiro, o tráfego precisa passar pelo Burp. No Firefox, isso é apontar o proxy manual para
+`127.0.0.1:8080`. Com o Intercept **desligado**, você navega normalmente e o Burp só registra; com o
+Intercept **ligado**, cada requisição para e espera a sua decisão:
+
+- **Forward** deixa a mensagem seguir.
+- **Drop** descarta a mensagem, que nunca chega ao servidor.
+
+A documentação resume: com *Intercept on*, as mensagens são interceptadas; com *Intercept off*, o
+Burp encaminha tudo automaticamente. Iniciante liga o Intercept, esquece ligado e acha que "a
+internet travou" — porque toda requisição está parada esperando o clique em Forward.
+
+### 3.2 Etapa 2: ler o que a aplicação faz sozinha
+
+Com o proxy registrando, carregar a página inicial do Juice Shop já gera dezenas de linhas no HTTP
+history. Entre elas, chamadas que o front-end faz por conta própria. Uma delas pede a versão da
+aplicação:
+
+```http
+GET /rest/admin/application-version HTTP/1.1
+Host: juice-shop:3000
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{"version":"20.2.0"}
+```
+
+Outra pede a configuração inteira da aplicação (`GET /rest/admin/application-configuration`), um JSON
+grande com dezenas de campos. Nenhuma das duas mudou a barra de endereços; as duas estão no
+histórico. Esse é o olho do Burp: ver a API por trás da tela.
+
+### 3.3 Etapa 3: o Repeater, requisição por requisição
+
+Achou uma requisição interessante? Mande-a para o Repeater (atalho **Ctrl+R**). Lá você tem a
+requisição de um lado, edita o que quiser e clica em **Send**; a resposta aparece do outro lado. A
+documentação define o Repeater exatamente assim: a ferramenta para modificar e reenviar uma mensagem
+interessante repetidamente. Diferente do navegador, aqui você controla **cada byte** da requisição —
+inclusive campos que a interface nunca deixaria você mudar.
+
+### 3.4 Etapa 4: o Intruder, muitas variações de uma vez
+
+Quando o teste é "repita isto trocando um valor N vezes", o trabalho é do Intruder. Você manda a
+requisição para ele (**Ctrl+I**), marca com `§cifrões§` as
+<GlossaryTerm term="payload position">posições</GlossaryTerm> que quer variar, escolhe o tipo de
+ataque e carrega a lista de payloads. Os quatro tipos, pela documentação oficial:
+
+| Tipo | Como distribui os payloads |
+|---|---|
+| <GlossaryTerm term="Sniper attack">Sniper</GlossaryTerm> | uma lista só, numa posição de cada vez |
+| Battering ram | o mesmo payload em todas as posições ao mesmo tempo |
+| Pitchfork | uma lista por posição, em paralelo (1º com 1º, 2º com 2º...) |
+| <GlossaryTerm term="Cluster bomb attack">Cluster bomb</GlossaryTerm> | uma lista por posição, **todas** as combinações |
+
+Para testar uma lista de senhas num único campo, o **Sniper** é o certo. O Intruder dispara as
+requisições e monta uma tabela com uma linha por tentativa: status, tamanho e tempo da resposta. É
+nessa tabela que o acerto se revela — como você vai ver na Missão 3.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+A lição que o Burp ensina — **nunca confie no cliente** — é a mesma que estes incidentes provam, cada
+um verificado na fonte.
+
+### Correios dos EUA (USPS): a API que servia os dados de todos (novembro de 2018)
+
+Em 21 de novembro de 2018, Brian Krebs revelou que o site do USPS, por meio da API do programa
+*Informed Visibility*, permitia que **qualquer usuário autenticado** consultasse (e em certos casos
+alterasse) os dados de conta de qualquer outro — e-mail, nome de usuário, endereço, telefone. A API
+aceitava buscas com curinga (*wildcard*), devolvendo conjuntos inteiros de uma vez. Krebs descreveu
+que "nenhuma ferramenta especial de hacking era necessária além de saber ver e modificar os
+elementos de dados que um navegador comum como o Chrome ou o Firefox processa".
+
+- **Impacto:** dados de cerca de 60 milhões de usuários expostos. O pesquisador que achou a falha
+  disse ter avisado o USPS mais de um ano antes, sem resposta; a correção saiu em 20 de novembro de
+  2018, um dia antes da publicação.
+- **Lição:** a autorização precisa ser checada no servidor, a cada requisição, para cada recurso. A
+  interface mostrava só os seus dados; a API, consultada direto, servia os de todos. É exatamente o
+  que um proxy revela.
+- **Fonte:** [KrebsOnSecurity, "USPS Site Exposed Data on 60 Million Users"](https://krebsonsecurity.com/2018/11/usps-site-exposed-data-on-60-million-users/).
+
+### First American: trocar um número na URL (maio de 2019)
+
+Em 24 de maio de 2019, Krebs publicou que a First American Financial, gigante do seguro de títulos
+imobiliários, expunha cerca de **885 milhões** de documentos digitalizados — extratos bancários,
+números de seguro social, imagens de carteiras de motorista. O mecanismo era primitivo: cada
+documento tinha uma URL com um número sequencial de nove dígitos, e **sem nenhuma autenticação**,
+quem conhecesse a URL de um documento válido via qualquer outro só mudando um dígito do link. Os
+registros iam até 2003.
+
+- **Impacto:** cerca de 885 milhões de documentos, acessíveis a qualquer um com um navegador. Em 15
+  de junho de 2021, a SEC multou a empresa em **US$ 487.616**, apontando que a falha fora descoberta
+  internamente meses antes e não corrigida, e que os executivos não sabiam disso.
+- **Lição:** isto é um *Insecure Direct Object Reference* (IDOR) — referenciar um objeto por um
+  identificador previsível, sem checar se o usuário pode vê-lo. Trocar o dígito à mão, ou com o
+  Intruder, é o teste. A defesa, de novo, é autorizar no servidor.
+- **Fonte:** [KrebsOnSecurity](https://krebsonsecurity.com/2019/05/first-american-financial-corp-leaked-hundreds-of-millions-of-title-insurance-records/)
+  e a [ordem da SEC](https://www.sec.gov/news/press-release/2021-102).
+
+Nos dois casos, a "proteção" estava na tela, não no servidor. Um proxy de interceptação como o Burp é
+a ferramenta que torna essa diferença visível — e por isso é a primeira coisa que um pentester web
+liga.
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá configurado o Burp como proxy do Firefox do Kali, lido a API
+que o Juice Shop chama sozinho, usado o Repeater para enviar um feedback que a interface **proíbe** e
+usado o Intruder para descobrir a senha do admin por força bruta com uma lista curta. Cada missão
+rende uma flag.
+
+O laboratório é o **`juice-shop`**: o Kali e o OWASP Juice Shop na mesma rede interna. O Juice Shop é
+uma loja de sucos deliberadamente vulnerável, mantida pela OWASP, cheia dos erros do OWASP Top 10. Ele
+é acessado, de dentro do Kali, em `http://juice-shop:3000/` — por HTTP, sem TLS, o que simplifica a
+intercepção.
+
+<Callout variant="warning" title="Um laboratório por vez">
+Este lab sobe o Kali e o Juice Shop; com o Firefox e o Burp (uma JVM) abertos, é dos mais pesados da
+plataforma. Feche o que não estiver usando no Windows antes de subir. Se outro lab estiver no ar, o
+botão vira **Trocar para este lab**.
+</Callout>
+
+### 5.1 Subir o lab e preparar a bancada (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Se a plataforma disser
+   que faltam imagens, rode no terminal do WSL `scripts/lab.sh pull juice-shop` (é o único momento
+   com internet) e tente de novo. Pelo terminal, a alternativa é `scripts/lab.sh up juice-shop`.
+2. Quando o desktop do Kali aparecer, clique nele, abra um terminal e crie a pasta de evidências:
+
+```console
+$ umask 077
+$ mkdir -p ~/engajamentos/lab-2.5_juice-shop/evidencias
+$ cd ~/engajamentos/lab-2.5_juice-shop/evidencias
+```
+
+3. Ainda no terminal, confirme que o alvo responde (e já guarde a evidência da versão):
+
+```console
+$ curl -s http://juice-shop:3000/rest/admin/application-version
+{"version":"20.2.0"}
+```
+
+### 5.2 A carta de autorização do exercício
+
+<Callout variant="info" title="Autorização — exercício 2.5 (laboratório local)">
+**Ativo autorizado:** a aplicação `http://juice-shop:3000/` do lab `juice-shop`.
+
+**Técnicas autorizadas:** interceptação e alteração de requisições com o Burp (Proxy, Repeater,
+Intruder), contra o Juice Shop.
+
+**Fora do escopo:** qualquer outro host (o `guacd`, o próprio Kali) e qualquer sistema fora do
+laboratório. Força bruta: só a lista curta desta missão, contra o Juice Shop.
+</Callout>
+
+### 5.3 Missão 1 — O proxy e o escopo (guiada)
+
+**Passo 1: ligar o proxy no Firefox.** No desktop do Kali, abra o Firefox. Em
+**Settings → Network Settings → Settings…**, escolha **Manual proxy configuration** e preencha
+**HTTP Proxy** `127.0.0.1` / **Port** `8080`, marcando "Also use this proxy for HTTPS". Salve.
+
+**Passo 2: abrir o Burp.** No menu do Kali, abra o **Burp Suite**. Na primeira execução ele mostra os
+termos de uso da PortSwigger — aceitar é decisão sua (a escolha fica salva em `/home/kali`). Escolha
+**Temporary project** e **Use Burp defaults**. O proxy já sobe em `127.0.0.1:8080`.
+
+<Callout variant="tip" title="Intercept desligado para começar">
+Na aba **Proxy → Intercept**, deixe o botão em **Intercept is off**. Assim você navega sem travar, e
+tudo fica no **HTTP history**. Só ligue o Intercept quando quiser segurar uma requisição específica.
+</Callout>
+
+**Passo 3: definir o escopo.** Navegue até `http://juice-shop:3000/` no Firefox. Volte ao Burp, vá em
+**Target → Site map**, clique com o botão direito no host `juice-shop` e escolha **Add to scope**.
+Aceite restringir o histórico ao escopo. A documentação descreve isso como dizer ao Burp quais hosts
+e URLs você quer testar, para filtrar o que aparece — a regra do 1.3 virada ferramenta.
+
+**Passo 4: ler a API.** No **HTTP history**, procure duas chamadas que o próprio site fez ao carregar:
+`GET /rest/admin/application-version` e `GET /rest/admin/application-configuration`. Clique em cada
+uma e leia a resposta (JSON). A primeira traz a versão; a segunda, dezenas de campos de configuração.
+
+**Sua tarefa:** a flag é `FLAG{versao-prefixo}`, onde **versao** é o que o endpoint de versão
+devolve e **prefixo** é o valor do campo `customMetricsPrefix` que aparece na configuração da
+aplicação. Os dois saem do que você leu no HTTP history.
+
+<Hint title="Dica — achar o customMetricsPrefix">
+A resposta de `/rest/admin/application-configuration` é grande. Clique nela no HTTP history e use o
+campo de busca do painel de resposta (ou **Ctrl+F**) para procurar por `customMetricsPrefix`. Pela
+linha de comando, dá para conferir com
+`curl -s http://juice-shop:3000/rest/admin/application-configuration | grep -o 'customMetricsPrefix":"[^"]*'`.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+A versão é `20.2.0`. No JSON da configuração, o campo aparece como `"customMetricsPrefix":"juiceshop"`.
+A flag é `FLAG{20.2.0-juiceshop}`.
+</Solution>
+
+<FlagInput task="missao-1-proxy-e-escopo" />
+
+**Para pensar:** você acabou de ler, sem nenhum "ataque", endpoints administrativos (`/rest/admin/...`)
+que a interface nunca te mostrou. Enumerar a API é metade do trabalho de testar uma SPA — e o Burp é
+o que a torna visível.
+
+### 5.4 Missão 2 — Repeater e a validação do cliente (desafio)
+
+**Objetivo:** o Juice Shop tem um desafio chamado *Zero Stars*: dar um feedback de **zero estrelas**
+à loja. A interface não deixa — o seletor de estrelas não chega a zero. Seu objetivo é enviar mesmo
+assim, usando o Repeater, e descobrir a `key` do desafio que isso resolve.
+
+O que você precisa saber:
+
+- Em algum lugar da loja há um formulário de feedback (menu da conta, ou a página de contato). Ao
+  enviar um feedback **válido**, o navegador faz um `POST /api/Feedbacks` com um JSON que inclui o
+  campo `rating`.
+- Esse POST exige um captcha: antes dele, o site chama `GET /rest/captcha/`, que devolve uma continha
+  (`captcha`) e a `answer`. O corpo do feedback manda o `captchaId` e a sua resposta.
+- A validação do mínimo de estrelas é **só no cliente**. O servidor, se o captcha bater, aceita o
+  `rating` que você mandar.
+
+<Hint title="Dica 1 — capturar e repetir">
+Dê um feedback qualquer **válido** (uma estrela, um comentário) para capturar o `POST /api/Feedbacks`
+no HTTP history. Clique nele com o botão direito e **Send to Repeater** (Ctrl+R). No Repeater, você
+vê o JSON do corpo, com `rating`, `captchaId` e `captcha`.
+</Hint>
+
+<Hint title="Dica 2 — o captcha expira">
+Cada captcha vale uma vez. No Repeater, antes de reenviar com `rating` trocado, pegue um captcha
+fresco: no próprio Repeater (ou numa aba nova) faça `GET /rest/captcha/`, leia o `captchaId` e a
+`answer`, e use esse par no corpo do feedback. Depois é só trocar o `rating` pelo valor que a
+interface proibia e clicar em **Send**.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+O fluxo, mostrado aqui pela linha de comando (no Repeater são os mesmos campos, só que na tela):
+
+```console
+$ curl -s http://juice-shop:3000/rest/captcha/
+{"captchaId":1,"captcha":"10*8+2","answer":"82"}
+$ curl -s -X POST http://juice-shop:3000/api/Feedbacks \
+    -H "Content-Type: application/json" \
+    -d '{"comment":"via Repeater","rating":0,"captchaId":1,"captcha":"82"}'
+{"status":"success","data":{"id":9,"comment":"via Repeater","rating":0,...}}
+```
+
+A resposta `"status":"success"` com `"rating":0` prova que o servidor aceitou a nota que a interface
+recusava. Para achar a `key` do desafio resolvido, consulte a lista de desafios do Juice Shop:
+
+```console
+$ curl -s "http://juice-shop:3000/api/Challenges/?name=Zero%20Stars" \
+    | grep -o '"key":"[^"]*"'
+"key":"zeroStarsChallenge"
+```
+
+A flag junta a `key` e a nota gravada: `FLAG{zeroStarsChallenge-0}`.
+</Solution>
+
+<FlagInput task="missao-2-repeater-zero-estrelas" />
+
+**Para pensar:** o `rating` mínimo nunca foi checado onde importa. A mesma ideia — mudar no Repeater
+um valor que a tela "protege" — resolve uma classe inteira de falhas: preços de produto, quantidades
+negativas, campos de perfil, papéis de usuário. Guarde isso para a Trilha 4.
+
+### 5.5 Missão 3 — Intruder e a senha fraca (desafio)
+
+**Objetivo:** o desafio *Password Strength* do Juice Shop pede entrar como administrador sem trocar a
+senha nem usar SQL injection. A conta é `admin@juice-sh.op`, e a senha é fraca o bastante para cair
+numa lista curta de senhas comuns. Use o Intruder para encontrá-la.
+
+O que você precisa saber:
+
+- O login é um `POST /rest/user/login` com `{"email":"...","password":"..."}` no corpo. Capture um
+  login (com uma senha qualquer) para ter a requisição.
+- Mande-a para o **Intruder** (Ctrl+I). Limpe as posições automáticas (**Clear §**) e marque **só** o
+  valor da senha como posição (**Add §**). Tipo de ataque: **Sniper**.
+- Em **Payloads**, carregue uma lista curta de senhas comuns (algumas dezenas bastam — a Community
+  Edition limita a velocidade do Intruder, então nada de listas enormes aqui).
+- Dispare (**Start attack**) e leia a tabela: ordene por **Status** ou por **Length**. A tentativa
+  certa se destaca.
+
+<Hint title="Dica 1 — montar a lista">
+Você não precisa de uma wordlist gigante. Uma dúzia de clássicos (`admin`, `password`, `123456`,
+`admin123`, `root`, `letmein`...) resolve. No Payloads do Intruder dá para colar a lista à mão, uma
+senha por linha.
+</Hint>
+
+<Hint title="Dica 2 — ler a tabela">
+Todas as senhas erradas devolvem o mesmo status e o mesmo tamanho. A certa devolve um status
+diferente e um corpo maior — porque a resposta de sucesso traz o token de sessão. Ordene por Length:
+a linha fora da curva é a resposta.
+</Hint>
+
+<Solution title="Solução da Missão 3">
+As senhas erradas e a certa, pela linha de comando (o Intruder faz o mesmo, uma linha por payload):
+
+```console
+$ curl -s -o /dev/null -w "errada: status=%{http_code} size=%{size_download}\n" \
+    -X POST http://juice-shop:3000/rest/user/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"admin@juice-sh.op","password":"wrongpass"}'
+errada: status=401 size=26
+$ curl -s -o /dev/null -w "certa:  status=%{http_code} size=%{size_download}\n" \
+    -X POST http://juice-shop:3000/rest/user/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"admin@juice-sh.op","password":"admin123"}'
+certa:  status=200 size=784
+```
+
+As erradas voltam **401** com **26 bytes**; `admin123` volta **200** com **784 bytes** (o corpo maior
+é o token). Na tabela do Intruder, essa é a única linha com status 200 e tamanho diferente. A senha é
+`admin123` e o status de sucesso é `200`: a flag é `FLAG{admin123-200}`.
+</Solution>
+
+<FlagInput task="missao-3-intruder-senha-fraca" />
+
+**Para pensar:** a força bruta funcionou porque (1) a senha era fraca e (2) o servidor não limitou as
+tentativas nem bloqueou a conta. As duas coisas são defesas, e as duas faltaram. A seção 8 mostra
+como fechá-las.
+
+### 5.6 Walkthrough: o seu ataque visto pelo defensor (sem flag)
+
+Do lado do alvo, o Juice Shop registra as requisições na saída do contêiner, que você lê do
+**terminal do WSL** (não do Kali, que não controla o Docker):
+
+```console
+$ docker logs cyberlab-juice-shop-1 2>&1 | tail -n 3
+```
+
+As tentativas do Intruder aparecem como uma rajada de `POST /rest/user/login` do mesmo cliente, em
+segundos — um padrão que grita "força bruta" para quem olha. A seção 8 transforma isso em defesa:
+limitar a taxa, bloquear após N erros, alertar sobre a rajada.
+
+Ao terminar, desligue o Burp (não precisa salvar o projeto temporário), **desmarque o proxy no
+Firefox** (senão ele fica sem internet depois) e pare o lab pelo botão **Parar** (ou
+`scripts/lab.sh down juice-shop`). As suas evidências ficam em `~/engajamentos`, que sobrevive.
+
+## 6. Variações e aprofundamento
+
+**Match and replace.** Em vez de editar cada requisição à mão, o
+<GlossaryTerm term="Match and replace">Match and replace</GlossaryTerm> aplica uma regra a tudo que
+passa — por exemplo, trocar o `User-Agent` em todas as requisições, ou injetar um cabeçalho. Fica em
+**Proxy → Match and replace**.
+
+**Decoder e Comparer na prática.** Muitos valores de aplicações web vêm codificados: um parâmetro em
+Base64, um ID em hex, um token com partes em Base64URL. O **Decoder** decodifica (e codifica) esses
+valores para você ler e remontar. Quando você quer achar o que muda entre duas respostas quase
+iguais (um login que deu certo e um que falhou), o **Comparer** destaca as diferenças byte a byte.
+
+**WebSockets.** Aplicações com <GlossaryTerm term="WebSocket">WebSocket</GlossaryTerm> (chats,
+notificações em tempo real) mantêm um canal aberto de mão dupla. O Burp registra e deixa editar
+também as mensagens WebSocket, na aba própria do histórico.
+
+**Community vs. Professional.** A página oficial descreve a
+<GlossaryTerm term="Burp Suite">Community Edition</GlossaryTerm> (gratuita) como o "kit manual
+essencial": Proxy, Repeater, Decoder, Comparer e o "Burp Intruder (demo)". A **Professional** acrescenta
+o scanner automático de vulnerabilidades, salvar projetos, o
+<GlossaryTerm term="Burp Collaborator">Burp Collaborator</GlossaryTerm> (para detectar interações
+fora de banda) e o Intruder sem limite de velocidade. Para aprender e para o teste manual, a Community
+basta — e é a que você usa neste módulo. Quando o Intruder demo atrapalhar por ser lento, a extensão
+<GlossaryTerm term="Turbo Intruder">Turbo Intruder</GlossaryTerm> envia requisições em alta velocidade
+sem essa limitação.
+
+**Alternativas abertas.** O <GlossaryTerm term="OWASP ZAP">OWASP ZAP</GlossaryTerm> é o concorrente
+livre mais próximo, com proxy, repetição e scanner. O
+<GlossaryTerm term="mitmproxy">mitmproxy</GlossaryTerm> é operado por linha de comando e brilha em
+scripting e automação. O Caido é um proxy mais novo, com foco em desempenho. Saber que existem evita a
+armadilha de achar que "pentest web = Burp".
+
+**Proxy para o que não é navegador.** Um app de celular, um script em Python, o `curl` — tudo pode
+passar pelo Burp. Para o `curl`, basta `curl -x http://127.0.0.1:8080 http://juice-shop:3000/`. É
+assim que se interceptam APIs chamadas por programas, não só por páginas.
+
+## 7. Erros comuns
+
+- **"A internet travou" / nada carrega:** o **Intercept** está ligado e toda requisição está parada
+  esperando o Forward. Desligue o Intercept (fica *off*) para navegar normalmente.
+- **O navegador não passa pelo Burp:** o proxy não foi configurado, ou aponta para a porta errada.
+  Confirme `127.0.0.1:8080` e que o Burp está ouvindo em **Proxy → Proxy settings**.
+- **"Your connection is not secure" em HTTPS:** a CA do Burp não foi instalada como confiável. Visite
+  `http://burpsuite` com o proxy ligado, baixe o certificado e instale-o. (No lab, acessando o Juice
+  Shop por HTTP, isso não ocorre.)
+- **O POST de feedback dá erro 500 falando de `captchaId`:** o captcha expirou ou não foi enviado.
+  Pegue um `GET /rest/captcha/` fresco e use o `captchaId`/`answer` dele no mesmo envio.
+- **O servidor reclama do corpo depois de editar à mão:** o `Content-Length` ficou errado. Deixe
+  ligada a opção do Repeater de recalcular o `Content-Length`.
+- **O Intruder está lento demais:** é a limitação da Community Edition. Use uma lista curta, ou
+  quebre o ataque em partes; para volume de verdade, a extensão Turbo Intruder.
+- **Depois do lab, o Firefox fica sem internet:** o proxy manual continua marcado e aponta para um
+  Burp que não está mais no ar. Volte o Firefox para **No proxy** (ou "Use system proxy").
+
+## 8. Defesa e mitigação
+
+A lição do módulo inteiro é uma frase: **nunca confie no cliente.** Tudo que chega ao servidor —
+cabeçalho, corpo, método, cookie — pode ter sido forjado por um proxy. Defender é checar tudo onde o
+atacante não alcança: no servidor.
+
+**1. Valide no servidor, sempre.** A validação do cliente é para o usuário; a do servidor é a que
+vale. No Juice Shop, o `rating` do feedback deveria ser recusado no servidor. Em Node.js/Express,
+como o Juice Shop, seria algo assim:
+
+```javascript
+// Vulnerável: confia que o cliente só manda rating de 1 a 5.
+app.post("/api/Feedbacks", (req, res) => {
+  Feedback.create({ comment: req.body.comment, rating: req.body.rating });
+});
+
+// Corrigido: o servidor recusa o que está fora da regra.
+app.post("/api/Feedbacks", (req, res) => {
+  const rating = Number(req.body.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return res.status(400).json({ error: "rating inválido" });
+  }
+  Feedback.create({ comment: String(req.body.comment).slice(0, 500), rating });
+});
+```
+
+Use um validador de esquema (como `zod` ou `joi`) para não escrever essas checagens à mão em cada
+rota — a própria plataforma valida toda Server Action com `zod`, pela mesma razão.
+
+**2. Autorize cada acesso, por recurso.** Os casos do USPS e da First American foram falhas de
+**autorização**: o servidor servia dados de outros usuários (ou documentos por número sequencial) sem
+checar se quem pedia tinha direito. A cada requisição, o servidor tem de perguntar "este usuário pode
+ver/alterar **este** objeto?". Nunca use um identificador previsível (um número que incrementa) como
+se fosse um segredo.
+
+**3. Contra a força bruta: limite e bloqueie.** A Missão 3 só funcionou porque o login aceitava
+tentativas ilimitadas. Defesas que se somam:
+
+- **Rate limiting:** limitar tentativas por IP e por conta num intervalo (ex.: `express-rate-limit`).
+- **Bloqueio progressivo:** atrasar ou bloquear a conta após N erros seguidos.
+- **Senhas fortes:** exigir senhas que não caiam numa wordlist, e nunca deixar senhas de fábrica como
+  `admin123` (o 3.2 aprofunda hashes e quebra de senhas).
+- **Autenticação em dois fatores (2FA):** mesmo com a senha, falta o segundo fator.
+
+**4. Proteja a sessão.** Cookies de sessão com `HttpOnly` (JavaScript não lê), `Secure` (só por
+HTTPS) e `SameSite` (contra requisições forjadas de outros sites, o Cross-Site Request Forgery, ou
+CSRF). Tokens anti-CSRF para ações que mudam estado.
+
+**5. Use HTTPS e <GlossaryTerm term="HSTS">HSTS</GlossaryTerm>.** O HTTPS impede um
+man-in-the-middle **não autorizado** na rede (não o Burp do dono da máquina). O cabeçalho HSTS obriga
+o navegador a só falar por HTTPS. Em apps de celular, o **certificate pinning** eleva a barra. Mas
+atenção: nada disso substitui a validação no servidor — são camadas diferentes.
+
+**Por que "detectar o Burp" não é defesa.** Dá para tentar reconhecer o proxy (um cabeçalho, um
+comportamento), mas qualquer sinal que parta do cliente o cliente pode forjar: troca-se o
+`User-Agent`, usa-se o ZAP ou o mitmproxy, escreve-se a requisição com `curl`. É um jogo que o
+atacante vence. A defesa real é a de sempre: validar e autorizar no servidor.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e faça os desafios práticos.
+
+<Quiz task="quiz-final" />
+
+### Desafios práticos (sem flag)
+
+1. **Score Board.** O Juice Shop esconde um painel de desafios. Com o Burp e o Firefox, descubra a
+   rota do *Score Board* (dica: o JavaScript da aplicação conhece as rotas; olhe o que o navegador
+   carrega). É o seu mapa dos próximos desafios, para a Trilha 4.
+2. **Comparer.** Capture uma resposta de login com sucesso e uma com erro e mande as duas para o
+   **Comparer**. Quais bytes diferem? Isso explica por que, no Intruder, o tamanho denuncia o acerto.
+3. **curl pelo Burp.** Faça `curl -x http://127.0.0.1:8080 http://juice-shop:3000/rest/admin/application-version`
+   e confirme que a requisição aparece no HTTP history. Entenda por que interceptar não exige um
+   navegador.
+
+<Callout variant="tip" title="Dica de estudo">
+A PortSwigger mantém a **Web Security Academy**, um curso gratuito e excelente de segurança web, com
+laboratórios próprios. É a melhor continuação natural deste módulo — mas lembre: os labs dela são
+online e públicos; o que você treina aqui, no Juice Shop local, é isolado e 100% seu.
+</Callout>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O Burp é um **proxy de interceptação**: fica entre o navegador e o servidor e deixa você ver e
+  **alterar** cada requisição e resposta. Por padrão, em `127.0.0.1:8080`.
+- O navegador é só um cliente. **Validação e regras do lado do cliente não são segurança** — o Burp
+  as contorna reenviando a requisição direto ao servidor.
+- Fluxo: **Proxy** captura, **Target/Scope** organiza e filtra, **Repeater** aprofunda uma
+  requisição, **Intruder** automatiza muitas variações.
+- Para ler HTTPS, o Burp monta dois túneis TLS e usa a **própria CA** (que você instala como
+  confiável); o **certificate pinning** pode barrar isso.
+- A defesa é uma só frase: **nunca confie no cliente.** Valide e autorize **no servidor**, limite
+  tentativas, proteja a sessão.
+
+### Cola rápida
+
+| Ação | Como |
+|---|---|
+| Proxy do Firefox | Manual, `127.0.0.1:8080` |
+| Ligar/desligar intercepção | Proxy → Intercept → *Intercept is on/off* |
+| Deixar passar / descartar | **Forward** / **Drop** |
+| Mandar para o Repeater | **Ctrl+R** |
+| Mandar para o Intruder | **Ctrl+I** |
+| Marcar/limpar posições (Intruder) | **Add §** / **Clear §** |
+| Baixar a CA do Burp | visitar `http://burpsuite` com o proxy ligado |
+| Interceptar o `curl` | `curl -x http://127.0.0.1:8080 <url>` |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Documentação do Burp Suite (PortSwigger)](https://portswigger.net/burp/documentation) — a
+  referência oficial de cada ferramenta.
+- [PortSwigger Web Security Academy](https://portswigger.net/web-security) — curso gratuito de
+  segurança web, com laboratórios.
+- [OWASP Juice Shop](https://owasp.org/www-project-juice-shop/) — o alvo do lab, com o guia de
+  desafios *Pwning OWASP Juice Shop*.

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
+  <title id="t">Como o Burp lê HTTPS: dois túneis TLS e a CA do Burp</title>
+  <desc id="d">Para ler tráfego HTTPS, o Burp quebra a conexão em dois túneis TLS separados. No primeiro túnel, entre o navegador e o Burp, o Burp gera na hora um certificado para o site visitado, assinado pela sua própria autoridade certificadora, a CA do Burp. Para o navegador não reclamar, é preciso instalar e confiar nessa CA, baixada em http://burpsuite. No segundo túnel, entre o Burp e o servidor real, o Burp faz um TLS normal, validando o certificado verdadeiro do servidor. No meio, entre os dois túneis, o Burp vê o conteúdo em texto claro e pode lê-lo e alterá-lo. Uma nota avisa que o certificate pinning é uma defesa: quando o aplicativo exige um certificado específico, ele recusa o certificado da CA do Burp e o túnel do navegador não se estabelece. No laboratório isso não aparece, porque o Juice Shop é acessado por HTTP simples, sem TLS.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 11.5px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .y { fill: #e8c46a; }
+    .g { fill: #5ee08a; }
+    .tls { stroke: #5ee08a; stroke-width: 3; fill: none; }
+    .clear { stroke: #f08a7a; stroke-width: 2; stroke-dasharray: 5 4; marker-end: url(#ap); fill: none; }
+  </style>
+  <defs>
+    <marker id="ap" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f08a7a"/></marker>
+  </defs>
+  <rect width="900" height="400" fill="#121815"/>
+  <text class="t" x="30" y="32">HTTPS pelo Burp: dois túneis TLS, com o texto claro no meio</text>
+
+  <!-- browser -->
+  <rect x="30" y="90" width="150" height="90" rx="8" fill="#16201b" stroke="#3a4b42"/>
+  <text class="h" x="52" y="122">Navegador</text>
+  <text class="s" x="52" y="146">confia na</text>
+  <text class="s" x="52" y="162">CA do Burp</text>
+
+  <!-- burp -->
+  <rect x="360" y="80" width="180" height="150" rx="8" fill="#16201b" stroke="#e8c46a"/>
+  <text class="y" x="398" y="108">Burp Proxy</text>
+  <text class="b g" x="376" y="134">vê texto claro</text>
+  <text class="s" x="376" y="156">gera um certificado</text>
+  <text class="s" x="376" y="170">por host, assinado</text>
+  <text class="s" x="376" y="184">pela CA do Burp</text>
+  <text class="s" x="376" y="208">valida o certificado</text>
+  <text class="s" x="376" y="222">real do servidor</text>
+
+  <!-- server -->
+  <rect x="720" y="90" width="150" height="90" rx="8" fill="#16201b" stroke="#3a4b42"/>
+  <text class="h" x="742" y="122">Servidor</text>
+  <text class="s" x="742" y="146">certificado</text>
+  <text class="s" x="742" y="162">verdadeiro</text>
+
+  <!-- tunnel 1 -->
+  <path class="tls" d="M180,135 L358,135"/>
+  <text class="g" x="196" y="126">túnel TLS 1</text>
+  <text class="s" x="196" y="172">cert. assinado</text>
+  <text class="s" x="196" y="186">pela CA do Burp</text>
+
+  <!-- tunnel 2 -->
+  <path class="tls" d="M540,135 L718,135"/>
+  <text class="g" x="560" y="126">túnel TLS 2</text>
+  <text class="s" x="560" y="172">TLS normal com o</text>
+  <text class="s" x="560" y="186">servidor real</text>
+
+  <!-- pinning note -->
+  <rect x="30" y="265" width="400" height="110" rx="10" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="h" x="46" y="291">Defesa: certificate pinning</text>
+  <text class="b" x="46" y="315">Quando o app exige um certificado</text>
+  <text class="b" x="46" y="333">específico, ele recusa o da CA do Burp:</text>
+  <text class="b y" x="46" y="351">o túnel 1 não se estabelece,</text>
+  <text class="b" x="46" y="369">e o Burp não consegue ler.</text>
+
+  <!-- lab note -->
+  <rect x="460" y="265" width="410" height="110" rx="10" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="h" x="476" y="291">No laboratório</text>
+  <text class="b" x="476" y="315">O Juice Shop é acessado por <tspan fill="#f08a7a">HTTP</tspan></text>
+  <text class="b" x="476" y="333">simples, sem TLS. Não há certificado</text>
+  <text class="b" x="476" y="351">para instalar nem túnel para montar —</text>
+  <text class="b" x="476" y="369">o Burp já vê tudo em texto claro.</text>
+</svg>

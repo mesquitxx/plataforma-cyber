@@ -201,7 +201,11 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   "Reconhecimento e nmap" (lab `rede-de-alvos`; três missões contra o DVWA e o Juice Shop na
   `lab_net`, com a `desktop_net` fora do escopo: a descoberta de hosts, os serviços e versões,
   inclusive um que o nmap não reconhece, e os scripts NSE forçados contra a portrule, e
-  walkthrough do rastro da varredura no log do Apache) escritos.
+  walkthrough do rastro da varredura no log do Apache) e 2.5 "Burp Suite" (lab `juice-shop`;
+  três missões contra o OWASP Juice Shop: o proxy e o escopo lendo a API que a SPA chama
+  sozinha, o Repeater enviando um feedback de 0 estrelas que a interface proíbe, e o Intruder
+  descobrindo a senha fraca do admin por status e tamanho da resposta, e walkthrough do rastro
+  do ataque nos logs do contêiner) escritos.
 
 ## Fase 10 — Conteúdo: Trilhas 3–5
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.

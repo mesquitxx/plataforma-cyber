@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-labelledby="t d">
+  <title id="t">O ciclo de trabalho no Burp Suite</title>
+  <desc id="d">Um ciclo com quatro etapas ligadas por setas. Primeiro, o Proxy captura o tráfego enquanto você navega e guarda tudo no HTTP history. Segundo, o Target e o Scope organizam o que foi capturado no site map e filtram só o que está no escopo. Terceiro, você manda uma requisição interessante para o Repeater e a reenvia alterada quantas vezes quiser, comparando as respostas. Quarto, quando quer testar muitas variações de uma vez, manda a requisição para o Intruder, marca as posições e dispara uma lista de payloads, lendo os resultados por status, tamanho e tempo. O Intruder e o Repeater devolvem achados que valem uma nova navegação, fechando o ciclo. No centro, uma nota lembra que Decoder e Comparer ajudam a entender valores codificados e a comparar respostas em qualquer etapa.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 14px; font-weight: 700; fill: #5cc8d8; }
+    .n { font-size: 13px; font-weight: 700; fill: #121815; }
+    .b { font-size: 11.5px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .flow { stroke: #e8c46a; stroke-width: 2.5; marker-end: url(#ay); fill: none; }
+  </style>
+  <defs>
+    <marker id="ay" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8c46a"/></marker>
+  </defs>
+  <rect width="900" height="460" fill="#121815"/>
+  <text class="t" x="30" y="32">O fluxo de um teste web no Burp</text>
+
+  <!-- 1 Proxy -->
+  <rect x="40" y="70" width="330" height="110" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <circle cx="68" cy="98" r="14" fill="#5cc8d8"/><text class="n" x="63" y="103">1</text>
+  <text class="h" x="92" y="103">Proxy</text>
+  <text class="b" x="56" y="130">Navegue com o tráfego passando pelo Burp.</text>
+  <text class="b" x="56" y="150">Tudo fica no <tspan fill="#e8c46a">HTTP history</tspan>: cada requisição</text>
+  <text class="b" x="56" y="168">e resposta, para você revisitar.</text>
+
+  <!-- 2 Target/Scope -->
+  <rect x="530" y="70" width="330" height="110" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <circle cx="558" cy="98" r="14" fill="#5cc8d8"/><text class="n" x="553" y="103">2</text>
+  <text class="h" x="582" y="103">Target + Scope</text>
+  <text class="b" x="546" y="130">O <tspan fill="#e8c46a">site map</tspan> organiza o que você viu.</text>
+  <text class="b" x="546" y="150">O <tspan fill="#e8c46a">scope</tspan> filtra só o alvo autorizado</text>
+  <text class="b" x="546" y="168">e tira o ruído do resto.</text>
+
+  <!-- 3 Repeater -->
+  <rect x="530" y="270" width="330" height="110" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <circle cx="558" cy="298" r="14" fill="#5cc8d8"/><text class="n" x="553" y="303">3</text>
+  <text class="h" x="582" y="303">Repeater</text>
+  <text class="b" x="546" y="330">Pegue uma requisição interessante e a</text>
+  <text class="b" x="546" y="350">reenvie alterada, à mão, quantas vezes</text>
+  <text class="b" x="546" y="368">quiser. Compare as respostas.</text>
+
+  <!-- 4 Intruder -->
+  <rect x="40" y="270" width="330" height="110" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <circle cx="68" cy="298" r="14" fill="#5cc8d8"/><text class="n" x="63" y="303">4</text>
+  <text class="h" x="92" y="303">Intruder</text>
+  <text class="b" x="56" y="330">Marque <tspan fill="#e8c46a">posições</tspan> e dispare uma lista de</text>
+  <text class="b" x="56" y="350">payloads. Ache o fora-da-curva por</text>
+  <text class="b" x="56" y="368">status, tamanho e tempo.</text>
+
+  <!-- flow arrows -->
+  <path class="flow" d="M370,125 L528,125"/>
+  <path class="flow" d="M695,180 L695,268"/>
+  <path class="flow" d="M528,325 L372,325"/>
+  <path class="flow" d="M205,270 C205,230 205,210 205,182"/>
+  <text class="s" x="300" y="258">achados → nova navegação</text>
+
+  <!-- center note -->
+  <rect x="300" y="200" width="300" height="60" rx="10" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="b" x="316" y="226"><tspan fill="#5ee08a">Decoder</tspan> e <tspan fill="#5ee08a">Comparer</tspan> ajudam em</text>
+  <text class="s" x="316" y="246">qualquer etapa: decodificar e comparar.</text>
+</svg>
