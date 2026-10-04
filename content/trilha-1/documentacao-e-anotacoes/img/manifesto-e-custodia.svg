@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
+  <title id="t">A cadeia de custódia de uma evidência, por hash</title>
+  <desc id="d">Da esquerda para a direita, quatro etapas. Na coleta, a saída de uma ferramenta é salva num arquivo original, que não se edita mais. Em seguida, calcula-se o hash SHA-256 de cada arquivo e grava-se o conjunto no MANIFESTO.sha256. Depois, o manifesto e as evidências entram num commit do Git, que carimba a data e torna qualquer alteração posterior visível no histórico. Por fim, na conferência, o comando sha256sum -c MANIFESTO.sha256 recalcula os hashes e aponta três resultados possíveis: OK quando bate, FAILED quando o conteúdo mudou, e um erro de arquivo não encontrado quando a evidência sumiu. Uma caixa à parte lembra que um arquivo que nunca entrou no manifesto também é um problema: ele existe sem prova de origem.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 12.5px; font-weight: 700; }
+    .s { font-size: 11px; fill: #9fb0a6; }
+    .c { font-size: 11.5px; }
+    .box { fill: #1c2521; stroke-width: 1.6; }
+    .ok { fill: #5ee08a; } .bad { fill: #f06a6a; } .warn { fill: #f0a35a; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="430" fill="#121815"/>
+  <text class="t" x="30" y="30">O hash prova que a evidência não mudou</text>
+
+  <rect class="box" x="30" y="56" width="180" height="92" rx="8" style="stroke:#5cc8d8"/>
+  <text class="m" x="44" y="80" style="fill:#5cc8d8">1 coleta</text>
+  <text class="c" x="44" y="102" style="font-size:11px">a saída da ferramenta</text>
+  <text class="c" x="44" y="120" style="font-size:11px">vira um arquivo</text>
+  <text class="c" x="44" y="138" style="font-size:11px">original (não se edita)</text>
+
+  <rect class="box" x="240" y="56" width="180" height="92" rx="8" style="stroke:#5ee08a"/>
+  <text class="m" x="254" y="80" style="fill:#5ee08a">2 hash</text>
+  <text class="c" x="254" y="102" style="font-size:11px">sha256sum E*.txt</text>
+  <text class="c" x="254" y="120" style="font-size:11px">&gt; MANIFESTO.sha256</text>
+  <text class="s" x="254" y="138">uma linha por arquivo</text>
+
+  <rect class="box" x="450" y="56" width="180" height="92" rx="8" style="stroke:#b48cf0"/>
+  <text class="m" x="464" y="80" style="fill:#b48cf0">3 commit</text>
+  <text class="c" x="464" y="102" style="font-size:11px">git add + commit</text>
+  <text class="c" x="464" y="120" style="font-size:11px">carimba a data;</text>
+  <text class="c" x="464" y="138" style="font-size:11px">mudança fica visível</text>
+
+  <rect class="box" x="660" y="56" width="210" height="92" rx="8" style="stroke:#e8c25a"/>
+  <text class="m" x="674" y="80" style="fill:#e8c25a">4 conferência</text>
+  <text class="c" x="674" y="102" style="font-size:11px">sha256sum -c</text>
+  <text class="c" x="674" y="120" style="font-size:11px">MANIFESTO.sha256</text>
+  <text class="s" x="674" y="138">recalcula e compara</text>
+
+  <g stroke="#5ee08a" stroke-width="2" marker-end="url(#g)">
+    <line x1="210" y1="102" x2="238" y2="102"/>
+    <line x1="420" y1="102" x2="448" y2="102"/>
+    <line x1="630" y1="102" x2="658" y2="102"/>
+  </g>
+
+  <!-- results -->
+  <rect class="box" x="660" y="168" width="210" height="130" rx="8" style="stroke:#34413b"/>
+  <text class="m" x="674" y="190">três resultados:</text>
+  <text class="c ok" x="674" y="214" style="font-size:11.5px">E01 ... : OK</text>
+  <text class="s" x="690" y="230">o conteúdo bate</text>
+  <text class="c bad" x="674" y="252" style="font-size:11.5px">E07 ... : FAILED</text>
+  <text class="s" x="690" y="268">o conteúdo mudou</text>
+  <text class="c warn" x="674" y="290" style="font-size:11.5px">E09 ... : No such file</text>
+  <line x1="765" y1="148" x2="765" y2="166" stroke="#e8c25a" stroke-width="2" marker-end="url(#g)"/>
+
+  <!-- not in manifest -->
+  <rect class="box" x="30" y="330" width="840" height="76" rx="8" style="stroke:#f0a35a"/>
+  <text class="m warn" x="46" y="356">e o quarto caso, que o -c não pega sozinho:</text>
+  <text class="c" x="46" y="380" style="font-size:12px">um arquivo que existe mas NÃO está no manifesto (E11). Ele não tem prova de origem — compare a lista</text>
+  <text class="c" x="46" y="398" style="font-size:12px">dos arquivos com a do manifesto (comm) e confira o próprio manifesto no histórico do Git.</text>
+</svg>

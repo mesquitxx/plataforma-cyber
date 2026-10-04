@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">A anatomia de um achado, campo a campo</title>
+  <desc id="d">À esquerda, uma nota de achado com sete campos empilhados: título (uma frase que diz a falha), ativo (o IP ou nome do alvo), hora em UTC, evidências (os IDs dos arquivos que provam), passos para reproduzir (uma lista numerada), impacto (o que um atacante consegue) e recomendação (como corrigir). À direita, as três seções do relatório final: o resumo executivo, a lista de achados e os anexos. Setas ligam cada campo da nota ao lugar onde ele é usado no relatório: o título e o impacto alimentam o resumo executivo e a lista; os passos e as evidências viram a prova de cada achado; a recomendação vira a remediação. Embaixo, uma régua de prioridade indica que o impacto define a severidade do achado.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 12.5px; font-weight: 700; }
+    .s { font-size: 11px; fill: #9fb0a6; }
+    .c { font-size: 11.5px; }
+    .box { fill: #1c2521; stroke-width: 1.6; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="30">A nota de hoje é o achado do relatório</text>
+
+  <!-- note with fields -->
+  <rect class="box" x="30" y="52" width="330" height="360" rx="8" style="stroke:#5cc8d8"/>
+  <text class="m" x="46" y="76" style="fill:#5cc8d8">achados/A03.md</text>
+  <g class="c" style="font-size:11.5px">
+    <text x="46" y="104"><tspan class="s">titulo:</tspan> SQL injection em /busca</text>
+    <text x="46" y="134"><tspan class="s">ativo:</tspan> 10.0.5.15</text>
+    <text x="46" y="164"><tspan class="s">hora_utc:</tspan> 2026-10-07T01:13:05Z</text>
+    <text x="46" y="194"><tspan class="s">evidencias:</tspan> E04, E05</text>
+    <text x="46" y="224"><tspan class="s">passos:</tspan></text>
+    <text x="62" y="244">1. ?q=caneta' -&gt; erro 500</text>
+    <text x="62" y="264">2. ?q=caneta'-- -&gt; 200</text>
+    <text x="46" y="294"><tspan class="s">impacto:</tspan> ler e alterar o banco</text>
+    <text x="46" y="324"><tspan class="s">recomendacao:</tspan></text>
+    <text x="62" y="344">consultas parametrizadas</text>
+    <text x="46" y="384" class="s">status: pronto</text>
+  </g>
+
+  <!-- report sections -->
+  <rect class="box" x="560" y="60" width="310" height="80" rx="8" style="stroke:#b48cf0"/>
+  <text class="m" x="574" y="84" style="fill:#b48cf0">resumo executivo</text>
+  <text class="s" x="574" y="106">o que foi testado, o risco geral,</text>
+  <text class="s" x="574" y="124">em linguagem de negócio</text>
+
+  <rect class="box" x="560" y="160" width="310" height="120" rx="8" style="stroke:#b48cf0"/>
+  <text class="m" x="574" y="184" style="fill:#b48cf0">lista de achados</text>
+  <text class="s" x="574" y="206">título + severidade</text>
+  <text class="s" x="574" y="224">passos para reproduzir</text>
+  <text class="s" x="574" y="242">evidências (anexas)</text>
+  <text class="s" x="574" y="260">recomendação de correção</text>
+
+  <rect class="box" x="560" y="300" width="310" height="70" rx="8" style="stroke:#b48cf0"/>
+  <text class="m" x="574" y="324" style="fill:#b48cf0">anexos</text>
+  <text class="s" x="574" y="346">evidências E04, E05 e a carta</text>
+  <text class="s" x="574" y="364">de autorização</text>
+
+  <g stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)">
+    <path d="M 360 100 C 460 100, 470 100, 558 100" fill="none"/>
+    <path d="M 360 254 C 460 254, 470 220, 558 220" fill="none"/>
+    <path d="M 360 184 C 450 184, 470 240, 558 242" fill="none"/>
+    <path d="M 360 334 C 460 340, 470 335, 558 335" fill="none"/>
+  </g>
+  <text class="s" x="372" y="94">título + impacto</text>
+  <text class="s" x="372" y="150">passos</text>
+  <text class="s" x="372" y="360">evidências</text>
+
+  <rect class="box" x="30" y="428" width="840" height="34" rx="8" style="stroke:#e8c25a"/>
+  <text class="c" x="46" y="450" style="font-size:12px">o campo <tspan style="fill:#e8c25a">impacto</tspan> define a <tspan style="fill:#e8c25a">severidade</tspan>: quanto um atacante consegue com a falha decide a prioridade de correção</text>
+</svg>

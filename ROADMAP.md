@@ -190,7 +190,11 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   e ética" (sem lab; três missões no WSL sobre o enquadramento de condutas no Código Penal,
   a auditoria LGPD de uma pasta de evidências com `grep` e os dilemas de um teste em
   andamento, todas fictícias, e walkthrough do texto compilado das leis no Planalto e das
-  decisões da ANPD) escritos.
+  decisões da ANPD) e 1.5 "Documentação e anotações de pentest" (sem lab; três missões no
+  WSL sobre a linha do tempo de um engajamento em UTC a partir de três fusos, a auditoria da
+  cadeia de custódia de uma pasta de evidências versionada no Git e a triagem de notas de
+  achado contra critérios de pronto, todas fictícias, e walkthrough do caderno-modelo com
+  `script`/`scriptreplay` e Git) escritos.
 
 ## Fase 10 — Conteúdo: Trilhas 3–5
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.

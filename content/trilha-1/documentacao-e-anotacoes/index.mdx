@@ -1,0 +1,1423 @@
+---
+slug: documentacao-e-anotacoes
+track: trilha-1
+title: "Documentação e anotações de pentest"
+prerequisites: [metodologia]
+lab: null
+tasks:
+  - slug: missao-1-quem-disparou-o-alerta
+    title: "Missão 1 — Quem disparou o alerta?"
+    type: flag
+    prompt: "A flag que o conferir.sh imprime quando as quatro linhas do respostas.txt estão no formato certo, no formato FLAG{12 caracteres hexadecimais}."
+    hint: "Converta as três fontes para UTC antes de comparar. O alerta sem nenhuma ação da equipe no mesmo instante — e com outra origem — é 'externo'."
+    flag:
+      hash: "scrypt$16384$8$1$6b03455dd5d36bc27047f91149da144dd64e7aea3b6f33a694ca9f60de6a14b0"
+      salt: "05216f05365fd3f3930762dda025cd1d"
+  - slug: missao-2-a-evidencia-mudou
+    title: "Missão 2 — A evidência mudou?"
+    type: flag
+    prompt: "Os IDs das evidências que não estão como foram coletadas (alteradas, sumidas ou fora do manifesto), em ordem crescente, separados por hífen, dentro de FLAG{ }."
+    hint: "sha256sum -c pega o que mudou e o que sumiu. Mas o manifesto também pode ter sido reescrito: compare-o com a versão do primeiro commit. E um arquivo que nunca entrou no manifesto também é um problema."
+    flag:
+      hash: "scrypt$16384$8$1$0481044fb04f1a108ee64542bf4eb94f02928e7737f3e69df957785e4745d57d"
+      salt: "54597f32846074db19991d060f8fa795"
+  - slug: missao-3-do-caderno-ao-relatorio
+    title: "Missão 3 — Do caderno ao relatório"
+    type: flag
+    prompt: "Os IDs dos achados que ainda NÃO estão prontos para o relatório, em ordem crescente, separados por hífen, dentro de FLAG{ }."
+    hint: "São cinco critérios. Um achado reprova se falhar em qualquer um: evidência que não existe, ativo fora do escopo, hora fora da janela, sem passo numerado, ou credencial em claro."
+    flag:
+      hash: "scrypt$16384$8$1$53b8320b218b88bdb288087865fa62b6641ecb537a6ac966925c05653a5aaf60"
+      salt: "fc9d5ed49dc2fd6a6187149bccb77ea7"
+  - slug: quiz-final
+    title: "Quiz — Documentação e anotações de pentest"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que a recomendação é anotar as horas em UTC, e não no horário de Brasília?"
+        options:
+          - "Porque o horário de Brasília é proibido em relatórios"
+          - "Porque UTC não tem fuso nem horário de verão: é um ponto de referência único que cruza sem ambiguidade com os logs do alvo e com as notas de outros membros da equipe"
+          - "Porque o comando date só funciona em UTC"
+          - "Porque UTC é mais fácil de digitar"
+        answer: 1
+        explanation: "UTC (Tempo Universal Coordenado) é o relógio de referência mundial, sem fuso e sem horário de verão. Uma nota '20:41' sem fuso é ambígua; '23:41Z' é um instante único. Como os logs de servidores e appliances costumam ser em UTC, anotar em UTC evita a conta de conversão (e o erro) na hora de cruzar a sua linha do tempo com a do defensor."
+      - question: "O que significa, na cadeia de custódia, nunca editar a evidência 'original'?"
+        options:
+          - "Que a evidência não pode ser lida por ninguém"
+          - "Que você trabalha sempre numa cópia (a derivada): mascara, corta e anota na cópia, e o arquivo original coletado fica intacto, com o hash registrado no manifesto"
+          - "Que o original precisa ser impresso em papel"
+          - "Que só o cliente pode abrir o original"
+        answer: 1
+        explanation: "A original é a prova de como o dado foi coletado. Qualquer tratamento (mascarar um CPF, cortar uma imagem) é feito numa cópia derivada, para que a original continue batendo com o hash do manifesto. Editar a original quebra a cadeia de custódia: você não consegue mais provar que ela não foi adulterada."
+      - question: "Um manifesto de hashes (sha256sum -c) acusa 'OK' para todas as evidências. Isso prova que a pasta está íntegra?"
+        options:
+          - "Sim, OK em tudo significa que nada foi tocado"
+          - "Não: o -c só confere os arquivos listados. Um arquivo novo, que nunca entrou no manifesto, não é checado; e se o próprio manifesto foi reescrito depois, ele passa a bater com o conteúdo alterado"
+          - "Sim, desde que o disco seja um SSD"
+          - "Não, porque o SHA-256 é inseguro"
+        answer: 1
+        explanation: "O sha256sum -c compara os arquivos contra as linhas do manifesto. Ele não sabe de um arquivo que não está listado (compare a lista de arquivos com a do manifesto), e não protege contra alguém que reescreva o manifesto para casar com um arquivo já alterado — por isso o manifesto entra no Git, onde qualquer mudança nele aparece no histórico."
+      - question: "Por que registrar também os resultados negativos (o que você testou e NÃO encontrou)?"
+        options:
+          - "Para encher o relatório"
+          - "Porque o negativo é a prova de cobertura: ele mostra ao cliente o que foi testado e estava são, e evita que um 'não testei' seja confundido com um 'testei e está seguro'"
+          - "Porque a lei exige"
+          - "Porque o negativo vira flag"
+        answer: 1
+        explanation: "Sem o negativo, o relatório só mostra o que falhou, e ninguém sabe se o resto foi testado. Um resultado negativo anotado ('testei SQL injection no login, sem sucesso, às 00:52Z') é o que alimenta a matriz de cobertura do 1.2 e separa 'testado e são' de 'não testado'."
+      - question: "Durante um teste autorizado, a tela mostra o prontuário de um paciente. O que a boa documentação manda fazer?"
+        options:
+          - "Tirar um print inteiro para o relatório"
+          - "Copiar os dados para um arquivo, por garantia"
+          - "Descrever o acesso em texto (que endpoint, que hora, o que apareceu), sem copiar nem fotografar o dado sensível, registrando só o necessário para provar a falha"
+          - "Parar o pentest imediatamente"
+        answer: 2
+        explanation: "A regra, que você viu no 1.4, é a minimização: a prova de que você acessou o prontuário é a descrição do acesso, não uma cópia do dado de saúde. Documentar bem é também documentar com o mínimo de dado pessoal — o caderno é o arquivo mais sensível do engajamento."
+      - question: "Na vulnerabilidade apelidada de aCropalypse (CVE-2023-21036), por que imagens 'cortadas' continuavam expondo o conteúdo removido?"
+        options:
+          - "Porque o corte era só visual: um retângulo por cima da imagem"
+          - "Porque a ferramenta salvava a imagem cortada sem truncar o arquivo original, deixando os bytes do fim do arquivo antigo (a parte 'removida') recuperáveis"
+          - "Porque o PNG não pode ser cortado"
+          - "Porque o atacante tinha acesso ao celular"
+        answer: 1
+        explanation: "No Markup do Pixel, o arquivo era aberto sem a flag de truncamento, então a imagem nova (menor) era escrita por cima da antiga e o resto dos bytes originais ficava no arquivo. Cortar a imagem não bastava: era preciso gerar um arquivo novo. A mesma classe de erro atingiu a Ferramenta de Captura do Windows (CVE-2023-28303)."
+      - question: "O que o caso do roubo das ferramentas de Red Team da FireEye (dezembro de 2020) ensina sobre as suas anotações?"
+        options:
+          - "Que ferramentas de Red Team são ilegais"
+          - "Que o material de quem testa — ferramentas, notas, credenciais achadas — é alvo: se vazar, entrega um mapa da rede do cliente, por isso o caderno precisa ser protegido como dado sensível"
+          - "Que a FireEye não usava hashes"
+          - "Que Red Team não deve documentar nada"
+        answer: 1
+        explanation: "A FireEye teve as próprias ferramentas de teste roubadas e respondeu publicando mais de 300 contramedidas. A lição para o caderno é direta: as suas notas concentram falhas ainda abertas, credenciais e a topologia do cliente. Vazar o caderno é pior que vazar uma ferramenta — por isso ele é cifrado e nunca vai para uma nuvem pessoal."
+      - question: "Qual a diferença entre a evidência original e a derivada?"
+        options:
+          - "A original é em PDF e a derivada em texto"
+          - "A original é o arquivo coletado, intocado, com hash no manifesto; a derivada é a cópia tratada para o relatório (mascarada, cortada, anotada)"
+          - "A derivada é a que vai para o tribunal"
+          - "Não há diferença, são sinônimos"
+        answer: 1
+        explanation: "A original preserva a cadeia de custódia (bate com o hash); a derivada é o que você mostra no relatório depois de remover o dado pessoal e destacar o ponto. Trabalhar na derivada mantém a original como prova confiável de como o dado foi obtido."
+      - question: "Por que separar a ação do pentester da do atacante real (deconfliction) depende de boas anotações?"
+        options:
+          - "Porque o cliente paga por hora anotada"
+          - "Porque, se um incidente real acontecer durante a janela, só a linha do tempo da equipe (com horas em UTC e origem conhecida) permite dizer 'isto fomos nós' e 'isto não fomos', separando o teste de uma invasão de verdade"
+          - "Porque a lei exige um diário"
+          - "Porque o atacante também usa UTC"
+        answer: 1
+        explanation: "Deconfliction é justamente distinguir a atividade autorizada da de um adversário. Sem a linha do tempo da equipe, um alerta do SOC durante a janela é indistinguível de um ataque real. Com ela (como na Missão 1), cada alerta é casado com uma ação — ou marcado como externo."
+      - question: "O que é, e para que serve, a lista de limpeza (cleanup list) no caderno?"
+        options:
+          - "A lista de arquivos a apagar do seu computador"
+          - "O registro de tudo que o teste deixou no alvo (contas criadas, arquivos enviados, configurações mudadas), para desfazer ao final e devolver o sistema ao estado anterior"
+          - "A lista de evidências a entregar"
+          - "A lista de testes que faltam"
+        answer: 1
+        explanation: "O PTES inclui uma fase de cleanup: remover binários, scripts e arquivos temporários, desfazer mudanças de configuração e apagar contas criadas para o teste. Isso só é possível se cada alteração foi anotada na hora, no caderno — senão, algo fica para trás e pode virar porta para um atacante."
+      - question: "Você vai gravar a sessão do terminal como evidência de uma operação longa. Qual ferramenta do próprio sistema faz isso?"
+        options:
+          - "O comando history, sozinho"
+          - "O script (util-linux), que grava a sessão num arquivo e, com o arquivo de tempo, permite reproduzir com scriptreplay"
+          - "O comando cat"
+          - "O comando tee, que grava a tela inteira automaticamente"
+        answer: 1
+        explanation: "O script registra tudo o que entra e sai do terminal; com -T (arquivo de tempo), o scriptreplay reproduz a sessão como um vídeo. O history ajuda (com HISTTIMEFORMAT, carimba a hora de cada comando), e o tee copia a saída de um comando para arquivo, mas quem grava a sessão inteira é o script."
+glossary:
+  - term: note-taking
+    definition: "Anotação: o hábito e o método de registrar, enquanto se trabalha, cada ação que toca o alvo — com hora, comando, resultado e evidência. Em pentest, o que não foi anotado praticamente não aconteceu, porque não entra no relatório nem se prova depois."
+  - term: evidence
+    definition: "Evidência: o registro que prova um achado — a saída de uma ferramenta, uma requisição e resposta, uma captura de tela. Boa evidência é datada, íntegra (com hash) e suficiente para alguém reproduzir o achado."
+  - term: timestamp
+    definition: "Carimbo de tempo: a marca de data e hora de um evento. Útil só quando traz o fuso (ou é UTC); sem o fuso, '20:41' pode ser vários instantes diferentes."
+  - term: UTC
+    definition: "Coordinated Universal Time (Tempo Universal Coordenado): o relógio de referência mundial, sem fuso e sem horário de verão. É o padrão para anotar horas em segurança, porque cruza sem ambiguidade com logs e com notas de outras pessoas."
+  - term: time zone
+    definition: "Fuso horário: o deslocamento do relógio local em relação ao UTC (o horário de Brasília é UTC-3). Horário de verão muda esse deslocamento em certas épocas, o que torna o horário local uma referência traiçoeira para registros."
+  - term: ISO 8601
+    definition: "Norma internacional para escrever data e hora de forma ordenável e sem ambiguidade — por exemplo 2026-10-07T01:13:05Z, onde o 'Z' indica UTC. Datas neste formato podem ser ordenadas como texto."
+  - term: Unix epoch
+    definition: "Tempo Unix: a contagem de segundos desde 1970-01-01T00:00:00Z. Um número único, sem fuso, usado em muitos logs e APIs; o date converte de e para esse formato."
+  - term: NTP
+    definition: "Network Time Protocol: o protocolo que mantém o relógio das máquinas sincronizado com servidores de tempo. Sem ele, relógios erram, e horas de fontes diferentes deixam de casar."
+  - term: clock drift
+    definition: "Desvio de relógio: a diferença acumulada entre o relógio de uma máquina e a hora real. Um relógio adiantado ou atrasado desalinha a sua linha do tempo da do alvo; anote o desvio quando notar um."
+  - term: timeline
+    definition: "Linha do tempo: a sequência ordenada dos eventos de um teste (ou de um incidente), em um fuso único. É o que permite ligar causa e efeito e separar a ação do testador da de um atacante real."
+  - term: SHA-256
+    definition: "Função de hash criptográfico da família SHA-2 que produz um resumo de 256 bits (64 caracteres hexadecimais). Mudar um único byte do arquivo muda o hash, o que a torna ideal para provar que uma evidência não foi alterada."
+  - term: hash manifest
+    definition: "Manifesto de hashes: um arquivo que lista o hash de cada evidência (a saída do sha256sum). Confere-se com 'sha256sum -c' para detectar o que mudou ou sumiu; versionado no Git, prova também quando cada hash foi registrado."
+  - term: original evidence
+    definition: "Evidência original: o arquivo exatamente como foi coletado, que nunca se edita. É a prova íntegra; qualquer tratamento é feito numa cópia."
+  - term: derived evidence
+    definition: "Evidência derivada: a cópia da original tratada para o relatório — com dado pessoal mascarado, imagem cortada, trecho destacado. Preserva a original como prova e mostra só o necessário."
+  - term: Markdown
+    definition: "Linguagem de marcação simples, em texto puro, que vira títulos, listas e tabelas. Boa para anotações porque é legível sem ferramenta, versiona bem no Git e exporta fácil para o relatório."
+  - term: steps to reproduce
+    definition: "Passos para reproduzir: a lista numerada de ações que faz a falha aparecer de novo. Sem eles, um achado é uma afirmação; com eles, qualquer pessoa confirma o problema e depois a correção."
+  - term: negative result
+    definition: "Resultado negativo: o registro de um teste que foi feito e não encontrou nada. É a prova de cobertura — distingue 'testado e são' de 'não testado' — e por isso vai para o caderno e para a matriz de cobertura."
+  - term: cleanup list
+    definition: "Lista de limpeza: o registro de tudo que o teste deixou no alvo (contas, arquivos, configurações alteradas), para desfazer ao final e devolver o sistema ao estado anterior. Só existe se cada alteração foi anotada na hora."
+  - term: artifact
+    definition: "Artefato: qualquer coisa que o teste cria ou deixa no ambiente — um arquivo enviado, uma conta criada, uma entrada de log, uma captura. Artefatos viram evidência (o que se guarda) e entram na lista de limpeza (o que se desfaz)."
+  - term: screenshot
+    definition: "Captura de tela: imagem do que apareceu na tela, usada como evidência. Só prova de verdade quando mostra o contexto — a URL ou o host, a hora e, quando for o caso, o usuário autenticado."
+  - term: redaction
+    definition: "Tarja: remover de um documento a informação sensível antes de divulgá-lo. Em arquivo digital, cobrir com um retângulo não basta: o dado precisa ser de fato removido, gerando um arquivo novo, senão continua recuperável."
+  - term: pixelation
+    definition: "Pixelização: borrar uma parte da imagem reduzindo sua resolução em blocos. É uma tarja fraca: ferramentas conseguem, em muitos casos, reconstruir texto pixelizado, então não serve para esconder senhas ou dados."
+  - term: metadata
+    definition: "Metadados: dados sobre o dado — quem criou um arquivo, quando, com que ferramenta, em que local. Documentos e imagens carregam metadados que podem vazar informação mesmo depois de o conteúdo visível ser limpo."
+  - term: EXIF
+    definition: "Exchangeable Image File Format: os metadados embutidos em fotos (modelo da câmera, data, às vezes a localização por GPS). Numa evidência fotográfica, convém revisar e remover o EXIF antes de entregar."
+  - term: session recording
+    definition: "Gravação de sessão: o registro de tudo que entrou e saiu do terminal durante o trabalho. O comando script (util-linux) grava num arquivo e, com o arquivo de tempo, o scriptreplay reproduz a sessão depois."
+  - term: HISTTIMEFORMAT
+    definition: "Variável do Bash que faz o histórico de comandos guardar e exibir a hora de cada comando. Ligada, transforma o history numa linha do tempo aproximada do que você digitou."
+  - term: aCropalypse
+    definition: "Apelido da falha CVE-2023-21036, no editor Markup do Google Pixel (e, em forma parecida, na Ferramenta de Captura do Windows, CVE-2023-28303): imagens cortadas não eram truncadas, e o conteúdo 'removido' continuava recuperável no arquivo."
+  - term: writeup
+    definition: "Relato técnico de como um desafio (de CTF) ou um alvo foi resolvido, passo a passo. Parente da nota de engajamento, mas público e didático — e por isso só se publica sobre o que é permitido divulgar."
+  - term: retention policy
+    definition: "Política de retenção: a regra de por quanto tempo se guardam as evidências e os dados do teste, e quando e como destruí-los. Combinada em contrato, protege o cliente e limita o risco de guardar dado sensível."
+---
+
+import cicloDaAnotacao from "./img/ciclo-da-anotacao.svg";
+import estruturaDoCaderno from "./img/estrutura-do-caderno.svg";
+import linhaDoTempoUtc from "./img/linha-do-tempo-utc.svg";
+import manifestoECustodia from "./img/manifesto-e-custodia.svg";
+import anatomiaDeUmAchado from "./img/anatomia-de-um-achado.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Dois pentesters acham a mesma falha na mesma noite. O primeiro escreve no caderno:
+`2026-10-07T01:13:05Z | 10.0.5.15 | GET /busca?q=caneta'-- | 200, injeção confirmada |
+evidência E05`. O segundo anota, num bloco de notas qualquer: "achei SQLi no /busca". Uma
+semana depois, o cliente liga: "o nosso SOC viu uma possível SQL injection à 01:13 UTC do
+dia 7 — isso foi vocês?". O primeiro abre o caderno e responde em dez segundos, com a
+prova. O segundo não sabe que horas eram, em que fuso anotou, nem qual requisição exata
+disparou o alerta. Os dois fizeram o mesmo trabalho técnico. Só um consegue **provar** o
+que fez.
+
+Você já viu, no 1.2, que "o que não foi registrado não aconteceu" e que o plano vira uma
+matriz de cobertura. Este módulo transforma esse princípio num método: como montar o
+caderno de um engajamento, o que anotar em cada linha, como datar sem ambiguidade, como
+provar que uma evidência não foi adulterada e como essas notas viram, sem retrabalho, o
+relatório final. É uma habilidade que separa o amador do profissional tão nitidamente
+quanto qualquer técnica de ataque — e que quase nenhum curso ensina.
+
+<Figure
+  src={cicloDaAnotacao}
+  alt="Cinco caixas em ciclo: ação, registro, evidência, achado e relatório, com a hora em UTC e o hash acompanhando o dado em todas as etapas."
+  caption="O ciclo da anotação: cada ação vira registro, o registro aponta para uma evidência datada e com hash, a evidência sustenta um achado, e os achados formam o relatório — e cada achado abre novas ações."
+/>
+
+**Ao final, você vai saber:**
+
+- montar o caderno de um engajamento: a estrutura de pastas, a nota por host, a nota por
+  achado e o diário;
+- registrar cada ação com hora inequívoca (UTC, ISO 8601), convertendo entre fusos e
+  `Unix epoch` com o `date`;
+- provar a integridade das evidências com um manifesto de hashes e o Git, e manter a cadeia
+  de custódia (original intocada, cópia derivada para o relatório);
+- transformar notas em achados com passos para reproduzir, impacto e recomendação;
+- proteger o caderno como o arquivo mais sensível do engajamento (mascarar, cifrar, reter e
+  destruir), e evitar as armadilhas de tarja e metadados que já vazaram dados no mundo real.
+
+**Pré-requisitos:** 1.2 — Metodologia (o plano de teste e a matriz de cobertura, que aqui
+ganham o caderno que os alimenta). Deste módulo em diante, você usa também o terminal, o
+`tee`, o `date` e o `sha256sum` da Trilha 0 e o Git do 0.8.
+
+**Tempo estimado:** 4 a 5 horas, incluindo as três missões.
+
+<Callout variant="ethics">
+Este módulo não ataca nada. As três missões usam documentos **fictícios** gerados no seu
+WSL, sem rede, sem portas e sem tocar em outro sistema. Os IPs são das faixas reservadas
+para documentação (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`) e os nomes são
+inventados. A regra das Trilhas 0 e 1 continua: só se registra — e só se testa — o que é
+seu ou o que alguém com autoridade autorizou por escrito, como os laboratórios desta
+plataforma.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 Por que anotar: as cinco funções da nota
+
+<GlossaryTerm term="note-taking">Anotar</GlossaryTerm> (em inglês, *note-taking*: o hábito
+e o método de registrar cada ação enquanto se trabalha) parece burocracia até o dia em que
+você precisa de uma nota e ela não existe. Em pentest, a anotação cumpre cinco funções, e
+nenhuma delas é opcional:
+
+1. **O relatório.** O produto que o cliente compra não é o acesso que você conseguiu; é o
+   relatório que explica como, com que impacto e como corrigir (você viu isso no 1.1). O
+   relatório se escreve **a partir** das notas. Nota ruim, relatório ruim — ou noites
+   refazendo o que já se fez.
+2. **A reprodutibilidade.** Um achado sem <GlossaryTerm term="steps to reproduce">passos
+   para reproduzir</GlossaryTerm> (a lista numerada de ações que faz a falha aparecer de
+   novo) é uma afirmação, não uma prova. Com eles, o cliente confirma o problema, corrige,
+   e você reteste a correção.
+3. **A cobertura.** A matriz do 1.2 só fica honesta se você anotar também os
+   <GlossaryTerm term="negative result">resultados negativos</GlossaryTerm> (o que testou e
+   **não** encontrou). O negativo distingue "testado e são" de "não testado" — e é metade
+   do valor do teste.
+4. **A deconfliction.** <GlossaryTerm term="deconfliction">Deconfliction</GlossaryTerm>
+   (separar a atividade autorizada da de um atacante real) depende de uma
+   <GlossaryTerm term="timeline">linha do tempo</GlossaryTerm> precisa. Se um incidente de
+   verdade acontecer durante a sua janela, só a sua linha do tempo permite dizer "isto fomos
+   nós" e "isto não fomos".
+5. **A defesa jurídica.** Você viu no 1.4 que as notas são a base da
+   <GlossaryTerm term="chain of custody">chain of custody</GlossaryTerm> (cadeia de
+   custódia) e a prova de que você ficou dentro do autorizado. Elas protegem o cliente e
+   protegem você.
+
+Guardar essas cinco funções na cabeça responde a quase toda dúvida de "preciso anotar
+isto?". Se a resposta ajuda em qualquer uma delas, anote.
+
+### 2.2 O que registrar (e o que nunca registrar)
+
+A unidade básica é **uma linha por ação que toca o alvo**, com cinco campos:
+
+```text
+AAAA-MM-DDTHH:MM:SSZ | alvo | ação (comando) | resultado | evidência
+```
+
+Além do diário, entram no caderno:
+
+- **O raciocínio.** Por que você decidiu testar aquilo. Seis meses depois, a decisão óbvia
+  de hoje vira um mistério.
+- **As comunicações com o cliente.** Cada aviso, cada autorização verbal depois
+  formalizada, cada <GlossaryTerm term="status report">status report</GlossaryTerm>.
+- **Os <GlossaryTerm term="artifact">artefatos</GlossaryTerm> deixados no alvo.** Tudo que o
+  teste cria — uma conta, um arquivo enviado, uma configuração mudada — vira a
+  <GlossaryTerm term="cleanup list">cleanup list</GlossaryTerm> (lista de limpeza) do fim do
+  engajamento.
+- **As credenciais encontradas:** registre **onde** e **quantas**, nunca o valor. "1.204
+  hashes de senha obtidos da tabela `usuarios`, não armazenados" é uma nota; colar os hashes
+  no caderno, não.
+
+E o que **nunca** entra: o valor de senhas, tokens e chaves; dados pessoais sensíveis em
+cópia (a regra de minimização do 1.4 — descreva o acesso em texto); e qualquer dado que
+você não precisa para provar o achado. O caderno é o arquivo mais valioso — e mais perigoso
+— do engajamento: ele concentra as falhas ainda abertas e o mapa da rede do cliente.
+
+### 2.3 O tempo: por que UTC resolve metade dos erros
+
+A causa número um de notas inúteis é a hora mal registrada. "20:41" sem nada ao lado é
+ambíguo: 20:41 de que fuso? Com ou sem horário de verão? Um
+<GlossaryTerm term="timestamp">timestamp</GlossaryTerm> (carimbo de data e hora) só serve
+se trouxer o <GlossaryTerm term="time zone">fuso</GlossaryTerm> (o deslocamento em relação
+ao relógio de referência) — ou, melhor, se for em
+<GlossaryTerm term="UTC">UTC</GlossaryTerm> (*Coordinated Universal Time*, o relógio mundial
+sem fuso e sem horário de verão).
+
+Três motivos para anotar em UTC:
+
+- **Os logs do alvo quase sempre são em UTC.** Servidores Linux, appliances e serviços de
+  nuvem registram em UTC por padrão. Anotar em UTC elimina a conta de conversão (e o erro)
+  na hora de cruzar a sua linha do tempo com a do defensor.
+- **O horário de verão some.** O Brasil não tem horário de verão desde o Decreto 9.772, de
+  25 de abril de 2019, mas muitos logs históricos e outros países têm. UTC nunca "anda" uma
+  hora.
+- **A equipe toda fala a mesma língua.** Se cada pessoa anota no seu fuso, juntar as notas
+  vira um quebra-cabeça. Em UTC, basta ordenar.
+
+Escreva no formato <GlossaryTerm term="ISO 8601">ISO 8601</GlossaryTerm> (a norma
+internacional de data e hora): `2026-10-07T01:13:05Z`. O `T` separa a data da hora e o `Z`
+(lê-se "Zulu") quer dizer UTC. Esse formato tem um bônus: datas assim **ordenam como
+texto**, então um `sort` já põe a linha do tempo em ordem. Outra forma que você vai
+encontrar em logs e APIs é o <GlossaryTerm term="Unix epoch">Unix epoch</GlossaryTerm> (a
+contagem de segundos desde `1970-01-01T00:00:00Z`): um número só, sem fuso, que o `date`
+converte nos dois sentidos.
+
+Por trás de tudo isso há um pressuposto: o relógio da sua máquina está certo. Quem mantém
+isso é o <GlossaryTerm term="NTP">NTP</GlossaryTerm> (*Network Time Protocol*, que
+sincroniza o relógio com servidores de tempo). Quando o relógio erra — um
+<GlossaryTerm term="clock drift">clock drift</GlossaryTerm> (desvio de relógio) — a sua
+linha do tempo desalinha da do alvo. Se notar um desvio, anote-o: "o relógio do host estava
+3 min adiantado em relação ao NTP". Esse detalhe já salvou investigações.
+
+<Figure
+  src={linhaDoTempoUtc}
+  alt="Três fontes em fusos diferentes (Brasília, UTC e Unix epoch) convertidas para UTC e colocadas numa régua única; um alerta às 02:26 UTC fica sem ação correspondente."
+  caption="Converter tudo para UTC antes de ordenar: a nota das 20:41 de Brasília e o alerta das 23:41 UTC são o mesmo instante; o alerta sem ação correspondente é atividade externa."
+/>
+
+### 2.4 A evidência e a cadeia de custódia
+
+Uma <GlossaryTerm term="evidence">evidência</GlossaryTerm> (o registro que prova um achado)
+só vale se duas perguntas tiverem resposta: de onde ela veio, e ela mudou desde então? A
+resposta vem de duas ideias.
+
+A primeira é separar a **evidência original** da **derivada**. A
+<GlossaryTerm term="original evidence">evidência original</GlossaryTerm> é o arquivo
+exatamente como foi coletado, e **nunca se edita**. Quando você precisa mascarar um CPF,
+cortar uma imagem ou destacar um trecho para o relatório, faz isso numa
+<GlossaryTerm term="derived evidence">evidência derivada</GlossaryTerm> — uma cópia. Assim a
+original continua sendo a prova íntegra de como o dado foi obtido.
+
+A segunda é provar a integridade por **hash**. Você já viu hash no 0.8 (o Git) e no 1.4. Um
+<GlossaryTerm term="SHA-256">SHA-256</GlossaryTerm> (função que resume qualquer arquivo em
+64 caracteres hexadecimais) muda completamente se um único byte do arquivo mudar. Guardando
+o hash de cada evidência num <GlossaryTerm term="hash manifest">manifesto de hashes</GlossaryTerm>
+(a saída do `sha256sum`), você detecta depois qualquer alteração com `sha256sum -c`. E, se o
+manifesto entrar num `commit` do Git, você prova também **quando** cada hash foi registrado
+— e qualquer reescrita do próprio manifesto aparece no histórico.
+
+<Figure
+  src={manifestoECustodia}
+  alt="Quatro etapas: coleta do original, cálculo do hash para o manifesto, commit no Git, e conferência com sha256sum -c mostrando OK, FAILED e arquivo ausente; uma caixa lembra do arquivo fora do manifesto."
+  caption="A cadeia de custódia por hash: o -c pega o que mudou (FAILED) e o que sumiu; o Git pega a reescrita do manifesto; e comparar as listas pega o arquivo que nunca entrou no manifesto."
+/>
+
+### 2.5 A estrutura do caderno
+
+Um caderno é uma pasta por engajamento, versionada no Git, com uma regra de nomes e um lugar
+para cada coisa. A estrutura abaixo é a que você vai montar na seção 5 e usar nas missões.
+
+<Figure
+  src={estruturaDoCaderno}
+  alt="Árvore de pastas de um engajamento: admin, escopo, notas (diario e hosts), achados, evidencias (originais e derivadas), sessoes, relatorio, o MANIFESTO.sha256 e o repositório git."
+  caption="Uma pasta por engajamento: o que entra no Git (verde) e o que fica de fora por ser grande (as gravações de sessão)."
+/>
+
+A regra de nomes vale ouro. Um arquivo chamado `print1.png` não diz nada; um chamado
+`E05_20261007T0113Z_10.0.5.15_sqli-confirmacao.txt` diz o ID da evidência, quando foi
+coletada (em UTC), de qual alvo e o quê. Para as notas, o formato é
+<GlossaryTerm term="Markdown">Markdown</GlossaryTerm> (marcação simples em texto puro, que
+vira títulos e listas): legível sem ferramenta nenhuma, versiona bem no Git e exporta fácil
+para o relatório.
+
+### 2.6 Da nota ao achado
+
+O achado é a ponte entre o caderno e o relatório. Ele tem campos fixos: título (uma frase
+que diz a falha), ativo, hora em UTC, evidências (os IDs que provam), passos para
+reproduzir, impacto (o que um atacante consegue) e recomendação (como corrigir). Cada campo
+tem um destino no relatório — e é por isso que escrever o achado direito **enquanto** a
+falha está fresca economiza o retrabalho do fim.
+
+<Figure
+  src={anatomiaDeUmAchado}
+  alt="À esquerda uma nota de achado com sete campos; à direita o relatório (resumo executivo, lista de achados, anexos); setas ligam cada campo ao seu destino."
+  caption="A nota de achado de hoje é o achado do relatório: título e impacto alimentam o resumo; passos e evidências viram a prova; a recomendação vira a remediação."
+/>
+
+### 2.7 O caderno é um alvo
+
+Feche a teoria com a inversão que muita gente esquece: o seu caderno reúne, num lugar só, as
+falhas ainda abertas do cliente, as credenciais que você achou e a topologia da rede. Para
+um atacante, ele é um mapa do tesouro. Protegê-lo — cifrar, não sincronizar em nuvem
+pessoal, destruir ao fim conforme uma <GlossaryTerm term="retention policy">política de
+retenção</GlossaryTerm> (a regra de por quanto tempo guardar e quando destruir) — é parte do
+trabalho, não um extra. A seção 8 mostra como.
+
+## 3. Na prática da segurança
+
+### 3.1 Um dia de engajamento, do lado do caderno
+
+Veja como o caderno acompanha um dia típico, cada ação virando uma linha no diário em UTC:
+
+```console
+$ cat >> notas/diario.md <<'EOF'
+2026-10-06T23:05:00Z | -        | kickoff por telefone; confirmados escopo, janela e contato | - | -
+2026-10-06T23:20:00Z | 10.0.5.0/27 | nmap -sn (descoberta de hosts) | 6 hosts ativos | E00
+2026-10-06T23:41:00Z | 10.0.5.15 | nmap -sV -p 22,443 | OpenSSH 9.6p1; nginx 1.24.0 | E01
+2026-10-07T01:13:05Z | 10.0.5.15 | GET /busca?q=caneta'-- | 200, injeção confirmada | E05
+2026-10-07T01:30:00Z | 10.0.5.15 | avisei o contato do achado crítico (SQLi) por telefone | - | -
+EOF
+```
+
+Repare: a linha das 23:05 e a das 01:30 têm alvo `-`, porque são trabalho de escritório
+(reunião, aviso) e não tocam o alvo — mas entram no diário assim mesmo, porque documentam a
+comunicação com o cliente. E o achado crítico gera **duas** linhas: a técnica (a requisição)
+e a da comunicação (o aviso imediato).
+
+### 3.2 Registro automático: o terminal grava por você
+
+Anotar à mão é obrigatório, mas o terminal pode guardar o registro bruto, que você resume
+depois. Três ferramentas, todas do próprio sistema:
+
+**O `tee` para um comando.** Você viu no 0.3: ele copia a saída para a tela **e** para um
+arquivo. Bom para a saída de um comando pontual que vira evidência.
+
+**O histórico com hora.** Por padrão, o `history` do Bash não guarda a hora de cada comando.
+A variável <GlossaryTerm term="HISTTIMEFORMAT">HISTTIMEFORMAT</GlossaryTerm> liga isso:
+
+```console
+$ HISTTIMEFORMAT='%Y-%m-%dT%H:%M:%S%z ' history 3
+ 1  2026-10-07T02:49:53-0300 nmap -sV -p 22,443 10.0.5.15
+ 2  2026-10-07T02:51:10-0300 curl -sI https://10.0.5.15/
+ 3  2026-10-07T02:52:14-0300 history 3
+```
+
+**A <GlossaryTerm term="session recording">gravação de sessão</GlossaryTerm> com o
+`script`.** Para operações longas, o `script` (do pacote util-linux) grava tudo o que entra
+e sai do terminal. Com `-T`, grava também um arquivo de tempo, e o `scriptreplay` reproduz a
+sessão depois, como um vídeo:
+
+```console
+$ script -q -T sessoes/tempo.log -B sessoes/sessao.log
+Script started, output log file is 'sessoes/sessao.log'.
+$ date -u +%Y-%m-%dT%H:%M:%SZ
+2026-10-07T05:49:53Z
+$ exit
+$ scriptreplay -T sessoes/tempo.log -B sessoes/sessao.log
+```
+
+As gravações ficam fora do Git (são grandes e podem conter dado sensível); o que vai para o
+manifesto é o **hash** delas.
+
+### 3.3 O screenshot que prova (e o que não prova)
+
+Uma <GlossaryTerm term="screenshot">captura de tela</GlossaryTerm> só é evidência quando
+mostra o contexto: a URL ou o host na barra de endereço, a hora (do relógio da máquina ou
+de um terminal aberto ao lado) e, quando for o caso, o usuário autenticado. Um print de uma
+tabela de dados sem a URL não prova de onde veio. E atenção ao que mais aparece na tela:
+abas abertas, outro cliente, dados de outra pessoa — tudo isso vaza junto.
+
+### 3.4 As notas na conversa com o cliente
+
+O 1.3 definiu o `status report` e a `stop condition`. O caderno é a matéria-prima dos dois:
+o status diário sai do diário e da matriz de cobertura, e um achado crítico vira um aviso
+imediato — com a hora exata (UTC) para o cliente procurar nos próprios logs.
+
+### 3.5 O outro lado: o atacante também documenta
+
+Documentar não é mania de quem defende. Quando a gangue de ransomware Conti teve seus
+manuais internos vazados por um afiliado insatisfeito, em agosto de 2021, a Cisco Talos
+traduziu o material e revelou **manuais passo a passo** que ensinavam os afiliados a usar
+ferramentas como Cobalt Strike e Mimikatz. O nível de detalhe, segundo a Talos, permitiria
+"até a adversários amadores" conduzir ataques destrutivos. A lição tem dois lados: o
+atacante organizado trabalha com método e registro, e o
+<GlossaryTerm term="timeline">defensor</GlossaryTerm> reconstrói a linha do tempo da
+intrusão a partir dos rastros — exatamente como você reconstrói a sua.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### FireEye: o Red Team vira vítima (dezembro de 2020)
+
+Em 8 de dezembro de 2020, a empresa de segurança FireEye anunciou que "um ator altamente
+sofisticado" tinha invadido seus sistemas e acessado as **ferramentas de Red Team** que ela
+usa para testar clientes. A FireEye foi explícita: "nenhuma das ferramentas contém exploits
+de dia zero". A resposta foi publicar, no GitHub, **mais de 300 contramedidas** (regras
+Yara, Snort, ClamAV e OpenIOC) para a comunidade detectar o uso daquelas ferramentas.
+
+- **Impacto:** as ferramentas que uma equipe ofensiva acumulou foram parar nas mãos erradas;
+  a mitigação exigiu um esforço coordenado de detecção em toda a indústria.
+- **Lição:** o material de quem testa — ferramentas, notas, credenciais achadas — **é
+  alvo**. Vazar o caderno de um engajamento é pior que vazar uma ferramenta: ele entrega o
+  mapa de uma rede específica, com as falhas ainda abertas. É por isso que o caderno se
+  cifra e não vai para uma nuvem pessoal.
+- **Fonte:** [FireEye/Mandiant, "Unauthorized Access of FireEye Red Team Tools"](https://cloud.google.com/blog/topics/threat-intelligence/unauthorized-access-of-fireeye-red-team-tools)
+  e o [repositório de contramedidas](https://github.com/mandiant/red_team_tool_countermeasures).
+
+### aCropalypse: a tarja que não apagava nada (março de 2023)
+
+A <GlossaryTerm term="aCropalypse">aCropalypse</GlossaryTerm> é a falha **CVE-2023-21036**,
+no editor de imagens Markup dos celulares Google Pixel, divulgada em 18 de março de 2023
+pelos pesquisadores Simon Aarons e David Buchanan. Quando o usuário cortava uma captura de
+tela e salvava por cima, o aplicativo abria o arquivo **sem truncá-lo**: a imagem nova, menor,
+era escrita no início, e os bytes do fim do arquivo original — a parte "cortada" —
+continuavam lá, recuperáveis. O boletim de segurança do Pixel de março de 2023 classificou
+a falha como de divulgação de informação. Dias depois, a Microsoft corrigiu a **mesma
+classe de erro** na Ferramenta de Captura do Windows (**CVE-2023-28303**, publicada em 24 de
+março de 2023).
+
+- **Impacto:** anos de capturas de tela "cortadas" — com números de cartão, rostos,
+  endereços — ficaram parcialmente recuperáveis, em dois dos sistemas mais usados do mundo.
+- **Lição:** cortar ou tarjar uma imagem **não basta** se o resultado for salvo por cima do
+  original. A tarja segura gera um **arquivo novo**. Vale para toda evidência que você
+  prepara para o relatório.
+- **Fonte:** [NVD, CVE-2023-21036](https://nvd.nist.gov/vuln/detail/CVE-2023-21036);
+  [boletim do Pixel de março de 2023](https://source.android.com/docs/security/bulletin/pixel/2023-03-01);
+  [MSRC, CVE-2023-28303](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-28303).
+
+### NSA: por que "cobrir com preto" não é tarja (2005)
+
+Antes do aCropalypse, o problema de <GlossaryTerm term="redaction">tarja</GlossaryTerm> já
+era conhecido no papel. Em 13 de dezembro de 2005, a NSA publicou o guia *"Redacting with
+Confidence: How to Safely Publish Sanitized Reports Converted From Word to PDF"*. Ele lista
+os três erros mais comuns de quem sanitiza documentos: **cobrir texto com retângulos
+pretos** (o texto continua embaixo), **reduzir ou esconder imagens** (os dados continuam no
+arquivo) e **esquecer os metadados**. A regra de ouro do guia: a informação sensível precisa
+ser de fato **removida**, não apenas escondida da vista.
+
+- **Lição:** vale para o relatório de pentest. Tarja de verdade remove o dado e gera um
+  arquivo novo; <GlossaryTerm term="metadata">metadados</GlossaryTerm> e
+  <GlossaryTerm term="EXIF">EXIF</GlossaryTerm> são limpos antes de entregar.
+- **Fonte:** [NSA, "Redacting with Confidence" (cópia pública, US Courts)](https://www.ca7.uscourts.gov/assets/pdf/nsa-redact.pdf).
+
+### CISA: a linha do tempo que mediu a cegueira do defensor (fevereiro de 2023)
+
+Em 28 de fevereiro de 2023, a CISA publicou o aviso **AA23-059A**, com os achados de um
+Red Team próprio contra "uma grande organização de infraestrutura crítica". Ao longo de três
+meses em 2022, a equipe entrou por *spearphishing* (sete alvos, dois clicaram) e a
+organização **não detectou a atividade durante todo o teste** — nem quando, na segunda fase,
+a equipe executou **13 eventos deliberados** para provocar resposta (varredura interna,
+criação de contas, movimento lateral, simulação de ransomware). O aviso só pôde relatar o
+que a defesa viu e o que não viu **porque a equipe documentou cada evento com hora**.
+
+- **Impacto:** uma organização "com postura de segurança madura" ficou cega a uma intrusão
+  completa; o relatório virou um guia de endurecimento para o setor.
+- **Lição:** notas com hora exata (UTC) não servem só a quem ataca — viram **métrica** para
+  quem defende, mostrando onde a detecção falhou. É a `deconfliction` do outro lado.
+- **Fonte:** [CISA, AA23-059A](https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-059a).
+
+## 5. Mãos à obra — exercícios no seu WSL
+
+Este módulo não tem laboratório próprio. Documentação se treina **fazendo**, e é o que você
+vai fazer, com arquivos **fictícios** gerados no seu WSL. Nada aqui usa a rede, abre portas
+ou toca em outro sistema.
+
+**Objetivo:** ao terminar, você terá (1) montado uma linha do tempo única em UTC a partir de
+três fontes em fusos diferentes e identificado qual ação da equipe disparou cada alerta do
+SOC — e qual alerta foi atividade externa (Missão 1); (2) auditado a cadeia de custódia de
+uma pasta de evidências versionada no Git, achando o que foi alterado, o que sumiu e o que
+nunca entrou no manifesto (Missão 2); e (3) separado, num conjunto de notas de achado, as
+que já podem virar relatório das que ainda reprovam nos critérios de pronto (Missão 3). Cada
+missão termina numa flag.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra o terminal do Ubuntu no WSL. Você vai usar ferramentas que já conhece (`cat`,
+   `grep`, `cut`, `sort`, `awk`, `date`, `sha256sum`, `git`) e o `comm`, que compara duas
+   listas ordenadas.
+2. Gere os arquivos. O bloco abaixo cria `~/treino-1-5` com três subpastas, uma por missão.
+   A Missão 2 monta um repositório Git com autor e datas fixos, para o histórico sair igual
+   no seu WSL. Copie o bloco inteiro, cole no terminal e aperte Enter:
+
+```bash
+mkdir -p ~/treino-1-5 && cd ~/treino-1-5 && rm -rf missao-1 missao-2 missao-3 && mkdir missao-1 missao-2 missao-3 && (
+cd missao-1
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 1 — Quem disparou o alerta?
+Pentest FICTÍCIO na Transportadora Exemplo (contrato 2026-088). Janela
+autorizada: todas as noites de 05/10 a 09/10/2026, das 20:00 às 02:00
+no horário de Brasília (UTC-3). Toda a equipe entra pela VPN do
+cliente, então TODO acesso da EQUIPE aparece no SOC com a origem
+192.0.2.77. Qualquer outra origem não é da equipe.
+Três pentesters anotaram o trabalho da noite de 06/10, cada um do seu
+jeito:
+  notas-ana.md       horário de Brasília, sem fuso escrito
+  terminal-bruno.log UTC, no formato ISO 8601 com Z
+  proxy-carla.csv    Unix epoch (segundos desde 1970-01-01T00:00:00Z)
+O SOC do cliente mandou alertas-soc.csv (horas em UTC) e pergunta:
+"cada alerta foi vocês?". Para cada alerta, escreva o ID da ação que
+o causou ou "externo" se nenhuma ação da equipe explica o alerta.
+Preencha respostas.txt (uma linha por alerta: AL1:ID) e rode:
+  bash conferir.sh
+EOF
+cat > notas-ana.md <<'EOF'
+# Ana — noite de 06/10 (horário de Brasília)
+- A01 20:05 VPN conectada; liguei para o contato do cliente e avisei o início
+- A02 20:20 descoberta de hosts em 10.0.5.0/27 (nmap -sn)
+- A03 20:33 todas as portas TCP de 10.0.5.15 (nmap -p-)
+- A04 20:41 versões dos serviços de 10.0.5.15 (nmap -sV -p 22,443)
+- A05 21:10 navegação manual em https://10.0.5.15/ (login e busca)
+- A06 21:52 teste de upload de arquivo em https://10.0.5.15/perfil
+- A07 22:13 print da tela de login de https://10.0.5.15/
+- A08 23:41 compartilhamentos SMB de 10.0.5.30 com a conta de teste
+            pentest01 (não administrativa)
+- A09 23:55 fim do dia; VPN desconectada
+EOF
+cat > terminal-bruno.log <<'EOF'
+[B01 2026-10-06T23:15:02Z] $ echo "início da sessão"
+[B02 2026-10-06T23:48:40Z] $ nc -zv 10.0.5.22 22
+[B03 2026-10-07T00:05:13Z] $ ssh pentest01@10.0.5.22
+[B04 2026-10-07T00:31:50Z] $ curl -sI https://10.0.5.15/
+[B05 2026-10-07T00:44:02Z] $ cat lista-autorizada.txt | wc -l
+[B06 2026-10-07T00:52:11Z] $ ./testa-senhas-ssh.sh 10.0.5.22 lista-autorizada.txt
+[B07 2026-10-07T01:20:30Z] $ curl -s https://10.0.5.15/api/status
+[B08 2026-10-07T01:40:00Z] $ echo "fim da sessão"
+EOF
+cat > proxy-carla.csv <<'EOF'
+id,epoch,metodo,url,status
+C01,1791329400,GET,https://10.0.5.15/,200
+C02,1791329404,GET,https://10.0.5.15/login,200
+C03,1791330730,POST,https://10.0.5.15/login,302
+C04,1791331845,GET,https://10.0.5.15/busca?q=caneta,200
+C05,1791334334,GET,https://10.0.5.15/perfil,200
+C06,1791335130,GET,https://10.0.5.15/busca?q=caneta%27,500
+C07,1791335585,GET,https://10.0.5.15/busca?q=caneta%27--,200
+C08,1791335620,GET,https://10.0.5.15/busca?q=caneta,200
+C09,1791336612,GET,https://10.0.5.15/logout,302
+C10,1791337269,GET,https://10.0.5.15/,200
+EOF
+cat > alertas-soc.csv <<'EOF'
+alerta,hora_utc,origem,destino,assinatura
+AL1,2026-10-06 23:41:30,192.0.2.77,10.0.5.15:443,Detecção de versão de serviço (nmap)
+AL2,2026-10-07 00:52:14,192.0.2.77,10.0.5.22:22,Múltiplas falhas de autenticação SSH
+AL3,2026-10-07 01:13:05,192.0.2.77,10.0.5.15:443,Possível SQL injection em parâmetro de URL
+AL4,2026-10-07 02:26:40,203.0.113.9,10.0.5.30:445,Logon SMB com a conta Administrador
+EOF
+printf 'AL1:?\nAL2:?\nAL3:?\nAL4:?\n' > respostas.txt
+cat > conferir.sh <<'EOF'
+#!/usr/bin/env bash
+# Checks the FORMAT of respostas.txt (not the content) and derives the flag.
+set -euo pipefail
+cd "$(dirname "$0")"
+ids='A0[1-9]|B0[1-8]|C0[1-9]|C10|externo'
+n=0
+while IFS= read -r line; do
+    n=$((n + 1))
+    if ! [[ $line =~ ^AL$n:($ids)$ ]]; then
+        echo "linha $n fora do formato: '$line' (esperado AL$n:ID ou AL$n:externo)" >&2
+        exit 1
+    fi
+done < respostas.txt
+[ "$n" -eq 4 ] || { echo "esperava 4 linhas, achei $n" >&2; exit 1; }
+echo "Formato OK. Flag candidata: FLAG{$(sha256sum respostas.txt | cut -c1-12)}"
+EOF
+cd ../missao-2
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 2 — A evidência mudou?
+caderno/ é o repositório Git de notas do mesmo pentest FICTÍCIO. Na
+noite de 06/10, a Ana coletou dez evidências (E01 a E10), gerou o
+manifesto de hashes e fez o commit, como manda o procedimento. Antes
+de o relatório sair, confira a cadeia de custódia: que evidências NÃO
+estão como foram coletadas (alteradas, sumidas ou que nunca passaram
+pelo manifesto)? A flag é a lista desses IDs, em ordem crescente,
+separados por hífen, dentro de FLAG{ }. Exemplo: FLAG{E01-E02}.
+EOF
+mkdir -p caderno && cd caderno
+git init -q -b main
+export GIT_AUTHOR_NAME="Ana Exemplo" GIT_AUTHOR_EMAIL="ana@pentest.example"
+export GIT_COMMITTER_NAME="Ana Exemplo" GIT_COMMITTER_EMAIL="ana@pentest.example"
+mkdir evidencias notas
+cd evidencias
+printf 'Nmap scan report for 10.0.5.15\nPORT    STATE SERVICE VERSION\n22/tcp  open  ssh     OpenSSH 9.6p1\n443/tcp open  https   nginx 1.24.0\n' > E01_20261006T2341Z_10.0.5.15_nmap-sV.txt
+printf 'HTTP/1.1 200 OK\nServer: nginx/1.24.0\nSet-Cookie: sessao=...; Path=/\n(sem HttpOnly e sem Secure)\n' > E02_20261007T0031Z_10.0.5.15_headers-login.txt
+printf 'Transcrição do print: tela de login com a mensagem "usuário inexistente"\n(enumeração de usuários pela mensagem de erro)\n' > E03_20261007T0113Z_10.0.5.15_print-login.txt
+printf 'GET /busca?q=caneta%%27 -> HTTP 500\nErro exibido: syntax error at or near "%%27" (PostgreSQL)\n' > E04_20261007T0105Z_10.0.5.15_erro-sql.txt
+printf 'GET /busca?q=caneta%%27-- -> HTTP 200, 3 produtos\nConfirmação da injeção sem ler nenhum dado além da página.\n' > E05_20261007T0113Z_10.0.5.15_sqli-confirmacao.txt
+printf 'ssh pentest01@10.0.5.22 -> login OK\nsudo -l -> (ALL) NOPASSWD: /usr/bin/find\n' > E06_20261007T0005Z_10.0.5.22_sudo-l.txt
+printf 'Senha fraca confirmada para a conta suporte em 10.0.5.22.\nValor da senha: Verao2026\n' > E07_20261007T0052Z_10.0.5.22_senha-fraca.txt
+printf 'smbclient -L //10.0.5.30 -U pentest01\n  publico   Disk\n  rh$       Disk\n' > E08_20261007T0241Z_10.0.5.30_smb-shares.txt
+printf 'Leitura de //10.0.5.30/publico: 41 arquivos, nenhum dado pessoal.\n' > E09_20261007T0244Z_10.0.5.30_smb-publico.txt
+printf 'Upload em /perfil aceita .php, mas o arquivo não é executado (Content-Type forçado).\n' > E10_20261007T0052Z_10.0.5.15_upload.txt
+sha256sum E*.txt > ../MANIFESTO.sha256
+cd ..
+printf '# Dia 1 (noite de 06/10)\nManifesto gerado às 2026-10-07T02:58Z, com E01 a E10.\nHash do MANIFESTO.sha256 no momento do commit:\n%s\n' "$(sha256sum MANIFESTO.sha256 | cut -d' ' -f1)" > notas/dia-1.md
+git add -A
+GIT_AUTHOR_DATE="2026-10-07T03:00:00Z" GIT_COMMITTER_DATE="2026-10-07T03:00:00Z" git commit -q -m "dia 1: evidências E01-E10 e manifesto"
+printf '# Dia 2 (noite de 07/10)\nRevisão das evidências do dia 1 para o relatório.\n' > notas/dia-2.md
+git add -A
+GIT_AUTHOR_DATE="2026-10-07T23:10:00Z" GIT_COMMITTER_DATE="2026-10-07T23:10:00Z" git commit -q -m "dia 2: notas"
+printf 'GET /busca?q=caneta%%27 -> HTTP 500\nErro exibido: erro de sintaxe no banco\n' > evidencias/E04_20261007T0105Z_10.0.5.15_erro-sql.txt
+(cd evidencias && sha256sum E*.txt > ../MANIFESTO.sha256)
+git add -A
+GIT_AUTHOR_DATE="2026-10-08T01:30:00Z" GIT_COMMITTER_DATE="2026-10-08T01:30:00Z" git commit -q -m "ajusta formatação"
+printf 'Senha fraca confirmada para a conta suporte em 10.0.5.22.\nValor da senha: [REMOVIDO]\n' > evidencias/E07_20261007T0052Z_10.0.5.22_senha-fraca.txt
+rm evidencias/E09_20261007T0244Z_10.0.5.30_smb-publico.txt
+printf 'Print do painel administrativo de 10.0.5.15 (sem data de coleta).\n' > evidencias/E11_10.0.5.15_painel.txt
+touch -d '2026-10-08T12:00:00Z' evidencias/E02_20261007T0031Z_10.0.5.15_headers-login.txt
+unset GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
+cd ../../missao-3
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 3 — Do caderno ao relatório
+achados/ tem oito notas de achado (A01 a A08) do mesmo pentest
+FICTÍCIO, no template do módulo. Antes de virar relatório, cada uma
+precisa cumprir criterios-de-pronto.txt. A flag é a lista dos achados
+que AINDA NÃO estão prontos, em ordem crescente, separados por hífen,
+dentro de FLAG{ }. Exemplo: FLAG{A01-A02}.
+EOF
+cat > criterios-de-pronto.txt <<'EOF'
+Critérios de pronto de um achado (contrato 2026-088, FICTÍCIO)
+P1 Toda evidência citada existe na pasta evidencias/.
+P2 O ativo está no escopo (ver escopo.txt).
+P3 A hora (UTC) está dentro da janela (ver escopo.txt).
+P4 Há pelo menos um passo numerado para reproduzir.
+P5 Nenhuma credencial em claro: nem valor de senha, nem hash, nem
+   token. Dizer que uma senha é fraca, sem o valor, é permitido.
+EOF
+cat > escopo.txt <<'EOF'
+Escopo: 10.0.5.0/27, exceto 10.0.5.1 (firewall de terceiro)
+Janela: de 2026-10-05T23:00Z a 2026-10-10T05:00Z, só entre 23:00Z e
+        05:00Z (20:00 às 02:00 no horário de Brasília)
+EOF
+mkdir evidencias achados
+for i in 01 02 03 04 05 06 07 08 09 10 11 12; do printf 'evidência E%s (FICTÍCIA)\n' "$i" > "evidencias/E$i.txt"; done
+cat > achados/A01.md <<'EOF'
+id: A01
+titulo: Compartilhamento SMB rh$ legível por qualquer usuário do domínio
+ativo: 10.0.5.30
+hora_utc: 2026-10-07T02:41:00Z
+evidencias: E08, E09
+passos:
+  1. Autenticar com uma conta comum (pentest01).
+  2. Listar os compartilhamentos: smbclient -L //10.0.5.30 -U pentest01
+  3. Abrir rh$ e listar os arquivos.
+impacto: qualquer funcionário lê documentos do RH.
+recomendacao: restringir a ACL de rh$ ao grupo do RH.
+EOF
+cat > achados/A02.md <<'EOF'
+id: A02
+titulo: Mensagem de erro revela se o usuário existe
+ativo: 10.0.5.15
+hora_utc: 2026-10-07T01:13:05Z
+evidencias: E03, E13
+passos:
+  1. Em https://10.0.5.15/login, tentar entrar com um usuário inventado.
+  2. Comparar a mensagem com a de um usuário real com senha errada.
+impacto: facilita adivinhar contas válidas.
+recomendacao: mensagem única para usuário ou senha inválidos.
+EOF
+cat > achados/A03.md <<'EOF'
+id: A03
+titulo: SQL injection no parâmetro q de /busca
+ativo: 10.0.5.15
+hora_utc: 2026-10-09T04:59:00Z
+evidencias: E04, E05
+passos:
+  1. Acessar https://10.0.5.15/busca?q=caneta%27 e observar o erro 500.
+  2. Acessar https://10.0.5.15/busca?q=caneta%27-- e observar a resposta 200.
+impacto: leitura e alteração do banco de dados da loja.
+recomendacao: consultas parametrizadas (prepared statements).
+EOF
+cat > achados/A04.md <<'EOF'
+id: A04
+titulo: Painel de impressora com senha padrão
+ativo: 10.0.5.40
+hora_utc: 2026-10-08T00:20:00Z
+evidencias: E10
+passos:
+  1. Acessar http://10.0.5.40/ e entrar com o usuário e a senha de fábrica.
+impacto: alterar configurações e ler documentos na fila.
+recomendacao: trocar a senha padrão e isolar as impressoras.
+EOF
+cat > achados/A05.md <<'EOF'
+id: A05
+titulo: Cookie de sessão sem HttpOnly e sem Secure
+ativo: 10.0.5.15
+hora_utc: 2026-10-08T06:10:00Z
+evidencias: E02
+passos:
+  1. Fazer login e inspecionar o cabeçalho Set-Cookie da resposta.
+impacto: o cookie pode ser lido por script ou trafegar sem cifra.
+recomendacao: marcar o cookie com HttpOnly, Secure e SameSite.
+EOF
+cat > achados/A06.md <<'EOF'
+id: A06
+titulo: Senha fraca na conta suporte do SSH
+ativo: 10.0.5.22
+hora_utc: 2026-10-07T00:52:11Z
+evidencias: E07
+passos:
+  1. Testar a lista autorizada de 20 senhas contra a conta suporte.
+  2. Confirmar o login (a senha foi a 7a da lista; valor nao registrado).
+impacto: acesso ao servidor com a conta suporte.
+recomendacao: politica de senhas fortes e login SSH so por chave.
+EOF
+cat > achados/A07.md <<'EOF'
+id: A07
+titulo: sudo permite rodar find como root sem senha
+ativo: 10.0.5.22
+hora_utc: 2026-10-07T00:05:13Z
+evidencias: E06
+passos: (ver print)
+impacto: escalacao de privilegio para root.
+recomendacao: remover a regra NOPASSWD de /usr/bin/find.
+EOF
+cat > achados/A08.md <<'EOF'
+id: A08
+titulo: Token de API exposto no codigo-fonte da pagina
+ativo: 10.0.5.15
+hora_utc: 2026-10-07T01:20:30Z
+evidencias: E11, E12
+passos:
+  1. Abrir o codigo-fonte de https://10.0.5.15/ (Ctrl+U).
+  2. Procurar por "apiToken".
+prova: apiToken = "tk_live_5f2a9c1e7b4d4e0a"
+impacto: chamadas a API interna em nome da aplicacao.
+recomendacao: tirar o token do front-end e revoga-lo.
+EOF
+) && echo "Pronto: $(find ~/treino-1-5 -path '*/.git' -prune -o -type f -print | wc -l) arquivos em ~/treino-1-5"
+```
+
+A última linha deve ser `Pronto: 47 arquivos em ~/treino-1-5`. Rodar o bloco de novo apaga
+e recria as três pastas: é o seu "resetar".
+
+### 5.2 Missão 1 — Quem disparou o alerta? (guiada)
+
+**Cenário:** você é o líder técnico do engajamento. O SOC do cliente mandou quatro alertas e
+pergunta, para cada um, se foi a equipe. Você tem as notas de três pessoas, cada uma num
+formato de tempo diferente. Para responder, precisa de **uma linha do tempo única em UTC**.
+
+**Etapa 1: entenda as três fontes.** Olhe cada arquivo e veja o formato de tempo.
+
+```console
+$ cd ~/treino-1-5/missao-1
+$ head -4 notas-ana.md
+# Ana — noite de 06/10 (horário de Brasília)
+- A01 20:05 VPN conectada; liguei para o contato do cliente e avisei o início
+- A02 20:20 descoberta de hosts em 10.0.5.0/27 (nmap -sn)
+- A03 20:33 todas as portas TCP de 10.0.5.15 (nmap -p-)
+$ sed -n '3,4p' terminal-bruno.log
+[B03 2026-10-07T00:05:13Z] $ ssh pentest01@10.0.5.22
+[B04 2026-10-07T00:31:50Z] $ curl -sI https://10.0.5.15/
+$ sed -n '2,3p' proxy-carla.csv
+C01,1791329400,GET,https://10.0.5.15/,200
+C02,1791329404,GET,https://10.0.5.15/login,200
+```
+
+Ana anota em Brasília (UTC-3) **sem escrever o fuso**; Bruno, em UTC com `Z`; Carla, em
+`Unix epoch`. Os alertas do SOC estão em UTC.
+
+**Etapa 2: converta a hora de uma linha de cada fonte, para pegar o jeito do `date`.**
+
+```console
+$ date -u -d '2026-10-06T20:41:00-03:00' +%Y-%m-%dT%H:%M:%SZ
+2026-10-06T23:41:00Z
+$ date -u -d @1791335585 +%Y-%m-%dT%H:%M:%SZ
+2026-10-07T01:13:05Z
+```
+
+A nota A04 de Ana (20:41 em Brasília) é **23:41 UTC**. O `-d` lê a data que você passa; o
+`@` na frente de um número diz ao `date` que é um `Unix epoch`; o `-u` imprime em UTC.
+
+**Etapa 3: o primeiro alerta.** O AL1 é de `2026-10-06 23:41:30 UTC`, origem `192.0.2.77`
+(a VPN da equipe), assinatura "detecção de versão de serviço (nmap)". Qual ação da equipe,
+em UTC, cai nesse instante e é um `nmap -sV`?
+
+Olhe a sua conversão da Etapa 2: A04 (Ana) é 23:41 UTC, e a nota diz `nmap -sV`. É ela. Logo
+`AL1:A04`.
+
+**Etapa 4: o segundo alerta.** O AL2 é de `00:52:14 UTC`, destino `10.0.5.22:22`, "múltiplas
+falhas de autenticação SSH". Procure uma ação da equipe perto de 00:52 UTC contra o SSH.
+
+```console
+$ grep 00:52 terminal-bruno.log
+[B06 2026-10-07T00:52:11Z] $ ./testa-senhas-ssh.sh 10.0.5.22 lista-autorizada.txt
+```
+
+B06, às 00:52:11 UTC, testa senhas por SSH em `10.0.5.22` — bate com o alerta três segundos
+depois. Logo `AL2:B06`.
+
+**Etapa 5 (desafio): os dois últimos alertas.** Agora é com você. Monte a linha do tempo
+inteira em UTC e descubra `AL3` (`01:13:05 UTC`, SQL injection em `10.0.5.15`) e `AL4`
+(`02:26:40 UTC`, origem `203.0.113.9`, logon SMB com a conta `Administrador` em
+`10.0.5.30`). Lembre: a equipe **sempre** aparece como `192.0.2.77`.
+
+<Hint title="Dica 1: junte tudo numa régua só">
+Converta cada fonte para UTC e jogue numa lista ordenável. Para Ana, um laço lê cada linha
+(as linhas de ação começam com `- A`); para Carla, o `@epoch`; Bruno já está em UTC. O
+`sort` põe em ordem porque o formato ISO 8601 ordena como texto.
+</Hint>
+
+<Hint title="Dica 2: o que torna um alerta 'externo'">
+Dois sinais, juntos: nenhuma ação da equipe cai no mesmo instante **e** a origem não é a VPN
+`192.0.2.77`. Olhe a origem do AL4 com atenção, e veja que conta ele usou, comparada com a
+que a equipe usava.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+A linha do tempo unificada em UTC (saída real do WSL):
+
+```console
+$ { while read -r dash id hhmm rest; do [ "$dash" = "-" ] || continue; echo "$(date -u -d "2026-10-06T$hhmm:00-03:00" +%Y-%m-%dT%H:%M:%SZ) $id"; done < notas-ana.md; sed -E 's/^\[(B[0-9]+) ([^]]+)\].*/\2 \1/' terminal-bruno.log; tail -n +2 proxy-carla.csv | while IFS=, read -r id epoch rest; do echo "$(date -u -d "@$epoch" +%Y-%m-%dT%H:%M:%SZ) $id"; done; } | sort
+2026-10-06T23:05:00Z A01
+2026-10-06T23:15:02Z B01
+2026-10-06T23:20:00Z A02
+2026-10-06T23:30:00Z C01
+2026-10-06T23:30:04Z C02
+2026-10-06T23:33:00Z A03
+2026-10-06T23:41:00Z A04
+2026-10-06T23:48:40Z B02
+2026-10-06T23:52:10Z C03
+2026-10-07T00:05:13Z B03
+2026-10-07T00:10:00Z A05
+2026-10-07T00:10:45Z C04
+2026-10-07T00:31:50Z B04
+2026-10-07T00:44:02Z B05
+2026-10-07T00:52:00Z A06
+2026-10-07T00:52:11Z B06
+2026-10-07T00:52:14Z C05
+2026-10-07T01:05:30Z C06
+2026-10-07T01:13:00Z A07
+2026-10-07T01:13:05Z C07
+2026-10-07T01:13:40Z C08
+2026-10-07T01:20:30Z B07
+2026-10-07T01:30:12Z C09
+2026-10-07T01:40:00Z B08
+2026-10-07T01:41:09Z C10
+2026-10-07T02:41:00Z A08
+2026-10-07T02:55:00Z A09
+```
+
+- **AL3** (01:13:05 UTC, SQL injection): `C07`, o `GET /busca?q=caneta'--` às 01:13:05 UTC,
+  no mesmo segundo do alerta. (A07, o print de Ana, é 01:13 também, mas não é uma injeção; o
+  que o SOC viu foi a requisição do proxy.)
+- **AL4** (02:26:40 UTC): nenhuma ação da equipe cai às 02:26 — a ação de SMB mais próxima é
+  A08, às **02:41**, e com a conta `pentest01`, não `Administrador`. Além disso, a origem é
+  `203.0.113.9`, **não** a VPN da equipe. É atividade **externa**: um atacante real durante
+  a janela. Isto não vira "achado"; vira um aviso imediato ao cliente.
+
+As respostas:
+
+```console
+$ printf 'AL1:A04\nAL2:B06\nAL3:C07\nAL4:externo\n' > respostas.txt
+$ bash conferir.sh
+Formato OK. Flag candidata: FLAG{d248eeec135a}
+```
+
+O `conferir.sh` só confere o **formato** das respostas e deriva a flag do conteúdo do
+`respostas.txt` — se o seu raciocínio bater com o gabarito, a flag é a mesma.
+</Solution>
+
+<FlagInput task="missao-1-quem-disparou-o-alerta" />
+
+<Callout variant="tip" title="Por que isto importa de verdade">
+Esse cruzamento é a `deconfliction` na prática. Num engajamento real, um alerta durante a
+janela que "foi a equipe" economiza uma resposta a incidente cara e desnecessária — e um que
+**não** foi a equipe, como o AL4, é você avisando o cliente de que há um invasor de verdade
+na rede. Sem a linha do tempo em UTC, os dois são indistinguíveis.
+</Callout>
+
+### 5.3 Missão 2 — A evidência mudou? (desafio)
+
+**Cenário:** a pasta `caderno/` é um repositório Git com as evidências coletadas pela Ana e
+o `MANIFESTO.sha256`. Antes de o relatório sair, você audita a cadeia de custódia: **que
+evidências não estão mais como foram coletadas?** São quatro problemas escondidos, de quatro
+tipos diferentes.
+
+**Etapa 1: a conferência básica.**
+
+```console
+$ cd ~/treino-1-5/missao-2/caderno
+$ cd evidencias && sha256sum -c ../MANIFESTO.sha256; cd ..
+E01_20261006T2341Z_10.0.5.15_nmap-sV.txt: OK
+E02_20261007T0031Z_10.0.5.15_headers-login.txt: OK
+E03_20261007T0113Z_10.0.5.15_print-login.txt: OK
+E04_20261007T0105Z_10.0.5.15_erro-sql.txt: OK
+E05_20261007T0113Z_10.0.5.15_sqli-confirmacao.txt: OK
+E06_20261007T0005Z_10.0.5.22_sudo-l.txt: OK
+E07_20261007T0052Z_10.0.5.22_senha-fraca.txt: FAILED
+sha256sum: E09_20261007T0244Z_10.0.5.30_smb-publico.txt: No such file or directory
+E09_20261007T0244Z_10.0.5.30_smb-publico.txt: FAILED open or read
+E10_20261007T0052Z_10.0.5.15_upload.txt: OK
+```
+
+Dois problemas já aparecem: **E07** mudou (`FAILED`) e **E09** sumiu (`No such file`). Mas o
+`-c` só confere o que está no manifesto, e só contra o manifesto **atual**. Faltam dois.
+
+**Etapa 2 (desafio): os outros dois.** Um arquivo pode existir na pasta e **não estar** no
+manifesto. E o próprio manifesto pode ter sido reescrito depois da coleta, para "casar" com
+uma evidência já alterada — o que o `-c` nunca pega sozinho. Use o `comm` e o histórico do
+Git.
+
+<Hint title="Dica 1: o arquivo que não está na lista">
+Compare a lista de arquivos da pasta com a lista de nomes do manifesto. O `comm -13` mostra
+o que está na segunda lista e não na primeira. Ordene as duas (`sort`) antes.
+</Hint>
+
+<Hint title="Dica 2: o manifesto foi mexido?">
+O manifesto está no Git. Veja o histórico dele (`git log -- MANIFESTO.sha256`) e compare a
+versão do **primeiro** commit (a coleta) com a atual (`git show <commit>:MANIFESTO.sha256`).
+Se uma linha de hash mudou, a evidência daquele arquivo foi alterada e alguém atualizou o
+manifesto para esconder.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+**O arquivo fora do manifesto** (saída real):
+
+```console
+$ comm -13 <(cut -d' ' -f3 MANIFESTO.sha256 | sort) <(ls evidencias | sort)
+E11_10.0.5.15_painel.txt
+```
+
+`E11` existe na pasta mas nunca entrou no manifesto: é uma evidência sem prova de origem.
+
+**O manifesto reescrito** (saída real):
+
+```console
+$ git log --oneline -- MANIFESTO.sha256
+f69816d ajusta formatação
+45274b0 dia 1: evidências E01-E10 e manifesto
+$ first=$(git rev-list --max-parents=0 HEAD)
+$ diff <(git show "$first:MANIFESTO.sha256") MANIFESTO.sha256
+4c4
+< 80416a4ed8d811f1ee3c67966ce9717679df8ed58ee93dbab76ca32cabe11093  E04_20261007T0105Z_10.0.5.15_erro-sql.txt
+---
+> 1252a032229d7464da10d6e8a7a1221455dd4a31253c8839c82ce15857623f92  E04_20261007T0105Z_10.0.5.15_erro-sql.txt
+```
+
+O commit "ajusta formatação" alterou o conteúdo de **E04** e reescreveu o manifesto para
+bater com a versão nova — por isso o `-c` da Etapa 1 disse `OK` para E04. Só o histórico do
+Git revela a troca.
+
+**O decoy:** e a E02? O `touch` mudou a **data** do arquivo, mas não o conteúdo — e o hash é
+do conteúdo, então o `-c` diz `OK`. Data de modificação não é prova; o hash é. E02 **não**
+entra na resposta.
+
+Os quatro problemas, em ordem: E04 (alterada, manifesto reescrito), E07 (alterada), E09
+(sumiu), E11 (fora do manifesto). A flag é `FLAG{E04-E07-E09-E11}`.
+</Solution>
+
+<FlagInput task="missao-2-a-evidencia-mudou" />
+
+### 5.4 Missão 3 — Do caderno ao relatório (desafio)
+
+**Cenário:** o engajamento acabou. A pasta `achados/` tem oito notas de achado no template
+do módulo. Antes de virar relatório, cada uma precisa passar em cinco **critérios de
+pronto** (`criterios-de-pronto.txt`). Sua tarefa: achar as que **reprovam**.
+
+**Etapa 1: leia os critérios e o escopo.**
+
+```console
+$ cd ~/treino-1-5/missao-3
+$ cat criterios-de-pronto.txt escopo.txt
+```
+
+Cinco critérios: P1 (evidência citada existe), P2 (ativo no escopo), P3 (hora na janela), P4
+(tem passo numerado), P5 (sem credencial em claro). Um achado reprova se falhar em
+**qualquer** um.
+
+**Etapa 2: ataque um critério de cada vez.** Comece pelo P1 — toda evidência citada existe
+em `evidencias/`?
+
+```console
+$ for f in achados/A*.md; do
+>   for e in $(grep '^evidencias:' "$f" | cut -d: -f2 | tr -d ' ' | tr ',' ' '); do
+>     [ -e "evidencias/$e.txt" ] || echo "$(basename "$f" .md): cita $e, que não existe"
+>   done
+> done
+A02: cita E13, que não existe
+```
+
+A02 já reprova (cita a evidência E13, inexistente). Faltam os outros quatro critérios.
+
+**O desafio:** encontre **todos** os achados que reprovam em pelo menos um critério. A flag é
+a lista desses IDs, em ordem crescente: por exemplo, `FLAG{A01-A02}`.
+
+<Hint title="Dica 1: escopo e janela (P2 e P3)">
+O escopo é `10.0.5.0/27` (de 10.0.5.0 a 10.0.5.31), menos o `.1`. Olhe o campo `ativo:` de
+cada achado — algum cai fora dessa faixa? Para a janela (P3), a hora em UTC precisa estar
+entre 23:00Z e 05:00Z. Cuidado com as pegadinhas: uma hora às 06:10Z está fora, mas uma às
+04:59Z **está dentro** (mesmo parecendo tarde).
+</Hint>
+
+<Hint title="Dica 2: passo numerado e segredo (P4 e P5)">
+Para o P4, procure as notas **sem** nenhuma linha que comece com `1.` — um `grep -L '1\.'`
+nos acha. Para o P5, procure o valor de um segredo em claro (um `token`, uma senha): dizer
+que a senha é fraca é permitido; colar o valor dela, não.
+</Hint>
+
+<Solution title="Solução da Missão 3">
+Critério por critério (saídas reais):
+
+```console
+$ grep -H '^ativo:' achados/*.md | grep -vE '10\.0\.5\.([0-9]|[12][0-9]|3[01])$'
+achados/A04.md:ativo: 10.0.5.40
+```
+
+**P2:** A04 está em `10.0.5.40`, fora do `/27` (que vai só até o `.31`).
+
+```console
+$ grep -H '^hora_utc:' achados/*.md | awk -F'T' '{h=substr($2,1,2)+0; if (h>=5 && h<23) print}'
+achados/A05.md:hora_utc: 2026-10-08T06:10:00Z
+```
+
+**P3:** só A05 (06:10Z) está fora da janela de 23:00Z–05:00Z. Cuidado com o decoy: A03 está
+anotado às **04:59Z**, que *parece* tarde mas ainda cai **dentro** da janela (antes das
+05:00Z) — ele não reprova no P3.
+
+```console
+$ grep -L '^  1\.' achados/*.md
+achados/A07.md
+```
+
+**P4:** A07 não tem passo numerado (o campo diz só "(ver print)").
+
+```console
+$ grep -liE '(senha|token|password)[[:alnum:]_]*[[:space:]]*[=:][[:space:]]*"?[A-Za-z0-9_]{6,}' achados/*.md
+achados/A08.md
+```
+
+**P5:** A08 traz o valor do token em claro (`apiToken = "tk_live_..."`; o `-i` do `grep` pega
+o `Token` com maiúscula). A06 fala de senha fraca mas **não** registra o valor — está
+correto, não reprova.
+
+Os reprovados: A02 (P1), A04 (P2), A05 (P3), A07 (P4), A08 (P5). Juntando em ordem:
+`FLAG{A02-A04-A05-A07-A08}`.
+</Solution>
+
+<FlagInput task="missao-3-do-caderno-ao-relatorio" />
+
+### 5.5 Walkthrough: monte o seu caderno-modelo (sem flag)
+
+Para fechar, monte o esqueleto de caderno que você vai usar nos próximos módulos. O script
+abaixo cria a estrutura da seção 2.5, com `umask 077` (só você lê), um `.gitignore` que
+mantém as gravações grandes fora do Git, e um commit inicial. Salve-o como
+`~/ferramentas/novo-engajamento.sh`:
+
+<CodeBlock title="novo-engajamento.sh" lang="bash" code={`#!/usr/bin/env bash
+# Creates the notebook skeleton of one engagement: folders, templates and a Git repo.
+# Usage: bash novo-engajamento.sh <contract-id> <client-slug>
+set -euo pipefail
+[ $# -eq 2 ] || { echo "uso: $0 <contrato> <cliente>" >&2; exit 1; }
+contract=$1; client=$2
+[[ $contract =~ ^[0-9]{4}-[0-9]{3}$ ]] || { echo "contrato no formato AAAA-NNN" >&2; exit 1; }
+[[ $client =~ ^[a-z0-9-]+$ ]] || { echo "cliente: so minusculas, digitos e hifen" >&2; exit 1; }
+root="$HOME/engajamentos/\${contract}_\${client}"
+[ -e "$root" ] && { echo "ja existe: $root" >&2; exit 1; }
+umask 077
+mkdir -p "$root"/{admin,escopo,notas/hosts,achados,evidencias/{originais,derivadas},sessoes,relatorio}
+printf '# Diario -- contrato %s (%s)\\n# Horas em UTC (ISO 8601). Uma linha por acao.\\n# AAAA-MM-DDTHH:MM:SSZ | alvo | acao | resultado | evidencia\\n\\n## %s\\n' \\
+  "$contract" "$client" "$(date -u +%Y-%m-%d)" > "$root/notas/diario.md"
+printf 'sessoes/\\n' > "$root/.gitignore"
+git -C "$root" init -q -b main
+git -C "$root" add -A
+git -C "$root" commit -q -m "estrutura do caderno: $contract $client"
+echo "Caderno criado em $root"`} />
+
+Rode-o num `HOME` qualquer para experimentar (`bash novo-engajamento.sh 2026-088
+transportadora-exemplo`) e confira que ele recusa um contrato mal formatado e não sobrescreve
+uma pasta que já existe. Depois, grave uma sessão de teste com o `script` (seção 3.2) e
+reproduza com o `scriptreplay`: é assim que você vai registrar o trabalho dos módulos de
+ataque das próximas trilhas.
+
+Sobre **ferramentas prontas** de anotação e relatório: existem opções offline e de código
+aberto que valem conhecer quando o caderno em texto apertar — o **CherryTree** e o **Joplin**
+para notas, e o **SysReptor** e o **Ghostwriter** para gerar relatórios a partir de achados
+estruturados. Nenhuma é necessária para este curso: texto em Markdown no Git leva você muito
+longe, e entender o método importa mais que a ferramenta.
+
+### 5.6 Limpeza
+
+As pastas de treino não usam rede nem deixam nada rodando. Para apagar tudo:
+
+```console
+$ rm -rf ~/treino-1-5
+```
+
+## 6. Variações e aprofundamento
+
+**O caderno em equipe.** Quando mais de uma pessoa anota no mesmo repositório, duas regras
+evitam dor de cabeça: um arquivo por pessoa por dia (ou por host) para reduzir
+`merge conflict` (o 0.8), e um prefixo de IDs por pessoa (A = Ana, B = Bruno) para os
+achados e evidências nunca colidirem — foi o que a Missão 1 fez.
+
+**Operações longas de Red Team.** Numa campanha de semanas, o diário vira a espinha da
+`deconfliction`: cada ação "barulhenta" (uma varredura, uma criação de conta) é registrada
+com hora exata e comunicada a um `trusted agent` (o 1.3), para o SOC saber separar o teste de
+um incidente real — exatamente o que o aviso da CISA mediu.
+
+**Relatório de `bug bounty`.** As plataformas pedem o achado no mesmo formato do módulo:
+passos para reproduzir, impacto e evidência. Um relatório sem passos claros costuma ser
+fechado como "não reproduzível" — a qualidade da nota decide se você é pago.
+
+**O <GlossaryTerm term="writeup">writeup</GlossaryTerm> de CTF.** É primo da nota de
+engajamento: o mesmo passo a passo, mas **público** e didático. A diferença é ética e legal
+(o 1.4): você publica o writeup de um desafio feito para isso (um CTF, um lab como os desta
+plataforma), nunca o "writeup" de um sistema real sem autorização para divulgar.
+
+**Notas de resposta a incidente.** Do outro lado, o time que responde a um incidente
+documenta igual — linha do tempo em UTC, evidências com hash, cadeia de custódia — porque o
+material pode virar processo. O seu caderno de pentest é o treino dessa disciplina.
+
+**A saída da ferramenta como registro.** Muitas ferramentas já gravam evidência estruturada:
+o `nmap -oA` salva em três formatos de uma vez, o Burp guarda o projeto com cada requisição.
+Você vai usá-las na Trilha 2; a disciplina é a mesma: dê nome com data e hash o resultado.
+
+**IA e nuvem.** Cuidado novo: colar a saída de uma ferramenta, com dados do cliente, num
+assistente de IA ou num serviço de notas na nuvem **envia o dado para fora**. Isso quase
+sempre viola a cláusula de dados do contrato (o 1.4). O caderno fica local e cifrado.
+
+## 7. Erros comuns
+
+- **"Depois eu anoto."** Não existe "depois": o detalhe exato (a requisição, a resposta, a
+  hora) se perde em minutos. Anote na hora, limpe depois.
+- **Hora local sem fuso.** "20:41" não é um instante. Sempre o fuso, de preferência UTC com
+  `Z`.
+- **Print sem contexto.** Uma captura sem a URL/host e a hora não prova de onde o dado veio.
+  E revise o que mais aparece na tela antes de salvar.
+- **Editar a evidência original.** Mascarou ou cortou? Foi numa cópia. A original fica
+  intocada, batendo com o manifesto.
+- **Confiar na data de modificação.** `mtime` não é prova (a E02 da Missão 2): só o hash diz
+  se o conteúdo mudou.
+- **Senha ou token no caderno.** "Obtive a senha da conta X" com o valor ao lado transforma o
+  seu caderno num vazamento ambulante. Registre onde e quantas, nunca o valor.
+- **Tarja fraca.** Retângulo por cima, <GlossaryTerm term="pixelation">pixelization</GlossaryTerm>
+  (pixelização: borrar em blocos de baixa resolução) numa senha, PDF "achatado" que ainda tem
+  texto embaixo — tudo recuperável. Remova o dado e gere arquivo novo (aCropalypse, NSA).
+- **Anotar só o que funcionou.** Sem os `negative result`, ninguém sabe o que foi coberto.
+- **`print1.png`, `teste2.txt`.** Nome sem data, alvo e conteúdo é um arquivo que ninguém
+  acha em dezembro.
+- **Caderno na nuvem pessoal.** Sincronizar o `~/engajamentos` num Drive pessoal entrega o
+  mapa do cliente a um terceiro (e, de novo, fere o contrato).
+
+## 8. Boas práticas e segurança
+
+### 8.1 Um template de nota de achado
+
+Comece todo achado por um molde fixo, para nunca esquecer um campo. Em Markdown:
+
+```text
+id: A01
+titulo: <uma frase que diz a falha>
+ativo: <IP ou nome, dentro do escopo>
+hora_utc: <AAAA-MM-DDTHH:MM:SSZ>
+evidencias: <IDs que provam, ex.: E04, E05>
+passos:
+  1. <ação>
+  2. <ação>
+impacto: <o que um atacante consegue com isto>
+recomendacao: <como corrigir>
+status: rascunho | pronto
+```
+
+### 8.2 Configuração do terminal para registro
+
+Três linhas no `~/.bashrc` deixam o terminal pronto para documentar. A primeira carimba a
+hora no histórico; a segunda é uma função `log` que registra no diário **e** executa o
+comando, copiando a saída para a tela e para o arquivo (como o `tee` do 0.3):
+
+```bash
+export HISTTIMEFORMAT='%Y-%m-%dT%H:%M:%S%z '
+log() {
+  printf '[%s] $ %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$HOME/engajamentos/diario-bruto.log"
+  "$@" 2>&1 | tee -a "$HOME/engajamentos/diario-bruto.log"
+}
+```
+
+Uso: `log nmap -sV 10.0.5.15`. A saída real (no WSL):
+
+```console
+$ log echo "exemplo de registro"
+[2026-10-07T05:49:53Z] $ echo exemplo de registro
+exemplo de registro
+```
+
+Esse log bruto é insumo; no fim do dia você o resume no diário em Markdown, já sem os becos
+sem saída.
+
+### 8.3 A cadeia de custódia, passo a passo
+
+Ao coletar uma evidência, grave o original, calcule o hash e versione:
+
+```console
+$ cd ~/engajamentos/2026-088_cliente/evidencias/originais
+$ nmap -sV -oN E01_$(date -u +%Y%m%dT%H%MZ)_10.0.5.15_nmap.txt 10.0.5.15
+$ sha256sum E*.txt > ../../MANIFESTO.sha256
+$ git -C ../.. add -A && git -C ../.. commit -q -m "coleta E01"
+```
+
+Para conferir depois que nada mudou, `sha256sum -c MANIFESTO.sha256`. E lembre dos dois
+pontos cegos da Missão 2: compare a lista de arquivos com a do manifesto (`comm`) para pegar
+o que não está listado, e confie no histórico do Git para o próprio manifesto.
+
+### 8.4 Tarja que funciona
+
+Para preparar uma evidência derivada:
+
+- **Texto/CPF:** mascare na cópia (o `sed` do 1.4), por registro, não por campo.
+- **Imagem:** desenhe um retângulo **sólido e opaco**, achate a imagem numa só camada e
+  **exporte para um arquivo novo** — nunca salve por cima do original. Isso evita o
+  aCropalypse e a tarja "por cima" que o guia da NSA condena. Nunca use `pixelation` em
+  segredo: ela é reversível.
+- **Metadados/EXIF:** remova os metadados antes de entregar (uma foto pode carregar a
+  localização por GPS). Documentos convertidos para PDF podem manter autor, comentários e
+  texto escondido.
+
+### 8.5 Proteger o caderno
+
+- **Cifre por engajamento.** Uma pasta de trabalho cifrada por cliente; no fim, destrua a
+  **chave** junto com os arquivos (o 1.4 explica por que o `shred` não garante nada num SSD).
+- **Nada de nuvem pessoal.** O caderno vive local e, se precisar sair, vai cifrado por um
+  canal combinado com o cliente.
+- **`umask 077`.** O caderno é legível só por você (o `novo-engajamento.sh` já faz isso).
+- **Retenção.** Combine em contrato por quanto tempo guardar e quando destruir (a
+  `retention policy`), e registre a destruição numa declaração ao cliente.
+
+### 8.6 Para quem contrata e para quem defende
+
+Quem **contrata** um pentest deve exigir no contrato: a devolução ou destruição das
+evidências com declaração, o log das atividades com hora (para `deconfliction`) e o formato
+mínimo de achado (passos, impacto, recomendação). Quem **defende** usa esse log de duas
+formas: para separar o teste de um incidente real durante a janela, e, depois, como no aviso
+da CISA, para medir **o que o SOC detectou e o que não detectou** — cada passo do pentest,
+com hora, é um teste grátis da sua capacidade de detecção.
+
+## 9. Exercícios
+
+O quiz abaixo fecha o módulo. Ele é uma tarefa `type: quiz`: a plataforma corrige no
+servidor e o gabarito não vai ao navegador. As três flags vêm das missões da seção 5.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar (sem flag)
+
+<Hint title="1. A hora do crime">
+Um cliente diz que o sistema caiu "por volta das 22h" e acusa o seu teste. Seu diário mostra
+`2026-10-07T00:44:02Z` como a última ação naquele host, e nenhuma depois. Como o fuso ajuda
+você a responder?
+</Hint>
+<Solution title="Resposta">
+00:44Z é 21:44 em Brasília (UTC-3). Se a queda foi "por volta das 22h" (Brasília), ela é
+**posterior** à sua última ação, e provavelmente não foi o teste — mas a resposta honesta é
+"minha última ação no host foi 21:44 local; o que houve às 22h precisa ser investigado nos
+logs do servidor". A nota em UTC, cruzada com o fuso do cliente, transforma uma acusação
+vaga numa checagem objetiva.
+</Solution>
+
+<Hint title="2. O print perfeito">
+Você precisa provar que acessou o painel administrativo de um sistema. O que a captura de
+tela tem de mostrar para ser evidência de verdade?
+</Hint>
+<Solution title="Resposta">
+A URL/host na barra de endereço, a hora (um terminal com `date -u` aberto ao lado resolve), e
+o elemento que prova o acesso administrativo (um menu, um nome de usuário logado). E nada que
+não devia aparecer: outras abas, dados de terceiros, outro cliente. Depois, trate como
+evidência derivada se houver dado pessoal.
+</Solution>
+
+### Exercício prático extra (sem flag)
+
+Pegue qualquer comando que você rodou nos módulos anteriores, registre-o com a função `log`
+da seção 8.2 e confira que o diário bruto recebeu a linha com a hora em UTC. Depois gere o
+hash do arquivo de log com `sha256sum` — você acabou de criar a primeira linha do seu
+manifesto.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Em pentest, o que não foi registrado não aconteceu: a nota serve ao relatório, à
+  reprodução, à cobertura, à `deconfliction` e à defesa jurídica.
+- Anote a hora em **UTC** (ISO 8601, com `Z`): sem fuso, um horário é ambíguo; em UTC, ele
+  cruza direto com os logs do alvo e com as notas da equipe.
+- Separe a **evidência original** (intocada, com hash no manifesto) da **derivada** (tratada
+  para o relatório). Prove integridade com `sha256sum` + Git.
+- O `sha256sum -c` pega o que mudou e o que sumiu; o `comm` pega o que ficou fora do
+  manifesto; o Git pega a reescrita do próprio manifesto.
+- A nota de achado (título, ativo, hora, evidências, passos, impacto, recomendação) é o
+  relatório em miniatura — escreva-a com a falha fresca.
+- Tarja de verdade **remove** o dado e gera arquivo novo (aCropalypse, NSA); o caderno é
+  dado sensível (FireEye) e se protege como tal.
+
+### Cola rápida: o que toda linha do caderno tem
+
+```text
+QUANDO  2026-10-07T01:13:05Z   (UTC, ISO 8601, sempre com Z)
+ONDE    10.0.5.15              (alvo dentro do escopo)
+O QUÊ   GET /busca?q=caneta'-- (o comando/ação exato)
+RESULTADO  200, injeção confirmada   (inclui o negativo!)
+PROVA   E05                    (ID da evidência, com hash no manifesto)
+```
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [NIST SP 800-115, "Technical Guide to Information Security Testing and Assessment"](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-115.pdf)
+  — a seção 7 recomenda registrar cada teste com "timestamp, test type, tool used, commands,
+  the IP address of testing equipment" e manter um log passo a passo como trilha de auditoria.
+- [PTES — Reporting](http://www.pentest-standard.org/index.php/Reporting) e
+  [Post Exploitation (Cleanup)](http://www.pentest-standard.org/index.php/Post_Exploitation)
+  — a estrutura do relatório e as regras de proteção e destruição dos dados do teste.
+- [NSA, "Redacting with Confidence"](https://www.ca7.uscourts.gov/assets/pdf/nsa-redact.pdf)
+  — por que cobrir com preto não é tarja, em detalhe.
+- [CISA AA23-059A](https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-059a)
+  — um relatório real de Red Team, com a linha do tempo dos eventos medidos.
