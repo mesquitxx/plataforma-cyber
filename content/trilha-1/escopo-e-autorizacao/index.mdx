@@ -1,0 +1,1993 @@
+---
+slug: escopo-e-autorizacao
+track: trilha-1
+title: "Escopo, regras de engajamento e autorização"
+prerequisites: [o-que-e-pentest]
+lab: null
+tasks:
+  - slug: missao-1-quem-autoriza
+    title: "Missão 1 — Quem pode autorizar?"
+    type: flag
+    prompt: "A flag que o conferir.sh da Missão 1 imprime quando as dez classificações do respostas.txt estão certas, no formato FLAG{12 caracteres hexadecimais}."
+    hint: "Para cada ativo, pergunte: de quem é a infraestrutura? O diretor que vai assinar manda nela? Se não, existe outra organização que possa autorizar, ou o ativo nem é do cliente?"
+    flag:
+      hash: "scrypt$16384$8$1$ddab67d8145acf93d6d610b08e6e93829e7a0a31245ada449ab1e3e0714008f7"
+      salt: "6db2c1d23de6a93f2ff90e836fda9ac7"
+  - slug: missao-2-carta-e-regras
+    title: "Missão 2 — A carta e as regras"
+    type: flag
+    prompt: "Os IDs de TODAS as cláusulas com defeito da minuta, em ordem crescente, separados por hífen, dentro de FLAG{ }."
+    hint: "Compare cada cláusula com o contexto.txt: quem assina, de quem são os IPs, o que cabe em 'todos os subdomínios', o fuso, o horário do contato, a validade e o que falta na engenharia social."
+    flag:
+      hash: "scrypt$16384$8$1$0866b5ee1759fec6b248237c512ecd2b10c68f96b0b6643f5ba6c5584b3cbded"
+      salt: "88f62c75feebcd24e278c2ed80de6737"
+  - slug: missao-3-parar-ou-continuar
+    title: "Missão 3 — Parar, continuar ou pedir adendo?"
+    type: flag
+    prompt: "A flag que o conferir.sh da Missão 3 imprime quando as oito decisões do respostas.txt estão certas, no formato FLAG{12 caracteres hexadecimais}."
+    hint: "Cada situação é resolvida por uma regra do roe.txt (R1 a R5). Ache a regra antes de decidir; a sua intuição não vale mais que o documento assinado."
+    flag:
+      hash: "scrypt$16384$8$1$72d3881f2d5842f0311546dd9f57b31686565ae26883280b7b1ee30a694c65b3"
+      salt: "811dc2c5efe8339fd50d9a6028f8f93e"
+  - slug: quiz-final
+    title: "Quiz — Escopo, regras de engajamento e autorização"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "A empresa que contratou você usa um portal de RH em SaaS, rh.empresa.example, que o fornecedor opera para 2.000 empresas no mesmo sistema. O diretor de tecnologia do seu cliente assinou a autorização incluindo esse portal. Você pode testá-lo?"
+        options:
+          - "Sim: o diretor assinou e o portal tem o nome do cliente"
+          - "Não sem a autorização escrita do fornecedor do SaaS: o cliente responde pelos dados dele, não pela infraestrutura do fornecedor nem pelos outros clientes"
+          - "Sim, desde que só nas madrugadas"
+          - "Sim, porque um CNAME no domínio do cliente transfere a autorização"
+        answer: 1
+        explanation: "O PTES é direto: o cliente 'não fala pelos seus provedores terceirizados', e a permissão precisa ser obtida deles também. O NIST SP 800-115 diz o mesmo: se parte dos sistemas está na rede de um terceiro, o dono dessa rede normalmente precisa consentir por escrito. Num SaaS multiempresa, um teste atinge também os dados de outras organizações."
+      - question: "No kickoff, portal.cliente.example resolvia para 198.51.100.21, um IP do escopo. No terceiro dia ele passa a resolver para 192.0.2.80, um IP de CDN. O que fazer?"
+        options:
+          - "Testar o nome normalmente: o nome está no contrato"
+          - "Não testar o IP novo; registrar a mudança, avisar o ponto de contato e seguir só com o IP autorizado"
+          - "Trocar o escopo por conta própria para incluir o IP da CDN"
+          - "Parar todo o engajamento e cancelar o contrato"
+        answer: 1
+        explanation: "Ferramentas atacam endereços, não nomes. Se o nome passou a apontar para outra infraestrutura (o que chamamos de DNS drift), o IP novo não foi autorizado por ninguém. Vale o IP listado; o nome é conferido de novo antes de cada ação, e a mudança vai para o ponto de contato."
+      - question: "No segundo dia, o gerente de TI liga: 'já que vocês estão aí, testem também o servidor novo, depois eu formalizo'. A resposta certa é:"
+        options:
+          - "Testar logo, porque o gerente é do cliente"
+          - "Testar só a parte que não causa impacto"
+          - "Agradecer e esperar um adendo assinado por quem tem autoridade antes de tocar no servidor novo"
+          - "Testar e incluir no relatório como bônus"
+        answer: 2
+        explanation: "Isso é scope creep. O PTES recomenda que todo pedido fora do escopo vire um SOW documentado e que o trabalho extra não comece antes de ele ser assinado pelas duas partes: pedidos informais são difíceis de provar numa disputa. E o gerente pode nem ter autoridade para autorizar."
+      - question: "Em 2016, a Uber pagou US$ 100 mil a dois invasores que tinham copiado dados de cerca de 57 milhões de usuários e motoristas, por meio do programa de bug bounty, com acordos de sigilo. O que esse caso ensina sobre autorização?"
+        options:
+          - "Que bug bounty é ilegal"
+          - "Que pagar pelo programa transforma a invasão em pesquisa autorizada"
+          - "Que autorização não é retroativa: chamar uma extorsão de 'bug bounty' depois do fato não a torna autorizada, e o programa não muda o que aconteceu"
+          - "Que acordos de sigilo autorizam o acesso"
+        answer: 2
+        explanation: "Segundo o Departamento de Justiça dos EUA, o então diretor de segurança tentou pagar os invasores pelo programa de bug bounty, que existe para quem aponta falhas sem comprometer dados, e foi condenado em outubro de 2022 por obstrução e ocultação de crime. A própria política do DOJ de 2022 diz que achar falhas para extorquir os donos, mesmo chamando de pesquisa, não é boa-fé."
+      - question: "Na decisão Van Buren v. United States (2021), como a Suprema Corte dos EUA leu 'exceeds authorized access' (exceder o acesso autorizado) na lei americana CFAA?"
+        options:
+          - "Qualquer uso de um sistema para um propósito que o dono não aprovaria"
+          - "Uma pergunta de 'portão aberto ou fechado': entrar em áreas do sistema (arquivos, pastas, bancos) que estão fechadas para você"
+          - "Qualquer violação de termos de uso de um site"
+          - "Apenas acessos feitos de fora do país"
+        answer: 1
+        explanation: "A Corte adotou a ideia de 'gates-up-or-down': ou você pode acessar uma área, ou não. Van Buren tinha acesso legítimo ao banco de placas e usou para fim proibido; isso, sozinho, não foi considerado 'exceder o acesso'. Mas a Corte deixou em aberto se limites escritos em contratos e políticas contam. Por isso, no pentest, os limites precisam estar escritos sem ambiguidade."
+      - question: "A carta de autorização diz 'válida de 01/09 a 30/09'. A janela de teste combinada é de 06/10 a 09/10. O que você faz?"
+        options:
+          - "Começa o teste: a intenção das partes era clara"
+          - "Pede uma carta nova (ou adendo) com a validade certa antes do primeiro pacote"
+          - "Testa só os alvos menos sensíveis"
+          - "Testa e anexa o e-mail do cliente ao relatório"
+        answer: 1
+        explanation: "Uma autorização vencida não cobre nada. É exatamente o tipo de defeito que só aparece quando alguém precisa mostrar o papel (um segurança, a polícia, um juiz). Conferir datas, fuso e assinaturas antes de começar é parte do trabalho."
+      - question: "No meio do teste, você encontra num servidor do escopo um web shell com data de três meses atrás e acessos de um IP desconhecido. Segundo o NIST SP 800-115, o que fazer?"
+        options:
+          - "Explorar o web shell para entender o atacante"
+          - "Ignorar: não é o objetivo do teste"
+          - "Relatar imediatamente à pessoa indicada e parar de testar os sistemas envolvidos enquanto a organização responde"
+          - "Apagar o arquivo para proteger o cliente"
+        answer: 2
+        explanation: "O guia recomenda que a presença de um adversário seja relatada imediatamente e que os testadores parem de avaliar os sistemas envolvidos durante a resposta. Mexer no arquivo destrói evidências; continuar o teste mistura as suas ações com as do invasor nos logs."
+      - question: "Randal Schwartz era contratado da Intel e rodou um quebrador de senhas (o Crack) em arquivos de senhas da empresa em 1993, dizendo depois que queria mostrar que a segurança tinha piorado. O que o caso mostra?"
+        options:
+          - "Que quebrar senhas é sempre crime"
+          - "Que ser de dentro e ter boa intenção não substituem autorização para aquela ação específica"
+          - "Que a Intel não tinha política de segurança"
+          - "Que o teste foi legal, porque ele trabalhava lá"
+        answer: 1
+        explanation: "Segundo o tribunal do Oregon, ele usou a senha de outro usuário sabendo que não tinha autoridade para isso, e foi condenado por júri em três acusações de crime informático (condenação mantida em 2001). Ter acesso a alguns sistemas não autorizava testar outros. O NIST SP 800-115 lista a quebra de senhas como uma atividade que o plano de teste precisa autorizar explicitamente, dizendo até como as senhas serão obtidas."
+      - question: "Um site tem o arquivo /.well-known/security.txt com um e-mail de contato. Isso autoriza você a testá-lo?"
+        options:
+          - "Sim: o arquivo é um convite público para testes"
+          - "Não: o RFC 9116 diz que a presença ou ausência do arquivo não concede nem nega permissão; ela, quando existe, está na política de divulgação"
+          - "Sim, se o teste for só de leitura"
+          - "Só se o campo Expires estiver no futuro"
+        answer: 1
+        explanation: "O security.txt diz como relatar um problema, não o que se pode testar. O próprio RFC 9116 (abril de 2022) avisa que pesquisadores não devem supor permissão pela presença ou ausência do arquivo; a permissão, se houver, está na política de divulgação (o campo Policy aponta para ela)."
+      - question: "Um programa de divulgação de vulnerabilidades adota o texto de safe harbor do disclose.io. Você testou dentro das regras do programa e acessou, sem querer, um servidor de um fornecedor da empresa. O safe harbor protege você perante esse fornecedor?"
+        options:
+          - "Sim: o safe harbor vale contra qualquer um"
+          - "Não: o próprio texto diz que ele só cobre reivindicações sob controle da organização do programa e não vincula terceiros independentes"
+          - "Sim, se você relatar em 24 horas"
+          - "Depende só da lei do país do fornecedor"
+        answer: 1
+        explanation: "O safe harbor é uma promessa da organização que publica a política: considerar a pesquisa autorizada e não processar quem segue as regras. Ela não pode prometer em nome de outros. O texto do disclose.io diz isso explicitamente, e promete apenas tornar público que você seguiu a política se um terceiro agir contra você."
+      - question: "No modelo de regras de engajamento do NIST SP 800-115 (apêndice B), quem deve assinar, no mínimo?"
+        options:
+          - "Só o testador"
+          - "Qualquer funcionário da TI do cliente"
+          - "O líder da equipe de teste e a alta gestão da organização (CSO, CISO, CIO etc.), declarando que entendem o escopo e os limites"
+          - "Um advogado de cada lado"
+        answer: 2
+        explanation: "A página de assinaturas existe para identificar quem responde por quê. Assinatura de alguém sem autoridade (por exemplo, um coordenador quando a política interna exige o CTO ou o CISO) deixa o teste sem autorização válida, como na Missão 2."
+      - question: "No Brasil, o crime de invasão de dispositivo informático (art. 154-A do Código Penal) descreve a invasão feita sem qual autorização?"
+        options:
+          - "Sem autorização do provedor de internet"
+          - "Sem autorização expressa ou tácita do usuário do dispositivo"
+          - "Sem registro na polícia"
+          - "Sem certificação profissional"
+        answer: 1
+        explanation: "O texto atual, com a redação da Lei 14.155/2021, fala em invadir dispositivo de uso alheio 'sem autorização expressa ou tácita do usuário do dispositivo'. Por isso a autorização precisa vir de quem pode dá-la, e ser expressa e por escrito: 'tácita' é exatamente a discussão que você não quer ter depois. O módulo 1.4 trata da lei a fundo."
+glossary:
+  - term: authorization letter
+    definition: "Carta de autorização: documento curto, assinado por quem tem autoridade sobre os alvos, dizendo quem pode testar o quê, quando e com que limites, com um contato para confirmar. O testador a leva consigo; no jargão, é a 'get-out-of-jail letter'."
+  - term: statement of work
+    definition: "SOW (declaração de trabalho): o documento que descreve o serviço contratado — alvos, tipo de teste, entregas, prazo e preço. Mudanças de escopo viram um novo SOW ou um adendo."
+  - term: master services agreement
+    definition: "MSA (contrato-mestre): o contrato que define as regras gerais da relação entre cliente e fornecedor (responsabilidade, sigilo, pagamento, foro). Cada trabalho específico vem num SOW ligado a ele."
+  - term: non-disclosure agreement
+    definition: "NDA (acordo de confidencialidade): compromisso de não revelar informações sigilosas recebidas ou descobertas no trabalho a quem não estiver autorizado."
+  - term: addendum
+    definition: "Adendo: documento que altera um contrato, SOW ou regras de engajamento já assinados (novo alvo, nova técnica, nova janela), assinado de novo por quem tem autoridade."
+  - term: limitation of liability
+    definition: "Limitação de responsabilidade: cláusula contratual que define até onde cada parte responde por danos. Num pentest, costuma tratar da possibilidade de instabilidade nos sistemas testados."
+  - term: testing window
+    definition: "Janela de teste: as datas e os horários, com fuso horário, em que as ações contra os alvos estão autorizadas."
+  - term: point of contact
+    definition: "Ponto de contato: a pessoa do cliente que responde pelo engajamento no dia a dia, recebe os status e decide dúvidas de escopo. O contato de emergência precisa estar disponível durante toda a janela."
+  - term: status report
+    definition: "Relatório de status: atualização periódica (diária, em geral) ao cliente sobre o que foi feito, o que vem a seguir e os problemas encontrados."
+  - term: stop condition
+    definition: "Condição de parada: situação, prevista nas regras de engajamento, que obriga a interromper o teste e avisar o cliente na hora (invasor anterior, serviço degradado, dados sensíveis além do necessário)."
+  - term: deconfliction
+    definition: "Desconflito: o procedimento para distinguir a atividade do teste de um ataque real (IPs de origem declarados, um contato que confirma o teste), evitando que a defesa ou a polícia trate o teste como incidente, e vice-versa."
+  - term: trusted agent
+    definition: "Agente de confiança: pessoa do cliente que sabe de um teste encoberto (red team) e pode confirmá-lo ou interrompê-lo se ele for detectado, sem avisar o resto da defesa."
+  - term: shunning
+    definition: "Bloqueio automático do endereço de origem de um ataque pela defesa (firewall, IPS). As regras dizem se o testador deve aceitar o bloqueio ou se o seu IP fica fora dele."
+  - term: scope creep
+    definition: "Crescimento do escopo sem documento: pedidos do tipo 'já que você está aí...'. Gera trabalho não pago e, pior, ações sem autorização escrita."
+  - term: exclude list
+    definition: "Lista de exclusão: os sistemas explicitamente proibidos de testar, mesmo que estejam dentro de uma faixa autorizada (por exemplo, o servidor da folha de pagamento)."
+  - term: third-party authorization
+    definition: "Autorização de terceiro: a permissão adicional, por escrito, de quem é dono da infraestrutura ou do serviço usado pelo cliente (provedor de nuvem, hospedagem, SaaS, MSSP)."
+  - term: shared responsibility model
+    definition: "Modelo de responsabilidade compartilhada: a divisão, na nuvem, entre o que o provedor protege (a infraestrutura) e o que o cliente protege (o que ele cria e configura). Define também o que o cliente pode autorizar a testar."
+  - term: IaaS
+    definition: "Infrastructure as a Service: nuvem em que o cliente aluga máquinas virtuais, redes e discos e administra o sistema operacional e tudo o que roda nele."
+  - term: SaaS
+    definition: "Software as a Service: software usado pela internet, rodando nos servidores do fornecedor (e-mail, RH, CRM). O cliente controla seus dados e usuários, não a infraestrutura."
+  - term: virtual machine
+    definition: "Máquina virtual (VM): um computador simulado por software, com sistema operacional próprio, rodando sobre um servidor físico que pode hospedar muitas outras."
+  - term: object storage
+    definition: "Armazenamento de objetos: serviço de nuvem que guarda arquivos (objetos) em contêineres chamados buckets, acessados por uma API. É um serviço gerenciado pelo provedor."
+  - term: multi-tenant
+    definition: "Multiempresa (multi-tenant): um mesmo sistema atende vários clientes ao mesmo tempo, separados só por software. Testar um deles pode atingir os outros."
+  - term: shared hosting
+    definition: "Hospedagem compartilhada: plano em que o mesmo servidor, com o mesmo IP, atende os sites de muitos clientes. Um teste no IP atinge todos."
+  - term: CDN
+    definition: "Content Delivery Network: rede de servidores espalhados pelo mundo que entrega o conteúdo de muitos sites a partir do ponto mais próximo do usuário. Os IPs são do provedor da CDN, não do site."
+  - term: MSSP
+    definition: "Managed Security Service Provider: empresa contratada para operar a segurança de outra (firewalls, monitoramento). Os equipamentos e serviços dela precisam de autorização própria para teste."
+  - term: VPN
+    definition: "Virtual Private Network: túnel cifrado que liga um computador (ou uma rede) a outra rede pela internet, como se estivesse dentro dela."
+  - term: subdomain
+    definition: "Subdomínio: um nome abaixo de outro no DNS (rh.empresa.example está abaixo de empresa.example). Um subdomínio pode apontar para servidores de qualquer organização."
+  - term: CNAME
+    definition: "Registro DNS que diz que um nome é apelido de outro (rh.empresa.example é apelido de empresa.fornecedor.example). Mostra, muitas vezes, que o serviço é de um terceiro."
+  - term: DNS drift
+    definition: "Deslocamento de DNS: o nome de um alvo passa a resolver para outros endereços durante o engajamento (migração, CDN, balanceamento). O IP novo não está autorizado só porque o nome está."
+  - term: dangling DNS
+    definition: "DNS pendente: registro que continua apontando para um recurso desligado ou devolvido (um IP, um bucket, um serviço de nuvem). O recurso pode ter passado para outra organização."
+  - term: subdomain takeover
+    definition: "Tomada de subdomínio: quando um registro DNS pendente aponta para um recurso que qualquer um pode criar, um atacante cria o recurso e passa a responder por aquele nome."
+  - term: WHOIS
+    definition: "Protocolo e serviço de consulta pública de quem registrou um domínio ou uma faixa de IPs. Usado para conferir a quem pertence cada alvo antes do teste."
+  - term: RDAP
+    definition: "Registration Data Access Protocol: o sucessor do WHOIS, com respostas estruturadas (JSON) sobre donos de domínios, faixas de IP e sistemas autônomos."
+  - term: password cracking
+    definition: "Quebra de senhas: descobrir senhas a partir dos seus hashes, testando muitas candidatas. Num pentest, só com autorização explícita para isso e para a forma de obter os hashes."
+  - term: SQL injection
+    definition: "Falha em que a aplicação junta a entrada do usuário a um comando SQL e o banco de dados a executa como parte do comando. Tema da Trilha 4."
+  - term: CFAA
+    definition: "Computer Fraud and Abuse Act: a principal lei federal dos EUA contra invasão de computadores, de 1986. Pune o acesso sem autorização e o acesso que 'excede' a autorização."
+  - term: exceeds authorized access
+    definition: "Exceder o acesso autorizado: na CFAA, entrar em partes de um sistema (arquivos, pastas, bancos) que estão fechadas para você, mesmo tendo acesso a outras. Definido pela Suprema Corte dos EUA em Van Buren (2021)."
+  - term: good-faith security research
+    definition: "Pesquisa de segurança de boa-fé: na política do DOJ dos EUA de 2022, acessar um computador só para testar, investigar ou corrigir uma falha, evitando danos e usando o resultado para melhorar a segurança. Extorsão nunca é boa-fé."
+  - term: vulnerability disclosure policy
+    definition: "VDP (política de divulgação de vulnerabilidades): página pública em que uma organização diz o que pode ser testado, o que é proibido e como relatar uma falha, em geral sem pagar recompensa."
+  - term: safe harbor
+    definition: "Porto seguro: cláusula de uma política de divulgação ou bug bounty em que a organização se compromete a tratar como autorizada a pesquisa que segue as regras e a não processar o pesquisador. Não vincula terceiros."
+  - term: security.txt
+    definition: "Arquivo /.well-known/security.txt (RFC 9116, abril de 2022) que diz como relatar problemas de segurança a uma organização. Não concede permissão para testar."
+  - term: data handling
+    definition: "Tratamento de dados: as regras de como o testador coleta, guarda, transmite e destrói os dados e evidências do teste, que são sensíveis por definição."
+---
+
+import cadeia from "./img/cadeia-de-autoridade.svg";
+import documentos from "./img/documentos-do-engajamento.svg";
+import camadas from "./img/camadas-do-escopo.svg";
+import decisao from "./img/posso-tocar-este-alvo.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+<Callout variant="hypothetical" title="Dois testes, um dígito">
+Duas consultorias recebem o mesmo pedido de pentest, com a mesma faixa de IPs, as mesmas
+ferramentas e o mesmo prazo. Na proposta da primeira, alguém copiou de uma planilha antiga
+um endereço com um dígito trocado. O endereço existe, responde e tem serviços abertos, e
+pertence a outra empresa, que nunca ouviu falar do teste. A segunda consultoria conferiu,
+antes de começar, de quem era cada faixa, e devolveu a lista corrigida ao cliente. As duas
+fizeram "o mesmo pentest". Só uma delas tinha autorização para tudo o que tocou.
+</Callout>
+
+No módulo 1.1 você viu que, do lado de fora, um teste de intrusão e um crime são
+idênticos, e que o que separa um do outro é a **autorização**. Viu também o caso
+Coalfire: dois profissionais com contrato assinado presos dentro de um fórum, porque quem
+assinou não mandava em tudo o que estava no papel e ninguém tinha avisado quem podia
+reagir. Este módulo pega essa frase, "autorização", e abre por dentro: **quem** pode dar,
+**sobre o quê**, **em que documento**, com **quais regras**, e o que fazer quando a
+realidade muda no meio do teste.
+
+Parece burocracia, e é a parte do trabalho que mais protege você. Um achado brilhante
+fora do escopo não vale nada para o cliente e pode valer um processo para você. Já um
+escopo bem escrito faz o contrário: deixa você trabalhar com tranquilidade, porque cada
+ação tem um papel por trás.
+
+**Ao final, você vai saber:**
+
+- explicar o que a autorização faz, jurídica e praticamente, e por que ela precisa ser
+  expressa, escrita, vigente e dada por quem tem autoridade sobre cada alvo;
+- distinguir os documentos de um engajamento (MSA, SOW, regras de engajamento, carta de
+  autorização, NDA e adendo) pela pergunta que cada um responde;
+- reconhecer quando um alvo depende de **outra** organização (nuvem, hospedagem
+  compartilhada, CDN, SaaS, MSSP, outra empresa do grupo) e de quem é a autorização que
+  falta;
+- escrever um escopo sem ambiguidade: IPs, nomes, exclusões, janela com fuso, técnicas,
+  ambiente, limites de dados e origem do tráfego;
+- tratar mudanças durante o teste: nomes que passam a apontar para outro lugar, pedidos
+  verbais, condições de parada;
+- entender os limites do bug bounty, do safe harbor e do `security.txt`;
+- auditar uma minuta de autorização e decidir, situação a situação, se o teste continua,
+  para ou espera um adendo.
+
+**Pré-requisitos:** **1.1 — O que é pentest e tipos de teste.** Dele você vai usar:
+
+- o vocabulário do engajamento: <GlossaryTerm term="engagement">engagement</GlossaryTerm>,
+  <GlossaryTerm term="pre-engagement">pre-engagement</GlossaryTerm>,
+  <GlossaryTerm term="scope">scope</GlossaryTerm>,
+  <GlossaryTerm term="rules of engagement">rules of engagement</GlossaryTerm> e
+  <GlossaryTerm term="kickoff meeting">kickoff meeting</GlossaryTerm>;
+- os tipos de teste (pentest, red team, bug bounty) e o caso Coalfire;
+- o script `in-scope.sh` (seção 8.3 do 1.1), que este módulo amplia;
+- e, por tabela, o que veio da Trilha 0: notação CIDR (0.2), DNS (0.1 e 0.2) e o terminal
+  com `cat`, `grep` e um laço em Bash (0.3, 0.4 e 0.6).
+
+O módulo 1.2 (Metodologia) não é pré-requisito; quando ele ajudar, você vai ver uma
+remissão.
+
+**Tempo estimado:** de 3 a 4 horas, incluindo as missões. As missões rodam no **seu WSL**,
+numa pasta descartável; não há laboratório para ligar.
+
+<Callout variant="ethics">
+Tudo o que você vai fazer aqui é ler e analisar documentos **fictícios** gerados no seu
+computador. Os endereços e nomes usados nos exemplos são reservados para documentação
+(as faixas `192.0.2.0/24`, `198.51.100.0/24` e `203.0.113.0/24` do RFC 5737 e o sufixo
+`.example` do RFC 2606), justamente para não apontar para ninguém de verdade. A regra
+deste módulo é a regra da profissão: **só se testa o que é seu ou o que está autorizado
+por escrito, por quem pode autorizar**, como os laboratórios desta plataforma. O módulo 1.4
+trata da lei brasileira.
+</Callout>
+
+## 2. Teoria aprofundada — a autorização por dentro
+
+### 2.1 O que a autorização faz
+
+Comece pela pergunta mais simples: **por que** um pentest é legal e uma invasão não, se os
+pacotes são os mesmos? Porque quase toda lei de crimes informáticos é escrita em volta da
+ideia de **acesso não autorizado**. Dois exemplos:
+
+- No Brasil, o art. 154-A do Código Penal (incluído pela Lei 12.737/2012, com a redação
+  atual dada pela Lei 14.155/2021) descreve como crime "invadir dispositivo informático de
+  uso alheio [...] com o fim de obter, adulterar ou destruir dados ou informações **sem
+  autorização expressa ou tácita do usuário do dispositivo**", com pena de reclusão de 1 a
+  4 anos e multa
+  ([Código Penal, planalto.gov.br](https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm)).
+  O módulo 1.4 estuda o artigo a fundo; aqui importa a expressão destacada.
+- Nos EUA, a <GlossaryTerm term="CFAA">CFAA</GlossaryTerm> (*Computer Fraud and Abuse
+  Act*, a lei federal contra invasão de computadores, de 1986) pune quem acessa um
+  computador "sem autorização" ou quem
+  <GlossaryTerm term="exceeds authorized access">exceeds authorized access</GlossaryTerm>
+  (excede o acesso autorizado). Você vai ver na seção 4 como a Suprema Corte americana leu
+  essa segunda expressão em 2021.
+
+A autorização, então, é o que tira a sua conduta de dentro do tipo penal. Isso tem
+consequências que todo iniciante subestima:
+
+1. **Ela tem dono.** Só pode autorizar quem tem poder sobre o sistema. Um funcionário
+   qualquer, um amigo que "trabalha lá", o cliente falando por um fornecedor dele: nenhum
+   desses autoriza o que não controla.
+2. **Ela tem limites.** Autorização para testar a loja virtual não é autorização para
+   testar o servidor de e-mail. Autorização para ler um registro como prova não é
+   autorização para baixar o banco inteiro. Passar do limite é, de novo, agir sem
+   autorização, mesmo dentro de um contrato.
+3. **Ela tem prazo.** Vale nas datas e horários combinados. O "reteste rápido no sábado"
+   que você viu no 1.1 não estava coberto.
+4. **Ela precisa ser provável.** A lei brasileira fala em autorização "expressa ou
+   tácita". Tácita é a autorização que se deduz do comportamento, e é exatamente a
+   discussão que você não quer ter numa delegacia. No pentest, a autorização é sempre
+   **expressa e escrita**.
+5. **Ela não é retroativa.** Ninguém autoriza depois do fato. Se você testou sem permissão
+   e o dono "gostou do resultado", isso pode até evitar um processo, mas não transforma o
+   ato em autorizado. O caso Uber, na seção 4, mostra o outro lado dessa moeda.
+6. **Ela não se transfere sozinha.** A autorização dada à sua empresa não cobre um
+   subcontratado que você chamou, a não ser que o documento preveja.
+
+<Callout variant="info" title="Autorização protege os dois lados">
+Para o cliente, o documento de autorização é o que impede que o teste seja confundido com
+um ataque real, e o que define até onde o testador pode ir com os dados dele. Para o
+testador, é a prova de que cada ação estava combinada. Quando um dos dois lados acha que
+"não precisa de tanto papel", normalmente é o lado que ainda não viu um teste dar
+errado.
+</Callout>
+
+### 2.2 Quem pode autorizar: a cadeia de autoridade
+
+A pergunta "o cliente autorizou?" esconde três perguntas diferentes, e o caso Coalfire
+mostrou que confundir as três dá cadeia:
+
+1. **Quem é o dono do ativo?** Não quem usa, nem quem paga: quem controla. Um prédio pode
+   ser usado por um órgão estadual e pertencer ao condado. Um site pode ter o nome da sua
+   cliente e rodar no servidor de uma hospedagem.
+2. **Quem, dentro do dono, tem autoridade para autorizar um teste intrusivo?** Em empresas
+   organizadas, a política interna diz (por exemplo: "só o CTO ou o CISO"). Um
+   coordenador de TI pode ser seu ponto de contato e não ter poder para assinar.
+3. **O documento assinado cobre este alvo, nesta data, com esta técnica?** É a pergunta
+   que você refaz antes de cada ação (seção 3.4).
+
+<Figure
+  src={cadeia}
+  alt="À esquerda, quatro caixas em sequência: dono dos ativos, quem tem autoridade (por exemplo CTO ou CISO), documento assinado (carta de autorização e regras de engajamento) e equipe de teste, que age só dentro do documento. À direita, três grupos de alvos: só o cliente autoriza (rede interna própria, faixa de IP registrada em nome do cliente, VM do cliente na nuvem quando a política do provedor permite); cliente mais terceiro (hospedagem compartilhada, serviço gerenciado de nuvem com pedido prévio, SaaS multiempresa, equipamento de MSSP, outra empresa do grupo); ninguém deste contrato autoriza (IP digitado errado de outra empresa, nome antigo que aponta para o servidor de outra organização)."
+  caption="A autorização é uma cadeia: dono, quem tem autoridade, documento e equipe. Cada alvo cai num de três grupos, e só o primeiro se resolve com a assinatura do cliente."
+/>
+
+O caso mais comum de dono diferente é o **terceiro**: uma organização que presta um
+serviço ao cliente e é dona da infraestrutura. O PTES, padrão comunitário de pentest que
+você conheceu no 1.1, dedica uma seção inteira a isso e resume a regra numa frase: mesmo
+que o cliente tenha dado permissão, "ele não fala pelos seus provedores terceirizados", e
+a permissão precisa ser obtida deles também
+([PTES — Pre-engagement, *Dealing with Third Parties*](http://www.pentest-standard.org/index.php/Pre-engagement)).
+O NIST SP 800-115 diz o mesmo com outras palavras: se parte dos sistemas está na rede de
+um terceiro, ou em sistemas compartilhados entre organizações, como máquinas virtuais que
+atendem várias empresas, o dono da outra rede "normalmente também precisa consentir por
+escrito". Essa permissão extra é a
+<GlossaryTerm term="third-party authorization">third-party authorization</GlossaryTerm>
+(autorização de terceiro). Os terceiros que você mais vai encontrar:
+
+- **Provedor de nuvem.** No modelo
+  <GlossaryTerm term="IaaS">IaaS</GlossaryTerm> (*Infrastructure as a Service*), o cliente
+  aluga uma <GlossaryTerm term="virtual machine">virtual machine</GlossaryTerm> (máquina
+  virtual, ou VM: um computador simulado por software, rodando num servidor físico que
+  atende muitos clientes) e administra tudo dentro dela. A divisão entre o que o provedor
+  protege (o servidor físico, a rede, os serviços dele) e o que o cliente protege (o que
+  ele cria e configura) se chama
+  <GlossaryTerm term="shared responsibility model">shared responsibility model</GlossaryTerm>
+  (modelo de responsabilidade compartilhada). Ela também diz o que o cliente pode
+  autorizar: a VM dele, sim, se o provedor deixar; a infraestrutura do provedor, nunca.
+  Os grandes provedores publicam a regra (a da Microsoft você viu no 1.1; a da AWS está na
+  seção 6.3). Serviços gerenciados, como o
+  <GlossaryTerm term="object storage">object storage</GlossaryTerm> (armazenamento de
+  arquivos em "buckets", operado pelo provedor), costumam ter regras próprias.
+- **Hospedagem compartilhada.** Na <GlossaryTerm term="shared hosting">shared
+  hosting</GlossaryTerm>, o mesmo servidor e o mesmo IP atendem dezenas ou centenas de
+  sites de outros clientes. Uma varredura agressiva no IP "da loja" atinge todos eles.
+- **SaaS.** No <GlossaryTerm term="SaaS">SaaS</GlossaryTerm> (*Software as a Service*), o
+  cliente usa um software pela internet, no servidor do fornecedor: e-mail, RH, CRM. Quase
+  sempre é <GlossaryTerm term="multi-tenant">multi-tenant</GlossaryTerm> (multiempresa):
+  o mesmo sistema guarda os dados de milhares de organizações, separados só por software.
+  Testar a separação entre clientes é, por definição, tentar ler dados de outras empresas.
+- **CDN.** Uma <GlossaryTerm term="CDN">CDN</GlossaryTerm> (*Content Delivery Network*) é
+  uma rede de servidores espalhados pelo mundo que entrega o conteúdo de muitos sites a
+  partir do ponto mais próximo do usuário. Quando o site do cliente está atrás de uma CDN,
+  o nome resolve para IPs **da CDN**, compartilhados com outros sites.
+- **MSSP.** Um <GlossaryTerm term="MSSP">MSSP</GlossaryTerm> (*Managed Security Service
+  Provider*) é uma empresa contratada para operar a segurança de outra: o firewall, o
+  monitoramento, às vezes o próprio <GlossaryTerm term="SOC">SOC</GlossaryTerm>. O PTES
+  lembra que o MSSP precisa ser avisado quando sistemas e serviços **dele** forem testados,
+  a não ser que medir a reação dele seja parte do objetivo, e aí isso precisa estar
+  combinado com quem pode decidir.
+- **Outra empresa do mesmo grupo.** Matriz e filial com CNPJs diferentes, com diretorias
+  diferentes, são donas diferentes. O diretor de uma não autoriza pela outra só porque o
+  logotipo é o mesmo.
+
+E há o caso em que **ninguém** deste contrato pode autorizar: o alvo nem é do cliente. É o
+IP digitado errado da abertura, ou o nome antigo que hoje aponta para o servidor de outra
+organização. Não existe assinatura que conserte isso; existe corrigir a lista.
+
+### 2.3 Os documentos do engajamento
+
+"Contrato" é uma palavra que esconde vários documentos. Os nomes variam de empresa para
+empresa, mas as **perguntas** que eles respondem são sempre as mesmas, e um engajamento
+bem montado tem resposta escrita para todas.
+
+<Figure
+  src={documentos}
+  alt="No alto, o MSA, contrato-mestre, com as regras gerais da relação, ligado ao NDA, acordo de sigilo. Do MSA sai o SOW, que diz o que será feito, quando e por quanto. Do SOW saem as regras de engajamento (como o teste acontece: janela com fuso, técnicas, contatos, IPs de origem, condições de parada, tratamento de dados) e a carta de autorização (quem autoriza o quê, curta, assinada por quem tem autoridade, com telefone para confirmar, levada pelo testador). Um adendo aponta para o SOW e para as regras: toda mudança vira documento novo assinado."
+  caption="Cada documento responde a uma pergunta. Quando uma delas fica sem resposta escrita, é ali que o engajamento vai dar problema."
+/>
+
+- **<GlossaryTerm term="master services agreement">Master services agreement</GlossaryTerm>
+  (MSA, contrato-mestre).** As regras gerais da relação: responsabilidade de cada parte,
+  sigilo, pagamento, foro. Costuma conter a
+  <GlossaryTerm term="limitation of liability">limitation of liability</GlossaryTerm>
+  (limitação de responsabilidade). O PTES recomenda que o documento de permissão diga com
+  clareza que o teste **pode causar instabilidade** nos sistemas, que o testador tomará o
+  devido cuidado para não derrubar nada e que, justamente porque o risco existe, o cliente
+  não o responsabilizará por instabilidades. O NIST SP 800-115 recomenda envolver o
+  departamento jurídico em testes intrusivos, para revisar o plano e incluir cláusulas de
+  indenização ou de limitação de responsabilidade.
+- **<GlossaryTerm term="non-disclosure agreement">Non-disclosure agreement</GlossaryTerm>
+  (NDA, acordo de confidencialidade).** O que o testador não pode contar a ninguém. Às vezes
+  vem separado, às vezes dentro do MSA. O NIST cita NDAs que proíbem o testador de revelar
+  informações sensíveis ou proprietárias a quem não estiver aprovado.
+- **<GlossaryTerm term="statement of work">Statement of work</GlossaryTerm> (SOW,
+  declaração de trabalho).** O que será feito neste trabalho: alvos, tipo de teste,
+  entregas, prazo e preço. Um MSA pode ter muitos SOWs ao longo dos anos.
+- **Rules of engagement (RoE, regras de engajamento).** **Como** o teste acontece. O PTES
+  separa as duas coisas com uma frase que vale decorar: "o escopo define **o que** será
+  testado; as regras de engajamento definem **como** o teste vai acontecer". A seção 2.5
+  abre o conteúdo das RoE.
+- **<GlossaryTerm term="authorization letter">Authorization letter</GlossaryTerm> (carta
+  de autorização).** O PTES a chama de *Permission to Test*, "um dos documentos mais
+  importantes" do pentest: ele declara o escopo e traz a assinatura de quem reconhece as
+  atividades do testador, e o teste não pode começar antes de ele estar assinado. O NIST
+  sugere ter também um memorando curto, de uma ou duas páginas, que o testador possa
+  **mostrar** a quem perguntar (usuários, donos de sistemas), dizendo o que é permitido e
+  proibido, quais sistemas estão autorizados e qual contato do time de segurança pode
+  confirmar. No jargão, é a *get-out-of-jail letter*, a carta que tira você da cadeia,
+  e o caso Coalfire mostrou que ela só cumpre esse papel se quem a assinou tiver
+  autoridade sobre o alvo e se quem pode reagir conseguir confirmá-la.
+- **<GlossaryTerm term="addendum">Addendum</GlossaryTerm> (adendo).** Qualquer mudança no
+  que foi assinado (novo alvo, nova técnica, nova janela) vira um documento novo, assinado
+  de novo. A seção 2.6 explica por quê.
+
+Quem assina? O modelo de RoE do NIST SP 800-115 (apêndice B) tem uma página de
+assinaturas cujo objetivo é "identificar as partes responsáveis e garantir que elas
+conheçam e entendam suas responsabilidades", e diz que, **no mínimo**, o líder da equipe
+de teste e a **alta gestão** da organização (CSO, CISO, CIO etc.) devem assinar,
+declarando que entendem o escopo e os limites do teste
+([NIST SP 800-115, apêndice B](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-115.pdf)).
+
+### 2.4 Anatomia de um escopo
+
+O escopo começa pelos alvos, mas não termina neles. Um escopo completo responde a oito
+perguntas.
+
+<Figure
+  src={camadas}
+  alt="À esquerda, retângulos aninhados: a internet e tudo o mais, proibido; dentro, os ativos que o cliente usa, incluindo SaaS, CDN, hospedagem e MSSP, que precisam do terceiro; dentro, o escopo autorizado por escrito, 10.20.0.0/24 e 198.51.100.16/28, com dois buracos: a exclusão explícita 198.51.100.18 (folha de pagamento) e um host de outra empresa dentro da faixa, 10.20.0.77. Uma seta tracejada mostra o nome portal.drogaria.example saindo de 198.51.100.21, dentro do escopo, no kickoff, para 192.0.2.80, um IP de CDN fora dele, três dias depois. À direita, o que mais o escopo diz: janela com fuso horário, ambiente, contas de teste, técnicas permitidas e proibidas, limites de dados e origem do tráfego. Regra prática: vale o IP autorizado; confira o nome antes de cada ação."
+  caption="O escopo é um território com fronteiras, buracos e nomes que mudam de lugar. O que está escrito é o IP; o nome é só um apelido, e apelidos mudam."
+/>
+
+1. **Quais alvos, exatamente?** Endereços IP e faixas CIDR (0.2), URLs, aplicações,
+   contas, prédios. O NIST pede que o plano identifique os sistemas autorizados "no mínimo
+   pelo endereço IP e, de preferência, também pelo nome".
+2. **O que fica de fora?** A <GlossaryTerm term="exclude list">exclude list</GlossaryTerm>
+   (lista de exclusão): sistemas proibidos mesmo dentro das faixas, como o servidor da
+   folha de pagamento. O NIST insiste que é "crucial" identificar qualquer sistema não
+   autorizado, de novo pelo nome e pelo IP.
+3. **Até onde vão os nomes?** "O domínio `empresa.example` e todos os seus subdomínios"
+   parece claro e é uma armadilha. Um
+   <GlossaryTerm term="subdomain">subdomain</GlossaryTerm> (subdomínio, um nome abaixo de
+   outro no DNS, como `rh.empresa.example`) pode apontar para qualquer lugar: muitas vezes
+   ele é só um <GlossaryTerm term="CNAME">CNAME</GlossaryTerm>, um registro DNS que diz "este
+   nome é apelido daquele outro", e o outro é um servidor do fornecedor de RH. Escopo por
+   nome precisa vir com a lista dos nomes e a confirmação de para onde cada um aponta.
+4. **Quando?** A <GlossaryTerm term="testing window">testing window</GlossaryTerm> (janela
+   de teste): datas, horários e **fuso horário**. "Das 22h às 6h" não diz se é o horário do
+   cliente ou o seu, nem se a noite do último dia está incluída. O PTES lembra que alguns
+   clientes exigem testes fora do horário comercial, e que isso precisa estar bem
+   estabelecido antes de começar.
+5. **Onde?** Produção ou homologação (o ambiente de testes do cliente)? O NIST recomenda
+   considerar um sistema que não seja de produção quando o teste puder expor dados
+   pessoais sensíveis.
+6. **Com quais técnicas?** O que é permitido e o que é proibido: negação de serviço,
+   engenharia social, teste físico, quebra de senhas, instalação de arquivos. O NIST pede
+   que o plano diga até **como** as senhas serão obtidas, se a quebra de senhas for usada,
+   e que as atividades proibidas sejam escritas "de um jeito que não deixe espaço para
+   interpretação".
+7. **Com que limite de dados?** Quantos registros provam uma falha (seção 2.5).
+8. **De onde?** De que IPs sai o tráfego de teste, para a defesa saber o que é teste.
+
+Há um ponto técnico neste escopo que pega até profissionais experientes: **nomes mudam de
+endereço**. Uma ferramenta de ataque não ataca "o site"; ela resolve o nome no DNS e manda
+pacotes para um IP. Se, entre a assinatura e o teste, o cliente migrou o site para uma
+CDN, ou trocou de hospedagem, o mesmo nome agora leva a uma infraestrutura que ninguém
+autorizou. Vamos chamar esse fenômeno de
+<GlossaryTerm term="DNS drift">DNS drift</GlossaryTerm> (deslocamento de DNS). O primo dele
+é o <GlossaryTerm term="dangling DNS">dangling DNS</GlossaryTerm> (DNS pendente): o
+servidor foi desligado, o IP foi devolvido ao provedor e entregue a outra organização, e
+ninguém apagou o registro. O nome ainda "é do cliente"; o servidor do outro lado, não. Por
+isso a regra da figura: **vale o IP autorizado, e o nome é conferido de novo antes de
+cada ação**.
+
+<Callout variant="tip" title="O nmap e os nomes">
+A documentação do nmap, que você vai usar na Trilha 2, avisa que, quando um nome resolve
+para vários endereços, por padrão só o **primeiro** é varrido (a opção `--resolve-all` faz
+varrer todos). Ou seja: até a ferramenta escolhe por você qual endereço o nome "é". Mais
+um motivo para o escopo da ferramenta ser feito de IPs que você conferiu.
+</Callout>
+
+### 2.5 Regras de engajamento por dentro
+
+As RoE são o manual de operação do teste. O modelo do NIST SP 800-115 (apêndice B) tem sete
+partes, e vale conhecê-las porque elas funcionam como uma lista de verificação: introdução
+(propósito, escopo, premissas e limitações, riscos), logística (pessoal, cronograma, local
+e equipamento de teste), estratégia de comunicação (comunicação geral e tratamento de
+incidentes), sistemas e redes-alvo (incluindo a lista de exclusão), execução do teste
+(componentes técnicos e não técnicos e tratamento de dados), relatórios e a página de
+assinaturas. Por dentro, as RoE resolvem cinco problemas.
+
+**1. Quem fala com quem.** O <GlossaryTerm term="point of contact">point of
+contact</GlossaryTerm> (ponto de contato) é a pessoa do cliente que responde pelo
+engajamento e decide dúvidas. O contato de emergência precisa estar disponível **durante a
+janela**: o PTES lembra que um número de grupo (central de serviço, SOC) só substitui um
+contato de emergência se for atendido 24 horas por dia, e que a organização-alvo pode não
+ser a mesma que contratou o teste. A cadência é o
+<GlossaryTerm term="status report">status report</GlossaryTerm> (relatório de status),
+normalmente diário; o PTES sugere reuniões curtas e diárias sobre "planos, progresso e
+problemas". E a comunicação sensível é **cifrada**: o PTES diz que "cifrar não é
+opcional", especialmente para o relatório final.
+
+**2. Como distinguir o teste de um ataque.** O NIST recomenda que o plano informe os IPs
+das máquinas de onde o teste vai sair, para que os administradores consigam diferenciar o
+pentest de um ataque malicioso de verdade. Esse cuidado tem nome no jargão:
+<GlossaryTerm term="deconfliction">deconfliction</GlossaryTerm> (desconflito), o
+procedimento para não confundir as duas coisas, nos dois sentidos. A defesa não deve
+tratar o teste como incidente e acionar a polícia; e o testador não deve achar que um
+ataque real em andamento é "o colega fazendo teste". As RoE também dizem o que fazer com o
+<GlossaryTerm term="shunning">shunning</GlossaryTerm>, o bloqueio automático do IP de
+origem pela defesa. O PTES observa que às vezes ele é perfeitamente aceitável (num teste
+caixa-preta que mede também a equipe de segurança) e às vezes vai contra o espírito do
+teste (quando se testa muita coisa em coordenação com a defesa). A regra precisa estar
+escrita: aceito o bloqueio ou meu IP fica fora dele?
+
+**3. Quando parar.** As <GlossaryTerm term="stop condition">stop conditions</GlossaryTerm>
+(condições de parada) são as situações em que o teste para e o cliente é avisado na hora.
+O NIST pede que as RoE tragam "critérios para interromper o teste" e o que fazer se um
+procedimento afetar a rede ou se um adversário atacar durante o teste. As clássicas:
+
+- **sinais de um invasor anterior**: o NIST recomenda relatar imediatamente e parar de
+  testar os sistemas envolvidos enquanto a organização responde, e pergunta, de propósito,
+  "o teste deve parar? Se sim, quando pode recomeçar, e com a autoridade de quem?";
+- **serviço degradado ou fora do ar** depois de uma ação de teste;
+- **dados sensíveis além do necessário** para provar a falha;
+- **qualquer dúvida de escopo**: o NIST diz que, se surgirem dúvidas sobre escopo e nível
+  de autorização durante o teste, testadores e ponto de contato devem se reunir para
+  resolvê-las.
+
+**4. O que fazer com os dados.** O <GlossaryTerm term="data handling">data
+handling</GlossaryTerm> (tratamento de dados) define como o testador coleta, guarda,
+transmite e destrói o que obtém. O NIST lembra que os resultados de qualquer teste mostram
+vulnerabilidades que um adversário pode explorar e devem ser considerados sensíveis, e pede
+regras para guardar dados nos sistemas do testador (com cifra e senha), guardar depois do
+fim, transmitir e **remover** ao concluir. O PTES acrescenta que certas informações nem
+devem ser vistas ou baixadas, e mostra como provar o acesso "sem tirar o dinheiro do
+cofre": uma captura do esquema do banco e das permissões, sem abrir o conteúdo.
+
+**5. O que deixar e o que tirar.** O NIST pede que as RoE digam se o testador pode
+instalar, criar, modificar ou executar arquivos para testar, e o que fazer com eles no fim.
+
+### 2.6 Quando o escopo quer crescer
+
+Todo pentest bem-sucedido tem um momento perigoso: o cliente gostou do que viu e quer mais.
+"Já que vocês estão aí, olhem também o servidor novo." É o
+<GlossaryTerm term="scope creep">scope creep</GlossaryTerm> (crescimento do escopo sem
+documento). O PTES dedica a ele uma seção inteira e aponta dois problemas. O primeiro é de
+negócio: trabalho extra consome o prazo e o dinheiro do que foi contratado. O segundo é
+jurídico: pedidos informais raramente são documentados, e numa disputa fica difícil saber
+"quem disse o quê"; o contrato é o documento que especifica o trabalho, e deve estar
+amarrado ao documento de permissão. A recomendação é que qualquer pedido fora do escopo
+original vire um SOW novo, e que o trabalho extra **não comece** antes de ele estar
+assinado pelas duas partes.
+
+Repare que o problema nem é o gerente mentir. Ele pode estar falando sério e mesmo assim
+**não ter autoridade** para autorizar (seção 2.2), o servidor novo pode ser de um terceiro,
+ou o diretor pode discordar no dia seguinte. O adendo escrito resolve as três coisas de uma
+vez. O mesmo vale para o reteste, que o PTES aponta como um dos lugares mais comuns de
+scope creep: ele precisa estar no contrato, com datas.
+
+## 3. Na prática da segurança
+
+### 3.1 A reunião de escopo
+
+O escopo nasce numa conversa. O PTES sugere chegar a ela com questionários por tipo de
+teste (rede, aplicação web, wireless, físico, engenharia social) e com perguntas
+específicas para gerentes e administradores. Na reunião, o primeiro ponto é estabelecer
+**explicitamente** quais faixas de IP estão no escopo. O PTES conta que é comum o cliente
+resistir e achar que descobrir a rede é trabalho do testador, "para ser mais realista". O
+realismo é tentador, mas as consequências legais vêm antes, e cabe ao testador explicar
+isso. Na mesma reunião, ainda segundo o PTES, verifica-se se o cliente é dono de todo o
+ambiente-alvo, "incluindo o servidor DNS, o servidor de e-mail, o hardware em que os
+servidores web rodam e o firewall/IDS/IPS", porque muitas empresas terceirizam a gestão
+desses equipamentos.
+
+Perguntas que costumam revelar terceiros escondidos:
+
+- "Onde roda cada sistema? Datacenter próprio, nuvem, hospedagem?"
+- "Algum desses nomes é de um serviço que vocês contratam (e-mail, RH, CRM, chat)?"
+- "Quem administra o firewall, o e-mail e o DNS? A equipe de vocês ou uma empresa?"
+- "Os servidores ficam em que países?" O PTES recomenda verificar onde os servidores
+  estão e conhecer as leis locais antes de testar, porque é o testador quem responde no
+  fim.
+- "Alguma dessas redes é de outra empresa do grupo?"
+- "Quem tem autoridade, pela política de vocês, para autorizar um teste intrusivo?"
+
+### 3.2 Do PDF ao arquivo de máquina
+
+O contrato é um PDF; as ferramentas leem arquivos de texto. A boa prática, que você
+começou a ver no 1.1, é transformar o escopo assinado em **arquivos que as ferramentas
+leem**, e nunca digitar alvos à mão. Por exemplo:
+
+```text
+# alvos.txt — contrato 2026-044 (fictício)
+10.20.0.0/24
+198.51.100.16/28
+```
+
+```text
+# excluidos.txt
+198.51.100.18
+10.20.0.77
+```
+
+O nmap, que você vai usar na Trilha 2, tem exatamente as duas opções para isso, conferidas
+na documentação oficial: `-iL arquivo` lê os alvos de um arquivo, e `--excludefile
+arquivo` lê os alvos a excluir, "mesmo que façam parte da faixa" informada. Uma varredura
+alimentada assim teria a forma abaixo. **Não rode agora**: o nmap e as varreduras são
+assunto da Trilha 2, e esses endereços não existem no seu ambiente.
+
+```bash
+nmap -iL alvos.txt --excludefile excluidos.txt   # prévia da Trilha 2
+```
+
+O ganho é que o escopo fica num lugar só. Se o cliente mandar um adendo, você altera o
+arquivo, versiona com o Git (0.8) e todas as ferramentas passam a respeitá-lo.
+
+### 3.3 Antes do primeiro pacote: conferir dono e nomes
+
+Três verificações, todas antes de qualquer pacote contra o alvo:
+
+1. **De quem é cada faixa pública?** O NIST SP 800-115 recomenda verificar se todos os
+   endereços públicos da lista estão de fato sob responsabilidade da organização antes de
+   começar, usando os serviços de registro como o
+   <GlossaryTerm term="WHOIS">WHOIS</GlossaryTerm>. Hoje, o protocolo mais novo para essa
+   consulta é o <GlossaryTerm term="RDAP">RDAP</GlossaryTerm> (*Registration Data Access
+   Protocol*), que devolve as mesmas informações de forma estruturada. O PTES chama essa
+   etapa de *Validate Ranges*.
+2. **Para onde aponta cada nome, agora?** Resolva cada nome do escopo e confira se todos os
+   endereços estão nas faixas autorizadas. Um CNAME para um domínio de fornecedor, um IP de
+   CDN ou um endereço fora da faixa são sinais de terceiro.
+3. **Quem precisa ser avisado?** Os terceiros com autorização própria, o MSSP, o
+   provedor de internet. O PTES lembra que alguns provedores bloqueiam tráfego considerado
+   malicioso e que o cliente precisa aceitar esse risco antes do teste.
+
+Lembre que essas consultas também são públicas e registráveis: consultar o WHOIS de um
+domínio não é atacar ninguém, mas resolver nomes e consultar registros já é o começo do
+reconhecimento que você vai estudar na Trilha 2. Faça sobre os alvos do seu escopo.
+
+### 3.4 Durante o teste: o escopo é conferido a cada ação
+
+O escopo não é um documento que se lê no primeiro dia e se esquece. Ele é conferido a cada
+alvo novo, porque o teste revela coisas: uma senha que "funcionaria em outro servidor", um
+nome que apareceu num arquivo de configuração, uma rede que só se vê de dentro. A árvore
+abaixo é o que um profissional faz de cabeça antes de cada ação.
+
+<Figure
+  src={decisao}
+  alt="Seis perguntas em sequência. Um: está escrito no escopo (IP, faixa, URL exata)? Se não, não toque ou peça adendo. Dois: está numa exclusão? Se sim, não toque. Três: se é nome, resolvi agora e todo IP está dentro? Se não, não toque e avise o contato. Quatro: a infraestrutura é do cliente ou o terceiro assinou? Se não, não toque. Cinco: estou dentro da janela, no fuso do contrato? Se não, espere a janela. Seis: a técnica é permitida pelas regras? Se não, não use ou peça adendo. Se todas passam: pode testar, registrando data, hora, origem e comando. Uma faixa vermelha embaixo: durante o teste, invasor anterior, serviço degradado ou dados pessoais além do necessário são condição de parada; interrompa e avise o contato de emergência na hora."
+  caption="Seis perguntas antes de cada ação, e uma regra que vale o tempo todo: condição de parada interrompe tudo."
+/>
+
+### 3.5 O lado do atacante
+
+O atacante real não tem escopo, e isso é uma informação útil para quem defende e para
+quem testa:
+
+- **Ele ataca pelo terceiro.** No caso Target, que você viu no 1.1, a entrada foi a
+  credencial de um fornecedor de ar-condicionado. O escopo de um pentest pode excluir os
+  fornecedores; o atacante, não. Por isso, quando o terceiro fica fora do escopo, o
+  relatório deve **dizer** que aquele caminho não foi testado.
+- **Ele usa o pretexto do pentest.** Um invasor que é pego numa sala de servidores tem
+  todo interesse em dizer "sou do pentest autorizado" e mostrar uma carta. Uma carta é um
+  papel; qualquer um imprime. É por isso que a carta precisa trazer um contato para
+  confirmação e que a defesa precisa confirmar por um canal independente (seção 8.5).
+- **Ele não tem janela nem condição de parada.** O teste dura dias; o atacante, meses. O
+  teste para quando um serviço cai; o atacante, não. Isso não torna o pentest "menos
+  realista"; torna as limitações do pentest algo que o relatório precisa explicar.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os casos abaixo foram conferidos nas fontes indicadas, data por data. Três são dos EUA,
+porque lá os processos e as decisões judiciais são públicos e detalhados; a lição de cada
+um vale para qualquer país, e o módulo 1.4 traz a lei brasileira.
+
+### Randal Schwartz e a Intel (1993, decisão de 2001): de dentro, e sem autorização
+
+Randal Schwartz trabalhava como contratado independente para a Intel desde o fim dos anos
+1980, cuidando de programação, manutenção de sistemas e suporte. Segundo a decisão do
+Tribunal de Apelações do Oregon, ele trabalhou na divisão de supercomputadores (SSD) e
+saiu dela em 1992 "não nos melhores termos" (palavras dele). Suas senhas na divisão foram
+desativadas, menos a de um computador, por esquecimento. Ele continuou trabalhando para
+outra divisão da Intel.
+
+Em 1993, ele rodou programas que abriam acesso de fora a computadores da Intel, o que a
+política da empresa proibia, e reconheceu que sabia disso. No outono de 1993, baixou o
+**Crack**, um programa de
+<GlossaryTerm term="password cracking">password cracking</GlossaryTerm> (quebra de senhas),
+e o rodou contra arquivos de senhas de computadores da Intel. Descobriu a senha de um
+usuário e, "embora soubesse que não tinha autoridade para isso", entrou com ela, copiou o
+arquivo de senhas inteiro da divisão para outro computador e descobriu as senhas de mais
+de 35 usuários, incluindo a do gerente-geral da divisão. Segundo o tribunal, ele
+aparentemente acreditava que, mostrando que a segurança da divisão tinha piorado desde a
+sua saída, recuperaria o respeito perdido. Em 28 de outubro de 1993, um administrador
+percebeu o Crack rodando; em 29 de outubro, a Intel decidiu chamar a polícia.
+
+Um júri o condenou por três acusações de crime informático. Em **4 de abril de 2001**, o
+Tribunal de Apelações do Oregon manteve a condenação, anulando apenas a ordem de
+ressarcimento para reconsideração. Em fevereiro de **2007**, segundo a imprensa
+especializada, um tribunal do Oregon anulou e apagou do registro a condenação, que tinha
+sido de 1995.
+
+- **Impacto:** um profissional conhecido condenado criminalmente, anos de processo, e um
+  caso estudado até hoje.
+- **Lição:** ser de dentro, ter acesso a **alguns** sistemas e ter boa intenção não
+  autoriza testar **outros**. O que Schwartz fez (procurar senhas fracas) é uma atividade
+  legítima num pentest, e o NIST SP 800-115 mostra como: a quebra de senhas precisa estar
+  autorizada no plano, que deve dizer até como as senhas serão obtidas. Faltou
+  exatamente isso.
+- **Fontes:** [State v. Schwartz, 173 Or. App. 301 (2001), texto integral no CourtListener](https://www.courtlistener.com/opinion/2570836/state-v-schwartz/);
+  [The Register, 05/03/2007, sobre a anulação](https://www.theregister.com/2007/03/05/intel_hacker_charges_quashed/).
+
+### Uber (2016–2023): um "bug bounty" que não autorizava nada
+
+Em **14 de novembro de 2016**, dez dias depois de depor sob juramento à Comissão Federal de
+Comércio dos EUA (FTC) sobre a segurança da Uber, o então diretor de segurança da
+empresa, Joseph Sullivan, recebeu um e-mail de um invasor dizendo que a Uber tinha sido
+invadida de novo. A equipe confirmou: os invasores tinham baixado dados de cerca de **57
+milhões** de usuários e motoristas, incluindo cerca de **600 mil** números de carteira de
+motorista, e pediam dinheiro.
+
+Segundo o Departamento de Justiça dos EUA (DOJ), Sullivan buscou pagar os invasores
+"canalizando o pagamento por um programa de bug bounty", que o próprio DOJ descreve como
+um programa para pesquisadores que apontam falhas "mas não comprometeram dados de fato".
+A Uber pagou **US$ 100 mil em bitcoin** em dezembro de 2016, embora os invasores se
+recusassem a dar os nomes verdadeiros, e eles assinaram acordos de confidencialidade com a
+afirmação falsa de que não tinham levado nem guardado dados. A nova direção da Uber
+descobriu o caso e o tornou público, e à FTC, em novembro de 2017. Os dois invasores se
+declararam culpados em 30 de outubro de 2019. Sullivan foi acusado em **20 de agosto de
+2020**, condenado por um júri em **5 de outubro de 2022** por obstrução de um procedimento
+da FTC e por ocultar um crime, e a sentença, de três anos de liberdade condicional e
+multa de US$ 50 mil, foi anunciada em **5 de maio de 2023**.
+
+- **Impacto:** dados de dezenas de milhões de pessoas expostos e escondidos por um ano, e
+  um diretor de segurança condenado criminalmente pelo encobrimento.
+- **Lição para este módulo:** um programa de bug bounty é uma autorização **prévia**, com
+  regras, para quem procura falhas de boa-fé. Ele não transforma em autorizada, depois do
+  fato, uma invasão seguida de extorsão. Nenhum acordo assinado depois muda o que
+  aconteceu antes.
+- **Fontes (DOJ, Distrito Norte da Califórnia):** [acusação, 20/08/2020](https://www.justice.gov/usao-ndca/pr/former-chief-security-officer-uber-charged-obstruction-justice);
+  [condenação, 05/10/2022](https://www.justice.gov/usao-ndca/pr/former-chief-security-officer-uber-convicted-federal-charges-covering-data-breach);
+  [sentença, 05/05/2023](https://www.justice.gov/usao-ndca/pr/former-chief-security-officer-uber-sentenced-three-years-probation-covering-data).
+
+### Van Buren v. United States (2021) e a política do DOJ (2022): o que é "exceder" a autorização
+
+Nathan Van Buren era sargento da polícia na Geórgia (EUA) e tinha acesso legítimo, com a
+própria senha, a um banco de dados de placas de veículos. A política do departamento
+permitia usá-lo só para fins policiais. Ele consultou uma placa em troca de dinheiro
+(cerca de US$ 5 mil), numa operação montada pelo FBI, e foi condenado por exceder o
+acesso autorizado. Em **3 de junho de 2021**, a Suprema Corte dos EUA, por 6 votos a 3,
+reformou a condenação. A maioria, com voto da juíza Amy Coney Barrett, adotou uma leitura
+de "portão aberto ou fechado" (*gates-up-or-down*): exceder o acesso é entrar em partes do
+computador, como arquivos, pastas ou bancos de dados, que estão **fechadas** para você,
+não usar para um fim proibido uma área que está aberta. Numa nota de rodapé, a Corte
+deixou explicitamente em aberto se esses limites são só técnicos ou se também contam os
+limites escritos em contratos e políticas.
+
+Menos de um ano depois, em **19 de maio de 2022**, o DOJ revisou sua política de acusações
+pela CFAA e determinou, pela primeira vez, que a
+<GlossaryTerm term="good-faith security research">good-faith security research</GlossaryTerm>
+(pesquisa de segurança de boa-fé) não deve ser acusada. A definição: acessar um computador
+só para testar, investigar ou corrigir uma falha de segurança, de forma a evitar danos a
+pessoas ou ao público, usando a informação principalmente para promover a segurança. E a
+ressalva: alegar pesquisa "não é passe livre" para quem age de má-fé; descobrir
+vulnerabilidades para extorquir os donos, "mesmo que chamado de pesquisa", não é boa-fé.
+
+- **Impacto:** a decisão mais importante sobre a CFAA desde a lei, e uma política que
+  reduziu o risco para pesquisadores honestos nos EUA.
+- **Lição:** limites técnicos são claros; limites escritos dependem de como estão
+  escritos, e até a Suprema Corte deixou a questão em aberto. No pentest, não dependa de
+  interpretação: o escopo e as RoE devem dizer, sem ambiguidade, o que está aberto e o
+  que está fechado. E a política de boa-fé é uma diretriz de quem acusa, nos EUA; não é
+  uma autorização, e não vale para outros países.
+- **Fontes:** [decisão da Suprema Corte, 03/06/2021 (PDF)](https://www.supremecourt.gov/opinions/20pdf/19-783_k53l.pdf)
+  e [resumo e texto na Cornell LII](https://www.law.cornell.edu/supremecourt/text/19-783);
+  [comunicado do DOJ, 19/05/2022](https://www.justice.gov/archives/opa/pr/department-justice-announces-new-policy-charging-cases-under-computer-fraud-and-abuse-act).
+
+### E o caso Coalfire?
+
+Ele está contado no módulo 1.1, com as datas conferidas: presos em 11 de setembro de 2019,
+acusações retiradas em 30 de janeiro de 2020, acordo de US$ 600 mil em 21 de janeiro de
+2026. Releia com os olhos deste módulo. O órgão que assinou não era o dono do prédio (seção
+2.2); a carta não resolveu a situação na hora (seção 2.3); a polícia local, que podia
+reagir, não sabia do teste (desconflito, seção 2.5); e havia dúvida sobre o horário
+autorizado (janela, seção 2.4). Quatro elos da cadeia, e nenhum deles era técnico.
+
+## 5. Mãos à obra — exercícios no seu WSL
+
+Este módulo não tem laboratório próprio. O trabalho dele acontece antes e durante o
+teste, no papel, e é isso que você vai treinar, com documentos fictícios gerados no seu
+WSL. Nada aqui usa a rede, abre portas ou toca em outro sistema.
+
+**Objetivo:** ao terminar, você terá classificado os dez ativos de um cliente fictício pelo
+tipo de autorização que cada um exige (Missão 1), encontrado todos os defeitos de uma
+minuta de autorização e regras de engajamento (Missão 2) e decidido, em oito situações de
+um teste em andamento, se ele continua, para ou espera um adendo (Missão 3). Cada missão
+termina numa flag que só aparece se o raciocínio estiver certo.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra o terminal do Ubuntu no WSL. Você vai usar só ferramentas que já conhece (`cat`,
+   `grep`, `nano`, `sha256sum`).
+2. Gere os arquivos. O bloco abaixo cria `~/treino-1-3` com três subpastas, uma por missão,
+   e escreve cada arquivo com um *here document* (o `cat > arquivo <<'EOF'` do 0.4). Copie
+   o bloco inteiro, cole no terminal e aperte Enter:
+
+```bash
+mkdir -p ~/treino-1-3 && cd ~/treino-1-3 && rm -rf missao-1 missao-2 missao-3 && mkdir missao-1 missao-2 missao-3 && (
+cd missao-1
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 1 — Quem pode autorizar?
+A Drogaria Exemplo Ltda. (FICTÍCIA) quer um pentest e mandou a lista de
+ativos que gostaria de ver testados (inventario.txt). Quem vai assinar a
+autorização é o diretor de tecnologia da Drogaria Exemplo Ltda.
+Antes de aceitar o escopo, você conferiu de quem é cada ativo
+(registros.txt) e leu a política pública do provedor de nuvem
+(politica-nuvemx.txt).
+
+Classifique cada ativo (escreva exatamente assim):
+  cliente    a assinatura do diretor da Drogaria basta para testar
+  terceiro   o ativo é usado pela Drogaria, mas também precisa da
+             autorização de outra organização (dona da infraestrutura,
+             do serviço ou da empresa)
+  fora       o ativo não é da Drogaria nem é usado por ela; não entra
+             no escopo, com autorização de ninguém deste contrato
+
+Preencha respostas.txt (uma linha por ativo: ID:classe) e rode:
+  bash conferir.sh
+EOF
+cat > inventario.txt <<'EOF'
+# Ativos que a Drogaria Exemplo Ltda. pediu para testar (fictício)
+ID   ATIVO                     O QUE O CLIENTE DISSE
+A01  10.20.0.0/24              rede interna da matriz
+A02  198.51.100.16/28          faixa de IPs públicos da empresa
+A03  loja.drogaria.example     loja virtual
+A04  api.drogaria.example      API do aplicativo
+A05  arquivos-drogaria         bucket com notas fiscais, na NuvemX
+A06  rh.drogaria.example       portal de RH dos funcionários
+A07  198.51.100.40             servidor de e-mail
+A08  10.30.0.0/24              rede da filial de Recife
+A09  fw-borda                  firewall da internet
+A10  ftp.drogaria.example      FTP antigo de fornecedores
+EOF
+cat > registros.txt <<'EOF'
+# O que você apurou sobre cada ativo (consultas fictícias de RDAP/WHOIS,
+# DNS e conversas com o cliente). RDAP e WHOIS dizem quem é o dono de
+# uma faixa de IPs ou de um domínio.
+
+[DNS]
+loja.drogaria.example   CNAME  drogaria.hospedafacil.example
+drogaria.hospedafacil.example  A  203.0.113.40
+api.drogaria.example    A      192.0.2.15
+rh.drogaria.example     CNAME  drogaria.rhfacil.example
+ftp.drogaria.example    A      203.0.113.99
+
+[RDAP — donos das faixas públicas]
+198.51.100.16/28   Drogaria Exemplo Ltda.
+198.51.100.32/27   Transportadora Vizinha S.A.
+203.0.113.0/25     HospedaFácil Hospedagem Ltda.
+203.0.113.96/28    Clínica Sorriso Ltda.
+192.0.2.0/24       NuvemX Serviços de Nuvem S.A.
+
+[Conversas e documentos]
+- 10.20.0.0/24: rede da matriz, administrada pela própria TI da Drogaria.
+- 198.51.100.16/28: contratada pela Drogaria direto do provedor de acesso,
+  em nome dela, há 6 anos.
+- A loja virtual roda num plano de hospedagem COMPARTILHADA da
+  HospedaFácil: o mesmo servidor 203.0.113.40 atende cerca de 300 sites de
+  outros clientes. O contrato da HospedaFácil proíbe testes de segurança
+  sem autorização prévia por escrito da HospedaFácil.
+- api.drogaria.example é uma máquina virtual (VM) da Drogaria na NuvemX,
+  criada e administrada pela TI da Drogaria.
+- O bucket arquivos-drogaria é do serviço de armazenamento de objetos da
+  NuvemX, na conta da Drogaria.
+- O portal de RH é um serviço SaaS (software usado pela internet, num
+  servidor do fornecedor) da RHFácil, que atende 2.000 empresas no mesmo
+  sistema. A RHFácil não tem política pública de testes.
+- 198.51.100.40: o cliente copiou o IP de uma planilha antiga. O servidor de
+  e-mail real fica em 198.51.100.20.
+- A filial de Recife é a Drogaria Exemplo Nordeste Ltda., outra empresa
+  (outro CNPJ) do mesmo grupo, com diretoria própria. O diretor que vai
+  assinar não tem mandato sobre ela.
+- O firewall da internet é um equipamento da VigiaSec (um MSSP, empresa que
+  presta segurança gerenciada), instalado na matriz; a Drogaria paga pelo
+  serviço, mas o equipamento e a administração são da VigiaSec.
+- O FTP de fornecedores foi desligado há 2 anos; ninguém apagou o registro
+  DNS.
+EOF
+cat > politica-nuvemx.txt <<'EOF'
+NuvemX — Política de testes de segurança (FICTÍCIA)
+1. Clientes podem testar, SEM aprovação prévia, as máquinas virtuais (VMs)
+   que criaram e administram na própria conta.
+2. Testes em qualquer outro serviço (armazenamento de objetos, banco de
+   dados gerenciado, filas) exigem pedido prévio pelo formulário da NuvemX
+   e aprovação por escrito.
+3. É proibido testar a infraestrutura da própria NuvemX e recursos de
+   outros clientes. Negação de serviço é proibida em qualquer caso.
+EOF
+printf 'A01:?\nA02:?\nA03:?\nA04:?\nA05:?\nA06:?\nA07:?\nA08:?\nA09:?\nA10:?\n' > respostas.txt
+cat > conferir.sh <<'EOF'
+#!/usr/bin/env bash
+# Checks the FORMAT of respostas.txt (not the content) and derives the flag.
+set -euo pipefail
+cd "$(dirname "$0")"
+n=0
+while IFS= read -r line; do
+    n=$((n + 1))
+    id=$(printf 'A%02d' "$n")
+    if ! [[ $line =~ ^$id:(cliente|terceiro|fora)$ ]]; then
+        echo "linha $n fora do formato: '$line' (esperado $id:cliente|terceiro|fora)" >&2
+        exit 1
+    fi
+done < respostas.txt
+[ "$n" -eq 10 ] || { echo "esperava 10 linhas, achei $n" >&2; exit 1; }
+echo "Formato OK. Flag candidata: FLAG{$(sha256sum respostas.txt | cut -c1-12)}"
+EOF
+cd ../missao-2
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 2 — A carta e as regras
+carta-e-roe.txt é a minuta (rascunho) FICTÍCIA de autorização e regras de
+engajamento que chegou para você assinar. contexto.txt traz o que você já
+sabe sobre o cliente. Encontre TODAS as cláusulas com defeito: as que
+deixam o teste sem autorização válida, ambíguo ou sem como agir numa
+emergência. Uma cláusula correta, mesmo que curta, não é defeito.
+EOF
+cat > contexto.txt <<'EOF'
+# O que você sabe (fictício)
+- Cliente: Drogaria Exemplo Ltda., sede em São Paulo (horário de Brasília,
+  UTC-3).
+- Sua equipe trabalha de Manaus (UTC-4).
+- Política interna PSI-07 da Drogaria: "testes intrusivos só podem ser
+  autorizados pelo Diretor de Tecnologia (CTO) ou pelo CISO".
+- CTO: Marina Teixeira. CISO: Paulo Andrade. Coordenador de
+  infraestrutura: Rafael Lima.
+- RDAP: 198.51.100.16/28 é da Drogaria; 198.51.100.32/27 é da Transportadora
+  Vizinha S.A.
+- rh.drogaria.example é o portal SaaS da RHFácil (multiempresa).
+- A Drogaria pediu que os testes sejam feitos à noite, para não atrapalhar
+  as vendas.
+EOF
+cat > carta-e-roe.txt <<'EOF'
+AUTORIZAÇÃO DE TESTE DE INTRUSÃO E REGRAS DE ENGAJAMENTO — MINUTA
+Contrato de serviços nº 2026-044 (fictício)
+
+C01 Partes: Drogaria Exemplo Ltda. (cliente) e Teste Seguro Consultoria
+    Ltda. (equipe de teste).
+C02 Objetivo: verificar se um atacante externo consegue acessar dados de
+    clientes a partir da internet, com prova de cada falha explorada.
+C03 Tipo de teste: caixa-cinza, às claras para a TI; a TI entregará duas
+    contas de teste na loja virtual.
+C04 Alvos autorizados (IPs): 198.51.100.16/28 e 198.51.100.40.
+C05 Alvos autorizados (nomes): drogaria.example e todos os seus subdomínios.
+C06 Fora do escopo: 198.51.100.18 (sistema de folha de pagamento).
+C07 Janela de teste: de 06/10/2026 a 09/10/2026, das 22h às 6h.
+C08 Origem: todo o tráfego de teste sai do IP 192.0.2.200, informado ao SOC
+    da Drogaria antes do início.
+C09 Contato de emergência: Rafael Lima, ramal 4410, de segunda a sexta,
+    das 8h às 17h.
+C10 Proibido: negação de serviço; alterar ou apagar dados; instalar
+    programas que permaneçam após o teste.
+C11 Validade: esta autorização vale de 01/09/2026 a 30/09/2026.
+C12 Engenharia social: permitida.
+C13 Dados: provar acesso com no máximo 5 registros, mascarados; evidências
+    cifradas, guardadas por 30 dias após a entrega do relatório e então
+    destruídas, com declaração escrita.
+C14 Assinaturas: Rafael Lima (Coordenador de Infraestrutura, pela
+    Drogaria) e o líder da equipe de teste.
+EOF
+cd ../missao-3
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 3 — Parar, continuar ou pedir adendo?
+Você está no meio de um pentest autorizado (fictício). roe.txt resume as
+regras assinadas. situacoes.txt descreve oito momentos do teste. Para cada
+um, decida a ação que as regras exigem (escreva exatamente assim):
+  CONTINUAR       seguir o teste normalmente
+  PARAR-E-AVISAR  interromper o que estava fazendo e avisar na hora o
+                  contato de emergência
+  PEDIR-ADENDO    não fazer até haver um adendo assinado
+  NAO-TOCAR       não agir contra aquele alvo; registrar e seguir com o
+                  resto do escopo
+Preencha respostas.txt (S1:ACAO ... S8:ACAO) e rode: bash conferir.sh
+EOF
+cat > roe.txt <<'EOF'
+REGRAS DE ENGAJAMENTO — resumo (contrato fictício 2026-044, versão assinada)
+R1 Escopo por IP: 10.20.0.0/24 e 198.51.100.16/28. Nomes de host aparecem
+   só como referência; vale o IP listado aqui.
+R2 Ativos de outras organizações que estejam dentro dessas faixas não estão
+   autorizados: não teste; registre e cite no status diário.
+R3 Mudança de escopo (novo alvo, nova técnica, nova janela) só com adendo
+   assinado pelo CTO. Pedido verbal não muda o escopo.
+R4 Condições de parada: sinais de invasão anterior ao teste; serviço
+   degradado ou fora do ar depois de uma ação de teste; acesso a dados
+   pessoais reais além do necessário para provar a falha (1 registro). Nesses
+   casos: pare a ação, avise o contato de emergência na hora e só retome com
+   autorização dele.
+R5 Bloqueio do IP de origem pela defesa faz parte do que se quer medir:
+   registre o horário, NÃO troque de IP e continue com os demais alvos do
+   escopo a partir do mesmo IP.
+R6 Achados que não envolvem as condições de parada vão no status diário.
+EOF
+cat > situacoes.txt <<'EOF'
+S1 No kickoff, portal.drogaria.example resolvia para 198.51.100.21. Hoje de
+   manhã ele resolve para 192.0.2.80, um IP da CDN Global (empresa que
+   distribui sites por servidores no mundo todo).
+S2 Em 10.20.0.15 você encontra um arquivo web shell com data de três meses
+   atrás e, nos logs, acessos a ele vindos de um IP desconhecido.
+S3 O gerente de TI liga: "já que vocês estão aí, testem também o servidor
+   novo 10.20.5.10, depois eu formalizo".
+S4 A varredura de portas de 10.20.0.0/24 está em andamento, dentro da janela,
+   sem nenhum efeito anormal.
+S5 Logo depois do seu teste de senhas no sistema de agendamento
+   (10.20.0.30), ele passa a responder "503 Service Unavailable" para todo
+   mundo.
+S6 Uma SQL injection confirmada em 198.51.100.22 devolve, na primeira
+   consulta, nome e CPF de dezenas de clientes reais.
+S7 O SOC bloqueou o seu IP de origem no firewall da internet; os alvos
+   internos continuam alcançáveis pela VPN de teste, com o mesmo IP.
+S8 O host 10.20.0.77 mostra na página inicial: "Sistema da Drogaria Exemplo
+   Nordeste Ltda. — hospedado na matriz sob contrato".
+EOF
+printf 'S1:?\nS2:?\nS3:?\nS4:?\nS5:?\nS6:?\nS7:?\nS8:?\n' > respostas.txt
+cat > conferir.sh <<'EOF'
+#!/usr/bin/env bash
+# Checks the FORMAT of respostas.txt (not the content) and derives the flag.
+set -euo pipefail
+cd "$(dirname "$0")"
+actions='CONTINUAR|PARAR-E-AVISAR|PEDIR-ADENDO|NAO-TOCAR'
+n=0
+while IFS= read -r line; do
+    n=$((n + 1))
+    if ! [[ $line =~ ^S$n:($actions)$ ]]; then
+        echo "linha $n fora do formato: '$line'" >&2
+        exit 1
+    fi
+done < respostas.txt
+[ "$n" -eq 8 ] || { echo "esperava 8 linhas, achei $n" >&2; exit 1; }
+echo "Formato OK. Flag candidata: FLAG{$(sha256sum respostas.txt | cut -c1-12)}"
+EOF
+) && echo "Pronto: $(find ~/treino-1-3 -type f | wc -l) arquivos em ~/treino-1-3"
+```
+
+3. Confira a saída (real):
+
+```console
+$ ls ~/treino-1-3
+missao-1  missao-2  missao-3
+```
+
+A última linha impressa pelo bloco deve ser `Pronto: 14 arquivos em ~/treino-1-3`. Se você
+rodar o bloco de novo, ele apaga e recria as três pastas: é o seu "resetar".
+
+### 5.2 Missão 1 — Quem pode autorizar? (guiada)
+
+**Cenário:** a Drogaria Exemplo mandou a lista de dez ativos que quer ver testados. O
+diretor de tecnologia vai assinar. Antes de aceitar, você fez a lição de casa da seção
+3.3: consultou os donos das faixas, resolveu os nomes e conversou com a TI. Agora precisa
+dizer, ativo a ativo, se a assinatura do diretor basta (`cliente`), se falta a de outra
+organização (`terceiro`) ou se o ativo nem é do cliente (`fora`).
+
+**Etapa 1: os enunciados.**
+
+```console
+$ cd ~/treino-1-3/missao-1
+$ cat LEIA-ME.txt
+$ head -3 inventario.txt
+# Ativos que a Drogaria Exemplo Ltda. pediu para testar (fictício)
+ID   ATIVO                     O QUE O CLIENTE DISSE
+A01  10.20.0.0/24              rede interna da matriz
+$ cat registros.txt politica-nuvemx.txt
+```
+
+**Etapa 2: os três primeiros, junto com você.**
+
+- **A01, `10.20.0.0/24`, rede interna da matriz.** É uma faixa privada (0.2), então não há
+  registro público para consultar; quem diz de quem é são as conversas. O `registros.txt`
+  diz que ela é "administrada pela própria TI da Drogaria". O dono é o cliente, e o diretor
+  de tecnologia manda nela: `cliente`.
+- **A02, `198.51.100.16/28`, faixa pública.** O RDAP mostra `198.51.100.16/28   Drogaria
+  Exemplo Ltda.`, e as conversas confirmam que ela foi contratada em nome da Drogaria.
+  `cliente`.
+- **A03, `loja.drogaria.example`.** O nome é da Drogaria, mas siga o DNS: ele é um
+  `CNAME` para `drogaria.hospedafacil.example`, que resolve para `203.0.113.40`, numa faixa
+  da HospedaFácil. E as conversas dizem que é hospedagem **compartilhada**, com uns 300
+  sites no mesmo servidor, e que o contrato da hospedagem proíbe testes sem autorização
+  prévia dela. A loja é da Drogaria; o servidor, não. `terceiro`.
+
+As três primeiras linhas da resposta ficam assim:
+
+```text
+A01:cliente
+A02:cliente
+A03:terceiro
+```
+
+**Etapa 3: os outros sete.** Para cada ativo, faça três perguntas, nesta ordem:
+
+1. **O ativo é mesmo da Drogaria, ou usado por ela?** Se não for (o IP é de outra empresa e
+   não tem nada a ver com a Drogaria, o nome aponta para um servidor que não é mais dela),
+   é `fora`.
+2. **Quem controla a infraestrutura (o servidor, o serviço, o equipamento, a empresa)?**
+   Se é a própria Drogaria, e o diretor manda nela, é `cliente`.
+3. **Se é outra organização, ela já deu permissão, por escrito e publicamente, para esse
+   tipo de teste?** Se deu (leia a política da NuvemX com atenção), a assinatura da
+   Drogaria basta: `cliente`. Se não deu, falta uma autorização: `terceiro`.
+
+**Etapa 4: preencher e conferir.** Edite o `respostas.txt` com o `nano` (0.4), trocando
+cada `?`, e rode o `conferir.sh`. Como no 1.1, ele confere só o **formato** e calcula a
+flag a partir do arquivo inteiro; quem diz se está certo é a plataforma. Saídas reais com
+o arquivo ainda incompleto:
+
+```console
+$ bash conferir.sh
+linha 4 fora do formato: 'A04:?' (esperado A04:cliente|terceiro|fora)
+$ echo $?
+1
+$ bash conferir.sh
+esperava 10 linhas, achei 4
+```
+
+A segunda mensagem aparece se você apagar linhas sem querer. Com as dez linhas no formato,
+ele imprime `Formato OK. Flag candidata:` e a flag.
+
+<Hint title="Dica 1: os dois ativos na NuvemX">
+A04 e A05 estão no mesmo provedor e têm respostas **diferentes**. A política da NuvemX
+separa as VMs que o cliente criou e administra (item 1) dos outros serviços (item 2). Qual
+dos dois é uma VM e qual é um serviço gerenciado?
+</Hint>
+
+<Hint title="Dica 2: os dois que não são de ninguém do contrato">
+Dois ativos são `fora`. Um deles é um IP: compare o `198.51.100.40` com as faixas do RDAP
+(um `/28` começando em `.16` vai até `.31`; um `/27` começando em `.32` vai até `.63`). O
+outro é um nome: para onde ele aponta, e de quem é esse endereço? O que aconteceu com o
+servidor original?
+</Hint>
+
+<Solution title="Solução da Missão 1">
+```text
+A01:cliente
+A02:cliente
+A03:terceiro
+A04:cliente
+A05:terceiro
+A06:terceiro
+A07:fora
+A08:terceiro
+A09:terceiro
+A10:fora
+```
+
+- **A04 — cliente:** `api.drogaria.example` é uma VM criada e administrada pela Drogaria, e
+  a política da NuvemX permite testar essas VMs sem aprovação prévia. O provedor já deu,
+  publicamente, a parte dele da autorização (é o modelo da AWS, seção 6.3). A proibição de
+  negação de serviço da política continua valendo.
+- **A05 — terceiro:** o bucket está na conta da Drogaria, mas armazenamento de objetos é um
+  serviço gerenciado; a política exige pedido prévio e aprovação por escrito da NuvemX.
+- **A06 — terceiro:** `rh.drogaria.example` é um CNAME para o SaaS da RHFácil, que atende
+  2.000 empresas no mesmo sistema e não tem política de testes. Só com autorização escrita
+  da RHFácil.
+- **A07 — fora:** `198.51.100.40` está no `198.51.100.32/27`, da Transportadora Vizinha. Foi
+  um erro de planilha; o servidor de e-mail real (`198.51.100.20`) já está dentro do A02.
+  A Transportadora não tem nada a ver com a Drogaria: corrige-se a lista.
+- **A08 — terceiro:** a filial é outra empresa, com diretoria própria. A Drogaria usa a
+  rede, mas quem pode autorizar é a diretoria da Drogaria Exemplo Nordeste.
+- **A09 — terceiro:** o firewall é equipamento da VigiaSec, um MSSP. É usado pela Drogaria,
+  mas o dono e administrador é o MSSP.
+- **A10 — fora:** `ftp.drogaria.example` aponta para `203.0.113.99`, no `203.0.113.96/28` da
+  Clínica Sorriso. O FTP foi desligado há dois anos, o IP mudou de dono e o registro ficou
+  para trás: é um *dangling DNS*. O nome é da Drogaria; o servidor do outro lado é da
+  clínica. Ninguém do contrato pode autorizar um teste ali. O certo é avisar o cliente para
+  **apagar o registro**, o que já é um achado (seção 6.3).
+
+Grave essas dez linhas no `respostas.txt` e rode `bash conferir.sh`: a flag é a que ele
+imprimir.
+</Solution>
+
+<FlagInput task="missao-1-quem-autoriza" />
+
+<Callout variant="tip" title="O que fazer com os 'terceiros' na vida real">
+Ativo classificado como terceiro não é ativo descartado. Você tem três caminhos, e os três
+precisam ser decididos com o cliente, por escrito: pedir a autorização do terceiro (às
+vezes demora semanas), testar só o que é do cliente (por exemplo, a configuração da conta
+da Drogaria no SaaS, se o fornecedor permitir) ou deixar o ativo de fora e **dizer no
+relatório** que aquele caminho não foi testado.
+</Callout>
+
+### 5.3 Missão 2 — A carta e as regras (desafio)
+
+**Cenário:** chegou a minuta da autorização e das regras de engajamento para o contrato
+2026-044. O comercial quer começar na semana que vem. Antes de assinar como líder da
+equipe, você revisa cláusula por cláusula, com o que já sabe sobre o cliente.
+
+```console
+$ cd ~/treino-1-3/missao-2
+$ cat LEIA-ME.txt contexto.txt
+$ grep -c '^C[0-9]' carta-e-roe.txt
+14
+$ cat carta-e-roe.txt
+```
+
+São 14 cláusulas, de `C01` a `C14`. **O desafio:** encontre **todas** as que têm defeito.
+Defeito, aqui, é o que deixa o teste sem autorização válida (quem assinou, o que está
+coberto, por quanto tempo), ambíguo (de um jeito que duas pessoas leriam diferente) ou sem
+como agir numa emergência. Uma cláusula correta, mesmo que simples, não é defeito.
+
+A flag é a lista dos IDs com defeito, em ordem crescente, separados por hífen: por exemplo,
+se fossem C01 e C02, seria `FLAG{C01-C02}`.
+
+Use a seção 2 como lista de verificação: cadeia de autoridade (2.2), documentos e
+assinaturas (2.3), as oito perguntas do escopo (2.4) e as RoE (2.5).
+
+<Hint title="Dica 1: o contexto não está lá à toa">
+Cada linha do `contexto.txt` serve para encontrar ao menos um defeito: a política PSI-07, os
+fusos de São Paulo e de Manaus, o RDAP, o portal da RHFácil e o pedido de testes à noite.
+Para cada linha do contexto, procure a cláusula que conflita com ela.
+</Hint>
+
+<Hint title="Dica 2: os defeitos que não dependem do contexto">
+Dois defeitos aparecem só comparando cláusulas entre si: confira a **validade** com a
+**janela**. E releia o que o PTES diz sobre os pretextos de engenharia social (seção 2.4,
+pergunta 6): "permitida" responde a quais perguntas?
+</Hint>
+
+<Solution title="Solução da Missão 2">
+São sete cláusulas com defeito:
+
+- **C04:** `198.51.100.40` está no `198.51.100.32/27`, da Transportadora Vizinha. É o IP
+  digitado errado da abertura. Precisa sair do escopo.
+- **C05:** "todos os seus subdomínios" inclui `rh.drogaria.example`, que é o SaaS
+  multiempresa da RHFácil. A cláusula precisa listar os nomes, um a um, e excluir os de
+  terceiros (ou trazer a autorização deles).
+- **C07:** "das 22h às 6h" sem fuso: São Paulo está em UTC-3 e sua equipe em UTC-4; uma
+  hora de diferença numa janela noturna. E não diz se a noite de 09/10 para 10/10 está
+  incluída. Precisa de fuso e de um fim inequívoco (por exemplo, "das 22h de 06/10 às 6h de
+  10/10, horário de Brasília").
+- **C09:** o teste é à noite e o único contato de emergência atende das 8h às 17h, em dias
+  úteis. Se algo cair às 2h da manhã, não há ninguém para avisar.
+- **C11:** a autorização vence em 30/09 e a janela começa em 06/10. No dia do teste, ela não
+  vale nada.
+- **C12:** "engenharia social: permitida" não diz contra quem, por qual canal, com quais
+  pretextos, nem com quais limites. O PTES pede que os pretextos sejam aprovados por
+  escrito antes do teste.
+- **C14:** quem assina pela Drogaria é o coordenador de infraestrutura, e a política PSI-07
+  exige o CTO ou o CISO. Sem a assinatura de quem tem autoridade, a autorização inteira cai.
+
+As outras sete estão corretas: C01 (partes), C02 (objetivo claro), C03 (tipo de teste e o
+que a TI entrega), C06 (exclusão explícita, com IP e nome do sistema), C08 (IP de origem
+informado ao SOC: é o desconflito da seção 2.5), C10 (proibições claras) e C13 (limite de
+dados, cifra, retenção e destruição com declaração).
+
+A flag junta os sete IDs em ordem crescente.
+</Solution>
+
+<FlagInput task="missao-2-carta-e-regras" />
+
+<Callout variant="warning" title="O defeito que derruba tudo">
+Dos sete, um invalida o documento inteiro: o C14. Os outros deixam partes do teste
+descobertas ou ambíguas; uma assinatura sem autoridade deixa **todo** o teste sem
+autorização. Por isso a pergunta "quem, pela política de vocês, pode autorizar?" vai na
+reunião de escopo (seção 3.1), antes de qualquer minuta.
+</Callout>
+
+### 5.4 Missão 3 — Parar, continuar ou pedir adendo? (desafio)
+
+**Cenário:** o contrato foi corrigido e assinado, e o teste está no terceiro dia. Oito
+coisas aconteceram. Para cada uma, você precisa decidir o que as regras **assinadas**
+mandam fazer, e não o que parece razoável no calor do momento.
+
+```console
+$ cd ~/treino-1-3/missao-3
+$ cat LEIA-ME.txt roe.txt situacoes.txt
+$ bash conferir.sh
+linha 1 fora do formato: 'S1:?'
+```
+
+As regras vão de `R1` a `R6`, e as situações de `S1` a `S8`. Duas palavras das situações,
+caso sejam novas: um *web shell* é um arquivo colocado num servidor web que permite rodar
+comandos nele pelo navegador, um sinal clássico de invasão (o módulo 1.2 o descreve); uma
+<GlossaryTerm term="VPN">VPN</GlossaryTerm> (*Virtual Private Network*) é um túnel cifrado
+que liga o seu computador a uma rede pela internet, como se você estivesse dentro dela. E
+a <GlossaryTerm term="SQL injection">SQL injection</GlossaryTerm> da S6 é uma falha em que a
+aplicação junta o que o usuário digitou a um comando do banco de dados, e o banco executa
+isso como parte do comando; você vai estudá-la na Trilha 4. Aqui basta saber que ela deu
+acesso a dados.
+
+**O desafio:** preencha o `respostas.txt` com uma ação por situação (`CONTINUAR`,
+`PARAR-E-AVISAR`, `PEDIR-ADENDO` ou `NAO-TOCAR`) e rode o `conferir.sh`. Antes de cada
+resposta, ache **a regra** que decide o caso e anote o número dela; se você não achar
+regra nenhuma, releia, porque todas as situações estão cobertas.
+
+<Hint title="Dica 1: as duas que se parecem">
+`NAO-TOCAR` e `PARAR-E-AVISAR` parecem a mesma coisa e não são. `NAO-TOCAR` é para um alvo
+que **não é seu para testar** (R1, R2): você anota, cita no status e segue com o resto.
+`PARAR-E-AVISAR` é para as condições de parada da R4: algo **aconteceu** e o cliente
+precisa saber agora.
+</Hint>
+
+<Hint title="Dica 2: a que contraria a intuição">
+Na S7, a vontade é parar ou trocar de IP. Leia a R5 inteira, palavra por palavra. O que a
+defesa fez é parte do que o cliente quer medir?
+</Hint>
+
+<Solution title="Solução da Missão 3">
+```text
+S1:NAO-TOCAR
+S2:PARAR-E-AVISAR
+S3:PEDIR-ADENDO
+S4:CONTINUAR
+S5:PARAR-E-AVISAR
+S6:PARAR-E-AVISAR
+S7:CONTINUAR
+S8:NAO-TOCAR
+```
+
+- **S1 — NAO-TOCAR (R1):** o escopo é por IP. `192.0.2.80` é da CDN e não está nas faixas.
+  É o *DNS drift* da seção 2.4. Registre e cite no status; o IP `198.51.100.21`, se ainda
+  responder, continua no escopo.
+- **S2 — PARAR-E-AVISAR (R4):** sinal de invasão anterior. É o caso que o NIST descreve:
+  relatar na hora e parar de testar os sistemas envolvidos. Não abra nem apague o arquivo:
+  ele é evidência da resposta a incidentes do cliente.
+- **S3 — PEDIR-ADENDO (R3):** pedido verbal não muda o escopo. É o *scope creep* da seção
+  2.6.
+- **S4 — CONTINUAR:** alvo no escopo, dentro da janela, sem efeito anormal.
+- **S5 — PARAR-E-AVISAR (R4):** serviço fora do ar depois de uma ação de teste. Pare de
+  testar aquele sistema e avise: o cliente pode precisar reiniciá-lo, e só quem decide se
+  o teste recomeça é ele.
+- **S6 — PARAR-E-AVISAR (R4):** dados pessoais reais (nome e CPF) muito além de um registro.
+  Pare a extração, registre o mínimo (a consulta usada, a contagem, um registro mascarado)
+  e avise na hora: além de provar a falha, você está diante de dados pessoais expostos.
+- **S7 — CONTINUAR (R5):** o bloqueio é parte do que o cliente quer medir. Registre o
+  horário, não troque de IP e siga com os alvos que continuam alcançáveis.
+- **S8 — NAO-TOCAR (R2):** o host está dentro da faixa, mas é da Drogaria Exemplo Nordeste,
+  outra empresa. Não teste, registre e cite no status diário, para o cliente decidir se
+  pede a autorização da filial.
+
+Grave as oito linhas no `respostas.txt` e rode `bash conferir.sh`: a flag é a que ele
+imprimir.
+</Solution>
+
+<FlagInput task="missao-3-parar-ou-continuar" />
+
+<Callout variant="info" title="Por que a regra vence a intuição">
+Na S7, a intuição diz "fui pego, paro". Na S5, diz "foi só um 503, já volta". As duas
+intuições estão erradas, e a razão é a mesma: quem decide o que é sucesso e o que é risco
+no teste é o cliente, e ele decidiu por escrito, antes. Ler as RoE inteiras no kickoff, e
+de novo quando algo inesperado acontece, é o que separa o profissional do amador.
+</Callout>
+
+### 5.5 Walkthrough: lendo regras públicas de verdade (sem flag)
+
+Missões fictícias treinam o raciocínio; documentos reais mostram como ele aparece no
+mundo. Abra no navegador, com calma, estes três textos. Você só vai **ler** páginas
+públicas: nenhum teste contra ninguém.
+
+1. **Política de pentest da AWS:**
+   [aws.amazon.com/security/penetration-testing](https://aws.amazon.com/security/penetration-testing/).
+   Encontre: a lista de serviços que podem ser testados sem aprovação prévia; a lista de
+   atividades proibidas; o que exige pedido prévio (procure "Other Simulated Events"); e a
+   frase sobre testar a infraestrutura da própria AWS. Compare com a NuvemX da Missão 1.
+2. **Pre-engagement do PTES:**
+   [pentest-standard.org — Pre-engagement](http://www.pentest-standard.org/index.php/Pre-engagement).
+   Leia as seções *Scope Creep*, *Dealing with Third Parties* e *Emergency Contact
+   Information*. Encontre a lista de dados que o PTES pede para cada contato de emergência.
+3. **Modelo de RoE do NIST SP 800-115:** no
+   [PDF do guia](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-115.pdf),
+   vá ao apêndice B. Ponha a minuta da Missão 2 ao lado e diga em qual seção do modelo cada
+   cláusula se encaixaria. Alguma seção do modelo ficou sem nenhuma cláusula na minuta?
+
+<Solution title="Comentários do walkthrough">
+- **AWS:** a página diz que os clientes podem fazer avaliações de segurança e pentests na
+  sua infraestrutura AWS "sem aprovação prévia" para os serviços listados (entre eles EC2,
+  RDS, Lambda e CloudFront); que testes com comando e controle (C2) exigem aprovação
+  prévia; que exercícios de red/blue/purple team, testes volumétricos, phishing simulado e
+  testes com malware entram em "Other Simulated Events", com pedido de autorização; e que
+  os clientes não podem fazer avaliações de segurança da infraestrutura AWS nem dos
+  serviços da própria AWS. Entre as atividades proibidas estão negação de serviço, DNS
+  *zone walking* e *hijacking* no Route 53 e *subdomain takeover*.
+- **PTES:** para cada contato de emergência, o PTES pede nome completo, cargo e
+  responsabilidade, autorização para discutir detalhes das atividades de teste (se isso já
+  não estiver especificado), duas formas de contato imediato disponíveis 24 horas por dia
+  (como celular ou telefone de casa) e uma forma segura de transferir dados (como SFTP ou
+  e-mail cifrado). E sugere que a lista inclua todos os testadores, o gerente da equipe de
+  teste, dois contatos técnicos em cada organização-alvo e no cliente, e um contato da
+  alta gestão do cliente.
+- **NIST:** na minuta da Missão 2 não há nada sobre premissas e riscos (seção 1 do modelo),
+  equipamento de teste (2.4) nem relatórios (6). Uma minuta real teria.
+</Solution>
+
+### 5.6 Limpeza
+
+Quando terminar as três missões (e enviado as flags), apague a pasta:
+
+```console
+$ rm -rf ~/treino-1-3
+```
+
+Se quiser refazer alguma missão do zero, rode de novo o bloco da seção 5.1.
+
+## 6. Variações e aprofundamento
+
+### 6.1 Bug bounty, VDP e safe harbor
+
+No 1.1 você viu que, num <GlossaryTerm term="bug bounty">bug bounty</GlossaryTerm>, as
+regras públicas do programa fazem o papel do contrato. Muitas organizações publicam essas
+regras mesmo sem pagar recompensa: é a
+<GlossaryTerm term="vulnerability disclosure policy">vulnerability disclosure
+policy</GlossaryTerm> (VDP, política de divulgação de vulnerabilidades), que diz o que pode
+ser testado, o que é proibido e como relatar, e se apoia na
+<GlossaryTerm term="coordinated vulnerability disclosure">coordinated vulnerability
+disclosure</GlossaryTerm> (avisar primeiro quem pode corrigir).
+
+Nas boas políticas, há uma cláusula de
+<GlossaryTerm term="safe harbor">safe harbor</GlossaryTerm> (porto seguro). O projeto
+disclose.io, que mantém modelos abertos dessas políticas, tem um texto-padrão em que a
+organização declara considerar a pesquisa feita dentro da política "autorizada" perante
+as leis contra invasão, e promete não iniciar nem apoiar ação judicial por violações
+acidentais e de boa-fé da política. Note três limites, todos escritos no próprio texto
+([disclose.io — texto de safe harbor](https://github.com/disclose/dioterms/blob/master/terms/safe-harbor/en-US.md)):
+
+1. **Você continua obrigado a cumprir a lei.** O safe harbor não suspende nenhuma lei.
+2. **Na dúvida, pergunte antes.** O texto pede que, se você não tiver certeza de que a
+   pesquisa está dentro da política, envie um relato pelos canais oficiais "antes de ir
+   além".
+3. **Ele não vincula terceiros.** O safe harbor "se aplica apenas a reivindicações legais
+   sob o controle da organização" e "não vincula terceiros independentes". Se um terceiro
+   agir contra você, a organização promete apenas tornar público que você seguiu a
+   política.
+
+Ou seja: o terceiro da seção 2.2 também existe no bug bounty. Uma política da loja não
+autoriza testar o SaaS de pagamentos que a loja usa.
+
+### 6.2 O `security.txt`
+
+O <GlossaryTerm term="security.txt">security.txt</GlossaryTerm> é um arquivo de texto
+publicado em `/.well-known/security.txt`, definido pelo RFC 9116 (abril de 2022), que diz
+**como** relatar um problema de segurança a uma organização. Os campos obrigatórios são
+`Contact` e `Expires`, e o campo `Policy` aponta para a política de divulgação. Um exemplo
+fictício:
+
+```text
+Contact: mailto:seguranca@drogaria.example
+Expires: 2027-10-01T00:00:00.000Z
+Policy: https://drogaria.example/seguranca/politica
+Preferred-Languages: pt, en
+```
+
+O ponto que importa para este módulo está na seção 5.5 do RFC, cujo título já diz tudo,
+*No Implied Permission for Testing* (nenhuma permissão implícita para testes):
+pesquisadores "não devem supor que a presença ou a ausência de um arquivo security.txt
+concede ou nega permissão para testes de segurança"; a permissão, se houver, está na
+política de divulgação
+([RFC 9116](https://www.rfc-editor.org/rfc/rfc9116.html)). Ele é o endereço da portaria,
+não a chave do prédio.
+
+### 6.3 Nuvem: o modelo da AWS, e os registros esquecidos
+
+No 1.1 você viu as regras da Microsoft. A AWS segue outra lógica, que inspirou a NuvemX da
+Missão 1: os clientes podem testar a própria infraestrutura **sem aprovação prévia** para
+uma lista de serviços (máquinas EC2, bancos RDS, funções Lambda e outros), testes com
+comando e controle e simulações (red team, phishing, malware, testes volumétricos) exigem
+pedido de autorização, e é proibido avaliar a infraestrutura ou os serviços da própria AWS
+([AWS — Penetration Testing](https://aws.amazon.com/security/penetration-testing/)). As
+políticas mudam: confira a versão do dia antes de propor o escopo.
+
+Repare que, entre as atividades proibidas pela AWS, aparece o
+<GlossaryTerm term="subdomain takeover">subdomain takeover</GlossaryTerm> (tomada de
+subdomínio). Ele é a versão de ataque do *dangling DNS* da Missão 1: se um nome do cliente
+aponta para um recurso de nuvem que foi apagado e que qualquer pessoa pode criar de novo,
+um atacante cria o recurso e passa a responder por aquele nome. Para o pentester, o
+achado é o **registro pendente**, provado com consultas de DNS; criar o recurso para
+"provar" o ataque esbarra nas regras do provedor e quase sempre precisa de autorização
+explícita.
+
+### 6.4 Red team: agentes de confiança, desconflito e a carta no bolso
+
+No red team, a defesa normalmente não sabe do teste (é um teste encoberto, como você viu
+no 1.1). Isso cria um problema de autorização que o pentest às claras não tem: se o SOC
+detectar o ataque, vai tratar como incidente de verdade, e pode chamar a polícia. A
+solução é ter, do lado do cliente, um ou mais
+<GlossaryTerm term="trusted agent">trusted agents</GlossaryTerm> (agentes de confiança):
+pessoas da direção que sabem do teste, podem confirmá-lo quando ele for detectado e podem
+interrompê-lo, sem avisar o resto da defesa. O NIST SP 800-115 pede que o plano de um teste
+encoberto defina como a atividade detectada e relatada pela equipe de segurança deve ser
+tratada, incluindo a escalada, justamente para que o teste não dispare a notificação de
+uma "invasão" a partes externas, como equipes externas de resposta a incidentes.
+
+O 1.1 citou o TIBER-EU, o framework europeu de red team para o setor financeiro, que
+formaliza esse papel: os testes são feitos sem o conhecimento da equipe de segurança e de
+resposta da entidade (o blue team), e "só um pequeno grupo da entidade, chamado White
+Team, sabe do teste", coordenado por um líder que também cuida da escalada se a defesa
+detectar e escalar um incidente ligado ao teste
+([TIBER-EU Framework, BCE, maio de 2018 (PDF)](https://www.ecb.europa.eu/pub/pdf/other/ecb.tiber_eu_framework.en.pdf)). A lição prática é a mesma em
+qualquer formato: **alguém com autoridade precisa estar acordado e alcançável durante todo
+o teste encoberto**, e os testadores precisam saber quem é.
+
+### 6.5 Engenharia social e teste físico
+
+São os dois tipos de teste em que a autorização mais aparece, porque envolvem **pessoas**
+que não sabem do teste. A <GlossaryTerm term="social engineering">social
+engineering</GlossaryTerm> precisa de regras próprias: o PTES pede que os **pretextos**
+(as histórias usadas, como "sou do suporte") sejam aprovados por escrito, e lembra que
+alguns pretextos que funcionam para criminosos não são aceitáveis num ambiente
+corporativo. Também é preciso definir quem pode ser alvo (funcionários, nunca clientes ou
+familiares), por quais canais (e-mail, telefone, presencial) e o que fazer com o que for
+obtido (senhas digitadas num <GlossaryTerm term="phishing">phishing</GlossaryTerm>
+simulado não devem ser guardadas em claro). O módulo 2.3 trata disso a fundo.
+
+No <GlossaryTerm term="physical penetration test">physical penetration test</GlossaryTerm>,
+a carta de autorização vai literalmente no bolso, e o caso Coalfire mostrou o que falta
+quando ela não basta: a polícia e os seguranças precisam de um jeito de confirmar o teste
+**na hora**, por um telefone atendido, e o dono do prédio precisa ser quem assinou. O NIST
+lembra que o plano deve dizer o que fazer diante de crachás, acompanhantes e seguranças.
+
+### 6.6 Produção, homologação e dados reais
+
+Testar em produção é mais realista e mais arriscado. Testar em homologação é mais seguro e
+pode não ter os mesmos dados e configurações. A decisão é do cliente, e o escopo precisa
+dizer qual ambiente vale, com o NIST sugerindo homologação quando o teste puder expor dados
+pessoais sensíveis. Quando o teste for em produção, as RoE precisam dizer o limite de dados
+(quantos registros provam a falha, mascarados como), o que fazer se o testador achar algo
+ilegal (o PTES é taxativo: se forem encontrados dados ilegais, a autoridade policial deve
+ser avisada imediatamente, e depois o cliente, sem aceitar orientação do cliente sobre
+isso) e por quanto tempo as evidências ficam guardadas.
+
+### 6.7 Mais de um país
+
+Um teste pode envolver servidores em vários países, e cada país tem sua lei. O PTES
+recomenda verificar onde os servidores estão e conhecer a lei local antes de testar, e é
+direto sobre a responsabilidade: não presuma que o jurídico da sua empresa vai resumir
+todas as leis, nem que a empresa vai responder pelas leis que você violar, porque é o
+testador quem vai responder no fim. Este módulo não ensina a lei de outros países (e não
+vai fingir que ensina); ensina a fazer a pergunta e a colocar a resposta no papel.
+
+## 7. Erros comuns
+
+- **"O cliente assinou, então posso tudo que tem o nome dele."** O nome não é a
+  infraestrutura. Confira dono por dono: hospedagem compartilhada, SaaS, CDN, MSSP, outra
+  empresa do grupo (Missão 1).
+- **Aceitar a assinatura de quem está à mão.** O coordenador que responde seus e-mails pode
+  não ter autoridade. Pergunte quem a política do cliente exige, antes da minuta (Missão 2,
+  C14).
+- **Escopo por nome sem IP.** "O site da empresa" muda de endereço. Escreva os IPs, resolva
+  os nomes de novo antes de cada ação e trate o IP novo como não autorizado (Missão 3, S1).
+- **"Todos os subdomínios."** Um subdomínio pode apontar para qualquer organização do
+  mundo. Liste os nomes, um por um.
+- **Janela sem fuso, sem fim claro, ou sem contato acordado nela.** Se o teste é de
+  madrugada, o contato de emergência também precisa ser (Missão 2, C07 e C09).
+- **Começar com a autorização vencida, ou sem ela assinada ainda.** "Está quase assinada"
+  é o mesmo que não assinada. O PTES é explícito: o teste não começa antes.
+- **Aceitar adendo verbal.** Por telefone, por corredor ou por mensagem informal. O
+  adendo é um documento assinado por quem tem autoridade (Missão 3, S3).
+- **Continuar depois de achar um invasor.** Além de atrapalhar a resposta, as suas ações
+  se misturam às dele nos logs. Pare e avise (Missão 3, S2).
+- **"Só mais uma consulta para mostrar o impacto."** Dados pessoais além do necessário
+  são condição de parada, não troféu (Missão 3, S6).
+- **Achar que a política pública do provedor, do bug bounty ou o `security.txt` autorizam
+  qualquer coisa.** Cada um autoriza o que diz, e o `security.txt` não autoriza nada.
+- **Guardar a dúvida para o relatório.** Dúvida de escopo é resolvida na hora, com o ponto
+  de contato, e o que ele decidir fica por escrito.
+
+## 8. Boas práticas e segurança
+
+### 8.1 Antes do primeiro pacote: a lista de quem testa
+
+- [ ] O dono de cada alvo foi confirmado (RDAP/WHOIS para faixas públicas, DNS para nomes,
+  conversa para redes internas).
+- [ ] Cada terceiro foi identificado e, para cada um, há autorização escrita, ou o ativo
+  saiu do escopo e o relatório dirá isso.
+- [ ] Quem assinou tem autoridade pela política do cliente, e isso está escrito.
+- [ ] O escopo lista IPs e nomes, a lista de exclusão, o ambiente e as contas de teste.
+- [ ] A janela tem datas, horas, fuso e um fim inequívoco, e o documento está vigente
+  nela.
+- [ ] Técnicas permitidas e proibidas estão escritas, inclusive engenharia social com
+  pretextos aprovados.
+- [ ] Há um contato de emergência alcançável durante toda a janela, com duas formas de
+  contato imediato (o PTES pede duas, disponíveis 24 horas).
+- [ ] Os IPs de origem foram informados (desconflito), e a regra de bloqueio está escrita.
+- [ ] Limite de dados, cifra, retenção e destruição das evidências estão combinados.
+- [ ] O escopo virou arquivos de máquina (seção 8.4), versionados.
+- [ ] A carta de autorização está com você, em papel ou no celular, com o telefone de
+  confirmação.
+
+### 8.2 Para quem contrata
+
+Se você estiver do outro lado, contratando um teste, estas decisões são suas, e o
+testador só consegue segui-las se você as tomar:
+
+1. **Defina quem assina.** Escreva na política interna quem pode autorizar testes
+   intrusivos, para não depender de quem estiver disponível.
+2. **Entregue o inventário com os donos.** Diga ao testador o que é seu, o que é de
+   fornecedor e o que é de outra empresa do grupo. Você conhece isso melhor do que ele.
+3. **Avise quem pode reagir.** O SOC (ou combine o teste encoberto com agentes de
+   confiança), o MSSP, a segurança do prédio, o provedor, quando for o caso.
+4. **Garanta o contato de emergência.** Uma pessoa com autoridade, alcançável durante toda
+   a janela.
+5. **Mantenha o DNS limpo.** Registros apontando para recursos desligados são o *dangling
+   DNS* da Missão 1, e um risco de *subdomain takeover* com ou sem pentest.
+
+### 8.3 Modelo comentado de carta de autorização e RoE
+
+O texto abaixo é um modelo **fictício e simplificado**, para mostrar a estrutura. Não é
+modelo jurídico: num trabalho real, contrato e autorização passam pelo jurídico das duas
+partes, como recomenda o NIST. Cada bloco responde a uma das perguntas da seção 2.
+
+```text
+AUTORIZAÇÃO DE TESTE DE INTRUSÃO E REGRAS DE ENGAJAMENTO
+Contrato nº 2026-044 — Anexo I ao SOW nº 3 (fictício)
+
+1. PARTES E AUTORIDADE
+   Drogaria Exemplo Ltda., CNPJ 00.000.000/0001-00, representada por
+   Marina Teixeira, Diretora de Tecnologia, que declara ter autoridade,
+   pela política PSI-07, para autorizar testes intrusivos nos alvos
+   abaixo. Equipe: Teste Seguro Consultoria Ltda.
+   -> quem é o dono e quem tem autoridade (seção 2.2)
+
+2. ALVOS AUTORIZADOS (vale o IP; nomes são referência)
+   198.51.100.16/28 — faixa registrada em nome da Drogaria (RDAP conferido
+   em 01/10/2026). Nomes: www.drogaria.example e vpn.drogaria.example,
+   resolvidos para essa faixa em 01/10/2026.
+   EXCLUSÕES: 198.51.100.18 (folha de pagamento).
+   NÃO INCLUÍDOS: rh.drogaria.example (SaaS da RHFácil) e
+   loja.drogaria.example (hospedagem compartilhada) — sem autorização dos
+   terceiros; o relatório registrará que não foram testados.
+   -> o quê, sem "todos os subdomínios" (seção 2.4)
+
+3. JANELA
+   De 22h00 de 06/10/2026 até 06h00 de 10/10/2026, horário de Brasília
+   (UTC-3). Esta autorização vale de 01/10/2026 a 31/10/2026.
+   -> quando, com fuso e fim inequívoco; vigência cobre a janela
+
+4. TÉCNICAS
+   Permitidas: descoberta e varredura, identificação de versões,
+   exploração com prova de conceito, testes de autenticação com as contas
+   entregues. Proibidas: negação de serviço; engenharia social; alteração
+   ou exclusão de dados; arquivos que permaneçam após o teste.
+   -> como (seção 2.5)
+
+5. ORIGEM E DESCONFLITO
+   Todo o tráfego sai de 192.0.2.200. O SOC foi informado. Bloqueio do IP
+   de origem é permitido; a equipe não trocará de IP e registrará o horário.
+
+6. COMUNICAÇÃO E CONDIÇÕES DE PARADA
+   Ponto de contato: Rafael Lima. Emergência (24h durante a janela):
+   Paulo Andrade, CISO, duas formas de contato imediato no Anexo II.
+   Status diário por e-mail cifrado, às 7h00.
+   Parar e avisar na hora: sinais de invasão anterior; serviço degradado
+   após ação de teste; dados pessoais além de 1 registro. Retomada só com
+   autorização do contato de emergência, registrada por escrito.
+   Mudança de alvo, técnica ou janela: só por adendo assinado pela
+   Diretora de Tecnologia ou pelo CISO.
+
+7. DADOS
+   Prova com no máximo 1 registro, mascarado. Evidências cifradas, apenas
+   nos equipamentos da equipe; entregues pelo canal combinado; destruídas
+   30 dias após a entrega do relatório, com declaração escrita.
+
+8. RISCOS
+   O teste pode causar instabilidade; a equipe tomará o devido cuidado e
+   seguirá as condições de parada. Limitação de responsabilidade conforme
+   o MSA.
+
+9. ASSINATURAS
+   Marina Teixeira (Diretora de Tecnologia, Drogaria) — data
+   Líder da equipe de teste (Teste Seguro) — data
+   Confirmação por telefone: Paulo Andrade, CISO (Anexo II).
+```
+
+### 8.4 Preflight: o escopo conferido por máquina, inclusive nomes
+
+No 1.1 você escreveu o `in-scope.sh`, que diz se um **IP** está dentro das faixas. Faltou
+o problema desta seção: **nomes**. O script abaixo, `preflight.sh`, faz as duas coisas.
+Para um nome, ele busca todos os endereços num arquivo de resolução (uma "foto" do DNS
+tirada logo antes do teste) e só diz `DENTRO` se **todos** os endereços estiverem no
+escopo. Ele também devolve o código de saída 1 (0.3) se qualquer alvo estiver bloqueado,
+para você poder usá-lo como trava antes de outro comando.
+
+```bash
+#!/usr/bin/env bash
+# preflight.sh — checks targets (IPs or host names) against the authorized
+# ranges before any test. A name is only "DENTRO" if EVERY address it
+# resolves to is inside the scope.
+# Usage: ./preflight.sh RANGES_FILE RESOLUTION_FILE TARGET [TARGET...]
+# RANGES_FILE: one CIDR per line; "!" marks exclusions; "#" comments.
+# RESOLUTION_FILE: "name address" per line (a snapshot of the DNS, taken
+# just before the test; e.g. from: getent ahostsv4 NAME).
+set -euo pipefail
+
+ip_to_int() {
+    local a b c d
+    IFS=. read -r a b c d <<< "$1"
+    echo $(( (10#$a << 24) | (10#$b << 16) | (10#$c << 8) | 10#$d ))
+}
+
+in_cidr() {    # in_cidr IP CIDR -> exit code 0 if IP is inside CIDR
+    local net=${2%/*} bits=${2#*/}
+    local mask=$(( bits == 0 ? 0 : (0xFFFFFFFF << (32 - bits)) & 0xFFFFFFFF ))
+    (( ($(ip_to_int "$1") & mask) == ($(ip_to_int "$net") & mask) ))
+}
+
+ip_verdict() {    # prints DENTRO, FORA or EXCLUÍDO for one IP
+    local verdict="FORA" range
+    while IFS= read -r range; do
+        case $range in ''|'#'*) continue ;; esac
+        if [[ $range == '!'* ]]; then
+            if in_cidr "$1" "${range#!}"; then echo "EXCLUÍDO"; return; fi
+        elif in_cidr "$1" "$range"; then
+            verdict="DENTRO"
+        fi
+    done < "$ranges_file"
+    echo "$verdict"
+}
+
+[ "$#" -ge 3 ] || { echo "uso: $0 ARQUIVO_DE_FAIXAS ARQUIVO_DE_RESOLUCAO ALVO [ALVO...]" >&2; exit 2; }
+ranges_file=$1 resolution_file=$2; shift 2
+status=0
+
+for target in "$@"; do
+    if [[ $target =~ ^[0-9]+(\.[0-9]+){3}$ ]]; then
+        addresses=$target
+    else
+        addresses=$(awk -v n="$target" '$1 == n { print $2 }' "$resolution_file")
+        if [ -z "$addresses" ]; then
+            printf '%-26s %s\n' "$target" "SEM RESOLUÇÃO (não teste)"; status=1; continue
+        fi
+    fi
+    final="DENTRO" details=""
+    for ip in $addresses; do
+        v=$(ip_verdict "$ip")
+        details+=" $ip=$v"
+        [ "$v" = "DENTRO" ] || final="BLOQUEADO"
+    done
+    [ "$final" = "DENTRO" ] || status=1
+    printf '%-26s %-10s%s\n' "$target" "$final" "$details"
+done
+exit "$status"
+```
+
+O que há de novo em relação ao `in-scope.sh`:
+
+- `ip_verdict` é o laço do 1.1 transformado em função: devolve `DENTRO`, `FORA` ou
+  `EXCLUÍDO` para um IP.
+- Um alvo que **parece** um IP (o teste `=~` com a expressão regular do 0.3) é usado
+  direto. Qualquer outro é tratado como nome, e o `awk` (0.6) busca **todas** as linhas do
+  arquivo de resolução com aquele nome, porque um nome pode ter vários endereços.
+- Um nome só passa se **todos** os endereços passarem. Um endereço fora basta para
+  `BLOQUEADO`: é a regra do "todo IP está dentro?" da árvore da seção 3.4.
+- Um nome que não está no arquivo de resolução também é bloqueado: se você não sabe para
+  onde ele aponta, não sabe o que vai atacar.
+
+Saída real, com faixas e resolução fictícias:
+
+```console
+$ cat faixas.txt
+# contrato 2026-044 (fictício)
+10.20.0.0/24
+198.51.100.16/28
+!198.51.100.18/32
+$ cat resolucao.txt
+# snapshot do DNS em 06/10/2026 21:50 (fictício)
+vpn.drogaria.example     198.51.100.20
+portal.drogaria.example  192.0.2.80
+loja.drogaria.example    203.0.113.40
+www.drogaria.example     198.51.100.21
+www.drogaria.example     192.0.2.81
+$ ./preflight.sh faixas.txt resolucao.txt 10.20.0.15 198.51.100.18 vpn.drogaria.example portal.drogaria.example www.drogaria.example intranet.drogaria.example
+10.20.0.15                 DENTRO     10.20.0.15=DENTRO
+198.51.100.18              BLOQUEADO  198.51.100.18=EXCLUÍDO
+vpn.drogaria.example       DENTRO     198.51.100.20=DENTRO
+portal.drogaria.example    BLOQUEADO  192.0.2.80=FORA
+www.drogaria.example       BLOQUEADO  198.51.100.21=DENTRO 192.0.2.81=FORA
+intranet.drogaria.example  SEM RESOLUÇÃO (não teste)
+$ echo $?
+1
+$ ./preflight.sh faixas.txt resolucao.txt 10.20.0.15 vpn.drogaria.example
+10.20.0.15                 DENTRO     10.20.0.15=DENTRO
+vpn.drogaria.example       DENTRO     198.51.100.20=DENTRO
+$ echo $?
+0
+```
+
+Repare no `www.drogaria.example`: um dos dois endereços está no escopo e o outro, não.
+Uma ferramenta que pegasse "o primeiro endereço" (como o nmap faz por padrão, seção 2.4)
+poderia acertar num dia e errar no outro. O `preflight.sh` bloqueia o nome inteiro, e a
+decisão volta para você e para o ponto de contato.
+
+Num engajamento real, a "foto" do DNS vem de uma consulta de verdade, feita sobre os nomes
+do **seu** escopo logo antes da janela. O `getent ahostsv4` (presente no Ubuntu) consulta o
+resolvedor do sistema; a saída tem o formato `IP STREAM nome`, e um `awk` a converte para o
+formato do arquivo (saída real, com o nome `localhost`):
+
+```console
+$ getent ahostsv4 localhost
+127.0.0.1       STREAM localhost
+127.0.0.1       DGRAM
+127.0.0.1       RAW
+$ getent ahostsv4 localhost | awk '$2 == "STREAM" { print "localhost", $1 }'
+localhost 127.0.0.1
+```
+
+Duas observações para levar adiante. Primeira: esta verificação é por IPv4; quando o
+escopo tiver IPv6 (0.2), ele precisa ser tratado também. Segunda: a trava só funciona se
+você a usar **sempre**, por exemplo num pequeno script que roda o `preflight.sh` e só
+chama a ferramenta se o código de saída for 0.
+
+<Callout variant="tip" title="Experimente">
+Copie o script para `~/treino-1-3/preflight/`, crie os dois arquivos acima e rode. Depois
+mude o `resolucao.txt` para simular um *DNS drift* (troque o IP do `vpn.drogaria.example`
+por um de fora) e veja o veredito mudar. Lembre de dar `chmod +x preflight.sh` (0.3).
+</Callout>
+
+### 8.5 Para quem defende: como verificar uma carta
+
+Na portaria, no SOC ou no telefone, alguém vai aparecer dizendo "sou do pentest
+autorizado". Pode ser verdade; pode ser um golpista que leu este módulo. Como verificar:
+
+1. **Ligue para um número que você já conhecia.** O da diretoria no cadastro interno, não o
+   impresso na carta. Um golpista põe o próprio telefone na carta e atende como "diretor".
+2. **Confira com quem tem autoridade.** O agente de confiança (red team) ou o contato de
+   emergência das RoE, não "alguém da TI".
+3. **Confira o que a carta autoriza.** Este prédio, esta sala, esta data, esta hora.
+   Autorização para o prédio A não vale no prédio B, como no caso Coalfire.
+4. **Na dúvida, contenha sem agredir.** Acompanhe a pessoa, não deixe que continue, e
+   espere a confirmação. Um testador legítimo entende; ele treinou para isso.
+5. **Registre.** Hora, nome, o que foi apresentado, com quem você falou. É útil para os
+   dois lados.
+
+### 8.6 Os dados do teste: guardar, transmitir, destruir
+
+As evidências de um pentest são o mapa de como invadir o cliente. Trate-as assim:
+
+- **Guarde cifrado.** O PTES pede cifra sempre e máquinas de teste limpas entre um
+  cliente e outro; o NIST pede regras para guardar dados nos sistemas do testador, com
+  cifra e senha.
+- **Transmita pelo canal combinado,** cifrado. O PTES lembra que, no e-mail cifrado, o
+  **assunto** vai em claro: não escreva "achado crítico no servidor X" ali.
+- **Colete o mínimo.** Um registro mascarado prova uma SQL injection tão bem quanto mil.
+- **Destrua no prazo, com declaração.** E nunca reaproveite o relatório de um cliente como
+  modelo para outro, outro conselho literal do PTES.
+- **Dados pessoais** trazem obrigações legais próprias no Brasil (LGPD), tema do módulo
+  1.4.
+
+## 9. Exercícios
+
+As três flags deste módulo estão na seção 5: Missão 1 (quem pode autorizar), Missão 2 (a
+carta e as regras) e Missão 3 (parar, continuar ou pedir adendo). O quiz abaixo é corrigido
+na plataforma; você precisa de 70% de acerto, e cada resposta traz a explicação.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar
+
+**Cenário 1.** Um cliente pede um pentest do aplicativo `app.cliente.example`, hospedado
+numa VM própria na AWS. No meio do teste, você descobre que o login usa um provedor de
+identidade em SaaS (um serviço externo de autenticação, usado por milhares de empresas).
+Você pode testar ataques de força bruta contra a tela de login?
+
+<Solution title="Comentário do cenário 1">
+Contra a parte do aplicativo que roda na VM do cliente, nas condições das RoE e da política
+da AWS, sim. Mas, se a tela de login e a verificação da senha são do provedor de
+identidade, um ataque de força bruta atinge a infraestrutura do provedor, compartilhada com
+outros clientes. Isso exige a política de testes do provedor ou uma autorização dele, além
+de cuidado com bloqueio de contas reais. Na dúvida: registre, pergunte ao ponto de contato
+e decida por escrito.
+</Solution>
+
+**Cenário 2.** Um amigo administra o site de uma ONG e diz, por mensagem: "pode testar à
+vontade, eu deixo". Isso basta?
+
+<Solution title="Comentário do cenário 2">
+Não. Ele administra, mas pode não ter autoridade para autorizar (quem responde pela ONG é a
+diretoria), o site pode estar numa hospedagem compartilhada (terceiro) e "à vontade" não é
+escopo, janela nem técnica. Se for fazer, faça direito: autorização escrita de quem
+representa a ONG, alvos conferidos, regras e a autorização da hospedagem, se for o caso.
+Ou, melhor ainda para quem está aprendendo, treine nos laboratórios desta plataforma.
+</Solution>
+
+**Cenário 3.** Num red team, o SOC do cliente detecta você às 3h e liga para o número de
+emergência que estava na carta. Ninguém atende. O SOC aciona a polícia. O que falhou, e
+como as RoE deveriam ter evitado isso?
+
+<Solution title="Comentário do cenário 3">
+Falhou o desconflito. As RoE de um teste encoberto precisam ter agentes de confiança
+alcançáveis durante toda a janela (duas formas de contato imediato 24 horas, como pede o
+PTES) e um procedimento
+combinado de escalada para quando o teste for detectado, como pede o NIST. O SOC também
+deveria saber a quem recorrer, sem saber dos detalhes do teste. Um contato que não atende
+de madrugada, num teste de madrugada, é o C09 da Missão 2.
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- A autorização é o que separa um pentest de um crime. Ela precisa ser **expressa,
+  escrita, vigente**, dada por **quem tem autoridade** sobre **cada alvo**, e não é
+  retroativa.
+- Quem paga não é, necessariamente, quem pode autorizar. Nuvem, hospedagem compartilhada,
+  CDN, SaaS, MSSP e outras empresas do grupo exigem **autorização de terceiro**; um IP
+  errado ou um nome esquecido não são de ninguém do contrato.
+- Cada documento responde a uma pergunta: MSA (relação), NDA (sigilo), SOW (o quê, quando,
+  quanto), RoE (como), carta de autorização (quem autoriza o quê) e adendo (o que mudou).
+- Um escopo completo diz alvos, exclusões, nomes, janela com fuso, ambiente, técnicas,
+  limite de dados e origem. **Vale o IP**; o nome é conferido de novo antes de cada ação.
+- As RoE dizem quem fala com quem, como distinguir teste de ataque, quando parar e o que
+  fazer com os dados. Condição de parada interrompe e avisa na hora.
+- Mudança de escopo é adendo assinado. Pedido verbal não muda nada.
+- Bug bounty, VDP e safe harbor autorizam o que dizem, e só por quem os publica; o
+  `security.txt` não autoriza nada.
+
+### Cola rápida: posso testar?
+
+| Pergunta | Se a resposta for "não" |
+| --- | --- |
+| Está escrito no escopo, por IP ou URL exata? | Não toque; peça adendo |
+| Está fora da lista de exclusão? | Não toque |
+| O nome resolve agora só para IPs do escopo? | Não toque; avise o contato |
+| A infraestrutura é do cliente, ou o terceiro assinou? | Não toque |
+| Quem assinou tem autoridade, e o documento está vigente? | Não comece |
+| Estou na janela, no fuso do contrato? | Espere |
+| A técnica é permitida? | Não use; peça adendo |
+| Nenhuma condição de parada aconteceu? | Pare e avise na hora |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [PTES — Pre-engagement](http://www.pentest-standard.org/index.php/Pre-engagement) — a
+  referência comunitária mais completa sobre escopo, terceiros, comunicação e regras de
+  engajamento.
+- [NIST SP 800-115 (PDF)](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-115.pdf) —
+  seções 6 (planejamento, incluindo as considerações legais) e 7, e o modelo de RoE do
+  apêndice B.
+- [RFC 9116 — security.txt](https://www.rfc-editor.org/rfc/rfc9116.html) — curto e
+  direto; vale ler a seção de considerações de segurança.
+- [disclose.io — termos e safe harbor](https://github.com/disclose/dioterms) — modelos
+  abertos de VDP e safe harbor, para entender o que as políticas prometem.
+- [AWS — Penetration Testing](https://aws.amazon.com/security/penetration-testing/) e
+  [Microsoft Cloud Penetration Testing Rules of Engagement](https://www.microsoft.com/en-us/msrc/pentest-rules-of-engagement) —
+  as regras dos dois maiores provedores, lado a lado.
+- [Van Buren v. United States, na Cornell LII](https://www.law.cornell.edu/supremecourt/text/19-783) —
+  para quem quiser ler o raciocínio da Corte sobre "portões abertos e fechados".

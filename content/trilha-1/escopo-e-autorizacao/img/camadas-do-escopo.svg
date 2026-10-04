@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
+  <title id="t">Camadas do escopo e o deslocamento de um nome para fora dele</title>
+  <desc id="d">À esquerda, retângulos aninhados. O de fora é a internet e tudo o mais: proibido. Dentro dele, os ativos que o cliente usa, incluindo os de terceiros, que precisam de outra autorização. Dentro deste, o escopo autorizado, as faixas 10.20.0.0/24 e 198.51.100.16/28, com dois buracos: a exclusão 198.51.100.18, da folha de pagamento, e um host de outra empresa dentro da faixa. Uma seta mostra o nome portal.drogaria.example: no kickoff ele resolvia para 198.51.100.21, dentro do escopo; dias depois passou a resolver para 192.0.2.80, um IP de CDN fora do escopo. A regra: vale o IP autorizado, e o nome é conferido de novo antes de cada ação. À direita, as outras dimensões de um escopo além dos alvos: janela com fuso horário, ambiente, contas de teste, técnicas, limites de dados e origem do tráfego.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 12.5px; font-weight: 700; }
+    .s { font-size: 11.5px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke-width: 1.6; }
+  </style>
+  <defs>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f0a35a"/></marker>
+  </defs>
+  <rect width="900" height="500" fill="#121815"/>
+  <text class="t" x="30" y="34">Escopo: um território com fronteiras, buracos e nomes que mudam</text>
+
+  <rect x="30" y="56" width="540" height="420" rx="10" fill="#161d1a" stroke="#f06a6a" stroke-width="1.6"/>
+  <text class="m" x="46" y="80" style="fill:#f06a6a">Internet e todo o resto: proibido</text>
+
+  <rect x="50" y="94" width="500" height="362" rx="10" fill="#19211d" stroke="#e8c25a" stroke-width="1.6"/>
+  <text class="m" x="66" y="118" style="fill:#e8c25a">Ativos que o cliente usa</text>
+  <text class="s" x="66" y="136">inclui SaaS, CDN, hospedagem, MSSP: precisam do terceiro</text>
+
+  <rect x="70" y="150" width="460" height="230" rx="10" fill="#1c2521" stroke="#5ee08a" stroke-width="1.8"/>
+  <text class="m" x="86" y="174" style="fill:#5ee08a">Escopo autorizado (por escrito)</text>
+  <text class="s" x="86" y="194">10.20.0.0/24   198.51.100.16/28</text>
+
+  <rect x="90" y="214" width="190" height="58" rx="8" fill="#121815" stroke="#f06a6a" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text class="s" x="102" y="236" style="fill:#f06a6a">exclusão explícita</text>
+  <text class="s" x="102" y="256">198.51.100.18 (folha)</text>
+
+  <rect x="300" y="214" width="210" height="58" rx="8" fill="#121815" stroke="#e8c25a" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text class="s" x="312" y="236" style="fill:#e8c25a">outra empresa na faixa</text>
+  <text class="s" x="312" y="256">10.20.0.77 (não testar)</text>
+
+  <circle cx="140" cy="330" r="7" fill="#5ee08a"/>
+  <text class="s" x="156" y="326">198.51.100.21</text>
+  <text class="s" x="156" y="342">kickoff: portal.drogaria.example</text>
+
+  <circle cx="300" cy="420" r="7" fill="#f06a6a"/>
+  <text class="s" x="316" y="416">192.0.2.80 (CDN)</text>
+  <text class="s" x="316" y="432">três dias depois: o mesmo nome</text>
+  <path d="M146 336 C 180 400, 230 420, 290 420" fill="none" stroke="#f0a35a" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#o)"/>
+  <text class="s" x="86" y="400" style="fill:#f0a35a">o DNS mudou</text>
+
+  <rect class="box" x="600" y="56" width="270" height="420" rx="10" style="stroke:#5cc8d8"/>
+  <text class="m" x="616" y="82" style="fill:#5cc8d8">Além dos alvos, o</text>
+  <text class="m" x="616" y="100" style="fill:#5cc8d8">escopo também diz:</text>
+  <text class="s" x="616" y="132">• janela: datas, horas</text>
+  <text class="s" x="616" y="148">  e FUSO HORÁRIO</text>
+  <text class="s" x="616" y="176">• ambiente: produção ou</text>
+  <text class="s" x="616" y="192">  homologação</text>
+  <text class="s" x="616" y="220">• contas de teste entregues</text>
+  <text class="s" x="616" y="248">• técnicas permitidas e</text>
+  <text class="s" x="616" y="264">  proibidas (DoS, phishing,</text>
+  <text class="s" x="616" y="280">  físico...)</text>
+  <text class="s" x="616" y="308">• limites de dados: quantos</text>
+  <text class="s" x="616" y="324">  registros provam a falha</text>
+  <text class="s" x="616" y="352">• origem: de que IPs sai</text>
+  <text class="s" x="616" y="368">  o tráfego de teste</text>
+  <text class="s" x="616" y="404" style="fill:#5ee08a">Regra prática: vale o IP</text>
+  <text class="s" x="616" y="420" style="fill:#5ee08a">autorizado; confira o nome</text>
+  <text class="s" x="616" y="436" style="fill:#5ee08a">antes de CADA ação.</text>
+</svg>

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="t d">
+  <title id="t">Cadeia de autoridade: quem pode autorizar cada alvo</title>
+  <desc id="d">À esquerda, a cadeia da autorização: a organização dona dos ativos, a pessoa com autoridade para assinar (por exemplo o CTO ou o CISO, conforme a política interna), o documento assinado (carta de autorização e regras de engajamento) e a equipe de teste, que só age dentro dele. À direita, três grupos de alvos. Primeiro grupo, só o cliente autoriza: rede interna própria, faixa de IP registrada em nome do cliente e máquina virtual do cliente na nuvem quando a política pública do provedor já permite. Segundo grupo, cliente mais terceiro: hospedagem compartilhada, serviço gerenciado de nuvem que exige pedido prévio, SaaS multiempresa, equipamento de um MSSP e outra empresa do mesmo grupo. Terceiro grupo, ninguém deste contrato autoriza: IP digitado errado que pertence a outra empresa e nome antigo do cliente que hoje aponta para o servidor de outra organização.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 12.5px; font-weight: 700; }
+    .s { font-size: 11.5px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke-width: 1.6; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="540" fill="#121815"/>
+  <text class="t" x="30" y="34">Quem paga não é, necessariamente, quem pode autorizar</text>
+
+  <!-- left chain -->
+  <rect class="box" x="30" y="62" width="270" height="70" rx="8" style="stroke:#5cc8d8"/>
+  <text class="m" x="44" y="86" style="fill:#5cc8d8">1. Dono dos ativos</text>
+  <text class="s" x="44" y="106">a organização que controla</text>
+  <text class="s" x="44" y="122">cada sistema, rede ou prédio</text>
+  <line x1="165" y1="132" x2="165" y2="158" stroke="#5cc8d8" stroke-width="1.6" marker-end="url(#a)"/>
+
+  <rect class="box" x="30" y="162" width="270" height="70" rx="8" style="stroke:#5cc8d8"/>
+  <text class="m" x="44" y="186" style="fill:#5cc8d8">2. Quem tem autoridade</text>
+  <text class="s" x="44" y="206">quem a política interna deixa</text>
+  <text class="s" x="44" y="222">assinar (ex.: CTO ou CISO)</text>
+  <line x1="165" y1="232" x2="165" y2="258" stroke="#5cc8d8" stroke-width="1.6" marker-end="url(#a)"/>
+
+  <rect class="box" x="30" y="262" width="270" height="70" rx="8" style="stroke:#5cc8d8"/>
+  <text class="m" x="44" y="286" style="fill:#5cc8d8">3. Documento assinado</text>
+  <text class="s" x="44" y="306">carta de autorização + RoE:</text>
+  <text class="s" x="44" y="322">o quê, quando, como, até onde</text>
+  <line x1="165" y1="332" x2="165" y2="358" stroke="#5cc8d8" stroke-width="1.6" marker-end="url(#a)"/>
+
+  <rect class="box" x="30" y="362" width="270" height="70" rx="8" style="stroke:#5ee08a"/>
+  <text class="m" x="44" y="386" style="fill:#5ee08a">4. Equipe de teste</text>
+  <text class="s" x="44" y="406">age só dentro do documento;</text>
+  <text class="s" x="44" y="422">o que não está escrito, não pode</text>
+
+  <text class="s" x="30" y="466">Se qualquer elo falta (dono errado,</text>
+  <text class="s" x="30" y="482">signatário sem poder, documento</text>
+  <text class="s" x="30" y="498">vago), a autorização não cobre o alvo.</text>
+
+  <!-- right groups -->
+  <rect class="box" x="330" y="62" width="540" height="112" rx="8" style="stroke:#5ee08a"/>
+  <text class="m" x="346" y="86" style="fill:#5ee08a">Só o cliente autoriza</text>
+  <text class="s" x="346" y="108">• rede interna administrada pela própria TI</text>
+  <text class="s" x="346" y="126">• faixa de IP registrada em nome do cliente (RDAP/WHOIS)</text>
+  <text class="s" x="346" y="144">• VM do cliente na nuvem, se a política pública do</text>
+  <text class="s" x="346" y="160">  provedor já permite testá-la sem pedido prévio</text>
+
+  <rect class="box" x="330" y="190" width="540" height="166" rx="8" style="stroke:#e8c25a"/>
+  <text class="m" x="346" y="214" style="fill:#e8c25a">Cliente + terceiro (duas autorizações)</text>
+  <text class="s" x="346" y="236">• hospedagem compartilhada: o servidor atende outros sites</text>
+  <text class="s" x="346" y="254">• serviço gerenciado de nuvem que exige pedido ao provedor</text>
+  <text class="s" x="346" y="272">• SaaS multiempresa: o sistema é do fornecedor</text>
+  <text class="s" x="346" y="290">• equipamento operado por um MSSP</text>
+  <text class="s" x="346" y="308">• outra empresa do grupo (outro CNPJ, outra diretoria)</text>
+  <text class="s" x="346" y="334">O cliente "fala" pelos dados dele, não pela infraestrutura</text>
+  <text class="s" x="346" y="350">nem pelos clientes do terceiro.</text>
+
+  <rect class="box" x="330" y="372" width="540" height="112" rx="8" style="stroke:#f06a6a"/>
+  <text class="m" x="346" y="396" style="fill:#f06a6a">Ninguém deste contrato autoriza</text>
+  <text class="s" x="346" y="418">• IP digitado errado que pertence a outra empresa</text>
+  <text class="s" x="346" y="436">• nome antigo do cliente que hoje aponta para o</text>
+  <text class="s" x="346" y="452">  servidor de outra organização</text>
+  <text class="s" x="346" y="472">Não entra no escopo; corrija a lista.</text>
+
+  <line x1="300" y1="397" x2="326" y2="397" stroke="#5cc8d8" stroke-width="1.6" stroke-dasharray="4 4"/>
+  <line x1="300" y1="397" x2="300" y2="118" stroke="#5cc8d8" stroke-width="1.6" stroke-dasharray="4 4"/>
+  <line x1="300" y1="118" x2="326" y2="118" stroke="#5cc8d8" stroke-width="1.6" stroke-dasharray="4 4" marker-end="url(#a)"/>
+  <line x1="300" y1="272" x2="326" y2="272" stroke="#5cc8d8" stroke-width="1.6" stroke-dasharray="4 4" marker-end="url(#a)"/>
+  <text class="s" x="330" y="520">Classificação usada na Missão 1 (cliente / terceiro / fora).</text>
+</svg>
