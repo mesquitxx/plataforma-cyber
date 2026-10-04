@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" role="img" aria-labelledby="t d">
+  <title id="t">Máquina virtual e contêiner: onde fica o kernel</title>
+  <desc id="d">Duas pilhas lado a lado. À esquerda, a máquina virtual: hardware, sistema hospedeiro, hipervisor e, em cima, a VM do Kali com o seu próprio kernel e as suas ferramentas; a fronteira de isolamento é o hipervisor. À direita, o contêiner: hardware, Windows, a VM leve do WSL2 com um único kernel Linux, o Docker e, em cima, vários contêineres (kali, guacd, dvwa) que compartilham esse mesmo kernel, separados por namespaces, cgroups e capabilities. Por isso o comando uname -r dentro do Kali mostra o kernel do WSL. Uma nota lembra que a fronteira do contêiner é mais fina, e que a plataforma compensa com redes internas, sem modo privileged e sem docker.sock.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 11.5px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c66a; }
+  </style>
+  <rect width="900" height="420" fill="#121815"/>
+  <text class="t" x="30" y="32">Máquina virtual × contêiner: quem tem o próprio kernel</text>
+
+  <text class="h" x="40" y="62">Kali numa máquina virtual</text>
+  <g fill="#1a2420" stroke="#34413b" stroke-width="1.5">
+    <rect x="40" y="76" width="380" height="96" rx="6" stroke="#5ee08a"/>
+    <rect x="40" y="180" width="380" height="40" rx="6" stroke="#e8c66a"/>
+    <rect x="40" y="228" width="380" height="40" rx="6"/>
+    <rect x="40" y="276" width="380" height="40" rx="6"/>
+  </g>
+  <text class="b" x="56" y="98">VM do Kali</text>
+  <text class="s" x="56" y="118">ferramentas, /home/kali</text>
+  <text class="b g" x="56" y="146">kernel Linux PRÓPRIO</text>
+  <text class="s" x="56" y="162">(uname -r mostra o kernel do Kali)</text>
+  <text class="b y" x="56" y="205">hipervisor (VirtualBox, VMware, Hyper-V)</text>
+  <text class="b" x="56" y="253">sistema hospedeiro (Windows)</text>
+  <text class="b" x="56" y="301">hardware</text>
+
+  <text class="h" x="480" y="62">Kali num contêiner (esta plataforma)</text>
+  <g fill="#1a2420" stroke="#34413b" stroke-width="1.5">
+    <rect x="480" y="76" width="120" height="56" rx="6" stroke="#5ee08a"/>
+    <rect x="610" y="76" width="120" height="56" rx="6"/>
+    <rect x="740" y="76" width="120" height="56" rx="6"/>
+    <rect x="480" y="140" width="380" height="32" rx="6"/>
+    <rect x="480" y="180" width="380" height="40" rx="6" stroke="#e8c66a"/>
+    <rect x="480" y="228" width="380" height="40" rx="6"/>
+    <rect x="480" y="276" width="380" height="40" rx="6"/>
+  </g>
+  <text class="b" x="492" y="98">kali</text>
+  <text class="s" x="492" y="118">ferramentas</text>
+  <text class="b" x="622" y="98">guacd</text>
+  <text class="b" x="752" y="98">dvwa</text>
+  <text class="s" x="752" y="118">(lab dvwa)</text>
+  <text class="b" x="492" y="161">Docker: namespaces, cgroups, capabilities</text>
+  <text class="b y" x="492" y="198">UM kernel Linux, compartilhado</text>
+  <text class="s" x="492" y="213">(o do WSL2: uname -r no Kali mostra ...-WSL2)</text>
+  <text class="b" x="492" y="253">VM leve do WSL2 e Windows</text>
+  <text class="b" x="492" y="301">hardware</text>
+
+  <rect x="40" y="336" width="820" height="66" rx="8" fill="#16201c" stroke="#34413b"/>
+  <text class="b" x="56" y="360">Fronteira da VM: o hipervisor. Fronteira do contêiner: o kernel compartilhado, mais fina.</text>
+  <text class="s" x="56" y="382">Por isso a plataforma compensa: redes internas, nenhum contêiner privileged, nenhum docker.sock montado.</text>
+</svg>

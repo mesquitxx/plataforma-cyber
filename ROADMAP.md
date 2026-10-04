@@ -194,7 +194,10 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   WSL sobre a linha do tempo de um engajamento em UTC a partir de três fusos, a auditoria da
   cadeia de custódia de uma pasta de evidências versionada no Git e a triagem de notas de
   achado contra critérios de pronto, todas fictícias, e walkthrough do caderno-modelo com
-  `script`/`scriptreplay` e Git) escritos.
+  `script`/`scriptreplay` e Git) escritos. Trilha 2: 2.1 "Kali Linux e organização do
+  ambiente" (lab `kali`; três missões no próprio Kali: o inventário da attack box e o serviço
+  que ela expõe, a bancada de um engajamento fictício conferida por um hash das pastas e
+  permissões, e a prova de dentro do isolamento pelos nomes que o Kali resolve) escrito.
 
 ## Fase 10 — Conteúdo: Trilhas 3–5
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.

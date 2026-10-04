@@ -1,0 +1,1474 @@
+---
+slug: kali-linux
+track: trilha-2
+title: "Kali Linux e organização do ambiente"
+prerequisites: [trilha-0, escopo-e-autorizacao]
+lab: kali
+tasks:
+  - slug: missao-1-quem-sou-eu
+    title: "Missão 1 — Quem sou eu e onde estou"
+    type: flag
+    prompt: "A porta e o nome do programa do único serviço TCP que o Kali deixa escutando fora do loopback, no formato FLAG{porta-Programa}, com o nome do programa exatamente como o ss mostra."
+    hint: "O ss lista quem escuta. Com -t (TCP), -l (escutando), -n (números) e -p (programa). Ignore o que escuta em 127.0.0.11: é o DNS embutido do Docker."
+    flag:
+      hash: "scrypt$16384$8$1$2222f6c2759bc84b457e29d518effba73482c8e9680e4a1cdfdfaf6d1ae7be07"
+      salt: "e8a72643892bf4876ca24ef5d3697fdb"
+  - slug: missao-2-bancada-do-engajamento
+    title: "Missão 2 — A bancada do engajamento"
+    type: flag
+    prompt: "Os 12 primeiros caracteres hexadecimais da impressão digital da sua bancada (o comando find ... | sha256sum da seção 5.4), dentro de FLAG{ }."
+    hint: "São 22 pastas contando a raiz, todas com permissão 700. Calcule os hosts do /28, tire o endereço de rede, o de broadcast e as exclusões, e não crie pasta para o que não está na carta."
+    flag:
+      hash: "scrypt$16384$8$1$7aa1c4e6f0542b0c0b7a0e7180a2450d50a7858974f22570082d320ce8a52398"
+      salt: "42fae6a9d58568547083202645d5063d"
+  - slug: missao-3-isolamento-por-dentro
+    title: "Missão 3 — O isolamento visto de dentro"
+    type: flag
+    prompt: "Dos oito nomes da lista da seção 5.5, os que o Kali consegue resolver no lab kali, em ordem alfabética, separados por hífen, dentro de FLAG{ }."
+    hint: "getent hosts <nome> imprime o endereço quando o nome resolve e não imprime nada (código 2) quando não resolve. Teste os oito."
+    flag:
+      hash: "scrypt$16384$8$1$2ae326b97b1ef4799bff02bcd61b4adbf8200c1e5a9dd813b98141d8f21eca3b"
+      salt: "721ed6bd7075d58e6179e900afa99d4f"
+  - slug: quiz-final
+    title: "Quiz — Kali Linux e organização do ambiente"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "O Kali Linux é derivado de qual distribuição, e o que isso significa no dia a dia?"
+        options:
+          - "Do Debian; por isso usa apt e pacotes .deb, e o que você aprendeu de apt e dpkg na Trilha 0 vale nele"
+          - "Do Ubuntu; por isso usa o gerenciador snap"
+          - "Do Arch; por isso usa pacman"
+          - "Não é derivado de nenhuma: tem formato de pacote próprio"
+        answer: 0
+        explanation: "O Kali é uma distribuição baseada no Debian (o sucessor do BackTrack, refeito sobre Debian em 2013). Isso quer dizer pacotes .deb, apt e dpkg, a mesma árvore de diretórios e a mesma lógica de repositórios que você viu no 0.4 — com repositórios próprios, assinados pela chave do Kali."
+      - question: "O que é o kali-rolling e qual o risco que vem junto com ele?"
+        options:
+          - "Uma versão congelada, que nunca recebe atualização"
+          - "O ramo padrão, atualizado continuamente: você recebe correções cedo, mas também recebe cedo o que estiver quebrado ou comprometido na origem, como aconteceu com o xz-utils em março de 2024"
+          - "Um ramo só para ARM"
+          - "Um ramo com ferramentas pagas"
+        answer: 1
+        explanation: "Rolling release é atualização contínua. A vantagem é ter as ferramentas e correções mais novas; o preço é a exposição rápida a problemas da origem. O backdoor do xz-utils (CVE-2024-3094) chegou ao kali-rolling e afetou o Kali entre 26 e 29 de março de 2024. Quem precisa de mais estabilidade pode usar o kali-last-snapshot."
+      - question: "Por que o Kali passou a usar um usuário comum (não-root) por padrão, a partir da 2020.1?"
+        options:
+          - "Porque as ferramentas deixaram de funcionar como root"
+          - "Por exigência da lei"
+          - "Para economizar memória"
+          - "Porque rodar tudo como superusuário contraria o princípio do menor privilégio: um erro de digitação ou um programa malicioso fazem estrago no sistema inteiro. Com usuário comum, o root só entra quando você pede, com sudo"
+        answer: 3
+        explanation: "Até a 2019.4, o padrão era root/toor. A 2020.1 trocou por um usuário comum (kali/kali), alinhando o Kali à boa prática de administração. Neste lab, o usuário kali está no grupo sudo, mas o dia a dia acontece sem privilégio."
+      - question: "Você digitou sudo apt-get install hydra no Kali desta plataforma e recebeu 'Unable to locate package hydra'. Por quê?"
+        options:
+          - "Porque o hydra foi removido do Kali"
+          - "Porque o usuário kali não tem sudo"
+          - "Porque o Kali do lab não tem internet, de propósito: o apt-get update falha ao resolver http.kali.org, e as listas de pacotes foram apagadas na construção da imagem. Ferramenta nova entra pelo Dockerfile e chega com scripts/lab.sh rebuild, no terminal do WSL"
+          - "Porque o nome correto é hydra-gtk"
+        answer: 2
+        explanation: "A attack box roda em redes internas, sem rota para fora: o apt-get update mostra 'Temporary failure resolving http.kali.org'. Isso é uma regra de isolamento, não um defeito. O caminho é editar labs/base/kali/Dockerfile e rodar scripts/lab.sh rebuild (único momento com internet)."
+      - question: "Dentro do Kali do lab, uname -r mostra uma versão terminada em -microsoft-standard-WSL2. O que isso prova?"
+        options:
+          - "Que o Kali está quebrado"
+          - "Que o Kali é um contêiner: ele não tem kernel próprio e usa o kernel do WSL2, o mesmo de todos os contêineres. A fronteira de isolamento é o kernel compartilhado, mais fina que a de uma máquina virtual"
+          - "Que o Kali é uma máquina virtual do Hyper-V"
+          - "Que o Kali foi instalado pela Microsoft Store"
+        answer: 1
+        explanation: "Uma VM tem o próprio kernel, separado do hospedeiro pelo hipervisor. Um contêiner é um processo isolado por namespaces, cgroups e capabilities, mas usa o kernel do hospedeiro. Por isso a plataforma compensa: redes internas, nenhum contêiner privileged e nenhum docker.sock montado."
+      - question: "Você criou /opt/notas.txt com sudo e guardou um relatório em ~/engajamentos. Depois clicou em Resetar. O que sobrou?"
+        options:
+          - "Nada: o Resetar apaga tudo"
+          - "Os dois arquivos"
+          - "Só o que está em ~/engajamentos: /home/kali é um volume (kali_home) que sobrevive ao Resetar; o resto do contêiner é recriado a partir da imagem"
+          - "Só o /opt/notas.txt"
+        answer: 2
+        explanation: "O Resetar recria o contêiner do Kali a partir da imagem: tudo o que você mudou fora da home some. O /home/kali é um volume Docker e só é apagado pelo purge, que existe apenas no terminal. Medimos isso no lab: /tmp e /opt voltaram limpos, ~/engajamentos continuou lá."
+      - question: "O ss -tlnp no Kali mostra o Xvnc escutando em 0.0.0.0:5901. Do ponto de vista de segurança, o que isso quer dizer?"
+        options:
+          - "Nada: 0.0.0.0 significa que ninguém consegue conectar"
+          - "Que a attack box também tem superfície de ataque: a porta aceita conexões de qualquer interface do Kali, inclusive da lab_net, onde ficam os alvos. Quem a protege é a senha do VNC; o mais seguro seria escutar só na interface de que o guacd precisa"
+          - "Que o Kali está exposto para a internet"
+          - "Que o VNC está desligado"
+        answer: 1
+        explanation: "0.0.0.0 é 'todas as interfaces IPv4 da máquina'. No Kali, isso inclui a desktop_net (onde está o guacd, que precisa da porta) e a lab_net (onde ficam os alvos, que não precisam). Não há internet nessas redes, mas um alvo comprometido poderia tentar a porta. É o princípio do menor privilégio aplicado a serviços: escute só onde precisa."
+      - question: "Qual sequência verifica de verdade uma ISO do Kali baixada da internet?"
+        options:
+          - "Conferir se o tamanho do arquivo bate com o do site"
+          - "Calcular o SHA-256 da ISO e comparar com o hash publicado no mesmo espelho, sem assinatura"
+          - "Importar a chave do Kali e conferir a impressão digital, verificar a assinatura do SHA256SUMS com gpg --verify, e só então comparar o SHA-256 da ISO com a linha do SHA256SUMS"
+          - "Abrir a ISO e ver se o desktop aparece"
+        answer: 2
+        explanation: "O hash só prova que o arquivo bate com a lista; a assinatura GPG prova que a lista veio do Kali. Sem a assinatura, um espelho adulterado pode trocar a ISO e a lista ao mesmo tempo. Por isso a ordem: chave conferida → assinatura válida → hash da ISO."
+      - question: "Na campanha contra pesquisadores de segurança revelada pelo Google TAG em 25 de janeiro de 2021, como as vítimas eram comprometidas?"
+        options:
+          - "Por um bug no Kali"
+          - "Os atacantes, atribuídos a um grupo apoiado pelo governo da Coreia do Norte, se passavam por pesquisadores, ofereciam colaboração e mandavam um projeto do Visual Studio com uma DLL maliciosa; outras vítimas foram comprometidas só por visitar o blog dos atacantes"
+          - "Por senhas fracas no GitHub"
+          - "Por um pendrive deixado em conferências"
+        answer: 1
+        explanation: "O alvo eram justamente pessoas que lidam com exploits. A recomendação do próprio Google: separar as atividades em máquinas físicas ou virtuais diferentes — navegação geral, contato com a comunidade, arquivos de terceiros e a sua pesquisa. É a razão de uma attack box isolada."
+      - question: "Por que criar a pasta de um engajamento com umask 077 em vez do padrão 022?"
+        options:
+          - "Porque com 022 as pastas nascem 755 (todos podem listar e entrar); com 077 elas nascem 700, e só o seu usuário lê as anotações, que são o arquivo mais sensível do teste"
+          - "Porque 077 deixa os arquivos mais rápidos"
+          - "Porque o Kali não aceita 022"
+          - "Porque 077 cifra os arquivos"
+        answer: 0
+        explanation: "O umask diz quais permissões tirar de quem cria. 022 tira só a escrita de grupo e outros (pastas 755); 077 tira tudo de grupo e outros (pastas 700). Na Missão 2, o mkdir com o umask padrão gera uma impressão digital diferente: é exatamente o erro que ela quer que você perceba."
+      - question: "Por que o Kali do lab não tem rota padrão (ip route só mostra as redes locais)?"
+        options:
+          - "Porque o Docker esqueceu de criar"
+          - "Porque as redes do lab são internal: true: o Docker não dá gateway nem NAT a elas, então qualquer destino fora das duas redes locais dá 'Network is unreachable'"
+          - "Porque o Kali bloqueia rotas por padrão"
+          - "Porque o WSL não tem internet"
+        answer: 1
+        explanation: "Sem rota padrão, o kernel não sabe para onde mandar pacotes destinados a redes que não são as dele — o ping a 1.1.1.1 falha antes mesmo de sair. É uma das camadas do isolamento, provada pelo teste 3 do scripts/lab.sh verify."
+      - question: "Por que o Kali consegue resolver o nome guacd, mas não guac-db nem dvwa (no lab kali)?"
+        options:
+          - "Porque o guacd está na internet"
+          - "Porque guac-db é um nome inválido"
+          - "Porque o arquivo /etc/hosts lista só o guacd"
+          - "Porque o DNS embutido do Docker (127.0.0.11) só responde nomes de contêineres que dividem uma rede com quem pergunta: o guacd está na desktop_net com o Kali; o guac-db está só na guac_back; o dvwa nem existe no lab kali"
+        answer: 3
+        explanation: "O Docker dá a cada contêiner um resolvedor embutido em 127.0.0.11 que conhece os nomes da rede de cada contêiner. A segmentação de redes vira segmentação de nomes: o Kali não descobre o banco do Guacamole nem pelo nome. O /etc/hosts só tem o localhost e o próprio Kali."
+glossary:
+  - term: penetration testing distribution
+    definition: "Distribuição de pentest: um sistema operacional (em geral Linux) que já vem com as ferramentas de teste de segurança empacotadas, configuradas e mantidas por uma equipe. Kali, ParrotOS e BlackArch são exemplos."
+  - term: Debian
+    definition: "Uma das distribuições Linux mais antigas e influentes, mantida por uma comunidade de voluntários. Usa pacotes .deb e o apt. O Kali e o Ubuntu são derivados do Debian."
+  - term: BackTrack
+    definition: "Distribuição de pentest que antecedeu o Kali. Em março de 2013, a mesma equipe lançou o Kali Linux 1.0 como sucessor, refeito sobre o Debian."
+  - term: rolling release
+    definition: "Modelo de distribuição em que o sistema é atualizado continuamente, sem 'versões grandes'. Você recebe as novidades e correções cedo — e também cedo o que estiver quebrado ou comprometido na origem."
+  - term: snapshot
+    definition: "Foto de um estado num momento. No Kali, o ramo kali-last-snapshot congela o rolling a cada versão numerada (como 2026.3), para quem prefere atualizações mais testadas. Em VMs, um snapshot guarda o estado da máquina para voltar depois."
+  - term: metapackage
+    definition: "Metapacote: um pacote vazio que só declara dependências, para instalar um conjunto de programas de uma vez. No Kali, kali-linux-default traz as ferramentas da imagem padrão e kali-tools-web traz as ferramentas de ataque web."
+  - term: package repository
+    definition: "Repositório de pacotes: o servidor de onde o apt baixa pacotes e listas. Cada repositório assina suas listas com uma chave; o apt recusa o que não bate com a chave confiável."
+  - term: archive signing key
+    definition: "Chave de assinatura do repositório: o par de chaves com que a distribuição assina as listas de pacotes. Se a chave muda (como no Kali, em abril de 2025), o apt update falha até a chave nova ser instalada."
+  - term: GPG
+    definition: "GNU Privacy Guard: programa que cria e verifica assinaturas digitais e cifra arquivos com o padrão OpenPGP. É com ele que se confere que um SHA256SUMS foi publicado pelo Kali, e não por um espelho adulterado."
+  - term: ISO image
+    definition: "Imagem ISO: um arquivo que contém o conteúdo inteiro de um disco de instalação. A forma usual de baixar uma distribuição para instalar, rodar ao vivo ou criar um pendrive."
+  - term: live USB
+    definition: "Pendrive com um sistema que dá boot direto, sem instalar no disco. O Kali Live pode ter persistência: uma partição extra onde as mudanças sobrevivem ao desligar."
+  - term: hypervisor
+    definition: "Hipervisor: o software que cria e roda máquinas virtuais, dando a cada uma hardware virtual e um kernel próprio (VirtualBox, VMware, Hyper-V). É a fronteira de isolamento de uma VM."
+  - term: namespace
+    definition: "Recurso do kernel Linux que dá a um grupo de processos a sua própria visão de algo — processos, rede, montagens, nomes de máquina, usuários. É a base dos contêineres: o Kali do lab vê só as interfaces de rede do namespace dele."
+  - term: Linux capabilities
+    definition: "Divisão dos poderes do root em pedaços independentes (CAP_NET_RAW para pacotes crus, CAP_NET_ADMIN para configurar a rede etc.). Um programa pode ganhar só a capacidade de que precisa, e o Docker tira as perigosas dos contêineres."
+  - term: raw socket
+    definition: "Socket cru: uma forma de o programa montar pacotes de rede por conta própria, cabeçalho incluído. Exige root ou a capability CAP_NET_RAW; é por isso que varreduras como o SYN scan do nmap pedem sudo."
+  - term: image digest
+    definition: "Digest da imagem: o hash SHA-256 que identifica exatamente uma imagem de contêiner. Uma tag como latest pode mudar de conteúdo; um digest (@sha256:...) não muda. Fixar o digest torna a construção reproduzível."
+  - term: Docker volume
+    definition: "Volume Docker: uma área de armazenamento que o Docker guarda fora da camada do contêiner e monta dentro dele. Sobrevive quando o contêiner é recriado. Aqui, o volume kali_home é o /home/kali."
+  - term: internal network
+    definition: "Rede interna do Docker (internal: true): uma rede sem gateway e sem NAT, em que os contêineres só falam entre si. Não há rota para a internet nem para o computador hospedeiro."
+  - term: embedded DNS
+    definition: "DNS embutido do Docker: o resolvedor em 127.0.0.11 que cada contêiner de uma rede definida pelo usuário recebe. Responde os nomes dos contêineres que dividem rede com quem pergunta, e só repassa o resto ao host se houver como."
+  - term: VNC
+    definition: "Virtual Network Computing: protocolo para ver e controlar a tela de outra máquina pela rede. Aqui, um servidor VNC dentro do Kali desenha o desktop e o guacd o converte para o navegador. O VNC clássico não cifra o tráfego."
+  - term: guacd
+    definition: "O componente do Apache Guacamole que fala os protocolos de tela remota (VNC, RDP, SSH) com as máquinas e os traduz para o protocolo do Guacamole, que a aplicação web entrega ao navegador."
+  - term: Win-KeX
+    definition: "Kali Desktop EXperience for Windows: pacote do Kali (kali-win-kex) que dá um desktop gráfico ao Kali instalado no WSL 2, com modo janela, modo integrado e área de transferência compartilhada."
+  - term: NetHunter
+    definition: "Kali NetHunter: a plataforma do Kali para dispositivos Android, com ferramentas de teste e, em aparelhos compatíveis, suporte a ataques Wi-Fi e USB."
+  - term: Kali Purple
+    definition: "Variante do Kali, anunciada na versão 2023.1, voltada à defesa (blue e purple team): ferramentas como Suricata, Zeek, Arkime e TheHive, e uma arquitetura de referência de SOC."
+  - term: OPSEC
+    definition: "Operations security: a disciplina de proteger as informações sobre a própria operação. Para o pentester, inclui proteger a attack box, as notas e as credenciais encontradas, e saber que rastros as ferramentas deixam."
+---
+
+import caminhoDaTela from "./img/caminho-da-tela.svg";
+import attackBoxERedes from "./img/attack-box-e-redes.svg";
+import vmEConteiner from "./img/vm-e-conteiner.svg";
+import oQuePersiste from "./img/o-que-persiste.svg";
+import desktopDoKali from "./img/desktop-do-kali.png";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em janeiro de 2021, o Google revelou que um grupo apoiado por um governo estava mirando
+pessoas exatamente como você vai ser: gente que estuda segurança. Os atacantes criavam
+perfis de "pesquisadores", ofereciam colaboração e mandavam um projeto com um exploit
+pronto para compilar. Quem abria o projeto na própria máquina de trabalho entregava a
+máquina. A defesa que o próprio Google recomendou não foi uma ferramenta mágica, foi
+**organização**: separar a máquina de pesquisa da máquina do dia a dia.
+
+Este é o primeiro módulo do Kit do Pentester. Antes de varrer portas (2.4), interceptar
+requisições (2.5) ou capturar tráfego (2.6), você precisa conhecer a bancada onde tudo isso
+acontece: a <GlossaryTerm term="attack box">attack box</GlossaryTerm>, que nesta plataforma
+é o <GlossaryTerm term="Kali Linux">Kali Linux</GlossaryTerm>. Ela é, ao mesmo tempo, a sua
+melhor ferramenta e um dos seus maiores riscos: concentra as ferramentas, as anotações, as
+credenciais que você encontra e o mapa da rede do cliente. Um pentester que não sabe o que
+tem na própria máquina, onde guarda as coisas e o que ela expõe está mal preparado — por
+mais técnicas de ataque que conheça.
+
+<Figure
+  src={caminhoDaTela}
+  alt="Cinco caixas da esquerda para a direita: navegador, guac-proxy, guacamole, guacd e kali, ligadas por setas, com a rede de cada trecho embaixo e uma faixa dizendo que nenhuma rede depois do navegador tem internet."
+  caption="O caminho que a sua tela percorre até o Kali: cada salto passa por uma rede interna, e a única porta publicada no PC é a do guac-proxy, no loopback."
+/>
+
+**Ao final, você vai saber:**
+
+- explicar o que é o Kali, de onde ele vem, como é montado (Debian, rolling release,
+  metapacotes) e quais políticas de segurança ele adota por padrão;
+- comparar as formas de rodar o Kali (máquina virtual, contêiner, pendrive, WSL) e dizer
+  por que esta plataforma usa um contêiner, e o que isso muda na fronteira de isolamento;
+- fazer o inventário de uma attack box: quem você é, que privilégio tem, que ferramentas
+  existem e que serviços ela própria expõe;
+- montar a bancada de um engajamento dentro do Kali, a partir de uma carta de autorização,
+  com a estrutura e as permissões certas;
+- provar, de dentro do Kali, como a plataforma isola os alvos;
+- proteger a sua bancada: verificar o que você baixa, não expor serviços, isolar código de
+  terceiros e guardar o trabalho onde ele sobrevive.
+
+**Pré-requisitos:**
+
+- **Trilha 0 inteira** — você vai usar o terminal e as permissões do 0.3, o `apt` e os
+  processos do 0.4, as redes e o CIDR do 0.2, e o raciocínio de "conferir em vez de
+  acreditar" do 0.1.
+- **1.3 — Escopo, regras de engajamento e autorização** — a Missão 2 parte de uma carta de
+  autorização e você decide o que entra e o que fica de fora. Vai ajudar também lembrar a
+  estrutura do caderno do 1.5, que aqui ganha uma casa dentro do Kali.
+
+**Tempo estimado:** 4 a 5 horas, incluindo as três missões no laboratório.
+
+<Callout variant="ethics">
+Este módulo não ataca nada: o lab `kali` não tem nenhum alvo na rede. Mas a partir daqui
+você passa a ter, à mão, as mesmas ferramentas que atacantes reais usam. A regra não muda,
+e vai ficar mais importante a cada módulo: elas só se apontam para o que é seu ou para o
+que alguém com autoridade autorizou por escrito — como os laboratórios desta plataforma.
+Ter a ferramenta não é ter a permissão.
+</Callout>
+
+## 2. Teoria aprofundada — a attack box por dentro
+
+### 2.1 O que é uma distribuição de pentest, e por que ela existe
+
+Quase toda ferramenta de segurança é software livre que você poderia instalar sozinho num
+Linux qualquer. Então por que existe o Kali? Faça a conta: um teste comum usa um scanner de
+portas, um proxy web, um capturador de tráfego, ferramentas de força bruta, de quebra de
+senha, de enumeração de diretórios, de exploração. Cada uma tem dependências próprias
+(versões de Python, Java, Ruby, bibliotecas de rede), e algumas brigam entre si. Instalar e
+manter isso à mão é um trabalho de semanas que se repete a cada máquina nova.
+
+Uma <GlossaryTerm term="penetration testing distribution">distribuição de pentest</GlossaryTerm>
+(em inglês, *penetration testing distribution*: um sistema que já vem com as ferramentas de
+teste empacotadas e mantidas) resolve isso com três coisas:
+
+1. **Empacotamento.** Cada ferramenta vira um pacote do sistema, com as dependências
+   resolvidas e testadas juntas. `apt install sqlmap` e pronto.
+2. **Manutenção.** Uma equipe acompanha as versões novas e corrige o que quebra. Você recebe
+   tudo pela atualização normal do sistema.
+3. **Confiança.** Os pacotes vêm de um repositório assinado. Você não baixa um binário de um
+   site qualquer: o `apt` só aceita o que foi assinado pela chave da distribuição.
+
+Esse terceiro ponto é o mais importante e o mais esquecido. Uma ferramenta de segurança roda
+com acesso à rede, muitas vezes com `sudo`, e processa dados hostis. Instalar uma versão
+adulterada é entregar a sua máquina. A distribuição concentra a confiança num ponto que pode
+ser verificado.
+
+### 2.2 De onde vem o Kali
+
+O Kali é mantido pela OffSec (antes chamada Offensive Security) como projeto comunitário. Ele
+é o sucessor do <GlossaryTerm term="BackTrack">BackTrack</GlossaryTerm>, a distribuição de
+pentest mais popular dos anos 2000. Em **13 de março de 2013**, na Black Hat Europe, a mesma
+equipe lançou o **Kali Linux 1.0**, refeito do zero sobre o
+<GlossaryTerm term="Debian">Debian</GlossaryTerm> (uma das distribuições Linux mais antigas,
+mantida por uma comunidade de voluntários, a mesma base do Ubuntu).
+
+Ser derivado do Debian tem consequências práticas que você já conhece da Trilha 0: os
+pacotes são `.deb`, o gerenciador é o <GlossaryTerm term="apt">apt</GlossaryTerm>, o banco de
+pacotes instalados é o do <GlossaryTerm term="dpkg">dpkg</GlossaryTerm>, a árvore de
+diretórios é a mesma. Quase tudo que funciona num Debian funciona no Kali.
+
+Alguns marcos da história, conferidos no blog oficial do Kali:
+
+| Quando | O que mudou |
+|---|---|
+| 13/03/2013 | Kali 1.0, sucessor do BackTrack, sobre Debian |
+| janeiro de 2016 | Kali 2016.1: o Kali vira *rolling release* |
+| 2019.4 | Xfce passa a ser o ambiente gráfico em destaque |
+| 28/01/2020 | Kali 2020.1: o usuário padrão deixa de ser root |
+| 13/03/2023 | Kali 2023.1: nasce o Kali Purple, voltado à defesa |
+
+O Kali que roda no seu lab é da série 2026 (você vai ver o `VERSION="2026.3"` no
+`/etc/os-release` na Missão 1).
+
+### 2.3 Rolling release: sempre novo, sempre exposto
+
+Distribuições tradicionais lançam versões grandes de tempos em tempos e, entre elas, só
+corrigem falhas. O Kali usa outro modelo desde 2016: o
+<GlossaryTerm term="rolling release">rolling release</GlossaryTerm>, em que o sistema é
+atualizado **continuamente**. A documentação oficial descreve os ramos (*branches*):
+
+- **`kali-rolling`** — o ramo padrão, que a maioria deve usar. É atualizado o tempo todo,
+  recebendo pacotes do `kali-dev` depois de uma checagem de estabilidade.
+- **`kali-last-snapshot`** — a cada versão numerada (2026.1, 2026.2...), o rolling é
+  congelado e copiado para este ramo. Quem o usa recebe atualizações de versão em versão,
+  mais testadas. A documentação o chama de opção "mais segura". É um
+  <GlossaryTerm term="snapshot">snapshot</GlossaryTerm>, uma foto do sistema num momento.
+- **`kali-experimental`** e **`kali-bleeding-edge`** — ramos parciais, para pacotes em teste
+  e para pacotes atualizados automaticamente direto da origem. Instáveis por natureza.
+
+O ponto de segurança é este: rolling release significa que o que acontecer na origem chega
+rápido até você. Na maior parte do tempo, isso é uma vantagem (a correção chega cedo). Mas
+quando a origem é comprometida, o problema também chega cedo. Você vai ver exatamente isso
+no caso do xz-utils (seção 4).
+
+Repare como esta plataforma lida com o problema: a imagem do Kali é construída a partir de
+um **digest fixo** da imagem oficial (`kalilinux/kali-rolling@sha256:d1d7...`, na primeira
+linha do `labs/base/kali/Dockerfile`). Um <GlossaryTerm term="image digest">image
+digest</GlossaryTerm> é o hash SHA-256 que identifica exatamente uma imagem; ao contrário de
+uma tag como `latest`, ele nunca muda de conteúdo. O Kali do seu lab só muda quando você
+decide reconstruí-lo.
+
+### 2.4 Metapacotes: como o Kali se organiza
+
+O Kali tem centenas de ferramentas, e ninguém precisa de todas. Elas são agrupadas em
+<GlossaryTerm term="metapackage">metapacotes</GlossaryTerm> (pacotes vazios que só declaram
+dependências, para instalar um conjunto de uma vez). A documentação oficial lista os de
+sistema:
+
+| Metapacote | O que traz |
+|---|---|
+| `kali-linux-core` | O sistema base, sempre incluído |
+| `kali-linux-headless` | A instalação padrão sem interface gráfica |
+| `kali-linux-default` | As ferramentas das imagens de desktop padrão |
+| `kali-linux-large` | O antigo conjunto padrão, maior |
+| `kali-linux-everything` | Todos os metapacotes e ferramentas |
+| `kali-linux-arm`, `kali-linux-nethunter` | Conjuntos para ARM e para o NetHunter |
+
+E os de ferramentas, com o prefixo `kali-tools-*`, um por área: `kali-tools-web` (ataques a
+aplicações web), `kali-tools-passwords` (quebra de senhas), `kali-tools-wireless` (Wi-Fi,
+Bluetooth, rádio), `kali-tools-forensics`, `kali-tools-exploitation` e outros. O menu do Kali
+segue a mesma lógica: as ferramentas aparecem agrupadas por etapa do teste, parecido com as
+fases da metodologia que você viu no 1.2.
+
+Por que isso importa para você? Porque **a sua attack box não precisa ter tudo**, e ter tudo
+tem custo: mais disco, mais RAM, mais software com falhas para atualizar. O Kali desta
+plataforma é propositalmente enxuto. Ele não instala nenhum metapacote de ferramentas: só um
+desktop leve e um punhado de ferramentas escolhidas a dedo para as Trilhas 2 a 4 (você vai
+fazer o inventário na Missão 1). Repositórios são servidores de onde o `apt` baixa pacotes —
+um <GlossaryTerm term="package repository">package repository</GlossaryTerm> — e o do Kali
+está fora de alcance quando o lab está ligado.
+
+### 2.5 As políticas de segurança do Kali
+
+Duas decisões de projeto do Kali dizem muito sobre como uma attack box deve se comportar.
+
+**Usuário comum por padrão.** Até a versão 2019.4, você entrava no Kali como
+<GlossaryTerm term="root">root</GlossaryTerm>, com a senha `toor`. Na 2020.1, o Kali passou a
+criar um usuário comum, sem privilégios (`kali`/`kali`), e explicou o motivo: rodar tudo como
+superusuário contraria a boa prática de administração. Um erro de digitação como root
+estraga o sistema inteiro; uma ferramenta maliciosa rodando como root é dona da máquina. Com
+um usuário comum, o poder total só entra quando você pede, com
+<GlossaryTerm term="sudo">sudo</GlossaryTerm>, para o comando que precisa. É o princípio do
+menor privilégio, que você viu no 0.3, aplicado à própria ferramenta de ataque.
+
+**Nenhum serviço de rede escutando por padrão.** A política de serviços de rede do Kali diz
+que ele "não habilita nenhum serviço que escute externamente por padrão" e que serviços como
+SSH, Apache e PostgreSQL não sobem sozinhos no boot. A justificativa oficial: o Kali pode ser
+usado em ambientes "hostis", e o objetivo é minimizar a exposição no estado padrão. Pense
+nisso: você leva a sua attack box para dentro da rede de um cliente. Qualquer serviço que ela
+deixe aberto é uma porta para quem já está lá dentro — inclusive um atacante de verdade.
+Você vai conferir, na Missão 1, que a attack box desta plataforma tem **um** serviço
+escutando, e vai pensar sobre isso.
+
+### 2.6 As formas de rodar o Kali
+
+O Kali roda em muitos lugares, cada um com um tipo diferente de fronteira de isolamento:
+
+| Forma | Como é | A favor | Contra |
+|---|---|---|---|
+| Instalação direta (*bare metal*) | O Kali é o sistema do computador | Desempenho total, acesso direto a Wi-Fi e USB | Uma máquina só para isso; tudo que der errado é no seu hardware |
+| Máquina virtual | O Kali roda numa <GlossaryTerm term="virtual machine">VM</GlossaryTerm>, dentro de outro sistema | Isolamento forte; snapshots para voltar atrás | Mais RAM e disco |
+| Pendrive ao vivo | <GlossaryTerm term="live USB">Live USB</GlossaryTerm>: dá boot sem instalar, com persistência opcional | Portátil, não toca no disco | Lento; persistência limitada |
+| WSL | O Kali como distribuição do <GlossaryTerm term="WSL">WSL</GlossaryTerm>, com desktop pelo <GlossaryTerm term="Win-KeX">Win-KeX</GlossaryTerm> | Prático no Windows | Integrado demais ao Windows para servir de bancada isolada |
+| Contêiner | A imagem oficial `kalilinux/kali-rolling`, no Docker | Leve, descartável, reproduzível | Fronteira mais fina (kernel compartilhado); a imagem oficial vem **sem nenhuma ferramenta** |
+| Celular | <GlossaryTerm term="NetHunter">NetHunter</GlossaryTerm>, no Android | Testes em campo | Hardware limitado |
+
+Para instalar, você baixa uma <GlossaryTerm term="ISO image">imagem ISO</GlossaryTerm> (um
+arquivo com o conteúdo inteiro de um disco de instalação) ou uma imagem pronta de VM. Como
+verificar essa imagem antes de confiar nela é assunto da seção 8.
+
+A imagem oficial para Docker é uma foto semanal do `kali-rolling` com uma base mínima, e a
+página dela avisa: *"there are no tools by default"* — não há ferramentas por padrão. Quem
+usa contêiner instala o que precisa (um pacote, ou um metapacote como o
+`kali-linux-headless`). É exatamente o que o `Dockerfile` desta plataforma faz, só que com
+uma lista curta e fechada.
+
+### 2.7 Máquina virtual × contêiner: onde mora o kernel
+
+Esta plataforma roda o Kali num <GlossaryTerm term="container">contêiner</GlossaryTerm>
+<GlossaryTerm term="Docker">Docker</GlossaryTerm>, não numa VM. A diferença não é detalhe: ela
+muda **onde fica a fronteira** entre a attack box e o seu computador.
+
+<Figure
+  src={vmEConteiner}
+  alt="Duas pilhas. Na VM: hardware, sistema hospedeiro, hipervisor e a VM do Kali com kernel próprio. No contêiner: hardware, Windows, VM leve do WSL2 com um único kernel Linux, Docker e vários contêineres compartilhando esse kernel."
+  caption="Numa VM, o Kali tem o próprio kernel e a fronteira é o hipervisor; num contêiner, todos os contêineres usam o mesmo kernel, e a fronteira é a separação que esse kernel faz entre eles."
+/>
+
+Numa máquina virtual, um <GlossaryTerm term="hypervisor">hipervisor</GlossaryTerm>
+(VirtualBox, VMware, Hyper-V) finge ser um computador inteiro: a VM tem hardware virtual e o
+seu **próprio** <GlossaryTerm term="kernel">kernel</GlossaryTerm>. Para escapar de uma VM, um
+programa precisa achar uma falha no hipervisor, o que é raro e valioso.
+
+Num contêiner, não há kernel próprio. O contêiner é um grupo de processos comuns do
+computador hospedeiro, que o kernel isola com três mecanismos:
+
+- **<GlossaryTerm term="namespace">namespaces</GlossaryTerm>** — cada contêiner tem a sua
+  própria visão de processos, rede, montagens e nome de máquina. O Kali do lab vê só as
+  interfaces de rede dele e acredita que se chama `kali`.
+- **cgroups** — limites de recursos. O `mem_limit: 3g` do `compose.yaml` é um cgroup: o Kali
+  não passa de 3 GB de RAM.
+- **<GlossaryTerm term="Linux capabilities">capabilities</GlossaryTerm>** — o poder do root
+  é dividido em pedaços (`CAP_NET_RAW` para montar pacotes, `CAP_NET_ADMIN` para configurar a
+  rede, `CAP_SYS_ADMIN` para quase tudo). O Docker tira dos contêineres as capacidades
+  perigosas. Mesmo o root dentro do Kali não pode, por exemplo, reconfigurar as interfaces de
+  rede.
+
+A consequência prática: uma falha **no kernel** do hospedeiro pode atravessar a fronteira do
+contêiner. Por isso a plataforma compensa com outras camadas, que você conheceu no 0.1:
+nenhum contêiner roda em modo `privileged` (que devolveria quase todas as capacidades),
+nenhum monta o `docker.sock` (que daria controle do Docker inteiro), e todos vivem em redes
+sem saída. E por isso, também, a plataforma não roda código de terceiros não confiável
+dentro do lab: alvos vêm de projetos vulneráveis-por-design consagrados, nunca de exploits
+baixados de origem duvidosa.
+
+Por que um contêiner, então? Pela regra de RAM. Com 16 GB, uma VM do Kali com desktop
+completo mais os alvos mais o Windows não cabem com folga; o Kali do lab usa cerca de
+0,45 GB ocioso. É uma troca consciente: menos isolamento de kernel, compensado por redes
+internas e pela ausência de privilégios perigosos — e documentada em `docs/LABORATORIO.md`.
+
+### 2.8 A attack box desta plataforma por dentro
+
+Junte tudo e você tem o retrato da sua bancada:
+
+- **Imagem construída com internet, executada sem ela.** O `scripts/lab.sh pull` constrói a
+  imagem `cyberlab/kali-xfce:local` a partir do Dockerfile, baixando os pacotes. Ligado, o
+  Kali não tem rota para fora: atualizar é reconstruir (`scripts/lab.sh rebuild`, só no
+  terminal do WSL).
+- **Lista curta de ferramentas.** Desktop Xfce, Firefox ESR, Burp Suite, nmap, netcat, curl,
+  sqlmap e Wireshark, mais utilitários de rede. Nada de `kali-linux-default`.
+- **O nmap sem *file capabilities*.** No Kali de fábrica, o binário do nmap ganha
+  capacidades de rede para fazer varreduras avançadas sem `sudo`. O Docker não dá
+  `CAP_NET_ADMIN` ao contêiner, e o kernel se recusa a executar um binário que pede uma
+  capacidade que o processo não pode ter. A plataforma prefere tirar as capacidades do nmap
+  a dar mais poder ao contêiner: sem `sudo`, o nmap faz um *connect scan*; com `sudo`, as
+  varreduras que exigem um <GlossaryTerm term="raw socket">raw socket</GlossaryTerm> (um
+  socket em que o programa monta o pacote inteiro). Você vai estudar isso no 2.4.
+- **Usuário `kali` com `sudo` sem senha, só dentro do contêiner.** Como o contêiner não tem
+  capacidades perigosas, ser root ali dentro não é ser root no seu PC.
+- **Só o `/home/kali` persiste.** Ele é um <GlossaryTerm term="Docker volume">volume
+  Docker</GlossaryTerm> (`kali_home`), uma área que o Docker guarda fora do contêiner. O resto
+  do sistema de arquivos é recriado da imagem a cada Resetar.
+- **Duas redes, ambas internas.** Uma
+  <GlossaryTerm term="internal network">rede interna</GlossaryTerm> do Docker
+  (`internal: true`) não tem gateway nem NAT: os contêineres nela só falam entre si.
+
+<Figure
+  src={attackBoxERedes}
+  alt="O contêiner kali no centro, com eth0 na desktop_net (onde está só o guacd) e eth1 na lab_net (onde ficam os alvos). Acima, setas vermelhas cortadas para a internet, o PC, os bancos e o guac-proxy."
+  caption="A attack box por dentro: a desktop_net liga o Kali só ao guacd (a tela), a lab_net liga o Kali só aos alvos, e tudo o mais é inalcançável por desenho."
+/>
+
+A **`desktop_net`** liga o Kali ao <GlossaryTerm term="guacd">guacd</GlossaryTerm>, o
+componente do Guacamole que fala o protocolo de tela remota com o Kali. A **`lab_net`** liga
+o Kali aos alvos (no lab `kali`, ela está vazia). A tela chega por
+<GlossaryTerm term="VNC">VNC</GlossaryTerm> (*Virtual Network Computing*, protocolo para ver e
+controlar a tela de outra máquina): dentro do Kali, um servidor VNC desenha o desktop e
+espera as conexões do guacd numa porta TCP — qual porta e qual programa, você descobre na
+Missão 1.
+
+E o DNS? Cada contêiner recebe o <GlossaryTerm term="embedded DNS">DNS embutido</GlossaryTerm>
+do Docker, um resolvedor em `127.0.0.11` que conhece os nomes dos contêineres **que dividem
+uma rede com quem pergunta**. A segmentação de redes vira segmentação de nomes: o Kali
+resolve `guacd`, mas não resolve `guac-db`, o banco do Guacamole, que mora em outra rede.
+Você vai provar isso na Missão 3.
+
+### 2.9 Onde as coisas moram no Kali
+
+A árvore de diretórios é a do Debian, que você conhece do 0.3. Algumas pastas importam mais
+para quem usa o Kali como ferramenta:
+
+| Onde | O que tem |
+|---|---|
+| `/usr/bin` | Os executáveis das ferramentas (`nmap`, `sqlmap`, `burpsuite`...) |
+| `/usr/share/<ferramenta>` | Dados das ferramentas. Ex.: `/usr/share/nmap/scripts/` tem 613 scripts NSE no seu lab |
+| `/usr/share/wordlists` | No Kali completo, as listas de palavras para força bruta. **Não existe** no Kali enxuto do lab |
+| `/etc/profile.d/` | Scripts que todo *login shell* carrega (vai aparecer na seção 7) |
+| `~/.config`, `~/.BurpSuite`, `~/.mozilla` | Configurações suas, de cada programa |
+| `~/engajamentos`, `~/ferramentas` | O seu trabalho (seção 3.2) |
+
+<Figure
+  src={oQuePersiste}
+  alt="À esquerda, a camada gravável do contêiner sobre a imagem; no meio, o volume kali_home em /home/kali; à direita, uma tabela: Parar mantém tudo, Resetar apaga a camada e mantém a home, purge apaga as duas."
+  caption="O que sobrevive a cada ação: só o volume kali_home (o /home/kali) passa pelo Resetar; o resto do contêiner volta a ser a imagem."
+/>
+
+## 3. Na prática da segurança
+
+Esta seção mostra como um pentester usa a attack box no dia a dia e o que um defensor vê do
+outro lado. As saídas são reais, do Kali do lab.
+
+### 3.1 Os primeiros quinze minutos numa attack box nova
+
+Quando você recebe uma máquina de teste nova (ou recria a sua), há uma lista de perguntas a
+responder antes de apontá-la para qualquer coisa. É o mesmo reconhecimento do 0.3, só que
+feito na sua própria ferramenta.
+
+**Quem sou eu e que poder eu tenho?**
+
+```console
+$ id
+uid=1000(kali) gid=1000(kali) groups=1000(kali),27(sudo)
+$ sudo -l
+Matching Defaults entries for kali on kali:
+    secure_path=/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+Runas and Command-specific defaults for kali:
+    Defaults!/usr/sbin/visudo env_keep+="SUDO_EDITOR EDITOR VISUAL"
+
+User kali may run the following commands on kali:
+    (ALL : ALL) ALL
+    (ALL) NOPASSWD: ALL
+```
+
+O `id` mostra o usuário comum `kali` (UID 1000) no grupo `sudo`. O `sudo -l` lista o que você
+pode rodar como outro usuário: tudo, e a última linha diz que sem senha (`NOPASSWD`). Numa
+attack box sua, isso é conforto; numa máquina compartilhada, seria um alerta.
+
+**Que sistema é este, e em que kernel ele roda?**
+
+```console
+$ grep -E '^(PRETTY_NAME|VERSION|ID_LIKE)=' /etc/os-release
+PRETTY_NAME="Kali GNU/Linux Rolling"
+VERSION="2026.3"
+ID_LIKE=debian
+$ uname -r
+6.18.40.1-microsoft-standard-WSL2
+```
+
+O `/etc/os-release` confirma o Kali rolling, derivado do Debian. O `uname -r` revela o que a
+seção 2.7 explicou: o kernel é o do WSL2. Você está num contêiner.
+
+**Que ferramentas eu tenho?** O `command -v` diz onde está um comando, e não imprime nada
+(com código de saída 1) quando ele não existe. Um laço do 0.6 resolve o inventário:
+
+```console
+$ for t in nmap sqlmap burpsuite wireshark nc curl msfconsole hydra john hashcat gobuster git tmux; do printf '%-11s %s\n' "$t" "$(command -v "$t" || echo AUSENTE)"; done
+nmap        /usr/bin/nmap
+sqlmap      /usr/bin/sqlmap
+burpsuite   /usr/bin/burpsuite
+wireshark   /usr/bin/wireshark
+nc          /usr/bin/nc
+curl        /usr/bin/curl
+msfconsole  AUSENTE
+hydra       AUSENTE
+john        AUSENTE
+hashcat     AUSENTE
+gobuster    AUSENTE
+git         AUSENTE
+tmux        AUSENTE
+```
+
+Ferramentas famosas do Kali, como o Metasploit (`msfconsole`), o John the Ripper e o hashcat,
+não estão aqui, e nem o `git`. Isso é o Kali enxuto. Para as versões, pergunte ao `dpkg`, que
+conhece os pacotes instalados mesmo sem internet:
+
+```console
+$ dpkg -l | grep -c '^ii'
+588
+$ dpkg -l | grep -E 'kali-(linux|tools|menu|themes)'
+ii  kali-menu                            2026.3.4                           all          Kali Linux custom menu
+ii  kali-themes                          2026.3.0                           all          Configure all desktops to use the Kali theme
+ii  kali-themes-common                   2026.3.0                           all          Kali Themes (data files)
+$ nmap --version | head -1
+Nmap version 7.99 ( https://nmap.org )
+```
+
+São 588 pacotes, nenhum metapacote `kali-linux-*` ou `kali-tools-*` — só o menu e os temas do
+Kali.
+
+**Que serviços a minha própria máquina expõe?** Essa é a pergunta que muita gente esquece. A
+<GlossaryTerm term="attack surface">superfície de ataque</GlossaryTerm> da attack box também
+conta. Você vai responder a ela na Missão 1, com o `ss` do 0.1.
+
+**Que horas são, e em que fuso?** O 1.5 ensinou a anotar em UTC. No Kali do lab, o relógio
+já está em UTC (`date` e `date -u` mostram o mesmo), mas confira sempre numa máquina nova.
+
+### 3.2 A bancada de um engajamento
+
+No 1.5, você montou um caderno de engajamento no WSL. A attack box é onde o trabalho técnico
+acontece, então o caderno precisa de uma casa nela também. Uma organização que funciona:
+
+```text
+/home/kali/
+├── ferramentas/                  scripts e ferramentas suas, reaproveitados entre engajamentos
+└── engajamentos/
+    └── 2026-021_cooperativa-exemplo/   contrato_cliente: uma pasta por engajamento
+        ├── admin/                carta de autorização, regras de engajamento, contatos
+        ├── escopo/               faixas e exclusões, em texto
+        ├── notas/
+        │   └── hosts/
+        │       └── 192.0.2.34/   uma pasta por host em escopo
+        ├── achados/
+        ├── evidencias/
+        │   ├── originais/        nunca editadas
+        │   └── derivadas/        mascaradas para o relatório
+        ├── sessoes/              gravações do terminal (script)
+        └── relatorio/
+```
+
+Três regras práticas:
+
+1. **Uma pasta por engajamento, e nada misturado.** Saídas de clientes diferentes nunca
+   dividem uma pasta. No fim do contrato, a pasta inteira segue a política de retenção
+   (guardar pelo prazo combinado e destruir).
+2. **Separe o que é seu do que é do cliente.** `~/ferramentas` tem os seus scripts; nenhuma
+   credencial ou dado do cliente entra lá. Assim você leva as suas ferramentas para o
+   próximo trabalho sem levar junto os segredos do anterior.
+3. **Proteja desde a criação.** Crie a pasta com `umask 077`, para tudo nascer acessível só a
+   você. O <GlossaryTerm term="umask">umask</GlossaryTerm> (0.3) diz quais permissões tirar de
+   quem cria: o padrão `022` faz pastas `755` (qualquer usuário lista e entra); `077` faz
+   pastas `700`.
+
+Dentro do engajamento, as ferramentas gravam onde você está. Por isso, entre na pasta certa
+antes de rodar qualquer coisa e dê nomes que digam o quê, contra quem e quando — o nmap, por
+exemplo, grava os três formatos de uma vez com `-oA` (você vai usar no 2.4). Para registrar a
+sessão inteira, o `script` do 1.5 está disponível no Kali (`/usr/bin/script`). O `git`, não:
+no Kali do lab, o versionamento do caderno fica no WSL (seção 5.6).
+
+### 3.3 O que o defensor vê: a attack box tem cara
+
+Ferramentas de ataque deixam rastros característicos, e quem defende aprende a reconhecê-los.
+Dois exemplos, lidos direto no código das ferramentas instaladas no lab:
+
+```console
+$ grep -n 'USER_AGENT =' /usr/share/nmap/nselib/http.lua
+160:USER_AGENT = stdnse.get_script_args('http.useragent') or "Mozilla/5.0 (compatible; Nmap Scripting Engine; https://nmap.org/book/nse.html)"
+$ grep -n '^DEFAULT_USER_AGENT' /usr/share/sqlmap/lib/core/settings.py
+29:DEFAULT_USER_AGENT = "%s (%s)" % (VERSION_STRING, SITE)
+$ sqlmap --version
+1.10.9#stable
+```
+
+O <GlossaryTerm term="user agent">User-Agent</GlossaryTerm> é o cabeçalho HTTP em que o
+cliente diz quem é. Os scripts HTTP do nmap se apresentam como *Nmap Scripting Engine*, e o
+sqlmap como `sqlmap/<versão>` seguido do site do projeto. Num log de servidor web, essas
+strings gritam "ferramenta de teste". O nome de máquina padrão (`kali`) aparece em pedidos de
+DHCP e em alguns protocolos do Windows.
+
+Isso é bom ou ruim? Num pentest **autorizado**, é bom: ajuda o cliente a separar o seu
+tráfego do de um atacante real (a <GlossaryTerm term="deconfliction">deconfliction</GlossaryTerm>
+do 1.5). As duas ferramentas permitem trocar o User-Agent (o sqlmap tem `--random-agent`, os
+scripts do nmap aceitam `--script-args http.useragent=...`), e há testes em que isso faz
+parte do combinado — um Red Team que mede se o SOC detecta um adversário cuidadoso, por
+exemplo. A decisão de se disfarçar é do contrato, nunca sua. Fora de um contrato, disfarçar
+a ferramenta não é técnica: é agravante.
+
+A mesma lógica vale para a sua <GlossaryTerm term="OPSEC">OPSEC</GlossaryTerm> (*operations
+security*, proteger as informações sobre a própria operação): o que a sua máquina revela,
+onde ficam as suas notas, quem consegue chegar nelas. Para o pentester, OPSEC é sobretudo
+proteger o cliente: a attack box guarda falhas ainda abertas dele.
+
+### 3.4 Os mesmos programas, nas mãos erradas
+
+As ferramentas do Kali são de uso duplo: o nmap que você vai usar no 2.4 também é usado por
+atacantes reais para mapear redes. A diferença entre um teste e um crime não está no programa,
+está na autorização (1.3 e 1.4). Isso tem uma consequência que muita gente não percebe: um
+defensor que vê o User-Agent do sqlmap nos logs não sabe se é você ou um atacante — a não ser
+que a sua janela de teste, o seu IP de origem e as suas anotações digam. É mais um motivo
+para a disciplina do caderno.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os três casos abaixo têm um fio comum: a attack box e as ferramentas de quem faz segurança
+também são alvo, e o que as protege é organização e verificação.
+
+### O backdoor do xz-utils chega ao Kali (março de 2024)
+
+O xz-utils é uma biblioteca de compressão presente em quase todo Linux. Ao longo de anos, um
+mantenedor que ganhou a confiança do projeto inseriu um
+<GlossaryTerm term="backdoor">backdoor</GlossaryTerm> nos pacotes de código-fonte das versões
+**5.6.0 e 5.6.1**: um código ofuscado, montado durante a compilação, que interferia no
+processo de autenticação do SSH. Em **29 de março de 2024**, o engenheiro Andres Freund
+publicou na lista oss-security o que tinha achado ao investigar sintomas estranhos num Debian
+de testes: logins por SSH gastando CPU demais e erros no valgrind — um login falho que levava
+cerca de 0,3 s passou a levar cerca de 0,8 s. A falha recebeu o identificador
+**CVE-2024-3094**, com nota CVSS 10.0, a máxima.
+
+No mesmo dia, o Kali publicou um aviso: o impacto atingiu o Kali **entre 26 e 29 de março de
+2024**. Quem atualizou o Kali nesse intervalo recebeu a versão comprometida. O aviso trazia o
+comando para conferir (`apt-cache policy liblzma5`) e o para corrigir
+(`sudo apt update && sudo apt install -y --only-upgrade liblzma5`).
+
+- **Impacto:** quem acompanha as versões mais novas, como os usuários do Kali rolling e do
+  Debian de testes onde Freund notou o problema, recebeu o código malicioso em poucos dias,
+  e foi o acaso de um engenheiro desconfiar de meio segundo a mais que interrompeu a
+  cadeia. Foi um <GlossaryTerm term="supply chain attack">supply chain attack</GlossaryTerm>
+  na sua forma mais pura.
+- **Lição:** rolling release troca estabilidade por novidade. Para uma attack box, saber
+  **quando** ela foi atualizada e **de onde** veio cada pacote importa — por isso esta
+  plataforma fixa o digest da imagem e só atualiza quando você manda.
+- **Fontes:** [Kali — All about the xz-utils backdoor](https://www.kali.org/blog/about-the-xz-backdoor/);
+  [Andres Freund na oss-security](https://www.openwall.com/lists/oss-security/2024/03/29/4);
+  [Red Hat — CVE-2024-3094](https://access.redhat.com/security/cve/cve-2024-3094).
+
+### A chave perdida do repositório do Kali (abril de 2025)
+
+Em **28 de abril de 2025**, o Kali anunciou: *"We lost access to the signing key of the
+repository, so we had to create a new one."* Ou seja, a equipe perdeu acesso à
+<GlossaryTerm term="archive signing key">chave de assinatura do repositório</GlossaryTerm>
+(o par de chaves que assina as listas de pacotes) e precisou criar outra. A chave antiga tinha
+o ID `ED444FF07D8D0BF6`; a nova, a impressão digital
+`827C 8569 F251 8CC6 77FE CA1A ED65 462E C8D5 E4C5`. O aviso dizia que, nos dias seguintes,
+o `apt update` ia falhar "para praticamente todo mundo", porque o sistema de cada usuário só
+confiava na chave antiga. A correção era baixar o novo chaveiro do Kali e conferir o hash dele
+antes de usar.
+
+- **Impacto:** as atualizações pararam para quem não trocou a chave à mão; não houve
+  comprometimento de pacotes.
+- **Lição:** a confiança de um repositório mora numa chave, e o `apt` recusa o que não bate
+  com ela — é isso que protege você de um espelho adulterado. Quando a chave muda, a troca
+  precisa ser feita com cuidado (pela fonte oficial e conferindo o hash), porque "baixar e
+  confiar numa chave nova" é exatamente o que um atacante gostaria que você fizesse sem
+  pensar.
+- **Fonte:** [Kali — A New Kali Linux Archive Signing Key](https://www.kali.org/blog/new-kali-archive-signing-key/).
+
+### Pesquisadores de segurança como alvo (janeiro de 2021)
+
+Em **25 de janeiro de 2021**, o Threat Analysis Group (TAG) do Google publicou que uma
+entidade apoiada pelo governo da Coreia do Norte conduzia uma campanha contra pesquisadores
+de segurança. Os atacantes montaram um blog de "pesquisa" e perfis no Twitter, ganharam
+credibilidade e então ofereciam colaboração: mandavam ao alvo um projeto do Visual Studio com
+o código de um exploit e uma DLL maliciosa, executada pelos *Build Events* do projeto — bastava
+compilar. Outras vítimas foram comprometidas só por visitar o blog dos atacantes, com
+Windows 10 e Chrome **totalmente atualizados**.
+
+- **Impacto:** máquinas de pesquisadores — que guardam exploits, achados e acesso a sistemas
+  de clientes — comprometidas por um adversário estatal.
+- **Lição:** o próprio Google recomendou separar as atividades de pesquisa em máquinas físicas
+  ou virtuais diferentes: navegação geral, contato com a comunidade, arquivos recebidos de
+  terceiros e a sua própria pesquisa. Nunca rode um exploit, uma ferramenta ou um projeto de
+  terceiros na sua máquina pessoal, e nem na attack box sem ler o código antes.
+- **Fonte:** [Google TAG — New campaign targeting security researchers](https://blog.google/threat-analysis-group/new-campaign-targeting-security-researchers/).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá feito o inventário da sua attack box e descoberto o
+serviço que ela mesma expõe, terá montado a bancada de um engajamento fictício a partir de
+uma carta de autorização, com as permissões certas, e terá provado de dentro do Kali o que
+ele alcança e o que não alcança. Cada missão rende uma flag.
+
+O laboratório é o **`kali`**: só o desktop do Kali, sem nenhum alvo na rede. Nada aqui ataca
+coisa alguma.
+
+### 5.1 Subir o lab e abrir o terminal (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. O log aparece ao
+   vivo; com a imagem já construída, o lab sobe em poucos segundos. Se a plataforma disser
+   que faltam imagens, rode no terminal do WSL `scripts/lab.sh pull kali` (é o único momento
+   com internet) e tente de novo. Pelo terminal, a alternativa é `scripts/lab.sh up kali`.
+2. Quando o lab estiver no ar, o desktop do Kali aparece no próprio painel, já logado.
+   **Clique dentro dele** para o teclado ir para o Kali. **Tela cheia** e **Nova aba** ficam
+   acima do desktop.
+
+<Figure
+  src={desktopDoKali}
+  alt="Captura de tela da página do módulo com o painel do laboratório mostrando o desktop Xfce do Kali, com o terminal aberto."
+  caption="O desktop do Kali dentro da plataforma (captura real): o painel do lab, o desktop Xfce e um terminal aberto."
+/>
+
+3. Abra um terminal: clique no ícone de terminal (um retângulo preto com `$_`) na barra
+   superior do Kali, ou abra o menu (o ícone do dragão, no canto superior esquerdo) e procure
+   **Terminal**. Na **primeira vez**, o Xfce abre a janela *Choose Preferred Application*,
+   pedindo o emulador de terminal preferido: escolha **Xfce Terminal** na lista e clique em
+   **OK**. A escolha fica salva em `/home/kali` e a janela não volta.
+4. O terminal abre com o prompt de duas linhas do Kali, `(kali㉿kali)-[~]`. No lab, o
+   símbolo `㉿` entre os dois `kali` aparece como um quadradinho: a fonte instalada na imagem
+   não tem esse caractere. É só cosmético.
+5. Se o teclado não chegar ao Kali mesmo depois de clicar no desktop, use **Nova aba**: o
+   mesmo desktop abre numa aba só dele, que recebe o teclado diretamente.
+
+<Callout variant="tip" title="Colar texto no Kali">
+O Kali está do outro lado do Guacamole, então o Ctrl+V do Windows não chega direto nele.
+Para colar: aperte **Ctrl+Alt+Shift** para abrir o menu do Guacamole; na caixa
+**Clipboard**, clique em *Click to view clipboard contents*, cole o texto ali e feche o menu
+com **Ctrl+Alt+Shift** de novo. No terminal do Kali, cole com **Ctrl+Shift+V**. (Testado no
+lab: o texto colado assim chega inteiro ao terminal.) Os comandos deste módulo são curtos de
+propósito: dá para digitar todos.
+</Callout>
+
+<Callout variant="warning" title="Um laboratório por vez">
+Se outro lab estiver no ar, o botão vira **Trocar para este lab**: ele desliga o atual (com
+confirmação) e liga o `kali`. É a regra de RAM da plataforma.
+</Callout>
+
+### 5.2 Missão 1 — Quem sou eu e onde estou (guiada)
+
+Você vai fazer o reconhecimento da sua própria attack box, como na seção 3.1, e terminar
+respondendo a pergunta mais importante: **que serviço esta máquina deixa aberto?**
+
+**Passo 1: identidade e sistema.** Rode e leia com calma:
+
+```console
+$ whoami
+kali
+$ id
+uid=1000(kali) gid=1000(kali) groups=1000(kali),27(sudo)
+$ hostname
+kali
+$ grep -E '^(PRETTY_NAME|VERSION)=' /etc/os-release
+PRETTY_NAME="Kali GNU/Linux Rolling"
+VERSION="2026.3"
+$ uname -r
+6.18.40.1-microsoft-standard-WSL2
+```
+
+O kernel do seu computador pode ter outro número, mas termina em `-WSL2`: é a prova de que o
+Kali é um contêiner, sem kernel próprio.
+
+**Passo 2: inventário.** Repita o laço da seção 3.1 e acrescente duas ferramentas que você
+acha que um pentester usaria. Elas estão aqui? Anote o resultado no seu caderno: ele vai dizer,
+nos próximos módulos, o que dá para fazer neste lab e o que é só teoria.
+
+**Passo 3: quem está escutando?** O `ss` do 0.1 lista os sockets. Com `-t` (TCP), `-l`
+(só quem escuta, *listening*), `-n` (números, sem traduzir nomes) e `-p` (o programa dono do
+socket):
+
+```console
+$ ss -tlnp
+```
+
+A saída tem uma linha por socket em escuta. Leia a coluna **Local Address:Port**:
+
+- `127.0.0.11:<porta alta>` é o DNS embutido do Docker. Ele escuta só no endereço de
+  loopback `127.0.0.11`, dentro do contêiner, e a porta muda a cada vez. Não é um serviço do
+  Kali, e nenhuma outra máquina chega nele.
+- As outras linhas são o que interessa: um serviço escutando em **todas** as interfaces. O
+  `0.0.0.0` (e o `[::]`, a versão IPv6) quer dizer "qualquer endereço desta máquina".
+
+**Sua tarefa:** descubra a porta e o nome do programa do único serviço TCP que o Kali deixa
+escutando fora do loopback. A flag é `FLAG{porta-Programa}`, com o nome do programa
+exatamente como o `ss` mostra (maiúsculas incluídas).
+
+<Hint title="Dica">
+O nome do programa aparece na coluna Process, entre aspas, no formato
+`users:(("nome",pid=...,fd=...))`. Pela seção 2.8, é o servidor VNC, o que desenha o desktop e
+espera o guacd. Copie o nome exatamente como aparece, com maiúsculas.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+```console
+$ ss -tlnp
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess
+LISTEN 0      5            0.0.0.0:5901       0.0.0.0:*    users:(("Xvnc",pid=13,fd=8))
+LISTEN 0      4096      127.0.0.11:46493      0.0.0.0:*
+LISTEN 0      5               [::]:5901          [::]:*    users:(("Xvnc",pid=13,fd=9))
+```
+
+O serviço é o **Xvnc**, na porta **5901**, em IPv4 e IPv6. A linha do `127.0.0.11` não mostra
+programa porque o socket não é de um processo seu: é do DNS embutido do Docker. A flag junta a
+porta e o programa no formato pedido.
+</Solution>
+
+<FlagInput task="missao-1-quem-sou-eu" />
+
+**Para pensar:** a seção 2.5 contou que o Kali de fábrica não deixa nenhum serviço escutando.
+Esta attack box deixa um, porque é por ele que a sua tela chega. Ele escuta em `0.0.0.0`, ou
+seja, em **todas** as interfaces: na `desktop_net`, onde está o guacd, que precisa dele, mas
+também na `lab_net`, onde ficam os alvos, que não precisam. Quem protege a porta é a senha do
+VNC (aleatória, gerada no `labs/.env`). Num cenário real, o que você mudaria? A resposta está
+na seção 8.2.
+
+### 5.3 A carta de autorização da Missão 2
+
+Os dados abaixo são **fictícios**. Os IPs são das faixas reservadas para documentação
+(`192.0.2.0/24` e `198.51.100.0/24`), que não existem na internet.
+
+<Callout variant="info" title="Carta de autorização — contrato 2026-021 (fictícia)">
+**Cliente:** Cooperativa Exemplo (identificador `cooperativa-exemplo`).
+**Signatário:** diretor de TI da cooperativa, com poderes para autorizar.
+
+**Ativos autorizados:**
+- a faixa `192.0.2.32/28` (rede de servidores da cooperativa);
+- o host avulso `198.51.100.7` (o servidor de VPN da cooperativa).
+
+**Exclusões (não testar):**
+- `192.0.2.33` — roteador da operadora de telecom. Pertence ao provedor; a cooperativa não
+  pode autorizar teste nele.
+- `192.0.2.40` a `192.0.2.42` — servidores do ERP em produção, fora deste contrato.
+</Callout>
+
+E, numa troca de e-mails depois da assinatura, o gerente de infraestrutura escreveu: *"Se der
+tempo, deem uma olhada também no 198.51.100.8, é o nosso servidor de e-mail."*
+
+### 5.4 Missão 2 — A bancada do engajamento (desafio)
+
+**Objetivo:** montar, no Kali, a bancada deste engajamento, de modo que ela possa ser
+conferida por uma impressão digital (um hash da estrutura).
+
+**As regras da bancada:**
+
+1. A raiz é `~/engajamentos/2026-021_cooperativa-exemplo` (contrato, sublinhado, cliente).
+2. Dentro dela, a estrutura do caderno do 1.5: `admin`, `escopo`, `notas/hosts`, `achados`,
+   `evidencias/originais`, `evidencias/derivadas`, `sessoes` e `relatorio`.
+3. Dentro de `notas/hosts`, **uma pasta por host que você pode testar**, com o IP como nome
+   (por exemplo, `notas/hosts/198.51.100.7`). Nenhuma pasta para o que está fora do escopo.
+4. **Todas** as pastas da bancada, a raiz inclusive, com permissão `700`.
+5. Nenhuma outra pasta. Arquivos não contam: crie à vontade.
+
+**A impressão digital.** Quando terminar, entre na raiz e rode o comando abaixo. Ele lista
+cada pasta com a sua permissão (`%m`) e o seu caminho (`%p`), põe em ordem (com `LC_ALL=C`,
+para a ordem não depender do idioma do sistema) e tira o SHA-256 da lista:
+
+```console
+$ cd ~/engajamentos/2026-021_cooperativa-exemplo
+$ find . -type d -printf '%m %p\n' | LC_ALL=C sort | sha256sum | cut -c1-12
+```
+
+Os 12 caracteres que saírem são a flag, dentro de `FLAG{ }`. Qualquer pasta a mais, a menos,
+com outro nome ou com outra permissão muda o hash por completo — é a propriedade do hash que
+você viu no 1.5.
+
+**Desafio 2.1: quem está no escopo?** Antes de criar qualquer coisa, decida a lista de hosts.
+Você precisa do CIDR do 0.2 e das regras do 1.3.
+
+<Hint title="Dica 1">
+Um `/28` tem 32 − 28 = 4 bits de host, ou 2⁴ = 16 endereços. `192.0.2.32/28` vai de
+`192.0.2.32` a `192.0.2.47`. O primeiro é o endereço da rede e o último, o de broadcast:
+nenhum dos dois é um host.
+</Hint>
+
+<Hint title="Dica 2">
+O e-mail do gerente não está na carta. No 1.3, o que muda o escopo depois da assinatura?
+</Hint>
+
+<Solution title="Solução do desafio 2.1">
+Hosts da faixa: `.33` a `.46` (14 endereços). Sai o `.33` (roteador do provedor: quem assinou
+não tem autoridade sobre ele) e saem `.40`, `.41` e `.42` (exclusão do ERP). Sobram dez:
+`.34` a `.39` e `.43` a `.46`. Mais o avulso `198.51.100.7`: **11 hosts**.
+
+O `198.51.100.8` **não entra**. Um "se der tempo, olhem" num e-mail não é autorização: o
+escopo só muda por um adendo assinado por quem tem autoridade (1.3). A resposta profissional
+ao gerente é "podemos incluir, mediante adendo". Sem pasta para ele.
+</Solution>
+
+**Desafio 2.2: criar a bancada com as permissões certas.** Monte a estrutura com o menor
+número possível de comandos. Pense em duas coisas do 0.3 e do 0.6: o `mkdir -p` com
+<GlossaryTerm term="brace expansion">brace expansion</GlossaryTerm> (as chaves que viram vários
+nomes), e o `umask`, que define a permissão com que tudo **nasce**.
+
+<Hint title="Dica 1">
+O Bash expande `{34..39}` em `34 35 36 37 38 39`, e `a/{b,c}` em `a/b a/c`. As chaves podem
+ficar umas dentro das outras: `notas/hosts/{192.0.2.{34..39},198.51.100.7}`.
+</Hint>
+
+<Hint title="Dica 2">
+O total esperado é de **22 pastas**, contando a raiz (`find . -type d | wc -l`). Se as suas
+pastas saíram `755`, o `umask` estava no padrão: veja o que acontece com um `chmod 700` só na
+raiz e por que ele não basta.
+</Hint>
+
+<Solution title="Solução do desafio 2.2 (sem a flag)">
+```console
+$ umask 077
+$ mkdir -p ~/engajamentos/2026-021_cooperativa-exemplo/{admin,escopo,notas/hosts/{192.0.2.{34..39},192.0.2.{43..46},198.51.100.7},achados,evidencias/{originais,derivadas},sessoes,relatorio}
+$ cd ~/engajamentos/2026-021_cooperativa-exemplo
+$ find . -type d | wc -l
+22
+$ find . -type d -printf '%m %p\n' | LC_ALL=C sort | head -5
+700 .
+700 ./achados
+700 ./admin
+700 ./escopo
+700 ./evidencias
+```
+
+O `umask 077` vale para o terminal em que você o digitou: todas as pastas criadas depois dele
+nascem `700`. A armadilha mais comum é criar com o `umask` padrão (`022`) e só depois tentar
+consertar. Saída real de um teste com pastas de exemplo:
+
+```console
+$ umask 022; mkdir -p t/{a,b/c}; find t -type d -printf '%m %p\n' | LC_ALL=C sort
+755 t
+755 t/a
+755 t/b
+755 t/b/c
+$ chmod 700 t; find t -type d -printf '%m %p\n' | LC_ALL=C sort
+700 t
+755 t/a
+755 t/b
+755 t/b/c
+```
+
+O `chmod` sem `-R` muda só a pasta que você indicou. Se você caiu nela, `chmod -R 700` na raiz
+conserta tudo (neste caso, só há pastas), ou apague e refaça com o `umask` certo. Com a
+estrutura certa, rode o comando da impressão digital: os 12 caracteres vão na flag.
+</Solution>
+
+<FlagInput task="missao-2-bancada-do-engajamento" />
+
+**Para pensar:** nesta missão, o que mais importou foi decidir o que **não** criar. Uma pasta
+para o `198.51.100.8` parece inofensiva, mas é o primeiro passo para testar um ativo sem
+autorização. A estrutura da bancada é o escopo materializado.
+
+### 5.5 Missão 3 — O isolamento visto de dentro (desafio)
+
+No 0.1, você conferiu o isolamento do lado da plataforma. Agora você está **dentro** do lab,
+no lugar de onde um atacante tentaria sair. Seu objetivo é montar, com comandos, a prova de
+cada fronteira do diagrama da seção 2.8.
+
+**Passo 1 (guiado): as interfaces e as rotas.** O `ip -br a` mostra cada interface de rede,
+de forma breve (`-br`), com o endereço:
+
+```console
+$ ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+eth0@if9         UP             172.30.0.1/16
+eth1@if10        UP             172.31.0.1/16
+$ ip route
+172.30.0.0/16 dev eth0 proto kernel scope link src 172.30.0.1
+172.31.0.0/16 dev eth1 proto kernel scope link src 172.31.0.1
+```
+
+Os seus endereços serão outros (o Docker escolhe as faixas, e elas podem mudar a cada vez
+que o lab é recriado). O que importa é o formato: duas
+<GlossaryTerm term="network interface">interfaces de rede</GlossaryTerm> além do loopback, uma
+por rede do lab, e uma <GlossaryTerm term="routing table">tabela de rotas</GlossaryTerm> com
+**só** as duas redes locais. Não há linha `default via ...`: o Kali não tem
+<GlossaryTerm term="default gateway">gateway padrão</GlossaryTerm>, nenhum caminho para fora.
+(Endereços terminados em `.1` são uma marca do `inhibit_ipv4` das redes internas: o
+computador hospedeiro não ganha endereço nelas, então o primeiro endereço sobra para o
+primeiro contêiner que entra na rede — às vezes o Kali, às vezes o guacd.)
+
+**Passo 2 (guiado): tentar sair.** Saídas reais:
+
+```console
+$ ping -c 2 -W 2 1.1.1.1
+ping: connect: Network is unreachable
+$ curl -sS -m 5 https://1.1.1.1
+curl: (7) Failed to connect to 1.1.1.1:443 after 0 ms: Could not connect to server
+$ curl -sS -m 5 https://example.com
+curl: (6) Could not resolve host: example.com
+```
+
+Repare que as falhas são **imediatas** (`after 0 ms`): sem rota, o kernel nem tenta mandar o
+pacote. E o nome `example.com` nem resolve: o DNS embutido do Docker não tem como perguntar
+lá fora. Isso fecha também a exfiltração por DNS, um truque em que o atacante esconde dados
+dentro de consultas de nome.
+
+**Passo 3 (desafio): quem o Kali enxerga pelo nome?** Leia o `/etc/resolv.conf` e o
+`/etc/hosts` para entender quem resolve nomes no Kali. Depois, teste cada um destes **oito
+nomes**:
+
+```text
+dvwa  example.com  guac-db  guac-proxy  guacamole  guacd  host.docker.internal  kali
+```
+
+O `getent hosts <nome>` pergunta ao sistema exatamente como um programa perguntaria: imprime o
+endereço quando o nome resolve, e não imprime nada (com código de saída 2) quando não resolve.
+Teste os oito (um laço do 0.6 ajuda). A flag é `FLAG{nome1-nome2...}`: **os nomes que
+resolvem**, em ordem alfabética, separados por hífen.
+
+<Hint title="Dica 1">
+`for n in dvwa example.com ...; do printf '%-22s ' "$n"; getent hosts "$n" || echo '(não resolve)'; done`
+</Hint>
+
+<Hint title="Dica 2">
+Um dos nomes que resolvem vem do `/etc/hosts`, e o outro do DNS embutido. Pense em quem divide
+uma rede com o Kali no lab `kali`.
+</Hint>
+
+<Solution title="Solução da Missão 3">
+```console
+$ grep -v '^#' /etc/resolv.conf | grep .
+nameserver 127.0.0.11
+options ndots:0
+$ cat /etc/hosts
+127.0.0.1	localhost
+::1	localhost ip6-localhost ip6-loopback
+fe00::	ip6-localnet
+ff00::	ip6-mcastprefix
+ff02::1	ip6-allnodes
+ff02::2	ip6-allrouters
+172.30.0.1	kali
+172.31.0.1	kali
+$ for n in dvwa example.com guac-db guac-proxy guacamole guacd host.docker.internal kali; do printf '%-22s ' "$n"; getent hosts "$n" || echo '(não resolve)'; done
+dvwa                   (não resolve)
+example.com            (não resolve)
+guac-db                (não resolve)
+guac-proxy             (não resolve)
+guacamole              (não resolve)
+guacd                  172.30.0.2      guacd
+host.docker.internal   (não resolve)
+kali                   172.30.0.1      kali
+172.31.0.1      kali
+```
+
+Resolvem `guacd` (pelo DNS embutido: divide a `desktop_net` com o Kali) e `kali` (pelo
+`/etc/hosts`: é o próprio contêiner, com um endereço em cada rede). Nenhum outro:
+
+- `guac-db`, `guacamole`, `guac-proxy` estão em outras redes — o Kali não descobre a
+  infraestrutura do Guacamole nem pelo nome;
+- `dvwa` não existe no lab `kali` (no lab `dvwa`, resolveria: ele entra na `lab_net`);
+- `host.docker.internal`, o nome que em algumas instalações do Docker aponta para o computador
+  hospedeiro, não existe aqui;
+- `example.com` precisaria de DNS externo.
+
+Junte os dois nomes em ordem alfabética para a flag.
+</Solution>
+
+<FlagInput task="missao-3-isolamento-por-dentro" />
+
+**Para pensar:** por que o Kali **precisa** enxergar o guacd, e por que seria ruim se ele
+enxergasse o `guac-db`? Pense no que há no banco do Guacamole (usuários, conexões e a senha
+do VNC) e no que um alvo comprometido poderia fazer se chegasse ao Kali e, dele, ao banco.
+
+### 5.6 Walkthrough: guardar a bancada e desligar (sem flag)
+
+1. **Onde a bancada está segura.** Tudo o que você criou está em `/home/kali`, que sobrevive
+   a **Parar** e a **Resetar**. Faça o teste: clique em **Resetar** no painel, reabra o
+   terminal e liste `~/engajamentos` — continua lá. Já um arquivo criado em `/tmp` ou com
+   `sudo` em `/opt` some (medimos isso no lab, como mostra o diagrama da seção 2.9).
+2. **Cópia fora do Kali.** O `/home/kali` só é apagado pelo `purge`, que existe só no
+   terminal. Antes de qualquer `purge` ou `rebuild` arriscado, faça uma cópia com todos os
+   labs desligados, no terminal do WSL: `scripts/lab.sh backup-home` (detalhes em
+   `docs/MANUTENCAO.md`). Como o Kali não tem `git`, é no WSL, com a cópia, que o caderno pode
+   entrar num repositório, como no 1.5.
+3. **Desligar.** Clique em **Parar** no painel (ou `scripts/lab.sh down kali`). Isso libera a
+   vaga de "um lab por vez" e a RAM.
+
+## 6. Variações e aprofundamento
+
+### 6.1 Outras distribuições de pentest
+
+O Kali é a mais conhecida, não a única. O **ParrotOS** (também derivado do Debian) junta as
+ferramentas de teste e de forense a aplicativos de uso geral, para fazer do teste ao relatório
+na mesma máquina. O **BlackArch** é uma distribuição de pentest baseada no Arch Linux, cujo
+repositório tem quase 3 mil ferramentas (2.862, segundo o site do projeto). Tudo o que este módulo ensina —
+inventário, menor privilégio, nenhum serviço exposto, bancada organizada, verificação do que se
+baixa — vale para qualquer uma delas. A escolha da distribuição importa muito menos que a
+disciplina de quem a usa.
+
+### 6.2 O Kali dos defensores: Kali Purple
+
+Na versão 2023.1, o Kali anunciou o <GlossaryTerm term="Kali Purple">Kali Purple</GlossaryTerm>,
+voltado a times de defesa (*blue team*) e a exercícios conjuntos (*purple team*), com mais de
+cem ferramentas defensivas, como Suricata e Zeek (detecção em rede), Arkime (captura e busca de
+tráfego) e TheHive (gestão de incidentes), e uma arquitetura de referência para montar um SOC
+de estudo. É um bom lembrete de que ataque e defesa usam a mesma base.
+
+### 6.3 Kali no WSL e no celular
+
+No Windows, dá para instalar o Kali como distribuição do WSL e ter um desktop gráfico com o
+Win-KeX (`sudo apt install -y kali-win-kex`, dentro do Kali no WSL). É prático para estudar,
+mas uma distribuição do WSL é integrada ao Windows por desenho (arquivos e rede
+compartilhados), o oposto do que se quer numa bancada isolada. O NetHunter leva o Kali ao
+Android, para testes em campo, como avaliações de Wi-Fi.
+
+### 6.4 Montar a própria imagem
+
+O `labs/base/kali/Dockerfile` desta plataforma é um exemplo completo de attack box sob medida.
+Leia-o com os olhos deste módulo:
+
+- `FROM kalilinux/kali-rolling@sha256:...` — a imagem oficial mínima, fixada por digest;
+- `apt-get install -y --no-install-recommends ...` — só a lista fechada, sem os pacotes
+  "recomendados" que o apt puxaria;
+- `rm -rf /var/lib/apt/lists/*` — apaga as listas de pacotes para a imagem ficar menor (é por
+  isso que o `apt-cache show` de um pacote não instalado não acha nada);
+- `setcap -r` em tudo que tinha capacidades — a troca do nmap da seção 2.8;
+- `useradd ... kali` e `USER kali` — o contêiner roda como usuário comum.
+
+Para quem instala o Kali em máquina real ou VM, o equivalente é o **live-build** do próprio
+Kali, que gera ISOs personalizadas, e o `kali-tweaks`, que instala metapacotes por categoria.
+
+### 6.5 Reprodutibilidade: digest, snapshot e rolling
+
+Três níveis de controle sobre "o que exatamente está na minha attack box":
+
+| Abordagem | O que você ganha | O que você perde |
+|---|---|---|
+| `kali-rolling` atualizado sempre | Ferramentas e correções no mesmo dia | Previsibilidade (o caso xz) |
+| `kali-last-snapshot` | Atualizações testadas, de versão em versão | Novidades com atraso |
+| Imagem fixada por digest (esta plataforma) | A mesma máquina hoje e daqui a seis meses | Atualizar exige uma decisão e um rebuild |
+
+Um detalhe honesto: mesmo com o digest da imagem-base fixo, o `apt-get install` do Dockerfile
+baixa as versões que estiverem no repositório no dia da construção. Duas construções em dias
+diferentes podem ter versões diferentes das ferramentas. A imagem pronta (`cyberlab/kali-xfce:local`)
+é que fica estável até o próximo `rebuild`.
+
+### 6.6 VM ou contêiner, de novo, com olhos de risco
+
+Para o seu estudo nesta plataforma, o contêiner é a escolha certa (RAM, isolamento de rede,
+reprodutibilidade). Num trabalho real, em que você vai abrir anexos de clientes, rodar
+ferramentas de terceiros e conectar à VPN de alguém, a VM dedicada (ou uma máquina física só
+para isso) dá a fronteira mais forte, e os snapshots permitem voltar a um estado limpo a cada
+engajamento. Muitas equipes usam as duas coisas: uma VM limpa por cliente, e contêineres dentro
+dela para ferramentas específicas.
+
+## 7. Erros comuns
+
+- **`E: Unable to locate package hydra` (ou qualquer outro pacote).** O Kali do lab não tem
+  internet, por desenho. O `sudo apt-get update` mostra
+  `Temporary failure resolving 'http.kali.org'`, e as listas de pacotes foram apagadas na
+  construção. Para ter uma ferramenta nova: acrescente o pacote no `labs/base/kali/Dockerfile`
+  e rode `scripts/lab.sh rebuild kali` no terminal do WSL.
+- **`Couldn't open a raw socket. Error: (1) Operation not permitted`.** Você pediu ao nmap um
+  tipo de varredura que monta pacotes por conta própria (como `-sS`) sem `sudo`. Use
+  `sudo nmap ...` ou um *connect scan* (`-sT`). Se o erro aparecer **mesmo sem** `-sS`, você
+  está num *login shell* (por exemplo, depois de `bash -l` ou `su - kali`): o Kali carrega o
+  `/etc/profile.d/nmap.sh`, que define `NMAP_PRIVILEGED=""` e faz o nmap se achar
+  privilegiado — o que valia no Kali de fábrica, com as capacidades no binário, mas não aqui.
+  Rode `unset NMAP_PRIVILEGED` ou use `-sT`. O terminal do desktop não carrega esse arquivo.
+- **"Sumiu o que eu fiz."** Você criou ou mudou arquivos fora do `/home/kali` e clicou em
+  Resetar. Só a home persiste. Trabalho de verdade mora em `~/engajamentos`.
+- **"O teclado não vai para o Kali."** Clique dentro do desktop: o foco do navegador precisa
+  estar no painel do lab. Se ainda assim não for, abra o desktop em **Nova aba**.
+- **"Colei e não apareceu nada."** O Ctrl+V do Windows não chega ao Kali. Use o menu do
+  Guacamole (**Ctrl+Alt+Shift**), clique em *Click to view clipboard contents* antes de colar
+  e, no terminal, **Ctrl+Shift+V** (seção 5.1).
+- **Clicou no terminal e apareceu "Choose Preferred Application".** É a primeira vez do Xfce:
+  escolha **Xfce Terminal** e **OK**.
+- **O Wireshark não mostra interfaces.** A captura exige root: abra com `sudo wireshark` no
+  terminal (o `dumpcap` do lab não é setuid, de propósito).
+- **Aviso do Firefox: "Some of Firefox's security features may offer less protection".**
+  Esperado: dentro do contêiner, o sandbox do Firefox não usa *user namespaces*. A troca está
+  documentada em `docs/LABORATORIO.md`.
+- **O Burp pede para aceitar termos.** Na primeira execução, ele mostra os termos de uso da
+  PortSwigger. Aceitar é decisão sua; a escolha fica salva em `~/.BurpSuite`.
+- **A impressão digital da Missão 2 não bate.** Confira, nesta ordem: o total de pastas
+  (`find . -type d | wc -l` deve dar 22), as permissões (`find . -type d ! -perm 700` não deve
+  listar nada), se você está **dentro** da raiz ao rodar o `find` (os caminhos começam com
+  `./`) e se não sobrou uma pasta de uma tentativa anterior.
+- **"Outro laboratório está rodando".** Pare o outro lab ou use **Trocar para este lab**.
+
+## 8. Boas práticas e segurança
+
+### 8.1 Verifique o que você baixa
+
+Para quem instala o Kali fora desta plataforma, a regra é nunca confiar numa ISO só porque
+ela veio de um link. A documentação oficial manda conferir em três passos, nesta ordem:
+
+```bash
+# 1. Importar a chave do Kali e conferir a impressão digital
+wget -q -O - https://archive.kali.org/archive-key.asc | gpg --import
+gpg --fingerprint 827C8569F2518CC677FECA1AED65462EC8D5E4C5
+#    esperado: 827C 8569 F251 8CC6 77FE  CA1A ED65 462E C8D5 E4C5
+
+# 2. Verificar a assinatura da lista de hashes (baixe SHA256SUMS e SHA256SUMS.gpg)
+gpg --verify SHA256SUMS.gpg SHA256SUMS
+#    esperado: Good signature from "Kali Linux Archive Automatic Signing Key (2025)"
+
+# 3. Conferir o SHA-256 da ISO contra a lista assinada
+grep kali-linux-2026.2-live-amd64.iso SHA256SUMS | shasum -a 256 -c
+#    esperado: kali-linux-2026.2-live-amd64.iso: OK
+```
+
+O <GlossaryTerm term="GPG">GPG</GlossaryTerm> (*GNU Privacy Guard*, o programa de assinaturas
+digitais do padrão OpenPGP) prova que a lista `SHA256SUMS` foi publicada pelo Kali; o hash
+prova que a ISO bate com a lista. Pular o passo 2 é o erro clássico: um espelho adulterado
+pode trocar a ISO **e** a lista de hashes ao mesmo tempo, e o `sha256sum` vai dizer "OK" para
+a ISO falsa. O nome do arquivo muda a cada versão; o método, não.
+
+### 8.2 Não exponha serviços na attack box
+
+A política do Kali (seção 2.5) existe por um motivo: dentro da rede do cliente, cada porta
+aberta na sua máquina é superfície de ataque. Na prática:
+
+- rode `ss -tlnp` ao começar e ao terminar o dia; tudo o que escuta precisa ter um motivo;
+- ao subir um serviço temporário (um servidor web para transferir um arquivo, no 2.7), faça-o
+  escutar **só** na interface necessária e desligue-o assim que terminar;
+- prefira escutar num endereço específico a escutar em `0.0.0.0`.
+
+O caso da Missão 1 é um exemplo real disso. O Xvnc escuta em todas as interfaces porque foi
+iniciado com `-localhost no` e sem `-interface`. A correção, no espírito do menor privilégio,
+seria fazê-lo escutar só no endereço do Kali na `desktop_net` — a única rede de onde o guacd
+conecta. É o mesmo raciocínio que o 0.1 aplicou à plataforma: escute só onde precisa.
+
+### 8.3 Isole código de terceiros
+
+A lição do caso de 2021: exploits, provas de conceito e ferramentas baixadas de repositórios
+desconhecidos se leem **antes** de rodar, e se rodam numa máquina descartável, nunca no seu
+computador pessoal. Uma prova de conceito publicada no GitHub pode ter, no meio de centenas
+de linhas, um trecho que baixa e executa outra coisa. Nesta plataforma, a regra é ainda mais
+simples e está no CLAUDE.md: alvos só de projetos vulneráveis-por-design consagrados, nunca
+exploit ou malware feito sob medida.
+
+### 8.4 Menor privilégio no dia a dia
+
+- Trabalhe como `kali`, não como root. Use `sudo` comando a comando, e só quando a ferramenta
+  exigir (captura de pacotes, varreduras com raw socket).
+- Não abra o Firefox, o Burp ou um editor como root: um bug numa página maliciosa ganharia o
+  poder do root.
+- Desconfie de qualquer instrução que comece com `sudo` e venha de origem que você não
+  conhece.
+
+### 8.5 Proteja a bancada como dado sensível
+
+A sua bancada guarda as falhas abertas do cliente, credenciais encontradas e o mapa da rede
+dele. Trate-a como o arquivo mais sensível do engajamento (1.5):
+
+- `umask 077` ao criar, e permissões `700`/`600`;
+- numa instalação real, disco cifrado (LUKS, no Linux) — se o notebook for roubado, as notas
+  não vão junto;
+- nada de cliente em `~/ferramentas`, nem em nuvem pessoal;
+- ao fim do contrato, retenção e destruição conforme o combinado: no Kali desta plataforma,
+  `rm -rf` da pasta do engajamento e, se for o caso, o `purge` (que apaga o `/home/kali`
+  inteiro) depois de um backup do que você precisa guardar.
+
+### 8.6 Atualize com método
+
+- **Fixe e decida.** Saiba que versão você tem (o digest da imagem, o `dpkg -l`) e atualize
+  como decisão consciente, não como reflexo.
+- **Atualize antes do engajamento, não durante.** Uma ferramenta que muda de comportamento no
+  meio do teste estraga a reprodutibilidade das suas evidências.
+- **Confira as chaves.** Se o `apt update` reclamar de assinatura, descubra por quê pela fonte
+  oficial (o caso de 2025) antes de "dar um jeito".
+- **Recrie em vez de remendar.** Numa VM, volte ao snapshot limpo; aqui, `Resetar` e
+  `rebuild`. Uma attack box que acumula meses de remendos é uma attack box que ninguém sabe
+  descrever.
+
+### 8.7 O olhar de quem defende
+
+Do outro lado, o que denuncia uma attack box? O User-Agent das ferramentas (seção 3.3), o nome
+de máquina padrão, o padrão de tráfego de um scanner (muitas portas em pouco tempo, que você
+verá no 2.4). Um SOC atento detecta isso facilmente — e é bom que detecte. Num teste
+autorizado, combine com o cliente o seu IP de origem e a janela de teste, para que um alerta
+seja casado com a sua atividade e não vire um incidente. A visibilidade da ferramenta é uma
+aliada da ética.
+
+## 9. Exercícios
+
+As três flags deste módulo estão nas missões da seção 5. O quiz abaixo cobre a teoria; ele
+conta para concluir o módulo.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar
+
+**a)** Um colega sugere: "Para não ter dor de cabeça, deixa o Kali sempre como root e com o SSH
+ligado, assim eu acesso de qualquer lugar." Quais princípios deste módulo a sugestão quebra, e
+o que você propõe no lugar?
+
+<Solution title="Discussão do cenário a">
+Quebra o menor privilégio (seção 2.5 e 8.4): como root, qualquer erro ou programa malicioso
+tem poder total. E quebra a política de nenhum serviço exposto (2.5 e 8.2): um SSH aberto na
+attack box, dentro da rede de um cliente, é uma porta para quem estiver lá — e "de qualquer
+lugar" é exatamente o problema. No lugar: usuário comum com `sudo` pontual; se o acesso remoto
+for indispensável, SSH só por chave, escutando numa interface específica, ligado só durante a
+janela e com o motivo anotado.
+</Solution>
+
+**b)** Durante um teste, você encontra no GitHub uma prova de conceito para a falha que está
+investigando. O README diz "rode `sudo python3 poc.py`". O que você faz antes de rodar?
+
+<Solution title="Discussão do cenário b">
+Lê o código inteiro (seção 8.3): o que ele importa, se baixa algo (`requests`, `urllib`,
+`curl`, `base64` decodificado e executado), se escreve fora da pasta, por que precisa de
+`sudo`. Confere se a origem é conhecida. Roda numa máquina descartável (uma VM com snapshot,
+ou um contêiner sem nada seu) e nunca no computador pessoal. É a lição do caso Google TAG de
+2021: o alvo eram justamente pessoas que rodam exploits.
+</Solution>
+
+**c)** Você vai começar um engajamento amanhã e percebe que a attack box está há quatro meses
+sem atualizar. Atualiza agora, no meio do teste, ou não atualiza?
+
+<Solution title="Discussão do cenário c">
+Atualiza **hoje**, antes do início (seção 8.6), e confere depois que as ferramentas de que
+você precisa funcionam. Atualizar durante o teste muda o comportamento das ferramentas no meio
+das evidências. Não atualizar nunca deixa falhas conhecidas na sua máquina. Anote no caderno a
+data da atualização e, se possível, as versões das ferramentas principais (`dpkg -l`). Num
+rolling release, confira também se não há avisos recentes da distribuição — o caso xz de 2024
+durou de 26 a 29 de março.
+</Solution>
+
+### Exercícios práticos extras (sem flag)
+
+1. Liste, com um comando, todos os pacotes do Kali do lab cujo nome contém `python3` e conte
+   quantos são.
+2. Descubra, com o `dpkg -S`, qual pacote instalou o `/usr/bin/nc`.
+3. Confira as permissões do arquivo de senha do VNC em `~/.vnc/passwd`. Elas estão certas para
+   um segredo? E as da pasta `~/.vnc`?
+4. Rode `find ~/engajamentos -type d ! -perm 700` e explique o que o `!` e o `-perm 700` fazem.
+
+<Solution title="Soluções dos exercícios extras">
+1. `dpkg -l | grep '^ii' | grep python3 | wc -l` (o primeiro `grep` fica só com os instalados).
+2. `dpkg -S /usr/bin/nc` responde `no path found matching pattern /usr/bin/nc`: o `/usr/bin/nc`
+   é um link do sistema de alternativas, que nenhum pacote instala diretamente. Siga o link com
+   `readlink -f /usr/bin/nc` (`/usr/bin/nc.traditional`) e pergunte de novo:
+   `dpkg -S /usr/bin/nc.traditional` responde `netcat-traditional`.
+3. `ls -l ~/.vnc/passwd` mostra `-rw-------` (600): só o dono lê, como deve ser um segredo. A
+   pasta `~/.vnc` está `755`, o que deixa outros usuários listarem o nome do arquivo, mas não
+   lerem o conteúdo. Num sistema com vários usuários, `700` na pasta seria o mais prudente.
+4. `-perm 700` casa com permissões exatamente `700`; o `!` nega a condição. O comando lista
+   toda pasta que **não** está `700` — uma auditoria da bancada em uma linha. Vazio é o
+   resultado certo.
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O Kali é uma distribuição de pentest baseada no Debian, sucessora do BackTrack (2013),
+  mantida pela OffSec. Rolling release desde 2016: novidades e problemas chegam cedo.
+- Metapacotes organizam as ferramentas (`kali-linux-default`, `kali-tools-*`). A sua attack box
+  não precisa de tudo — a desta plataforma é enxuta de propósito.
+- Duas políticas do Kali que valem para qualquer attack box: usuário comum por padrão (desde a
+  2020.1) e nenhum serviço de rede escutando por padrão.
+- O Kali do lab é um contêiner: usa o kernel do WSL2, isolado por namespaces, cgroups e
+  capabilities. A fronteira é mais fina que a de uma VM, e a plataforma compensa com redes
+  internas, sem `privileged` e sem `docker.sock`.
+- Sem internet no lab: ferramenta nova entra pelo Dockerfile e chega com `rebuild`. Só o
+  `/home/kali` sobrevive ao Resetar.
+- A bancada de um engajamento é o escopo materializado: uma pasta por engajamento, uma por host
+  autorizado, `umask 077`, nada de cliente misturado com as suas ferramentas.
+- A própria attack box tem superfície de ataque (o Xvnc na 5901). Escute só onde precisa.
+- Verifique o que baixa (chave → assinatura → hash), isole código de terceiros e atualize com
+  método — os casos xz (2024), chave do Kali (2025) e Google TAG (2021) mostram por quê.
+
+### Cola rápida
+
+| Para... | Use |
+|---|---|
+| Ver quem você é e que poder tem | `id`, `sudo -l` |
+| Ver o sistema e o kernel | `cat /etc/os-release`, `uname -r` |
+| Saber se uma ferramenta existe | `command -v nome` |
+| Listar pacotes instalados | `dpkg -l`, `dpkg -l \| grep nome` |
+| Ver quem escuta na sua máquina | `ss -tlnp` (TCP), `ss -ulnp` (UDP) |
+| Ver interfaces e rotas | `ip -br a`, `ip route` |
+| Testar se um nome resolve | `getent hosts nome` |
+| Criar a bancada protegida | `umask 077` antes do `mkdir -p` |
+| Auditar permissões da bancada | `find ~/engajamentos -type d ! -perm 700` |
+| Atualizar o Kali do lab | `scripts/lab.sh rebuild kali` (terminal do WSL) |
+| Copiar o `/home/kali` | `scripts/lab.sh backup-home` (labs desligados) |
+| Verificar uma ISO | `gpg --verify SHA256SUMS.gpg SHA256SUMS` e depois o SHA-256 |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Kali Docs — Kali Branches](https://www.kali.org/docs/general-use/kali-branches/) — os ramos
+  do Kali e quando usar cada um.
+- [Kali Docs — Metapackages](https://www.kali.org/docs/general-use/metapackages/) — a lista
+  completa de metapacotes.
+- [Kali Docs — Network Service Policy](https://www.kali.org/docs/policy/kali-linux-network-service-policy/)
+  — a política de serviços desligados por padrão.
+- [Kali Docs — Downloading Kali Linux](https://www.kali.org/docs/introduction/download-official-kali-linux-images/)
+  — a verificação de imagens, passo a passo.
+- [Kali Linux 2020.1 Release](https://www.kali.org/blog/kali-linux-2020-1-release/) — a troca
+  do root pelo usuário comum, nas palavras da equipe.
+- [Kali — Happy 10th anniversary](https://www.kali.org/blog/10-years/) — a história do Kali
+  contada pela própria equipe.
+- `docs/LABORATORIO.md`, neste repositório — a arquitetura completa do lab e as trocas de
+  segurança aceitas.
