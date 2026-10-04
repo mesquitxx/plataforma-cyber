@@ -1,0 +1,1795 @@
+---
+slug: metodologia
+track: trilha-1
+title: "Metodologia"
+prerequisites: [o-que-e-pentest]
+lab: null
+tasks:
+  - slug: missao-1-que-fase-e-esta
+    title: "Missão 1 — Que fase é esta?"
+    type: flag
+    prompt: "A flag que o conferir.sh imprime quando as dez classificações do respostas.txt estão certas, no formato FLAG{12 caracteres hexadecimais}."
+    hint: "Para cada evento, pergunte: o código do atacante já rodou? Ele já tem um jeito de voltar? Já está recebendo ordens de fora?"
+    flag:
+      hash: "scrypt$16384$8$1$573d205093268164af4f930176507caaa89dc1e39f5c9dd88c6f4f5d9ee2e0cd"
+      salt: "fb8e4c9b94e2d4ce1d4d1671ab8555f2"
+  - slug: missao-2-o-que-ficou-sem-testar
+    title: "Missão 2 — O que ficou sem testar?"
+    type: flag
+    prompt: "Os IDs completos dos testes do plano sem resultado, em ordem alfabética, separados por vírgula e sem espaços, dentro de FLAG{ }."
+    hint: "Um ID citado no meio do texto de outro teste não conta como testado. E 'não se aplica' só vale com justificativa."
+    flag:
+      hash: "scrypt$16384$8$1$51b76281ad798a98da44e8f6096c2159f90ad83c4573c72d303e4b140edf3b75"
+      salt: "101d9b47c299c4db83a805706cf5fd76"
+  - slug: missao-3-idioma-do-defensor
+    title: "Missão 3 — Escrevendo no idioma do defensor"
+    type: flag
+    prompt: "Os IDs do ATT&CK dos sete passos, na ordem das notas, separados por hífen, dentro de FLAG{ }."
+    hint: "A tática de cada passo já está anotada. Para cada uma, o catálogo tem duas ou três opções: escolha a que descreve exatamente o que a pentester fez."
+    flag:
+      hash: "scrypt$16384$8$1$257bf53257490456600010c653aa768ae09ee503f7eb440845154ed22fd5b6b4"
+      salt: "7bb1a391f2cd6951cda423f3541843d9"
+  - slug: quiz-final
+    title: "Quiz — Metodologia"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Você vai testar o login de um aplicativo web e quer saber exatamente quais testes fazer e como fazer cada um. Qual referência responde a essa pergunta?"
+        options:
+          - "O PTES"
+          - "A Cyber Kill Chain"
+          - "O OWASP Web Security Testing Guide (WSTG)"
+          - "O NIST SP 800-115"
+        answer: 2
+        explanation: "O WSTG é um guia técnico de testes: cada teste tem um ID (como WSTG-ATHN-03, mecanismo de bloqueio de conta), objetivos e um 'como testar'. O PTES e o NIST organizam o engajamento inteiro, e a kill chain modela o ataque; nenhum dos três diz, teste a teste, o que verificar num login."
+      - question: "Qual é a diferença de natureza entre a Cyber Kill Chain e o MITRE ATT&CK?"
+        options:
+          - "Nenhuma: são dois nomes para o mesmo modelo"
+          - "A kill chain é uma sequência de sete fases; o ATT&CK é um catálogo de táticas e técnicas, cada uma com ID, exemplos reais, mitigações e detecção, sem uma ordem obrigatória"
+          - "O ATT&CK serve só para pentest e a kill chain só para defesa"
+          - "A kill chain é mais nova e substituiu o ATT&CK"
+        answer: 1
+        explanation: "A kill chain (2011) descreve a ordem em que uma intrusão progride, para a defesa saber onde cortar. O ATT&CK é uma base de conhecimento: as táticas são os objetivos ('por quê') e as técnicas são os meios ('como'), observados em ataques reais. Um ataque real usa técnicas de várias táticas, em qualquer ordem e voltando atrás."
+      - question: "Um e-mail com uma planilha maliciosa anexada chega à caixa de entrada de um funcionário, que ainda não o abriu. Em que fase da kill chain o ataque está?"
+        options:
+          - "Weaponization"
+          - "Delivery"
+          - "Exploitation"
+          - "Installation"
+        answer: 1
+        explanation: "Delivery é a transmissão da arma até o ambiente do alvo; e-mail, site e pendrive são os três vetores que a Lockheed Martin mais via. A planilha foi montada antes (weaponization), e o código só roda quando alguém a abre e a macro executa (exploitation)."
+      - question: "Segundo o artigo da Lockheed Martin, por que pensar em kill chain favorece quem defende?"
+        options:
+          - "Porque o atacante precisa vencer cada fase da cadeia, e uma única mitigação em qualquer fase interrompe a intrusão"
+          - "Porque a kill chain impede ataques zero-day"
+          - "Porque o modelo elimina a necessidade de monitoramento"
+          - "Porque ela mostra quem é o atacante"
+        answer: 0
+        explanation: "O artigo diz que o adversário precisa progredir com sucesso por cada estágio antes de atingir o objetivo, e que 'apenas uma mitigação' rompe a cadeia. Daí a ideia de ter controles em várias fases, não só na entrada. O próprio artigo diz que atribuir o ataque a alguém é secundário."
+      - question: "Na entrada T1552.001 (Credentials In Files) do ATT&CK, o que a tática Credential Access representa?"
+        options:
+          - "A ferramenta usada pelo atacante"
+          - "O objetivo do adversário naquele momento: o 'porquê' (obter contas e senhas)"
+          - "O grupo que usou a técnica"
+          - "A vulnerabilidade explorada"
+        answer: 1
+        explanation: "Táticas são os objetivos ('o adversário está tentando roubar contas e senhas'); técnicas e subtécnicas são os meios ('procurando senhas em arquivos'); procedimentos são como um grupo ou software real fez, por exemplo o FIN13, que vasculhou arquivos locais atrás de credenciais de administrador."
+      - question: "O WAF do cliente bloqueou todos os seus testes de SQL injection, e você não tem autorização para contorná-lo. O que vai para o relatório?"
+        options:
+          - "Nada: só se reportam achados"
+          - "Que não há SQL injection no sistema"
+          - "Que o teste ficou bloqueado, com o motivo e o que seria preciso para executá-lo (por exemplo, liberar o IP do teste no WAF)"
+          - "Que o WAF é uma vulnerabilidade"
+        answer: 2
+        explanation: "Um teste bloqueado não é um teste aprovado. A matriz de cobertura existe para isso: o cliente precisa saber o que foi testado, o que não foi e por quê. Dizer 'não há SQL injection' seria afirmar o que você não verificou, e o atacante real pode chegar por outro caminho que não passa pelo WAF."
+      - question: "Para que serve a seção threat modeling do PTES?"
+        options:
+          - "Para escolher as ferramentas de varredura"
+          - "Para identificar os ativos e processos de negócio e os agentes de ameaça com suas capacidades, priorizar onde gastar o tempo e dar contexto ao risco de cada achado"
+          - "Para escrever o contrato"
+          - "Para explorar as falhas encontradas"
+        answer: 1
+        explanation: "O PTES exige que os quatro elementos (ativos, processos, comunidades de ameaça e suas capacidades) sejam identificados e documentados em todo pentest, e que o modelo vá no relatório: os achados se referem a ele para ter um risco específico da organização, não uma nota genérica."
+      - question: "Qual crítica à Cyber Kill Chain original o autor da Unified Kill Chain faz?"
+        options:
+          - "Que ela tem fases demais"
+          - "Que ela é focada no perímetro e em malware, e que ataques reais podem pular fases"
+          - "Que ela foi criada por uma empresa privada"
+          - "Que ela não serve para pentest"
+        answer: 1
+        explanation: "Paul Pols resume a crítica mais forte: o modelo é 'focado em perímetro e em malware' e cobre mal o que acontece dentro da rede. Os estudos de caso dele também mostram fases sendo puladas, o que enfraquece a ideia de cortar só no começo e reforça a defesa em camadas."
+      - question: "O relatório do Senado dos EUA sobre a invasão da Target (2013) usou a kill chain. Qual foi uma das oportunidades perdidas que ele aponta?"
+        options:
+          - "A Target não tinha nenhuma ferramenta de segurança"
+          - "Os atacantes usaram um zero-day impossível de detectar"
+          - "O software anti-intrusão gerou alertas sobre a instalação do malware e sobre as rotas de saída dos dados, e a Target não respondeu a eles"
+          - "O fornecedor de ar-condicionado era o atacante"
+        answer: 2
+        explanation: "O relatório lista, entre outras falhas, alertas automáticos do software anti-intrusão (FireEye) sem resposta, um fornecedor com segurança fraca como porta de entrada e a falta de isolamento entre as áreas da rede. A Target tinha ferramentas; o que faltou foi agir sobre elas em fases que teriam quebrado a cadeia."
+      - question: "Segundo o GAO, por que os atacantes ficaram cerca de 76 dias dentro da Equifax sem ser percebidos?"
+        options:
+          - "Porque a Equifax não tinha nenhum equipamento de inspeção de tráfego"
+          - "Porque um certificado digital vencido havia cerca de 10 meses impedia a inspeção do tráfego criptografado, e os atacantes tiravam os dados por canais criptografados"
+          - "Porque os atacantes eram funcionários"
+          - "Porque a falha do Apache Struts era desconhecida"
+        answer: 1
+        explanation: "O equipamento existia, mas não inspecionava o tráfego criptografado por causa do certificado vencido. A falha do Struts era pública desde março de 2017, e a Equifax só a detectou em 29 de julho, depois de trocar o certificado. Identificação (não achar o servidor vulnerável) e detecção falharam juntas."
+      - question: "No meio de um pentest, você nota um comportamento estranho que não está em nenhum teste do seu plano, mas está dentro do escopo. O que a boa metodologia manda fazer?"
+        options:
+          - "Ignorar, porque não está no checklist"
+          - "Investigar, dentro do escopo e das regras, e registrar no caderno o que fez e por quê, como um teste fora do plano"
+          - "Parar o pentest e refazer o plano do zero"
+          - "Testar também os sistemas fora do escopo que parecem relacionados"
+        answer: 1
+        explanation: "Metodologia é um piso, não um teto: ela garante que o básico seja coberto e que tudo seja registrado. Seguir uma pista boa é parte do trabalho, desde que dentro do escopo e documentado (como o WSTG-INPV-12 fora do plano na Missão 2). Sair do escopo nunca é uma opção."
+glossary:
+  - term: methodology
+    definition: "Metodologia: um jeito definido, documentado e repetível de conduzir um trabalho — em que ordem, o que fazer em cada etapa e o que registrar. Em segurança, garante cobertura, comparabilidade e defesa do que foi feito."
+  - term: OSSTMM
+    definition: "Open Source Security Testing Methodology Manual: metodologia aberta do ISECOM para testar e medir a segurança operacional em cinco canais (humano, físico, sem fio, telecomunicações e redes de dados). A versão 3 foi publicada em 14 de dezembro de 2010."
+  - term: WSTG
+    definition: "Web Security Testing Guide: o guia de testes de aplicações web do OWASP. A versão estável é a 4.2 (3 de dezembro de 2020), com os testes em 12 categorias, cada um com um ID como WSTG-ATHN-03."
+  - term: ASVS
+    definition: "Application Security Verification Standard: padrão do OWASP com os requisitos de segurança que uma aplicação deve cumprir, em níveis. O WSTG diz como testar; o ASVS diz o que a aplicação precisa ter. Versão 5.0.0 de maio de 2025."
+  - term: threat modeling
+    definition: "Modelagem de ameaças: identificar o que vale proteger (ativos e processos), quem atacaria e com que capacidade, e por onde. No PTES é uma seção própria e orienta onde o pentest gasta o tempo."
+  - term: OSINT
+    definition: "Open Source Intelligence: informação colhida de fontes abertas (sites, redes sociais, registros públicos, metadados de documentos). O PTES a divide em passiva, semipassiva e ativa, conforme o quanto o alvo pode perceber a coleta."
+  - term: test plan
+    definition: "Plano de teste: a lista dos testes que serão feitos num engajamento, derivada do escopo, do threat model e dos guias técnicos. É a régua contra a qual se mede a cobertura."
+  - term: coverage matrix
+    definition: "Matriz de cobertura: a tabela que liga cada teste do plano ao seu resultado (feito, achado, não se aplica, bloqueado, pendente). Mostra ao cliente o que foi testado e, tão importante quanto, o que não foi."
+  - term: Cyber Kill Chain
+    definition: "Modelo da Lockheed Martin (artigo de Hutchins, Cloppert e Amin, 2011) que divide uma intrusão em sete fases: reconnaissance, weaponization, delivery, exploitation, installation, command and control e actions on objectives."
+  - term: Advanced Persistent Threat
+    definition: "Advanced Persistent Threat: adversário com recursos, treino e paciência, que conduz campanhas longas contra alvos escolhidos, em geral atrás de informação sensível. Foi para ele que a kill chain foi criada."
+  - term: weaponization
+    definition: "Armamento: segunda fase da kill chain. O atacante junta um código malicioso (um backdoor) a um exploit num arquivo entregável, como um PDF ou um documento do Office."
+  - term: delivery
+    definition: "Entrega: terceira fase da kill chain. A arma é transmitida ao ambiente do alvo; e-mail com anexo, site e mídia USB eram os vetores mais vistos pela Lockheed Martin entre 2004 e 2010."
+  - term: installation
+    definition: "Instalação: quinta fase da kill chain. Um backdoor é instalado no sistema da vítima para o atacante manter presença (persistência) no ambiente."
+  - term: command and control
+    definition: "Comando e controle (C2): o canal pelo qual o atacante dá ordens aos sistemas comprometidos e recebe as respostas. Em geral, a máquina infectada é que chama um servidor externo, para atravessar o firewall de dentro para fora."
+  - term: actions on objectives
+    definition: "Ações sobre os objetivos: a sétima fase da kill chain, em que o atacante faz o que veio fazer — copiar e tirar dados, alterar ou destruir sistemas, ou usar a máquina como ponte para outras."
+  - term: exfiltration
+    definition: "Exfiltração: tirar dados de dentro da rede da vítima para um lugar controlado pelo atacante, muitas vezes em pedaços e disfarçados de tráfego normal."
+  - term: indicator of compromise
+    definition: "Indicador de comprometimento (IOC): um dado observável que denuncia uma intrusão — um endereço IP, um domínio, o hash de um arquivo, um padrão de tráfego. A kill chain chama de indicator e os divide em atômicos, computados e comportamentais."
+  - term: courses of action
+    definition: "Cursos de ação: o que a defesa pode fazer em cada fase da kill chain. O artigo da Lockheed Martin usa seis, da doutrina militar americana: detect, deny, disrupt, degrade, deceive e destroy."
+  - term: IDS
+    definition: "Intrusion Detection System: sistema que observa a atividade e gera alertas quando ela parece um ataque. NIDS olha o tráfego da rede; HIDS olha um host. O IPS (ou NIPS) vai além e bloqueia."
+  - term: honeypot
+    definition: "Isca: sistema ou dado falso, sem uso legítimo, colocado para atrair o atacante. Qualquer acesso a ele é suspeito, e isso o torna um ótimo detector."
+  - term: macro
+    definition: "Pequeno programa embutido num documento do Office (em VBA). Macros maliciosas foram por anos um dos jeitos mais comuns de fazer código rodar a partir de um anexo de e-mail."
+  - term: spear phishing
+    definition: "Phishing direcionado: a mensagem é feita sob medida para uma pessoa ou um grupo, com nomes, cargos e assuntos verdadeiros, para parecer legítima."
+  - term: tactic
+    definition: "Tática, no MITRE ATT&CK: o objetivo do adversário num momento do ataque, o 'porquê' (por exemplo, Credential Access: obter contas e senhas). Cada uma tem um ID TA (TA0006)."
+  - term: technique
+    definition: "Técnica, no MITRE ATT&CK: um meio de atingir uma tática, o 'como' (por exemplo, T1552 Unsecured Credentials). Uma técnica pode servir a mais de uma tática."
+  - term: sub-technique
+    definition: "Subtécnica, no MITRE ATT&CK: uma forma mais específica de uma técnica, com ID depois do ponto (T1552.001 Credentials In Files)."
+  - term: procedure
+    definition: "Procedimento, no MITRE ATT&CK: como um grupo, uma campanha ou um software real usou uma técnica, com fonte. É o nível mais concreto."
+  - term: TTP
+    definition: "Tactics, Techniques and Procedures: o jeito de operar de um adversário. Mudar de IP é barato para o atacante; mudar de TTP é caro, por isso a defesa que detecta TTPs dura mais."
+  - term: Unified Kill Chain
+    definition: "Modelo de Paul Pols (publicado em dezembro de 2017) que une a Cyber Kill Chain e o ATT&CK em 18 fases agrupadas em três etapas: entrar (In), avançar pela rede (Through) e agir sobre o objetivo (Out)."
+  - term: web shell
+    definition: "Script colocado num servidor web que recebe comandos por requisições HTTP e devolve o resultado. No ATT&CK é a subtécnica T1505.003, de persistência."
+---
+
+import familias from "./img/familias-de-metodologia.svg";
+import killChain from "./img/kill-chain-e-defesa.svg";
+import engajamento from "./img/metodologia-no-engajamento.svg";
+import anatomia from "./img/anatomia-attack.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+<Callout variant="hypothetical" title="Dois relatórios do mesmo sistema">
+Duas empresas testam o mesmo portal, com o mesmo prazo de cinco dias. A primeira entrega
+um relatório com seis achados e nada mais. A segunda entrega quatro achados e, junto, a
+lista dos 60 testes que planejou, o resultado de cada um, os três que não conseguiu fazer
+(e por quê) e, para cada achado, o nome padronizado da técnica de ataque. Seis meses
+depois, o portal é invadido por uma falha de controle de acesso. Qual relatório deixa o
+cliente descobrir se aquele tipo de falha foi testado e não apareceu, ou simplesmente não
+foi testado?
+</Callout>
+
+Só o segundo, e a diferença entre os dois não é talento: é **método**. No módulo 1.1 você
+viu o que é um pentest, os tipos de teste e as fases de um engajamento. Este módulo
+responde à pergunta seguinte: **como** se conduz esse trabalho de um jeito que outra
+pessoa consiga conferir, repetir e comparar? Uma
+<GlossaryTerm term="methodology">methodology</GlossaryTerm> (metodologia) é exatamente
+isso: um jeito definido, documentado e repetível de fazer o trabalho, que diz em que ordem
+agir, o que fazer em cada etapa e o que registrar.
+
+O tropeço mais comum de quem começa é achar que existe "a" metodologia. Existem várias, e
+elas respondem a **perguntas diferentes**. O PTES diz em que ordem trabalhar do contrato
+ao relatório; o guia de testes do OWASP diz o que testar numa aplicação web, teste a
+teste; a Cyber Kill Chain e o MITRE ATT&CK descrevem como um ataque real progride, e são a
+língua que a defesa fala. Um bom profissional usa as três famílias ao mesmo tempo, e este
+módulo mostra como.
+
+**Ao final, você vai saber:**
+
+- explicar por que um pentest precisa de metodologia e o que ela garante (cobertura,
+  repetição, comparação e defesa do trabalho), com base no NIST SP 800-115;
+- separar as três famílias de metodologia (processo, guia técnico e modelo do
+  adversário) e dizer qual responde a cada pergunta;
+- usar o PTES como espinha de um engajamento, incluindo os níveis de coleta de informação
+  e o *threat modeling*;
+- ler um teste do OWASP WSTG pelo ID e montar um plano de teste com matriz de cobertura;
+- descrever as sete fases da Cyber Kill Chain e o que a defesa pode fazer em cada uma;
+- ler uma entrada do MITRE ATT&CK (tática, técnica, subtécnica e procedimento) e mapear um
+  ataque para ela;
+- reconhecer os limites de cada modelo, a partir dos casos da Target e da Equifax.
+
+**Pré-requisitos:**
+
+- **1.1 — O que é pentest e tipos de teste:** o que é um engajamento, escopo e regras, as
+  sete seções do PTES e as quatro fases do NIST SP 800-115, achado, severidade e cadeia de
+  ataque. Este módulo parte de lá e não repete a visão geral;
+- e, por tabela, a Trilha 0, que o 1.1 já pedia: nas missões você vai usar o terminal do
+  WSL, `grep`, `cut`, `sort`, `comm` e um pouco de `awk` (0.3, 0.4 e 0.6).
+
+**Tempo estimado:** de 3 a 4 horas, incluindo as missões. As missões rodam no **seu
+WSL**, numa pasta descartável; não há laboratório para ligar.
+
+<Callout variant="ethics">
+Metodologia organiza o trabalho, mas **não amplia a autorização**. Nenhum guia, por mais
+completo, transforma um teste fora do escopo em teste permitido: se o plano lista um teste
+que o contrato não cobre, quem manda é o contrato. Neste módulo você só vai ler e analisar
+arquivos **fictícios**, gerados no seu computador; nenhum sistema de terceiros é tocado.
+</Callout>
+
+## 2. Teoria aprofundada — metodologia por dentro
+
+### 2.1 Por que metodologia: o que dá errado sem ela
+
+Um pentest tem prazo (o *time-boxing* do 1.1) e um alvo grande. Sem método, o testador
+tende a fazer três coisas, todas ruins.
+
+1. **Testar o que sabe, não o que importa.** Quem é bom em SQL injection procura SQL
+   injection; quem gosta de rede varre portas. As áreas que o testador conhece menos
+   ficam sem teste, e ninguém percebe, porque nada no relatório mostra o que **não** foi
+   olhado.
+2. **Não conseguir repetir.** Se o teste de março encontrou cinco falhas e o de setembro,
+   duas, o sistema melhorou ou o segundo testador olhou menos coisas? Sem uma lista comum
+   do que foi verificado, não há como saber.
+3. **Não conseguir se defender.** Se o cliente for invadido depois, a primeira pergunta é
+   "vocês testaram isso?". Um caderno com o que foi feito, quando e com que resultado é a
+   resposta; "acho que sim" não é.
+
+O NIST SP 800-115, o guia técnico do NIST sobre testes de segurança que você conheceu no
+1.1 (publicado em setembro de 2008), põe isso como a primeira recomendação: **implementar
+uma metodologia de avaliação repetível e documentada**. Segundo o guia, ela dá consistência
+e estrutura aos testes, o que reduz o risco dos próprios testes, facilita a entrada de
+gente nova no time e ajuda a lidar com a falta de recursos. O guia também observa que
+existem várias metodologias aceitas e que uma organização pode precisar usar mais de uma.
+
+Um ponto fino, mas importante: metodologia não é burocracia que atrasa o ataque. É o que
+transforma uma sessão de *hacking* numa **medição**. Um pentest vende uma resposta à
+pergunta "o que um atacante consegue aqui?", e uma medição só vale se você souber como ela
+foi feita.
+
+### 2.2 Três perguntas, três famílias
+
+Quando alguém diz "a metodologia que eu uso", pode estar falando de coisas de natureza
+bem diferente. Vale separá-las em três famílias:
+
+<Figure
+  src={familias}
+  alt="Três colunas. Processo do engajamento responde 'em que ordem eu trabalho, do contrato ao relatório?', com PTES, NIST SP 800-115 e OSSTMM 3. Guia técnico de testes responde 'o que exatamente eu testo nesta tecnologia?', com OWASP WSTG v4.2 e OWASP MASTG. Modelo do adversário responde 'como um ataque real anda e onde ele pode ser quebrado?', com Cyber Kill Chain, MITRE ATT&CK e Unified Kill Chain. Uma faixa embaixo diz que um engajamento bem feito usa as três ao mesmo tempo."
+  caption="As três famílias respondem a perguntas diferentes e se completam: uma dá a ordem do trabalho, outra o conteúdo dos testes, a terceira o vocabulário do ataque."
+/>
+
+- **Processo do engajamento:** organiza o trabalho inteiro, do primeiro contato ao
+  relatório. Diz que fases existem, o que entra e o que sai de cada uma, e o que
+  documentar. Exemplos: PTES, NIST SP 800-115 e OSSTMM.
+- **Guia técnico de testes:** para uma tecnologia específica, lista **o que** testar e
+  **como**, com um identificador por teste. Exemplo principal: o OWASP Web Security
+  Testing Guide (WSTG), para aplicações web.
+- **Modelo do adversário:** descreve como ataques reais acontecem, fase por fase ou
+  técnica por técnica. Nasceu do lado da defesa, para saber onde cortar um ataque, e
+  virou a língua comum entre atacantes, defensores e relatórios. Exemplos: a Cyber Kill
+  Chain, o MITRE ATT&CK e a Unified Kill Chain.
+
+As próximas seções abrem cada uma.
+
+### 2.3 PTES a fundo: a espinha do engajamento
+
+O PTES (*Penetration Testing Execution Standard*) é um padrão escrito por profissionais da
+área e publicado como wiki em [pentest-standard.org](http://www.pentest-standard.org/).
+Você já conhece as sete seções: *pre-engagement interactions*, *intelligence gathering*,
+*threat modeling*, *vulnerability analysis*, *exploitation*, *post exploitation* e
+*reporting*. O que interessa agora é o que o PTES diz **dentro** delas, e três detalhes
+que quase ninguém lê.
+
+**Primeiro detalhe: o padrão não diz como atacar.** A página principal avisa que o
+padrão "não traz nenhuma diretriz técnica" sobre como executar um pentest, e que por isso
+existe um documento à parte, as *PTES Technical Guidelines*. Ou seja: o PTES é um
+**processo**. Ele diz que a análise de vulnerabilidades tem de acontecer e o que ela deve
+produzir; o "como testar uma aplicação web" vem de outro lugar (do WSTG, por exemplo).
+
+**Segundo detalhe: níveis de esforço.** A seção de coleta de informação define três
+níveis, pensados para casar o esforço com o que o cliente precisa:
+
+| Nível | "Pense em..." | O que é |
+| --- | --- | --- |
+| 1 | Conformidade | Coleta quase toda automática; o mínimo para dizer que houve coleta (por exemplo, para atender a uma norma como o PCI DSS). |
+| 2 | Boa prática | O nível 1 mais análise manual: localização, relações comerciais, organograma. |
+| 3 | Ataque patrocinado por um Estado | Tudo dos níveis 1 e 2 mais muita análise manual, relações em redes sociais e muitas horas de correlação. É o nível de um red team de escopo total. |
+
+A mesma seção separa a coleta de <GlossaryTerm term="OSINT">OSINT</GlossaryTerm>
+(*Open Source Intelligence*, informação de fontes abertas) em três formas, conforme o
+quanto o alvo pode perceber:
+
+- **passiva:** nenhum pacote vai para o alvo; só se usa informação já arquivada por
+  terceiros (por isso pode estar velha ou errada);
+- **semipassiva:** consultas que parecem tráfego normal da internet, como perguntar aos
+  servidores DNS públicos ou ler metadados de documentos publicados, sem procurar nada
+  escondido;
+- **ativa:** o alvo deve perceber: varrer todas as portas, enumerar serviços, procurar
+  diretórios e servidores não publicados. É o "reconhecimento" típico de um pentest.
+
+Essa distinção importa para as regras de engajamento: um cliente pode autorizar a coleta
+passiva desde o primeiro dia e a ativa só dentro da janela de teste.
+
+**Terceiro detalhe: o *threat modeling* é obrigatório.** A seção de
+<GlossaryTerm term="threat modeling">threat modeling</GlossaryTerm> (modelagem de
+ameaças) é a mais pulada na prática e a que mais muda o resultado. O PTES não impõe um
+modelo específico, mas exige que quatro elementos sejam identificados e documentados
+**em todo pentest**:
+
+1. os **ativos de negócio** (dados de clientes, segredos industriais, informação
+   financeira...);
+2. os **processos de negócio** que usam esses ativos (e a infraestrutura, as pessoas e os
+   terceiros por trás deles);
+3. as **comunidades de ameaça** (funcionários, gestores, concorrentes, criminosos...);
+4. as **capacidades** dessas comunidades (ferramentas, acesso a exploits, como se
+   comunicam, que acesso já têm).
+
+O padrão pede ainda que o modelo seja feito junto com o cliente sempre que possível, e
+que vá **no relatório**: os achados devem se referir a ele, para que o risco de cada um
+seja o risco **daquela** organização, e não uma nota técnica genérica. O exemplo do
+próprio PTES é bom: o CRM de um cliente está no escopo; o banco de dados de clientes por
+trás dele é um ativo óbvio; mas, olhando o desenho técnico, descobre-se que o banco de RH
+mora no mesmo servidor. Sem o *threat modeling*, esse segundo ativo, talvez o mais
+sensível, nem entraria na conversa.
+
+**Um alerta de honestidade:** o PTES é um padrão comunitário e de atualização lenta. A
+página principal se apresenta como uma "v1.0" e anuncia uma "v2.0" que traria os níveis
+para todas as seções; a última edição da página principal é de **16 de agosto de 2014**.
+Ele continua útil como espinha (e é citado pelo guia de pentest do PCI SSC como uma das
+metodologias aceitas pelo setor), mas os detalhes técnicos envelheceram. Use-o pela
+estrutura, não pelas listas de ferramentas.
+
+### 2.4 NIST SP 800-115: o que ele acrescenta
+
+No 1.1 você viu as quatro fases do pentest segundo o NIST (*planning*, *discovery*,
+*attack* e *reporting*) e a seta de *additional discovery*. O guia acrescenta duas ideias
+que ajudam a pensar metodologia.
+
+**Fases da avaliação, não só do ataque.** Para qualquer avaliação de segurança (não só
+pentest), o NIST pede no mínimo três fases: *planning* (planejamento, tratado "como
+qualquer outro projeto", com objetivos, escopo, papéis, limitações, cronograma e
+entregáveis), *execution* (achar as vulnerabilidades e validá-las quando for apropriado)
+e *post-execution* (analisar as causas, recomendar correções e escrever o relatório).
+Repare na palavra "causas": o relatório não para no sintoma.
+
+**Técnicas agrupadas pelo que fazem.** O guia organiza as técnicas em três grupos:
+
+- **revisão** (*review techniques*): examinar de forma passiva documentação, logs,
+  regras de firewall, configurações, tráfego capturado e a integridade de arquivos. Por
+  serem passivas, quase não oferecem risco aos sistemas;
+- **identificação e análise de alvos** (*target identification and analysis*):
+  descobrir o que existe e o que está exposto, como varredura de portas e de
+  vulnerabilidades;
+- **validação de vulnerabilidades** (*target vulnerability validation*): confirmar que
+  a falha existe, quebrando senhas, explorando ou fazendo engenharia social. É onde mora
+  o pentest propriamente dito.
+
+Essa divisão é útil para ler um contrato: um cliente que pede "uma avaliação" pode estar
+querendo só revisão e identificação, sem validação. É a diferença entre varredura e
+pentest que você viu no 1.1, agora com o vocabulário do NIST.
+
+### 2.5 OSSTMM: a escola da medição
+
+O <GlossaryTerm term="OSSTMM">OSSTMM</GlossaryTerm> (*Open Source Security Testing
+Methodology Manual*), do instituto ISECOM, tem outra filosofia. A primeira versão saiu em
+18 de dezembro de 2000; a versão 3, a atual, foi publicada em **14 de dezembro de 2010**.
+O manual se define como uma metodologia para testar, analisar e **medir** a segurança
+operacional, e propõe métricas próprias (os *ravs*) para calcular a superfície de ataque.
+
+Duas ideias do OSSTMM valem para qualquer pentester:
+
+- **Canais.** A versão 3 cobre cinco canais de teste: humano, físico, sem fio,
+  telecomunicações e redes de dados. É um lembrete de que "segurança" não é só a rede: o
+  caso Coalfire do 1.1 era um teste do canal físico.
+- **Medir, não só achar.** Em vez de terminar com uma lista de falhas, o OSSTMM tenta
+  responder "quanta proteção existe aqui?" de forma que dois testes possam ser
+  comparados.
+
+Na prática, o OSSTMM é menos usado como roteiro do dia a dia do que o PTES e o WSTG, e é
+bem mais denso. Vale conhecer a existência e a ideia de canais; você não precisa
+dominá-lo agora.
+
+### 2.6 OWASP WSTG: o guia técnico da web
+
+O <GlossaryTerm term="WSTG">WSTG</GlossaryTerm> (*Web Security Testing Guide*) é o
+guia de testes de aplicações web da fundação
+<GlossaryTerm term="OWASP">OWASP</GlossaryTerm>. A versão estável é a **4.2**,
+lançada em **3 de dezembro de 2020**; a 5.0 está em desenvolvimento no GitHub. Ele é o
+exemplo perfeito de guia técnico: não diz como conduzir o engajamento, diz **o que testar
+numa aplicação web e como**.
+
+Os testes da v4.2 estão em 12 categorias, e cada teste tem um ID no formato
+`WSTG-<categoria>-<número>`:
+
+| Código | Categoria | Exemplo de teste |
+| --- | --- | --- |
+| `INFO` | Information Gathering | `WSTG-INFO-02` Fingerprint Web Server |
+| `CONF` | Configuration and Deployment Management | `WSTG-CONF-04` Review Old Backup and Unreferenced Files |
+| `IDNT` | Identity Management | `WSTG-IDNT-04` Account Enumeration and Guessable User Account |
+| `ATHN` | Authentication | `WSTG-ATHN-03` Weak Lock Out Mechanism |
+| `ATHZ` | Authorization | `WSTG-ATHZ-04` Insecure Direct Object References |
+| `SESS` | Session Management | `WSTG-SESS-02` Cookies Attributes |
+| `INPV` | Input Validation | `WSTG-INPV-05` SQL Injection |
+| `ERRH` | Error Handling | `WSTG-ERRH-01` Improper Error Handling |
+| `CRYP` | Weak Cryptography | `WSTG-CRYP-01` Weak Transport Layer Security |
+| `BUSL` | Business Logic | `WSTG-BUSL-08` Upload of Unexpected File Types |
+| `CLNT` | Client-side | `WSTG-CLNT-09` Clickjacking |
+| `APIT` | API Testing | `WSTG-APIT-01` Testing GraphQL |
+
+Esses nomes vão ficar familiares na Trilha 4. Agora, o que importa é **como uma página
+de teste é feita**. Pegue o `WSTG-ATHN-03`, *Testing for Weak Lock Out Mechanism* (o
+mecanismo que bloqueia a conta depois de várias senhas erradas). A página tem:
+
+- **Summary:** o que é o mecanismo e por que existe. O guia lembra que ele é um
+  equilíbrio entre proteger a conta e não impedir o dono legítimo de entrar, e que é comum
+  bloquear depois de 3 a 5 tentativas;
+- **Test Objectives:** avaliar se o bloqueio segura a adivinhação de senhas e se o
+  desbloqueio resiste a quem não é o dono;
+- **How to Test:** um roteiro concreto (errar 3 vezes e acertar; errar 4 e acertar; errar
+  5 e ver se bloqueou; tentar de novo depois de 5, 10 e 15 minutos), mais uma lista de
+  falhas comuns de CAPTCHA;
+- **Remediation** (nem todo teste tem): opções de desbloqueio, da menos para a mais
+  segura, e o que considerar ao escolher o limite;
+- **References.**
+
+E tem um conselho que é pura metodologia: se você só tem **uma** conta para testar, faça
+esse teste **no fim do plano**, para não perder dias de trabalho com a conta bloqueada. É
+esse tipo de detalhe, acumulado por muita gente ao longo de anos, que um guia técnico dá e
+que a memória de um testador sozinho não dá.
+
+O WSTG também é a base de um <GlossaryTerm term="test plan">test plan</GlossaryTerm>
+(plano de teste): a lista dos testes que serão feitos naquele engajamento. Nem todo teste
+do guia cabe em todo alvo (um site sem GraphQL não tem `WSTG-APIT-01`), e o plano é
+justamente a escolha, feita a partir do escopo e do *threat modeling*, do que testar. O
+plano vira a régua da <GlossaryTerm term="coverage matrix">coverage matrix</GlossaryTerm>
+(matriz de cobertura), a tabela que liga cada teste ao seu resultado. Você vai montar e
+auditar uma na Missão 2.
+
+### 2.7 Cyber Kill Chain: o ataque visto por quem defende
+
+As três seções anteriores são metodologias de quem **testa**. A
+<GlossaryTerm term="Cyber Kill Chain">Cyber Kill Chain</GlossaryTerm> nasceu do outro
+lado: de quem **defende**. Ela foi apresentada no artigo *Intelligence-Driven Computer
+Network Defense Informed by Analysis of Adversary Campaigns and Intrusion Kill Chains*,
+de Eric M. Hutchins, Michael J. Cloppert e Rohan M. Amin, da Lockheed Martin, publicado
+em **2011**.
+
+O contexto era o APT (<GlossaryTerm term="Advanced Persistent Threat">*Advanced Persistent
+Threat*</GlossaryTerm>): adversários com recursos e paciência, que fazem campanhas de anos contra alvos
+escolhidos, usando ferramentas feitas sob medida e até
+<GlossaryTerm term="zero-day">zero-days</GlossaryTerm>. Os autores argumentam que a
+resposta a incidentes tradicional faz duas suposições erradas: que a resposta começa
+**depois** do comprometimento, e que o comprometimento veio de uma falha que dá para
+corrigir e esquecer. Contra um adversário que volta sempre, isso não basta.
+
+O termo "kill chain" veio da doutrina militar americana (que descreve o ciclo de atacar
+um alvo como encontrar, fixar, rastrear, mirar, engajar e avaliar), chamado de "cadeia"
+porque qualquer falha num elo interrompe o processo inteiro. Os autores aplicaram a ideia
+às intrusões em redes e definiram sete fases:
+
+1. **Reconnaissance** — pesquisar, identificar e escolher alvos. O artigo dá como exemplo
+   vasculhar sites, anais de conferências e listas de e-mail atrás de endereços, relações
+   e tecnologias usadas.
+2. **<GlossaryTerm term="weaponization">Weaponization</GlossaryTerm>** (armamento) —
+   juntar um *trojan* de acesso remoto (um
+   <GlossaryTerm term="backdoor">backdoor</GlossaryTerm>) com um
+   <GlossaryTerm term="exploit">exploit</GlossaryTerm> num
+   <GlossaryTerm term="payload">payload</GlossaryTerm> entregável, em geral com uma
+   ferramenta automática. Cada vez mais, dizem os autores, o veículo é um arquivo comum,
+   como um PDF ou um documento do Office.
+3. **<GlossaryTerm term="delivery">Delivery</GlossaryTerm>** (entrega) — transmitir a
+   arma ao ambiente do alvo. Os três vetores mais vistos pela equipe de resposta da
+   Lockheed Martin entre 2004 e 2010: anexos de e-mail, sites e mídia USB.
+4. **Exploitation** (exploração) — a arma chega e o código do atacante dispara. Na maioria
+   das vezes explora uma falha de aplicação ou de sistema operacional, mas pode
+   simplesmente "explorar o próprio usuário" ou um recurso do sistema que executa código
+   automaticamente.
+5. **<GlossaryTerm term="installation">Installation</GlossaryTerm>** (instalação) — um
+   backdoor é instalado na vítima e garante a permanência do atacante no ambiente.
+6. **<GlossaryTerm term="command and control">Command and Control</GlossaryTerm>** (C2,
+   comando e controle) — a máquina comprometida chama um servidor na internet e abre um
+   canal por onde recebe ordens. A partir daqui, o atacante tem "a mão no teclado" dentro
+   da rede.
+7. **<GlossaryTerm term="actions on objectives">Actions on Objectives</GlossaryTerm>**
+   (ações sobre os objetivos) — só agora o atacante faz o que veio fazer. Em geral é a
+   <GlossaryTerm term="exfiltration">exfiltration</GlossaryTerm> (exfiltração: juntar,
+   cifrar e tirar os dados da rede da vítima), mas pode ser ferir a integridade ou a
+   disponibilidade, ou usar a máquina como ponte para alcançar outras.
+
+**Por que isso ajuda a defesa.** O artigo é direto: o adversário precisa progredir com
+sucesso por **cada** fase antes de atingir o objetivo, e "apenas uma mitigação" rompe a
+cadeia. Se a defesa barra a entrega, não importa que o exploit fosse um zero-day
+excelente. Para cada fase, os autores propõem
+<GlossaryTerm term="courses of action">courses of action</GlossaryTerm> (cursos de ação)
+tirados da doutrina militar de operações de informação: **detect** (detectar),
+**deny** (negar), **disrupt** (interromper), **degrade** (degradar), **deceive**
+(enganar) e **destroy** (destruir).
+
+<Figure
+  src={killChain}
+  alt="As sete fases da Cyber Kill Chain em sequência: reconnaissance, weaponization, delivery, exploitation, installation, command and control e actions on objectives. Embaixo de cada uma, exemplos de ação defensiva: detectar com web analytics e negar com ACL de firewall; detectar com NIDS e negar com NIPS; detectar com um usuário atento e negar com filtro de proxy; detectar com HIDS e negar com patch; detectar com HIDS e interromper com antivírus; detectar com NIDS e negar com ACL de firewall; detectar com log de auditoria e enganar com honeypot. Uma corrente com um elo quebrado na fase de delivery ilustra que basta uma mitigação. Uma caixa final resume a crítica da Unified Kill Chain."
+  caption="A cadeia e alguns cursos de ação da tabela 1 do artigo de 2011. Uma barreira em qualquer fase quebra a corrente; a caixa de baixo lembra os limites do modelo, que a seção 2.9 explica."
+/>
+
+Alguns termos da tabela merecem uma linha cada. Um
+<GlossaryTerm term="IDS">IDS</GlossaryTerm> (*Intrusion Detection System*) é um sistema
+que observa a atividade e alerta quando ela parece um ataque: o **NIDS** olha o tráfego da
+rede e o **HIDS** olha um computador; o **NIPS**, um sistema de prevenção, vai além e
+bloqueia. Uma *ACL* de <GlossaryTerm term="firewall">firewall</GlossaryTerm> é a lista
+de regras do que pode passar. E um
+<GlossaryTerm term="honeypot">honeypot</GlossaryTerm> é uma isca: um sistema ou dado
+falso que ninguém legítimo usa, e por isso qualquer acesso a ele é suspeito.
+
+O artigo traz ainda uma ideia que vale ouro para quem vai trabalhar em defesa: o
+<GlossaryTerm term="indicator of compromise">indicator</GlossaryTerm> (indicador,
+hoje mais chamado de IOC, *indicator of compromise*), qualquer dado que descreve
+objetivamente uma intrusão. Os autores o dividem em **atômico** (um IP, um e-mail, um
+CVE), **computado** (um hash, uma expressão regular) e **comportamental** (uma combinação
+dos outros, como "primeiro um backdoor que gera tal tráfego, depois troca por outro
+arquivo com tal hash"). Como o atacante precisa reaproveitar ferramentas e infraestrutura
+para a intrusão sair barata, cada indicador colhido numa fase serve para barrar a próxima
+tentativa, mesmo que ela venha com um exploit novo.
+
+### 2.8 MITRE ATT&CK: o catálogo do adversário
+
+A kill chain tem sete caixas grandes. Para descrever um ataque com precisão, é pouco: a
+fase "actions on objectives" sozinha inclui roubar senhas, mover-se pela rede, juntar
+dados e tirá-los, coisas que se defendem de jeitos bem diferentes. O
+<GlossaryTerm term="MITRE ATT&CK">MITRE ATT&CK</GlossaryTerm>, que você conheceu no 0.3,
+resolve isso com outro formato: em vez de uma sequência, um **catálogo**.
+
+O ATT&CK é uma base de conhecimento pública da organização MITRE, montada a partir de
+ataques reais observados. A versão atual é a **v19.2** (28 de abril de 2026). Ela se
+organiza em quatro níveis:
+
+<Figure
+  src={anatomia}
+  alt="Quatro caixas ligadas por setas. Tática TA0006 Credential Access, o porquê: o adversário quer roubar contas e senhas. Técnica T1552 Unsecured Credentials: achar credenciais guardadas sem proteção. Subtécnica T1552.001 Credentials In Files: senha em arquivo de configuração, script ou backup. Procedimento: o grupo FIN13, G1016, obteve credenciais de administrador vasculhando arquivos locais de uma máquina comprometida. Embaixo, as mitigações M1047 Audit, M1027 Password Policies, M1022 e M1017, e a estratégia de detecção."
+  caption="Uma entrada do ATT&CK vai do objetivo (tática) ao caso concreto (procedimento), e a mesma página traz o que a defesa pode fazer."
+/>
+
+- **<GlossaryTerm term="tactic">Tactic</GlossaryTerm>** (tática): o objetivo do
+  adversário naquele momento, o **porquê**. No domínio Enterprise, a partir da v19 são
+  **15 táticas**, de *Reconnaissance* (TA0043) a *Impact* (TA0040). A descrição de cada
+  uma começa com "o adversário está tentando...": por exemplo, *Credential Access*
+  (TA0006), "roubar nomes de conta e senhas".
+- **<GlossaryTerm term="technique">Technique</GlossaryTerm>** (técnica): um meio de
+  atingir a tática, o **como**. Exemplo: `T1552` *Unsecured Credentials*, credenciais
+  guardadas sem proteção. Uma técnica pode servir a mais de uma tática:
+  `T1078` *Valid Accounts* aparece em Initial Access, Persistence, Privilege Escalation e
+  Stealth.
+- **<GlossaryTerm term="sub-technique">Sub-technique</GlossaryTerm>** (subtécnica): uma
+  forma mais específica, com o número depois do ponto. `T1552.001` *Credentials In
+  Files*: senhas em arquivos.
+- **<GlossaryTerm term="procedure">Procedure</GlossaryTerm>** (procedimento): como um
+  adversário real usou a técnica, com fonte. Na página do `T1552.001`, por exemplo, o
+  grupo FIN13 (`G1016`) "obteve credenciais administrativas vasculhando arquivos locais
+  numa máquina comprometida".
+
+Juntos, esses níveis formam o que a área chama de
+<GlossaryTerm term="TTP">TTP</GlossaryTerm> (*tactics, techniques and procedures*), o jeito
+de operar de um adversário. O próprio artigo da kill chain já dizia que o objetivo da
+análise é entender **como** os intrusos operam, e não só **o que** eles fazem. A razão é
+prática: trocar um endereço IP é fácil para o atacante; mudar o jeito de trabalhar custa
+caro.
+
+E a mesma página que descreve o ataque serve à defesa. A do `T1552.001` lista mitigações
+como `M1047` *Audit* ("procurar preventivamente arquivos com senhas e reduzir a
+exposição"), `M1027` *Password Policies* (proibir senha guardada em arquivo), `M1022`
+(restringir permissões de arquivos e pastas) e `M1017` *User Training*, além de uma
+estratégia de detecção.
+
+<Callout variant="info" title="O ATT&CK muda: cite a versão">
+O ATT&CK é revisado duas vezes por ano. Na v19 (abril de 2026), a antiga tática *Defense
+Evasion* foi dividida em duas, *Stealth* (TA0005) e *Defense Impairment* (TA0112), e é
+por isso que o Enterprise passou a ter 15 táticas em vez de 14. Material antigo (inclusive
+cursos e livros) vai falar em *Defense Evasion*. Ao usar IDs num relatório, anote a versão
+do ATT&CK consultada.
+</Callout>
+
+**Kill chain × ATT&CK.** Não são concorrentes, são ferramentas diferentes:
+
+| | Cyber Kill Chain | MITRE ATT&CK |
+| --- | --- | --- |
+| Formato | Sequência de 7 fases | Catálogo de táticas e técnicas |
+| Granularidade | Grossa | Fina (centenas de técnicas e subtécnicas) |
+| Ordem | Implica uma ordem | Sem ordem obrigatória; táticas se repetem |
+| Foco original | Intrusão por malware vinda de fora | Comportamento do adversário dentro e fora da rede |
+| Melhor para | Explicar e planejar defesas por fase | Descrever exatamente o que aconteceu e medir detecção |
+
+### 2.9 Unified Kill Chain: a ponte, e a crítica
+
+A kill chain foi criticada desde cedo. A crítica mais citada está na
+<GlossaryTerm term="Unified Kill Chain">Unified Kill Chain</GlossaryTerm>, de Paul Pols,
+publicada pela primeira vez em **dezembro de 2017**: o modelo original é "focado no
+perímetro e em malware" e cobre mal outros vetores e o que acontece **atrás** do
+perímetro, como o atacante de dentro ou o que vem depois da primeira máquina.
+
+A Unified Kill Chain une a kill chain e as táticas do ATT&CK em **18 fases**, agrupadas
+em três etapas: **In** (entrar: reconhecimento, preparação de recursos, entrega,
+engenharia social, exploração, persistência, evasão de defesas, comando e controle),
+**Through** (avançar pela rede: *pivoting*, descoberta, escalação de privilégios,
+execução, acesso a credenciais, movimentação lateral) e **Out** (agir: coleta,
+exfiltração, impacto, objetivos). Duas novidades contam: ela modela o papel do usuário
+(engenharia social é uma fase) e o *pivoting*, o uso de uma máquina já tomada como ponte
+para chegar a redes que não se alcançam de fora.
+
+E há uma conclusão que muda a defesa: nos estudos de caso de Pols, os atacantes **pularam
+fases**, o que derruba a suposição de que eles precisam passar por todas, numa sequência
+fixa. Se uma fase pode ser pulada, o controle daquela fase também pode. Por isso, em vez
+de apostar tudo em barrar o ataque o mais cedo possível, a recomendação é a
+*defense in depth* (defesa em camadas: várias barreiras independentes, para que a falha
+de uma não entregue tudo), com atenção às fases mais frequentes e às que são passagem obrigatória, partindo da
+premissa de que alguém já entrou (o *assumed breach* do 1.1).
+
+### 2.10 Como tudo se encaixa num engajamento
+
+Com as três famílias à mão, o desenho de um engajamento fica assim:
+
+<Figure
+  src={engajamento}
+  alt="Em cima, as sete seções do PTES, com uma seta que volta de post exploitation para intelligence gathering. Abaixo, três faixas: escopo e threat model decidem os testes do WSTG e o adversário a imitar; o OWASP WSTG dá os testes do alvo web, como WSTG-ATHZ-04; o MITRE ATT&CK dá um ID a cada passo da cadeia, como T1190. Embaixo, o caderno e a matriz de cobertura com o status de cada teste. Dela saem o relatório, com IDs do WSTG e do ATT&CK e a lista do que não foi testado, e o blue team, que confere se há detecção para cada técnica."
+  caption="O PTES dá a ordem; o WSTG preenche a análise e a exploração do alvo web; o ATT&CK dá nome a cada passo; o caderno amarra tudo e alimenta o relatório e a defesa."
+/>
+
+1. No **pré-engajamento** e no **threat modeling**, o escopo e os ativos decidem que
+   testes entram no plano (quais categorias do WSTG fazem sentido para aquele alvo) e, num
+   teste mais realista, que adversário imitar.
+2. Na **coleta**, na **análise** e na **exploração**, o WSTG dá o conteúdo dos testes web,
+   cada um com seu ID; para outros alvos (rede, Windows, Active Directory), outras
+   referências fazem esse papel nas próximas trilhas.
+3. Na **pós-exploração** e no **relatório**, cada passo da cadeia ganha o nome e o ID do
+   ATT&CK, para quem defende poder perguntar: "temos detecção para isso?".
+4. Por baixo de tudo, o **caderno** registra cada ação com data e hora, e a **matriz de
+   cobertura** mostra o status de cada teste do plano. É dela que sai a parte do relatório
+   que diz o que **não** foi testado.
+
+## 3. Na prática da segurança
+
+### 3.1 Um engajamento de cinco dias, passo a passo
+
+<Callout variant="hypothetical" title="Pentest web, caixa-cinza, cinco dias">
+O cenário abaixo é ilustrativo. O cliente fictício é um hospital que vai lançar um portal
+de prontuários e entregou duas contas de teste (uma de médica, uma de recepcionista), a
+documentação da API e uma janela de cinco dias úteis no ambiente de homologação.
+</Callout>
+
+**Antes do dia 1 (PTES 1 e 3: pre-engagement e threat modeling).** A reunião de abertura
+confirma escopo, janelas e contatos (1.1). O *threat modeling* é feito com o cliente:
+
+- ativos: prontuários (dado de saúde, sensível pela LGPD), agenda e contas de médicos;
+- comunidades de ameaça: funcionário curioso com conta legítima, criminoso de fora
+  atrás de dados para extorsão;
+- conclusão: o risco mais relevante é **uma conta de baixo privilégio ler prontuários**.
+
+Isso orienta o plano: as categorias `ATHZ` (autorização) e `SESS` (sessão) do WSTG ganham
+prioridade, e o teste de bloqueio de conta (`WSTG-ATHN-03`) vai para o fim, porque só há
+uma conta de cada perfil. O plano final tem 60 testes, cada um com seu ID.
+
+**Dia 1 (PTES 2: intelligence gathering).** Coleta e mapeamento: `WSTG-INFO-02`
+(identificar o servidor web), `WSTG-INFO-06` (listar os pontos de entrada da aplicação),
+`WSTG-CONF-04` (procurar backups esquecidos). Tudo vai para o caderno, com hora.
+
+**Dias 2 e 3 (PTES 4 e 5: vulnerability analysis e exploitation).** Os testes do plano,
+na ordem de prioridade. No `WSTG-ATHZ-04` (*Insecure Direct Object References*, quando a
+aplicação confia num número que o usuário controla), a recepcionista troca
+`/api/prontuarios/1041` por `/api/prontuarios/1042` e lê o prontuário de outro paciente.
+É o achado que o *threat modeling* previa. Como é crítico, o cliente é avisado no mesmo
+dia (1.1). A prova usa só dois registros de teste.
+
+**Dia 4 (PTES 6: post exploitation).** O que esse acesso permite? Quantos registros? Dá
+para alterar, ou só ler? A pentester mede, com o mínimo de dados reais possível, e
+anota.
+
+**Dia 5 (fechamento).** Os testes que restaram, inclusive o `WSTG-ATHN-03`, e a revisão
+da matriz: 52 testes feitos, 5 marcados como "não se aplica" (com o motivo), 2 bloqueados
+pelo WAF (o *web application firewall*, que filtra requisições suspeitas) e 1 pendente,
+combinado com o cliente para o reteste.
+
+**Relatório (PTES 7).** Cada achado sai assim:
+
+```text
+ACHADO 03 — Leitura de prontuários de outros pacientes (crítico)
+Teste:     WSTG-ATHZ-04 (Insecure Direct Object References)
+ATT&CK:    não se aplica (falha de autorização da aplicação; ver nota)
+Evidência: requisição e resposta com o registro 1042, lido pela conta joao.recepcao
+Impacto:   qualquer conta de recepção lê qualquer prontuário (dado de saúde, LGPD)
+Correção:  checar no servidor, a cada requisição, se o usuário pode ver aquele registro
+Ameaça:    funcionário curioso com conta legítima (threat model, item 2)
+```
+
+Repare em duas coisas. Primeiro, a linha "Ameaça" amarra o achado ao *threat modeling*,
+como o PTES pede: o risco é o deste hospital, não um número genérico. Segundo, nem todo
+achado tem uma técnica do ATT&CK que o descreva bem, e tudo bem: o ATT&CK descreve
+**comportamento de adversário** (como ele entra, se move, rouba). Ele brilha na
+descrição de **cadeias**, como a da Missão 3.
+
+### 3.2 O plano como checklist vivo
+
+Na prática, o plano de teste é uma planilha ou um arquivo de texto versionado (o Git do
+0.8 serve bem), com uma linha por teste e uma coluna de status. Os status mais comuns:
+
+| Status | Quer dizer | Vai para o relatório? |
+| --- | --- | --- |
+| feito | Testado, sem achado | Sim, como coberto |
+| achado | Testado, com achado | Sim, como achado |
+| não se aplica | O teste não faz sentido para este alvo (com o motivo) | Sim, com a justificativa |
+| bloqueado | Não foi possível testar (WAF, ambiente fora do ar, conta bloqueada) | Sim, com o motivo e o que faltou |
+| pendente | Ainda não foi feito | Não pode sobrar no fim; vira "não testado" |
+
+O status "não se aplica" é o mais abusado. Ele é legítimo (não se testa *clickjacking*
+numa API sem interface), mas **sem justificativa** ele é indistinguível de "esqueci". A
+regra prática: um "não se aplica" sem uma frase de motivo não é cobertura. Você vai cair
+nessa armadilha de propósito na Missão 2.
+
+### 3.3 O atacante também segue uma "kill chain", sem saber
+
+Criminosos não leem o artigo da Lockheed Martin, mas o trabalho deles tem a mesma forma,
+porque a forma vem do problema: para tirar dados de uma empresa, é preciso saber quem
+atacar, preparar alguma coisa, fazer chegar, fazer rodar, ficar, receber ordens e, por
+fim, agir. O que o modelo não captura bem, e a Unified Kill Chain apontou, é que o ataque
+real **vai e volta**: depois de entrar, o atacante faz reconhecimento de novo (agora de
+dentro), escala privilégios, se move, volta a procurar. É a mesma seta de
+*additional discovery* que o NIST desenha para o pentest.
+
+### 3.4 Como o defensor usa os modelos
+
+Do lado do *blue team*, os modelos viram três atividades concretas:
+
+- **Defesa por fase.** Para cada fase da kill chain, que controle existe? Se a resposta
+  para C2 for "nenhum", qualquer atacante que entrar fica à vontade. É o raciocínio da
+  tabela de cursos de ação.
+- **Análise de lacunas com o ATT&CK.** Para as técnicas que os adversários relevantes
+  usam (a *threat intelligence* diz quais), existe regra de detecção? Ela já foi testada?
+  Um relatório de pentest com IDs do ATT&CK alimenta isso diretamente: "o teste usou
+  `T1552.001` e ninguém percebeu" vira uma tarefa para o
+  <GlossaryTerm term="SOC">SOC</GlossaryTerm>.
+- **Reconstrução de incidentes.** O artigo de 2011 insiste: quando se detecta uma intrusão
+  numa fase tardia, é preciso reconstruir as fases anteriores, porque só entendendo como a
+  entrega aconteceu dá para barrar a próxima entrega. É exatamente o que os relatórios da
+  seção 4 fazem.
+
+### 3.5 Metodologia não é roteiro
+
+O risco oposto à falta de método é o método virar uma prisão: o testador executa os 60
+testes, marca todos e não pensa em mais nada. Metodologia é um **piso**: garante que o
+básico seja coberto e que tudo seja registrado. As falhas mais graves muitas vezes estão
+na lógica de negócio de **aquela** aplicação, que nenhum guia genérico prevê.
+
+A regra é simples: quando aparecer uma pista fora do plano, siga-a, **dentro do escopo e
+das regras**, e registre-a no caderno como um teste fora do plano, com o que você fez e por
+quê. Assim você ganha a criatividade sem perder a rastreabilidade.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os dois casos abaixo são invasões reais reconstruídas por órgãos do governo americano em
+relatórios públicos. Eles mostram os modelos desta seção sendo usados de verdade e o que
+acontece quando as fases não têm quem as vigie.
+
+### Target (2013): uma invasão analisada fase por fase
+
+Você conheceu o caso da Target no 1.1, pelo ângulo da conformidade. O que interessa
+agora é como ele foi **analisado**. Em **26 de março de 2014**, a equipe da maioria da
+Comissão de Comércio, Ciência e Transporte do Senado dos EUA, a pedido do presidente da
+comissão, o senador John D. Rockefeller IV, publicou o relatório *A "Kill Chain" Analysis
+of the 2013 Target Data Breach*. O relatório usa explicitamente o modelo da Lockheed
+Martin e se baseia em reportagens e análises publicadas até então (a perícia da empresa
+ainda não estava concluída).
+
+Segundo o relatório:
+
+- **O que aconteceu:** entre novembro e dezembro de 2013, os atacantes entraram na rede da
+  Target, roubaram dados financeiros e pessoais de **até 110 milhões** de clientes e os
+  levaram para um servidor no Leste Europeu. Os cartões afetados foram os usados nas lojas
+  dos EUA entre 27 de novembro e 18 de dezembro de 2013.
+- **A entrada:** pelo menos dois meses antes, os atacantes roubaram, com e-mails
+  infectados, as credenciais de acesso de um fornecedor de refrigeração e
+  ar-condicionado, a Fazio Mechanical Services, da Pensilvânia, que tinha acesso remoto à
+  rede da Target para faturamento e gestão de contratos.
+- **Fase a fase**, o relatório aponta onde a cadeia poderia ter sido quebrada. Na
+  **entrega**, exigir autenticação de dois fatores dos fornecedores. Na **exploração**,
+  deixar o FireEye apagar sozinho o malware detectado ou responder aos alertas. Na
+  **instalação**, eliminar contas padrão desnecessárias. No **C2**, filtrar as conexões
+  de saída. Nas **ações sobre o objetivo**, aceitar envio de dados só para servidores
+  aprovados.
+- **A linha do tempo**, pelo relatório: primeiro acesso à rede em 12 de novembro;
+  malware de ponto de venda instalado em poucos terminais entre 15 e 28 de novembro e na
+  maioria até 30 de novembro; malware de exfiltração instalado em 30 de novembro e
+  atualizado em 2 e 3 de dezembro, com alertas do FireEye a cada instalação; envio dos
+  dados a partir de 2 de dezembro, por duas semanas; o Departamento de Justiça avisou a
+  Target em 12 de dezembro; o anúncio público foi em 19 de dezembro, um dia depois de o
+  jornalista Brian Krebs revelar o caso.
+
+**Impacto:** dados de cartão de cerca de 40 milhões de contas e dados pessoais de até 70
+milhões de clientes (o relatório usa "até 110 milhões" para o total).
+
+**Lição:** o relatório resume quatro oportunidades perdidas: dar acesso de rede a um
+fornecedor com segurança fraca, não responder aos alertas sobre a instalação do malware,
+deixar os atacantes passarem de áreas pouco sensíveis para as que guardavam dados de
+cartão (falta de isolamento) e não responder aos alertas sobre as rotas de saída dos
+dados. A Target **tinha** ferramentas em várias fases; o que faltou foi transformar os
+alertas em ação. Modelos como a kill chain servem exatamente para perguntar, fase por
+fase: "se isso acontecer aqui, alguém vê e alguém age?".
+
+**Fonte:** [U.S. Senate Committee on Commerce, Science, and Transportation — A "Kill
+Chain" Analysis of the 2013 Target Data Breach (26/03/2014)](https://www.commerce.senate.gov/services/files/24d3c229-4f2f-405d-b8db-a3a67f183883).
+Se o link do Senado não abrir, há uma
+[cópia no Internet Archive](https://web.archive.org/web/2020/https://www.commerce.senate.gov/services/files/24d3c229-4f2f-405d-b8db-a3a67f183883).
+
+### Equifax (2017): 76 dias sem ninguém ver
+
+A Equifax é uma das três grandes agências de crédito dos EUA. O caso está documentado no
+relatório **GAO-18-559** do GAO, o órgão de auditoria do Congresso americano, de **agosto
+de 2018**, e no comunicado da própria empresa de 15 de setembro de 2017.
+
+Segundo o GAO, com base no que a Equifax informou:
+
+- **Março de 2017:** em **10 de março**, desconhecidos varreram os sistemas da Equifax
+  procurando uma vulnerabilidade que o US-CERT tinha divulgado **dois dias antes**. Era
+  uma falha no Apache Struts, um *framework* (base de código pronta) muito usado para
+  fazer aplicações web, que permitia executar comandos no servidor. A empresa identificou
+  a falha como a **CVE-2017-5638** no comunicado de setembro, e a descrição do NVD
+  confirma que ela foi "explorada na prática em março de 2017". A varredura achou o portal
+  de contestações de crédito (onde o consumidor envia documentos para corrigir o seu
+  relatório) rodando a versão vulnerável; os invasores confirmaram que conseguiam rodar
+  comandos, mas não levaram dados nessa vez.
+- **A partir de 13 de maio de 2017**, num incidente separado, atacantes entraram pelo
+  mesmo portal, usaram os canais criptografados já existentes para mandar comandos e
+  esconder a atividade, acharam um repositório com nomes de usuário e senhas **sem
+  criptografia** e, com eles, passaram das 3 bases de dados do portal para **outras 48**.
+  Rodaram cerca de **9.000 consultas** e tiraram os dados aos poucos, por protocolos web
+  criptografados, como se fosse tráfego normal.
+- **29 de julho de 2017:** um administrador de rede, numa verificação de rotina, percebeu
+  que um certificado digital **vencido havia cerca de 10 meses** impedia o equipamento de
+  inspeção de tráfego de olhar o tráfego criptografado. Trocado o certificado, os sinais
+  da invasão apareceram. O portal saiu do ar em 30 de julho. O ataque durou **cerca de 76
+  dias** até ser descoberto. A empresa avisou o FBI em 2 de agosto e anunciou o caso em 7
+  de setembro de 2017.
+
+**Impacto:** dados pessoais de pelo menos **145,5 milhões** de pessoas nos EUA, segundo o
+GAO.
+
+**Lição:** pela análise da própria Equifax, os fatores principais estavam em quatro
+áreas: **identificação** (o aviso sobre o Struts circulou com uma lista de destinatários
+desatualizada, e a varredura feita uma semana depois não achou o portal vulnerável),
+**detecção** (o certificado vencido), **segmentação** (do portal se chegava a dezenas de
+bases sem relação com ele) e **governança de dados** (senhas guardadas sem criptografia).
+Em linguagem de kill chain: a fase de exploração não foi barrada porque ninguém sabia que
+o servidor era vulnerável, e as fases de C2 e de ações sobre o objetivo não foram vistas
+porque o sensor estava cego. Em linguagem de ATT&CK: `T1190` (*Exploit Public-Facing
+Application*), seguida de credenciais encontradas em texto claro, que você vai reconhecer
+na Missão 3.
+
+**Fontes:** [GAO-18-559 — Data Protection: Actions Taken by Equifax and Federal Agencies in
+Response to the 2017 Breach (agosto de 2018)](https://www.gao.gov/products/gao-18-559);
+[Equifax — Equifax Releases Details on Cybersecurity Incident (15/09/2017)](https://investor.equifax.com/news-events/press-releases/detail/237/equifax-releases-details-on-cybersecurity-incident);
+[NVD — CVE-2017-5638](https://nvd.nist.gov/vuln/detail/CVE-2017-5638).
+
+<Callout variant="tip" title="O que os dois casos ensinam sobre metodologia">
+Nos dois, a organização tinha controles; eles falharam em fases específicas. Um pentest
+com metodologia faz o mesmo exercício **antes** do criminoso: percorre as fases, registra
+o que foi visto e o que não foi, e diz à defesa, com os nomes do ATT&CK, quais passos
+passaram sem alarme.
+</Callout>
+
+## 5. Mãos à obra — exercícios no seu WSL
+
+Este módulo não tem laboratório próprio, e não precisa: metodologia se pratica sobre o
+**registro** do trabalho. Você vai fazer, com arquivos fictícios gerados no seu WSL, três
+tarefas que todo profissional faz: classificar os eventos de uma invasão nas fases da kill
+chain (como os relatórios da seção 4), auditar a cobertura de um plano de teste do WSTG e
+traduzir uma cadeia de ataque para o ATT&CK. Nada aqui usa a rede, abre portas ou toca
+em outro sistema.
+
+**Objetivo:** ao terminar, você terá classificado os dez eventos de uma intrusão fictícia
+nas sete fases da Cyber Kill Chain (Missão 1), encontrado os testes de um plano do WSTG
+que ficaram sem resultado (Missão 2) e mapeado os sete passos de um pentest fictício para
+técnicas do MITRE ATT&CK (Missão 3). Cada missão termina numa flag que só aparece se você
+fizer o raciocínio.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra o terminal do Ubuntu no WSL. Você vai usar só ferramentas que já conhece (`cat`,
+   `grep`, `cut`, `sort`, `comm`, `awk`, `sha256sum`), todas presentes no Ubuntu.
+2. Gere os arquivos das missões. O bloco abaixo cria a pasta `~/treino-1-2` com uma
+   subpasta por missão e escreve cada arquivo com um *here document* (0.4). Copie o bloco
+   inteiro, cole no terminal e aperte Enter:
+
+```bash
+mkdir -p ~/treino-1-2 && cd ~/treino-1-2 && rm -rf missao-1 missao-2 missao-3 && mkdir missao-1 missao-2 missao-3 && (
+cd missao-1
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 1 — Que fase é esta?
+linha-do-tempo.txt é a reconstrução FICTÍCIA de uma invasão à Distribuidora
+Exemplo Ltda., feita pela equipe de resposta a incidentes. Classifique cada
+evento numa das sete fases da Cyber Kill Chain da Lockheed Martin.
+
+Fases (escreva exatamente assim):
+  reconnaissance   pesquisar, identificar e escolher o alvo
+  weaponization    juntar o código malicioso a um "veículo" entregável
+  delivery         fazer a arma chegar ao ambiente do alvo
+  exploitation     a arma dispara: o código do atacante roda
+  installation     instalar um backdoor que garanta a permanência
+  c2               canal de comando e controle com o atacante
+  actions          ações sobre o objetivo (o que o atacante veio fazer)
+
+Preencha respostas.txt (uma linha por evento: ID:fase) e rode:
+  bash conferir.sh
+EOF
+cat > linha-do-tempo.txt <<'EOF'
+E01|2026-03-02|O site da distribuidora e perfis profissionais públicos são vasculhados para montar a lista de nomes e e-mails da equipe financeira.
+E02|2026-03-04|Os metadados de um PDF publicado no site revelam o nome interno de um servidor e a versão exata do pacote de escritório usado na empresa.
+E03|2026-03-09|Uma planilha "Tabela de precos 2026.xlsm" é preparada com uma macro que baixa um backdoor, testada contra aquela mesma versão do pacote de escritório.
+E04|2026-03-10|Um e-mail que imita um fornecedor real chega a três pessoas do financeiro, com a planilha anexada.
+E05|2026-03-10|Como ninguém abriu o anexo em uma hora, o mesmo arquivo é oferecido por um link enviado por SMS a uma das três pessoas.
+E06|2026-03-10|Uma analista abre a planilha e clica em "Habilitar conteúdo"; a macro roda no computador dela.
+E07|2026-03-10|A macro grava o backdoor no disco e cria uma tarefa agendada para que ele volte a rodar a cada vez que o Windows inicia.
+E08|2026-03-10|O backdoor passa a consultar a cada cinco minutos um servidor externo, por HTTPS, e a executar os comandos que recebe de lá.
+E09|2026-03-12|Pelo backdoor, o operador procura as pastas compartilhadas do ERP e copia as planilhas de clientes para uma pasta temporária.
+E10|2026-03-14|As planilhas são compactadas e enviadas para o servidor externo: 2 GB de dados de clientes saem da empresa.
+EOF
+printf 'E01:?\nE02:?\nE03:?\nE04:?\nE05:?\nE06:?\nE07:?\nE08:?\nE09:?\nE10:?\n' > respostas.txt
+cat > conferir.sh <<'EOF'
+#!/usr/bin/env bash
+# Checks the FORMAT of respostas.txt (not the content) and derives the flag.
+set -euo pipefail
+cd "$(dirname "$0")"
+phases='reconnaissance|weaponization|delivery|exploitation|installation|c2|actions'
+n=0
+while IFS= read -r line; do
+    n=$((n + 1))
+    id=$(printf 'E%02d' "$n")
+    if ! [[ $line =~ ^$id:($phases)$ ]]; then
+        echo "linha $n fora do formato: '$line'" >&2
+        exit 1
+    fi
+done < respostas.txt
+[ "$n" -eq 10 ] || { echo "esperava 10 linhas, achei $n" >&2; exit 1; }
+echo "Formato OK. Flag candidata: FLAG{$(sha256sum respostas.txt | cut -c1-12)}"
+EOF
+cd ../missao-2
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 2 — O que ficou sem testar?
+plano-de-teste.txt é o plano FICTÍCIO de um pentest web caixa-cinza no
+portal.exemplo.com.br, montado com testes do OWASP WSTG v4.2.
+caderno.md é o caderno da pentester. Cada teste executado tem um
+cabeçalho no formato:
+  ## WSTG-XXXX-NN | status
+Status possíveis:
+  feito           testado, sem achado
+  achado          testado, com achado
+  nao-se-aplica   não se aplica a este alvo (exige justificativa)
+  bloqueado       não foi possível testar
+  pendente        ainda não testado
+Encontre os testes do PLANO que NÃO têm resultado: os que não aparecem no
+caderno com status feito, achado ou nao-se-aplica justificado.
+EOF
+cat > plano-de-teste.txt <<'EOF'
+WSTG-INFO-02|Fingerprint Web Server
+WSTG-INFO-06|Identify Application Entry Points
+WSTG-CONF-04|Review Old Backup and Unreferenced Files for Sensitive Information
+WSTG-CONF-05|Enumerate Infrastructure and Application Admin Interfaces
+WSTG-CONF-06|Test HTTP Methods
+WSTG-CONF-07|Test HTTP Strict Transport Security
+WSTG-IDNT-04|Testing for Account Enumeration and Guessable User Account
+WSTG-ATHN-02|Testing for Default Credentials
+WSTG-ATHN-03|Testing for Weak Lock Out Mechanism
+WSTG-ATHN-09|Testing for Weak Password Change or Reset Functionalities
+WSTG-ATHZ-02|Testing for Bypassing Authorization Schema
+WSTG-ATHZ-04|Testing for Insecure Direct Object References
+WSTG-SESS-02|Testing for Cookies Attributes
+WSTG-SESS-05|Testing for Cross Site Request Forgery
+WSTG-SESS-06|Testing for Logout Functionality
+WSTG-INPV-01|Testing for Reflected Cross Site Scripting
+WSTG-INPV-05|Testing for SQL Injection
+WSTG-ERRH-01|Testing for Improper Error Handling
+WSTG-BUSL-08|Test Upload of Unexpected File Types
+WSTG-CLNT-09|Testing for Clickjacking
+EOF
+cat > caderno.md <<'EOF'
+# Caderno — portal.exemplo.com.br (pentest autorizado, fictício)
+Contas recebidas: maria.medica (perfil médico) e joao.recepcao (recepção).
+
+## WSTG-INFO-02 | feito
+Cabeçalho Server: nginx. Versão não exposta.
+
+## WSTG-INFO-06 | feito
+Mapeados 34 pontos de entrada (formulários, parâmetros e APIs) com o proxy.
+
+## WSTG-CONF-04 | achado
+/backup/portal-2025.zip acessível sem login. Contém código-fonte antigo.
+
+## WSTG-CONF-05 | feito
+/admin existe, mas só responde para a rede interna (403 de fora).
+O servidor também não respondeu ao método OPTIONS; ver WSTG-CONF-06 depois.
+
+## WSTG-CONF-07 | achado
+Strict-Transport-Security ausente em todas as respostas.
+
+## WSTG-IDNT-04 | achado
+"Usuário não encontrado" x "Senha incorreta": dá para listar contas válidas.
+
+## WSTG-ATHN-02 | feito
+Testadas as senhas padrão do framework e do painel: nenhuma funcionou.
+
+## WSTG-ATHN-03 | feito
+Conta bloqueada após 5 tentativas por 15 minutos.
+
+## WSTG-ATHZ-02 | achado
+joao.recepcao acessa /api/prontuarios/ chamando a API direto, sem passar pela tela.
+
+## WSTG-ATHZ-04 | achado
+Trocar o número em /api/prontuarios/1041 por 1042 mostra o prontuário de outro paciente.
+
+## WSTG-SESS-02 | achado
+Cookie de sessão sem o atributo Secure. HttpOnly e SameSite presentes.
+
+## WSTG-SESS-05 | pendente
+Testar na quinta-feira, junto com o cliente.
+
+## WSTG-SESS-06 | feito
+Logout invalida a sessão no servidor (cookie antigo devolve 401).
+
+## WSTG-INPV-01 | feito
+Saídas codificadas em todos os 34 pontos de entrada.
+
+## WSTG-INPV-05 | bloqueado
+O WAF do cliente bloqueia os testes; não há autorização para contorná-lo.
+Pedido ao cliente: liberar o IP do teste no WAF.
+
+## WSTG-INPV-12 | feito
+Fora do plano, mas no escopo: o gerador de PDF não executa comandos.
+
+## WSTG-ERRH-01 | achado
+Erro 500 mostra o caminho completo do servidor e a versão do framework.
+
+## WSTG-BUSL-08 | achado
+Upload aceita .html no campo "anexar exame".
+
+## WSTG-CLNT-09 | nao-se-aplica
+EOF
+cd ../missao-3
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 3 — Escrevendo no idioma do defensor
+notas-do-pentest.md descreve, passo a passo, a cadeia de um pentest
+FICTÍCIO e autorizado. A pentester já anotou a TÁTICA do MITRE ATT&CK de
+cada passo. Use catalogo-attack.txt (um recorte real do ATT&CK Enterprise)
+para escolher a TÉCNICA ou SUBTÉCNICA certa de cada passo.
+EOF
+cat > catalogo-attack.txt <<'EOF'
+# Recorte do MITRE ATT&CK Enterprise (IDs e nomes conferidos em attack.mitre.org, v19)
+# ID         | TÁTICA            | NOME
+T1593        | Reconnaissance    | Search Open Websites/Domains
+T1595.001    | Reconnaissance    | Active Scanning: Scanning IP Blocks
+T1595.002    | Reconnaissance    | Active Scanning: Vulnerability Scanning
+T1133        | Initial Access    | External Remote Services
+T1190        | Initial Access    | Exploit Public-Facing Application
+T1566.001    | Initial Access    | Phishing: Spearphishing Attachment
+T1059.001    | Execution         | Command and Scripting Interpreter: PowerShell
+T1059.004    | Execution         | Command and Scripting Interpreter: Unix Shell
+T1133        | Persistence       | External Remote Services
+T1505.003    | Persistence       | Server Software Component: Web Shell
+T1110.001    | Credential Access | Brute Force: Password Guessing
+T1552.001    | Credential Access | Unsecured Credentials: Credentials In Files
+T1046        | Discovery         | Network Service Discovery
+T1083        | Discovery         | File and Directory Discovery
+T1021.001    | Lateral Movement  | Remote Services: Remote Desktop Protocol
+T1021.004    | Lateral Movement  | Remote Services: SSH
+T1041        | Exfiltration      | Exfiltration Over C2 Channel
+T1048        | Exfiltration      | Exfiltration Over Alternative Protocol
+EOF
+cat > notas-do-pentest.md <<'EOF'
+# Pentest autorizado (fictício) — Cliente Exemplo Ltda. — a cadeia
+Escopo: portal.exemplo.com.br e a rede 10.10.20.0/24. Caixa-preta.
+
+1. [Reconnaissance] Rodei um scanner de vulnerabilidades web contra o
+   portal. Ele identificou a versão do framework Java e apontou um CVE
+   de execução remota de comandos para ela.
+2. [Initial Access] Com um exploit público para esse CVE, mandei uma
+   requisição ao portal (que é aberto na internet) e confirmei que ela
+   executava comandos no servidor.
+3. [Execution] Os comandos rodavam pelo /bin/sh do servidor Linux, como
+   o usuário do Tomcat. Usei só id, hostname e ls para a prova.
+4. [Persistence] Para não repetir o exploit a cada dia, deixei em
+   /opt/tomcat/webapps/portal/ um arquivo .jsp que recebe um comando
+   pela URL e devolve a saída (combinado com o cliente; removido no fim).
+5. [Credential Access] No servidor, o arquivo application.properties
+   trazia em texto claro a senha do banco e a de um usuário de serviço.
+   Não precisei adivinhar nenhuma senha.
+6. [Lateral Movement] A senha do usuário de serviço funcionou no SSH do
+   servidor de relatórios, 10.10.20.35, que está no escopo.
+7. [Exfiltration] Copiei 5 registros fictícios de teste, como prova, e
+   baixei o arquivo pelo mesmo .jsp que eu usava para mandar comandos.
+EOF
+) && ls -R ~/treino-1-2
+```
+
+   Não há nada aleatório no bloco: todo mundo recebe exatamente os mesmos arquivos, e por
+   isso as flags são as mesmas para todos. Tudo roda dentro de parênteses, num subshell
+   (0.6), para o `cd` não mudar a pasta do seu terminal. Se algo der errado em qualquer
+   missão, rode o bloco de novo: ele apaga e recria só as três pastas.
+
+3. Confira o resultado (saída real):
+
+```console
+$ ls -R ~/treino-1-2
+/home/aluno/treino-1-2:
+missao-1
+missao-2
+missao-3
+
+/home/aluno/treino-1-2/missao-1:
+LEIA-ME.txt
+conferir.sh
+linha-do-tempo.txt
+respostas.txt
+
+/home/aluno/treino-1-2/missao-2:
+LEIA-ME.txt
+caderno.md
+plano-de-teste.txt
+
+/home/aluno/treino-1-2/missao-3:
+LEIA-ME.txt
+catalogo-attack.txt
+notas-do-pentest.md
+```
+
+Cada pasta tem um `LEIA-ME.txt` com o enunciado. Leia-o antes de começar cada missão.
+
+### 5.2 Missão 1 — Que fase é esta? (guiada)
+
+**Cenário:** você está na equipe de resposta a incidentes da Distribuidora Exemplo. A
+perícia reconstruiu a invasão em dez eventos. Antes do relatório, alguém precisa
+classificar cada evento numa fase da kill chain, como fez o relatório do Senado sobre a
+Target: é isso que mostra em que pontos a cadeia poderia ter sido quebrada.
+
+**Etapa 1: o enunciado e a linha do tempo.**
+
+```console
+$ cd ~/treino-1-2/missao-1
+$ cat LEIA-ME.txt
+$ cut -d'|' -f1,2 linha-do-tempo.txt | head -3
+E01|2026-03-02
+E02|2026-03-04
+E03|2026-03-09
+```
+
+O arquivo tem três campos separados por `|`: o ID, a data e a descrição. Leia as dez
+descrições inteiras com `cat linha-do-tempo.txt` antes de classificar.
+
+**Etapa 2: três eventos, junto com você.**
+
+- **E01** — vasculhar o site e perfis públicos para montar a lista de e-mails do
+  financeiro. Ninguém tocou na empresa ainda; é pesquisa para escolher quem atacar:
+  `reconnaissance`.
+- **E03** — preparar uma planilha com uma
+  <GlossaryTerm term="macro">macro</GlossaryTerm> (um pequeno programa embutido no
+  documento do Office) que baixa um backdoor. Ainda não saiu da mão do atacante: ele está
+  juntando o código malicioso ao "veículo" que vai ser entregue. É `weaponization`.
+- **E04** — o e-mail com o anexo chega a três pessoas. O nome técnico do golpe é
+  <GlossaryTerm term="spear phishing">spear phishing</GlossaryTerm>: um
+  <GlossaryTerm term="phishing">phishing</GlossaryTerm> feito sob medida, imitando um
+  fornecedor real para pessoas escolhidas. A arma chegou ao ambiente, mas nada rodou:
+  `delivery`.
+
+As três primeiras linhas da resposta ficam assim (a E02 é sua):
+
+```text
+E01:reconnaissance
+E02:?
+E03:weaponization
+E04:delivery
+```
+
+**Etapa 3: os outros sete.** Para cada evento, faça três perguntas, nesta ordem:
+
+1. **O código do atacante já rodou na vítima?** Se não, é reconhecimento, armamento ou
+   entrega.
+2. **Se rodou, é o primeiro disparo, ou é algo para ficar?** O disparo é `exploitation`;
+   gravar algo que volta sozinho depois de reiniciar é `installation`.
+3. **O atacante já está dando ordens de fora?** O canal que recebe ordens é `c2`; o que
+   ele faz com essas ordens para atingir o objetivo é `actions`.
+
+**Etapa 4: preencher e conferir.** Edite o `respostas.txt` com o `nano` (0.4), trocando
+cada `?`, e rode o `conferir.sh`. Ele confere só o **formato** de cada linha (o ID certo e
+uma das sete fases, escritas exatamente como no `LEIA-ME.txt`) e calcula a flag a partir
+do arquivo. Veja o que acontece com o arquivo ainda sem respostas e com uma fase escrita
+errado (saídas reais):
+
+```console
+$ bash conferir.sh
+linha 1 fora do formato: 'E01:?'
+$ echo $?
+1
+$ bash conferir.sh
+linha 2 fora do formato: 'E02:recon'
+```
+
+Com as dez linhas no formato certo, ele imprime `Formato OK. Flag candidata:` e a flag. Se
+você errar alguma classificação, ele também imprime uma flag, só que **outra**: a flag é
+um trecho do `sha256sum` do arquivo, e mudar uma palavra muda o hash inteiro. Quem decide
+se está certo é a plataforma.
+
+<Hint title="Dica 1: E05, mais uma entrega?">
+O E05 manda **o mesmo arquivo** por outro caminho (um link por SMS). O código já rodou?
+Não: ainda é a arma tentando chegar. Uma fase pode ter vários eventos, e o atacante pode
+tentar mais de um vetor de entrega.
+</Hint>
+
+<Hint title="Dica 2: E06, E07 e E08">
+Os três acontecem no mesmo dia, e é aí que a maioria erra. No E06 a macro **roda**: é o
+disparo, mesmo sem nenhuma falha de software, porque o artigo da kill chain diz que a
+exploração pode simplesmente "explorar o próprio usuário". No E07, o que muda é a
+**permanência**: uma tarefa agendada que faz o backdoor voltar depois de reiniciar. No
+E08, o backdoor passa a **receber ordens** de fora. E o E09 e o E10 são o que o atacante
+veio fazer.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+```text
+E01:reconnaissance
+E02:reconnaissance
+E03:weaponization
+E04:delivery
+E05:delivery
+E06:exploitation
+E07:installation
+E08:c2
+E09:actions
+E10:actions
+```
+
+- **E01 e E02 — reconnaissance:** pesquisa sobre pessoas e tecnologia, sem tocar em nada
+  da empresa. O E02 é OSINT semipassiva: ler metadados de um documento publicado.
+- **E03 — weaponization:** a planilha com macro foi montada e testada contra a versão
+  descoberta no E02. Repare como o reconhecimento alimenta o armamento.
+- **E04 e E05 — delivery:** dois vetores (e-mail e link por SMS) para a mesma arma.
+- **E06 — exploitation:** a macro roda; o "explorado" aqui é o usuário.
+- **E07 — installation:** backdoor gravado e configurado para voltar a cada
+  inicialização.
+- **E08 — c2:** o backdoor consulta um servidor externo e executa os comandos que recebe.
+- **E09 e E10 — actions:** localizar e copiar os dados, depois compactar e tirar 2 GB da
+  empresa. O E10 é a exfiltração.
+
+Grave essas dez linhas no `respostas.txt` e rode `bash conferir.sh`: a flag é a que ele
+imprimir.
+</Solution>
+
+<FlagInput task="missao-1-que-fase-e-esta" />
+
+<Callout variant="tip" title="De volta para a defesa">
+Com a classificação pronta, faça o exercício do relatório do Senado: para cada fase, que
+controle poderia ter quebrado a cadeia? Treinamento e um filtro de anexos com macro
+(delivery), bloquear macros vindas da internet (exploitation), vigiar tarefas agendadas
+novas (installation), filtrar conexões de saída para destinos desconhecidos (o
+<GlossaryTerm term="egress filtering">egress filtering</GlossaryTerm>, contra o C2) e
+alertar sobre envios grandes para fora (actions).
+</Callout>
+
+### 5.3 Missão 2 — O que ficou sem testar? (desafio)
+
+**Cenário:** um pentest web caixa-cinza terminou, e a pentester entregou o plano de teste
+e o caderno. Antes de o relatório sair, o gerente pede uma conferência: **que testes do
+plano ficaram sem resultado?** Eles precisam aparecer no relatório como "não testados", com
+o motivo, ou ser feitos no reteste. Se escaparem, o cliente vai achar que foram testados.
+
+**Etapa 1: o plano e o caderno.**
+
+```console
+$ cd ~/treino-1-2/missao-2
+$ cut -d'|' -f1 plano-de-teste.txt | head -3
+WSTG-INFO-02
+WSTG-INFO-06
+WSTG-CONF-04
+$ grep '^## WSTG-' caderno.md | head -3
+## WSTG-INFO-02 | feito
+## WSTG-INFO-06 | feito
+## WSTG-CONF-04 | achado
+```
+
+O plano tem 20 testes, um por linha, no formato `ID|título`. No caderno, cada teste
+executado começa com um cabeçalho `## ID | status`, seguido do que foi visto.
+
+**Etapa 2: a tentativa ingênua.** A primeira ideia de quase todo mundo é listar todos os
+IDs que aparecem no caderno e comparar com o plano. O `comm` (0.4) compara duas listas
+**ordenadas** e, com `-23`, mostra só as linhas que estão na primeira e não na segunda
+(saída real):
+
+```console
+$ grep -o 'WSTG-[A-Z]*-[0-9]*' caderno.md | sort -u > citados.txt
+$ cut -d'|' -f1 plano-de-teste.txt | sort | comm -23 - citados.txt
+WSTG-ATHN-09
+```
+
+Um teste só? Desconfie. Essa comparação conta como "testado" qualquer ID que **apareça**
+no caderno, em qualquer lugar e com qualquer status. Releia o `LEIA-ME.txt`: só valem os
+status `feito`, `achado` e `nao-se-aplica` **com justificativa**.
+
+**O desafio:** encontre todos os testes do plano sem resultado. A flag é a lista dos
+IDs completos, em ordem alfabética (a do `sort`), separados por vírgula e sem espaços:
+por exemplo, se fossem dois, `FLAG{WSTG-AAAA-01,WSTG-BBBB-02}`.
+
+<Hint title="Dica 1: o que conta como resultado">
+Em vez de procurar IDs em qualquer lugar, procure só nos **cabeçalhos**, e só nos
+cabeçalhos com status `feito` ou `achado`. Uma expressão regular estendida (0.4) faz isso:
+`grep -E '^## WSTG-.* \| (feito|achado)$' caderno.md`. Depois, olhe os outros status um a
+um: `grep '^## WSTG-' caderno.md | grep -v -E '(feito|achado)$'`.
+</Hint>
+
+<Hint title="Dica 2: as duas armadilhas">
+Um dos testes do plano não tem cabeçalho próprio, mas o ID dele aparece **no texto** de
+outro teste. E um dos testes marcados `nao-se-aplica` não tem nenhuma linha de
+justificativa embaixo: `grep -A2 'nao-se-aplica$' caderno.md` mostra o que vem depois do
+cabeçalho.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+Primeiro, os testes com resultado de verdade (`feito` ou `achado`), só pelos cabeçalhos:
+
+```console
+$ grep -E '^## WSTG-.* \| (feito|achado)$' caderno.md | cut -d' ' -f2 | sort > feitos.txt
+$ wc -l < feitos.txt
+16
+```
+
+Depois, o único `nao-se-aplica` (saída real):
+
+```console
+$ grep -n -A2 'nao-se-aplica$' caderno.md
+60:## WSTG-CLNT-09 | nao-se-aplica
+```
+
+Ele é a última linha do arquivo, sem nenhuma justificativa embaixo, então **não** conta
+como resultado. Agora, o plano menos os testes com resultado:
+
+```console
+$ cut -d'|' -f1 plano-de-teste.txt | sort | comm -23 - feitos.txt
+WSTG-ATHN-09
+WSTG-CLNT-09
+WSTG-CONF-06
+WSTG-INPV-05
+WSTG-SESS-05
+```
+
+Cinco testes, cada um por um motivo diferente:
+
+- `WSTG-ATHN-09` (troca e recuperação de senha): esquecido, não aparece no caderno;
+- `WSTG-CLNT-09` (*clickjacking*): `nao-se-aplica` sem justificativa;
+- `WSTG-CONF-06` (métodos HTTP): só citado no texto do `WSTG-CONF-05` ("ver depois"),
+  nunca testado. É a armadilha que enganou a tentativa ingênua;
+- `WSTG-INPV-05` (SQL injection): `bloqueado` pelo WAF. Vai para o relatório como "não
+  testado", com o motivo e o pedido de liberação;
+- `WSTG-SESS-05` (CSRF): `pendente`.
+
+E o `WSTG-INPV-12`, que está no caderno mas não no plano? Ele não muda a resposta: é um
+teste a mais, feito fora do plano e dentro do escopo, exatamente como a seção 3.5
+recomenda. Vai para o relatório como tal.
+
+A flag junta os cinco IDs nessa ordem, separados por vírgula.
+</Solution>
+
+<FlagInput task="missao-2-o-que-ficou-sem-testar" />
+
+<Callout variant="warning" title="Por que isso importa">
+Se esses cinco testes sumissem do relatório, o cliente leria que o portal passou por SQL
+injection, CSRF e recuperação de senha, quando ninguém olhou. É o pior tipo de erro de um
+pentest: um <GlossaryTerm term="false negative">false negative</GlossaryTerm> que nem
+parece um, porque foi produzido pelo processo, e não pela ferramenta.
+</Callout>
+
+### 5.4 Missão 3 — Escrevendo no idioma do defensor (desafio)
+
+**Cenário:** um pentest caixa-preta encontrou uma cadeia que terminou em dados copiados
+de um servidor interno. O *blue team* do cliente pediu que cada passo venha com o ID do
+MITRE ATT&CK, para conferir, técnica por técnica, se alguma regra de detecção disparou.
+A pentester anotou a **tática** de cada passo; falta escolher a **técnica**.
+
+```console
+$ cd ~/treino-1-2/missao-3
+$ cat notas-do-pentest.md
+$ cat catalogo-attack.txt
+```
+
+Veja as táticas anotadas nas notas (saída real):
+
+```console
+$ grep -o '^[0-9]\. \[[A-Za-z ]*\]' notas-do-pentest.md
+1. [Reconnaissance]
+2. [Initial Access]
+3. [Execution]
+4. [Persistence]
+5. [Credential Access]
+6. [Lateral Movement]
+7. [Exfiltration]
+```
+
+O catálogo é um recorte real do ATT&CK Enterprise, com os IDs e os nomes como estão no
+site. Repare que ele tem duas ou três opções para cada tática, e que o `T1133` aparece
+duas vezes: uma técnica pode servir a mais de uma tática (2.8). Também há duas técnicas
+de *Discovery*, uma tática que não aparece nas notas: elas estão lá só para confundir.
+
+**O desafio:** para cada passo, escolha no catálogo a técnica ou subtécnica que descreve
+**exatamente** o que a pentester fez. A flag são os sete IDs, na ordem dos passos,
+separados por hífen: `FLAG{T....-T....-...}`.
+
+<Hint title="Dica 1: um passo de cada vez">
+Filtre o catálogo pela tática do passo, por exemplo `grep 'Lateral Movement'
+catalogo-attack.txt`, e releia o passo. Por qual serviço a pentester entrou no servidor de
+relatórios? No passo 1, o scanner procurou blocos de IP ou vulnerabilidades? No passo 3,
+o servidor é Linux ou Windows?
+</Hint>
+
+<Hint title="Dica 2: os passos 4, 5 e 7">
+No passo 4, o arquivo `.jsp` que recebe comandos pela URL tem um nome próprio no ATT&CK
+(veja o glossário). No passo 5, a frase "não precisei adivinhar nenhuma senha" elimina uma
+das opções. No passo 7, por onde o arquivo saiu: por um protocolo diferente ou pelo mesmo
+canal que ela usava para mandar comandos?
+</Hint>
+
+<Solution title="Solução da Missão 3">
+1. **Reconnaissance → `T1595.002`** *Active Scanning: Vulnerability Scanning*. Um scanner
+   de vulnerabilidades contra o portal. Não é `T1595.001` (varrer blocos de IP) nem
+   `T1593` (pesquisar sites abertos, que não toca o alvo).
+2. **Initial Access → `T1190`** *Exploit Public-Facing Application*. Um exploit contra
+   uma aplicação aberta na internet. Não é `T1133` (entrar por um serviço remoto como VPN
+   com credenciais) nem phishing. É a mesma técnica do caso Equifax.
+3. **Execution → `T1059.004`** *Unix Shell*. Os comandos rodavam pelo `/bin/sh` de um
+   servidor Linux; `T1059.001` é o PowerShell do Windows.
+4. **Persistence → `T1505.003`** *Server Software Component: Web Shell*. Um
+   <GlossaryTerm term="web shell">web shell</GlossaryTerm> é exatamente isso: um script no
+   servidor web que recebe comandos por HTTP e devolve o resultado.
+5. **Credential Access → `T1552.001`** *Credentials In Files*. A senha estava num arquivo
+   de configuração, em texto claro (o *hardcoded credential* do 0.8). Não houve
+   adivinhação (`T1110.001`).
+6. **Lateral Movement → `T1021.004`** *Remote Services: SSH*. Não foi RDP.
+7. **Exfiltration → `T1041`** *Exfiltration Over C2 Channel*. O arquivo saiu pelo mesmo
+   `.jsp` que servia de canal de comandos; `T1048` seria por outro protocolo.
+
+A flag junta os sete IDs nessa ordem, separados por hífen.
+</Solution>
+
+<FlagInput task="missao-3-idioma-do-defensor" />
+
+<Callout variant="ethics" title="O web shell do passo 4">
+Num pentest de verdade, deixar um web shell no servidor do cliente só se faz **com
+combinação explícita**, protegido para que mais ninguém o use, registrado no caderno e
+**removido no fim**, como a nota do passo diz. Um web shell esquecido é uma porta aberta
+que o pentest criou. O guia de pentest do PCI SSC lembra a mesma regra: contas e
+ferramentas criadas pelo testador devem ser removidas ao final.
+</Callout>
+
+### 5.5 Walkthrough: o ATT&CK e o WSTG de verdade (sem flag)
+
+As três missões usaram recortes. Agora abra as fontes, no navegador do Windows:
+
+1. **Uma técnica do ATT&CK.** Abra a página do
+   [T1190 — Exploit Public-Facing Application](https://attack.mitre.org/techniques/T1190/).
+   Identifique: a tática a que ela pertence, os **Procedure Examples** (grupos e
+   softwares reais que a usaram, cada um com fonte), as **Mitigations** (com IDs `M`) e a
+   **Detection Strategy**. Procure, entre os procedimentos, um nome que você reconheça do
+   noticiário.
+2. **Um teste do WSTG.** Abra o
+   [WSTG-ATHN-03 — Testing for Weak Lock Out Mechanism](https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/04-Authentication_Testing/03-Testing_for_Weak_Lock_Out_Mechanism/)
+   na versão 4.2. Ache as seções que a 2.6 descreveu e o conselho de fazer o teste no fim
+   do plano.
+3. **A matriz inteira.** Na página inicial do ATT&CK, abra a matriz Enterprise e conte as
+   colunas: são as táticas. Ache *Stealth* e *Defense Impairment*, as duas que nasceram na
+   v19.
+
+<Solution title="O que você deve observar">
+O T1190 aparece na tática *Initial Access* e tem dezenas de procedimentos, porque explorar
+uma aplicação exposta é um dos jeitos mais comuns de entrar. As mitigações incluem
+`M1051` *Update Software*, `M1048` *Application Isolation and Sandboxing* e `M1030`
+*Network Segmentation*: atualizar, isolar e separar da rede interna, exatamente o que
+faltou na Equifax. No WSTG, a página do ATHN-03
+tem Summary, Test Objectives, How to Test, Remediation e References; o conselho está no
+começo de "Lockout Mechanism": "se você só tem uma conta [...] faça este teste no fim do
+seu plano de teste". A matriz Enterprise tem 15 colunas.
+</Solution>
+
+### 5.6 Limpeza
+
+As missões não deixaram nada fora da pasta `~/treino-1-2`. Quando terminar, apague-a:
+
+```console
+$ rm -rf ~/treino-1-2
+```
+
+## 6. Variações e aprofundamento
+
+### 6.1 Requisito × teste: o ASVS ao lado do WSTG
+
+O OWASP tem outro documento que confunde quem começa: o
+<GlossaryTerm term="ASVS">ASVS</GlossaryTerm> (*Application Security Verification
+Standard*). A diferença é de pergunta: o WSTG diz **como testar** uma aplicação; o ASVS
+diz **o que a aplicação precisa ter** para ser considerada segura, em níveis de exigência.
+A versão 5.0.0 saiu em 30 de maio de 2025. Na prática, os dois se completam: o cliente usa
+o ASVS para definir requisitos ("nosso app precisa do nível 2"), e o pentester usa o WSTG
+para verificar se eles foram cumpridos. Para aplicativos móveis, o OWASP mantém um guia
+técnico próprio, o MASTG (*Mobile Application Security Testing Guide*).
+
+### 6.2 O que o mercado aceita como metodologia
+
+Quem contrata pentest por obrigação (PCI DSS, bancos, governo) muitas vezes precisa
+mostrar que o teste seguiu uma metodologia reconhecida. O documento *Penetration Testing
+Guidance* do PCI SSC, o conselho das bandeiras de cartão (versão 1.1, de setembro de
+2017), lista como metodologias aceitas pelo setor o OSSTMM, o NIST SP 800-115, o guia de
+testes do OWASP e o PTES, entre outras. O mesmo documento diz algo que resume este módulo:
+listar vulnerabilidades não basta; o relatório deve comunicar com clareza **o que foi
+testado, como foi testado e os resultados**.
+
+### 6.3 Emular um adversário específico
+
+No 1.1 você viu a
+<GlossaryTerm term="adversary emulation">adversary emulation</GlossaryTerm> (emulação de
+adversário) e o TIBER-EU. É aqui que o ATT&CK deixa de ser só vocabulário e vira roteiro:
+a *threat intelligence* diz quais grupos miram aquele setor, as páginas desses grupos no
+ATT&CK listam as técnicas que eles usam, e o red team monta o plano de ataque com essas
+técnicas. No fim, a pergunta não é "quantas falhas achamos?", e sim "das técnicas que
+**esse** grupo usa, quantas a defesa viu?". É a mesma lógica da Missão 3, em escala.
+
+### 6.4 Granularidades diferentes do mesmo caminho
+
+Você agora conhece vários desenhos para o mesmo trabalho: 3 fases de avaliação e 4 de
+pentest no NIST, 7 seções no PTES, 7 fases na kill chain, 18 na Unified Kill Chain, 15
+táticas no ATT&CK. Não existe o "número certo" de fases; existe a granularidade certa
+para a pergunta. Para explicar um ataque a um diretor, a kill chain basta. Para escrever
+uma regra de detecção, só a subtécnica do ATT&CK serve. Para organizar a sua semana de
+pentest, o PTES. Um bom profissional troca de lente sem se confundir.
+
+### 6.5 A sua metodologia pessoal
+
+Todo pentester experiente acaba com uma metodologia própria: um conjunto de checklists e
+anotações, derivados desses guias, ajustados ao que ele costuma testar e versionados como
+código. Ela começa aqui. Ao longo das próximas trilhas, toda vez que você aprender uma
+técnica, pergunte: em que seção do PTES isso entra? Que teste do WSTG cobre isso? Que
+técnica do ATT&CK descreve isso? O módulo 1.5 (*Documentação e anotações de pentest*)
+transforma essas respostas no caderno que você vai usar até o fim.
+
+## 7. Erros comuns
+
+- **Usar a kill chain como checklist de pentest.** Ela descreve uma intrusão de malware
+  vista pela defesa; um pentest web pode não ter *weaponization* nem *installation*. Para
+  conduzir o trabalho, use o PTES; para descrever o ataque, a kill chain ou o ATT&CK.
+- **Tratar o ATT&CK como uma sequência.** As táticas não são passos numerados. Um ataque
+  real volta à descoberta várias vezes, e uma técnica pode servir a várias táticas.
+- **Confundir os IDs.** `WSTG-ATHN-03` é um teste do OWASP; `T1110` é uma técnica do
+  ATT&CK; `TA0006` é uma tática; `M1047` é uma mitigação; `G1016` é um grupo. Cada prefixo
+  diz o que é.
+- **Citar sem versão.** O ATT&CK muda duas vezes por ano (a *Defense Evasion* da v18 não
+  existe mais na v19), e o WSTG tem uma versão estável (4.2) e outra em desenvolvimento
+  (5.0), que pode mudar o conteúdo dos testes. No relatório, escreva "WSTG v4.2" e
+  "ATT&CK v19".
+- **Pular o *threat modeling*.** Sem ele, o plano testa tudo com o mesmo peso e o
+  relatório dá notas genéricas. Com ele, o tempo vai para o que pode machucar aquele
+  cliente.
+- **"Não se aplica" sem motivo, "testado" sem registro.** Se não está no caderno, não foi
+  feito. Se não tem justificativa, não é cobertura (Missão 2).
+- **Seguir o checklist e parar de pensar.** O plano é o mínimo. As falhas de lógica de
+  negócio quase nunca estão nele.
+- **Achar que o modelo prova segurança.** "Temos controle em todas as fases" não quer
+  dizer que os controles funcionam: a Target tinha alertas e a Equifax tinha o sensor.
+  Quem prova é o teste.
+
+## 8. Boas práticas e segurança
+
+### 8.1 Monte o plano a partir do escopo, não do guia
+
+Comece pelo que foi contratado e pelo *threat modeling*; só depois abra o WSTG (ou outro
+guia) e escolha os testes. Um plano simples, em texto, versionado no Git, já resolve:
+
+```text
+# Plano de teste — contrato 2026-031 (fictício) — WSTG v4.2, ATT&CK v19
+# Escopo: portal.exemplo.com.br (homologação). Janela: 06/10 a 10/10, 9h-18h.
+# Threat model: (1) funcionário com conta legítima; (2) criminoso externo.
+# ID           | Prioridade | Por quê                                | Status
+WSTG-ATHZ-04   | alta       | threat model (1): ler prontuário alheio | pendente
+WSTG-ATHZ-02   | alta       | threat model (1)                       | pendente
+WSTG-SESS-02   | média      | sessão de usuário com dado de saúde     | pendente
+WSTG-ATHN-03   | média      | só uma conta por perfil: fazer no fim   | pendente
+WSTG-APIT-01   | -          | não se aplica: o portal não usa GraphQL | nao-se-aplica
+```
+
+Cada linha diz **por que** o teste está no plano. Isso ajuda a priorizar quando o tempo
+apertar, e mostra ao cliente o raciocínio.
+
+### 8.2 Registre tudo, na hora
+
+- Uma linha no caderno para cada ação que toca o alvo: data e hora, alvo, o que foi feito
+  e o resultado. O diário da Missão 2 do 1.1 era isso.
+- Guarde as evidências (requisições, respostas, capturas de tela) com nome que remeta ao
+  teste (`WSTG-ATHZ-04_registro-1042.txt`). Elas são a base da
+  <GlossaryTerm term="chain of custody">chain of custody</GlossaryTerm> (cadeia de
+  custódia) se o caso for parar num tribunal.
+- Anote as versões dos guias e das ferramentas usadas. Um teste refeito daqui a um ano só
+  é comparável se você souber o que mudou.
+- Ao fim de cada dia, revise a matriz: nada pode ficar "pendente" no último dia sem um
+  motivo escrito.
+
+### 8.3 Metodologia não amplia o escopo
+
+Se um teste do plano exigiria tocar algo fora do escopo (um servidor de terceiros, uma
+técnica proibida nas regras de engajamento), o status é "não se aplica" ou "bloqueado",
+**com o motivo**, e nunca "fiz mesmo assim". O mesmo vale para as pistas fora do plano
+(3.5): seguir uma pista é dentro do escopo, ou não é.
+
+### 8.4 Use o ATT&CK para deixar a defesa melhor
+
+O pentest termina; a defesa continua. Para que o relatório sirva ao *blue team*:
+
+- dê a cada passo de uma cadeia o ID da técnica (e da versão do ATT&CK);
+- anote, se o cliente quiser medir detecção, **a hora exata** de cada passo, para o SOC
+  procurar nos logs o que viu e o que não viu;
+- recomende a mitigação da página do ATT&CK quando ela se aplicar (por exemplo, `M1047`
+  *Audit* contra senhas em arquivos de configuração), além da correção pontual.
+
+### 8.5 Do lado da defesa: um controle por fase, e camadas
+
+Para quem defende, a lição dos modelos é concreta:
+
+| Fase | Exemplos de controle |
+| --- | --- |
+| Reconnaissance | Publicar menos (metadados, organograma, versões); monitorar varreduras |
+| Weaponization / Delivery | Filtro de e-mail e de anexos, bloqueio de macros vindas da internet, treinamento contra phishing, autenticação de dois fatores para acesso remoto e de fornecedores |
+| Exploitation | Atualização rápida (inventário que saiba **onde** está cada software, a lição da Equifax), varredura que confirme a correção |
+| Installation | Lista de programas permitidos, alerta para tarefas agendadas e serviços novos |
+| Command and Control | Egress filtering, proxy obrigatório, inspeção do tráfego criptografado **com os certificados em dia** |
+| Actions on Objectives | Segmentação da rede, dados sensíveis cifrados, alertas para volumes anormais de saída, honeypots |
+
+E, por cima de tudo, a crítica da Unified Kill Chain: fases podem ser puladas. Não
+aposte tudo numa fase; mantenha controles em todas e parta do princípio de que alguém
+já entrou.
+
+## 9. Exercícios
+
+As três flags do módulo vêm das missões da seção 5:
+
+- **Missão 1 — Que fase é esta?** (seção 5.2);
+- **Missão 2 — O que ficou sem testar?** (seção 5.3);
+- **Missão 3 — Escrevendo no idioma do defensor** (seção 5.4).
+
+O quiz abaixo fecha a parte teórica. Ele conta para concluir o módulo (70% de acertos).
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar
+
+1. Um cliente pede "um pentest seguindo o OWASP Top 10". O que você responderia? (Dica: o
+   Top 10 é uma lista de **categorias de risco** para conscientização; que documento do
+   OWASP diz **como testar**?)
+
+<Solution title="Uma resposta possível">
+O Top 10 é ótimo para conversar sobre riscos, mas não é um roteiro de teste: cada
+categoria cobre muitas falhas diferentes. O caminho é montar o plano com o WSTG (e,
+se o cliente tiver requisitos formais, conferir contra o ASVS), mostrando no relatório
+como cada teste se relaciona com as categorias do Top 10 que interessam ao cliente.
+</Solution>
+
+2. Na Missão 1, imagine que a analista **não** abriu a planilha, mas o atacante tentou de
+   novo uma semana depois, com outro arquivo e outro remetente, mostrando que ainda tinha
+   a lista de e-mails. Em que fase a defesa quebrou a cadeia da primeira vez? O que o
+   artigo de 2011 recomenda fazer com os indicadores dessa tentativa frustrada?
+
+<Solution title="Uma resposta possível">
+A cadeia parou entre *delivery* e *exploitation*: a arma chegou, mas não disparou. O
+artigo pede que a defesa analise também as intrusões que não deram certo (ele chama isso de
+síntese): colher os indicadores do e-mail (remetente, servidor de origem, hash do
+anexo, domínio para onde a macro ligaria) e reconstruir o que teria acontecido, para
+barrar a próxima tentativa mesmo que ela venha por outro caminho.
+</Solution>
+
+3. Pegue o caso da Equifax (seção 4) e escreva, em cinco linhas, a cadeia em técnicas do
+   ATT&CK, usando a página de cada técnica no site. Que tática do relatório do GAO não
+   tem nenhuma técnica de *Lateral Movement* óbvia, e por quê?
+
+<Solution title="Uma resposta possível">
+Uma versão: `T1595.002` (varredura atrás da falha do Struts), `T1190` (exploração do
+portal), credenciais em texto claro num repositório (`T1552`, *Unsecured Credentials*),
+consultas a outras bases (*Collection*) e saída dos dados por protocolos web cifrados
+(*Exfiltration*). O GAO descreve o avanço para 48 outras bases com credenciais
+encontradas, e não a tomada de outras máquinas por um serviço remoto: por isso não há uma
+técnica de *Lateral Movement* óbvia, e quem mapeia precisa ser honesto sobre o que a fonte
+diz e o que ela não diz.
+</Solution>
+
+### Exercício prático extra (sem flag)
+
+Escolha um alvo do laboratório que você vai usar na Trilha 4, o DVWA, e monte, só no
+papel, um plano de teste para o login dele: liste cinco testes do WSTG v4.2 da categoria
+`ATHN` que façam sentido, um por linha, com a prioridade e o motivo, no formato da seção
+8.1. Guarde o arquivo: você vai executá-lo quando chegar lá.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Metodologia é o que transforma um ataque autorizado numa **medição**: repetível,
+  comparável e defensável. O NIST SP 800-115 a põe como primeira recomendação.
+- Há três famílias: **processo** (PTES, NIST, OSSTMM: em que ordem trabalhar), **guia
+  técnico** (OWASP WSTG: o que testar, com ID) e **modelo do adversário** (Cyber Kill
+  Chain, MITRE ATT&CK, Unified Kill Chain: como o ataque anda e onde quebrá-lo). Um
+  engajamento usa as três.
+- O PTES exige *threat modeling* em todo pentest e define níveis de coleta; não traz
+  diretriz técnica e envelheceu nos detalhes.
+- O plano de teste e a matriz de cobertura dizem o que foi testado e, tão importante
+  quanto, o que **não** foi e por quê.
+- A kill chain (2011) tem sete fases e uma ideia central: o atacante precisa vencer todas,
+  a defesa precisa quebrar uma. Seus limites: foco em perímetro e malware, e fases que
+  podem ser puladas.
+- O ATT&CK é um catálogo: táticas (porquê), técnicas e subtécnicas (como) e procedimentos
+  (como um grupo real fez), com mitigações e detecção. Cite sempre a versão (hoje, v19).
+- Target e Equifax tinham ferramentas; elas falharam em fases específicas. Pensar por
+  fases mostra onde.
+
+### Cola rápida
+
+| Pergunta | Use |
+| --- | --- |
+| Em que ordem conduzo o engajamento? | PTES (espinha) e NIST SP 800-115 |
+| O que exatamente testo nesta aplicação web? | OWASP WSTG v4.2 (ID por teste) |
+| O que a aplicação deveria ter? | OWASP ASVS |
+| Como explico o ataque e onde a defesa corta? | Cyber Kill Chain |
+| Como descrevo cada passo para o blue team? | MITRE ATT&CK (tática, técnica, ID) |
+| O que foi e o que não foi testado? | Plano de teste + matriz de cobertura |
+
+| Prefixo | O que é | Exemplo |
+| --- | --- | --- |
+| `WSTG-` | Teste do OWASP WSTG | `WSTG-ATHZ-04` |
+| `TA` | Tática do ATT&CK | `TA0006` Credential Access |
+| `T` | Técnica (ou subtécnica, com ponto) | `T1552.001` |
+| `M` | Mitigação do ATT&CK | `M1047` Audit |
+| `G` | Grupo no ATT&CK | `G1016` FIN13 |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Hutchins, Cloppert e Amin — Intelligence-Driven Computer Network Defense (Lockheed Martin)](https://www.lockheedmartin.com/content/dam/lockheed-martin/rms/documents/cyber/LM-White-Paper-Intel-Driven-Defense.pdf):
+  o artigo da kill chain. As seções 3.2 a 3.4 são curtas e valem a leitura inteira.
+- [MITRE ATT&CK](https://attack.mitre.org/): a matriz Enterprise, as páginas de técnicas e
+  grupos e o histórico de versões.
+- [OWASP Web Security Testing Guide](https://owasp.org/www-project-web-security-testing-guide/):
+  a v4.2 estável e a v5 em desenvolvimento.
+- [PTES](http://www.pentest-standard.org/): as seções *Intelligence Gathering* e *Threat
+  Modeling*, citadas neste módulo.
+- [NIST SP 800-115](https://csrc.nist.gov/pubs/sp/800/115/final): a seção 2.1, sobre
+  metodologia de avaliação.
+- [The Unified Kill Chain (Paul Pols)](https://www.unifiedkillchain.com/): o white paper,
+  com as 18 fases e a crítica à kill chain original.
+- [OSSTMM 3 (ISECOM)](https://www.isecom.org/research.html): para quem quiser conhecer a
+  escola da medição.
+- [PCI SSC — Penetration Testing Guidance v1.1](https://listings.pcisecuritystandards.org/documents/Penetration-Testing-Guidance-v1_1.pdf):
+  o que o setor de cartões espera de um pentest e do relatório.

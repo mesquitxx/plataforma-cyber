@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
+  <title id="t">Como PTES, WSTG e ATT&amp;CK se encaixam num engajamento</title>
+  <desc id="d">Em cima, a espinha do engajamento: as sete seções do PTES, de pre-engagement a reporting, com uma seta curva que volta de post exploitation para intelligence gathering, porque cada acesso novo realimenta a coleta. Logo abaixo, três faixas: sob as seções 1 a 3, o escopo e o threat model decidem quais testes do WSTG entram no plano e qual adversário imitar; sob as seções 4 e 5, o OWASP WSTG dá os testes do alvo web, cada um com um ID como WSTG-ATHZ-04; sob as seções 6 e 7, o MITRE ATT&amp;CK dá um ID a cada passo da cadeia, como T1190. Abaixo, uma faixa larga: o caderno e a matriz de cobertura, com o status de cada teste do plano (feito, achado, não se aplica, bloqueado, pendente). Dela saem duas caixas: o relatório, com cada achado ligado ao ID do WSTG e à técnica do ATT&amp;CK e a lista do que não foi testado; e o blue team, que confere se existe detecção para cada técnica do relatório.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 12.5px; font-weight: 700; }
+    .s { font-size: 11.5px; fill: #9fb0a6; }
+    .c { font-size: 11.5px; fill: #e6ede8; }
+    .box { fill: #1c2521; stroke-width: 1.6; }
+  </style>
+  <defs>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f0a35a"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="500" fill="#121815"/>
+  <text class="t" x="30" y="28">Do recon ao relatório: quem faz o quê</text>
+
+  <!-- loop -->
+  <path d="M 691 86 C 691 36, 207 36, 207 84" fill="none" stroke="#f0a35a" stroke-width="2" marker-end="url(#o)"/>
+  <text class="s" x="300" y="76" style="fill:#f0a35a">cada acesso novo realimenta a coleta (é iterativo)</text>
+
+  <!-- PTES spine: x = 30 + i*121, width 112 -->
+  <rect class="box" x="30"  y="88" width="112" height="56" rx="8" style="stroke:#5cc8d8"/>
+  <text class="m" x="40"  y="110" style="fill:#5cc8d8">1 pre-</text>
+  <text class="m" x="40"  y="128" style="fill:#5cc8d8">engagement</text>
+  <rect class="box" x="151" y="88" width="112" height="56" rx="8" style="stroke:#5cc8d8"/>
+  <text class="m" x="161" y="110" style="fill:#5cc8d8">2 intelli-</text>
+  <text class="m" x="161" y="128" style="fill:#5cc8d8">gence</text>
+  <rect class="box" x="272" y="88" width="112" height="56" rx="8" style="stroke:#5cc8d8"/>
+  <text class="m" x="282" y="110" style="fill:#5cc8d8">3 threat</text>
+  <text class="m" x="282" y="128" style="fill:#5cc8d8">modeling</text>
+  <rect class="box" x="393" y="88" width="112" height="56" rx="8" style="stroke:#e8c25a"/>
+  <text class="m" x="403" y="110" style="fill:#e8c25a">4 vulnera-</text>
+  <text class="m" x="403" y="128" style="fill:#e8c25a">bility an.</text>
+  <rect class="box" x="514" y="88" width="112" height="56" rx="8" style="stroke:#e8c25a"/>
+  <text class="m" x="524" y="110" style="fill:#e8c25a">5 exploi-</text>
+  <text class="m" x="524" y="128" style="fill:#e8c25a">tation</text>
+  <rect class="box" x="635" y="88" width="112" height="56" rx="8" style="stroke:#f06a6a"/>
+  <text class="m" x="645" y="110" style="fill:#f06a6a">6 post</text>
+  <text class="m" x="645" y="128" style="fill:#f06a6a">exploitation</text>
+  <rect class="box" x="756" y="88" width="112" height="56" rx="8" style="stroke:#f06a6a"/>
+  <text class="m" x="766" y="110" style="fill:#f06a6a">7 reporting</text>
+  <text class="s" x="30" y="80">PTES: a espinha</text>
+
+  <!-- row 2 -->
+  <rect class="box" x="30" y="160" width="354" height="72" rx="8" style="stroke:#5cc8d8"/>
+  <text class="m" x="44" y="182" style="fill:#5cc8d8">escopo + threat model decidem:</text>
+  <text class="c" x="44" y="202">quais testes do WSTG entram no plano?</text>
+  <text class="c" x="44" y="220">qual adversário imitar (ATT&amp;CK)?</text>
+
+  <rect class="box" x="393" y="160" width="233" height="72" rx="8" style="stroke:#e8c25a"/>
+  <text class="m" x="407" y="182" style="fill:#e8c25a">OWASP WSTG (alvo web)</text>
+  <text class="c" x="407" y="202">o que testar, teste a</text>
+  <text class="c" x="407" y="220">teste: WSTG-ATHZ-04</text>
+
+  <rect class="box" x="635" y="160" width="233" height="72" rx="8" style="stroke:#f06a6a"/>
+  <text class="m" x="649" y="182" style="fill:#f06a6a">MITRE ATT&amp;CK</text>
+  <text class="c" x="649" y="202">cada passo da cadeia</text>
+  <text class="c" x="649" y="220">ganha um ID: T1190</text>
+
+  <!-- arrows to row 3 -->
+  <g stroke="#5ee08a" stroke-width="2" marker-end="url(#g)">
+    <line x1="207" y1="232" x2="207" y2="256"/>
+    <line x1="509" y1="232" x2="509" y2="256"/>
+    <line x1="751" y1="232" x2="751" y2="256"/>
+  </g>
+
+  <!-- row 3 -->
+  <rect class="box" x="30" y="260" width="838" height="64" rx="8" style="stroke:#5ee08a"/>
+  <text class="m" x="46" y="284" style="fill:#5ee08a">caderno + matriz de cobertura (o tempo todo)</text>
+  <text class="c" x="46" y="306">cada teste do plano com status: feito / achado / nao-se-aplica (por quê) / bloqueado / pendente</text>
+
+  <g stroke="#5ee08a" stroke-width="2" marker-end="url(#g)">
+    <line x1="237" y1="324" x2="237" y2="352"/>
+    <line x1="660" y1="324" x2="660" y2="352"/>
+  </g>
+
+  <!-- row 4 -->
+  <rect class="box" x="30" y="356" width="414" height="116" rx="8" style="stroke:#b48cf0"/>
+  <text class="m" x="46" y="380" style="fill:#b48cf0">relatório</text>
+  <text class="c" x="46" y="402">cada achado com o ID do WSTG e a</text>
+  <text class="c" x="46" y="420">técnica do ATT&amp;CK; a cadeia em ordem;</text>
+  <text class="c" x="46" y="438">a lista do que NÃO foi testado e</text>
+  <text class="c" x="46" y="456">por quê (bloqueado, pendente...)</text>
+
+  <rect class="box" x="454" y="356" width="414" height="116" rx="8" style="stroke:#b48cf0"/>
+  <text class="m" x="470" y="380" style="fill:#b48cf0">blue team</text>
+  <text class="c" x="470" y="402">para cada técnica do relatório:</text>
+  <text class="c" x="470" y="420">existe regra de detecção? ela</text>
+  <text class="c" x="470" y="438">disparou durante o teste? se não,</text>
+  <text class="c" x="470" y="456">é uma lacuna a fechar</text>
+  <line x1="444" y1="414" x2="452" y2="414" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
+</svg>

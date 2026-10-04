@@ -179,7 +179,10 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   datas fixos, flags derivadas de hashes, e walkthroughs de merge, remote local e
   GitHub privado) escritos. Trilha 1: 1.1 "O que é pentest e tipos de teste" (sem lab;
   três missões no WSL sobre pedidos de clientes, o diário de um pentest e a saída de um
-  scanner, todos fictícios, e walkthrough de relatórios públicos) escrito.
+  scanner, todos fictícios, e walkthrough de relatórios públicos) e 1.2 "Metodologia"
+  (sem lab; três missões no WSL sobre a kill chain de uma invasão, a cobertura de um
+  plano do OWASP WSTG e o mapeamento de uma cadeia para o MITRE ATT&CK, todos fictícios,
+  e walkthrough das páginas do ATT&CK e do WSTG) escritos.
 
 ## Fase 10 — Conteúdo: Trilhas 3–5
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.
