@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" role="img" aria-labelledby="t d">
+  <title id="t">O algoritmo de Shor: fatorar vira achar o período de uma sequência</title>
+  <desc id="d">À esquerda, as quatro etapas do algoritmo de Shor em caixas encadeadas. Etapa 1: escolher um número a menor que N, sem fator comum com N. Etapa 2, destacada em amarelo como a única parte quântica: achar o período r da sequência a elevado a x, módulo N. Etapa 3, clássica: se r for par e a elevado a r sobre 2 não for congruente a menos 1, os fatores saem de dois cálculos de máximo divisor comum, mdc(a^(r/2) − 1, N) e mdc(a^(r/2) + 1, N). Etapa 4: com p e q, calcula-se φ e o expoente privado d, e a chave RSA cai. À direita, o exemplo com N = 15 e a = 7: a sequência 7, 4, 13, 1 se repete a cada 4 passos, então r = 4; 7 ao quadrado módulo 15 dá 4; mdc(3, 15) = 3 e mdc(5, 15) = 5, os fatores. Embaixo, a comparação de custo: classicamente o período pode ser quase do tamanho de N, e o tempo dobra a cada bit a mais; no computador quântico o custo cresce de forma polinomial no número de bits.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .c { fill: #5cc8d8; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .q { fill: #241f12; stroke: #e8c46a; stroke-width: 2; }
+    .arrow { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ar); fill: none; }
+    .cell { fill: #16201b; stroke: #5cc8d8; stroke-width: 1.2; }
+    .one { fill: #1d3326; stroke: #5ee08a; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="480" fill="#121815"/>
+  <text class="t" x="30" y="32">O Shor por dentro: fatorar N vira achar o ritmo de aˣ mod N</text>
+
+  <rect class="box" x="30" y="54" width="420" height="52" rx="8"/>
+  <text class="h" x="44" y="76">1. Escolha um a &lt; N</text>
+  <text class="s" x="44" y="94">sem fator comum com N (mdc(a, N) = 1)</text>
+  <path class="arrow" d="M240,106 L240,124"/>
+
+  <rect class="q" x="30" y="126" width="420" height="86" rx="8"/>
+  <text class="h y" x="44" y="148">2. Ache o período r de aˣ mod N</text>
+  <text class="s" x="44" y="166">a única etapa QUÂNTICA: superposição de todos os x</text>
+  <text class="s" x="44" y="182">+ transformada de Fourier quântica (QFT), que</text>
+  <text class="s" x="44" y="198">"ouve" o ritmo da sequência e devolve r</text>
+  <path class="arrow" d="M240,212 L240,230"/>
+
+  <rect class="box" x="30" y="232" width="420" height="86" rx="8"/>
+  <text class="h" x="44" y="254">3. Transforme r em fatores (clássico)</text>
+  <text class="s" x="44" y="272">se r é par e a^(r/2) não deixa resto N−1:</text>
+  <text class="b g" x="44" y="292">p = mdc(a^(r/2) − 1, N)</text>
+  <text class="b g" x="44" y="310">q = mdc(a^(r/2) + 1, N)</text>
+  <path class="arrow" d="M240,318 L240,336"/>
+
+  <rect class="box" x="30" y="338" width="420" height="52" rx="8"/>
+  <text class="h" x="44" y="360">4. Com p e q, a chave privada cai</text>
+  <text class="s" x="44" y="378">φ = (p−1)(q−1), d = e⁻¹ mod φ (o RSA do 3.4)</text>
+
+  <text class="h" x="490" y="76">Exemplo: N = 15, a = 7</text>
+  <text class="s" x="490" y="96">x:</text>
+  <text class="s" x="490" y="128">7ˣ mod 15:</text>
+  <g>
+    <rect class="cell" x="572" y="108" width="34" height="30" rx="4"/><text class="b" x="584" y="128">7</text>
+    <rect class="cell" x="610" y="108" width="34" height="30" rx="4"/><text class="b" x="622" y="128">4</text>
+    <rect class="cell" x="648" y="108" width="34" height="30" rx="4"/><text class="b" x="656" y="128">13</text>
+    <rect class="one" x="686" y="108" width="34" height="30" rx="4"/><text class="b g" x="698" y="128">1</text>
+    <rect class="cell" x="724" y="108" width="34" height="30" rx="4"/><text class="b" x="736" y="128">7</text>
+    <rect class="cell" x="762" y="108" width="34" height="30" rx="4"/><text class="b" x="774" y="128">4</text>
+    <rect class="cell" x="800" y="108" width="34" height="30" rx="4"/><text class="b" x="808" y="128">13</text>
+    <rect class="one" x="838" y="108" width="34" height="30" rx="4"/><text class="b g" x="850" y="128">1</text>
+  </g>
+  <text class="s" x="586" y="96">1</text><text class="s" x="624" y="96">2</text><text class="s" x="662" y="96">3</text><text class="s" x="700" y="96">4</text>
+  <text class="s" x="738" y="96">5</text><text class="s" x="776" y="96">6</text><text class="s" x="814" y="96">7</text><text class="s" x="852" y="96">8</text>
+  <path d="M574,150 L718,150" stroke="#e8c46a" stroke-width="2" fill="none"/>
+  <path d="M574,144 L574,156 M718,144 L718,156" stroke="#e8c46a" stroke-width="2"/>
+  <text class="b y" x="600" y="172">o padrão se repete: r = 4</text>
+
+  <text class="b" x="490" y="214">r = 4 é par → a^(r/2) = 7² = 49</text>
+  <text class="b" x="490" y="236">49 mod 15 = 4  (não é 14 = N−1, ok)</text>
+  <text class="b g" x="490" y="266">mdc(4 − 1, 15) = mdc(3, 15) = 3</text>
+  <text class="b g" x="490" y="288">mdc(4 + 1, 15) = mdc(5, 15) = 5</text>
+  <text class="b" x="490" y="318">15 = 3 × 5. Fatorado.</text>
+
+  <rect class="box" x="30" y="408" width="840" height="58" rx="8"/>
+  <text class="b" x="44" y="430">Clássico: o período pode ser quase do tamanho de N → cada bit a mais dobra o trabalho.</text>
+  <text class="b y" x="44" y="452">Quântico: a etapa 2 custa um número de passos polinomial no número de bits de N.</text>
+</svg>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-labelledby="t d">
+  <title id="t">Colher agora, decifrar depois, e a desigualdade de Mosca</title>
+  <desc id="d">Linha do tempo da esquerda (hoje) para a direita (futuro). Na faixa de cima, o atacante: no presente ele grava o handshake e os dados cifrados de uma conexão; durante anos ele só armazena; quando surge um computador quântico com relevância criptográfica (CRQC), ele roda o algoritmo de Shor sobre o key_share gravado, recupera a chave da sessão e lê tudo. Na faixa de baixo, a desigualdade de Mosca: a barra y mostra o tempo que a organização leva para migrar, durante o qual o tráfego continua clássico; a barra x, que começa no fim da migração, mostra por quanto tempo o último dado clássico precisa continuar secreto; uma linha vertical tracejada marca z, o momento em que o CRQC chega. A parte da barra x que passa da linha z está em vermelho: é a janela de exposição, em que dados ainda sensíveis já podem ser decifrados. A conclusão no quadro: se x + y for maior que z, o problema já começou hoje.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .c { fill: #5cc8d8; }
+    .r { fill: #e86a6a; }
+    .axis { stroke: #2c3a33; stroke-width: 2; marker-end: url(#ax); }
+    .crqc { stroke: #e86a6a; stroke-width: 2; stroke-dasharray: 6 5; }
+    .step { fill: #16201b; stroke: #5cc8d8; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="ax" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2c3a33"/></marker>
+  </defs>
+  <rect width="900" height="460" fill="#121815"/>
+  <text class="t" x="30" y="32">Colher agora, decifrar depois: o relógio começa a correr hoje</text>
+
+  <text class="h" x="30" y="66">O atacante</text>
+  <rect class="step" x="60" y="80" width="210" height="62" rx="8"/>
+  <text class="b c" x="72" y="100">1. grava hoje</text>
+  <text class="s" x="72" y="118">o handshake (key_share) e</text>
+  <text class="s" x="72" y="132">os dados cifrados da sessão</text>
+  <rect class="step" x="300" y="80" width="230" height="62" rx="8"/>
+  <text class="b c" x="312" y="100">2. só armazena</text>
+  <text class="s" x="312" y="118">disco é barato; ele não precisa</text>
+  <text class="s" x="312" y="132">ler nada agora</text>
+  <rect class="step" x="600" y="80" width="270" height="62" rx="8" style="stroke:#e86a6a"/>
+  <text class="b r" x="612" y="100">3. no dia do CRQC</text>
+  <text class="s" x="612" y="118">Shor no key_share gravado → chave</text>
+  <text class="s" x="612" y="132">da sessão → lê o tráfego antigo</text>
+
+  <line class="axis" x1="60" y1="190" x2="880" y2="190"/>
+  <text class="b" x="52" y="212">hoje</text>
+  <text class="b" x="820" y="212">futuro</text>
+
+  <line class="crqc" x1="580" y1="160" x2="580" y2="372"/>
+  <text class="b r" x="588" y="236">z: chega o CRQC</text>
+
+  <text class="h" x="30" y="262">Mosca</text>
+  <rect x="60" y="276" width="260" height="26" rx="5" fill="#1b2a3a" stroke="#5cc8d8"/>
+  <text class="b c" x="70" y="294">y: tempo para migrar</text>
+  <text class="s" x="70" y="318">(o tráfego segue clássico)</text>
+  <rect x="320" y="330" width="260" height="26" rx="5" fill="#2a2614" stroke="#e8c46a"/>
+  <rect x="580" y="330" width="200" height="26" rx="5" fill="#3a1b1b" stroke="#e86a6a"/>
+  <text class="b y" x="330" y="348">x: o dado precisa de sigilo</text>
+  <text class="b r" x="590" y="348">exposto!</text>
+  <text class="s" x="330" y="372">(a partir do último dado clássico)</text>
+
+  <rect x="60" y="392" width="810" height="52" rx="8" fill="#16201b" stroke="#2c3a33"/>
+  <text class="b" x="74" y="414">Se <tspan class="y">x</tspan> + <tspan class="c">y</tspan> &gt; <tspan class="r">z</tspan>, o problema já começou hoje: o dado gravado durante a migração</text>
+  <text class="b" x="74" y="432">ainda vale alguma coisa quando o CRQC chega. Autenticação não entra nesta conta.</text>
+</svg>

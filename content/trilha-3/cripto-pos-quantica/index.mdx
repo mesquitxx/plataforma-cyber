@@ -1,0 +1,1862 @@
+---
+slug: cripto-pos-quantica
+track: trilha-3
+title: "Criptografia pós-quântica"
+prerequisites: [criptografia-assimetrica-e-tls]
+lab: null
+tasks:
+  - slug: missao-1-shor-de-brinquedo
+    title: "Missão 1 — O Shor de brinquedo"
+    type: flag
+    prompt: "Fatore o N da chave fictícia com a receita do Shor (período + mdc), monte a chave privada, decifre a mensagem interceptada e cole FLAG{p-q-PALAVRA}, com p < q."
+    hint: "Nem toda base a serve: se o período for ímpar, ou se a^(r/2) mod N der N−1, troque de base. Com p e q, o d sai como no RSA do 3.4: pow(e, -1, φ)."
+    flag:
+      hash: "scrypt$16384$8$1$53d9d87ea15cd5455dde74377c98818665b24e94e718f993630dd7bd824a11c2"
+      salt: "56d2269feb8e189c0f5bd1b2c488c10a"
+  - slug: missao-2-inventario-quantico
+    title: "Missão 2 — Inventário quântico da Loja Exemplo"
+    type: flag
+    prompt: "Classifique os dez itens do inventário como hndl, autenticacao ou ok, preencha respostas.txt e cole a flag que o conferir.sh imprime."
+    hint: "Pergunte de cada item: ele protege o SIGILO de algo com uma troca de chaves (ou cifra de chave) quântico-vulnerável? Então é hndl. Só prova identidade com assinatura clássica? autenticacao. Use openssl x509 -text nos certificados; Peer Temp Key é troca clássica."
+    flag:
+      hash: "scrypt$16384$8$1$4af47747d303d9b4c9e5e1eb4a8066590225eb5d1cabf687defcaa516b78ac32"
+      salt: "5faa13882962ec318990839952f7aec0"
+  - slug: missao-3-handshake-hibrido
+    title: "Missão 3 — O handshake híbrido ao vivo"
+    type: flag
+    prompt: "Cole FLAG{tamanho-quantidade-hex}: o tamanho do key_share do servidor no grupo híbrido, quantos ClientHello o cliente manda quando o servidor só aceita secp256r1, e os 12 primeiros hex do SHA-256 da chave pública (DER) do certificado recebido."
+    hint: "O -trace do openssl s_client mostra cada key_share com (len=...). Conte as linhas 'ClientHello, Length'. A chave pública sai do certificado com openssl x509 -pubkey e vira DER com openssl pkey -pubin -outform DER."
+    flag:
+      hash: "scrypt$16384$8$1$c2b61bdc2890188d143a5374822abad2d4bf0d6a3fc9ae513db8e2c012ece392"
+      salt: "b2e9033b26c4c9fdd3c3f3a3ae423558"
+  - slug: quiz-final
+    title: "Quiz — Criptografia pós-quântica"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que o algoritmo de Shor ameaça RSA, Diffie-Hellman e curvas elípticas, mas não o AES?"
+        options:
+          - "Porque o AES usa chaves maiores que o RSA"
+          - "Porque o AES é mais novo que o RSA"
+          - "Porque fatorar e o logaritmo discreto escondem uma estrutura periódica que a interferência quântica consegue achar; o AES não tem essa estrutura para explorar"
+          - "Porque computadores quânticos não conseguem fazer contas com bits"
+        answer: 2
+        explanation: "O Shor transforma fatorar (e o logaritmo discreto, base de DH e ECC) em achar o período de uma sequência — e achar período é exatamente o que a transformada de Fourier quântica faz bem. O AES não é um problema algébrico com período escondido; contra ele, o melhor ataque quântico conhecido é o Grover, que é só uma busca mais rápida. O tamanho da chave não é o motivo: um RSA de 4096 bits cai do mesmo jeito."
+      - question: "Qual é o efeito do algoritmo de Grover sobre o AES-256?"
+        options:
+          - "Um ganho quadrático na busca pela chave, que deixa uma margem enorme; o AES-256 segue recomendado"
+          - "Quebra o AES-256 em segundos"
+          - "Nenhum: o Grover só serve para fatorar"
+          - "Obriga a trocar o AES por ML-KEM"
+        answer: 0
+        explanation: "O Grover acha um item entre N em cerca de √N passos, e não em N/2. Na teoria, isso 'divide pela metade' os bits de uma chave de busca exaustiva — mas os passos são sequenciais e caríssimos num computador quântico real. O NIST, no rascunho do IR 8547, considera que as primitivas simétricas aprovadas com 128 bits ou mais já atendem à categoria 1 de segurança pós-quântica. O ML-KEM não substitui o AES: ele substitui a troca de chaves que entrega a chave do AES."
+      - question: "Na ameaça 'colher agora, decifrar depois' (harvest now, decrypt later), o que fica em risco HOJE?"
+        options:
+          - "Só sistemas que já usam criptografia pós-quântica"
+          - "A autenticidade dos certificados que expiram este ano"
+          - "Nada, enquanto não existir um computador quântico grande"
+          - "O sigilo de dados de vida longa que trafegam hoje protegidos por uma troca de chaves quântico-vulnerável"
+        answer: 3
+        explanation: "O atacante grava agora o handshake e os dados cifrados e espera. Quando existir um CRQC, ele roda o Shor no key_share gravado, recupera a chave da sessão e lê o passado. Por isso o risco é de confidencialidade e é presente: o que está sendo colhido é o tráfego de hoje. Assinaturas não entram nessa conta, porque autenticação é verificada na hora."
+      - question: "Pela desigualdade de Mosca, um dado precisa ficar secreto por x = 10 anos, a migração leva y = 5 anos e você estima z = 12 anos até um CRQC. Qual a conclusão?"
+        options:
+          - "Ainda há folga, porque 10 é menor que 12"
+          - "Já está atrasado: x + y = 15 > 12, então o dado cifrado no fim da migração ainda precisará de sigilo quando o CRQC chegar"
+          - "Só há problema se a migração for mais longa que z"
+          - "A desigualdade vale só para assinaturas"
+        answer: 1
+        explanation: "A conta é x + y > z. Durante os 5 anos de migração o tráfego segue clássico; o último dado clássico ainda precisa de 10 anos de sigilo, até o ano 15. Se o CRQC chegar no ano 12, há 3 anos de exposição. Comparar só x com z esquece o tempo de migrar, que é justamente o que mais pesa na prática."
+      - question: "O TLS 1.3 com ECDHE tem forward secrecy. Por que isso NÃO protege contra o 'colher agora, decifrar depois' quântico?"
+        options:
+          - "Porque o atacante quântico não precisa da chave de longo prazo: ele resolve o logaritmo discreto direto sobre os valores públicos do key_share que gravou e recupera o segredo da sessão"
+          - "Porque o TLS 1.3 não tem forward secrecy"
+          - "Porque o certificado expira"
+          - "Porque o AES-GCM cai para o Shor"
+        answer: 0
+        explanation: "A forward secrecy protege contra o roubo FUTURO da chave privada do servidor: a chave efêmera da sessão foi descartada e não há onde buscá-la. Mas os valores públicos efêmeros (g^a, g^b, ou os pontos da curva) ficaram na gravação. O Shor resolve o logaritmo discreto a partir deles e reconstrói o segredo sem chave privada nenhuma. A defesa é uma troca de chaves que o Shor não resolve: ML-KEM (no híbrido)."
+      - question: "O que é o ML-KEM (FIPS 203)?"
+        options:
+          - "Uma assinatura digital baseada em hash"
+          - "Uma cifra simétrica que substitui o AES"
+          - "Um mecanismo de encapsulamento de chave (KEM) baseado em reticulados, usado para estabelecer a chave de sessão"
+          - "Um protocolo de distribuição quântica de chaves"
+        answer: 2
+        explanation: "ML-KEM é o antigo CRYSTALS-Kyber, padronizado em agosto de 2024. Um KEM não cifra mensagens: ele 'encapsula' um segredo aleatório para quem tem a chave pública, e os dois lados terminam com o mesmo segredo de 32 bytes, que vira chave simétrica. A assinatura principal é o ML-DSA (FIPS 204); a de hash é o SLH-DSA (FIPS 205). QKD é outra coisa, que exige hardware quântico."
+      - question: "Para que serve o grupo híbrido X25519MLKEM768?"
+        options:
+          - "Para deixar o handshake mais rápido que o X25519 sozinho"
+          - "Para que a sessão continue segura se QUALQUER um dos dois algoritmos ficar de pé: o X25519, testado há anos, ou o ML-KEM, que resiste ao quântico"
+          - "Para que o cliente possa escolher o algoritmo depois do handshake"
+          - "Para substituir o certificado do servidor"
+        answer: 1
+        explanation: "Os dois segredos (ML-KEM e X25519) são concatenados e alimentam o key schedule. O atacante precisa quebrar os dois. Contra o computador quântico, o ML-KEM segura; contra uma falha clássica ainda desconhecida no ML-KEM (como a que derrubou o SIKE), o X25519 segura. O preço é tamanho: 1216 bytes no ClientHello em vez de 32."
+      - question: "Qual é a lição do SIKE, candidato da 4ª rodada do NIST quebrado em 2022?"
+        options:
+          - "Que computadores quânticos já existem"
+          - "Que o NIST escolhe algoritmos ao acaso"
+          - "Que algoritmos com chaves pequenas são sempre seguros"
+          - "Que ser 'pós-quântico' não garante resistir a ataques clássicos: daí a maturidade, o modo híbrido e a agilidade criptográfica"
+        answer: 3
+        explanation: "O SIKE foi quebrado por Castryck e Decru com um computador comum, um único núcleo — sem nada de quântico. Um algoritmo novo é matemática nova, e matemática nova pode ter atalhos que ninguém viu. Por isso a transição usa híbrido (o clássico segura se o novo cair), padroniza mais de uma família (HQC como reserva do ML-KEM) e exige sistemas capazes de trocar de algoritmo sem reescrever tudo."
+      - question: "Num plano de migração com orçamento limitado, o que vem primeiro?"
+        options:
+          - "A troca de chaves (confidencialidade), porque o tráfego de hoje já pode estar sendo colhido"
+          - "Os certificados da PKI, porque expiram antes"
+          - "O AES-128, trocando por AES-256 em tudo"
+          - "Nada: esperar o primeiro CRQC aparecer"
+        answer: 0
+        explanation: "Falsificar uma assinatura exige o CRQC no momento do ataque; ler o passado só exige que ele exista um dia. Por isso a troca de chaves é urgente e as assinaturas podem vir depois (sem esquecer o que tem vida longa, como firmware). AES-128 não é a prioridade: o NIST o considera adequado no nível de 128 bits."
+      - question: "No pentest, o servidor web do cliente negocia só x25519 (sem híbrido). Como reportar?"
+        options:
+          - "Crítico: o tráfego pode ser decifrado hoje por qualquer atacante"
+          - "Não reportar: não existe computador quântico"
+          - "Como achado de baixa severidade ou informativo, com o contexto de HNDL (sensibilidade e vida útil dos dados) e a correção concreta"
+          - "Como vulnerabilidade de injeção"
+        answer: 2
+        explanation: "Ninguém decifra esse tráfego hoje: dizer 'crítico' é exagero e queima a credibilidade do relatório. Mas também não é nada: se o site trafega dados que precisam de sigilo por anos, a colheita já é um risco real. O achado bom diz o que viu (grupo negociado), por que importa (HNDL e Mosca), para que dados, e como corrigir (OpenSSL 3.5+ e grupo X25519MLKEM768)."
+glossary:
+  - term: post-quantum cryptography
+    definition: "Criptografia pós-quântica (PQC): algoritmos que rodam em computadores comuns, mas cuja segurança se baseia em problemas que nem um computador quântico sabe resolver rápido. Substitui RSA, Diffie-Hellman e ECC, que caem para o algoritmo de Shor."
+  - term: quantum computer
+    definition: "Computador quântico: máquina que processa informação em qubits e usa superposição e interferência. Não é um computador 'mais rápido para tudo'; ele só dá saltos em problemas com estrutura específica, como achar o período de uma sequência."
+  - term: qubit
+    definition: "Bit quântico: a unidade de informação de um computador quântico. Pode estar numa superposição de 0 e 1 e, ao ser medido, vira um 0 ou um 1 com certas probabilidades. Qubits físicos erram muito; muitos deles formam um qubit lógico corrigido."
+  - term: Shor's algorithm
+    definition: "Algoritmo de Shor (1994): algoritmo quântico que fatora inteiros e resolve o logaritmo discreto em tempo polinomial, transformando o problema em achar um período. Quebra RSA, Diffie-Hellman e curvas elípticas."
+  - term: period finding
+    definition: "Busca de período: achar o menor r tal que a^r mod N = 1, isto é, de quanto em quanto a sequência a^x mod N se repete. É a única etapa quântica do Shor; o resto é aritmética clássica."
+  - term: quantum Fourier transform
+    definition: "Transformada de Fourier quântica (QFT): operação que, aplicada a uma superposição com um padrão repetitivo, concentra a probabilidade nos valores ligados ao período. É o 'ouvido' que o Shor usa para achar o ritmo da sequência."
+  - term: Grover's algorithm
+    definition: "Algoritmo de Grover (1996): busca quântica que acha um item entre N em cerca de √N passos. Contra cifras simétricas, só reduz a margem (ganho quadrático); por isso AES com 128 bits ou mais segue adequado."
+  - term: CRQC
+    definition: "Cryptographically Relevant Quantum Computer: computador quântico grande e estável o bastante para rodar o Shor contra chaves reais (RSA-2048, P-256). Ainda não existe publicamente; é o 'z' da desigualdade de Mosca."
+  - term: harvest now, decrypt later
+    definition: "Colher agora, decifrar depois (HNDL, também 'store now, decrypt later'): gravar hoje tráfego e dados cifrados com troca de chaves quântico-vulnerável, para decifrá-los quando houver um CRQC. Ameaça a confidencialidade de dados de vida longa já no presente."
+  - term: Mosca's inequality
+    definition: "Desigualdade de Mosca: se x (anos que o dado precisa de sigilo) + y (anos para migrar) > z (anos até um CRQC), o problema já começou. Formulada por Michele Mosca; é a régua para priorizar a migração."
+  - term: lattice-based cryptography
+    definition: "Criptografia baseada em reticulados (lattices): família que se apoia na dificuldade de problemas sobre grades de pontos em muitas dimensões, como achar o vetor mais curto ou resolver sistemas lineares com ruído. Base do ML-KEM e do ML-DSA."
+  - term: Learning With Errors
+    definition: "LWE (Learning With Errors, aprender com erros): o problema de descobrir um segredo s a partir de equações lineares em que cada resultado leva um pequeno erro aleatório. Sem o erro, resolve-se por eliminação de Gauss; com o erro, é difícil até para computadores quânticos."
+  - term: KEM
+    definition: "Key Encapsulation Mechanism (mecanismo de encapsulamento de chave): primitiva com três operações — gerar chaves, encapsular (com a pública, produz um cifrado e um segredo) e desencapsular (com a privada, recupera o mesmo segredo do cifrado). Serve para combinar uma chave de sessão."
+  - term: ML-KEM
+    definition: "Module-Lattice-Based Key-Encapsulation Mechanism (FIPS 203, agosto de 2024): o KEM pós-quântico principal do NIST, ex-CRYSTALS-Kyber. ML-KEM-768 tem chave pública de 1184 bytes, cifrado de 1088 e segredo de 32."
+  - term: ML-DSA
+    definition: "Module-Lattice-Based Digital Signature Algorithm (FIPS 204, agosto de 2024): a assinatura pós-quântica principal do NIST, ex-CRYSTALS-Dilithium. ML-DSA-65 tem chave pública de 1952 bytes e assinatura de 3309."
+  - term: SLH-DSA
+    definition: "Stateless Hash-Based Digital Signature Algorithm (FIPS 205, agosto de 2024): assinatura pós-quântica que depende só de funções de hash, ex-SPHINCS+. Chaves pequenas e assinaturas grandes (7856 bytes no SLH-DSA-SHA2-128s); é a reserva caso os reticulados caiam."
+  - term: FN-DSA
+    definition: "FFT over NTRU-Lattice-Based Digital Signature Algorithm: assinatura baseada no Falcon, em padronização pelo NIST como FIPS 206. Tem assinaturas menores que o ML-DSA, mas é mais difícil de implementar com segurança."
+  - term: HQC
+    definition: "Hamming Quasi-Cyclic: KEM baseado em códigos corretores de erro, escolhido pelo NIST em 11 de março de 2025 como reserva do ML-KEM, justamente por usar outra matemática."
+  - term: stateful hash-based signature
+    definition: "Assinatura baseada em hash com estado (LMS e XMSS, NIST SP 800-208): cada chave assina um número limitado de mensagens e o signatário precisa guardar quais 'folhas' já usou. Reusar estado quebra a segurança. Usada para firmware e raízes de confiança."
+  - term: hybrid key exchange
+    definition: "Troca de chaves híbrida: combina um algoritmo clássico (X25519) e um pós-quântico (ML-KEM) na mesma negociação, juntando os dois segredos. A sessão fica segura se qualquer um dos dois resistir."
+  - term: X25519MLKEM768
+    definition: "Grupo híbrido do TLS 1.3 (codepoint 4588, 0x11EC, RFC 10024): ML-KEM-768 + X25519. É o padrão do Chrome desde a versão 131, do OpenSSL desde a 3.5 e o que a maioria dos grandes sites negocia hoje."
+  - term: HelloRetryRequest
+    definition: "Mensagem do TLS 1.3 em que o servidor diz ao cliente: nenhum dos key_shares que você mandou serve, mande de novo com este grupo. Custa uma ida e volta a mais. No trace, é um ServerHello com um Random fixo definido no RFC 8446."
+  - term: crypto-agility
+    definition: "Agilidade criptográfica: a capacidade de um sistema trocar de algoritmo (por configuração, sem reescrever código nem quebrar formatos) quando um deles enfraquece. É a lição permanente da transição pós-quântica."
+  - term: cryptographic inventory
+    definition: "Inventário criptográfico: a lista de onde e como uma organização usa criptografia (protocolos, algoritmos, chaves, certificados, bibliotecas, dados e por quanto tempo precisam de sigilo). É o primeiro passo de qualquer migração."
+  - term: CBOM
+    definition: "Cryptography Bill of Materials: inventário criptográfico em formato legível por máquina (o CycloneDX tem um padrão para isso), listando os algoritmos e chaves de cada componente de software, como um SBOM lista as dependências."
+  - term: quantum key distribution
+    definition: "Distribuição quântica de chaves (QKD): troca de chaves que usa física quântica (fótons) num canal dedicado. Não é PQC: exige hardware especial, alcance limitado e um outro mecanismo para autenticar as pontas, e não é o que os padrões pós-quânticos do NIST cobrem."
+  - term: downgrade attack
+    definition: "Ataque de rebaixamento: forçar cliente e servidor a negociar uma opção mais fraca do que os dois suportam (versão de protocolo, cifra, grupo). No TLS 1.3, a assinatura sobre o transcript do handshake protege contra isso."
+  - term: side-channel attack
+    definition: "Ataque de canal lateral: extrair segredos não da matemática do algoritmo, mas de efeitos físicos da implementação, como tempo de execução, consumo de energia ou cache. O KyberSlash é um exemplo de canal lateral de tempo."
+  - term: FIPS
+    definition: "Federal Information Processing Standards: padrões do governo dos EUA publicados pelo NIST, de uso obrigatório nos órgãos federais e seguidos no mundo todo. FIPS 203, 204 e 205 são os padrões pós-quânticos."
+  - term: SPKI
+    definition: "Subject Public Key Info: a estrutura do certificado X.509 que guarda a chave pública e o identificador do algoritmo. O hash SHA-256 do SPKI em DER é a 'impressão digital' de uma chave, usada em pinning."
+  - term: textbook RSA
+    definition: "RSA de livro: o RSA puro, m^e mod n, sem padding. É determinístico (a mesma mensagem dá sempre o mesmo cifrado) e inseguro; o RSA de verdade usa OAEP para cifrar e PSS para assinar."
+---
+
+import shorIntuicao from "./img/shor-intuicao.svg";
+import hndlMosca from "./img/hndl-mosca.svg";
+import handshakeHibrido from "./img/handshake-hibrido.svg";
+import familiasPqc from "./img/familias-pqc.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No 3.4 você viu o cadeado do navegador se fechar: o
+<GlossaryTerm term="ECDHE">ECDHE</GlossaryTerm> combina a chave em público, o
+certificado e a assinatura provam quem é o servidor, e o AES-GCM cifra o resto. Você
+também viu por que a <GlossaryTerm term="forward secrecy">forward secrecy</GlossaryTerm>
+importa: roubar a chave privada do servidor amanhã não abre a conversa de hoje.
+Tudo isso repousa em dois problemas que ninguém sabe resolver rápido: **fatorar** (o
+<GlossaryTerm term="RSA">RSA</GlossaryTerm>) e o
+<GlossaryTerm term="discrete logarithm problem">logaritmo discreto</GlossaryTerm>
+(Diffie-Hellman e curvas elípticas).
+
+Este módulo trata da máquina que resolveria os dois: o
+<GlossaryTerm term="quantum computer">computador quântico</GlossaryTerm> grande. Ele
+ainda não existe, e talvez demore. Mas há um detalhe que muda tudo: quem grava hoje
+o tráfego cifrado de um banco, de um governo ou de um hospital pode guardá-lo e
+decifrá-lo no dia em que a máquina existir. É o "colher agora, decifrar depois", e é
+por causa dele que o Chrome, o OpenSSH, o Signal, o iMessage e o OpenSSL já trocaram a
+troca de chaves que usam por padrão. A resposta tem nome:
+<GlossaryTerm term="post-quantum cryptography">criptografia pós-quântica</GlossaryTerm>
+(*post-quantum cryptography*, PQC): algoritmos que rodam em computadores comuns, mas
+que nem um computador quântico sabe quebrar.
+
+Para quem testa sistemas, isso já é trabalho de hoje. O cliente vai perguntar "estamos
+prontos?", e o relatório precisa responder sem pânico e sem descaso: o que está
+exposto, o que não está, e o que fazer primeiro.
+
+**Ao final, você vai saber:**
+
+- explicar, sem matemática pesada, por que o algoritmo de Shor quebra RSA, DH e ECC e
+  por que o de Grover só arranha o AES, e fatorar uma chave RSA de brinquedo com a
+  receita do Shor;
+- dizer quais dados já estão em risco pelo "colher agora, decifrar depois" e calcular
+  a urgência de uma migração com a desigualdade de Mosca;
+- distinguir KEM de assinatura e nomear os padrões do NIST de 2024 (FIPS 203, 204 e
+  205), o FN-DSA e o HQC, com o papel de cada um;
+- reconhecer, num handshake TLS real, a troca de chaves híbrida X25519MLKEM768 e o que
+  muda nos bytes;
+- inventariar a criptografia de um alvo com `openssl` e `ssh`, classificar o risco
+  quântico de cada item e redigir o achado com a severidade certa;
+- dizer exatamente o que configurar (OpenSSL, nginx, OpenSSH) para migrar.
+
+**Pré-requisitos:**
+
+- **3.4 — Criptografia assimétrica e TLS:** o RSA feito à mão (vamos quebrar um igual),
+  o Diffie-Hellman e o ECDHE, a assinatura digital, os certificados X.509 e o handshake
+  do TLS 1.3, que você vai ver ganhar um key_share pós-quântico.
+
+Pelo 3.4 também voltam o <GlossaryTerm term="TLS handshake">handshake</GlossaryTerm>
+e a <GlossaryTerm term="session key">chave de sessão</GlossaryTerm>. E, de mais longe,
+a captura do Wireshark (2.6), o princípio de "não invente a sua cripto" (3.1) e o
+`openssl` que você usa desde o 3.1.
+
+**Tempo estimado:** de 4 a 5 horas, incluindo as três missões no seu WSL.
+
+<Callout variant="ethics">
+As missões deste módulo usam só arquivos fictícios e um servidor de teste que escuta
+apenas em `127.0.0.1` da sua própria máquina. Inventariar a criptografia de um sistema
+real (varrer TLS e SSH de servidores, coletar certificados) é parte de um pentest e
+precisa da mesma autorização por escrito de qualquer teste (1.3). Gravar o tráfego
+cifrado de terceiros para "decifrar depois" é interceptação de comunicações, crime pelo
+art. 10 da Lei 9.296/1996, que você viu no 2.6. Aqui você estuda o ataque para saber
+defender dele.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O que um computador quântico é (e o que não é)
+
+A ideia popular é que um computador quântico "testa todas as possibilidades ao mesmo
+tempo". Se fosse assim, ele quebraria qualquer cifra, AES incluído. Não é assim, e
+entender por que é a chave do módulo.
+
+Um computador comum guarda bits, cada um 0 ou 1. Um computador quântico guarda
+<GlossaryTerm term="qubit">qubits</GlossaryTerm> (*quantum bits*): um qubit pode estar
+numa **superposição** de 0 e 1, uma mistura descrita por dois números (amplitudes)
+que dizem com que peso cada resultado está presente. Com *n* qubits, a superposição
+cobre as 2ⁿ combinações de uma vez. Até aqui, parece o mito. O problema é o fim da
+conta: **ao medir, a superposição desaba num único resultado**, sorteado conforme as
+amplitudes. Se você calculou 2ⁿ respostas em superposição e mede, recebe *uma* delas,
+ao acaso. Não ganhou nada.
+
+O truque, então, não é "calcular tudo": é a **interferência**. As amplitudes se
+comportam como ondas: podem se somar (reforço) ou se anular (cancelamento). Um
+algoritmo quântico útil é um arranjo engenhoso em que os caminhos que levam à resposta
+**errada** se cancelam e os que levam à **certa** se reforçam, de modo que, ao medir, a
+resposta boa sai com alta probabilidade. Isso só é possível quando o problema tem uma
+**estrutura** que a interferência consegue explorar. Para a maioria dos problemas, não
+há esse arranjo, e o computador quântico não é melhor que o seu notebook.
+
+Por isso a pergunta certa nunca é "o quântico quebra criptografia?", e sim "este
+problema matemático específico tem a estrutura que a interferência explora?". Para
+fatoração e logaritmo discreto, tem. Para a busca da chave do AES, praticamente não.
+
+Um último ponto de realidade: qubits físicos erram o tempo todo (o ruído os tira da
+superposição). Para rodar um algoritmo longo, juntam-se muitos qubits físicos para
+formar um qubit lógico corrigido. Quem importa para a criptografia é o
+<GlossaryTerm term="CRQC">CRQC</GlossaryTerm> (*cryptographically relevant quantum
+computer*, o computador quântico com relevância criptográfica): grande e estável o
+bastante para rodar o Shor contra uma chave real. A estimativa pública mais recente
+que conferimos, de Craig Gidney (Google, maio de 2025), é que fatorar um RSA-2048
+levaria menos de uma semana numa máquina com **menos de um milhão de qubits físicos
+ruidosos**, sob hipóteses de engenharia que o artigo detalha
+([arXiv:2505.15917](https://arxiv.org/abs/2505.15917)). Em 2019, a estimativa que ele
+publicou com Martin Ekerå era de 20 milhões de qubits (em oito horas). A máquina não
+ficou pronta; o que caiu foi o custo estimado de construí-la.
+
+### 2.2 O algoritmo de Shor: fatorar vira achar um ritmo
+
+Em novembro de 1994, Peter Shor apresentou no simpósio FOCS (Santa Fe, EUA) algoritmos
+quânticos que fatoram inteiros e resolvem o logaritmo discreto em tempo
+**polinomial**, isto é, com um custo que cresce como uma potência do número de dígitos,
+e não exponencialmente
+([arXiv:quant-ph/9508027](https://arxiv.org/abs/quant-ph/9508027), a versão expandida).
+O <GlossaryTerm term="Shor's algorithm">algoritmo de Shor</GlossaryTerm> não ataca a
+fatoração de frente. Ele a troca por outro problema, que a interferência sabe resolver.
+
+**O truque.** Escolha um número `a` qualquer, menor que `N` e sem fator comum com ele.
+Calcule as potências `a¹ mod N`, `a² mod N`, `a³ mod N`... Como só há `N` restos
+possíveis, a sequência um dia volta ao 1 e passa a se repetir. O tamanho dessa
+repetição é o **período** `r`: o menor `r` com `aʳ mod N = 1`. Achar esse `r` é a
+<GlossaryTerm term="period finding">busca de período</GlossaryTerm> (*period finding*).
+
+Com `N = 15` e `a = 7`, faça à mão (ou confira no Python):
+
+```console
+$ python3 -c "print([pow(7, x, 15) for x in range(1, 9)])"
+[7, 4, 13, 1, 7, 4, 13, 1]
+```
+
+A sequência `7, 4, 13, 1` se repete a cada 4 passos: `r = 4`.
+
+**Por que o período entrega os fatores.** Se `aʳ mod N = 1`, então `aʳ − 1` é
+múltiplo de `N`. Quando `r` é par, `aʳ − 1` se fatora como
+`(a^(r/2) − 1) · (a^(r/2) + 1)`. O produto é múltiplo de `N = p · q`; então, a menos
+de um azar, `p` está num dos parênteses e `q` no outro. Para tirá-los de lá basta o
+**máximo divisor comum** (mdc), que o algoritmo de Euclides calcula num piscar:
+
+```console
+$ python3 -c "from math import gcd; y = pow(7, 2, 15); print(y, gcd(y - 1, 15), gcd(y + 1, 15))"
+4 3 5
+```
+
+`7² mod 15 = 4`; `mdc(3, 15) = 3` e `mdc(5, 15) = 5`. Fatorado. O "azar" tem duas
+formas, e você vai encontrar as duas na Missão 1: `r` sair ímpar, ou `a^(r/2) mod N`
+dar exatamente `N − 1` (aí os mdc devolvem só 1 e `N`). Nos dois casos, troca-se de
+`a` e repete-se; para a maioria das escolhas, funciona.
+
+**Onde entra o quântico.** Tudo acima é aritmética clássica, menos uma etapa: achar `r`.
+Classicamente, o período pode ser quase tão grande quanto `N`, e não se conhece jeito
+de achá-lo muito melhor que andar na sequência. Para um `N` de 2048 bits, a sequência
+tem da ordem de 2²⁰⁴⁸ termos: não acaba antes do Sol. O computador quântico calcula
+`aˣ mod N` para todos os `x` em superposição e aplica a
+<GlossaryTerm term="quantum Fourier transform">transformada de Fourier quântica</GlossaryTerm>
+(QFT). Pense na QFT como um ouvido que escuta um acorde e diz qual é a nota: aplicada a
+uma superposição que se repete com ritmo `r`, ela faz as amplitudes interferirem de modo
+que a medição revela um valor ligado a `r`. É exatamente a estrutura que a seção 2.1
+dizia faltar na maioria dos problemas e sobrar neste.
+
+<Figure
+  src={shorIntuicao}
+  alt="À esquerda, as quatro etapas do Shor: escolher a; achar o período r de a^x mod N (a única etapa quântica, em destaque); transformar r nos fatores p e q com dois mdc; montar a chave privada. À direita, o exemplo N = 15 e a = 7, com a sequência 7, 4, 13, 1 se repetindo, r = 4, e os fatores 3 e 5. Embaixo, o custo clássico dobra a cada bit, e o quântico cresce de forma polinomial."
+  caption="O Shor em quatro etapas. Só a busca do período é quântica; transformar o período em fatores e os fatores em chave privada é a aritmética do 3.4."
+/>
+
+Você não precisa de um computador quântico para sentir o tamanho do salto. Medimos, na
+máquina do autor, quanto tempo leva achar o período por força bruta (o que o
+`periodo.py` da Missão 1 faz) conforme `N` cresce:
+
+| Bits de `N` | Período `r` encontrado | Tempo (força bruta clássica) |
+|---|---|---|
+| 21 | 29.322 | 0,001 s |
+| 25 | 9.870.500 | 0,41 s |
+| 29 | 50.933.262 | 2,1 s |
+| 33 | 838.994.205 | 60 s |
+| 37 | 2.481.673.084 | 192 s |
+
+Quatro bits a mais e o tempo multiplica-se por dezenas. Extrapole para 2048 bits e o
+Shor deixa de ser curiosidade: é a diferença entre "impossível" e "uma semana".
+
+**E o logaritmo discreto?** O mesmo raciocínio vale para o Diffie-Hellman e para as
+curvas elípticas. Achar `a` sabendo `g` e `gᵃ mod p` também se reduz a achar o período
+de uma função construída com `g` e `gᵃ`, e a QFT faz o mesmo papel. Por isso o Shor
+derruba de uma vez RSA, DH, ECDH, ECDSA e EdDSA: toda a criptografia assimétrica que você
+viu no 3.4. **Aumentar o tamanho da chave não salva**: o custo do Shor cresce de forma
+polinomial; dobrar a chave só torna o ataque algumas vezes mais caro.
+
+### 2.3 O algoritmo de Grover: um arranhão no simétrico
+
+Em 1996, Lov Grover (Bell Labs) publicou um algoritmo quântico de **busca**: achar um
+item entre `N` possibilidades em cerca de `√N` passos, quando um computador comum
+precisaria olhar, em média, metade delas
+([arXiv:quant-ph/9605043](https://arxiv.org/abs/quant-ph/9605043), apresentado no STOC
+de maio de 1996). O <GlossaryTerm term="Grover's algorithm">algoritmo de Grover</GlossaryTerm>
+é genérico: serve para qualquer problema de "achar a agulha", inclusive procurar a
+chave de um AES testando todas.
+
+Na teoria, a conta é: uma chave de 128 bits tem 2¹²⁸ possibilidades; o Grover a acharia
+em cerca de 2⁶⁴ passos, como se a chave tivesse "64 bits de força". Parece grave, mas
+há três freios na prática. Primeiro, os 2⁶⁴ passos do Grover são **sequenciais**: não dá
+para dividir o trabalho entre mil máquinas e ganhar mil vezes (dividir em *k* máquinas
+só ganha √*k*). Segundo, cada passo é um circuito quântico inteiro rodando o AES, com
+correção de erros, caríssimo. Terceiro, o ganho é **quadrático**, não exponencial:
+basta dobrar o tamanho da chave para devolver a margem.
+
+A posição do NIST está no rascunho do NIST IR 8547 (novembro de 2024): as primitivas
+simétricas aprovadas que dão pelo menos 128 bits de segurança clássica são consideradas
+suficientes para a categoria 1 de segurança pós-quântica, e só os padrões simétricos de
+112 bits seriam desaprovados em 2030
+([NIST IR 8547 ipd](https://csrc.nist.gov/pubs/ir/8547/ipd)). Para hashes, o efeito é
+parecido: SHA-256 segue de pé. Resumo para o relatório: **AES e SHA-2 não precisam de
+migração urgente**; quem precisa é a criptografia assimétrica.
+
+### 2.4 Colher agora, decifrar depois, e a conta de Mosca
+
+Se o CRQC não existe, por que mexer agora? Porque o ataque não precisa acontecer em tempo
+real. O <GlossaryTerm term="harvest now, decrypt later">"colher agora, decifrar
+depois"</GlossaryTerm> (*harvest now, decrypt later*, HNDL; o OpenSSH chama de *store now,
+decrypt later*) tem três passos, e o primeiro é o que você já fez no 2.6: **gravar** o
+tráfego. Um ECDHE gravado guarda os valores públicos de cada lado no `key_share`. Hoje,
+ninguém resolve o logaritmo discreto a partir deles. No dia do CRQC, o Shor resolve,
+reconstrói o segredo da sessão, deriva as chaves do AES e lê tudo o que foi gravado.
+
+Repare no que a <GlossaryTerm term="forward secrecy">forward secrecy</GlossaryTerm>
+protege e no que não protege. Ela torna inútil roubar a chave privada **de longo prazo**
+do servidor, porque a chave da sessão foi descartada. Mas o Shor não precisa de chave
+privada nenhuma: ele parte dos valores públicos efêmeros que estão na gravação. Contra o
+quântico, forward secrecy não ajuda.
+
+E há uma assimetria importante: **autenticação não sofre HNDL**. Para se passar por um
+servidor com uma assinatura falsa, o atacante precisa do CRQC **no momento** da conexão;
+uma assinatura forjada daqui a dez anos não engana uma conexão de hoje. Por isso a
+transição começou pela troca de chaves, e os certificados vêm depois. (Com uma exceção
+que você vai ver na Missão 2: o que é assinado hoje e verificado por décadas, como
+firmware.)
+
+Quem deu forma a essa urgência foi o pesquisador Michele Mosca, da Universidade de
+Waterloo, num artigo de 2015
+([ePrint 2015/1075](https://eprint.iacr.org/2015/1075)). A
+<GlossaryTerm term="Mosca's inequality">desigualdade de Mosca</GlossaryTerm> usa três
+números:
+
+- **x**, a "vida de prateleira": por quantos anos o dado precisa ficar secreto (0 para
+  uma consulta de cotação; 25 para um prontuário ou um contrato);
+- **y**, o tempo de migração: quantos anos a organização leva para trocar a
+  criptografia de tudo;
+- **z**, o tempo de colapso: quantos anos até existir um CRQC.
+
+Se **`x + y > z`**, nas palavras do artigo, "temos um problema sério hoje": o dado
+protegido com ferramentas vulneráveis no fim da migração ainda vai precisar de sigilo
+quando o CRQC chegar.
+
+<Figure
+  src={hndlMosca}
+  alt="Linha do tempo de hoje ao futuro. Na faixa do atacante: grava hoje o handshake e os dados, só armazena por anos, e no dia do CRQC roda o Shor no key_share e lê o tráfego antigo. Na faixa de Mosca: a barra y (tempo de migrar, tráfego ainda clássico), seguida da barra x (tempo que o último dado clássico precisa de sigilo), cortada pela linha tracejada z, em que chega o CRQC; a parte de x depois de z está em vermelho, como exposta. No rodapé: se x + y > z, o problema já começou hoje."
+  caption="O HNDL e a desigualdade de Mosca. A janela vermelha é o tempo em que um dado gravado ainda vale alguma coisa e já pode ser decifrado. Ela só fecha encurtando y (migrar antes) — x é do negócio e z é do mundo."
+/>
+
+Repare que, de `x`, `y` e `z`, só o `y` está nas mãos de quem defende. `x` é uma
+exigência do negócio ou da lei; `z` é incerto. O próprio Mosca, no mesmo artigo de 2015,
+estimou "uma chance em sete" de o RSA-2048 ser quebrado até 2026 e "uma em duas" até
+2031. Até a escrita deste módulo (outubro de 2026), não há registro público de
+fatoração de RSA-2048. Leia isso como o que é: **uma estimativa, não uma profecia**. O
+argumento de Mosca não depende de acertar `z`; ele mostra que, para dados com `x`
+longo, esperar ter certeza de `z` já é tarde.
+
+### 2.5 Como a pós-quântica resiste: problemas sem ritmo
+
+A pós-quântica não usa física quântica. Ela troca os problemas que o Shor resolve por
+problemas em que **não se conhece estrutura** que a interferência explore. Há algumas
+famílias, e a mais importante hoje é a de reticulados.
+
+**Reticulados e LWE.** Um reticulado (*lattice*) é uma grade regular de pontos num espaço
+de muitas dimensões. A <GlossaryTerm term="lattice-based cryptography">criptografia
+baseada em reticulados</GlossaryTerm> se apoia em problemas como achar o ponto da grade
+mais perto de um ponto dado, que, em centenas de dimensões, ninguém sabe resolver rápido,
+nem com quântico. A forma de usar isso na prática é o problema
+<GlossaryTerm term="Learning With Errors">LWE</GlossaryTerm> (*Learning With Errors*,
+aprender com erros), apresentado por Oded Regev no STOC de 2005.
+
+A intuição cabe numa sala de aula. Imagine um sistema de equações lineares:
+
+```text
+22·s1 + 61·s2 +  5·s3 + 40·s4 = 95   (mod 97)
+ 7·s1 + 88·s2 + 31·s3 +  2·s4 = 85   (mod 97)
+...
+```
+
+Sem mais nada, você acha `s1..s4` por eliminação de Gauss, como no ensino médio. Agora
+some um **erro pequeno e aleatório** a cada resultado (+1, −2, 0, +2...) e jogue os erros
+fora. A eliminação de Gauss, que combina equações, faz os erros se somarem e crescerem
+até o resultado não valer nada. Recuperar `s` passa a ser achar o ponto de um reticulado
+mais perto de um alvo: o problema difícil. Quem conhece `s`, por outro lado, calcula
+`b − A·s` e enxerga só o erro pequeno, que sabe ignorar.
+
+Esse é o esqueleto de uma cifra. O script abaixo implementa, com números de brinquedo, a
+cifra de Regev: a chave pública é a matriz `A` e o vetor `b = A·s + e`; para cifrar um
+bit, soma-se um subconjunto de linhas e, se o bit for 1, acrescenta-se meio módulo
+(`q/2`); para decifrar, quem tem `s` tira `⟨u, s⟩` e vê se sobrou "perto de 0" ou
+"perto de 48". Saída real:
+
+```python
+q = 97                      # modulus
+s = [3, 14, 15, 9]          # secret key
+A = [[22, 61, 5, 40], [7, 88, 31, 2], [55, 13, 70, 18],
+     [9, 47, 26, 81], [64, 3, 12, 50]]
+e = [1, -2, 0, 2, -1]       # small noise, thrown away after keygen
+b = [(sum(a * x for a, x in zip(row, s)) + err) % q for row, err in zip(A, e)]
+print("chave pública: A e b =", b)
+
+def encrypt(bit, rows=(0, 1, 3)):
+    u = [sum(A[r][j] for r in rows) % q for j in range(4)]
+    v = (sum(b[r] for r in rows) + bit * (q // 2)) % q
+    return u, v
+
+def decrypt(u, v):
+    d = (v - sum(x * y for x, y in zip(u, s))) % q
+    bit = 1 if q // 4 < d < 3 * q // 4 else 0
+    return d, bit
+
+for bit in (0, 1):
+    u, v = encrypt(bit)
+    print(f"bit {bit}: cifrado u={u} v={v} -> decifra para {decrypt(u, v)}")
+```
+
+```console
+$ python3 lwe.py
+chave pública: A e b = [95, 85, 7, 60, 87]
+bit 0: cifrado u=[38, 2, 62, 26] v=46 -> decifra para (1, 0)
+bit 1: cifrado u=[38, 2, 62, 26] v=94 -> decifra para (49, 1)
+```
+
+O `1` e o `49` são o ruído aparecendo: o bit 0 decifrou para "1, perto de 0", e o bit 1
+para "49, perto de 48". O dono da chave tolera o ruído; o atacante se afoga nele. O
+ML-KEM é esta ideia com polinômios no lugar de números soltos (daí o "Module" de
+*Module-LWE*), dimensões de centenas e parâmetros escolhidos para que a decifração
+quase nunca erre.
+
+<Callout variant="warning" title="Isto é aula, não cripto">
+Com 4 incógnitas e módulo 97, este sistema se resolve por força bruta em milésimos de
+segundo. O script serve para ver a engrenagem girar, como o RSA de `p = 5, q = 11` do
+3.4. A regra do 3.1 continua valendo: em produção, só bibliotecas consagradas.
+</Callout>
+
+**Outras famílias.** A segurança do **hash** (como a do SHA-256) também resiste ao
+quântico; dá para construir assinaturas só com hashes, sem nenhuma suposição
+matemática extra: é o SLH-DSA, mais conservador e mais pesado. Os **códigos corretores
+de erro** (a mesma matemática que corrige arranhões num CD) dão o HQC e o Classic
+McEliece. E houve famílias que **caíram**: as isogenias (SIKE) e a multivariada (Rainbow),
+quebradas em 2022 por ataques clássicos (seção 4). Uma última distinção, para não
+confundir: a <GlossaryTerm term="quantum key distribution">distribuição quântica de
+chaves</GlossaryTerm> (QKD) usa fótons num canal dedicado; não é PQC, exige hardware
+especial e um outro mecanismo para autenticar as pontas, e não é o que os padrões do NIST
+desta transição cobrem. Para a web, o SSH e as VPNs, a resposta é software: PQC.
+
+### 2.6 KEM: o jeito novo de combinar a chave
+
+No 3.4, o Diffie-Hellman era uma conversa simétrica: cada lado manda um valor público e
+os dois calculam o mesmo segredo. As construções pós-quânticas mais eficientes não têm
+essa forma; elas são um <GlossaryTerm term="KEM">KEM</GlossaryTerm> (*Key Encapsulation
+Mechanism*, mecanismo de encapsulamento de chave), com três operações:
+
+1. **Gerar o par:** quem vai receber cria uma chave privada e uma pública (no ML-KEM-768,
+   a pública tem 1184 bytes).
+2. **Encapsular:** quem envia pega a pública, **sorteia um segredo** de 32 bytes e
+   produz um "envelope" (o cifrado, 1088 bytes) que só a privada abre. Ele fica com o
+   segredo e manda o envelope.
+3. **Desencapsular:** o dono da privada abre o envelope e obtém **o mesmo** segredo.
+
+Os dois lados terminam com 32 bytes iguais, que viram a chave simétrica. A diferença
+para o DH é que um lado escolhe o segredo e o outro o recebe; para o TLS, o efeito é o
+mesmo. O <GlossaryTerm term="ML-KEM">ML-KEM</GlossaryTerm> foi desenhado como KEM
+desde o começo, e o TLS 1.3 o encaixa no mesmo lugar do ECDHE: o cliente manda a chave
+pública de encapsulamento no `key_share`, e o servidor responde com o envelope. Você vai
+encapsular e desencapsular à mão, com o `openssl`, no walkthrough da seção 5.5.
+
+### 2.7 Os padrões do NIST
+
+Em 2016, o NIST (o instituto de padrões dos EUA, que também publica o AES e o SHA-2)
+abriu um concurso público: criptógrafos do mundo todo mandaram dezenas de propostas, que
+foram atacadas e filtradas em rodadas por seis anos. Em **5 de julho de 2022**, o NIST
+anunciou os escolhidos (CRYSTALS-Kyber, CRYSTALS-Dilithium, FALCON e SPHINCS+) e mandou
+quatro KEMs para uma 4ª rodada: BIKE, Classic McEliece, HQC e SIKE
+([NIST, 05/07/2022](https://www.nist.gov/news-events/news/2022/07/nist-announces-first-four-quantum-resistant-cryptographic-algorithms);
+[NIST IR 8413](https://csrc.nist.gov/pubs/ir/8413/upd1/final)).
+
+Em **13 de agosto de 2024**, saíram os três primeiros padrões finais, como
+<GlossaryTerm term="FIPS">FIPS</GlossaryTerm> (*Federal Information Processing
+Standards*, os padrões oficiais do governo dos EUA, seguidos no mundo todo)
+([NIST, 13/08/2024](https://www.nist.gov/news-events/news/2024/08/nist-releases-first-3-finalized-post-quantum-encryption-standards)):
+
+- **FIPS 203 — ML-KEM** (ex-Kyber): o KEM principal, "para criptografia em geral".
+- **FIPS 204 — <GlossaryTerm term="ML-DSA">ML-DSA</GlossaryTerm>** (ex-Dilithium): a
+  assinatura principal, também de reticulados.
+- **FIPS 205 — <GlossaryTerm term="SLH-DSA">SLH-DSA</GlossaryTerm>** (ex-SPHINCS+):
+  assinatura baseada só em hash, "reserva caso o ML-DSA se mostre vulnerável".
+
+O quarto, o **<GlossaryTerm term="FN-DSA">FN-DSA</GlossaryTerm>** (baseado no Falcon),
+está em padronização como FIPS 206: assinaturas menores que o ML-DSA, mas uma
+implementação delicada (usa ponto flutuante, difícil de fazer em tempo constante). Até a
+escrita deste módulo, a página de notícias do projeto PQC do NIST não registra a versão
+final; confira o status atual em [csrc.nist.gov](https://csrc.nist.gov/projects/post-quantum-cryptography).
+E em **11 de março de 2025**, o NIST escolheu o **<GlossaryTerm term="HQC">HQC</GlossaryTerm>**
+(códigos corretores de erro) como KEM de reserva: "queremos um padrão reserva baseado
+numa matemática diferente da do ML-KEM", nas palavras do chefe do projeto, Dustin Moody;
+a previsão era de um rascunho em cerca de um ano e o padrão final em 2027
+([NIST, 11/03/2025](https://www.nist.gov/news-events/news/2025/03/nist-selects-hqc-fifth-algorithm-post-quantum-encryption)).
+
+Para firmware e raízes de confiança existe ainda uma categoria à parte, publicada antes
+de tudo isso: as <GlossaryTerm term="stateful hash-based signature">assinaturas de hash
+com estado</GlossaryTerm>, LMS e XMSS
+([NIST SP 800-208, outubro de 2020](https://csrc.nist.gov/pubs/sp/800/208/final)).
+São seguras e pequenas, mas cada chave só assina um número limitado de mensagens, e o
+signatário precisa **lembrar** quais já usou: reusar o estado (por exemplo, restaurando
+um backup antigo da chave) quebra a segurança.
+
+<Figure
+  src={familiasPqc}
+  alt="Tabela com as famílias de PQC nas linhas e as colunas KEM e assinatura. Reticulados: ML-KEM FIPS 203 e ML-DSA FIPS 204, mais FN-DSA FIPS 206 em elaboração. Hash: SLH-DSA FIPS 205 e LMS/XMSS SP 800-208. Códigos: HQC, escolhido em março de 2025. Isogenias: SIKE, quebrado em julho de 2022. Multivariada: Rainbow, quebrado em fevereiro de 2022. As duas últimas em vermelho."
+  caption="O mapa da pós-quântica. Os padrões em verde estão publicados; os amarelos, a caminho; os vermelhos caíram para ataques clássicos durante o concurso. Ter mais de uma família padronizada é a reserva contra a próxima surpresa."
+/>
+
+**O preço: tamanho.** Medimos com o `openssl` 3.5.5 do WSL o tamanho das chaves
+públicas (no formato DER, com o cabeçalho que identifica o algoritmo) e das assinaturas
+de cada algoritmo:
+
+| Algoritmo | Uso | Chave pública (DER) | Assinatura / cifrado |
+|---|---|---|---|
+| X25519 | troca de chaves clássica | 44 B | — (32 B de valor público) |
+| ML-KEM-768 | KEM pós-quântico | 1206 B | 1088 B (cifrado) |
+| ECDSA P-256 | assinatura clássica | 91 B | ~71 B |
+| RSA-2048 | assinatura clássica | 294 B | 256 B |
+| ML-DSA-65 | assinatura pós-quântica | 1974 B | 3309 B |
+| SLH-DSA-SHA2-128s | assinatura pós-quântica (hash) | 50 B | 7856 B |
+
+A velocidade não é o problema: no `openssl speed` da mesma máquina, o ML-KEM-768 fez
+cerca de 38 mil encapsulamentos por segundo, no mesmo patamar das 37 mil trocas X25519.
+O problema é que cada handshake carrega mais de um quilobyte a mais, e uma cadeia de
+certificados ML-DSA pesa vários quilobytes. Guarde isso: é a origem do caso real mais
+instrutivo da seção 4.
+
+### 2.8 Híbrido e agilidade
+
+Se o ML-KEM é tão bom, por que não usá-lo sozinho? Porque ele é **novo**. O X25519 está em
+uso há anos; o ML-KEM foi padronizado em 2024, e a seção 4 mostra candidatos que pareciam
+sólidos e caíram em um fim de semana. A resposta da indústria foi a
+<GlossaryTerm term="hybrid key exchange">troca de chaves híbrida</GlossaryTerm>: fazer
+**as duas** trocas na mesma negociação e juntar os segredos. Para ler a sessão, o atacante
+precisa quebrar as duas. Contra o quântico, o ML-KEM segura; contra uma falha clássica
+ainda desconhecida no ML-KEM, o X25519 segura.
+
+No TLS 1.3, o híbrido mais usado é o grupo
+<GlossaryTerm term="X25519MLKEM768">X25519MLKEM768</GlossaryTerm> (codepoint 4588, ou
+0x11EC), publicado como [RFC 10024](https://www.rfc-editor.org/rfc/rfc10024) em agosto
+de 2026. O RFC define os bytes exatos: o `key_share` do cliente é a chave de
+encapsulamento ML-KEM-768 (1184 bytes) seguida da parte X25519 (32), total de **1216
+bytes**; o do servidor é o cifrado ML-KEM (1088) seguido da parte X25519 dele (32), total
+de **1120**; o segredo final é a concatenação dos dois segredos de 32 bytes, 64 bytes que
+entram no *key schedule* do TLS 1.3. Você vai contar esses bytes num handshake real na
+Missão 3.
+
+<Figure
+  src={handshakeHibrido}
+  alt="Sequência Cliente-Servidor. O ClientHello leva o key_share híbrido de 1216 bytes (chave ML-KEM-768 de 1184 bytes mais X25519 de 32) e um X25519 puro de 32 bytes de reserva. O ServerHello devolve 1120 bytes (cifrado ML-KEM de 1088 mais X25519 de 32). Nos dois lados, os segredos ML-KEM e X25519, de 32 bytes cada, viram 64 bytes que entram no key schedule. Depois vêm o certificado e a assinatura ML-DSA-65 de 3309 bytes e os dados em AES-256-GCM. À direita: para ler a sessão é preciso quebrar os dois; o X25519 cai para o Shor, o ML-KEM é novo; juntos, seguro se qualquer um ficar de pé; o preço é o ClientHello passar de 1 KB."
+  caption="O handshake híbrido que você vai capturar na Missão 3. A estrutura é a do 3.4; muda o conteúdo do key_share, e o tamanho."
+/>
+
+A lição maior vai além do TLS. Esta é a segunda grande troca de algoritmo em uma geração
+(antes vieram o fim do MD5, do SHA-1, do RC4 e do RSA de 1024 bits), e não será a última.
+A <GlossaryTerm term="crypto-agility">agilidade criptográfica</GlossaryTerm>
+(*crypto-agility*) é projetar sistemas para que trocar de algoritmo seja uma mudança de
+configuração, e não uma reescrita. E nada se troca sem saber onde está: o
+<GlossaryTerm term="cryptographic inventory">inventário criptográfico</GlossaryTerm>
+(onde a organização usa criptografia, com que algoritmo, protegendo que dado, por quanto
+tempo) é o primeiro passo de toda migração. É exatamente o que você vai montar na
+Missão 2.
+
+## 3. Como o ataque funciona — a mecânica
+
+Este módulo não ensina um ataque que você vá executar contra um alvo: o CRQC não existe.
+Mas há ataques reais aqui, uns futuros e outros bem presentes, e um pentester precisa
+saber a mecânica de cada um para medir o risco certo.
+
+### 3.1 A cadeia do HNDL, passo a passo
+
+1. **Escolher o alvo.** Tráfego cujo conteúdo terá valor daqui a dez, vinte anos:
+   diplomacia, defesa, segredos industriais, saúde, dados financeiros de longo prazo,
+   credenciais que não giram. O tráfego de um placar esportivo não vale a fita.
+2. **Ficar no caminho.** Um ponto de passagem do tráfego: um provedor, um cabo submarino,
+   um ponto de troca de tráfego, uma VPN comprometida, um Wi-Fi público. É o mesmo
+   *man-in-the-middle* passivo do 2.6, sem precisar alterar nada.
+3. **Gravar o handshake inteiro e os dados.** O que importa é o `ClientHello` e o
+   `ServerHello` com os `key_share` (os valores públicos efêmeros) e todo o tráfego
+   cifrado depois. No Wireshark, é um `tcpdump -w` comum.
+4. **Armazenar.** Barato e paciente. Não há nada a fazer até o passo 5.
+5. **No dia do CRQC:** rodar o Shor sobre os valores públicos do `key_share` para obter o
+   segredo ECDHE; aplicar o *key schedule* do TLS 1.3 (público, no RFC 8446) para derivar
+   as chaves do AES-GCM; decifrar os registros gravados.
+
+O passo 5 só depende de **matemática** sobre dados que o defensor já entregou. Por isso a
+única defesa eficaz é atuar **antes** do passo 3: se o handshake gravado tem um ML-KEM
+no meio, o passo 5 falha.
+
+Os documentos oficiais tratam essa cadeia como ameaça concreta. A ficha conjunta da
+CISA, da NSA e do NIST *Quantum-Readiness: Migration to Post-Quantum Cryptography*,
+publicada em 21 de agosto de 2023, alerta que "atores de ameaça podem estar mirando
+hoje dados que ainda exigirão proteção no futuro", numa operação de "colher agora,
+decifrar depois", e pede que as organizações comecem pelo inventário
+([ficha, NIST NCCoE](https://www.nccoe.nist.gov/sites/default/files/2023-08/quantum-readiness-fact-sheet.pdf)).
+O Chrome, ao anunciar o primeiro híbrido em 2023, usou o mesmo argumento
+([Chromium Blog, 10/08/2023](https://blog.chromium.org/2023/08/protecting-chrome-traffic-with-hybrid.html)).
+
+<Callout variant="hypothetical" title="Cenário hipotético: o contrato de 25 anos">
+Uma estatal fictícia negocia com um fornecedor estrangeiro um contrato de concessão de
+25 anos, por e-mail e por um portal web, em 2026. O portal usa TLS 1.3 com X25519, sem
+híbrido. Um adversário com acesso a um ponto de troca de tráfego grava tudo. Em 2040, se
+houver um CRQC, ele lê as cláusulas confidenciais, as margens de negociação e as
+credenciais do portal (que ninguém trocou). O contrato ainda estará em vigor por 11 anos.
+Nada disso aconteceu; é o exemplo de `x = 25` que a seção 2.4 calculou. Com um grupo
+híbrido no portal, o passo 5 falharia.
+</Callout>
+
+### 3.2 O que um CRQC faria com cada peça do 3.4
+
+| Peça | Algoritmo típico | Efeito de um CRQC |
+|---|---|---|
+| Troca de chaves TLS/SSH | ECDHE (X25519, P-256), DH | **Quebra**, inclusive tráfego gravado (HNDL) |
+| Troca de chaves no TLS 1.2 com RSA | RSA (cifrar a chave) | **Quebra** e, sem forward secrecy, já é ruim hoje |
+| Certificados e assinaturas | RSA, ECDSA, EdDSA | **Falsificação** a partir do dia do CRQC, não antes |
+| Cifra dos dados | AES-128/256-GCM, ChaCha20 | Grover: margem reduzida, sem quebra prática |
+| Hashes | SHA-256, SHA-3 | Margem reduzida, sem quebra prática |
+| Chave simétrica "embrulhada" com RSA | RSA-OAEP + AES | **Quebra**: o AES era forte, mas a chave dele foi junto |
+
+A última linha é a armadilha mais comum em inventários, e aparece na Missão 2: um AES-256
+impecável não vale nada se a chave dele foi guardada cifrada com RSA ao lado do arquivo.
+O atacante quântico não ataca o AES; ataca o RSA que guarda a chave.
+
+### 3.3 Rebaixamento: o híbrido que some no caminho
+
+O híbrido só protege se **for negociado**. O cliente oferece `X25519MLKEM768` e `X25519`;
+o servidor escolhe. Há três jeitos de terminar no clássico:
+
+- **O servidor não suporta o híbrido.** É o caso comum, e é legítimo: o TLS foi feito para
+  negociar o melhor que os dois têm em comum. A conexão segue com X25519.
+- **Uma configuração "endurecida" antiga.** Um administrador que, em 2020, fixou
+  `ssl_ecdh_curve prime256v1:secp384r1;` no nginx, por boa intenção, **tirou o híbrido**
+  da lista mesmo depois de atualizar o OpenSSL. A lista explícita substitui o padrão.
+- **Um intermediário que interfere.** Um <GlossaryTerm term="downgrade attack">ataque de
+  rebaixamento</GlossaryTerm> (*downgrade attack*) é um atacante ativo apagando a oferta
+  forte do `ClientHello` para forçar a fraca. No TLS 1.3, isso não passa despercebido:
+  o servidor **assina** (no `CertificateVerify`) o resumo de todas as mensagens do
+  handshake, e o cliente confere. Mexer no `ClientHello` quebra a assinatura. Mas um
+  *middlebox* corporativo que termina o TLS (como o proxy do Burp no 2.5) negocia o que
+  quiser com o servidor, e é aí que o híbrido costuma sumir.
+
+Na Missão 3 você vai ver a primeira e a segunda situações em funcionamento, e um detalhe
+do protocolo: quando o servidor não aceita nenhum dos `key_share` que o cliente mandou, ele
+responde com um <GlossaryTerm term="HelloRetryRequest">HelloRetryRequest</GlossaryTerm>
+("mande de novo, com este grupo"), e o handshake ganha uma ida e volta a mais.
+
+### 3.4 Ataques clássicos contra a pós-quântica
+
+A ironia da transição é que os primeiros ataques bem-sucedidos contra a pós-quântica
+foram feitos **sem nenhum computador quântico**. Há dois tipos:
+
+- **Matemática nova, atalho novo.** Um algoritmo pós-quântico se apoia num problema
+  supostamente difícil. Se alguém acha um atalho clássico, ele cai para um notebook. Foi o
+  caso do SIKE e do Rainbow (seção 4).
+- **Implementação.** Mesmo com a matemática intacta, o código pode vazar o segredo. Um
+  <GlossaryTerm term="side-channel attack">ataque de canal lateral</GlossaryTerm>
+  (*side-channel attack*) mede efeitos físicos da execução: tempo, energia, cache. É o
+  <GlossaryTerm term="timing attack">timing attack</GlossaryTerm> que você conhece,
+  agora com chaves de reticulado. O KyberSlash (seção 4) achou uma divisão cujo tempo
+  dependia do segredo, no código de referência do próprio Kyber.
+
+### 3.5 Na prática do pentest: o que um testador faz com isso
+
+O trabalho do pentester não é quebrar a pós-quântica; é **medir a exposição** e mostrar o
+caminho. Na prática, isso é inventariar, num escopo autorizado:
+
+- **TLS:** que grupo cada serviço negocia e com que certificado. Com o `openssl` 3.5,
+  `openssl s_client` mostra `Negotiated TLS1.3 group: X25519MLKEM768` quando é híbrido e
+  `Peer Temp Key: X25519, 253 bits` quando é clássico. A opção `-groups` força a oferta,
+  para testar o que o servidor aceita. O script NSE `ssl-enum-ciphers` do nmap (2.4) lista
+  versões e cifras em massa.
+- **SSH:** o `ssh -v` mostra `debug1: kex: algorithm: ...`; a partir do OpenSSH 10.1, o
+  cliente avisa sozinho quando a troca não é pós-quântica.
+- **Certificados:** `openssl x509 -text` diz o algoritmo da chave pública e o da
+  assinatura, e a validade.
+- **Dados em repouso:** perguntar (e ler) como a chave de cada backup é protegida.
+
+E escrever o achado com a severidade certa. "O servidor negocia só X25519" não é
+"crítico: tráfego decifrável": ninguém decifra esse tráfego hoje. É um achado de
+severidade baixa ou informativa **cujo peso depende de `x`**: num portal de prontuários,
+sobe; num site institucional, quase some. O relatório bom diz o que foi visto, que dados
+passam por ali, a conta de Mosca e a correção concreta.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Ainda não há caso público de dado decifrado por computador quântico. Os casos reais desta
+transição são de outro tipo: algoritmos pós-quânticos que caíram para ataques clássicos,
+implementações que vazaram, e a migração esbarrando em software mal escrito. São eles
+que ensinam por que a transição é híbrida, cuidadosa e testada.
+
+### SIKE: da 4ª rodada a um núcleo de CPU (julho de 2022)
+
+O SIKE (*Supersingular Isogeny Key Encapsulation*) era o queridinho das chaves pequenas:
+o NIST destacava suas chaves e cifrados compactos. Em **5 de julho de 2022**, o
+NIST o colocou entre os quatro KEMs que seguiam para a 4ª rodada de avaliação. Em **30
+de julho de 2022**, Wouter Castryck e Thomas Decru, da KU Leuven, publicaram no arquivo
+da IACR um ataque de recuperação de chave que, segundo o resumo do artigo, quebra o
+SIKEp434 (o parâmetro do nível 1 de segurança) "em cerca de dez minutos num único núcleo"
+de um processador comum, usando matemática de curvas elípticas do século XX (o critério
+de redutibilidade de Kani).
+
+- **Impacto:** um candidato do concurso mais escrutinado da criptografia caiu sem nenhum
+  computador quântico, com um computador comum, menos de um mês depois de seguir para a
+  4ª rodada. Ninguém foi prejudicado em produção, porque a transição ainda estava na
+  fase de avaliação.
+- **Lição:** "pós-quântico" diz respeito a um tipo de atacante; não garante nada contra
+  o atacante clássico. Daí o híbrido (o X25519 teria segurado uma sessão SIKE+X25519) e a
+  insistência do NIST em reservas de outras famílias.
+- **Fonte:** [Castryck e Decru, "An efficient key recovery attack on SIDH", ePrint
+  2022/975](https://eprint.iacr.org/2022/975) e
+  [NIST IR 8413](https://csrc.nist.gov/pubs/ir/8413/upd1/final) (a lista da 4ª rodada).
+
+### Rainbow: um fim de semana num laptop (fevereiro de 2022)
+
+O Rainbow, assinatura da família multivariada, era um dos três **finalistas** de
+assinatura da 3ª rodada do NIST, ao lado do Dilithium e do Falcon (anúncio de 22 de julho
+de 2020). Em **25 de fevereiro de 2022**, Ward Beullens (IBM Research Zurich) publicou
+"Breaking Rainbow Takes a Weekend on a Laptop": dada uma chave pública do parâmetro de
+nível 1, o ataque devolve a chave privada "em média após 53 horas (um fim de semana) de
+computação num laptop comum".
+
+- **Impacto:** o Rainbow não foi escolhido em julho de 2022, e a família multivariada
+  saiu da primeira leva de padrões.
+- **Lição:** o processo funcionou como deveria: anos de ataque público antes de
+  padronizar. É o princípio de Kerckhoffs do 3.1 em escala mundial.
+- **Fonte:** [Beullens, ePrint 2022/214](https://eprint.iacr.org/2022/214) e
+  [NIST, finalistas da 3ª rodada](https://csrc.nist.gov/news/2020/pqc-third-round-candidate-announcement).
+
+### KyberSlash: o segredo no tempo de uma divisão (dezembro de 2023)
+
+O algoritmo Kyber (hoje ML-KEM) seguia intacto, mas o **código** não. A linha problemática
+estava no código de referência oficial: uma divisão por 3329 (o módulo público do Kyber)
+em que o numerador dependia do segredo. Em muitos processadores, o tempo de uma instrução
+de divisão varia conforme os números; o tempo, então, vazava o segredo. A cronologia, pelo
+registro dos próprios pesquisadores:
+
+- Goutam Tamvada, Karthikeyan Bhargavan e Franziskus Kiefer notaram o problema ao escrever
+  uma implementação formalmente verificada em Rust e avisaram o mantenedor; o repositório
+  oficial `pq-crystals/kyber` foi corrigido em **1º de dezembro de 2023**.
+- Daniel J. Bernstein, independentemente, anunciou o problema em **15 de dezembro de
+  2023**.
+- Em **30 de dezembro de 2023**, Prasanna Ravi e Matthias Kannwischer anunciaram outras
+  divisões do mesmo tipo (o "KyberSlash2"), e Bernstein publicou uma demonstração que
+  recuperava a chave secreta completa a partir dos tempos, num Raspberry Pi 2.
+- O artigo final (TCHES 2025) relata a recuperação da chave "em minutos" para o KyberSlash2
+  e "em poucas horas" para o KyberSlash1, num Raspberry Pi 2 e num Arm Cortex-M4.
+
+- **Impacto:** várias bibliotecas tinham herdado o código; a lista mantida pelos
+  autores mostra correções entre dezembro de 2023 e 2025, como no liboqs (15/12/2023 e 08/01/2024), no
+  Botan (20/12/2023 e 04/01/2024) e no AWS-LC.
+- **Lição:** o paralelo com o caso Debian do 3.1 é direto: **algoritmo certo,
+  implementação errada**. PQC é código novo, e código novo precisa da mesma disciplina de
+  tempo constante que levou décadas para o RSA e o ECC.
+- **Fonte:** [KyberSlash — introdução, linha do tempo e artigo](https://kyberslash.cr.yp.to/papers.html)
+  e [lista de bibliotecas afetadas](https://kyberslash.cr.yp.to/libraries.html).
+
+### O Chrome liga o híbrido, e servidores quebram (abril de 2024)
+
+Em **10 de agosto de 2023**, o Chrome anunciou o suporte ao híbrido X25519Kyber768 a
+partir do Chrome 116, avisando: a troca "acrescenta mais de um quilobyte" ao
+`ClientHello`, e alguns *middleboxes* falhavam por "restrições de tamanho mal codificadas".
+Para isso, criou a política corporativa temporária `PostQuantumKeyAgreementEnabled`. O
+híbrido passou a ser padrão no Chrome 124 para desktop, lançado em **16 de abril de 2024**.
+
+Aí apareceu o problema que ganhou um site próprio, o [tldr.fail](https://tldr.fail/): com
+o `ClientHello` maior, a mensagem não cabe num pacote TCP, e um único `read()` não a traz
+inteira. Servidores mal escritos, que nunca tinham precisado chamar `read()` duas vezes,
+**derrubavam a conexão** em vez de ignorar o grupo desconhecido. A tabela do site registra
+casos descobertos com o Chrome 124, como Cisco (23/04/2024), Envoy (29/04/2024) e o
+Ingress Nginx do Kubernetes (03/06/2024). Depois, em **13 de setembro de 2024**, o Google
+anunciou a troca do Kyber pelo ML-KEM final no Chrome 131 (lançado em 12 de novembro de
+2024), com o codepoint mudando de 0x6399 para **0x11EC**, sem suportar os dois ao mesmo
+tempo ([Google Security Blog](https://security.googleblog.com/2024/09/a-new-path-for-kyber-on-web.html)).
+
+- **Impacto:** sites e serviços inacessíveis para usuários do Chrome atrás de
+  equipamentos defeituosos, e empresas desligando a pós-quântica pela política para
+  "resolver". O bug não era de criptografia: era de leitura de socket, antigo e escondido.
+- **Lição:** a migração encontra o software real, não o do RFC. Para quem testa, o
+  `ClientHello` grande é um caso de teste (o tldr.fail traz um script para isso); para
+  quem defende, a política de desligar a PQ é um paliativo com data para acabar.
+- **Fonte:** [Chromium Blog, 10/08/2023](https://blog.chromium.org/2023/08/protecting-chrome-traffic-with-hybrid.html),
+  [tldr.fail](https://tldr.fail/) e
+  [Google Security Blog, 13/09/2024](https://security.googleblog.com/2024/09/a-new-path-for-kyber-on-web.html).
+
+## 5. Mãos à obra — exercícios no seu WSL
+
+Este módulo não tem laboratório próprio. Você vai trabalhar no terminal do Ubuntu, com
+arquivos **fictícios** e um servidor TLS de teste que escuta só em `127.0.0.1` da sua
+máquina, atende uma conexão e se desliga. Nada aqui toca a rede local, a internet ou os
+labs do Docker.
+
+**Objetivo:** ao terminar, você terá:
+
+1. fatorado uma chave RSA de brinquedo com a receita do Shor, montado a chave privada e
+   lido uma mensagem "colhida" em 2026 (Missão 1);
+2. montado o inventário quântico de uma empresa fictícia a partir de certificados,
+   varreduras de TLS e SSH e uma política de backup, separando o que é HNDL, o que é só
+   autenticação e o que já está pronto (Missão 2);
+3. capturado, byte a byte, um handshake TLS 1.3 híbrido com certificado ML-DSA, e visto o
+   que acontece quando o servidor não aceita o que o cliente oferece (Missão 3).
+
+Cada missão termina numa flag.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra o terminal do Ubuntu no WSL. Você vai usar `openssl` (3.5 ou mais novo, que traz
+   ML-KEM, ML-DSA e SLH-DSA), `python3`, `ss` e `ssh`, todos do Ubuntu padrão. Confira
+   (saídas reais; as versões no seu podem ser outras):
+
+   ```console
+   $ openssl version
+   OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)
+   $ openssl list -kem-algorithms | grep -i ml-kem
+     { 2.16.840.1.101.3.4.4.1, id-alg-ml-kem-512, ML-KEM-512, MLKEM512 } @ default
+     { 2.16.840.1.101.3.4.4.2, id-alg-ml-kem-768, ML-KEM-768, MLKEM768 } @ default
+     { 2.16.840.1.101.3.4.4.3, id-alg-ml-kem-1024, ML-KEM-1024, MLKEM1024 } @ default
+     X25519MLKEM768 @ default
+     X448MLKEM1024 @ default
+     SecP256r1MLKEM768 @ default
+     SecP384r1MLKEM1024 @ default
+   $ python3 --version
+   Python 3.14.4
+   ```
+
+   Se o `openssl version` mostrar 3.0, 3.2 ou 3.4, as missões 2 e 3 não funcionam: veja a
+   seção 7.
+
+2. Gere os arquivos. O bloco abaixo cria `~/treino-3-5` com uma pasta por missão. Copie o
+   bloco inteiro, cole no terminal e aperte Enter:
+
+```bash
+mkdir -p ~/treino-3-5 && cd ~/treino-3-5 && rm -rf missao-1 missao-2 missao-3 && mkdir missao-1 missao-2 missao-3 && (
+cd missao-1
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 1 — O Shor de brinquedo
+Você gravou, em 2026, uma mensagem cifrada com RSA "de livro" (sem
+padding, um caractere por vez) entre duas filiais FICTÍCIAS da Loja
+Exemplo. A chave pública está em chave-publica.txt e a mensagem, em
+interceptada.txt. A chave é minúscula de propósito: é o "futuro"
+em que o atacante tem um computador quântico, simulado aqui pelo
+periodo.py, que acha o período por força bruta.
+Objetivo: fatorar N com a receita do Shor (período + mdc), montar
+a chave privada e decifrar a mensagem.
+A flag é FLAG{p-q-PALAVRA}, com p < q e a palavra em maiúsculas.
+EOF
+cat > chave-publica.txt <<'EOF'
+N = 52961
+e = 17
+EOF
+cat > interceptada.txt <<'EOF'
+26463 20914 45581 29754 18518 50207 20914
+EOF
+cat > periodo.py <<'EOF'
+#!/usr/bin/env python3
+"""Toy period finder: the step that Shor's algorithm runs on a quantum computer.
+
+Usage: python3 periodo.py N a
+
+Prints a^x mod N for x = 1, 2, 3... until the value returns to 1, and then
+the period r. Here it is classical brute force, so the time grows with N.
+"""
+import sys
+from math import gcd
+
+SHOW = 6
+
+
+def find_period(n: int, a: int) -> int:
+    value, x = a % n, 1
+    while value != 1:
+        if x <= SHOW:
+            print(f"  {a}^{x} mod {n} = {value}")
+        value = value * a % n
+        x += 1
+    if x > SHOW:
+        print(f"  ... ({x - SHOW - 1} linhas omitidas)")
+    print(f"  {a}^{x} mod {n} = 1")
+    return x
+
+
+if __name__ == "__main__":
+    n, a = int(sys.argv[1]), int(sys.argv[2])
+    if gcd(a, n) != 1:
+        sys.exit(f"sorte: mdc({a}, {n}) = {gcd(a, n)} já é um fator")
+    r = find_period(n, a)
+    print(f"período r = {r} ({'par' if r % 2 == 0 else 'ímpar'})")
+EOF
+cd ../missao-2
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 2 — Inventário quântico da Loja Exemplo
+Pentest FICTÍCIO (contrato 2026-188). O cliente pediu um anexo ao
+relatório: para cada item abaixo, qual é o risco quântico?
+  hndl          a confidencialidade de HOJE cai depois (colher agora,
+                decifrar depois): troca de chaves ou cifra de chave
+                quântico-vulnerável protegendo dados
+  autenticacao  só assinatura/identidade quântico-vulnerável: o risco
+                é falsificação FUTURA, não ler o passado
+  ok            já resiste a um computador quântico (PQC, híbrido ou
+                simétrico com chave de 128 bits ou mais)
+Itens:
+  I1  certificado do site web          certs/web.pem
+  I2  troca de chaves do site web      varredura-tls.txt (web)
+  I3  troca de chaves da API           varredura-tls.txt (api)
+  I4  troca de chaves da VPN legada    varredura-tls.txt (vpn-legada)
+  I5  certificado do portal novo       certs/portal-novo.pem
+  I6  troca de chaves do SSH bastião   ssh-bastiao.txt
+  I7  troca de chaves do SSH do Git    ssh-git.txt
+  I8  backup externo                   backups.txt (A)
+  I9  cofre de senhas                  backups.txt (B)
+  I10 assinatura do firmware           certs/firmware.pem
+Preencha respostas.txt (uma linha por item, formato I1:classe) e
+rode:  bash conferir.sh
+EOF
+mkdir certs
+openssl req -x509 -newkey rsa:2048 -nodes -keyout /dev/null -out certs/web.pem -days 365 -subj "/CN=www.lojaexemplo.test" 2>/dev/null
+openssl req -x509 -newkey ML-DSA-65 -nodes -keyout /dev/null -out certs/portal-novo.pem -days 365 -subj "/CN=portal.lojaexemplo.test" 2>/dev/null
+openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -keyout /dev/null -out certs/firmware.pem -days 7300 -subj "/CN=Loja Exemplo Firmware Signing/OU=medidores (vida util 20 anos)" 2>/dev/null
+cat > varredura-tls.txt <<'EOF'
+# Resumo do openssl s_client contra cada serviço (pentest FICTÍCIO,
+# saídas reais de um laboratório, nomes trocados).
+== web (www.lojaexemplo.test:443)
+Peer signature type: rsa_pss_rsae_sha256
+Peer Temp Key: X25519, 253 bits
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+Protocol: TLSv1.3
+Server public key is 2048 bit
+== api (api.lojaexemplo.test:443)
+Peer signature type: ecdsa_secp256r1_sha256
+Negotiated TLS1.3 group: X25519MLKEM768
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+Protocol: TLSv1.3
+Server public key is 256 bit
+== vpn-legada (vpn.lojaexemplo.test:443)
+New, TLSv1.2, Cipher is AES256-GCM-SHA384
+Protocol: TLSv1.2
+Server public key is 2048 bit
+EOF
+cat > ssh-bastiao.txt <<'EOF'
+# bastiao.lojaexemplo.test (FICTÍCIO)
+$ ssh -v auditor@bastiao.lojaexemplo.test 2>&1 | grep -E 'kex: algorithm|WARNING|session may'
+debug1: kex: algorithm: curve25519-sha256
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+$ sudo sshd -T | grep -i '^kexalgorithms'
+kexalgorithms curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256
+EOF
+cat > ssh-git.txt <<'EOF'
+# git.lojaexemplo.test (FICTÍCIO)
+$ ssh -v auditor@git.lojaexemplo.test 2>&1 | grep -E 'kex: algorithm'
+debug1: kex: algorithm: mlkem768x25519-sha256
+$ sudo sshd -T | grep -i '^kexalgorithms'
+kexalgorithms mlkem768x25519-sha256,sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256
+EOF
+cat > backups.txt <<'EOF'
+Política de backup e cofres (trecho, Loja Exemplo — FICTÍCIO)
+(A) Backup externo: o banco de clientes é cifrado com AES-256-GCM e
+    uma chave aleatória por arquivo. Essa chave vai junto do arquivo,
+    cifrada com RSA-OAEP (RSA-2048, chave pública da equipe de TI).
+    Os arquivos seguem para um storage em nuvem de terceiros.
+    Retenção: 25 anos (exigência contratual).
+(B) Cofre de senhas da equipe: arquivo local cifrado com AES-128-GCM;
+    a chave é derivada da senha mestra com scrypt. Não há chave
+    pública envolvida.
+EOF
+printf 'I1:?\nI2:?\nI3:?\nI4:?\nI5:?\nI6:?\nI7:?\nI8:?\nI9:?\nI10:?\n' > respostas.txt
+cat > conferir.sh <<'EOF'
+#!/usr/bin/env bash
+# Checks the FORMAT of respostas.txt (not the content) and derives the flag.
+set -euo pipefail
+cd "$(dirname "$0")"
+n=0
+lines=()
+while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%$'\r'}
+    [ -z "$line" ] && continue
+    n=$((n + 1))
+    if ! [[ $line =~ ^I$n:(hndl|autenticacao|ok)$ ]]; then
+        echo "linha $n fora do formato: '$line' (esperado I$n:hndl, I$n:autenticacao ou I$n:ok)" >&2
+        exit 1
+    fi
+    lines+=("$line")
+done < respostas.txt
+[ "$n" -eq 10 ] || { echo "esperava 10 linhas, achei $n" >&2; exit 1; }
+echo "Formato OK. Flag candidata: FLAG{$(printf '%s\n' "${lines[@]}" | sha256sum | cut -c1-12)}"
+EOF
+cd ../missao-3
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 3 — O handshake híbrido ao vivo
+servidor.sh liga UM servidor TLS 1.3 de teste, só em 127.0.0.1,
+porta 44330. Ele atende UMA conexão e se desliga sozinho. O
+certificado é ML-DSA-65; a chave vem de uma semente FIXA (só para o
+exercício dar sempre o mesmo resultado; nunca faça isso de verdade).
+Uso:  bash servidor.sh                 (grupos padrão: híbrido + X25519)
+      bash servidor.sh secp256r1       (o servidor só aceita P-256)
+Descubra, com o openssl s_client:
+  1. o tamanho, em bytes, do key_share que o SERVIDOR devolve no
+     grupo híbrido;
+  2. quantos ClientHello o cliente precisa mandar quando o servidor
+     só aceita secp256r1;
+  3. os 12 primeiros caracteres hex do SHA-256 da chave pública do
+     servidor (formato DER), tirada do certificado RECEBIDO.
+Flag: FLAG{tamanho-quantidade-hex}
+EOF
+echo bdb99ecc7405a4c7dbb6919a5b9f0407499e1f8dc5c8d038044e9c76ca1c77e1 > semente.hex
+openssl genpkey -algorithm ML-DSA-65 -pkeyopt hexseed:"$(cat semente.hex)" -out servidor.key
+openssl req -x509 -key servidor.key -out servidor.pem -days 365 -subj "/CN=portal.lojaexemplo.test" 2>/dev/null
+chmod 600 servidor.key
+cat > servidor.sh <<'EOF'
+#!/usr/bin/env bash
+# Starts ONE TLS 1.3 test server on 127.0.0.1:44330 (loopback only). It
+# serves a single connection and exits. Usage: bash servidor.sh [groups]
+set -euo pipefail
+cd "$(dirname "$0")"
+groups=${1:-X25519MLKEM768:X25519}
+if ss -tln | grep -q '127.0.0.1:44330 '; then
+    echo "já há algo escutando em 127.0.0.1:44330; conecte-se a ele ou espere" >&2
+    exit 1
+fi
+openssl s_server -accept 127.0.0.1:44330 -naccept 1 -cert servidor.pem \
+    -key servidor.key -groups "$groups" -www -quiet >/dev/null 2>&1 &
+sleep 1
+echo "servidor no ar em 127.0.0.1:44330 (grupos: $groups); atende UMA conexão e sai"
+EOF
+) && echo "Pronto: $(find ~/treino-3-5 -type f | wc -l) arquivos em ~/treino-3-5"
+```
+
+A última linha deve ser `Pronto: 19 arquivos em ~/treino-3-5`. Rodar o bloco de novo apaga
+e recria as três pastas: é o seu "resetar". (Os certificados da Missão 2 saem com chaves
+novas a cada vez, mas os algoritmos, e as respostas, são sempre os mesmos.)
+
+### 5.2 Missão 1 — O Shor de brinquedo (guiada, depois desafio)
+
+**Cenário:** é o futuro. Você é o atacante do HNDL e, em 2026, gravou uma mensagem entre
+duas filiais da Loja Exemplo, cifrada com <GlossaryTerm term="textbook RSA">RSA de
+livro</GlossaryTerm> (*textbook RSA*: o `m^e mod n` puro do 3.4, sem padding, um caractere
+por vez). Agora você tem um "computador quântico": o `periodo.py`, que acha o período (aqui,
+por força bruta, porque a chave é minúscula). O resto da receita do Shor é com você.
+
+**Etapa 1: leia a missão e os dados.**
+
+```console
+$ cd ~/treino-3-5/missao-1
+$ cat LEIA-ME.txt chave-publica.txt interceptada.txt
+```
+
+**Etapa 2: o Shor no 15, juntos.** Antes do alvo, refaça a seção 2.2 com o script
+(saída real):
+
+```console
+$ python3 periodo.py 15 7
+  7^1 mod 15 = 7
+  7^2 mod 15 = 4
+  7^3 mod 15 = 13
+  7^4 mod 15 = 1
+período r = 4 (par)
+$ python3 -c "from math import gcd; y = pow(7, 4 // 2, 15); print(y, gcd(y - 1, 15), gcd(y + 1, 15))"
+4 3 5
+```
+
+Período 4, par; `7² mod 15 = 4`, que não é `14` (o `N − 1`); os mdc dão 3 e 5. É
+exatamente a receita: **período → `y = a^(r/2) mod N` → `mdc(y − 1, N)` e
+`mdc(y + 1, N)`**. Use sempre `pow(a, r // 2, N)` (com o terceiro argumento): sem ele, o
+Python calcularia o número gigante `a^(r/2)` inteiro antes de tirar o resto.
+
+**Etapa 3: a primeira tentativa no alvo, juntos.** O `N` da chave é 52961. Comece pela
+base mais óbvia, `a = 2` (saída real):
+
+```console
+$ python3 periodo.py 52961 2
+  2^1 mod 52961 = 2
+  2^2 mod 52961 = 4
+  2^3 mod 52961 = 8
+  2^4 mod 52961 = 16
+  2^5 mod 52961 = 32
+  2^6 mod 52961 = 64
+  ... (1043 linhas omitidas)
+  2^1050 mod 52961 = 1
+período r = 1050 (par)
+```
+
+Par, ótimo. Agora o `y`:
+
+```console
+$ python3 -c "from math import gcd; N = 52961; y = pow(2, 1050 // 2, N); print(y, gcd(y - 1, N), gcd(y + 1, N))"
+52960 1 52961
+```
+
+Os mdc deram `1` e o próprio `N`: nenhum fator. Olhe o `y`: **52960 é `N − 1`**. É o
+"azar" da seção 2.2: `a^(r/2) ≡ −1 (mod N)`, e então `y + 1` é o próprio `N` e `y − 1`
+não tem fator comum com ele. No Shor de verdade acontece o mesmo, e a resposta é a mesma:
+**trocar de base**.
+
+**Etapa 4 (desafio): fatorar e decifrar.** Agora é com você:
+
+1. ache uma base `a` que funcione (período par e `y` diferente de `N − 1`) e tire `p` e `q`;
+2. monte a chave privada como no 3.4: `φ = (p − 1)(q − 1)` e `d = e⁻¹ mod φ`;
+3. decifre cada número de `interceptada.txt` com `m = c^d mod N` e converta cada `m` em
+   caractere (`chr`).
+
+<Hint title="Dica 1: escolher a base">
+Teste as próximas bases pequenas: 3, 5, 7. Uma delas tem período ímpar (aí a fórmula nem
+começa, porque `r/2` não é inteiro); outra funciona. Para cada uma, rode o `periodo.py` e,
+se o período for par, a mesma linha de Python da Etapa 3 com a nova base e o novo `r`.
+</Hint>
+
+<Hint title="Dica 2: chave privada e decifração">
+O Python calcula o inverso modular direto: `pow(e, -1, phi)`. Para decifrar a lista
+inteira de uma vez, leia o arquivo, faça `split()`, converta com `int()` e aplique
+`chr(pow(c, d, N))` a cada número. Antes de decifrar, repare que o segundo e o último
+números de `interceptada.txt` são iguais: o que isso já diz sobre a mensagem?
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Saídas reais:
+
+```console
+$ python3 periodo.py 52961 5
+  5^1 mod 52961 = 5
+  5^2 mod 52961 = 25
+  5^3 mod 52961 = 125
+  5^4 mod 52961 = 625
+  5^5 mod 52961 = 3125
+  5^6 mod 52961 = 15625
+  ... (168 linhas omitidas)
+  5^175 mod 52961 = 1
+período r = 175 (ímpar)
+$ python3 periodo.py 52961 3
+  3^1 mod 52961 = 3
+  3^2 mod 52961 = 9
+  3^3 mod 52961 = 27
+  3^4 mod 52961 = 81
+  3^5 mod 52961 = 243
+  3^6 mod 52961 = 729
+  ... (5243 linhas omitidas)
+  3^5250 mod 52961 = 1
+período r = 5250 (par)
+$ python3 -c "from math import gcd; N = 52961; y = pow(3, 5250 // 2, N); print(y, gcd(y - 1, N), gcd(y + 1, N))"
+29117 251 211
+$ python3 -c "print(pow(17, -1, (211 - 1) * (251 - 1)))"
+12353
+$ python3 -c "N, d = 52961, 12353; print(''.join(chr(pow(int(c), d, N)) for c in open('interceptada.txt').read().split()))"
+C…
+```
+
+- **Base 5:** período 175, ímpar: não serve.
+- **Base 3:** período 5250, par; `y = 29117`, que não é `N − 1`; os mdc dão **211** e
+  **251**. Conferindo: `211 × 251 = 52961`.
+- **Chave privada:** `φ = 210 × 250 = 52500` e `d = 12353`.
+- **Mensagem:** na sua tela aparece a palavra inteira (aqui, a reticência esconde o
+  resto). É ela, em maiúsculas, que fecha a flag `FLAG{p-q-PALAVRA}` com `p < q`.
+
+O segundo e o último números de `interceptada.txt` são iguais (`20914`) porque o RSA de
+livro é **determinístico**: a mesma letra vira sempre o mesmo número. Mesmo sem fatorar,
+quem gravou a mensagem já sabia que a 2ª e a 7ª letras eram iguais, a análise de
+frequência do 3.1. É por isso que o RSA real usa padding aleatório (OAEP).
+</Solution>
+
+<FlagInput task="missao-1-shor-de-brinquedo" />
+
+<Callout variant="tip" title="O que você acabou de fazer, em escala real">
+Trocando o `periodo.py` por um CRQC e o 52961 por um módulo de 2048 bits, esta missão é o
+passo 5 do HNDL da seção 3.1. As etapas 3 e 4 (mdc, `φ`, `d`, decifrar) são idênticas e
+rodam num notebook em milissegundos. Toda a segurança do RSA estava na Etapa 2.
+</Callout>
+
+### 5.3 Missão 2 — Inventário quântico da Loja Exemplo (desafio)
+
+**Cenário:** no fim de um pentest fictício, o cliente pede um anexo: "estamos prontos para
+o quântico?". Você tem dez itens, com a evidência de cada um num arquivo. Para cada item,
+decida a classe:
+
+- `hndl`: a **confidencialidade de hoje** depende de algo que o Shor quebra (troca de
+  chaves clássica, ou chave de dados embrulhada com RSA/ECC). É o que já está sendo
+  colhido.
+- `autenticacao`: só **identidade/assinatura** clássica. O risco é falsificação depois
+  que o CRQC existir; não há passado para ler.
+- `ok`: já resiste (PQC, híbrido, ou simétrico com chave de 128 bits ou mais).
+
+**Etapa 1: leia o LEIA-ME e um certificado, juntos.** O `openssl x509 -text` mostra o
+algoritmo da chave pública e da assinatura. Para não se afogar na saída, filtre (saída
+real):
+
+```console
+$ cd ~/treino-3-5/missao-2
+$ openssl x509 -in certs/web.pem -noout -subject -enddate
+subject=CN=www.lojaexemplo.test
+notAfter=Oct  5 22:39:36 2027 GMT
+$ openssl x509 -in certs/web.pem -noout -text | grep -E 'Public Key Algorithm|Public-Key|Signature Algorithm' | sort -u
+                Public-Key: (2048 bit)
+            Public Key Algorithm: rsaEncryption
+        Signature Algorithm: sha256WithRSAEncryption
+    Signature Algorithm: sha256WithRSAEncryption
+```
+
+RSA-2048, assinado com RSA (as datas na sua tela serão as do dia em que você gerou os
+arquivos). É um **certificado**: serve para provar quem é o servidor, não
+para combinar a chave da sessão (no TLS 1.3, isso é o `key_share`). Um CRQC permitiria
+forjar uma assinatura dessa chave no futuro, mas não ler tráfego passado. Então a primeira
+linha é `I1:autenticacao`.
+
+**Etapa 2 (desafio): os outros nove.** Use a mesma lógica. Para cada item, pergunte: isto
+protege o **sigilo** de alguma coisa, ou só a **identidade**? Se protege sigilo, com que
+algoritmo a chave é combinada ou guardada?
+
+<Hint title="Dica 1: TLS e SSH">
+No `varredura-tls.txt`, a linha `Peer Temp Key: X25519` é o `openssl s_client` dizendo que
+a troca foi um ECDHE clássico; `Negotiated TLS1.3 group: X25519MLKEM768` é o híbrido. E
+quando **não há** nenhuma das duas linhas? Olhe a versão e o nome da cifra da VPN: no TLS
+1.2, uma suíte sem `ECDHE` nem `DHE` no nome usa a troca de chave por RSA puro (o 3.4
+explicou por que o TLS 1.3 a removeu). No SSH, o que importa é o `kex: algorithm`.
+</Hint>
+
+<Hint title="Dica 2: backups e firmware">
+No backup (A), o AES-256 é forte. Mas de onde vem a chave dele, e como ela é guardada? Releia
+a última linha da tabela da seção 3.2. No cofre (B), há alguma peça que o Shor ataque? E o
+firmware: é assinatura (então qual classe?), ainda que de vida longa; a seção 8 volta a ele.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+Saídas reais dos outros dois certificados:
+
+```console
+$ openssl x509 -in certs/portal-novo.pem -noout -text | grep -E 'Public Key Algorithm|Signature Algorithm' | sort -u
+            Public Key Algorithm: ML-DSA-65
+        Signature Algorithm: ML-DSA-65
+    Signature Algorithm: ML-DSA-65
+$ openssl x509 -in certs/firmware.pem -noout -subject -enddate
+subject=CN=Loja Exemplo Firmware Signing, OU=medidores (vida util 20 anos)
+notAfter=Sep 30 22:39:36 2046 GMT
+$ openssl x509 -in certs/firmware.pem -noout -text | grep -E 'Public Key Algorithm|NIST CURVE|Signature Algorithm' | sort -u
+                NIST CURVE: P-256
+            Public Key Algorithm: id-ecPublicKey
+        Signature Algorithm: ecdsa-with-SHA256
+    Signature Algorithm: ecdsa-with-SHA256
+```
+
+| Item | Evidência | Classe | Por quê |
+|---|---|---|---|
+| I1 | RSA-2048 | `autenticacao` | certificado: identidade, sem HNDL |
+| I2 | `Peer Temp Key: X25519` | `hndl` | troca clássica, tráfego colhível |
+| I3 | `X25519MLKEM768` | `ok` | híbrido |
+| I4 | TLS 1.2, `AES256-GCM-SHA384`, sem Temp Key | `hndl` | troca por RSA puro; e sem forward secrecy |
+| I5 | ML-DSA-65 | `ok` | assinatura pós-quântica |
+| I6 | `curve25519-sha256` + aviso do OpenSSH | `hndl` | troca clássica |
+| I7 | `mlkem768x25519-sha256` | `ok` | híbrido |
+| I8 | AES-256, mas chave embrulhada com RSA-2048 | `hndl` | o Shor abre o RSA e entrega a chave; retenção de 25 anos |
+| I9 | AES-128 + scrypt, nada assimétrico | `ok` | só Grover; 128 bits basta (NIST IR 8547) |
+| I10 | ECDSA P-256, firmware de 20 anos | `autenticacao` | assinatura; mas veja o callout abaixo |
+
+```console
+$ printf 'I1:autenticacao\nI2:hndl\nI3:ok\nI4:hndl\nI5:ok\nI6:hndl\nI7:ok\nI8:hndl\nI9:ok\nI10:autenticacao\n' > respostas.txt
+$ bash conferir.sh
+```
+
+O `conferir.sh` só confere o **formato** e deriva a flag do conteúdo: uma classe errada
+(`I8:ok`, por exemplo) também passa no formato, mas gera outra flag, que a plataforma
+recusa.
+</Solution>
+
+<FlagInput task="missao-2-inventario-quantico" />
+
+<Callout variant="tip" title="O placar da Loja Exemplo, e a ordem do relatório">
+Quatro itens `hndl`, dois `autenticacao`, quatro `ok`. A ordem de correção não é a da
+lista: primeiro o **I8**, o backup de 25 anos num storage de terceiros, o caso de livro do
+`x + y > z`; depois a VPN (**I4**), que nem forward secrecy tem; depois web e bastião. Entre
+os de autenticação, o firmware (**I10**) vem antes do site: um certificado web troca-se em
+meses, mas medidores com 20 anos de vida verificarão essa assinatura até 2046. Se o CRQC
+chegar antes, quem tiver a chave pública forja atualizações aceitas por eles.
+</Callout>
+
+### 5.4 Missão 3 — O handshake híbrido ao vivo (desafio)
+
+**Cenário:** o portal novo da Loja Exemplo (o I5 da Missão 2) está pronto para ir ao ar
+com certificado ML-DSA-65 e grupo híbrido. Antes de assinar o laudo, você quer ver com os
+próprios olhos o que trafega. O `servidor.sh` sobe uma cópia dele em `127.0.0.1:44330`, só
+na sua máquina, para **uma** conexão.
+
+<Callout variant="warning" title="Só em 127.0.0.1, e uma conexão por vez">
+O servidor escuta apenas no loopback (nenhum outro aparelho o alcança) e sai sozinho
+depois de atender uma conexão (`-naccept 1`). Por isso, rode o `servidor.sh` **antes de
+cada** `s_client`. Se um teste falhar no meio, confira com `ss -tln | grep 44330` se ficou
+algo escutando: o próximo `s_client` atende e libera.
+</Callout>
+
+**Etapa 1: o primeiro handshake, juntos** (saída real):
+
+```console
+$ cd ~/treino-3-5/missao-3
+$ bash servidor.sh
+servidor no ar em 127.0.0.1:44330 (grupos: X25519MLKEM768:X25519); atende UMA conexão e sai
+$ echo | openssl s_client -connect 127.0.0.1:44330 2>/dev/null | grep -E 'group|signature type|Protocol:|handshake has read'
+Peer signature type: mldsa65
+Negotiated TLS1.3 group: X25519MLKEM768
+SSL handshake has read 10235 bytes and written 1613 bytes
+Protocol: TLSv1.3
+```
+
+Três fatos numa tela: o grupo é o híbrido, o servidor assinou com ML-DSA-65, e o cliente
+leu **mais de 10 KB** num handshake (o certificado e a assinatura ML-DSA pesam). O
+`echo |` manda uma linha vazia e fecha a conexão logo após o handshake; o `2>/dev/null`
+esconde os avisos de certificado autoassinado.
+
+**Etapa 2: abrir o handshake, juntos.** A opção `-trace` imprime cada mensagem decodificada.
+Guarde num arquivo e procure os `key_share` (saída real, cortada nas primeiras colunas):
+
+```console
+$ bash servidor.sh
+servidor no ar em 127.0.0.1:44330 (grupos: X25519MLKEM768:X25519); atende UMA conexão e sai
+$ echo | openssl s_client -connect 127.0.0.1:44330 -trace 2>/dev/null > trace-hibrido.txt
+$ grep -nE 'ClientHello, Length|ServerHello, Length|NamedGroup|key_exchange:' trace-hibrido.txt | head -5 | cut -c1-80
+7:    ClientHello, Length=1524
+98:            NamedGroup: X25519MLKEM768 (4588)
+99:            key_exchange:  (len=1216): DA1613BC5A06008DB10E4CA1C1099A232814FD
+100:            NamedGroup: ecdh_x25519 (29)
+101:            key_exchange:  (len=32): B6E429E3B32E314DE191492EB5D3831007923F3
+```
+
+O `head -5` corta a saída no fim do `ClientHello`, de propósito: o resto é a Etapa 3.
+
+O `ClientHello` tem 1524 bytes e leva **dois** `key_share`: o híbrido (grupo 4588, o
+0x11EC do Chrome) com 1216 bytes, a conta exata do RFC 10024 (1184 + 32), e um X25519 puro
+de 32 bytes, de reserva para servidores que não falam o híbrido. Os hexadecimais mudam a
+cada execução: são chaves efêmeras.
+
+**Etapa 3 (desafio): as três respostas.**
+
+1. Qual o tamanho do `key_share` que o **servidor** devolve no grupo híbrido? (Ele está no
+   mesmo trace, logo abaixo do `ServerHello`; a seção 2.8 diz o que esperar.)
+2. Agora suba o servidor aceitando **só** `secp256r1` (`bash servidor.sh secp256r1`) e
+   capture outro trace. O cliente ofereceu híbrido e X25519; nenhum serve. Quantos
+   `ClientHello` ele precisa mandar até o handshake fechar?
+3. Pegue o certificado **que chegou pela rede**, extraia a chave pública, converta para
+   DER e calcule o SHA-256. Os 12 primeiros caracteres hex fecham a flag.
+
+<Hint title="Dica 1: a contagem e o HelloRetryRequest">
+Conte as linhas `ClientHello, Length` do segundo trace (`grep -c`). Olhe o primeiro
+`ServerHello` dele: o `key_share` tem `length=2` (só o nome do grupo, sem chave) e o
+`Random` é sempre `CF21AD74E59A6111...`. Esse Random fixo, definido no RFC 8446, é o que
+transforma um ServerHello num HelloRetryRequest.
+</Hint>
+
+<Hint title="Dica 2: a chave pública do certificado recebido">
+O `s_client` imprime o certificado em PEM na saída padrão; o `openssl x509` lê PEM da
+entrada padrão. Encadeie: `s_client` → `openssl x509 -pubkey -noout` (imprime só a chave
+pública) → `openssl pkey -pubin -outform DER` → `sha256sum`. Essa estrutura (algoritmo +
+chave) é o <GlossaryTerm term="SPKI">SPKI</GlossaryTerm> (*Subject Public Key Info*), e o
+hash dela é a impressão digital usada no
+<GlossaryTerm term="certificate pinning">certificate pinning</GlossaryTerm> do 2.5.
+</Hint>
+
+<Solution title="Solução da Missão 3">
+Saídas reais:
+
+```console
+$ grep -nE 'key_exchange:' trace-hibrido.txt | cut -c1-60
+99:            key_exchange:  (len=1216): DA1613BC5A06008DB1
+101:            key_exchange:  (len=32): B6E429E3B32E314DE19
+124:            key_exchange:  (len=1120): 571019FCAA3A61B12
+$ bash servidor.sh secp256r1
+servidor no ar em 127.0.0.1:44330 (grupos: secp256r1); atende UMA conexão e sai
+$ echo | openssl s_client -connect 127.0.0.1:44330 -trace 2>/dev/null > trace-p256.txt
+$ grep -E 'ClientHello, Length|ServerHello, Length|Peer Temp Key' trace-p256.txt
+    ClientHello, Length=1524
+    ServerHello, Length=84
+    ClientHello, Length=337
+    ServerHello, Length=151
+Peer Temp Key: ECDH, prime256v1, 256 bits
+$ grep -c 'ClientHello, Length' trace-p256.txt
+2
+$ bash servidor.sh
+servidor no ar em 127.0.0.1:44330 (grupos: X25519MLKEM768:X25519); atende UMA conexão e sai
+$ echo | openssl s_client -connect 127.0.0.1:44330 2>/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform DER | sha256sum
+```
+
+1. O servidor devolve **1120** bytes: o cifrado do ML-KEM (1088) mais a parte X25519 dele
+   (32).
+2. **Dois** `ClientHello`. O primeiro (1524 bytes) ofereceu híbrido e X25519; o servidor
+   respondeu com um HelloRetryRequest de 84 bytes pedindo `secp256r1`; o segundo
+   `ClientHello` (337 bytes, só com um ponto P-256 de 65 bytes) fechou o handshake, que
+   terminou **clássico** (`Peer Temp Key: ECDH, prime256v1`). Uma ida e volta a mais, e
+   nenhuma proteção pós-quântica: é a "configuração endurecida antiga" da seção 3.3.
+3. O hash sai na última linha; os 12 primeiros caracteres da **sua** saída fecham a flag.
+   Para conferir que o certificado da rede é mesmo o do arquivo, compare com
+   `openssl pkey -in servidor.key -pubout -outform DER | sha256sum`: os dois batem.
+
+A flag é `FLAG{tamanho-quantidade-hex}` com esses três valores.
+</Solution>
+
+<FlagInput task="missao-3-handshake-hibrido" />
+
+Termine confirmando que nada ficou escutando (saída real):
+
+```console
+$ ss -tln | grep 44330 || echo "nada escutando em 44330"
+nada escutando em 44330
+```
+
+### 5.5 Walkthrough: um KEM e uma assinatura à mão, e o mundo lá fora (sem flag)
+
+**Encapsular e desencapsular.** Faça a seção 2.6 com o `openssl`. A "Alice" gera o par
+ML-KEM-768 e publica a chave; o "Bob" encapsula para ela, guarda o segredo e manda só o
+cifrado; a Alice desencapsula (saída real):
+
+```console
+$ mkdir -p ~/treino-3-5/walkthrough && cd ~/treino-3-5/walkthrough
+$ openssl genpkey -algorithm ML-KEM-768 -out alice-kem.pem
+$ openssl pkey -in alice-kem.pem -pubout -out alice-kem.pub
+$ openssl pkeyutl -encap -inkey alice-kem.pub -pubin -out cifrado.bin -secret segredo-bob.bin
+$ openssl pkeyutl -decap -inkey alice-kem.pem -in cifrado.bin -secret segredo-alice.bin
+$ cmp segredo-bob.bin segredo-alice.bin && echo "segredos iguais"
+segredos iguais
+$ wc -c cifrado.bin segredo-bob.bin
+1088 cifrado.bin
+  32 segredo-bob.bin
+1120 total
+```
+
+Os 32 bytes de segredo nunca viajaram: só os 1088 do cifrado. É o papel do `key_share` do
+servidor na Missão 3 (1088 + os 32 do X25519 = 1120).
+
+**Assinar e verificar com ML-DSA.** O ML-DSA assina a mensagem inteira (por isso o
+`-rawin`, sem um hash separado antes):
+
+```console
+$ echo "contrato de teste" > msg.txt
+$ openssl genpkey -algorithm ML-DSA-65 -out assinante.pem
+$ openssl pkeyutl -sign -inkey assinante.pem -rawin -in msg.txt -out msg.sig
+$ openssl pkey -in assinante.pem -pubout -out assinante.pub
+$ openssl pkeyutl -verify -pubin -inkey assinante.pub -rawin -in msg.txt -sigfile msg.sig
+Signature Verified Successfully
+$ wc -c < msg.sig
+3309
+```
+
+Mude uma letra do `msg.txt` e verifique de novo: a verificação falha, como com o RSA do 3.4.
+Repita com `-algorithm SLH-DSA-SHA2-128s` e compare o tamanho da assinatura (7856 bytes).
+
+**O SSH do seu WSL.** O OpenSSH do Ubuntu já prefere o híbrido (saída real):
+
+```console
+$ ssh -V
+OpenSSH_10.2p1 Ubuntu-2ubuntu3.6, OpenSSL 3.5.5 27 Jan 2026
+$ ssh -Q kex | grep -E 'mlkem|sntrup'
+sntrup761x25519-sha512
+sntrup761x25519-sha512@openssh.com
+mlkem768x25519-sha256
+```
+
+**O mundo lá fora (com internet, fora do lab).** O mesmo `s_client` contra sites públicos
+mostra o estado da web hoje. Isto é uma conexão HTTPS comum, a mesma que o seu navegador
+faz (saída real, de outubro de 2026):
+
+```console
+$ echo | openssl s_client -connect example.com:443 -servername example.com 2>/dev/null | grep -E 'Negotiated TLS1.3 group|Peer signature type'
+Peer signature type: ecdsa_secp256r1_sha256
+Negotiated TLS1.3 group: X25519MLKEM768
+$ echo | openssl s_client -connect example.com:443 -servername example.com -groups X25519 2>/dev/null | grep -E 'Negotiated|Temp Key'
+Peer Temp Key: X25519, 253 bits
+```
+
+Repare no par: a **troca de chaves** já é pós-quântica, a **assinatura** ainda é ECDSA. É
+a ordem de migração da seção 2.4 em funcionamento: primeiro o que sofre HNDL. E o segundo
+comando mostra o servidor aceitando o clássico quando o cliente só oferece isso: o
+rebaixamento legítimo da seção 3.3.
+
+### 5.6 Limpeza
+
+```console
+$ ss -tln | grep 44330 || echo "nada escutando em 44330"
+$ rm -rf ~/treino-3-5
+```
+
+## 6. Variações e aprofundamento
+
+**PQC além do TLS.** A migração da troca de chaves não está só no navegador:
+
+- **SSH.** O OpenSSH oferece troca de chaves pós-quântica por padrão desde a versão 9.0
+  (abril de 2022), primeiro com o `sntrup761x25519-sha512` (NTRU Prime + X25519); a versão
+  9.9 acrescentou o `mlkem768x25519-sha256`, que virou o padrão na 10.0 (abril de 2025); e
+  a 10.1 passou a avisar o usuário quando a troca não é pós-quântica, com a mensagem que
+  está no `ssh-bastiao.txt` da Missão 2 ([OpenSSH, "Post-Quantum
+  Cryptography"](https://www.openssh.com/pq.html)). As assinaturas vieram depois: a 10.5
+  (agosto de 2026) trouxe suporte experimental a uma assinatura composta ML-DSA-44 +
+  Ed25519, desligado por padrão ([notas de versão](https://www.openssh.com/releasenotes.html)).
+- **Mensageiros.** O Signal anunciou em **19 de setembro de 2023** o PQXDH, que acrescenta
+  um KEM pós-quântico à troca de chaves inicial do protocolo
+  ([Signal Blog](https://signal.org/blog/pqxdh/)). A Apple anunciou o PQ3 do iMessage em
+  **21 de fevereiro de 2024**, com chaves pós-quânticas também renovadas durante a conversa
+  ([Apple Security Research](https://security.apple.com/blog/imessage-pq3/)).
+- **OpenSSL.** A versão 3.5.0 (8 de abril de 2025) trouxe ML-KEM, ML-DSA e SLH-DSA e passou
+  a oferecer `X25519MLKEM768` e `X25519` como `key_share` padrão do TLS
+  ([NEWS do OpenSSL 3.5](https://github.com/openssl/openssl/blob/openssl-3.5/NEWS.md)).
+  Foi por isso que o seu `s_client` negociou o híbrido sem nenhuma opção.
+
+**Variantes do híbrido.** O RFC 10024 define também `SecP256r1MLKEM768` e
+`SecP384r1MLKEM1024`, para ambientes que exigem curvas do NIST, e o OpenSSL lista ainda o
+`X448MLKEM1024`. E existem os grupos ML-KEM **puros** (`MLKEM768`, sem a parte clássica),
+que fazem sentido quando uma norma exige só o pós-quântico. O cliente padrão do OpenSSL não
+os oferece; o exercício extra da seção 9 mostra o que isso causa.
+
+**Por que "768"? As categorias de segurança.** Os números do ML-KEM (512, 768, 1024) não
+são bits de chave como no RSA: são conjuntos de parâmetros, e cada um mira uma
+**categoria de segurança** do NIST. As categorias usam o simétrico como régua, porque é o
+que se sabe medir bem: categoria 1 é "tão difícil de quebrar quanto achar uma chave de
+AES-128 por busca", 3 equivale ao AES-192 e 5 ao AES-256. No rascunho do IR 8547, o
+ML-KEM-512 é categoria 1, o ML-KEM-768 é 3 e o ML-KEM-1024 é 5. O híbrido da web usa o 768,
+acima do mínimo: se um avanço na análise de reticulados custar alguns bits, ainda sobra
+folga. O ML-DSA segue a mesma lógica, com outros nomes (44, 65, 87). Num relatório,
+"ML-KEM-512" não é um achado por si só: é categoria 1, o mesmo patamar do AES-128.
+
+**Testar o próprio cliente.** O inventário não é só de servidores. Navegadores, agentes de
+atualização, SDKs de nuvem e clientes de API também negociam TLS, com a biblioteca que
+trouxeram. Um cliente antigo (um Java, um Python ou um aplicativo com OpenSSL embutido de
+anos atrás) nunca oferece o híbrido, e o servidor moderno aceita a troca clássica sem
+reclamar. Para descobrir o que um cliente oferece, aponte-o para um servidor de teste como
+o da Missão 3 (com `-trace` no lado do servidor, ou o Wireshark do 2.6 no loopback) e leia
+o `supported_groups` do `ClientHello`.
+
+**Certificados pós-quânticos, o problema maior.** Trocar a assinatura dos certificados da
+web é muito mais difícil que trocar a troca de chaves. Uma cadeia típica tem duas
+assinaturas e duas chaves públicas, mais os carimbos do Certificate Transparency: com
+ML-DSA-65, isso soma vários quilobytes a cada handshake (o certificado autoassinado da
+Missão 3 já fez o cliente ler mais de 10 KB). E toda a PKI (CAs, navegadores, HSMs,
+políticas) precisa mudar junto. Por isso a autenticação veio depois, e por isso o FN-DSA,
+com assinaturas menores, interessa tanto.
+
+**Estimativas que mudam.** A estimativa de Gidney caiu de 20 milhões (2019) para menos de
+um milhão de qubits ruidosos (2025) para o RSA-2048. Na conta de Mosca, `z` não é fixo:
+cada avanço de algoritmo ou de correção de erro o encurta. Um relatório que cita um ano
+para o CRQC deve citar a fonte e a data da estimativa, nunca um número solto.
+
+**"Quantum-safe" não é "seguro".** A PQC resolve uma ameaça específica. Um servidor com
+`X25519MLKEM768` e senha `admin123` (2.5) continua invadível hoje. No relatório, a
+pós-quântica é um item, não um selo.
+
+## 7. Erros comuns
+
+- **Erro de algoritmo desconhecido no `genpkey` ou no `req` com `ML-KEM-768` ou
+  `ML-DSA-65`.** O seu OpenSSL é anterior ao 3.5 (`openssl version`), e as missões 2 e 3
+  dependem dele. O Ubuntu 26.04 do WSL configurado na Trilha 0 traz o 3.5; em versões mais
+  antigas do Ubuntu, um `apt full-upgrade` (0.4) não muda a versão principal da biblioteca.
+  A Missão 1 e a teoria funcionam com qualquer versão. Não instale um OpenSSL compilado de
+  fonte desconhecida só para o exercício.
+- **`pow(a, r/2)` com barra simples.** Em Python, `r/2` é `float` (`2625.0`) e o
+  `pow` com módulo recusa. Use `r // 2`. E sempre o terceiro argumento: `pow(a, r // 2, N)`.
+- **"Os mdc deram 1 e N, o Shor não funciona."** Funciona; a base é que deu azar
+  (`a^(r/2) ≡ −1`). Troque de base, como na Missão 1.
+- **`connect:errno=111` (conexão recusada) na Missão 3.** O servidor já atendeu uma conexão
+  e saiu. Rode o `servidor.sh` de novo antes de cada `s_client`.
+- **`já há algo escutando em 127.0.0.1:44330`.** Um teste anterior deixou o servidor
+  esperando (por exemplo, você subiu e não conectou). Conecte uma vez com o `s_client`, que
+  ele atende e sai, e confira com `ss -tln | grep 44330`.
+- **Confundir `-groups` com `-sigalgs`.** `-groups` escolhe a **troca de chaves**
+  (X25519MLKEM768); `-sigalgs` escolhe a **assinatura** (mldsa65). Um servidor pode ter um e
+  não o outro, como o `example.com` do walkthrough.
+- **Ler o `key_share` errado.** No trace, o `ClientHello` tem dois (`len=1216` e `len=32`);
+  o do servidor vem depois do `ServerHello`. Não confunda o comprimento da extensão
+  (`key_share(51), length=1258`, que inclui cabeçalhos) com o do valor (`len=1216`).
+- **Hash da chave pública "errado".** Calcule sobre o DER da chave pública
+  (`-outform DER`), não sobre o PEM (texto Base64 com quebras de linha) nem sobre o
+  certificado inteiro.
+- **Pânico no relatório.** "Crítico: criptografia quebrável por computadores quânticos" num
+  achado de X25519 é exagero. Ninguém decifra esse tráfego hoje. Classifique pela conta de
+  Mosca e pelo dado protegido.
+
+## 8. Defesa e mitigação
+
+A migração inteira cabe em cinco verbos: **inventariar, priorizar, hibridizar, testar e
+manter ágil**. Em concreto:
+
+### 8.1 Inventário primeiro
+
+Não se migra o que não se conhece. O <GlossaryTerm term="cryptographic inventory">inventário
+criptográfico</GlossaryTerm> precisa listar, para cada sistema: protocolos (TLS, SSH, VPN,
+S/MIME), algoritmos de troca de chaves e assinatura, certificados e validade, bibliotecas e
+versões, onde estão as chaves (HSM, arquivo, nuvem) e, o mais esquecido, **que dado passa ou
+fica ali e por quanto tempo precisa de sigilo** (o `x`). A ficha da CISA, NSA e NIST de 2023
+começa justamente por aí. Em software, o inventário pode virar um
+<GlossaryTerm term="CBOM">CBOM</GlossaryTerm> (*Cryptography Bill of Materials*, a lista
+legível por máquina dos algoritmos e chaves de cada componente, como um SBOM lista
+dependências). As ferramentas da Missão 2 (`openssl s_client`, `openssl x509`, `ssh -v`,
+`sshd -T`, nmap `ssl-enum-ciphers`) são o começo de um inventário de rede.
+
+### 8.2 Priorizar pela conta de Mosca
+
+1. **Troca de chaves que protege dados de `x` longo** (HNDL): TLS e VPN de sistemas com dados
+   sensíveis, SSH administrativo, e qualquer chave de dados embrulhada com RSA/ECC (o I8).
+2. **Protocolos sem forward secrecy** (TLS 1.2 com troca RSA): já são ruins hoje e são os
+   piores amanhã.
+3. **Assinaturas de vida longa**: firmware, raízes de confiança, assinatura de código,
+   documentos que precisam valer por décadas. Aqui entram LMS/XMSS (SP 800-208) e ML-DSA.
+4. **Certificados web e o resto da PKI**, acompanhando os navegadores e as CAs.
+
+O cronograma de referência é o rascunho do NIST IR 8547 (novembro de 2024): RSA e ECDSA
+com 112 bits de segurança (RSA-2048, por exemplo) **depreciados depois de 2030 e proibidos
+depois de 2035**; com 128 bits ou mais, proibidos depois de 2035
+([NIST IR 8547 ipd](https://csrc.nist.gov/pubs/ir/8547/ipd)).
+
+### 8.3 Configurações concretas
+
+**OpenSSL 3.5 ou mais novo** já oferece o híbrido por padrão. O primeiro passo, então, é
+atualizar a biblioteca e **não** sobrescrever a lista de grupos com uma lista antiga. Se
+precisar fixar a lista (no `openssl.cnf` do sistema, seção do `SSL_CONF`), ponha o híbrido
+primeiro; segundo a documentação, "o primeiro grupo da lista também é o usado no key_share
+que o cliente manda" ([SSL_CONF_cmd](https://docs.openssl.org/3.5/man3/SSL_CONF_cmd/)):
+
+```ini
+# openssl.cnf (system_default section)
+Groups = X25519MLKEM768:X25519:secp256r1
+```
+
+**nginx.** O padrão `ssl_ecdh_curve auto` usa a lista embutida do OpenSSL, que no 3.5 já
+começa pelo híbrido. O risco é a configuração antiga com lista explícita
+([documentação do nginx](https://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_ecdh_curve)):
+
+```nginx
+# ERRADO em 2026: lista "endurecida" antiga, sem o híbrido
+ssl_ecdh_curve prime256v1:secp384r1;
+
+# CERTO: deixe o OpenSSL 3.5+ escolher (auto) ou ponha o híbrido primeiro
+ssl_ecdh_curve X25519MLKEM768:X25519:prime256v1;
+```
+
+Depois de mudar, **teste do lado de fora**, como na Missão 3:
+`openssl s_client -connect servidor:443 | grep 'Negotiated TLS1.3 group'`.
+
+**OpenSSH.** A partir do 10.0, o padrão já começa por `mlkem768x25519-sha256` (confira com
+`ssh -Q kex` e, no servidor, `sshd -T | grep kexalgorithms`). Se o seu `sshd_config` tem um
+`KexAlgorithms` fixado de anos atrás, ele **substitui** o padrão, e o híbrido some da
+oferta do servidor. A correção mais simples é **apagar** a linha antiga e voltar ao
+padrão. Se a organização precisa mexer na lista, as páginas `sshd_config(5)` e
+`ssh_config(5)` aceitam prefixos que partem do padrão em vez de substituí-lo: `+`
+acrescenta, `-` remove e `^` põe no começo. No servidor, a ordem não importa (quem escolhe
+a preferência é o cliente); importa que o algoritmo **esteja** na lista:
+
+```text
+# sshd_config: tira só o que é fraco, sem perder o híbrido do padrão
+KexAlgorithms -diffie-hellman-group14-sha256
+
+# ssh_config (cliente): híbrido na frente da preferência
+KexAlgorithms ^mlkem768x25519-sha256,sntrup761x25519-sha512
+```
+
+**Dados em repouso.** Para backups e arquivos com `x` longo, não embrulhe a chave simétrica
+com RSA ou ECC: use um KEM pós-quântico (ou híbrido) para proteger a chave, ou chaves
+simétricas gerenciadas num cofre/HSM. O AES-256-GCM dos dados pode ficar.
+
+### 8.4 Código ágil e bibliotecas consagradas
+
+```python
+# ERRADO: algoritmo e tamanhos cravados no código e no formato do arquivo
+key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+header = b"RSA2048"                 # nobody can change this later
+
+# CERTO: algoritmo como configuração e formato que identifica o algoritmo
+ALGORITHM = config["kem"]            # e.g. "X25519MLKEM768", changeable
+header = encode_algorithm_id(ALGORITHM)
+```
+
+O segundo trecho é pseudocódigo de propósito: o ponto não é uma API, é o desenho. Guarde
+o identificador do algoritmo junto do dado (como o X.509 e o JWT fazem com o `alg`, mas
+validado pelo servidor, como o 3.4 ensinou), não presuma tamanhos de chave em bancos e
+protocolos, e centralize a escolha numa configuração. E use **bibliotecas consagradas**
+(OpenSSL 3.5+, BoringSSL, AWS-LC, liboqs para estudo e testes), com atualização em dia: o
+KyberSlash mostrou que o algoritmo certo, mal implementado, vaza. Nunca implemente ML-KEM
+"a partir do PDF" em produção (3.1).
+
+### 8.5 Testar a migração
+
+- **Interoperabilidade:** o `ClientHello` híbrido passa de 1 KB. Teste seus servidores,
+  balanceadores e *middleboxes* com um cliente que ofereça o híbrido (o `s_client` do
+  OpenSSL 3.5, o Chrome atual) e com o script do [tldr.fail](https://tldr.fail/). Um
+  equipamento que derruba a conexão é bug do fornecedor; a política
+  `PostQuantumKeyAgreementEnabled` do Chrome é um paliativo, não uma correção.
+- **Rebaixamento:** confira que o híbrido é **negociado** onde deveria, não só "suportado".
+  Um servidor que aceita o híbrido mas prefere o clássico desperdiça a proteção.
+- **Monitoramento:** registre o grupo negociado nos logs de TLS para saber que fração do
+  tráfego já é pós-quântica. No nginx, a variável `$ssl_curve` (desde a versão 1.21.5, com
+  OpenSSL 3.0 ou mais novo) traz o grupo negociado, e pode entrar num `log_format`.
+
+### 8.6 Para quem testa e para quem defende
+
+- **Pentester:** inventarie dentro do escopo, mostre a evidência (o grupo negociado, o
+  algoritmo do certificado), aplique Mosca ao dado do cliente e recomende a correção
+  concreta da 8.3. Severidade proporcional, nunca alarme.
+- **Defensor:** atualize OpenSSL e OpenSSH, retire listas fixas antigas, comece pelos dados
+  de vida longa, e trate a agilidade como requisito de todo sistema novo. A pós-quântica não
+  é um projeto que termina; é a primeira troca de algoritmo planejada de uma série.
+
+## 9. Exercícios
+
+O quiz abaixo fecha o módulo. Ele é uma tarefa `type: quiz`: a plataforma corrige no
+servidor e mostra a explicação de cada resposta. As três flags estão na seção 5.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar (sem flag)
+
+1. **Mosca na prática.** Calcule `x + y > z` para três sistemas fictícios, supondo `y = 4`
+   anos de migração e `z = 10`: (a) um e-commerce que guarda pedidos por 5 anos; (b) um
+   hospital com prontuários guardados por 20 anos; (c) um placar esportivo ao vivo. Em
+   quais o problema "já começou"? Em qual a resposta muda se `z` cair para 8?
+2. **O backup do I8.** A Loja Exemplo propõe "resolver" o I8 trocando o AES-256 por um AES
+   "ainda maior". Explique, em três linhas, por que isso não muda nada, e o que mudaria.
+3. **A VPN do I4.** Por que a VPN legada da Missão 2 era um problema **antes** de qualquer
+   computador quântico existir? (Dica: o que acontece se a chave privada RSA do servidor
+   vazar amanhã? Releia a forward secrecy do 3.4.)
+4. **Rebaixamento no proxy.** No 2.5, o Burp terminava o TLS entre o navegador e o
+   servidor. Se o Burp do testador só fala X25519, que grupo o navegador vê? E o servidor?
+   O que isso significa para quem audita um proxy corporativo que inspeciona TLS?
+
+### Exercício prático extra (sem flag)
+
+Na pasta da Missão 3, suba o servidor com `bash servidor.sh MLKEM768` (só o ML-KEM puro) e
+conecte com o `s_client` padrão. O que acontece, e por quê? Agora conecte com
+`-groups MLKEM768` e compare. O que isso diz sobre servidores que exigem "só pós-quântico"
+enquanto os clientes ainda não oferecem esse grupo?
+
+## 10. Resumo e glossário
+
+Um computador quântico grande não acelera tudo: ele explora a interferência em problemas
+com estrutura periódica. Fatoração e logaritmo discreto têm essa estrutura, e o algoritmo
+de Shor os resolve em tempo polinomial, derrubando RSA, Diffie-Hellman e curvas elípticas,
+qualquer que seja o tamanho da chave. Contra o simétrico, o Grover só dá um ganho
+quadrático: AES e SHA-2 com 128 bits ou mais seguem adequados. Como o tráfego pode ser
+colhido hoje e decifrado depois, a confidencialidade de dados de vida longa já está em
+risco, e a desigualdade de Mosca (`x + y > z`) mede a urgência. A resposta é a criptografia
+pós-quântica, padronizada pelo NIST em agosto de 2024 (ML-KEM, ML-DSA, SLH-DSA), com o
+FN-DSA e o HQC a caminho, aplicada primeiro à troca de chaves, em modo híbrido
+(X25519MLKEM768), porque algoritmos novos também caem (SIKE, Rainbow) e implementações
+novas também vazam (KyberSlash). Para quem testa, o trabalho é inventariar e medir a
+exposição com severidade proporcional; para quem defende, é atualizar, retirar
+configurações antigas, priorizar pelo dado e manter o sistema ágil para a próxima troca.
+
+### Cola rápida: o que cai, o que arranha, o que substitui
+
+| Hoje | Contra um CRQC | Substituto |
+|---|---|---|
+| ECDHE / X25519 / DH (troca de chaves) | cai (Shor), inclusive o passado gravado | X25519MLKEM768 (híbrido), ML-KEM |
+| RSA para cifrar/embrulhar chaves | cai (Shor), inclusive o passado | ML-KEM (ou híbrido) |
+| RSA, ECDSA, EdDSA (assinatura) | cai (Shor), do dia do CRQC em diante | ML-DSA, SLH-DSA, FN-DSA; LMS/XMSS para firmware |
+| AES-128/256, ChaCha20 | Grover: margem menor, sem quebra prática | mantém |
+| SHA-256, SHA-3 | margem menor, sem quebra prática | mantém |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [NIST — Post-Quantum Cryptography (projeto, notícias e padrões)](https://csrc.nist.gov/projects/post-quantum-cryptography)
+  e os [FIPS 203](https://csrc.nist.gov/pubs/fips/203/final),
+  [204](https://csrc.nist.gov/pubs/fips/204/final) e
+  [205](https://csrc.nist.gov/pubs/fips/205/final).
+- [RFC 10024 — PQ/T Hybrid Key Agreement Mechanisms for TLS 1.3](https://www.rfc-editor.org/rfc/rfc10024)
+  (os bytes do X25519MLKEM768).
+- [OpenSSH — Post-Quantum Cryptography](https://www.openssh.com/pq.html) (curto e direto,
+  com o argumento do "store now, decrypt later").
+- [Mosca, "Cybersecurity in an era with quantum computers: will we be ready?" (2015)](https://eprint.iacr.org/2015/1075).
+- [Shor, o artigo original (versão expandida)](https://arxiv.org/abs/quant-ph/9508027) e
+  [Gidney, a estimativa de 2025 para o RSA-2048](https://arxiv.org/abs/2505.15917).
+- [tldr.fail](https://tldr.fail/) (o bug que travou a migração e como testá-lo).

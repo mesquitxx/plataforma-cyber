@@ -222,7 +222,13 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   sobre artefatos fictícios: classificar encoding, hash e cifra num pentest e recuperar o que
   é recuperável, achar com HMAC os arquivos adulterados de uma release cujo `sha256sum -c`
   diz tudo OK, e quebrar com texto claro conhecido uma cifra XOR caseira, e walkthrough de
-  `gpg --symmetric` detectando adulteração) escrito.
+  `gpg --symmetric` detectando adulteração) escrito. 3.4 "Criptografia assimétrica e TLS"
+  (lab `juice-shop`; duas missões de forja de JWT, por `alg:none` e por confusão de chaves
+  RS256→HS256) escrito. 3.5 "Criptografia pós-quântica" (sem lab; três missões no WSL: fatorar
+  uma chave RSA de brinquedo com a receita do Shor, o inventário quântico de uma empresa
+  fictícia a partir de certificados, varreduras e políticas, e um handshake TLS 1.3 híbrido
+  X25519MLKEM768 com certificado ML-DSA capturado num servidor só em `127.0.0.1`, e walkthrough
+  de ML-KEM e ML-DSA com o `openssl` 3.5) escrito.
 
 ## Fase 11 — Conteúdo: Trilhas 6–8 e consolidação
 **Entrega:** Trilhas 6–8 e o fechamento do projeto.

@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
+  <title id="t">A troca de chaves híbrida X25519MLKEM768 no TLS 1.3</title>
+  <desc id="d">Diagrama de sequência entre Cliente e Servidor. O ClientHello leva dois key_shares: o híbrido X25519MLKEM768, de 1216 bytes, formado pela chave de encapsulamento do ML-KEM-768 (1184 bytes) seguida da parte pública X25519 (32 bytes), e um X25519 puro de 32 bytes, de reserva para servidores que ainda não suportam o híbrido. O ServerHello devolve 1120 bytes: o texto cifrado do encapsulamento ML-KEM (1088 bytes) seguido da parte pública X25519 do servidor (32 bytes). Os dois lados calculam dois segredos de 32 bytes, um do ML-KEM e um do X25519, e os concatenam num segredo de 64 bytes, que entra no key schedule do TLS 1.3 para gerar as chaves da sessão. Em seguida o servidor envia o certificado e a assinatura CertificateVerify, que no exercício é ML-DSA-65, com 3309 bytes. O quadro à direita explica que, para ler a sessão, o atacante precisa quebrar os dois segredos: o X25519 cai para o Shor, o ML-KEM resiste; e, se um dia o ML-KEM tiver uma falha, o X25519 continua segurando contra atacantes clássicos.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .c { fill: #5cc8d8; }
+    .life { stroke: #2c3a33; stroke-width: 2; }
+    .msg { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ar); fill: none; }
+    .pq { fill: #2a2614; stroke: #e8c46a; stroke-width: 1.2; }
+    .ec { fill: #1b2a3a; stroke: #5cc8d8; stroke-width: 1.2; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="500" fill="#121815"/>
+  <text class="t" x="30" y="32">Híbrido X25519MLKEM768: dois segredos, um cadeado só</text>
+
+  <rect x="40" y="50" width="120" height="32" rx="8" fill="#16201b" stroke="#5ee08a"/>
+  <text class="h g" x="72" y="71">Cliente</text>
+  <rect x="490" y="50" width="120" height="32" rx="8" fill="#16201b" stroke="#5ee08a"/>
+  <text class="h g" x="516" y="71">Servidor</text>
+  <line class="life" x1="100" y1="82" x2="100" y2="452"/>
+  <line class="life" x1="550" y1="82" x2="550" y2="452"/>
+
+  <text class="b c" x="114" y="104">ClientHello, key_share:</text>
+  <rect class="pq" x="114" y="112" width="250" height="22" rx="4"/>
+  <text class="s y" x="120" y="127">ML-KEM-768 ek · 1184 B</text>
+  <rect class="ec" x="364" y="112" width="70" height="22" rx="4"/>
+  <text class="s c" x="368" y="127">X25519 32</text>
+  <text class="s" x="440" y="127">= 1216 B</text>
+  <rect class="ec" x="114" y="138" width="70" height="22" rx="4"/>
+  <text class="s c" x="118" y="153">X25519 32</text>
+  <text class="s" x="190" y="153">reserva: só clássico</text>
+  <path class="msg" d="M102,170 L548,170"/>
+
+  <text class="b c" x="114" y="200">ServerHello, key_share:</text>
+  <rect class="pq" x="114" y="208" width="230" height="22" rx="4"/>
+  <text class="s y" x="120" y="223">ML-KEM cifrado · 1088 B</text>
+  <rect class="ec" x="344" y="208" width="70" height="22" rx="4"/>
+  <text class="s c" x="348" y="223">X25519 32</text>
+  <text class="s" x="420" y="223">= 1120 B</text>
+  <path class="msg" d="M548,242 L102,242"/>
+
+  <rect x="114" y="258" width="420" height="94" rx="8" fill="#16201b" stroke="#2c3a33"/>
+  <text class="b" x="126" y="278">nos dois lados, sem trafegar:</text>
+  <rect class="pq" x="126" y="288" width="170" height="22" rx="4"/>
+  <text class="s y" x="132" y="303">segredo ML-KEM 32 B</text>
+  <rect class="ec" x="300" y="288" width="170" height="22" rx="4"/>
+  <text class="s c" x="306" y="303">segredo X25519 32 B</text>
+  <text class="b g" x="126" y="336">64 B → key schedule do TLS 1.3 → chaves</text>
+
+  <path class="msg" d="M548,384 L102,384"/>
+  <text class="b" x="114" y="376">{Certificate} + {CertificateVerify}</text>
+  <text class="s" x="114" y="402">no exercício: ML-DSA-65, assinatura de 3309 B</text>
+  <path class="msg" d="M102,428 L548,428" style="stroke:#5ee08a"/>
+  <text class="b g" x="160" y="420">dados — AES-256-GCM</text>
+
+  <rect x="630" y="94" width="250" height="358" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="644" y="118">Por que dois?</text>
+  <text class="s" x="644" y="142">Para ler a sessão, o atacante</text>
+  <text class="s" x="644" y="156">precisa dos DOIS segredos.</text>
+  <text class="s c" x="644" y="184">X25519</text>
+  <text class="s" x="644" y="200">testado há anos; cai para o</text>
+  <text class="s" x="644" y="214">Shor num computador quântico</text>
+  <text class="s y" x="644" y="242">ML-KEM-768</text>
+  <text class="s" x="644" y="258">resiste ao quântico; é novo</text>
+  <text class="s" x="644" y="272">(e se tiver uma falha?)</text>
+  <text class="s g" x="644" y="304">Juntos: seguro se QUALQUER</text>
+  <text class="s g" x="644" y="318">um dos dois ficar de pé.</text>
+  <text class="s" x="644" y="350">Tamanho é o preço: o</text>
+  <text class="s" x="644" y="364">ClientHello passa de 1 KB</text>
+  <text class="s" x="644" y="378">e não cabe num pacote só</text>
+  <text class="s" x="644" y="392">(o caso tldr.fail).</text>
+  <text class="s" x="644" y="420">Codepoint 4588 (0x11EC),</text>
+  <text class="s" x="644" y="434">RFC 10024.</text>
+</svg>
