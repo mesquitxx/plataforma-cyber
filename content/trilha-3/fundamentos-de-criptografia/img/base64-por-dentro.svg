@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
+  <title id="t">Base64 por dentro: Man vira TWFu</title>
+  <desc id="d">Os três caracteres M, a e n viram três bytes: 77, 97 e 110, ou em bits 01001101, 01100001 e 01101110. Os 24 bits são relidos em quatro grupos de 6 bits: 010011, 010110, 000101 e 101110, que valem 19, 22, 5 e 46. Cada número é a posição de um caractere no alfabeto Base64 (A a Z de 0 a 25, a a z de 26 a 51, 0 a 9 de 52 a 61, mais + e /): 19 é T, 22 é W, 5 é F, 46 é u. Resultado: TWFu. Embaixo, o caso em que sobram bytes: Ma vira TWE= e M vira TQ==; o sinal de igual é o padding, que completa o bloco de 4 caracteres. Não há chave em nenhum passo.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .big { font-size: 20px; font-weight: 700; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .r { fill: #f08a7e; }
+    .fw { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ar); fill: none; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="400" fill="#121815"/>
+  <text class="t" x="30" y="32">Base64 à mão: 3 bytes entram, 4 caracteres saem</text>
+
+  <text class="h" x="30" y="66">1. texto</text>
+  <text class="big" x="190" y="68">M</text>
+  <text class="big" x="420" y="68">a</text>
+  <text class="big" x="650" y="68">n</text>
+
+  <text class="h" x="30" y="104">2. bytes</text>
+  <text class="b" x="180" y="104">77</text>
+  <text class="b" x="410" y="104">97</text>
+  <text class="b" x="640" y="104">110</text>
+
+  <text class="h" x="30" y="142">3. 24 bits</text>
+  <rect x="120" y="124" width="690" height="28" rx="5" fill="#16201b" stroke="#3a4b42"/>
+  <text class="b y" x="140" y="143">0 1 0 0 1 1 0 1</text>
+  <text class="b y" x="370" y="143">0 1 1 0 0 0 0 1</text>
+  <text class="b y" x="600" y="143">0 1 1 0 1 1 1 0</text>
+
+  <text class="h" x="30" y="196">4. grupos</text>
+  <text class="h" x="30" y="212">de 6 bits</text>
+  <rect x="120" y="178" width="160" height="28" rx="5" fill="#16201b" stroke="#5ee08a"/>
+  <rect x="296" y="178" width="160" height="28" rx="5" fill="#16201b" stroke="#5ee08a"/>
+  <rect x="472" y="178" width="160" height="28" rx="5" fill="#16201b" stroke="#5ee08a"/>
+  <rect x="648" y="178" width="160" height="28" rx="5" fill="#16201b" stroke="#5ee08a"/>
+  <text class="b g" x="146" y="197">0 1 0 0 1 1</text>
+  <text class="b g" x="322" y="197">0 1 0 1 1 0</text>
+  <text class="b g" x="498" y="197">0 0 0 1 0 1</text>
+  <text class="b g" x="674" y="197">1 0 1 1 1 0</text>
+
+  <text class="h" x="30" y="246">5. valor</text>
+  <text class="b" x="190" y="246">19</text>
+  <text class="b" x="366" y="246">22</text>
+  <text class="b" x="546" y="246">5</text>
+  <text class="b" x="718" y="246">46</text>
+
+  <path class="fw" d="M198,254 L198,272"/>
+  <path class="fw" d="M374,254 L374,272"/>
+  <path class="fw" d="M550,254 L550,272"/>
+  <path class="fw" d="M726,254 L726,272"/>
+
+  <text class="h" x="30" y="296">6. alfabeto</text>
+  <text class="big g" x="190" y="298">T</text>
+  <text class="big g" x="366" y="298">W</text>
+  <text class="big g" x="542" y="298">F</text>
+  <text class="big g" x="718" y="298">u</text>
+
+  <rect x="20" y="318" width="860" height="70" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="s" x="36" y="338">alfabeto: A–Z = 0–25 · a–z = 26–51 · 0–9 = 52–61 · + = 62 · / = 63   (Base64url troca + por - e / por _)</text>
+  <text class="b" x="36" y="360">Sobrou byte?   "Ma" → <tspan class="g">TWE</tspan><tspan class="y">=</tspan>   ·   "M" → <tspan class="g">TQ</tspan><tspan class="y">==</tspan>   ·   o sinal <tspan class="y">=</tspan> é o padding, que completa o bloco de 4</text>
+  <text class="b r" x="36" y="380">Em nenhum passo existe chave: quem conhece a tabela desfaz tudo.</text>
+</svg>

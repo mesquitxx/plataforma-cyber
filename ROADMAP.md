@@ -218,6 +218,11 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   e o alvo de APIs/GraphQL (candidato DVGA, decidido nesta fase se necessário).
 - Trilha 5 (Redes e Serviços): `vulhub`, Metasploit, CVEs reais (incluindo a
   escolha da CVE final do lab `vulhub`).
+- Andamento: Trilha 3: 3.1 "Fundamentos de criptografia" (sem lab; três missões no WSL
+  sobre artefatos fictícios: classificar encoding, hash e cifra num pentest e recuperar o que
+  é recuperável, achar com HMAC os arquivos adulterados de uma release cujo `sha256sum -c`
+  diz tudo OK, e quebrar com texto claro conhecido uma cifra XOR caseira, e walkthrough de
+  `gpg --symmetric` detectando adulteração) escrito.
 
 ## Fase 11 — Conteúdo: Trilhas 6–8 e consolidação
 **Entrega:** Trilhas 6–8 e o fechamento do projeto.

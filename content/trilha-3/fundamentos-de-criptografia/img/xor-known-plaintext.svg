@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
+  <title id="t">Como um texto claro conhecido entrega a chave de um XOR repetido</title>
+  <desc id="d">Primeira linha: o texto cifrado interceptado, byte a byte, começando por df 6c 18 f7. Segunda linha: o cabeçalho que todo pedido tem, conhecido pelo manual do protocolo: C R I P, ou 43 52 49 50. Fazendo XOR byte a byte das duas linhas sai a chave: 9c 3e 51 a7 e assim por diante. Isso funciona porque cifrado = claro XOR chave, e portanto cifrado XOR claro = chave. Com 22 bytes de cabeçalho conhecido, a chave de 12 bytes aparece inteira e começa a se repetir no 13º byte, o que revela o tamanho dela. Com a chave, todas as mensagens, passadas e futuras, se abrem.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .r { fill: #f08a7e; }
+  </style>
+  <rect width="900" height="400" fill="#121815"/>
+  <text class="t" x="30" y="32">cifrado ⊕ claro conhecido = chave</text>
+
+  <rect x="20" y="50" width="860" height="200" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="36" y="80">cifrado</text>
+  <text class="b r" x="190" y="80">df  6c  18  f7  86  47  06  b7  b9  53  2c  1d  bc  42  71  f7 …</text>
+  <text class="h" x="36" y="112">claro</text>
+  <text class="s" x="36" y="126">(do manual)</text>
+  <text class="b y" x="190" y="112">C   R   I   P   T   O   M   A   X   ␠   v   1   ␠   |   ␠   P  …</text>
+  <text class="b y" x="190" y="130">43  52  49  50  54  4f  4d  41  58  20  76  31  20  7c  20  50 …</text>
+  <line x1="190" y1="142" x2="830" y2="142" stroke="#3a4b42"/>
+  <text class="h" x="36" y="166">⊕ = chave</text>
+  <text class="b g" x="190" y="166">9c  3e  51  a7  d2  08  4b  f6  e1  73  5a  2c  <tspan class="y">9c  3e  51  a7</tspan> …</text>
+  <rect x="185" y="152" width="265" height="20" rx="4" fill="none" stroke="#5ee08a"/>
+  <text class="s g" x="190" y="190">12 bytes de chave</text>
+  <text class="s y" x="458" y="190">↑ repetiu: o período é 12</text>
+  <text class="s" x="36" y="236">por quê: cifrado = claro ⊕ chave  →  cifrado ⊕ claro = claro ⊕ chave ⊕ claro = chave   (x ⊕ x = 0)</text>
+
+  <rect x="20" y="266" width="860" height="118" rx="10" fill="#16201b" stroke="#f08a7e"/>
+  <text class="h r" x="36" y="292">O que a CriptoMax achava que tinha</text>
+  <text class="b" x="36" y="314">"ninguém conhece o algoritmo" → o código vazou (cifra.py)</text>
+  <text class="b" x="36" y="334">"a chave é secreta" → todo pedido começa igual; o cabeçalho É texto claro conhecido</text>
+  <text class="b" x="36" y="354">"cada mensagem é independente" → a mesma chave cifra todas: quebrou uma, quebrou todas</text>
+  <text class="s" x="36" y="374">Um one-time pad com chave aleatória, do tamanho da mensagem e nunca reusada não teria nenhum desses problemas.</text>
+</svg>

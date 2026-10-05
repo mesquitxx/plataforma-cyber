@@ -1,0 +1,1796 @@
+---
+slug: fundamentos-de-criptografia
+track: trilha-3
+title: "Fundamentos de criptografia"
+prerequisites: [trilha-2]
+lab: null
+tasks:
+  - slug: missao-1-esta-criptografado-confia
+    title: "Missão 1 — \"Está criptografado, confia\""
+    type: flag
+    prompt: "Classifique os seis artefatos de achados.txt, recupere o que for recuperável, preencha respostas.txt e cole aqui a flag que o conferir.sh imprime."
+    hint: "Olhe o alfabeto e o tamanho de cada valor. Base64 termina às vezes em =; hex só tem 0-9 e a-f; %2F é URL. 64 caracteres hex sem chave à vista costumam ser um hash; U2FsdGVkX1 é o começo de 'Salted__' em Base64."
+    flag:
+      hash: "scrypt$16384$8$1$17f6bc3a3e3ce176d5f2e50c5659369d892d900e1cb858c53583f750e6bf9cee"
+      salt: "6894c5da0990cfef14d6f421e2683738"
+  - slug: missao-2-o-checksum-bate
+    title: "Missão 2 — O checksum bate, mas..."
+    type: flag
+    prompt: "Os nomes dos arquivos da release que NÃO são autênticos, em ordem alfabética, separados por hífen, dentro de FLAG{ }."
+    hint: "O sha256sum -c confere contra uma lista que o próprio espelho pode ter reescrito. Confira as tags HMAC com a chave que veio por outro canal, e procure também arquivo sem tag."
+    flag:
+      hash: "scrypt$16384$8$1$08fdfd533465ded07c52d34d3741ede545b72145f9110140107dd9c237db8711"
+      salt: "c8684b954b98097a417db6998a34024a"
+  - slug: missao-3-a-cifra-da-criptomax
+    title: "Missão 3 — A cifra secreta da CriptoMax"
+    type: flag
+    prompt: "O código de liberação contido na terceira mensagem interceptada, dentro de FLAG{ }."
+    hint: "Todo pedido começa com o mesmo cabeçalho. Cifrado XOR claro conhecido = chave. Veja onde a chave começa a se repetir."
+    flag:
+      hash: "scrypt$16384$8$1$75d156f1709168125ca8bf1734349c9f3a68eb5e1b4e7774cdd00337e8f9d6bc"
+      salt: "a09f240617093816e8a4e2fe6fb9a5fa"
+  - slug: quiz-final
+    title: "Quiz — Fundamentos de criptografia"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Num cookie você encontra `perfil=eyJ1c2VyIjoiYW5hIn0`. O que é esse valor, mais provavelmente?"
+        options:
+          - "Um hash SHA-256 do nome do usuário"
+          - "Um texto cifrado com AES que exige a chave do servidor"
+          - "JSON codificado em Base64url, que qualquer um decodifica"
+          - "Uma assinatura digital que impede a leitura"
+        answer: 2
+        explanation: "`eyJ` é o começo de `{\"` em Base64, e a ausência de `+`, `/` e `=` sugere Base64url. Decodificar mostra o JSON. Não há chave nenhuma: é encoding, não proteção. Se o servidor confiar nesse valor sem assinatura, o usuário pode editá-lo."
+      - question: "Um desenvolvedor diz: \"a senha do banco está protegida, guardei em Base64 no .env\". Qual é a resposta técnica correta?"
+        options:
+          - "Está protegida, porque Base64 não é texto legível"
+          - "Não está protegida: Base64 é encoding, sem chave; quem lê o arquivo decodifica em um comando (CWE-261)"
+          - "Está protegida se o Base64 for de 256 bits"
+          - "Só está desprotegida se o atacante souber que é Base64"
+        answer: 1
+        explanation: "Encoding só muda a representação. O RFC 4648 diz que ele \"não fornece nenhuma confidencialidade\". A CWE-261 (Weak Encoding for Password) descreve exatamente esse erro. Reconhecer Base64 é trivial pelo alfabeto e pelo `=` no fim."
+      - question: "Um site publica o instalador e, ao lado, o SHA-256 dele, no mesmo servidor. Um atacante invade o servidor. O hash protege você?"
+        options:
+          - "Sim: SHA-256 é resistente a colisão, então o atacante não consegue trocar o arquivo"
+          - "Sim, desde que você use sha256sum -c"
+          - "Não: quem troca o instalador também troca o hash publicado; hash sem segredo prova integridade, não origem"
+          - "Não, porque SHA-256 está quebrado"
+        answer: 2
+        explanation: "O hash não tem chave: qualquer um calcula o hash do arquivo adulterado e publica. Para provar a origem, é preciso um segredo que o atacante não tem: uma chave de MAC compartilhada por outro canal ou, melhor, uma assinatura digital com a chave privada do autor. Foi a Missão 2."
+      - question: "Qual é a diferença essencial entre um hash SHA-256 e um HMAC-SHA-256?"
+        options:
+          - "O HMAC é mais rápido"
+          - "O HMAC depende de uma chave secreta; só quem tem a chave gera ou confere a tag"
+          - "O HMAC é reversível e o hash não"
+          - "Nenhuma; HMAC é só outro nome"
+        answer: 1
+        explanation: "O HMAC (RFC 2104) mistura uma chave secreta ao cálculo do hash. Sem a chave, o atacante não consegue produzir uma tag válida para um arquivo alterado. Por isso o HMAC dá integridade e autenticidade, coisa que o hash puro não dá."
+      - question: "Uma empresa justifica sua cifra proprietária: \"é segura porque ninguém conhece o algoritmo\". Qual princípio ela viola?"
+        options:
+          - "O princípio do menor privilégio"
+          - "O princípio de Kerckhoffs: o sistema deve continuar seguro mesmo que o inimigo conheça tudo, menos a chave"
+          - "O princípio da defesa em profundidade"
+          - "Nenhum, se o código nunca vazar"
+        answer: 1
+        explanation: "Kerckhoffs (1883) pediu sistemas que \"não exijam segredo\" e possam cair nas mãos do inimigo sem problema. Algoritmos vazam (engenharia reversa, código exposto, funcionário). O caso MIFARE Classic mostra o custo: a Crypto-1 secreta foi reconstruída e quebrada."
+      - question: "Na Missão 3, por que conhecer o cabeçalho fixo das mensagens bastou para quebrar a cifra?"
+        options:
+          - "Porque o cabeçalho continha a chave em texto claro"
+          - "Porque com XOR, cifrado ⊕ claro = chave; com um trecho de texto claro conhecido sai o trecho correspondente da chave, e a chave curta se repete"
+          - "Porque o Python tem uma função que desfaz qualquer cifra"
+          - "Porque o cabeçalho estava em Base64"
+        answer: 1
+        explanation: "É um known-plaintext attack. Como x ⊕ x = 0, cifrado ⊕ claro devolve a chave. A chave de 12 bytes aparecia inteira nos 22 bytes do cabeçalho e se repetia a partir do 13º, entregando o período. Uma cifra moderna resiste a esse modelo de ataque."
+      - question: "Uma chave de 56 bits (DES) contra uma de 128 bits (AES-128): por que a diferença de 72 bits importa tanto?"
+        options:
+          - "Porque cada bit a mais dobra o keyspace; 72 bits a mais multiplicam o trabalho do brute force por 2^72"
+          - "Porque o AES é 72 vezes mais forte"
+          - "Não importa: as duas caem em horas"
+          - "Porque chaves maiores são em Base64"
+        answer: 0
+        explanation: "O keyspace é 2^n. O DES (2^56) caiu em 56 horas numa máquina da EFF de 1998, de menos de US$ 250 mil. 2^128 é 2^72 vezes maior: mesmo a um trilhão de chaves por segundo, levaria mais de 10 quintilhões de anos."
+      - question: "Um script gera o token de redefinição de senha com `random.randint`. Qual é o problema?"
+        options:
+          - "Nenhum, se o número for grande"
+          - "O random não é um CSPRNG: a própria documentação do Python manda não usá-lo para segurança; use o módulo secrets"
+          - "O random só gera números pares"
+          - "O problema é usar Python, não o random"
+        answer: 1
+        explanation: "O módulo random é previsível por desenho (mesma semente, mesma sequência). Tokens, chaves, senhas e nonces vêm de um CSPRNG: `secrets.token_urlsafe()`, `os.urandom()` ou `openssl rand`. O caso Debian (CVE-2008-0166) mostra o tamanho do estrago quando a aleatoriedade falha."
+      - question: "A Adobe guardava as senhas cifradas com 3DES, com a mesma chave para todas. Por que isso foi pior do que um hash lento com salt?"
+        options:
+          - "Porque 3DES é um encoding"
+          - "Porque quem rouba a chave abre todas; e, cifrando senhas iguais com a mesma chave (em ECB), senhas iguais viram textos cifrados iguais, que, somados às dicas em claro, entregam milhões de senhas"
+          - "Porque 3DES é mais lento que um hash"
+          - "Não foi pior; cifrar é sempre melhor que fazer hash"
+        answer: 1
+        explanation: "Senha não precisa voltar: o sistema só precisa comparar. Por isso se usa hash lento com salt (Módulo 3.2). Cifra tem volta: uma chave vazada abre tudo. E sem aleatoriedade por senha, os iguais se denunciam."
+      - question: "O que a assinatura digital oferece que um HMAC não oferece?"
+        options:
+          - "Confidencialidade"
+          - "Não repúdio: só o dono da chave privada assina, então ele não pode negar; no HMAC os dois lados têm a mesma chave"
+          - "Velocidade"
+          - "Compressão"
+        answer: 1
+        explanation: "No HMAC, emissor e receptor compartilham a chave, então qualquer um dos dois poderia ter gerado a tag: não dá para provar a um terceiro quem foi. Na assinatura, a chave privada é só do autor e qualquer um confere com a pública. Nenhuma das duas esconde o conteúdo."
+glossary:
+  - term: cryptography
+    definition: "Criptografia: o estudo e a prática de proteger informação contra adversários, garantindo confidencialidade, integridade e autenticidade com técnicas matemáticas."
+  - term: cryptanalysis
+    definition: "Criptoanálise: o estudo de como quebrar sistemas criptográficos, recuperando o texto claro ou a chave sem ter acesso legítimo a eles."
+  - term: plaintext
+    definition: "Texto claro: a mensagem original, legível, antes de ser cifrada (ou depois de decifrada)."
+  - term: ciphertext
+    definition: "Texto cifrado: a mensagem depois de cifrada. Sem a chave, deve ser indistinguível de bytes aleatórios."
+  - term: cipher
+    definition: "Cifra: o algoritmo que transforma texto claro em texto cifrado (e de volta) usando uma chave. Ex.: AES, ChaCha20."
+  - term: key
+    definition: "Chave: o valor secreto que parametriza a cifra. Pelo princípio de Kerckhoffs, é o único segredo do sistema."
+  - term: encryption
+    definition: "Cifragem (encryption): transformar texto claro em texto cifrado com uma cifra e uma chave, para que só quem tem a chave consiga ler."
+  - term: decryption
+    definition: "Decifragem (decryption): a operação inversa da cifragem, que recupera o texto claro a partir do texto cifrado e da chave."
+  - term: encoding
+    definition: "Codificação: mudar a representação de dados (ex.: bytes em Base64, hex ou URL) por um algoritmo público e sem chave. Serve para transportar dados, nunca para esconder."
+  - term: ASCII
+    definition: "Tabela de 128 caracteres (letras sem acento, dígitos, pontuação e controles) em que cada caractere ocupa um byte com valor de 0 a 127. Ex.: A = 65."
+  - term: UTF-8
+    definition: "Codificação de texto Unicode em que os caracteres ASCII ocupam 1 byte e os demais 2 a 4 bytes. Ex.: é = c3 a9. É o padrão da web e do Linux."
+  - term: Base64
+    definition: "Encoding que representa bytes com 64 caracteres imprimíveis (A–Z, a–z, 0–9, + e /), 6 bits por caractere, com = de padding. Definido no RFC 4648. Não tem chave."
+  - term: Base64url
+    definition: "Variante do Base64 segura para URLs e nomes de arquivo: troca + por - e / por _, e costuma omitir o padding =. Usada em JWT e em muitos cookies."
+  - term: percent-encoding
+    definition: "Codificação de URL: um byte vira % seguido de dois dígitos hex (ex.: / vira %2F, espaço vira %20). Permite levar caracteres especiais dentro de uma URL."
+  - term: one-way function
+    definition: "Função de mão única: fácil de calcular num sentido e impraticável de inverter. Funções de hash criptográficas são desse tipo."
+  - term: avalanche effect
+    definition: "Efeito avalanche: mudar um único bit da entrada muda, em média, metade dos bits da saída de um hash ou cifra, sem padrão visível."
+  - term: symmetric encryption
+    definition: "Criptografia simétrica: a mesma chave cifra e decifra. Rápida, usada para os dados em si. Ex.: AES, ChaCha20. Assunto do Módulo 3.3."
+  - term: asymmetric encryption
+    definition: "Criptografia assimétrica: um par de chaves, pública e privada; o que uma faz, só a outra desfaz. Resolve a troca de chaves e as assinaturas. Assunto do Módulo 3.4."
+  - term: public-key cryptography
+    definition: "Criptografia de chave pública: o nome da família assimétrica. A chave pública pode ser divulgada; a privada fica só com o dono."
+  - term: XOR
+    definition: "Ou-exclusivo (⊕): operação bit a bit que dá 1 quando os bits são diferentes. Propriedades: x ⊕ x = 0 e x ⊕ 0 = x; aplicada duas vezes com a mesma chave, se desfaz."
+  - term: one-time pad
+    definition: "Cifra em que a chave é aleatória, do tamanho da mensagem e usada uma única vez, combinada por XOR. É inquebrável se essas três condições valem, e impraticável por causa delas."
+  - term: Caesar cipher
+    definition: "Cifra de César: troca cada letra pela que está n posições adiante no alfabeto. Só tem 25 chaves possíveis e cai por tentativa ou por análise de frequência."
+  - term: frequency analysis
+    definition: "Análise de frequência: técnica de criptoanálise que compara a frequência das letras do texto cifrado com a do idioma (em português, a e e lideram) para desfazer cifras de substituição."
+  - term: keyspace
+    definition: "Espaço de chaves: o número de chaves possíveis de uma cifra. Uma chave de n bits tem 2^n valores; cada bit a mais dobra o trabalho do atacante."
+  - term: brute force
+    definition: "Força bruta: testar todas as possibilidades (chaves, senhas) até achar a certa. Só é viável quando o espaço de busca é pequeno."
+  - term: ciphertext-only attack
+    definition: "Ataque em que o criptoanalista só tem textos cifrados. É o modelo de ataque mais fraco; uma cifra que cai nele é inútil."
+  - term: known-plaintext attack
+    definition: "Ataque em que o criptoanalista tem pares de texto claro e o texto cifrado correspondente (ex.: um cabeçalho fixo). Cifras modernas precisam resistir a ele."
+  - term: chosen-plaintext attack
+    definition: "Ataque em que o criptoanalista escolhe textos claros e obtém o cifrado deles (ex.: enviando dados a um sistema que os cifra). Cifras modernas precisam resistir a ele."
+  - term: authenticity
+    definition: "Autenticidade: a garantia de que a mensagem veio de quem diz ter enviado. Hash não garante; MAC e assinatura garantem."
+  - term: non-repudiation
+    definition: "Não repúdio: a garantia de que o autor não pode negar a autoria, porque só ele poderia ter produzido a prova. Exige assinatura digital; um MAC não basta."
+  - term: MAC
+    definition: "Message Authentication Code: uma tag calculada da mensagem com uma chave secreta compartilhada. Prova integridade e autenticidade para quem tem a chave. Não confundir com MAC address."
+  - term: HMAC
+    definition: "Hash-based MAC (RFC 2104): construção de MAC a partir de uma função de hash, como HMAC-SHA-256. É o MAC mais usado."
+  - term: authenticated encryption
+    definition: "Cifra autenticada (AEAD): cifra que esconde o conteúdo e também detecta qualquer alteração, recusando-se a decifrar. Ex.: AES-GCM, ChaCha20-Poly1305."
+  - term: malleability
+    definition: "Maleabilidade: propriedade de uma cifra sem autenticação que permite ao atacante alterar o texto cifrado e causar uma mudança previsível no texto claro, sem conhecer a chave."
+  - term: Kerckhoffs's principle
+    definition: "Princípio de Kerckhoffs (1883): um sistema criptográfico deve continuar seguro mesmo que tudo sobre ele seja público, exceto a chave."
+  - term: security through obscurity
+    definition: "Segurança por obscuridade: confiar no segredo do projeto ou do algoritmo em vez de no segredo de uma chave. Pode ser uma camada extra, nunca a base."
+  - term: CSPRNG
+    definition: "Cryptographically Secure Pseudo-Random Number Generator: gerador de números aleatórios imprevisível o bastante para chaves e tokens. Ex.: os.urandom, módulo secrets, /dev/urandom."
+  - term: JWT
+    definition: "JSON Web Token: token em três partes Base64url (cabeçalho.dados.assinatura). Os dados são legíveis por qualquer um; só a assinatura impede a alteração. Aprofundado no Módulo 3.4."
+  - term: HTTP Basic authentication
+    definition: "Esquema de login do HTTP (RFC 7617) que envia usuario:senha em Base64 no cabeçalho Authorization. Sem TLS, a senha viaja em texto claro na prática."
+  - term: path traversal
+    definition: "Ataque que usa ../ num parâmetro de arquivo para sair da pasta prevista e ler arquivos arbitrários do servidor (ex.: /etc/shadow)."
+  - term: CWE
+    definition: "Common Weakness Enumeration: catálogo público, mantido pela MITRE, de tipos de fraqueza de software, cada um com um número (ex.: CWE-261). Usado para classificar achados em relatórios."
+  - term: timing attack
+    definition: "Ataque de tempo: deduzir um segredo medindo quanto tempo uma operação demora. Ex.: uma comparação que para no primeiro byte diferente revela quantos bytes acertaram."
+  - term: key management
+    definition: "Gestão de chaves: tudo o que envolve gerar, guardar, distribuir, rotacionar e destruir chaves. É onde a maioria dos sistemas criptográficos falha na prática."
+---
+
+import trilhos from "./img/encoding-hash-cifra.svg";
+import base64Inside from "./img/base64-por-dentro.svg";
+import propriedades from "./img/propriedades-e-primitivas.svg";
+import kerckhoffs from "./img/kerckhoffs.svg";
+import xorKpa from "./img/xor-known-plaintext.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Num pentest, você abre o arquivo de configuração de uma aplicação e encontra
+`DB_PASSWORD=QmFuY28hTG9qYSM3Nw==`. Você avisa o desenvolvedor, que responde
+tranquilo: "não tem problema, está criptografado". Não está. Aquilo é Base64,
+e um único comando devolve a senha do banco de dados. A confusão entre
+**esconder** e **mudar de formato** aparece em todo engajamento, e é
+exatamente o que separa quem entende criptografia de quem só repete a
+palavra.
+
+A <GlossaryTerm term="cryptography">criptografia</GlossaryTerm>
+(*cryptography*, a técnica de proteger informação contra adversários) está
+por trás de quase tudo o que você viu na Trilha 2. É o
+<GlossaryTerm term="TLS">TLS</GlossaryTerm> que impediria a captura da senha
+que você fez no Wireshark (2.6), o certificado que o Burp precisou falsificar
+(2.5) e o <GlossaryTerm term="SHA-256">SHA-256</GlossaryTerm> que prova que
+uma evidência não mudou (1.5). Este módulo abre a Trilha 3 sem fórmulas: ele
+dá o **vocabulário e o modelo mental** que os próximos quatro módulos usam
+para quebrar senhas, cifras e tokens. Ele também ensina a reconhecer, num
+relance, se um dado está de fato protegido.
+
+**Ao final, você vai saber:**
+
+- distinguir encoding, hash e cifra e explicar por que só a cifra esconde;
+- reconhecer Base64, Base64url, hex, URL encoding, hashes e textos cifrados
+  pela aparência e decodificá-los no terminal;
+- dizer que propriedade (confidencialidade, integridade, autenticidade, não
+  repúdio) cada ferramenta entrega e qual ela **não** entrega;
+- verificar a autenticidade de arquivos com HMAC e explicar por que um hash
+  sozinho não basta;
+- aplicar o princípio de Kerckhoffs e quebrar, com texto claro conhecido,
+  uma cifra caseira que se dizia segura;
+- escolher a ferramenta certa para cada necessidade, em vez de inventar a
+  sua, e relatar falhas criptográficas com a classificação correta.
+
+**Pré-requisito:** Trilha 2 — Kit do Pentester. Daqui você usa o Decoder do
+Burp (2.5), a captura de credenciais em texto claro e de cookies no Wireshark
+(2.6), o netcat e a transferência de arquivos (2.7) e, de antes, os bytes e o
+hexadecimal (0.2), o Python e o Bash da Trilha 0 e o SHA-256 da cadeia de
+custódia (1.5).
+
+**Tempo estimado:** de 4 a 5 horas, incluindo as três missões no seu WSL.
+
+<Callout variant="ethics">
+Decodificar uma senha que você achou num sistema é fácil; o que torna isso
+legítimo é a autorização. Todos os artefatos deste módulo são **fictícios** e
+gerados no seu próprio WSL. Num pentest real, credenciais decodificadas são
+evidência sensível: entram no relatório tarjadas, e usá-las fora do escopo
+autorizado é crime (Lei 12.737/2012, que você viu no 1.4).
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O problema que a criptografia resolve
+
+Toda a criptografia nasce de uma situação simples. Duas pessoas, que a
+literatura chama de **Alice** e **Bob**, querem conversar por um canal que
+não controlam: a internet, o Wi-Fi do café, um disco que pode ser roubado. No
+caminho há um adversário. Às vezes ele só escuta, como **Eve** (de
+*eavesdropper*), o <GlossaryTerm term="sniffing">sniffing</GlossaryTerm> que
+você fez no Wireshark. Às vezes ele também altera as mensagens, como
+**Mallory**, o <GlossaryTerm term="man-in-the-middle">man-in-the-middle</GlossaryTerm>
+que você montou com o Burp.
+
+Contra esse adversário, Alice e Bob querem quatro garantias. Três delas você
+já conhece da <GlossaryTerm term="CIA triad">tríade CIA</GlossaryTerm>
+(1.1), mais uma:
+
+- **<GlossaryTerm term="confidentiality">Confidencialidade</GlossaryTerm>:**
+  Eve não consegue ler a mensagem.
+- **<GlossaryTerm term="integrity">Integridade</GlossaryTerm>:** se Mallory
+  mudar um único bit, Bob percebe.
+- **<GlossaryTerm term="authenticity">Autenticidade</GlossaryTerm>:** Bob tem
+  certeza de que a mensagem veio de Alice, e não de Mallory se passando por
+  ela.
+- **<GlossaryTerm term="non-repudiation">Não repúdio</GlossaryTerm>:** Alice
+  não consegue negar, diante de um terceiro, que enviou a mensagem.
+
+A <GlossaryTerm term="availability">disponibilidade</GlossaryTerm>, o "A" da
+tríade, fica de fora: nenhuma técnica criptográfica impede que Mallory
+simplesmente corte o cabo.
+
+Antes de ver as técnicas, um aviso de vocabulário que vale o módulo inteiro:
+existem **três** transformações que leigos chamam de "criptografar", e elas
+não têm nada a ver uma com a outra.
+
+<Figure
+  src={trilhos}
+  alt="Três faixas com a mesma entrada senha123. Encoding Base64 dá c2VuaGExMjM= e qualquer um volta. Hash SHA-256 dá 64 caracteres hex e não há volta. Cifra AES dá bytes ilegíveis e a volta só existe com a chave."
+  caption="A pergunta que separa as três: existe volta? E, se existe, ela exige um segredo? Encoding volta para qualquer um; hash não volta; cifra volta só para quem tem a chave."
+/>
+
+### 2.2 Encoding: representação, não segredo
+
+Um computador só guarda **bytes**, números de 0 a 255 (o
+<GlossaryTerm term="byte">byte</GlossaryTerm> e o
+<GlossaryTerm term="hexadecimal">hexadecimal</GlossaryTerm> são do 0.2). Para
+que esses números virem texto, todos precisam concordar numa tabela. A mais
+antiga é a <GlossaryTerm term="ASCII">ASCII</GlossaryTerm>: 128 caracteres,
+um por byte, em que `A` é 65 e `a` é 97. Para acentos e emojis existe o
+<GlossaryTerm term="Unicode">Unicode</GlossaryTerm>, normalmente gravado em
+<GlossaryTerm term="UTF-8">UTF-8</GlossaryTerm>, que usa 1 byte para os
+caracteres ASCII e de 2 a 4 bytes para os demais. Veja no seu terminal (saída
+real):
+
+```console
+$ echo -n 'é' | xxd
+00000000: c3a9                                     ..
+$ echo -n 'é' | iconv -t UTF-16LE | xxd
+00000000: e900                                     ..
+```
+
+O mesmo `é` é `c3 a9` em UTF-8 e `e9 00` em UTF-16LE (a codificação interna
+do Windows). Nenhum dos dois é mais "secreto": são só **representações**
+diferentes do mesmo caractere. Isso é um
+<GlossaryTerm term="encoding">encoding</GlossaryTerm> (codificação): uma
+regra pública, sem chave, para trocar uma representação por outra. Encoding
+existe para resolver problemas de **transporte**, nunca de segredo.
+
+**Hexadecimal** é o encoding mais direto: cada byte vira dois dígitos de
+`0` a `f`. Ele dobra o tamanho, mas deixa qualquer byte imprimível e fácil
+de ler.
+
+**<GlossaryTerm term="Base64">Base64</GlossaryTerm>** resolve um problema
+histórico: protocolos como o e-mail e os cabeçalhos HTTP foram feitos para
+texto e corrompem bytes arbitrários (um byte 0, uma quebra de linha no lugar
+errado). A solução, padronizada no [RFC 4648](https://www.rfc-editor.org/rfc/rfc4648),
+é reler os bytes em grupos de **6 bits**. Com 6 bits há 64 valores
+possíveis, e cada valor vira um caractere de um alfabeto de 64 símbolos
+seguros: `A–Z`, `a–z`, `0–9`, `+` e `/`. Três bytes (24 bits) viram quatro
+caracteres, por isso o Base64 é cerca de 33% maior que o original.
+
+<Figure
+  src={base64Inside}
+  alt="M, a, n viram 77, 97, 110; em bits 01001101 01100001 01101110; relidos em grupos de 6 bits dão 19, 22, 5, 46, que no alfabeto Base64 são T, W, F, u. Embaixo: Ma vira TWE= e M vira TQ==."
+  caption="Base64 à mão. A única 'tabela secreta' é um alfabeto que está no RFC. Quando a entrada não é múltipla de 3 bytes, o = (padding) completa o bloco."
+/>
+
+Confira no terminal que a conta está certa (saída real):
+
+```console
+$ echo -n Man | base64
+TWFu
+$ echo -n Ma | base64
+TWE=
+$ echo -n M | base64
+TQ==
+```
+
+Daí vêm as **assinaturas visuais** do Base64: só letras, dígitos, `+` e
+`/`, comprimento múltiplo de 4 e, às vezes, um ou dois `=` no fim. Existe uma
+variante, o <GlossaryTerm term="Base64url">Base64url</GlossaryTerm> (seção 5
+do mesmo RFC), que troca `+` por `-` e `/` por `_` para caber em URLs e nomes
+de arquivo, e quase sempre omite o `=`. Ela aparece em cookies e em todo
+<GlossaryTerm term="JWT">JWT</GlossaryTerm> (*JSON Web Token*, um token de
+sessão em três partes separadas por ponto, que o Módulo 3.4 ataca). Um truque
+que você vai usar a vida toda: JSON começa com `{"`, que em Base64 vira
+`eyJ`. Viu `eyJ`, provavelmente é JSON codificado.
+
+O terceiro encoding da web é o
+<GlossaryTerm term="percent-encoding">percent-encoding</GlossaryTerm>
+(codificação de <GlossaryTerm term="URL">URL</GlossaryTerm>): caracteres
+com significado especial numa URL viram `%` mais dois dígitos hex. A barra
+`/` vira `%2F`, o espaço vira `%20`, o apóstrofo vira `%27`. Atacantes usam
+isso o tempo todo para passar caracteres por filtros ingênuos, e você vai
+decodificar um caso na Missão 1.
+
+Agora a frase que justifica esta seção. O próprio RFC 4648, nas
+considerações de segurança, avisa que a codificação "esconde visualmente
+informações facilmente reconhecíveis, como senhas, mas **não fornece nenhuma
+confidencialidade computacional**". Não há chave. O algoritmo é todo o
+segredo, e ele está publicado. Por isso o encoding falha no teste mais
+simples que existe:
+
+```console
+$ echo -n 'senha123' | base64
+c2VuaGExMjM=
+$ echo -n 'c2VuaGExMjM=' | base64 -d
+senha123
+```
+
+O <GlossaryTerm term="HTTP Basic authentication">HTTP Basic authentication</GlossaryTerm>,
+o login mais antigo da web, manda `usuario:senha` exatamente assim, em
+Base64, no cabeçalho `Authorization`. O exemplo do próprio
+[RFC 7617](https://www.rfc-editor.org/rfc/rfc7617) é o usuário `Aladdin` com a
+senha `open sesame`, que vira `QWxhZGRpbjpvcGVuIHNlc2FtZQ==`. O RFC diz que a
+falha mais séria do esquema é que ele "resulta na transmissão da senha do
+usuário em texto claro pela rede física". É por isso que, no Wireshark (2.6),
+uma senha "codificada" aparece inteira para quem escuta.
+
+### 2.3 Hash: a impressão digital de mão única
+
+Você já usou <GlossaryTerm term="hash">hashes</GlossaryTerm> três vezes neste
+curso: o <GlossaryTerm term="checksum">checksum</GlossaryTerm> de arquivos
+(0.3), o identificador dos commits do Git, que é um
+<GlossaryTerm term="SHA-1">SHA-1</GlossaryTerm> (0.8), e o manifesto SHA-256
+das evidências (1.5). Agora é hora de entender por que eles funcionam.
+
+Uma função de hash criptográfica pega uma entrada de qualquer tamanho e
+devolve uma saída de **tamanho fixo**: 256 bits (64 caracteres hex) no
+SHA-256, seja a entrada uma letra ou um disco inteiro. Ela tem quatro
+propriedades que importam:
+
+1. **Determinística:** a mesma entrada dá sempre a mesma saída. É o que
+   permite conferir.
+2. **<GlossaryTerm term="one-way function">Mão única</GlossaryTerm>**
+   (*one-way*): dado o hash, é impraticável achar uma entrada que o produza.
+   Não existe "decodificar um hash". O que existe é **adivinhar** a entrada,
+   calcular o hash dela e comparar, assunto inteiro do Módulo 3.2.
+3. **<GlossaryTerm term="avalanche effect">Efeito avalanche</GlossaryTerm>:**
+   mudar um bit da entrada muda cerca de metade dos bits da saída, sem
+   nenhum padrão. Olhe `abc` contra `abd` (saída real):
+
+   ```console
+   $ echo -n abc | sha256sum
+   ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad  -
+   $ echo -n abd | sha256sum
+   a52d159f262b2c6ddb724a61840befc36eb30c88877a4030b65cbe86298449c9  -
+   $ echo abc | sha256sum
+   edeaaff3f1774ad2888673770c6d64097e391bc362d7d6fb34982ddf0efd18cb  -
+   ```
+
+   O terceiro comando é uma armadilha clássica: sem o `-n`, o `echo` acrescenta
+   uma quebra de linha (`\n`), que vira parte da entrada e muda o hash
+   inteiro.
+4. **Resistente a colisão:** deve ser impraticável achar **duas** entradas
+   com o mesmo hash. Quando isso falha, a função morre; foi o que aconteceu
+   com o MD5 e com o SHA-1 (a
+   <GlossaryTerm term="hash collision">colisão</GlossaryTerm> do 0.8, seção 6).
+
+Repare no que **falta** na lista: chave. Um hash não tem segredo nenhum.
+Qualquer pessoa calcula o SHA-256 de qualquer coisa. Isso dá ao hash uma
+limitação que a Missão 2 vai deixar concreta: ele prova que um arquivo **não
+mudou desde que alguém calculou o hash**, mas não prova **quem** calculou.
+Se o atacante troca o arquivo e o hash publicado ao lado dele, a conferência
+passa.
+
+### 2.4 Cifra: o segredo mora na chave
+
+<GlossaryTerm term="encryption">Cifrar</GlossaryTerm> (*encryption*) é a
+única das três transformações que esconde. Uma
+<GlossaryTerm term="cipher">cifra</GlossaryTerm> (*cipher*) é um algoritmo
+que recebe o <GlossaryTerm term="plaintext">texto claro</GlossaryTerm>
+(*plaintext*, a mensagem legível) e uma
+<GlossaryTerm term="key">chave</GlossaryTerm> (*key*, um valor secreto) e
+produz o <GlossaryTerm term="ciphertext">texto cifrado</GlossaryTerm>
+(*ciphertext*). A <GlossaryTerm term="decryption">decifragem</GlossaryTerm>
+(*decryption*) faz o caminho inverso, **só** com a chave certa. Quem tenta
+desfazer sem a chave está fazendo
+<GlossaryTerm term="cryptanalysis">criptoanálise</GlossaryTerm>
+(*cryptanalysis*).
+
+A ideia é antiga. A <GlossaryTerm term="Caesar cipher">cifra de César</GlossaryTerm>
+troca cada letra pela que está três posições adiante (`A→D`, `B→E`): a
+"chave" é o deslocamento. Ela ensina as duas formas de quebrar uma cifra.
+
+- **Tentar todas as chaves.** Só existem 25 deslocamentos úteis; testar
+  todos leva segundos. Isso é <GlossaryTerm term="brute force">força bruta</GlossaryTerm>
+  (*brute force*), e a defesa contra ela é um
+  <GlossaryTerm term="keyspace">espaço de chaves</GlossaryTerm> (*keyspace*)
+  enorme.
+- **Explorar a estrutura.** Mesmo com 26! chaves possíveis (qualquer
+  permutação do alfabeto), uma cifra de substituição cai por
+  <GlossaryTerm term="frequency analysis">análise de frequência</GlossaryTerm>:
+  em português, `a` e `e` são as letras mais comuns, e a letra mais comum
+  do texto cifrado provavelmente é uma delas. A cifra esconde as letras,
+  mas não o **padrão**.
+
+Uma cifra moderna precisa vencer as duas frentes: keyspace grande demais
+para força bruta e nenhum padrão aproveitável na saída.
+
+**Quão grande é grande?** Uma chave de *n* bits tem 2<sup>n</sup> valores, e
+cada bit a mais **dobra** o trabalho. O DES, padrão americano dos anos
+1970, tinha chave de 56 bits: 2<sup>56</sup> = 72.057.594.037.927.936
+chaves, cerca de 72 quatrilhões. Parece muito, mas em julho de 1998 a EFF
+[anunciou](https://w2.eff.org/Privacy/Crypto/Crypto_misc/DESCracker/19980717_oreilly_crackingdes.pressrel)
+que uma máquina construída por menos de US$ 250 mil tinha achado, em 15 de
+julho, uma chave DES depois de 56 horas de busca. O sucessor, o AES, usa no mínimo 128
+bits: 2<sup>128</sup> é 2<sup>72</sup> vezes maior. A **um trilhão** de
+chaves por segundo, percorrer esse espaço levaria mais de 10 quintilhões de
+anos (a conta, se quiser conferir: `2**128 / 10**12 / 31557600`).
+
+**O caso perfeito e por que ninguém o usa.** Existe uma cifra
+matematicamente inquebrável: o <GlossaryTerm term="one-time pad">one-time pad</GlossaryTerm>.
+Ele combina cada byte da mensagem com um byte de chave usando
+<GlossaryTerm term="XOR">XOR</GlossaryTerm> (⊕, ou-exclusivo: o bit de
+saída é 1 quando os dois bits são diferentes). O XOR tem duas propriedades
+que você vai explorar na Missão 3: `x ⊕ x = 0` e `x ⊕ 0 = x`. Logo,
+`(claro ⊕ chave) ⊕ chave = claro`: aplicar a mesma chave duas vezes desfaz.
+Se a chave é **verdadeiramente aleatória**, **do tamanho da mensagem** e
+**nunca reusada**, todo texto claro do mesmo tamanho é igualmente provável
+para quem só vê o cifrado. O preço é impraticável: para mandar 1 GB em
+segredo, você precisa ter entregado antes, em segredo, 1 GB de chave. Toda
+cifra prática troca essa perfeição por uma chave curta, de 128 ou 256 bits,
+reaproveitada com segurança. Quebre uma dessas três condições e o XOR vira
+brinquedo, como na Missão 3.
+
+**Simétrica e assimétrica.** Na
+<GlossaryTerm term="symmetric encryption">criptografia simétrica</GlossaryTerm>,
+a mesma chave cifra e decifra (AES, ChaCha20). É rápida e protege os dados
+em si, mas tem um problema de origem: como Alice entrega a chave a Bob sem
+que Eve veja? A
+<GlossaryTerm term="asymmetric encryption">criptografia assimétrica</GlossaryTerm>,
+ou <GlossaryTerm term="public-key cryptography">de chave pública</GlossaryTerm>,
+resolve isso com um **par** de chaves: a pública, que pode ser divulgada, e
+a privada, que nunca sai do dono. O que uma faz, só a outra desfaz. O TLS
+usa as duas: a assimétrica para combinar uma chave e autenticar o servidor,
+a simétrica para o tráfego. Os Módulos 3.3 e 3.4 abrem cada uma; aqui basta
+saber que existem e para que servem.
+
+### 2.5 Que propriedade cada ferramenta entrega
+
+Com as três transformações claras, dá para responder à pergunta que um
+pentester faz diante de qualquer mecanismo: **o que isto garante, de
+verdade?**
+
+<Figure
+  src={propriedades}
+  alt="Tabela: encoding não garante nada; hash dá integridade só contra erro acidental; MAC dá integridade e autenticidade; cifra sozinha dá confidencialidade; cifra autenticada dá confidencialidade, integridade e autenticidade; assinatura digital dá integridade, autenticidade e não repúdio."
+  caption="Cada ferramenta responde a uma pergunta diferente. O erro mais comum em sistemas reais é usar a linha errada: hash onde precisava de MAC, cifra onde precisava de hash, encoding onde precisava de qualquer coisa."
+/>
+
+Duas linhas dessa tabela merecem atenção.
+
+**Do hash ao MAC.** Para transformar "não mudou" em "não mudou **e** veio de
+quem diz", falta um segredo que o atacante não tenha. O
+<GlossaryTerm term="MAC">MAC</GlossaryTerm> (*Message Authentication Code*)
+calcula uma etiqueta (a *tag*) a partir da mensagem **e** de uma chave
+compartilhada. A construção mais usada é o
+<GlossaryTerm term="HMAC">HMAC</GlossaryTerm>, publicado no
+[RFC 2104](https://www.rfc-editor.org/rfc/rfc2104) em fevereiro de 1997, que
+monta um MAC a partir de qualquer hash (HMAC-SHA-256, por exemplo). Sem a
+chave, Mallory até troca o arquivo, mas não consegue produzir a tag certa
+para o arquivo novo. O limite do MAC é o não repúdio: como Alice e Bob têm a
+**mesma** chave, qualquer um dos dois pode ter gerado a tag, e nenhum deles
+prova a um juiz quem foi.
+
+**Da cifra à cifra autenticada.** Cifrar esconde, mas não impede alteração.
+Uma cifra sem autenticação tem
+<GlossaryTerm term="malleability">maleabilidade</GlossaryTerm>: Mallory
+mexe em bytes do texto cifrado, e o texto claro muda de forma previsível,
+sem que Bob perceba. Você vai ver um número de conta mudar assim na seção 6.
+A resposta moderna é a
+<GlossaryTerm term="authenticated encryption">cifra autenticada</GlossaryTerm>
+(AEAD), como AES-GCM e ChaCha20-Poly1305: ela cifra **e** calcula uma tag, e
+se recusa a decifrar qualquer coisa que tenha sido alterada.
+
+Para o não repúdio, só a
+<GlossaryTerm term="digital signature">assinatura digital</GlossaryTerm>,
+que você já usou ao confiar nos pacotes do `apt` (0.4): a chave privada é só
+do autor, e qualquer um confere com a pública.
+
+### 2.6 O princípio de Kerckhoffs
+
+Em janeiro e fevereiro de 1883, Auguste Kerckhoffs publicou no *Journal des sciences militaires* o artigo
+["La cryptographie militaire"](https://www.petitcolas.net/kerckhoffs/), com
+seis requisitos para um sistema de cifra militar. O segundo atravessou mais
+de um século: o sistema "não deve exigir segredo, e deve poder cair nas mãos
+do inimigo sem inconveniente". Hoje ele é chamado de
+<GlossaryTerm term="Kerckhoffs's principle">princípio de Kerckhoffs</GlossaryTerm>,
+e sua versão moderna costuma ser citada como a máxima de Claude Shannon: "o
+inimigo conhece o sistema".
+
+A lógica é de engenharia, não de filosofia. Um algoritmo está em todo lugar:
+no código do programa, no firmware de milhões de aparelhos, na cabeça de
+cada funcionário que o implementou. Ele **vai** vazar, por engenharia
+reversa, por um repositório público ou por alguém que saiu da empresa. Uma
+chave é pequena e fácil de trocar. Se o segredo do sistema mora no
+algoritmo, um vazamento obriga a jogar tudo fora; se mora na chave, basta
+trocar a chave. E há um bônus: um algoritmo público pode ser atacado por
+milhares de especialistas antes de você confiar nele.
+
+<Figure
+  src={kerckhoffs}
+  alt="Alice e Bob, cada um com algoritmo público e chave secreta, trocando texto cifrado por um canal onde Eve escuta. Eve vê o cifrado e conhece o algoritmo, mas não tem a chave. Embaixo, quatro degraus de modelos de ataque: ciphertext-only, known-plaintext, chosen-plaintext e chosen-ciphertext."
+  caption="O que Eve pode saber. Kerckhoffs manda supor que ela conhece o algoritmo; os modelos de ataque dizem quanto mais ela pode ter. Uma cifra moderna resiste aos quatro."
+/>
+
+O contrário de Kerckhoffs tem nome: <GlossaryTerm term="security through obscurity">segurança por obscuridade</GlossaryTerm>
+(*security through obscurity*), confiar no segredo do projeto em vez de no
+segredo de uma chave. Cuidado com a nuance: obscuridade como **camada a
+mais** não é pecado (não anunciar a versão do servidor dificulta a vida do
+atacante, e você viu isso no nmap). O pecado é a obscuridade como
+**fundação**, o "é seguro porque ninguém sabe como funciona".
+
+Os **modelos de ataque** da figura organizam o que "seguro" quer dizer. Do
+mais fraco ao mais forte:
+
+- **<GlossaryTerm term="ciphertext-only attack">Ciphertext-only</GlossaryTerm>:**
+  Eve só tem textos cifrados. É o que um sniffer captura.
+- **<GlossaryTerm term="known-plaintext attack">Known-plaintext</GlossaryTerm>:**
+  Eve tem alguns pares de claro e cifrado. Parece raro, mas é o normal:
+  arquivos têm cabeçalhos fixos, protocolos começam sempre igual, e-mails
+  terminam com a mesma assinatura.
+- **<GlossaryTerm term="chosen-plaintext attack">Chosen-plaintext</GlossaryTerm>:**
+  Eve escolhe o que é cifrado, por exemplo cadastrando dados num sistema que
+  os cifra.
+- **Chosen-ciphertext:** Eve envia textos cifrados ao sistema e observa como
+  ele reage (aceita, recusa, demora). Muitos ataques web modernos a
+  criptografia moram aqui.
+
+Uma cifra séria precisa resistir aos quatro, **sabendo** que o atacante
+conhece o algoritmo. A cifra caseira da Missão 3 cai no segundo degrau.
+
+### 2.7 Por que não inventar a sua
+
+Em 15 de outubro de 1998, Bruce Schneier escreveu na newsletter
+[Crypto-Gram](https://www.schneier.com/crypto-gram/archives/1998/1015.html)
+uma frase hoje chamada de "lei de Schneier": "qualquer pessoa, do amador
+mais desinformado ao melhor criptógrafo, consegue criar um algoritmo que ela
+mesma não consegue quebrar". O ponto não é que o autor seja ingênuo: é que
+**o autor é o pior juiz possível** da própria cifra. Ele só testa os ataques
+em que pensou.
+
+É por isso que os algoritmos em que o mundo confia vêm de processos
+públicos e longos. O AES é o exemplo clássico. O NIST
+[abriu a chamada](https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines/archived-crypto-projects/aes-development)
+em 12 de setembro de 1997, anunciou quinze candidatos em 20 de agosto de
+1998, deixou a comunidade mundial atacá-los por mais de dois anos e, em 2 de
+outubro de 2000, escolheu o Rijndael. O padrão
+saiu como [FIPS 197](https://csrc.nist.gov/pubs/fips/197/final) em 26 de
+novembro de 2001. Uma cifra de empresa, revisada por três pessoas numa
+sala, não tem como competir com isso.
+
+"Não invente a sua" vale para mais do que o algoritmo. A maioria das falhas
+reais está em **como** algoritmos bons são usados: a escolha do modo de
+operação, a aleatoriedade das chaves, a comparação de tags, a combinação de
+peças boas de um jeito ruim. A seção 4 mostra uma falha de cada tipo, e a
+regra prática da seção 8 é curta: use uma biblioteca madura, com a interface
+de mais alto nível que resolva o problema, e trate qualquer cripto escrita à
+mão como suspeita.
+
+## 3. Na prática da segurança
+
+### 3.1 Reconhecer o artefato num relance
+
+Num pentest, você raramente vai "atacar o AES". Você vai tropeçar em dados
+estranhos o tempo todo: no proxy, num cookie, num arquivo de configuração,
+num dump de banco. A primeira habilidade é **classificar** o que está na sua
+frente em segundos, porque a classificação decide o próximo passo. Esta é a
+cola que um pentester carrega na cabeça:
+
+| Aparência | Provavelmente é | O que fazer |
+|---|---|---|
+| `A–Z a–z 0–9 + /`, tamanho múltiplo de 4, talvez `=` no fim | Base64 | `base64 -d` |
+| igual, mas com `-` e `_` e sem `=` | Base64url | completar o `=` e decodificar |
+| começa com `eyJ` | JSON em Base64; se tiver dois pontos, um JWT | decodificar cada parte |
+| só `0–9 a–f`, tamanho par | hex | `xxd -r -p` |
+| `%2F`, `%27`, `%20` | URL encoding | `urllib.parse.unquote` |
+| 32, 40 ou 64 hex sem contexto de chave | hash MD5, SHA-1 ou SHA-256 | identificar e (Módulo 3.2) quebrar offline |
+| começa com `$2b$`, `$argon2id$`, `$6$` | hash de senha com salt | Módulo 3.2 |
+| `U2FsdGVkX1` no início | `Salted__` em Base64: saída do `openssl enc` | é cifra; procure a chave, não "decodifique" |
+| bytes sem nenhum padrão, sem cabeçalho | cifra ou dado comprimido | procure a chave e o contexto |
+
+O teste do último caso usa uma ideia que vale guardar: um texto cifrado bom
+parece **ruído**. Encoding preserva o padrão do texto original (o Base64 de
+um JSON sempre começa com `eyJ`); cifra destrói qualquer padrão.
+
+### 3.2 Onde cada coisa aparece num engajamento
+
+- **No tráfego:** o cabeçalho `Authorization: Basic ...` e senhas em
+  formulários HTTP. Você já capturou os dois no 2.6. Base64 não muda nada.
+- **Em <GlossaryTerm term="HTTP cookie">cookies</GlossaryTerm> e tokens:** é
+  comum uma aplicação guardar o perfil do usuário num cookie em Base64. Se
+  não houver assinatura ou MAC, o usuário pode editar o próprio perfil (por
+  exemplo, trocar `"role":"cliente"` por `"role":"admin"`). Em JWT, a
+  pergunta é sempre "a assinatura é verificada de verdade?", e o 3.4 inteiro
+  é sobre isso.
+- **Em configurações:** "senhas criptografadas" no `.env`, no `web.config`
+  ou num `Secret` do Kubernetes. A própria
+  [documentação do Kubernetes](https://kubernetes.io/docs/concepts/configuration/secret/)
+  avisa que os Secrets ficam, por padrão, guardados **sem cifra** no banco
+  do cluster (o etcd), e os valores dos exemplos dela estão em Base64. Achar
+  um `Secret` em Base64 num repositório é achar a credencial.
+- **Em dumps de banco:** colunas de senha. Se for hash, o caminho é o 3.2. Se
+  for cifra com chave única, como na Adobe (seção 4), o achado é ainda mais
+  grave.
+- **Em backups e compartilhamentos:** arquivos `.enc`, `.gpg`, `.zip` com
+  senha. A cifra provavelmente está certa; a pergunta é **onde está a
+  chave**. Com frequência, num script ao lado ou
+  <GlossaryTerm term="hardcoded credential">fixa no código</GlossaryTerm>.
+
+Decodificar é rápido no terminal (saídas reais, de artefatos fictícios):
+
+```console
+$ echo 'c3Vwb3J0ZTpWZXJhb0AyMDI2' | base64 -d
+suporte:Verao@2026
+$ echo 42616e636f214c6f6a61233737 | xxd -r -p
+Banco!Loja#77
+$ python3 -c "from urllib.parse import unquote; print(unquote('..%2F..%2Fetc%2Fpasswd'))"
+../../etc/passwd
+$ echo -n 'U2FsdGVkX192ao9n9WP39vpH' | base64 -d | xxd | head -1
+00000000: 5361 6c74 6564 5f5f 766a 8f67 f563 f7f6  Salted__vj.g.c..
+```
+
+O último comando mostra por que "descobrir o formato" não é "quebrar": os
+primeiros 8 bytes dizem `Salted__`, a assinatura do `openssl enc`. Os 8
+seguintes são o salt; o resto é texto cifrado com AES. Sem a chave, não há o
+que decodificar. O Decoder do Burp (2.5) faz as mesmas conversões quando o
+dado está numa requisição.
+
+### 3.3 Como relatar uma falha criptográfica
+
+Um bom achado diz **o que** está errado com o nome certo, e não "a
+criptografia é fraca". O vocabulário padrão é o
+<GlossaryTerm term="CWE">CWE</GlossaryTerm> (*Common Weakness Enumeration*), o
+catálogo de fraquezas da MITRE. A
+[CWE-261, *Weak Encoding for Password*](https://cwe.mitre.org/data/definitions/261.html),
+diz literalmente: "ofuscar uma senha com uma codificação trivial não a
+protege". O exemplo dela é uma senha em Base64 num arquivo `.properties`.
+Para o quadro maior, a categoria do
+<GlossaryTerm term="OWASP">OWASP</GlossaryTerm> Top 10 é a
+[A04:2025 — Cryptographic Failures](https://top10.owasp.org/2025), que
+reúne dados sensíveis sem cifra, algoritmos fracos e chaves mal guardadas.
+
+Na prática, o achado do desenvolvedor da abertura ficaria assim: "**Senha do
+banco de dados armazenada com encoding reversível (CWE-261).** O arquivo
+`.env` contém `DB_PASSWORD` em Base64, que qualquer pessoa com leitura do
+arquivo decodifica num comando. Evidência: [valor tarjado]. Recomendação: …".
+Repare em "valor tarjado": a senha decodificada é exatamente o tipo de dado
+que o 1.5 ensinou a nunca colar em claro no relatório.
+
+### 3.4 O outro lado: como o atacante usa (e evita) a criptografia
+
+O atacante real quase nunca enfrenta o AES de frente. Ele procura o **elo
+fraco** em volta dele: a chave escrita no código-fonte, o backup sem cifra, o
+token gerado com um gerador previsível, a senha em Base64 que alguém chamou
+de criptografada.
+
+Ele também **usa** os mesmos conceitos a seu favor. Malware e scripts de
+ataque passam por Base64 e XOR o tempo todo, não para ter segurança, mas
+para <GlossaryTerm term="obfuscation">ofuscação</GlossaryTerm> (0.6): fugir de
+uma detecção que procura palavras como `Invoke-WebRequest` em texto claro. O
+caso clássico é o parâmetro `-EncodedCommand` do PowerShell. A
+[documentação oficial](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pwsh)
+o descreve como uma forma de passar comandos com aspas complexas: ele recebe
+o comando em Base64 de texto **UTF-16LE**. Um defensor que vê
+`powershell -enc SQBFAFgA...` num log decodifica com o mesmo raciocínio do
+seu módulo: Base64, depois UTF-16LE. Os `A` intercalados são a dica, porque
+cada caractere ASCII em UTF-16LE vem seguido de um byte zero (saída real):
+
+```console
+$ echo -n 'A' | iconv -t UTF-16LE | base64
+QQA=
+```
+
+E o atacante usa cifra **de verdade** quando precisa: o ransomware cifra os
+arquivos da vítima com algoritmos padrão e corretos, justamente porque
+seguem Kerckhoffs. O resgate existe porque a cripto funciona, não porque
+falha.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Adobe: senhas cifradas que deveriam ser hash (outubro e novembro de 2013)
+
+Em **3 de outubro de 2013**, o diretor de segurança da Adobe, Brad Arkin,
+[anunciou](https://blog.adobe.com/en/publish/2013/10/03/important-customer-security-announcement)
+que atacantes tinham acessado IDs de clientes e "senhas criptografadas",
+dados de 2,9 milhões de clientes e o código-fonte de vários produtos. Em
+**29 de outubro**, a Adobe confirmou ao jornalista Brian Krebs que os
+atacantes tinham obtido IDs e senhas cifradas de
+[cerca de 38 milhões de usuários ativos](https://krebsonsecurity.com/2013/10/adobe-breach-impacted-at-least-38-million-users/),
+enquanto um arquivo de 3,8 GB com mais de 150 milhões de registros circulava
+na internet. Em **4 de novembro**, uma porta-voz da Adobe
+[confirmou](https://www.csoonline.com/article/540070/network-security-adobe-confirms-stolen-passwords-were-encrypted-not-hashed.html)
+que o sistema atacado, um backup que seria desativado, usava **Triple DES**
+para proteger todas as senhas.
+
+Esse é o erro da seção 2.5 em escala industrial: usar **cifra** onde se
+precisava de **hash**. A análise de [Filippo Valsorda](https://filippo.io/analyzing-the-adobe-leaked-passwords/)
+mostrou que o 3DES estava em modo ECB e com a mesma chave para todas as
+senhas: blocos iguais de 8 bytes viravam cifrados iguais, então senhas
+iguais se denunciavam. E as **dicas de senha** estavam em texto claro. Os
+pesquisadores agruparam milhões de senhas idênticas e leram as dicas de
+cada grupo, sem precisar da chave. Troy Hunt, do Have I Been Pwned,
+[analisou](https://www.troyhunt.com/adobe-credentials-and-serious/) em 12 de
+novembro 152.989.508 registros, cerca de 109 milhões com dica.
+
+- **Impacto:** cerca de 153 milhões de contas expostas, segundo o
+  [registro do Have I Been Pwned](https://haveibeenpwned.com/Breach/Adobe), e
+  senhas recuperadas em massa sem quebrar o 3DES.
+- **Lição:** senha não precisa voltar, só ser comparada; por isso se guarda
+  hash lento com salt, nunca cifra. Uma cifra com chave única é um cofre
+  com uma chave só para 153 milhões de portas.
+
+### Zoom: "AES-256 de ponta a ponta" que não era (abril e novembro de 2020)
+
+Em **3 de abril de 2020**, no auge da migração para o trabalho remoto, Bill
+Marczak e John Scott-Railton, do Citizen Lab, publicaram
+["Move Fast and Roll Your Own Crypto"](https://citizenlab.ca/2020/04/move-fast-roll-your-own-crypto-a-quick-look-at-the-confidentiality-of-zoom-meetings/).
+O título já resume a lição. A documentação do Zoom falava em "AES-256" e em
+reuniões "end-to-end". O que os pesquisadores encontraram foi "uma única
+chave AES-128 usada em modo ECB por todos os participantes" para cifrar
+áudio e vídeo. As chaves eram geradas pelos servidores do Zoom e, em alguns
+casos, entregues por servidores na China, mesmo com todos os participantes
+fora de lá.
+
+Em **9 de novembro de 2020**, a FTC, a agência americana de proteção ao
+consumidor,
+[anunciou um acordo](https://www.ftc.gov/news-events/news/press-releases/2020/11/ftc-requires-zoom-enhance-its-security-practices-part-settlement)
+com o Zoom. Ela alegou que a empresa prometia "end-to-end, 256-bit encryption"
+mas guardava as chaves que permitiriam acessar o conteúdo das reuniões, e
+que algumas gravações ficavam até 60 dias sem cifra nos servidores, apesar da
+promessa de cifrá-las logo após a reunião.
+
+- **Impacto:** um programa de segurança imposto pela FTC, com avaliação
+  independente a cada dois anos e aviso obrigatório à agência em caso de
+  vazamento, além do descrédito público num momento de uso massivo.
+- **Lição:** "usa AES" não diz nada. Importam o tamanho da chave, o modo, **quem
+  tem a chave** e se a afirmação de marketing bate com a implementação.
+  Verificar essa distância é trabalho de pentester.
+
+### MIFARE Classic: o segredo do algoritmo não durou (2007 e 2008)
+
+O MIFARE Classic, da NXP, era um dos chips de cartão por aproximação
+(RFID) mais usados do mundo, em bilhetes de transporte e crachás. A
+segurança dele dependia da Crypto-1, uma cifra **proprietária e secreta**.
+Em **28 de dezembro de 2007**, no congresso 24C3 do Chaos Computer Club,
+Karsten Nohl e Henryk Plötz apresentaram
+["Mifare: Little Security, Despite Obscurity"](https://fahrplan.events.ccc.de/congress/2007/Fahrplan/events/2378.en.html):
+tinham reconstruído a cifra a partir do próprio hardware do chip e
+encontrado fraquezas nela.
+
+Em **7 de março de 2008**, o grupo de Segurança Digital da Universidade
+Radboud de Nijmegen, na Holanda,
+[revelou](https://sos.cs.ru.nl/applications/rfid/main.html) um ataque
+prático: com poucos dados interceptados, recuperava "offline, a chave
+secreta em menos de um segundo" (uma chave de 48 bits) e clonava cartões,
+incluindo o bilhete de transporte holandês, o OV-chipkaart. A NXP foi à
+Justiça para impedir a publicação do artigo científico. Em **18 de julho de
+2008**, o tribunal de Arnhem
+[negou o pedido](https://www.sos.cs.ru.nl/applications/rfid/pressrelease-courtdecision.en.html):
+a publicação estava protegida pela liberdade de expressão. O artigo,
+"Dismantling MIFARE Classic", saiu na conferência ESORICS 2008.
+
+- **Impacto:** a troca de sistemas de bilhetagem e controle de acesso no
+  mundo todo, que dependiam de um segredo já perdido.
+- **Lição:** Kerckhoffs na prática. O algoritmo estava gravado em cada
+  cartão: era questão de tempo alguém lê-lo. E uma cifra que só sobreviveu
+  por não ter sido analisada caiu assim que foi.
+
+### Debian OpenSSL: algoritmo certo, aleatoriedade quebrada (2006 a 2008)
+
+Em **13 de maio de 2008**, o Debian publicou o alerta
+[DSA-1571](https://lists.debian.org/debian-security-announce/2008/msg00152.html)
+(CVE-2008-0166): "o gerador de números aleatórios do pacote openssl do
+Debian é previsível". Uma mudança feita no código do OpenSSL **pelo próprio
+Debian**, entrou na versão 0.9.8c-1, enviada em **17 de setembro de 2006**.
+Daí ela chegou às distribuições estáveis. Durante quase dois anos, as chaves
+geradas nesses sistemas vieram de um conjunto pequeno e previsível. O alerta
+lista as afetadas: chaves SSH, OpenVPN, DNSSEC e de certificados X.509, além
+das chaves de sessão de conexões SSL/TLS. E manda recriá-las do zero.
+
+- **Impacto:** cada chave gerada naquele período por esse OpenSSL tinha de
+  ser considerada comprometida; chaves DSA usadas para
+  autenticação, inteiramente.
+- **Lição:** "não invente a sua" inclui "não mexa na de outros sem entender".
+  O algoritmo (RSA, DSA) estava perfeito; a <GlossaryTerm term="key management">gestão de chaves</GlossaryTerm>,
+  começando pela geração aleatória, falhou. Chave previsível é chave pública.
+
+## 5. Mãos à obra — exercícios no seu WSL
+
+Este módulo não tem laboratório próprio. Fundamentos de criptografia se
+treinam com **dados**, e é isso que você vai manipular, em arquivos
+**fictícios** gerados no seu WSL. Nada aqui usa a rede, abre portas ou toca
+outro sistema, e nenhum arquivo das missões deve ser executado (exceto os
+`conferir.sh`, que só conferem formato).
+
+**Objetivo:** ao terminar, você terá:
+
+1. classificado seis artefatos de um pentest fictício como encoding, hash
+   ou cifra e recuperado tudo o que era recuperável (Missão 1);
+2. descoberto, numa release cujo `sha256sum -c` diz tudo `OK`, quais arquivos
+   foram adulterados, usando HMAC (Missão 2);
+3. quebrado uma cifra "secreta" caseira com um ataque de texto claro
+   conhecido e lido uma mensagem que você não deveria ler (Missão 3).
+
+Cada missão termina numa flag.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra o terminal do Ubuntu no WSL. Você vai usar `base64`, `xxd`,
+   `sha256sum`, `openssl` e `python3`, todos presentes num Ubuntu padrão.
+   Confira (saída real; as versões no seu podem ser outras):
+
+   ```console
+   $ openssl version
+   OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)
+   $ python3 --version
+   Python 3.14.4
+   ```
+
+2. Gere os arquivos. O bloco abaixo cria `~/treino-3-1` com uma pasta por
+   missão. Copie o bloco inteiro, cole no terminal e aperte Enter:
+
+```bash
+mkdir -p ~/treino-3-1 && cd ~/treino-3-1 && rm -rf missao-1 missao-2 missao-3 && mkdir missao-1 missao-2 missao-3 && (
+cd missao-1
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 1 — "Está criptografado, confia"
+Pentest FICTÍCIO na Loja Exemplo (contrato 2026-131). O desenvolvedor
+garante que "todas as senhas e dados sensíveis estão criptografados".
+achados.txt tem seis artefatos coletados no teste. Para CADA um:
+  1. classifique: encoding, hash ou cifra;
+  2. se for encoding, recupere o que se pede:
+       A1 -> a senha (só a senha, sem o usuário)
+       A2 -> o valor do campo role
+       A3 -> a senha
+       A4 -> o caminho ABSOLUTO do arquivo que o atacante tentou ler
+     se for hash ou cifra, escreva - (um hífen) no lugar do valor.
+Preencha respostas.txt, uma linha por artefato, no formato
+  A1:classe:valor
+e rode:  bash conferir.sh
+EOF
+cat > achados.txt <<'EOF'
+A1  Requisição capturada no proxy (só o cabeçalho que importa):
+    Authorization: Basic c3Vwb3J0ZTpWZXJhb0AyMDI2
+
+A2  Cookie que a loja define depois do login:
+    Set-Cookie: perfil=eyJ1c2VyIjoiY2FybGEiLCJyb2xlIjoiY2xpZW50ZSIsImV4cCI6MTc5MTMzMTIwMH0; Path=/; HttpOnly
+
+A3  Linha do arquivo /var/www/loja/.env:
+    DB_PASSWORD_HEX=42616e636f214c6f6a61233737
+
+A4  Linha do log de acesso do Apache (o download.php abre o arquivo pedido
+    a partir da pasta /var/www/loja):
+    203.0.113.50 - - [06/Oct/2026:01:12:09 +0000] "GET /download.php?arquivo=..%2F..%2F..%2Fetc%2Fshadow HTTP/1.1" 404 196
+
+A5  Linha de um dump da tabela usuarios:
+    admin:1a4331f9c1dd973892531249e241e67901715f2723b44ed13dc940c4ea77cf4d
+
+A6  Conteúdo de backup.cfg.enc, achado num compartilhamento de rede:
+    U2FsdGVkX192ao9n9WP39vpH/BdMYRr1N2WWvgDWTDYPRnvrl3LJ02CJorMMFBYmUviIpe/ZieNH1FqBIp15hNKfKWZtsE2JoBpALseXamg=
+EOF
+printf 'A1:?:?\nA2:?:?\nA3:?:?\nA4:?:?\nA5:?:?\nA6:?:?\n' > respostas.txt
+cat > conferir.sh <<'EOF'
+#!/usr/bin/env bash
+# Checks the FORMAT of respostas.txt (not the content) and derives the flag.
+set -euo pipefail
+cd "$(dirname "$0")"
+n=0
+lines=()
+while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%$'\r'}
+    [ -z "$line" ] && continue
+    n=$((n + 1))
+    if ! [[ $line =~ ^A$n:(encoding|hash|cifra):[^[:space:]]+$ ]]; then
+        echo "linha $n fora do formato: '$line' (esperado A$n:classe:valor)" >&2
+        exit 1
+    fi
+    lines+=("$line")
+done < respostas.txt
+[ "$n" -eq 6 ] || { echo "esperava 6 linhas, achei $n" >&2; exit 1; }
+echo "Formato OK. Flag candidata: FLAG{$(printf '%s\n' "${lines[@]}" | sha256sum | cut -c1-12)}"
+EOF
+cd ../missao-2
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 2 — "O checksum bate, mas..."
+A pasta release/ é a versão 2.3.0 da ferramenta FICTÍCIA "varredor",
+baixada de um espelho que pode ter sido comprometido. Junto vêm:
+  release/SHA256SUMS       hashes SHA-256 de cada arquivo
+  release/SHA256SUMS.hmac  tags HMAC-SHA-256 calculadas pelo autor
+A chave do HMAC NÃO está no espelho: o autor passou por telefone, e
+você anotou em chave-hmac.txt.
+Pergunta: que arquivos da release NÃO são autênticos (foram alterados
+ou não têm tag do autor)? A flag é a lista dos nomes, em ordem
+alfabética, separados por hífen, dentro de FLAG{ }.
+Exemplo: FLAG{a.txt-b.txt}. NÃO execute nada da release.
+EOF
+printf 'r3l3as3-varredor-2026-chave-do-autor' > chave-hmac.txt
+mkdir release && cd release
+cat > varredor.py <<'EOF'
+#!/usr/bin/env python3
+"""varredor 2.3.0 -- fictional tool used only in this exercise."""
+VERSION = "2.3.0"
+
+def main() -> None:
+    print(f"varredor {VERSION}")
+
+if __name__ == "__main__":
+    main()
+EOF
+cat > config.ini <<'EOF'
+[varredor]
+update_url = https://atualizacoes.varredor.example/estavel
+timeout = 30
+EOF
+cat > instalar.sh <<'EOF'
+#!/bin/sh
+# Installs varredor into ~/.local/bin (fictional).
+echo "copiando varredor.py para ~/.local/bin/varredor"
+echo "pronto"
+EOF
+cat > CHANGELOG.txt <<'EOF'
+2.3.0 - nova opcao --timeout
+2.2.1 - correcao na leitura do config.ini
+EOF
+cat > LEIA-ME.md <<'EOF'
+# varredor
+Ferramenta FICTÍCIA deste exercício. Leia, não execute.
+EOF
+key=$(cat ../chave-hmac.txt)
+for f in CHANGELOG.txt LEIA-ME.md config.ini instalar.sh varredor.py; do
+    printf '%s  %s\n' "$(openssl dgst -sha256 -hmac "$key" -r "$f" | cut -d' ' -f1)" "$f"
+done > SHA256SUMS.hmac
+sed -i 's|https://atualizacoes.varredor.example/estavel|http://198.51.100.23/atualizacoes|' config.ini
+sed -i 's|^echo "pronto"|echo "registrando a licença em http://198.51.100.23/registro"\necho "pronto"|' instalar.sh
+cat > plugin_extra.py <<'EOF'
+"""plugin_extra -- added by the mirror, not by the author (fictional)."""
+EOF
+touch -d '2026-10-01 03:00:00' CHANGELOG.txt
+sha256sum CHANGELOG.txt LEIA-ME.md config.ini instalar.sh plugin_extra.py varredor.py > SHA256SUMS
+chmod 644 ./*
+cd ../../missao-3
+cat > LEIA-ME.txt <<'EOF'
+MISSÃO 3 — A cifra secreta da CriptoMax
+A distribuidora FICTÍCIA CriptoMax criou o próprio algoritmo para
+proteger os pedidos entre as filiais e se gaba de que "ninguém conhece
+o algoritmo". O código-fonte vazou (cifra.py), e você interceptou três
+mensagens (interceptadas.txt). A chave você NÃO tem.
+O manual do protocolo (protocolo.txt) também circula entre os
+funcionários. Decifre a terceira mensagem. A flag é o código de
+liberação que ela contém, dentro de FLAG{ }.
+EOF
+cat > cifra.py <<'EOF'
+#!/usr/bin/env python3
+"""CriptoMax v1 -- in-house cipher (leaked source).
+
+Usage: python3 cifra.py <hex-key-file> "<message>"
+"""
+import sys
+
+
+def encrypt(key: bytes, message: bytes) -> bytes:
+    """XOR every byte of the message with the key, repeating the key."""
+    return bytes(b ^ key[i % len(key)] for i, b in enumerate(message))
+
+
+if __name__ == "__main__":
+    with open(sys.argv[1]) as fh:
+        key = bytes.fromhex(fh.read().strip())
+    print(encrypt(key, sys.argv[2].encode()).hex())
+EOF
+cat > protocolo.txt <<'EOF'
+Protocolo de pedidos CriptoMax v1 (uso interno)
+- Toda mensagem começa com o cabeçalho fixo "CRIPTOMAX v1 | PEDIDO ",
+  seguido do número do pedido com 4 dígitos e de " | ".
+- Só caracteres ASCII, sem acentos.
+- A cifra é segredo da empresa e garante a segurança dos pedidos.
+EOF
+cat > interceptadas.txt <<'EOF'
+df6c18f7864706b7b9532c1dbc4271f7974c02b2ae536a18ad0c71dbf23c7bd682123354fd4d71c3b7283b9793123c59ef512287a2693997c1127a4af55238c6be28059993073f
+df6c18f7864706b7b9532c1dbc4271f7974c02b2ae536a18ad0d71dbf26b2a988216364dee1e3e87a26d2f9f851c7a1ca80e688bf26b279f841d2e49bc5a34d4bb7b3f9f94
+df6c18f7864706b7b9532c1dbc4271f7974c02b2ae536a18ad0a71dbf264229484013b5ebc5171c4bd6e3993c1173b0cfa573dceb3646ba5941f7a4ff35371c8f26b24928814350cd36c00f29b4c0eb7cc446918ad
+EOF
+) && echo "Pronto: $(find ~/treino-3-1 -type f | wc -l) arquivos em ~/treino-3-1"
+```
+
+A última linha deve ser `Pronto: 18 arquivos em ~/treino-3-1`. Rodar o
+bloco de novo apaga e recria as três pastas: é o seu "resetar".
+
+### 5.2 Missão 1 — "Está criptografado, confia" (guiada)
+
+**Cenário:** você está no fim de um pentest fictício na Loja Exemplo. O
+desenvolvedor jura que tudo está criptografado. Você tem seis artefatos e
+precisa, para cada um, dizer **o que ele é** e recuperar o que for
+recuperável. É a tabela da seção 3.1 em uso real.
+
+**Etapa 1: leia a missão e os artefatos.**
+
+```console
+$ cd ~/treino-3-1/missao-1
+$ cat LEIA-ME.txt achados.txt
+```
+
+**Etapa 2: o A1, juntos.** O cabeçalho é `Authorization: Basic ...`. Pela
+seção 2.2, o HTTP Basic é `usuario:senha` em Base64: alfabeto certo e tamanho
+24, múltiplo de 4. Decodifique (saída real):
+
+```console
+$ echo 'c3Vwb3J0ZTpWZXJhb0AyMDI2' | base64 -d
+suporte:Verao@2026
+```
+
+Usuário `suporte`, senha `Verao@2026`. O LEIA-ME pede só a senha, então a
+primeira linha das respostas é `A1:encoding:Verao@2026`. Repare: quem captura
+esse cabeçalho no Wireshark, como você fez no 2.6, tem a senha.
+
+**Etapa 3: o A2, juntos.** O cookie começa com `eyJ`: JSON em Base64. Mas
+não tem `=` no fim, e o tamanho (67) não é múltiplo de 4, sinais de
+Base64url sem padding. Duas formas de decodificar (saídas reais):
+
+```console
+$ echo 'eyJ1c2VyIjoiY2FybGEiLCJyb2xlIjoiY2xpZW50ZSIsImV4cCI6MTc5MTMzMTIwMH0' | base64 -d
+{"user":"carla","role":"cliente","exp":1791331200}
+$ python3 -c "import base64; s='eyJ1c2VyIjoiY2FybGEiLCJyb2xlIjoiY2xpZW50ZSIsImV4cCI6MTc5MTMzMTIwMH0'; print(base64.urlsafe_b64decode(s + '=' * (-len(s) % 4)))"
+b'{"user":"carla","role":"cliente","exp":1791331200}'
+```
+
+O `base64` do seu sistema pode reclamar da falta de padding com
+`base64: invalid input`, ainda assim imprimindo o que conseguiu (a seção 7
+explica). O Python completa o `=` que falta (`-len(s) % 4` calcula quantos)
+e usa o alfabeto url-safe: é o jeito que funciona sempre. O valor de `role`
+é `cliente`, então a linha é `A2:encoding:cliente`. Anote o achado de
+verdade: um cookie de perfil **sem assinatura**, que o usuário pode editar
+para `"role":"admin"`.
+
+**Etapa 4 (desafio): A3 a A6.** Agora é com você. Use a tabela da seção 3.1.
+Para cada artefato, primeiro **classifique** pela aparência, depois decida
+se dá para recuperar algo.
+
+<Hint title="Dica 1: A3 e A4">
+O A3 só tem `0–9` e `a–f`, com tamanho par: é hex. O `xxd -r -p` converte hex
+de volta em bytes. O A4 tem `%2F`: é URL encoding. Decodifique e depois
+**resolva o caminho**: cada `../` sobe uma pasta a partir de `/var/www/loja`.
+Três `../` a partir dali levam aonde? (O <GlossaryTerm term="path traversal">path traversal</GlossaryTerm>,
+o ataque por trás desse log, volta na Trilha 4.)
+</Hint>
+
+<Hint title="Dica 2: A5 e A6">
+O A5 tem exatamente 64 caracteres hex, sem chave à vista, numa coluna de
+senha: é o tamanho de um SHA-256. Não existe "decodificar" um hash. O A6
+começa com `U2FsdGVkX1`: decodifique só o começo e olhe com o `xxd`. Os
+primeiros 8 bytes dizem quem produziu esse arquivo, e por que você não
+consegue lê-lo.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Saídas reais:
+
+```console
+$ echo 42616e636f214c6f6a61233737 | xxd -r -p
+Banco!Loja#77
+$ python3 -c "from urllib.parse import unquote; print(unquote('..%2F..%2F..%2Fetc%2Fshadow'))"
+../../../etc/shadow
+$ echo -n 1a4331f9c1dd973892531249e241e67901715f2723b44ed13dc940c4ea77cf4d | wc -c
+64
+$ echo -n 'U2FsdGVkX192ao9n9WP39vpH' | base64 -d | xxd | head -1
+00000000: 5361 6c74 6564 5f5f 766a 8f67 f563 f7f6  Salted__vj.g.c..
+```
+
+- **A3:** hex, que dá `Banco!Loja#77`. É encoding: a senha do banco está
+  "protegida" por uma tabela pública (CWE-261).
+- **A4:** URL encoding de `../../../etc/shadow`. De `/var/www/loja`, o
+  primeiro `../` vai a `/var/www`, o segundo a `/var`, o terceiro a `/`. O
+  alvo era `/etc/shadow`, o arquivo de hashes de senha do Linux. O status
+  `404` diz que não funcionou, mas o log prova a tentativa.
+- **A5:** 64 hex, coluna de senha, nenhuma chave: hash (SHA-256). Valor `-`.
+- **A6:** `Salted__` é a assinatura do `openssl enc`: o resto é AES. É
+  **cifra**: sem a chave, não há o que fazer, e o achado passa a ser "onde
+  está a chave?". Valor `-`.
+
+As respostas, e a flag:
+
+```console
+$ printf 'A1:encoding:Verao@2026\nA2:encoding:cliente\nA3:encoding:Banco!Loja#77\nA4:encoding:/etc/shadow\nA5:hash:-\nA6:cifra:-\n' > respostas.txt
+$ bash conferir.sh
+```
+
+O `conferir.sh` só confere o **formato** das linhas e deriva a flag do
+conteúdo do `respostas.txt`: se o seu raciocínio bater com o gabarito, a flag
+é aceita. Uma classe errada (`A5:encoding:-`, por exemplo) também passa no
+formato, mas gera outra flag, que a plataforma recusa.
+</Solution>
+
+<FlagInput task="missao-1-esta-criptografado-confia" />
+
+<Callout variant="tip" title="O placar da Loja Exemplo">
+De seis artefatos "criptografados", quatro eram encoding. A senha do
+suporte, o perfil do usuário e a senha do banco estavam a um comando de
+distância. Só dois estavam de fato protegidos, e mesmo esses abrem perguntas
+novas: o hash do admin aguenta o 3.2? Onde mora a chave do backup? É assim que
+um relatório separa "criptografado" de "codificado".
+</Callout>
+
+### 5.3 Missão 2 — O checksum bate, mas... (desafio)
+
+**Cenário:** você baixou a ferramenta fictícia `varredor` 2.3.0 de um
+espelho, um servidor de terceiros que replica a release. Você suspeita que o
+espelho foi comprometido. O autor publica duas coisas: o `SHA256SUMS`
+(hashes) e o `SHA256SUMS.hmac` (tags HMAC calculadas com uma chave que ele
+passou por telefone e você anotou em `chave-hmac.txt`). **Quais arquivos não
+são autênticos?**
+
+**Etapa 1: a conferência que todo mundo faz** (saída real):
+
+```console
+$ cd ~/treino-3-1/missao-2/release
+$ sha256sum -c SHA256SUMS
+CHANGELOG.txt: OK
+LEIA-ME.md: OK
+config.ini: OK
+instalar.sh: OK
+plugin_extra.py: OK
+varredor.py: OK
+```
+
+Tudo `OK`. Mas pense no que essa linha prova, à luz da seção 2.3: o arquivo
+bate com o **`SHA256SUMS` que está ao lado dele**, no mesmo espelho. Se o
+atacante alterou um arquivo, nada o impede de recalcular o hash e reescrever
+o `SHA256SUMS`. Ele não precisa de segredo nenhum para isso.
+
+**Etapa 2: calcule uma tag HMAC.** O `openssl dgst` calcula HMAC com
+`-hmac <chave>`. O `-r` imprime no formato "valor arquivo" (saída real):
+
+```console
+$ key=$(cat ../chave-hmac.txt)
+$ openssl dgst -sha256 -hmac "$key" config.ini
+HMAC-SHA2-256(config.ini)= 2b65feef8dc7ee0d5aecb56b60d22d1dba3e798bba25213167aa9d2b99c7f8fc
+$ grep config.ini SHA256SUMS.hmac
+e23130c9cf73de54324df942781e744255f0c18e361b0225028513a24c5dc998  config.ini
+```
+
+Não bate. O autor calculou `e231...` sobre o `config.ini` **original**; o
+arquivo que você tem dá `2b65...`. E o atacante não tem como consertar
+isso: para produzir a tag certa do arquivo novo, ele precisaria da chave,
+que nunca passou pelo espelho.
+
+**O desafio:** confira **todos** os arquivos contra o `SHA256SUMS.hmac` e
+encontre os que não são autênticos. São dois tipos de problema.
+
+<Hint title="Dica 1: confira tudo de uma vez">
+Um laço `while read -r tag f` sobre o `SHA256SUMS.hmac` lê cada linha. Para
+cada uma, calcule `openssl dgst -sha256 -hmac "$key" -r "$f"`, pegue só o
+valor (`cut -d' ' -f1`) e compare com `tag`.
+</Hint>
+
+<Hint title="Dica 2: o arquivo que não está na lista">
+O HMAC só confere o que **está** no `SHA256SUMS.hmac`. Compare a lista de
+arquivos da pasta com a lista de nomes desse arquivo. Um arquivo sem tag do
+autor também não é autêntico: ninguém com a chave o aprovou. O `comm`, que
+você usou no 1.5, compara duas listas ordenadas.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+Saídas reais:
+
+```console
+$ while read -r tag f; do calc=$(openssl dgst -sha256 -hmac "$key" -r "$f" | cut -d' ' -f1); [ "$calc" = "$tag" ] && echo "$f: autêntico" || echo "$f: FALHOU"; done < SHA256SUMS.hmac
+CHANGELOG.txt: autêntico
+LEIA-ME.md: autêntico
+config.ini: FALHOU
+instalar.sh: FALHOU
+varredor.py: autêntico
+$ comm -13 <(awk '{print $2}' SHA256SUMS.hmac | sort) <(ls | grep -v '^SHA256SUMS' | sort)
+plugin_extra.py
+```
+
+- **`config.ini`:** o servidor de atualização foi trocado para
+  `http://198.51.100.23/atualizacoes`. Isso dá ao atacante as próximas
+  atualizações.
+- **`instalar.sh`:** ganhou uma linha que "registra a licença" num endereço
+  do atacante.
+- **`plugin_extra.py`:** existe na release e no `SHA256SUMS`, mas o autor
+  nunca o aprovou: não tem tag.
+- **O decoy:** o `CHANGELOG.txt` tem data de modificação estranha (`ls -l`),
+  mas o HMAC confere. Data não é prova; a tag é.
+
+A mesma conferência em Python, com a comparação segura da seção 8:
+
+```python
+import hashlib
+import hmac
+
+key = open("../chave-hmac.txt", "rb").read()
+for line in open("SHA256SUMS.hmac"):
+    tag, name = line.split()
+    calc = hmac.new(key, open(name, "rb").read(), hashlib.sha256).hexdigest()
+    print(name, "autêntico" if hmac.compare_digest(calc, tag) else "FALHOU")
+```
+
+Em ordem alfabética, os três nomes formam a flag:
+`config.ini`, `instalar.sh`, `plugin_extra.py`, separados por hífen dentro
+de `FLAG{ }`.
+</Solution>
+
+<FlagInput task="missao-2-o-checksum-bate" />
+
+<Callout variant="info" title="E no mundo real?">
+Ninguém passa chave de HMAC por telefone para cada usuário: isso não escala.
+Distribuições Linux e projetos sérios **assinam** o arquivo de hashes com uma
+chave privada (o `SHA256SUMS.gpg` ou `.sig` ao lado), e você confere com a
+chave pública do projeto, obtida uma vez por um canal confiável. Foi o que o
+`apt` fez por você no 0.4 e o que o 2.1 ensinou a fazer com a ISO do Kali
+(`gpg --verify` no `SHA256SUMS`). A
+lógica é a mesma da missão: o atacante que controla o espelho não tem o
+segredo do autor.
+</Callout>
+
+### 5.4 Missão 3 — A cifra secreta da CriptoMax (desafio)
+
+**Cenário:** a distribuidora fictícia CriptoMax inventou a própria cifra
+para os pedidos entre filiais e confia no segredo do algoritmo. O código
+vazou, você interceptou três mensagens e o manual do protocolo circula entre
+os funcionários. **A chave você não tem.** Seu objetivo: ler a terceira
+mensagem.
+
+**Etapa 1: leia o algoritmo.** Pelo princípio de Kerckhoffs, você deve
+supor que o atacante conhece o algoritmo, e aqui ele conhece mesmo:
+
+```console
+$ cd ~/treino-3-1/missao-3
+$ cat cifra.py protocolo.txt
+```
+
+A função `encrypt` faz `b ^ key[i % len(key)]`: XOR de cada byte da
+mensagem com um byte da chave, que **se repete** (o `%` faz a chave voltar ao
+começo quando acaba). É um one-time pad que viola duas das três condições da
+seção 2.4: a chave é curta e é reusada em todas as mensagens.
+
+**Etapa 2: o que o manual entrega.** Toda mensagem começa com
+`CRIPTOMAX v1 | PEDIDO `, 22 caracteres conhecidos. É o cenário de
+known-plaintext da seção 2.6. Agora pense na álgebra do XOR:
+
+`cifrado = claro ⊕ chave`, logo `cifrado ⊕ claro = chave`.
+
+<Figure
+  src={xorKpa}
+  alt="Linha do cifrado df 6c 18 f7…, linha do cabeçalho conhecido C R I P… em hex 43 52 49 50…, e o XOR das duas: a chave 9c 3e 51 a7 d2 08 4b f6 e1 73 5a 2c, que se repete a partir do 13º byte."
+  caption="cifrado ⊕ texto claro conhecido = chave. Com 22 bytes de cabeçalho e uma chave de 12, a chave aparece inteira e começa a se repetir, revelando o próprio tamanho."
+/>
+
+**O desafio:** escreva, em Python, o ataque: recupere a chave a partir do
+cabeçalho conhecido e da primeira mensagem, descubra o tamanho dela e
+decifre as três mensagens. A flag é o código de liberação da terceira.
+
+<Hint title="Dica 1: a chave a partir do cabeçalho">
+Leia as mensagens com `bytes.fromhex(...)`. Com `zip(cifrado, cabecalho)`,
+faça o XOR byte a byte e imprima em hex. Olhe o resultado: em que posição ele
+começa a se repetir? Esse é o tamanho da chave.
+</Hint>
+
+<Hint title="Dica 2: decifrar">
+Decifrar é cifrar de novo: XOR é a própria inversa. Você pode até importar a
+função `encrypt` de `cifra.py` e chamá-la com a chave recuperada sobre cada
+texto cifrado.
+</Hint>
+
+<Solution title="Solução da Missão 3">
+Saída real:
+
+```console
+$ python3 - <<'EOF'
+lines = [bytes.fromhex(l) for l in open("interceptadas.txt").read().split()]
+known = b"CRIPTOMAX v1 | PEDIDO "
+keystream = bytes(c ^ p for c, p in zip(lines[0], known))
+print(keystream.hex())
+key = keystream[:12]
+for c in lines:
+    print(bytes(b ^ key[i % len(key)] for i, b in enumerate(c)).decode())
+EOF
+9c3e51a7d2084bf6e1735a2c9c3e51a7d2084bf6e173
+CRIPTOMAX v1 | PEDIDO 0412 | 40 caixas de parafusos para a filial Norte
+CRIPTOMAX v1 | PEDIDO 0413 | cancelar o pedido 0409, cliente desistiu
+CRIPTOMAX v1 | PEDIDO 0414 | liberar o cofre da filial Sul com o codigo …
+```
+
+A primeira linha mostra a chave: `9c3e51a7d2084bf6e1735a2c` e depois de novo
+`9c3e51a7…`, então o período é 12. Com ela, as três mensagens se abrem, e o
+código está no fim da terceira (na sua tela, sem a reticência). A flag é ele
+dentro de `FLAG{ }`.
+
+Repare no que **não** foi preciso: força bruta, adivinhar o algoritmo ou
+qualquer matemática além do XOR. Bastou um cabeçalho fixo, o tipo de texto
+claro conhecido que quase todo protocolo tem.
+</Solution>
+
+<FlagInput task="missao-3-a-cifra-da-criptomax" />
+
+<Callout variant="warning" title="Nem precisava do manual">
+Mesmo sem o `protocolo.txt`, a cifra da CriptoMax cai. Como a mesma chave
+cifra todas as mensagens, `cifrado1 ⊕ cifrado2 = claro1 ⊕ claro2`: a chave
+some. Faça a conta com as duas primeiras mensagens e veja o resultado
+começar com 22 bytes `00`, ou seja, as duas mensagens começam iguais. É o
+mesmo erro que derrubou cifras históricas que reusavam a chave de um
+one-time pad.
+</Callout>
+
+### 5.5 Walkthrough: cifrar do jeito certo (sem flag)
+
+Para fechar, faça o contrário das missões: proteja um arquivo com uma
+ferramenta madura e veja a diferença na prática. Crie um relatório de teste e
+cifre com o GPG (o <GlossaryTerm term="GPG">GPG</GlossaryTerm> que você usou
+no 2.1 para conferir o Kali), em modo simétrico, com uma senha (saídas reais,
+num diretório de teste):
+
+```console
+$ cd ~/treino-3-1 && printf 'Relatório preliminar — Loja Exemplo\nAchado crítico: senha do banco em hex no .env\n' > relatorio.txt
+$ gpg --symmetric relatorio.txt
+$ xxd relatorio.txt.gpg | head -2
+00000000: 8c0d 0409 030a e529 3024 a3a8 95db ffd2  .......)0$......
+00000010: 9301 de97 ab56 4667 bfe9 c501 81f6 9260  .....VFg.......`
+```
+
+O GPG pede a senha duas vezes e grava `relatorio.txt.gpg`: bytes sem nenhum
+padrão, a "cara de ruído" da seção 3.1. Os seus bytes serão outros, porque o
+salt é aleatório a cada execução. Agora peça a versão em texto (o
+`--armor`), boa para colar num e-mail:
+
+```console
+$ gpg --symmetric --armor -o relatorio.txt.asc relatorio.txt
+$ head -3 relatorio.txt.asc
+-----BEGIN PGP MESSAGE-----
+
+jA0ECQMKr9xx2dlFN3X/0pMB9b3RWMoIlPVTQECw6durSHBxB/2lU0qMHAonHcis
+```
+
+Isso é **cifra e encoding juntos**: primeiro o AES escondeu o conteúdo,
+depois o Base64 tornou os bytes imprimíveis. Decodificar o Base64 do
+`.asc` devolve os bytes cifrados, não o relatório. Confira o que o GPG
+usou:
+
+```console
+$ gpg --list-packets relatorio.txt.gpg 2>&1 | head -3
+gpg: AES256.CFB encrypted data
+gpg: encrypted with 1 passphrase
+# off=0 ctb=8c tag=3 hlen=2 plen=13
+```
+
+AES de 256 bits, uma senha transformada em chave com salt, e um código de
+detecção de modificação (`mdc_method` mais abaixo na saída). Teste essa
+última parte. Gere uma cópia sem compressão, altere **um byte** e tente
+decifrar (saída real):
+
+```console
+$ gpg --compress-algo none --symmetric -o semzip.gpg relatorio.txt
+$ cp semzip.gpg adulterado.gpg
+$ printf 'X' | dd of=adulterado.gpg bs=1 seek=60 count=1 conv=notrunc 2>/dev/null
+$ gpg -d adulterado.gpg; echo "exit=$?"
+gpg: AES256.CFB encrypted data
+gpg: encrypted with 1 passphrase
+Rel�tóri�u���p?^i�{��� Loja Exemplo
+Achado crítico: senha do banco em hex no .env
+gpg: WARNING: encrypted message has been manipulated!
+exit=2
+```
+
+O GPG percebeu a alteração e avisou, com código de saída 2. Mas repare num
+detalhe que separa quem lê a saída de quem só olha: ele **imprimiu o texto
+estragado antes do aviso**. Num script, quem não confere o código de saída
+usa o conteúdo adulterado. A seção 6 mostra o que acontece com uma cifra que
+nem esse aviso dá.
+
+Apague tudo ao terminar (`rm relatorio.txt* semzip.gpg adulterado.gpg`).
+
+### 5.6 Limpeza
+
+Nada ficou rodando e nada usou a rede. Para apagar os arquivos de treino:
+
+```console
+$ rm -rf ~/treino-3-1
+```
+
+## 6. Variações e aprofundamento
+
+**Cifrar não é autenticar: a maleabilidade na prática.** O `openssl enc`, o
+comando que gerou o artefato A6, cifra mas **não** autentica. Veja o que um
+atacante faz sem conhecer a senha. Uma ordem de pagamento é cifrada com
+AES-CBC; ele altera um único byte do texto cifrado e o número da conta muda
+de `1234-5` para `9234-5` (saída real):
+
+```console
+$ printf 'pagar R$ 100,00 a conta 1234-5\n' > ordem.txt
+$ openssl enc -aes-256-cbc -pbkdf2 -pass pass:exemplo -in ordem.txt -out ordem.enc
+$ python3 -c "d=bytearray(open('ordem.enc','rb').read()); d[16+8]^=ord('1')^ord('9'); open('ordem2.enc','wb').write(d)"
+$ openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:exemplo -in ordem2.enc | cat -v; echo "exit=${PIPESTATUS[0]}"
+fM-DM-^C.Kg^K#M-5U'4E&M-aM-^Fa conta 9234-5
+exit=0
+```
+
+O primeiro bloco virou lixo, mas a conta foi trocada **exatamente** para o
+que o atacante quis, e o `openssl` saiu com `exit=0`, sem reclamar. O
+"porquê" (o modo CBC e o XOR que ele faz entre blocos) é o assunto do 3.3.
+A lição já vale aqui: é por isso que a tabela da seção 2.5 separa "cifra
+sozinha" de "cifra autenticada".
+
+**Aleatoriedade: o ingrediente invisível.** Chaves, tokens e nonces precisam
+ser **imprevisíveis**, e "parece aleatório" não basta. O módulo `random` do
+Python é determinístico por desenho: a mesma semente dá sempre a mesma
+sequência (saída real, rodando duas vezes):
+
+```console
+$ python3 -c "import random; random.seed(2026); print([random.randint(0,9) for _ in range(6)])"
+[1, 5, 8, 8, 1, 3]
+$ python3 -c "import random; random.seed(2026); print([random.randint(0,9) for _ in range(6)])"
+[1, 5, 8, 8, 1, 3]
+```
+
+A [documentação do Python](https://docs.python.org/3/library/random.html)
+avisa que esses geradores "não devem ser usados para fins de segurança" e
+manda usar o módulo `secrets`, que é um
+<GlossaryTerm term="CSPRNG">CSPRNG</GlossaryTerm> (gerador
+criptograficamente seguro). Na linha de comando, o equivalente é
+`openssl rand -hex 16`. O caso Debian da seção 4 é o que acontece quando
+essa peça falha num sistema inteiro.
+
+**Comparar também pode vazar.** Para conferir uma tag de HMAC, o reflexo é
+escrever `calc == tag`. Só que a comparação comum para no **primeiro** byte
+diferente, então ela demora um pouco mais quando os primeiros bytes batem.
+Medindo esse tempo, milhares de vezes, um atacante descobre a tag certa byte
+a byte: é um <GlossaryTerm term="timing attack">timing attack</GlossaryTerm>.
+A [documentação do `hmac`](https://docs.python.org/3/library/hmac.html)
+recomenda `hmac.compare_digest()`, que leva o mesmo tempo independentemente
+de onde está a diferença.
+
+**Algoritmos envelhecem.** Nada na criptografia é seguro para sempre, porque
+os ataques só melhoram. O DES caiu por força bruta em 1998 (seção 2.4). O
+SHA-1, usado no Git, teve a primeira colisão prática anunciada em 23 de
+fevereiro de 2017, pela equipe do CWI Amsterdam e do Google
+([SHAttered](https://shattered.io/)): dois PDFs diferentes com o mesmo hash,
+ao custo de cerca de 6.500 anos de CPU e 110 de GPU. Por isso sistemas bem
+feitos têm *cripto-agilidade*, a capacidade de trocar de algoritmo sem
+reescrever tudo. O 3.5 mostra a próxima troca grande, a pós-quântica.
+
+**Compressão, cifra e entropia.** Um arquivo comprimido e um cifrado parecem
+igualmente "aleatórios" no `xxd`. A diferença está no cabeçalho: um `.gz`
+começa com `1f 8b`, um `.zip` com `PK`, e uma saída do `openssl enc` com
+`Salted__`. Cifra boa não deixa nem isso. Nos dois casos, a medida de
+"aleatoriedade" (entropia) é alta, e é por isso que ferramentas de análise
+de malware a usam para achar trechos cifrados ou comprimidos dentro de
+binários.
+
+**Encoding em camadas.** Em CTFs e em malware real, é comum empilhar
+encodings: Base64 de hex de Base64, ou Base64 de um texto com XOR de um
+byte. A técnica é sempre a mesma da Missão 1: olhe o alfabeto, decodifique
+uma camada, olhe de novo. Quando o resultado parece ruído **sem** cabeçalho
+reconhecível, você chegou numa cifra, ou num XOR de chave curta, que cai
+como na Missão 3.
+
+## 7. Erros comuns
+
+- **"Vou descriptografar esse hash."** Não existe volta. Sites que
+  "descriptografam MD5" só têm tabelas gigantes de hashes de senhas comuns
+  já calculados; se a senha não está na tabela, não há resultado. O caminho
+  certo é o 3.2.
+- **O hash "não bate" por causa do `echo`.** `echo abc | sha256sum` inclui a
+  quebra de linha; use `echo -n` ou `printf '%s'`. O mesmo vale para Base64
+  (`echo senha | base64` codifica `senha\n`, e a pessoa estranha o `Cg==` no
+  fim).
+- **`base64: invalid input`.** Três causas comuns: (1) é Base64url (`-` e `_`),
+  e o `base64` comum não conhece esse alfabeto; use `basenc --base64url -d`
+  (com o padding completo, senão ele também recusa) ou o Python; (2) falta padding: complete com `=` até o tamanho ser
+  múltiplo de 4; (3) há lixo no meio, como espaços, quebras de linha ou aspas
+  copiadas junto. O comportamento varia com a versão do `base64`: o GNU
+  coreutils costuma imprimir o que decodificou **e** dar o erro; algumas
+  implementações aceitam o padding faltando sem reclamar.
+- **Texto estranho depois de decodificar.** Se aparecem `A`s intercalados
+  ou caracteres nulos, o texto era UTF-16LE (Windows, PowerShell); converta
+  com `iconv -f UTF-16LE`. Se aparecem caracteres como `Ã©`, você leu UTF-8
+  como se fosse outra tabela.
+- **Achar que hash prova a origem.** O `sha256sum -c` que diz `OK` só prova
+  que o arquivo bate com aquela lista. Se a lista veio do mesmo lugar que o
+  arquivo, ela vale o mesmo que ele (Missão 2).
+- **Confundir "em trânsito" com "em repouso".** HTTPS protege o dado
+  **enquanto viaja**; no servidor, ele pode estar em texto claro no banco. A
+  <GlossaryTerm term="encryption at rest">cifra em repouso</GlossaryTerm>
+  (1.4) é outra camada. Um relatório precisa dizer qual das duas falta.
+- **Confiar na saída sem conferir o código de saída.** O GPG imprime o texto
+  adulterado **antes** de avisar (5.5). Em script, sempre teste o `$?` (ou o
+  `set -e` do 0.6) antes de usar o resultado.
+- **"Usa AES, então é seguro."** O caso Zoom mostra que tamanho de chave,
+  modo e **quem guarda a chave** importam tanto quanto o nome do algoritmo.
+
+## 8. Boas práticas e segurança
+
+### 8.1 A ferramenta certa para cada pergunta
+
+A regra de ouro é escolher pela **pergunta** (que propriedade eu preciso?)
+e usar a interface de mais alto nível de uma biblioteca madura:
+
+| Preciso de… | Use | Nunca |
+|---|---|---|
+| Guardar senha de usuário | hash lento com salt: Argon2id, scrypt ou bcrypt (Módulo 3.2) | cifra, hash rápido sem salt, encoding |
+| Esconder dados em disco ou em banco | cifra autenticada: AES-GCM ou ChaCha20-Poly1305, via biblioteca | cifra sem autenticação, XOR caseiro |
+| Provar que dados não mudaram, entre partes que compartilham uma chave | HMAC-SHA-256 | hash puro publicado ao lado do dado |
+| Provar autoria para qualquer pessoa | assinatura digital (Ed25519, por exemplo) | MAC (os dois lados têm a chave) |
+| Proteger dados em trânsito | TLS 1.3 ([RFC 8446](https://www.rfc-editor.org/rfc/rfc8446), de agosto de 2018) | protocolo próprio |
+| Gerar token, chave, nonce ou senha temporária | `secrets` / `os.urandom` / `openssl rand` | `random`, timestamp, contador |
+| Transportar bytes em texto | Base64, hex | dizer que isso "protege" |
+
+### 8.2 Código vulnerável e corrigido
+
+**Senha "protegida" com encoding** (CWE-261) e a correção:
+
+```python
+# VULNERABLE: anyone who reads the file decodes the password
+import base64
+db_password = base64.b64decode(config["db_password_b64"]).decode()
+
+# FIXED: the secret never lives in the code or in the repository;
+# it comes from the environment, filled by a secret manager at deploy time
+import os
+db_password = os.environ["DB_PASSWORD"]
+```
+
+O ponto não é trocar Base64 por "uma cifra": uma senha cifrada com a chave ao
+lado continua exposta. É tirar o segredo do código e do repositório (o
+<GlossaryTerm term="secret scanning">secret scanning</GlossaryTerm> do 0.8
+existe porque isso vaza o tempo todo) e entregá-lo pelo ambiente ou por um
+cofre de segredos.
+
+**Cifra caseira** e a correção com cifra autenticada, usando a biblioteca
+`cryptography` (API conferida na
+[documentação oficial](https://cryptography.io/en/latest/hazmat/primitives/aead/)):
+
+```python
+# VULNERABLE: home-made repeating-key XOR (Mission 3)
+def encrypt(key: bytes, message: bytes) -> bytes:
+    return bytes(b ^ key[i % len(key)] for i, b in enumerate(message))
+
+# FIXED: AES-GCM, authenticated encryption from a maintained library
+import os
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+key = AESGCM.generate_key(bit_length=256)   # store it in a secret manager
+aesgcm = AESGCM(key)
+nonce = os.urandom(12)                       # never reuse with the same key
+ciphertext = aesgcm.encrypt(nonce, b"pagar R$ 100,00 a conta 1234-5", None)
+try:
+    plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+except InvalidTag:
+    raise SystemExit("ciphertext was tampered with; refusing to use it")
+```
+
+Rodando a versão corrigida e alterando um byte do texto cifrado, como na
+seção 6 (saída real):
+
+```console
+$ python3 seguro.py
+46 dfbd8fbdc9c20aa583618d2491a4446d ...
+b'pagar R$ 100,00 a conta 1234-5'
+InvalidTag: o texto cifrado foi alterado; nada foi decifrado
+```
+
+Compare com o `openssl enc` da seção 6: lá, a conta mudou e o comando saiu
+com sucesso. Aqui, a alteração é recusada **antes** de qualquer byte ser
+entregue. Se você não quer lidar nem com nonces, a mesma biblioteca oferece
+o `Fernet`, uma receita pronta de cifra autenticada (`Fernet.generate_key()`,
+`encrypt`, `decrypt`).
+
+**Comparação de tags e aleatoriedade:**
+
+```python
+# VULNERABLE
+if received_tag == expected_tag: ...              # timing attack
+reset_token = str(random.randint(0, 999999))      # predictable
+
+# FIXED
+import hmac, secrets
+if hmac.compare_digest(received_tag, expected_tag): ...
+reset_token = secrets.token_urlsafe(32)
+```
+
+### 8.3 Gestão de chaves: onde a criptografia de verdade falha
+
+Com algoritmo bom e biblioteca boa, sobra a parte difícil: a
+**gestão de chaves**. A cifra mais forte do mundo não protege nada se a
+chave estiver no mesmo lugar que o dado. Regras práticas:
+
+- A chave **nunca** vai para o repositório nem para o código
+  (<GlossaryTerm term="hardcoded credential">hardcoded credential</GlossaryTerm>).
+  Ela vem de um cofre de segredos ou de uma variável de ambiente preenchida
+  na implantação. Use o `gitleaks` (0.8) para garantir.
+- Separe chave e dado: backup cifrado num servidor, chave em outro.
+- Planeje a <GlossaryTerm term="secret rotation">rotação</GlossaryTerm>:
+  trocar a chave tem de ser rotina, não um projeto de emergência como o do
+  Debian.
+- Uma chave, um propósito: a chave do HMAC das releases não é a chave que
+  cifra o banco.
+- Para guardar senhas de usuário, **não há chave**: há hash lento com salt.
+  Se alguém propõe "cifrar as senhas", mostre o caso Adobe.
+
+A referência para aprofundar é o
+[OWASP Cryptographic Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html).
+
+### 8.4 Para quem testa e para quem defende
+
+**No pentest:** trate todo "está criptografado" como hipótese a testar.
+Classifique o artefato (seção 3.1); se for encoding, decodifique e relate
+com o CWE certo; se for cifra, procure a chave em volta; se for hash, leve ao
+3.2. Credenciais recuperadas entram no relatório **tarjadas** e são usadas só
+dentro do escopo autorizado. Recuperar uma senha não autoriza usá-la num
+sistema fora do contrato (1.3 e 1.4).
+
+**Na defesa:** procure Base64 e hex em arquivos de configuração e em
+repositórios com as mesmas regexes que um atacante usaria. Monitore
+`-EncodedCommand` em logs de PowerShell. Exija, no processo de revisão de
+código, que toda cripto venha de uma biblioteca aprovada, e desconfie de
+qualquer função chamada `encrypt` escrita dentro do projeto.
+
+## 9. Exercícios
+
+O quiz abaixo fecha o módulo. Ele é uma tarefa `type: quiz`: a plataforma
+corrige no servidor, e você precisa de 70% para concluí-lo. As flags das três
+missões estão na seção 5.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar (sem flag)
+
+1. Um aplicativo guarda o número do cartão de crédito no banco com SHA-256,
+   "para proteger". Por que essa escolha é ao mesmo tempo insegura e
+   inútil? Pense: o cartão precisa voltar? Quantos números de cartão
+   existem?
+2. Uma API assina as respostas com HMAC usando uma chave que está embutida
+   no aplicativo de celular. Que propriedade da tabela 2.5 isso destrói?
+3. Um colega propõe "melhorar" o XOR da CriptoMax trocando a chave de 12
+   bytes por uma de 1.000 bytes. O ataque da Missão 3 ainda funciona? O que
+   precisaria mudar para virar um one-time pad de verdade, e por que isso é
+   impraticável?
+
+<Solution title="Respostas comentadas">
+1. Insegura porque o espaço de números de cartão válidos é pequeno o
+   bastante para força bruta (prefixos de banco conhecidos, dígito
+   verificador): um hash rápido sem salt cai. Inútil porque a loja
+   provavelmente precisa do número de volta para estornos, e hash não volta.
+   O certo é não guardar o cartão (tokenização pelo processador de
+   pagamento) ou cifrá-lo com cifra autenticada e chave bem guardada.
+2. Autenticidade: a chave está em cada cópia do aplicativo, então qualquer
+   pessoa que o desmonte gera tags válidas. Com assinatura digital, o
+   aplicativo só teria a chave pública, que não assina nada.
+3. Funciona enquanto houver texto claro conhecido suficiente e a chave se
+   repetir: com mensagens maiores que 1.000 bytes, ou com várias mensagens
+   cifradas com a mesma chave (`c1 ⊕ c2` elimina a chave). Para ser um
+   one-time pad, a chave teria de ser aleatória, do tamanho de **cada**
+   mensagem e nunca reusada, o que exige entregar antes, em segredo, tanta
+   chave quanto dado.
+</Solution>
+
+### Exercício prático extra (sem flag)
+
+Gere um "cookie de perfil" como o do A2 com `role` igual a `admin`, em
+Base64url sem padding, usando só o terminal ou o Python. Depois, escreva em
+duas linhas o que a Loja Exemplo deveria fazer para que esse cookie forjado
+fosse recusado. (Dica: a tabela 2.5 tem a resposta, e o 3.4 a aprofunda com
+JWT.)
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- **Encoding** muda a representação, sem chave: Base64, hex e URL encoding
+  protegem nada. **Hash** é de mão única e prova que algo não mudou, mas não
+  quem fez. **Cifra** esconde, e só quem tem a chave volta.
+- Cada ferramenta entrega propriedades específicas: MAC dá autenticidade
+  entre quem compartilha a chave; cifra autenticada esconde **e** detecta
+  alteração; só a assinatura dá não repúdio.
+- **Kerckhoffs:** o atacante conhece o algoritmo; o único segredo é a chave.
+  Segurança por obscuridade pode ser camada, nunca fundação.
+- **Não invente a sua:** algoritmos confiáveis vêm de anos de análise pública
+  (AES: 1997 a 2001). A maioria das falhas reais está no **uso**: modo,
+  aleatoriedade, comparação, gestão de chaves (Adobe, Zoom, Debian).
+- Para o pentester, o primeiro passo é **classificar** o artefato; o segundo
+  é relatar com o nome certo (CWE-261, OWASP A04:2025) e com a credencial
+  tarjada.
+
+### Cola rápida: o que é isto?
+
+| Viu | É |
+|---|---|
+| `...=` / `A–Z a–z 0–9 + /` | Base64 |
+| `eyJ...` | JSON em Base64(url); com dois pontos, JWT |
+| `%2F %27 %20` | URL encoding |
+| 32 / 40 / 64 hex | MD5 / SHA-1 / SHA-256 |
+| `$2b$` `$argon2id$` `$6$` | hash de senha com salt |
+| `U2FsdGVkX1` | `openssl enc` (cifra) |
+| `-----BEGIN PGP MESSAGE-----` | GPG (cifra + Base64) |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [RFC 4648 — The Base16, Base32, and Base64 Data Encodings](https://www.rfc-editor.org/rfc/rfc4648)
+  — curto, e a seção de segurança é a frase deste módulo.
+- [Crypto 101](https://www.crypto101.io/) — livro introdutório gratuito, de
+  lvh, nascido de uma palestra na PyCon 2013; cobre cifras, hashes, MACs e
+  TLS e é uma ótima ponte para os módulos 3.3 e 3.4.
+- [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)
+  — as recomendações práticas da seção 8, com mais detalhes.
+- ["Move Fast and Roll Your Own Crypto"](https://citizenlab.ca/2020/04/move-fast-roll-your-own-crypto-a-quick-look-at-the-confidentiality-of-zoom-meetings/),
+  do Citizen Lab — um relatório curto, um exemplo de como se audita a
+  criptografia de um produto real.

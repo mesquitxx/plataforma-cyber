@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" role="img" aria-labelledby="t d">
+  <title id="t">Princípio de Kerckhoffs e o que o atacante pode saber</title>
+  <desc id="d">Alice cifra uma mensagem e manda o texto cifrado a Bob por um canal inseguro, onde Eve escuta. Pelo princípio de Kerckhoffs, Eve conhece o algoritmo inteiro e vê todo o texto cifrado; o único segredo é a chave, que Alice e Bob guardam. Embaixo, uma escada de modelos de ataque, do mais fraco para o mais forte: só texto cifrado (ciphertext-only), texto claro conhecido (known-plaintext), texto claro escolhido (chosen-plaintext) e texto cifrado escolhido (chosen-ciphertext). Uma cifra moderna precisa resistir a todos; a cifra caseira da Missão 3 cai já no segundo degrau.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .r { fill: #f08a7e; }
+    .fw { stroke: #5cc8d8; stroke-width: 2.5; marker-end: url(#ar); fill: none; }
+    .ey { stroke: #f08a7e; stroke-width: 2; stroke-dasharray: 5 4; fill: none; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="420" fill="#121815"/>
+  <text class="t" x="30" y="32">O inimigo conhece o sistema; só a chave é segredo</text>
+
+  <rect x="20" y="50" width="200" height="90" rx="10" fill="#16201b" stroke="#5ee08a"/>
+  <text class="h g" x="36" y="74">Alice</text>
+  <text class="b" x="36" y="96">texto claro</text>
+  <text class="b" x="36" y="114">+ algoritmo público</text>
+  <text class="b g" x="36" y="132">+ CHAVE secreta</text>
+
+  <path class="fw" d="M226,95 L670,95"/>
+  <text class="b" x="330" y="86">texto cifrado (canal inseguro)</text>
+
+  <rect x="680" y="50" width="200" height="90" rx="10" fill="#16201b" stroke="#5ee08a"/>
+  <text class="h g" x="696" y="74">Bob</text>
+  <text class="b" x="696" y="96">texto cifrado</text>
+  <text class="b" x="696" y="114">+ algoritmo público</text>
+  <text class="b g" x="696" y="132">+ CHAVE secreta</text>
+
+  <path class="ey" d="M450,100 L450,160"/>
+  <rect x="300" y="160" width="300" height="80" rx="10" fill="#16201b" stroke="#f08a7e"/>
+  <text class="h r" x="316" y="184">Eve (atacante)</text>
+  <text class="b" x="316" y="204">vê todo o texto cifrado ✓</text>
+  <text class="b" x="316" y="220">conhece o algoritmo ✓ (Kerckhoffs)</text>
+  <text class="b r" x="316" y="236">não tem a chave ✗</text>
+
+  <rect x="20" y="256" width="860" height="150" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="36" y="280">O que mais Eve pode ter (modelos de ataque, do mais fraco ao mais forte)</text>
+  <rect x="36" y="294" width="196" height="96" rx="6" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="b y" x="46" y="314">1. ciphertext-only</text>
+  <text class="s" x="46" y="334">só os textos cifrados</text>
+  <text class="s" x="46" y="350">ex.: escuta na rede</text>
+  <rect x="246" y="294" width="196" height="96" rx="6" fill="#1d2a23" stroke="#f08a7e"/>
+  <text class="b y" x="256" y="314">2. known-plaintext</text>
+  <text class="s" x="256" y="334">pares claro/cifrado</text>
+  <text class="s" x="256" y="350">ex.: cabeçalho fixo</text>
+  <text class="s r" x="256" y="374">a CriptoMax cai aqui</text>
+  <rect x="456" y="294" width="196" height="96" rx="6" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="b y" x="466" y="314">3. chosen-plaintext</text>
+  <text class="s" x="466" y="334">escolhe o que é cifrado</text>
+  <text class="s" x="466" y="350">ex.: envia dados ao app</text>
+  <rect x="666" y="294" width="196" height="96" rx="6" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="b y" x="676" y="314">4. chosen-ciphertext</text>
+  <text class="s" x="676" y="334">manda cifrados e vê</text>
+  <text class="s" x="676" y="350">como o sistema reage</text>
+  <text class="s g" x="676" y="374">AES-GCM resiste (nonce único)</text>
+</svg>
