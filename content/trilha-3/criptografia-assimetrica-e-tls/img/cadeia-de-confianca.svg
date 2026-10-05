@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
+  <title id="t">A cadeia de confiança dos certificados TLS</title>
+  <desc id="d">Três certificados encadeados, do topo para a base. No topo, o certificado raiz (root CA), autoassinado, cuja chave pública já vem instalada no navegador e no sistema operacional. Ele assina o certificado intermediário (intermediate CA). O intermediário assina o certificado da folha (leaf), emitido para o domínio exemplo.com.br e contendo a chave pública do servidor. Setas rotuladas "assina" descem de cada nível para o seguinte. À direita, o navegador valida a cadeia de baixo para cima: confere a assinatura de cada certificado com a chave pública do nível acima, até chegar a uma raiz em que já confia; verifica também o domínio e a validade. Embaixo, um aviso: se a chave privada de uma CA for roubada, como no caso DigiNotar, o atacante emite certificados falsos que o navegador aceita — por isso a raiz é removida da lista de confiança.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .r { fill: #f08a7e; }
+    .sign { stroke: #5ee08a; stroke-width: 2; marker-end: url(#ar); fill: none; }
+    .chk { stroke: #5cc8d8; stroke-width: 2; stroke-dasharray: 5 4; marker-end: url(#arc); fill: none; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5ee08a"/></marker>
+    <marker id="arc" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="430" fill="#121815"/>
+  <text class="t" x="30" y="32">Cadeia de confiança: por que o cadeado fecha</text>
+
+  <rect x="60" y="54" width="360" height="74" rx="10" fill="#16201b" stroke="#5ee08a"/>
+  <text class="h g" x="76" y="78">Raiz (Root CA) — autoassinada</text>
+  <text class="s" x="76" y="98">chave pública já instalada no navegador/SO</text>
+  <text class="s" x="76" y="116">é a âncora: você confia nela por padrão</text>
+
+  <path class="sign" d="M240,128 L240,166"/>
+  <text class="b g" x="250" y="152">assina</text>
+
+  <rect x="60" y="168" width="360" height="74" rx="10" fill="#16201b" stroke="#3a4b42"/>
+  <text class="h" x="76" y="192">Intermediária (Intermediate CA)</text>
+  <text class="s" x="76" y="212">emitida e assinada pela raiz</text>
+  <text class="s" x="76" y="230">fica online no lugar da raiz (que fica offline)</text>
+
+  <path class="sign" d="M240,242 L240,280"/>
+  <text class="b g" x="250" y="266">assina</text>
+
+  <rect x="60" y="282" width="360" height="86" rx="10" fill="#16201b" stroke="#e8c46a"/>
+  <text class="h y" x="76" y="306">Folha (leaf) — exemplo.com.br</text>
+  <text class="s" x="76" y="326">contém a chave pública do servidor</text>
+  <text class="s" x="76" y="344">válida de/até uma data; só para este domínio</text>
+  <text class="s" x="76" y="360">é a que o servidor manda no handshake</text>
+
+  <path class="chk" d="M430,320 C520,320 520,100 432,95"/>
+  <text class="b c" x="470" y="200">navegador</text>
+  <text class="s c" x="470" y="218">valida de baixo</text>
+  <text class="s c" x="470" y="234">para cima:</text>
+  <text class="s" x="470" y="256">1. assinatura de cada</text>
+  <text class="s" x="470" y="270">   nível pela pública</text>
+  <text class="s" x="470" y="284">   do nível acima</text>
+  <text class="s" x="470" y="304">2. domínio bate?</text>
+  <text class="s" x="470" y="320">3. dentro da validade?</text>
+
+  <rect x="660" y="54" width="210" height="314" rx="10" fill="#16201b" stroke="#f08a7e"/>
+  <text class="h r" x="676" y="78">Quando a âncora cai</text>
+  <text class="s" x="676" y="104">Se a chave privada de</text>
+  <text class="s" x="676" y="120">uma CA é roubada, o</text>
+  <text class="s" x="676" y="136">atacante assina certs</text>
+  <text class="s" x="676" y="152">falsos que o navegador</text>
+  <text class="s" x="676" y="168">aceita sem reclamar.</text>
+  <text class="s r" x="676" y="196">DigiNotar (2011):</text>
+  <text class="s" x="676" y="212">531 certificados</text>
+  <text class="s" x="676" y="228">fraudulentos, incl.</text>
+  <text class="s" x="676" y="244">*.google.com, usados</text>
+  <text class="s" x="676" y="260">contra ~300 mil</text>
+  <text class="s" x="676" y="276">usuários no Irã.</text>
+  <text class="s y" x="676" y="304">Remédio: remover a</text>
+  <text class="s y" x="676" y="320">raiz da lista de</text>
+  <text class="s y" x="676" y="336">confiança — a CA</text>
+  <text class="s y" x="676" y="352">inteira morre.</text>
+</svg>

