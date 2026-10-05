@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" role="img" aria-labelledby="t d">
+  <title id="t">Onde é preciso estar para ver o tráfego</title>
+  <desc id="d">Três cenários lado a lado. No primeiro, o laboratório: o Kali é uma das pontas da conversa com o DVWA na lab_net, então o Wireshark na eth1 vê tudo o que o próprio Kali envia e recebe. No segundo, uma rede com switch: o switch entrega a cada porta só o tráfego dela, então um terceiro computador vê apenas broadcast, como ARP, e não a conversa alheia, a menos que exista uma porta espelho configurada pelo administrador ou que alguém engane o switch e as vítimas, o que já é um ataque ativo. No terceiro, um Wi-Fi aberto: todos dividem o mesmo ar e, sem criptografia, qualquer um ao alcance pode gravar os quadros de todos. A lição: capturar exige posição; sem posição, o atacante precisa criar uma, e a defesa que funciona em todos os casos é a criptografia de ponta a ponta.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .r { fill: #f08a7e; }
+    .ln { stroke: #3a4b42; stroke-width: 2; }
+    .seen { stroke: #5ee08a; stroke-width: 2.5; }
+    .hid { stroke: #f08a7e; stroke-width: 2; stroke-dasharray: 5 4; }
+  </style>
+  <rect width="900" height="420" fill="#121815"/>
+  <text class="t" x="30" y="32">Capturar exige posição: o que cada lugar da rede enxerga</text>
+
+  <!-- panel 1: lab -->
+  <rect x="20" y="52" width="270" height="290" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="36" y="78">1. o laboratório</text>
+  <rect x="36" y="110" width="118" height="56" rx="8" fill="#1d2a23" stroke="#5ee08a"/>
+  <text class="b" x="48" y="134">Kali</text>
+  <text class="s" x="48" y="152">Wireshark eth1</text>
+  <rect x="186" y="110" width="88" height="56" rx="8" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="b" x="198" y="134">DVWA</text>
+  <text class="s" x="198" y="152">porta 80</text>
+  <line class="seen" x1="154" y1="138" x2="186" y2="138"/>
+  <text class="s" x="40" y="196">lab_net, rede interna</text>
+  <text class="b g" x="40" y="226">vê tudo: você é</text>
+  <text class="b g" x="40" y="242">uma das pontas</text>
+  <text class="s" x="40" y="272">é o caso deste módulo:</text>
+  <text class="s" x="40" y="286">capturar a própria</text>
+  <text class="s" x="40" y="300">conversa, sem enganar</text>
+  <text class="s" x="40" y="314">ninguém</text>
+
+  <!-- panel 2: switch -->
+  <rect x="315" y="52" width="270" height="290" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="331" y="78">2. rede com switch</text>
+  <rect x="405" y="100" width="90" height="40" rx="8" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="b" x="425" y="125">switch</text>
+  <rect x="330" y="180" width="70" height="40" rx="8" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="b" x="350" y="205">A</text>
+  <rect x="415" y="180" width="70" height="40" rx="8" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="b" x="435" y="205">B</text>
+  <rect x="500" y="180" width="70" height="40" rx="8" fill="#1d2a23" stroke="#e8c46a"/>
+  <text class="b y" x="512" y="205">você</text>
+  <line class="seen" x1="365" y1="180" x2="430" y2="140"/>
+  <line class="seen" x1="450" y1="180" x2="450" y2="140"/>
+  <line class="hid" x1="535" y1="180" x2="470" y2="140"/>
+  <text class="b r" x="331" y="250">A↔B não chega a você;</text>
+  <text class="b r" x="331" y="266">só broadcast (ARP)</text>
+  <text class="s" x="331" y="292">para ver: porta espelho (o</text>
+  <text class="s" x="331" y="306">admin liga) ou enganar o</text>
+  <text class="s" x="331" y="320">switch (já é ataque ativo)</text>
+
+  <!-- panel 3: open wifi -->
+  <rect x="610" y="52" width="270" height="290" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="626" y="78">3. Wi-Fi aberto</text>
+  <circle cx="745" cy="150" r="58" fill="none" stroke="#3a4b42" stroke-dasharray="4 4"/>
+  <circle cx="745" cy="150" r="30" fill="none" stroke="#3a4b42" stroke-dasharray="4 4"/>
+  <rect x="720" y="135" width="50" height="30" rx="6" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="s" x="730" y="155">AP</text>
+  <rect x="626" y="100" width="40" height="30" rx="6" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="b" x="641" y="120">A</text>
+  <rect x="824" y="100" width="40" height="30" rx="6" fill="#1d2a23" stroke="#3a4b42"/>
+  <text class="b" x="839" y="120">B</text>
+  <rect x="718" y="210" width="54" height="28" rx="6" fill="#1d2a23" stroke="#e8c46a"/>
+  <text class="b y" x="728" y="229">você</text>
+  <text class="b r" x="626" y="260">o ar é de todos: sem</text>
+  <text class="b r" x="626" y="276">cifra, todos veem todos</text>
+  <text class="s" x="626" y="298">o cenário do Firesheep</text>
+  <text class="s" x="626" y="312">e do Street View</text>
+  <text class="s" x="626" y="326">(seção 4)</text>
+
+  <rect x="20" y="356" width="860" height="50" rx="10" fill="#16201b" stroke="#5ee08a"/>
+  <text class="b" x="36" y="378">A defesa que vale nos três: criptografia de ponta a ponta (HTTPS/TLS).</text>
+  <text class="s" x="36" y="396">Com ela, quem captura vê endereços, portas e tamanhos, mas não o conteúdo.</text>
+</svg>

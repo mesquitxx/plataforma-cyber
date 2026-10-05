@@ -1,0 +1,1522 @@
+---
+slug: wireshark
+track: trilha-2
+title: "Wireshark e análise de tráfego"
+prerequisites: [redes-tcp-ip, kali-linux]
+lab: dvwa
+tasks:
+  - slug: missao-1-o-servidor-se-apresenta
+    title: "Missão 1 — O servidor se apresenta"
+    type: flag
+    prompt: "As versões do Apache e do PHP que o DVWA anuncia nos cabeçalhos da resposta HTTP, lidas no Wireshark, no formato FLAG{apache-php} (só os números, por exemplo FLAG{1.2.3-4.5.6})."
+    hint: "Capture na eth1 enquanto carrega a página de login, aplique o filtro http, clique numa resposta do servidor (HTTP/1.1 200 OK) e abra o Hypertext Transfer Protocol na árvore de campos. Os cabeçalhos Server e X-Powered-By trazem as duas versões."
+    flag:
+      hash: "scrypt$16384$8$1$1cb35d887baad83f4e3538ae7825adae5c89891be5468d10a9125438416aea1f"
+      salt: "f82c5a192aa7e7093e00dc245b786b72"
+  - slug: missao-2-a-senha-em-texto-claro
+    title: "Missão 2 — A senha em texto claro"
+    type: flag
+    prompt: "O nome do campo oculto que o formulário de login envia junto com o usuário e a senha, e o tamanho em bytes do corpo do POST de login (o Content-Length), no formato FLAG{campo-tamanho}."
+    hint: "Faça o login com admin e password com a captura ligada, filtre por http.request.method == \"POST\" e abra o HTML Form URL Encoded na árvore de campos. São quatro campos; um deles você não digitou. O tamanho está no cabeçalho Content-Length do mesmo pacote."
+    flag:
+      hash: "scrypt$16384$8$1$dd91e85217389fff99b7e419886317edfcce707435dae84ec93aa00fcebef284"
+      salt: "70003b64c5ab4baf674b08b5eec844f1"
+  - slug: missao-3-o-arquivo-remontado
+    title: "Missão 3 — O arquivo remontado"
+    type: flag
+    prompt: "O nome do maior objeto HTTP da sua captura e os 8 primeiros caracteres do SHA-256 do arquivo que o Wireshark exportou, no formato FLAG{arquivo-hash}."
+    hint: "Abra File → Export Objects → HTTP, ordene pela coluna Size e salve o maior objeto em ~/capturas. No terminal, sha256sum no arquivo salvo dá o hash; use os 8 primeiros caracteres. Se a lista não tiver imagens, o navegador usou o cache: recarregue com Ctrl+Shift+R durante a captura."
+    flag:
+      hash: "scrypt$16384$8$1$93dc8b3781f70f06523dce4af14fa651ab0913e589518851125fce254ef59e74"
+      salt: "47ae5e2b856d9cfebd8daa130699c099"
+  - slug: quiz-final
+    title: "Quiz — Wireshark e análise de tráfego"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual é a diferença entre um filtro de captura e um filtro de exibição?"
+        options:
+          - "Nenhuma: são dois nomes para a mesma coisa"
+          - "O filtro de captura (sintaxe BPF) age antes da gravação, e o que ele recusa nunca entra no arquivo; o filtro de exibição (sintaxe do Wireshark) age depois, só esconde quadros e pode ser trocado à vontade"
+          - "O filtro de exibição é mais rápido porque roda no kernel"
+          - "O filtro de captura só funciona com HTTPS"
+        answer: 1
+        explanation: "O filtro de captura é compilado para BPF e roda no kernel: o quadro recusado nem chega ao dumpcap, e não há como recuperá-lo. O filtro de exibição roda no Wireshark, sobre o que já foi gravado; o arquivo continua inteiro. Por isso, na dúvida, capture largo e filtre na exibição."
+      - question: "Você digita 'host dvwa' na barra verde do Wireshark e ela fica vermelha. Por quê?"
+        options:
+          - "Porque o DVWA está desligado"
+          - "Porque 'host dvwa' é sintaxe de filtro de captura (BPF); a barra verde é de filtro de exibição, que tem outra linguagem. O equivalente é ip.addr == seguido do IP do DVWA"
+          - "Porque falta sudo"
+          - "Porque o Wireshark não aceita nomes de máquinas em nenhum filtro"
+        answer: 1
+        explanation: "Testado no lab: 'host dvwa', 'port 80' e 'tcp.port = 80' foram recusados como filtro de exibição ('Filter expression invalid'). A barra verde fala a língua dos campos dos dissectors: ip.addr, tcp.port == 80, http.request.method. Trocar uma sintaxe pela outra é o erro número um de quem começa."
+      - question: "Por que, no lab, o login do DVWA aparece inteiro na captura, com usuário e senha legíveis?"
+        options:
+          - "Porque o Wireshark quebra a criptografia do DVWA"
+          - "Porque o DVWA usa HTTP sem TLS: o formulário viaja como texto, em application/x-www-form-urlencoded, e qualquer um que veja os quadros lê os campos"
+          - "Porque a senha é fraca"
+          - "Porque o Kali tem a chave privada do DVWA"
+        answer: 1
+        explanation: "Não houve quebra de nada: o corpo do POST era literalmente username=admin&password=password&Login=Login&user_token=... O Firefox até avisou ('This connection is not secure. Logins entered here could be compromised'). Com HTTPS, o mesmo POST viajaria cifrado, e a captura mostraria só registros TLS."
+      - question: "No lab, 'Follow TCP Stream' mostrou o corpo da página de login como lixo ilegível, e 'Follow HTTP Stream' mostrou o HTML. O que explica isso?"
+        options:
+          - "A página estava criptografada"
+          - "A resposta veio comprimida com gzip (Content-Encoding: gzip). O Follow TCP Stream mostra os bytes como passaram; o Follow HTTP Stream usa o dissector HTTP, que descomprime o corpo"
+          - "O Wireshark estava com defeito"
+          - "O TCP embaralha os bytes"
+        answer: 1
+        explanation: "Compressão não é criptografia: qualquer um descomprime gzip, sem chave. No lab, a mesma conversa (tcp.stream eq 4) tinha 2570 bytes no Follow TCP Stream e 3743 no Follow HTTP Stream, a diferença do corpo descomprimido. É também por isso que procurar uma palavra com frame contains pode falhar em respostas comprimidas."
+      - question: "Por que capturar tráfego exige privilégio, e como o Wireshark reduz o risco disso?"
+        options:
+          - "Não exige privilégio nenhum"
+          - "Porque ler todos os quadros de uma interface é um poder perigoso (vê o tráfego de todos os processos). O Wireshark separa os papéis: só o pequeno dumpcap precisa de privilégio para capturar; a interface gráfica, que interpreta dados vindos da rede, pode rodar como usuário comum"
+          - "Porque o Wireshark precisa apagar arquivos do sistema"
+          - "Porque o kernel exige senha a cada pacote"
+        answer: 1
+        explanation: "A wiki oficial chama de muito inseguro rodar o Wireshark inteiro como root, porque qualquer falha num dos milhares de dissectors rodaria com poder de administrador. No lab, medimos o dumpcap rodando com UID 0 e CapEff 0: depois de abrir a interface ele larga as capabilities. O lab usa sudo wireshark por simplicidade, numa caixa isolada; num computador seu, prefira o dumpcap com capabilities e o grupo wireshark."
+      - question: "Num switch, um terceiro computador liga o Wireshark. O que ele consegue ver da conversa entre A e B?"
+        options:
+          - "Tudo, sempre"
+          - "Em geral só o broadcast (como ARP) e o próprio tráfego: o switch entrega a cada porta só o que é dela. Para ver A↔B, é preciso uma porta espelho configurada pelo administrador, um tap, ou enganar o switch e as vítimas, o que já é um ataque ativo"
+          - "Nada, nem o próprio tráfego"
+          - "Só o tráfego HTTPS"
+        answer: 1
+        explanation: "Capturar exige posição. No lab, o Kali é uma das pontas da conversa, então vê tudo. Numa rede com switch, a posição precisa ser criada: port mirroring (legítimo, pelo dono da rede), tap físico, ou ARP spoofing (ataque, visto no 0.2). Num Wi-Fi aberto, a posição é dada de graça: o ar é de todos."
+      - question: "O que o Firesheep, lançado em outubro de 2010, mostrou?"
+        options:
+          - "Que o TLS tinha uma falha grave"
+          - "Que, em redes Wi-Fi abertas, bastava capturar o cookie de sessão que sites populares mandavam sem criptografia para entrar na conta da vítima, sem saber a senha"
+          - "Que o Wireshark podia ser usado para invadir servidores"
+          - "Que senhas fracas eram o maior problema da web"
+        answer: 1
+        explanation: "Eric Butler anunciou a extensão no ToorCon 12 e a descreveu como session hijacking (sidejacking): com o cookie, o atacante faz tudo o que o usuário pode fazer. A solução que ele apontou foi criptografia de ponta a ponta, HTTPS. No lab, o walkthrough 5.6 fez o mesmo com a própria sessão: o PHPSESSID capturado abriu o index.php como admin."
+      - question: "Na captura do lab, o PHPSESSID antes e depois do login era o mesmo. Que falha isso revela, e qual é a correção?"
+        options:
+          - "Nenhuma falha; é o comportamento esperado"
+          - "O servidor não regenera o ID de sessão ao autenticar, o que abre espaço para session fixation. A documentação do PHP manda chamar session_regenerate_id() quando o privilégio sobe, como depois do login, e ligar session.use_strict_mode"
+          - "Que o cookie está criptografado"
+          - "Que o Wireshark não atualizou a tela"
+        answer: 1
+        explanation: "Quem conhece (ou planta) o ID antes do login continua com uma sessão válida depois dele. O manual do PHP é explícito: os IDs de sessão devem ser regenerados quando o privilégio do usuário sobe, por exemplo depois de autenticar. No DVWA, medimos session.use_strict_mode=0, cookie_httponly=0, cookie_secure=0: tudo desligado, de propósito."
+      - question: "Um site passa a usar HTTPS. O que alguém que captura o tráfego ainda consegue saber?"
+        options:
+          - "Tudo, inclusive senhas"
+          - "Nada, nem que houve conexão"
+          - "Os metadados: os IPs e portas das duas pontas, os horários, os tamanhos e o ritmo dos pacotes e, em geral, o nome do site pedido no início do handshake (SNI); o conteúdo, não"
+          - "Só a senha, mas não o usuário"
+        answer: 2
+        explanation: "O TLS protege o conteúdo, não o fato de a conversa existir. IPs, portas, tamanhos e horários continuam visíveis, e o nome do servidor costuma ir no ClientHello (SNI). Para o atacante passivo, isso já é informação; para o defensor, é o que permite monitorar a rede sem quebrar a criptografia."
+      - question: "Você terminou um pentest com dez capturas .pcapng cheias de logins de clientes. O que fazer com elas?"
+        options:
+          - "Publicá-las no relatório inteiras, para provar o achado"
+          - "Tratá-las como evidência sensível: guardar cifradas, com hash e cadeia de custódia, mostrar no relatório só o trecho necessário com as senhas mascaradas, e apagar segundo a política de retenção combinada"
+          - "Apagar todas imediatamente, sem registro"
+          - "Mandar por e-mail para a equipe toda"
+        answer: 1
+        explanation: "Uma captura guarda tudo o que passou, inclusive dados pessoais e credenciais de terceiros (LGPD, 1.4). O pcapng ainda carrega metadados da sua máquina: no lab, o capinfos mostrou o modelo do processador e o sistema do PC que capturou. É evidência (1.5): hash, custódia, mascaramento e retenção."
+glossary:
+  - term: protocol analyzer
+    definition: "Analisador de protocolos: programa que captura o tráfego de rede e o decodifica campo por campo, protocolo por protocolo, mostrando o que cada pacote significa. O Wireshark é o mais usado."
+  - term: Ethereal
+    definition: "Nome original do Wireshark. Gerald Combs começou o projeto no fim de 1997, lançou a versão 0.2.0 em julho de 1998, e o projeto passou a se chamar Wireshark em 2006."
+  - term: dissector
+    definition: "No Wireshark, o módulo que entende um protocolo: recebe bytes, identifica cada campo e entrega o resto ao dissector da camada de cima (Ethernet → IP → TCP → HTTP). Há milhares deles."
+  - term: promiscuous mode
+    definition: "Modo promíscuo: configuração da placa de rede que a faz entregar ao sistema todos os quadros que chegam a ela, e não só os endereçados ao seu MAC. Só adianta se o quadro chegar até a placa."
+  - term: monitor mode
+    definition: "Modo monitor: modo de placas Wi-Fi que captura os quadros de rádio de uma rede sem estar associado a ela. Nem toda placa e nem todo driver suportam."
+  - term: libpcap
+    definition: "Biblioteca de captura de pacotes usada pelo tcpdump, pelo dumpcap e por muitas outras ferramentas no Linux e no macOS. Abre a interface, aplica o filtro de captura e entrega as cópias dos quadros. No Windows, o equivalente é o Npcap."
+  - term: Npcap
+    definition: "Biblioteca de captura de pacotes para Windows, mantida pelo projeto Nmap. Implementa no Windows a mesma interface da libpcap, e é o que permite ao Wireshark e ao Nmap capturar nesse sistema."
+  - term: dumpcap
+    definition: "O programa de captura do Wireshark: o único pedaço que precisa de privilégio. Grava os quadros num arquivo (pcapng por padrão), que a interface gráfica ou o tshark leem."
+  - term: pcap
+    definition: "Formato clássico de arquivo de captura (libpcap): um cabeçalho e, para cada pacote, a hora e os bytes. Simples e lido por quase todas as ferramentas."
+  - term: pcapng
+    definition: "PCAP Next Generation: formato padrão de captura do Wireshark. Além dos pacotes, guarda várias interfaces, comentários e metadados, como o sistema e o processador da máquina que capturou."
+  - term: BPF
+    definition: "Berkeley Packet Filter: linguagem e máquina de filtragem que roda no kernel e decide, quadro a quadro, o que a captura grava. É a sintaxe dos filtros de captura (host, port, net, tcp, and, or, not)."
+  - term: capture filter
+    definition: "Filtro de captura: expressão BPF aplicada antes da gravação. O que ela recusa nunca entra no arquivo. Economiza disco em capturas longas, mas um filtro errado perde dados para sempre."
+  - term: display filter
+    definition: "Filtro de exibição: expressão na linguagem do Wireshark (campos dos dissectors, como http.request.method == \"POST\") aplicada depois da gravação. Só esconde quadros; o arquivo continua inteiro."
+  - term: packet list
+    definition: "Painel de cima do Wireshark: uma linha por quadro, com número, hora, origem, destino, protocolo, tamanho e um resumo (Info)."
+  - term: packet details
+    definition: "Painel do meio (ou da esquerda) do Wireshark: a árvore de campos do quadro selecionado, camada por camada, como os dissectors o entenderam."
+  - term: packet bytes
+    definition: "Painel dos bytes crus do quadro selecionado, em hexadecimal e em texto. Clicar num campo da árvore destaca os bytes dele."
+  - term: TCP stream
+    definition: "Uma conexão TCP inteira, do SYN ao FIN, identificada pelo par de IPs e portas. O Wireshark numera cada uma (tcp.stream eq 4 é a quinta conexão do arquivo, contando do zero)."
+  - term: TCP reassembly
+    definition: "Remontagem TCP: o Wireshark junta os segmentos de uma mesma conexão, na ordem, para reconstruir uma mensagem que chegou em pedaços, como uma imagem dividida em vários segmentos."
+  - term: Follow Stream
+    definition: "Recurso do Wireshark (Follow TCP Stream, Follow HTTP Stream e outros) que mostra uma conversa inteira como texto corrido, com o que o cliente mandou de uma cor e o que o servidor respondeu de outra."
+  - term: segmentation offload
+    definition: "Otimização em que a placa de rede (ou o kernel) corta e junta segmentos TCP no lugar do sistema. Por isso uma captura na própria máquina pode mostrar quadros maiores que o MTU."
+  - term: persistent connection
+    definition: "Conexão persistente (keep-alive): no HTTP/1.1, o cliente reaproveita a mesma conexão TCP para vários pedidos e respostas, em vez de abrir uma nova a cada pedido."
+  - term: cleartext
+    definition: "Texto claro: dado que viaja sem criptografia, legível por qualquer um que o capture. HTTP, FTP e Telnet sem TLS são protocolos de texto claro."
+  - term: form URL encoding
+    definition: "Codificação application/x-www-form-urlencoded: o jeito padrão de um navegador mandar um formulário HTML, como pares campo=valor separados por &, com caracteres especiais escritos como %XX. É formatação, não proteção."
+  - term: HTTP compression
+    definition: "Compressão do corpo de uma resposta HTTP (Content-Encoding: gzip, deflate, br) para economizar banda. Esconde o texto dos olhos de quem lê os bytes crus, mas qualquer um descomprime: não é criptografia."
+  - term: HTTP cookie
+    definition: "Pequeno valor que o servidor manda ao navegador (cabeçalho Set-Cookie) e que o navegador devolve em todo pedido seguinte ao mesmo site (cabeçalho Cookie). É como a web, que não guarda estado, lembra quem é você."
+  - term: session ID
+    definition: "Identificador de sessão: valor aleatório que o servidor cria para reconhecer um usuário logado, guardado num cookie (no PHP, o PHPSESSID). Quem tem o ID é tratado como o dono da sessão."
+  - term: session hijacking
+    definition: "Sequestro de sessão: usar o ID de sessão de outra pessoa para agir como ela, sem saber a senha. Quando o ID é roubado da rede, o ataque também é chamado de sidejacking."
+  - term: session fixation
+    definition: "Fixação de sessão: ataque em que o atacante faz a vítima usar um ID de sessão que ele já conhece; se o servidor não troca o ID no login, a sessão autenticada passa a ser dele também."
+  - term: CSRF
+    definition: "Cross-Site Request Forgery: ataque em que um site malicioso faz o navegador da vítima enviar, sem ela perceber, um pedido a outro site onde ela está logada. Visto em detalhe na Trilha 4."
+  - term: CSRF token
+    definition: "Valor aleatório que o servidor põe num campo oculto do formulário e confere quando o formulário volta, para provar que o envio veio da página dele. No DVWA, é o campo user_token."
+  - term: HttpOnly
+    definition: "Atributo de cookie que proíbe o JavaScript da página de lê-lo. Protege o cookie de sessão contra roubo por injeção de script; não o protege na rede."
+  - term: Secure (cookie)
+    definition: "Atributo de cookie que faz o navegador só enviá-lo por HTTPS. Sem ele, um único pedido HTTP basta para o cookie viajar em texto claro."
+  - term: SameSite
+    definition: "Atributo de cookie (Strict, Lax ou None) que limita o envio do cookie em pedidos vindos de outros sites. É uma defesa contra CSRF."
+  - term: Export Objects
+    definition: "Recurso do Wireshark (File → Export Objects) que remonta arquivos transferidos por protocolos como HTTP, SMB e TFTP e permite salvá-los, como se você os tivesse baixado."
+  - term: Protocol Hierarchy
+    definition: "Estatística do Wireshark (Statistics → Protocol Hierarchy) que mostra a árvore de protocolos da captura, com a porcentagem de pacotes e bytes de cada um. O primeiro raio-X de uma captura desconhecida."
+  - term: Conversations
+    definition: "Estatística do Wireshark (Statistics → Conversations) que lista quem conversou com quem, por camada (Ethernet, IPv4, TCP, UDP), com pacotes, bytes e duração."
+  - term: port mirroring
+    definition: "Espelhamento de porta (SPAN, no vocabulário da Cisco): configuração de um switch gerenciável que copia o tráfego de uma ou mais portas para outra, onde fica o sensor. É como o dono da rede captura legitimamente."
+  - term: network tap
+    definition: "Equipamento físico colocado no meio de um cabo que copia todo o tráfego que passa por ele para uma porta de monitoração, sem interferir na conexão."
+  - term: Router Solicitation
+    definition: "Mensagem ICMPv6 que uma interface manda ao subir, perguntando se há roteador IPv6 na rede. Aparece como ruído de fundo nas capturas, mesmo onde ninguém usa IPv6."
+  - term: Firesheep
+    definition: "Extensão do Firefox lançada por Eric Butler em 24 de outubro de 2010, no ToorCon 12, que capturava cookies de sessão em redes Wi-Fi abertas e permitia entrar nas contas das vítimas com um duplo clique."
+  - term: tcpdump
+    definition: "Capturador de pacotes clássico de linha de comando, baseado na libpcap. Mostra um resumo de cada pacote ou grava pcap; usa a mesma sintaxe BPF nos filtros."
+  - term: tshark
+    definition: "A versão de linha de comando do Wireshark: os mesmos dissectors e os mesmos filtros de exibição (-Y), com saída em texto, JSON ou campos. No Kali, vem num pacote separado."
+  - term: capinfos
+    definition: "Ferramenta do Wireshark que resume um arquivo de captura: formato, quantidade de pacotes, duração, tamanho e metadados como o sistema e o hardware de quem capturou."
+  - term: ring buffer
+    definition: "Captura em anel: o dumpcap grava em vários arquivos de tamanho ou duração fixos e, ao chegar ao último, recomeça pelo primeiro. Permite capturar por dias sem lotar o disco."
+  - term: snaplen
+    definition: "Snapshot length: quantos bytes de cada pacote a captura guarda. Um snaplen pequeno guarda só os cabeçalhos, o que economiza espaço e dados sensíveis."
+  - term: key log file
+    definition: "Arquivo em que um navegador (com a variável SSLKEYLOGFILE) anota os segredos de cada sessão TLS. Com ele, o Wireshark decifra o tráfego daquele navegador, mesmo com TLS 1.3."
+  - term: forward secrecy
+    definition: "Sigilo futuro: propriedade de trocas de chave (como o Diffie-Hellman efêmero) em que roubar a chave privada do servidor depois não permite decifrar conversas antigas gravadas."
+  - term: SNI
+    definition: "Server Name Indication: extensão do TLS em que o cliente diz, no início do handshake, o nome do site que quer. Em geral viaja sem cifra, então quem captura vê o nome do site mesmo com HTTPS."
+  - term: network security monitoring
+    definition: "NSM: prática de coletar e analisar o tráfego da rede (pacotes, fluxos, registros de protocolo) para detectar e investigar intrusões."
+  - term: Zeek
+    definition: "Ferramenta livre de monitoração de rede que transforma o tráfego em registros por protocolo (conexões, HTTP, DNS, TLS), usados em detecção e resposta a incidentes."
+  - term: Dynamic ARP Inspection
+    definition: "Recurso de switches gerenciáveis que confere cada resposta ARP contra uma tabela confiável (em geral, a do DHCP snooping) e descarta as falsas, barrando o ARP spoofing."
+  - term: DHCP snooping
+    definition: "Recurso de switches gerenciáveis que só aceita respostas de DHCP vindas das portas do servidor legítimo e registra qual IP foi dado a qual MAC em cada porta."
+  - term: port security
+    definition: "Recurso de switches gerenciáveis que limita quais e quantos endereços MAC podem usar cada porta, dificultando ligar um equipamento estranho na rede."
+  - term: WPA2
+    definition: "Padrão de segurança de redes Wi-Fi que cifra o tráfego entre o aparelho e o ponto de acesso. Seu sucessor é o WPA3. Numa rede aberta, sem nenhum dos dois, o tráfego vai pelo ar sem cifra."
+  - term: version disclosure
+    definition: "Exposição de versão: o servidor anuncia, em cabeçalhos ou páginas de erro, o software e a versão exata que usa (Server: Apache/2.4.68, X-Powered-By: PHP/8.5.10), poupando o reconhecimento do atacante."
+---
+
+import caminhoDaCaptura from "./img/caminho-da-captura.svg";
+import doisFiltros from "./img/dois-filtros.svg";
+import ondeEscutar from "./img/onde-escutar.svg";
+import captura from "./img/captura.png";
+import listaHttp from "./img/lista-http.png";
+import followTcp from "./img/follow-tcp.png";
+import followHttp from "./img/follow-http.png";
+import exportObjects from "./img/export-objects.png";
+import hierarquia from "./img/hierarquia-de-protocolos.png";
+import firefoxNaoSeguro from "./img/firefox-nao-seguro.png";
+import postEmClaro from "./img/post-em-claro.png";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em 24 de outubro de 2010, o pesquisador Eric Butler subiu ao palco do ToorCon 12 e lançou uma
+extensão para o Firefox chamada **Firesheep**. Ligada num Wi-Fi aberto movimentado, ela mostrava
+numa barra lateral o nome e a foto de quem, ali perto, visitasse um dos sites inseguros que ela
+conhecia. Dois cliques no nome e você entrava na conta da pessoa. Ninguém quebrou senha nenhuma: os sites mandavam
+o "crachá" do usuário logado pela rede sem criptografia, e quem estivesse no mesmo ar podia
+copiá-lo. A ferramenta que permite ver, um por um, os bytes que passam por uma rede, e entender o
+que cada um significa, tem nome: **Wireshark**. Este módulo é sobre ela.
+
+No 0.2 você viu o primeiro <GlossaryTerm term="packet capture">packet capture</GlossaryTerm>
+(captura de pacotes) da plataforma e decodificou um quadro byte a byte, com papel e caneta. Aqui
+você passa a usar o <GlossaryTerm term="Wireshark">Wireshark</GlossaryTerm>, um
+<GlossaryTerm term="protocol analyzer">protocol analyzer</GlossaryTerm> (analisador de
+protocolos): um programa que captura o tráfego e faz esse trabalho de decodificação por você, para
+milhares de protocolos, em milhões de pacotes. Para quem ataca, ele mostra o que vaza: senhas,
+cookies, arquivos e versões de software que trafegam em texto claro. Para quem defende, é a
+ferramenta de diagnóstico e de perícia mais honesta que existe: o pacote mostra o que de fato
+passou pela rede, não o que um programa diz que fez.
+
+<Figure
+  src={caminhoDaCaptura}
+  alt="Um quadro chega à placa eth1; no kernel, o filtro de captura BPF decide se ele é copiado, e o que não passa é descartado para sempre. A libpcap entrega as cópias ao dumpcap, o único processo com privilégio, que grava um arquivo pcapng. O Wireshark lê o arquivo, passa cada quadro pelos dissectors, aplica o filtro de exibição, que só esconde, e mostra três painéis: lista de pacotes, árvore de campos e bytes."
+  caption="O caminho de um pacote até a sua tela. Cada caixa é uma peça que você vai usar neste módulo, e cada uma tem um erro clássico (seção 7)."
+/>
+
+**Ao final, você vai saber:**
+
+- explicar como uma captura funciona por dentro (placa, kernel, BPF, dumpcap, pcapng, dissectors)
+  e por que ela exige privilégio;
+- capturar no Kali, na interface certa, pela interface gráfica e pela linha de comando;
+- usar filtros de captura e de exibição sem confundir as duas linguagens;
+- seguir uma conversa TCP e HTTP inteira, entender por que uma resposta comprimida parece lixo e
+  por que compressão não é proteção;
+- encontrar, numa captura real, as credenciais de um login HTTP, o cookie de sessão e os arquivos
+  transferidos, e remontar esses arquivos byte a byte;
+- explicar onde alguém precisa estar numa rede para ver o tráfego alheio;
+- defender: HTTPS com HSTS, cookies com `Secure`, `HttpOnly` e `SameSite`, sessão regenerada no
+  login, versões escondidas, segmentação, recursos de switch e o cuidado com as próprias capturas.
+
+**Pré-requisitos (relembrando em uma linha cada):**
+
+- **0.2 — Redes TCP/IP na prática:** encapsulamento Ethernet → IP → TCP → HTTP, endereços MAC e
+  IP, portas, o three-way handshake, ARP e o que é um quadro. Este módulo usa tudo isso o tempo todo.
+- **2.1 — Kali Linux e organização do ambiente:** o Kali do lab, as redes `desktop_net` e
+  `lab_net`, o `sudo` sem senha dentro do contêiner e as *capabilities* do Linux.
+
+<Callout variant="ethics" title="Capturar o tráfego dos outros é crime">
+No Brasil, o art. 10 da Lei 9.296/1996 diz que constitui crime "realizar interceptação de
+comunicações telefônicas, de informática ou telemática" sem autorização judicial ou com objetivos
+não autorizados em lei, com pena de reclusão de 2 a 4 anos e multa (redação da Lei 13.869/2019).
+Ligar o Wireshark no Wi-Fi do hotel, do trabalho ou da faculdade "só para ver" é exatamente isso.
+Num pentest, a captura precisa estar na carta de autorização (1.3), com rede, período e o que será
+feito com o que for gravado. Neste módulo, você só captura a **própria** conversa entre o Kali e o
+DVWA, na rede interna do laboratório, que é sua.
+</Callout>
+
+## 2. Teoria aprofundada — o tráfego por dentro
+
+### 2.1 O que é um analisador de protocolos
+
+Uma rede, por baixo, só transporta bytes. Um quadro Ethernet é uma sequência de números de 0 a 255;
+quem decide que os bytes 26 a 29 são o IP de origem e que, mais adiante, `47 45 54` são as letras
+`GET` é a **especificação de cada protocolo**. No 0.2 você fez essa leitura à mão, com um mapa do
+quadro ao lado. Um analisador de protocolos é um programa que traz embutidos os mapas de milhares
+de protocolos e faz a leitura sozinho.
+
+O Wireshark começou assim. Segundo o guia oficial, Gerald Combs começou a escrevê-lo no fim de
+1997, porque precisava de uma ferramenta para achar problemas de rede e queria aprender mais sobre
+redes. O projeto se chamava <GlossaryTerm term="Ethereal">Ethereal</GlossaryTerm>, saiu em julho
+de 1998 como versão 0.2.0 e, em 2006, ganhou o nome atual. O Kali do lab traz o Wireshark 4.6.6.
+
+O coração do Wireshark são os <GlossaryTerm term="dissector">dissectors</GlossaryTerm>: um módulo
+para cada protocolo. O dissector Ethernet lê os 14 primeiros bytes, descobre pelo campo "tipo"
+(`0x0800`) que o resto é IPv4 e entrega o resto ao dissector IP. Este lê o cabeçalho IP, vê que o
+protocolo é 6 (TCP) e passa adiante. O dissector TCP vê a porta 80 e chama o HTTP. É o
+<GlossaryTerm term="encapsulation">encapsulamento</GlossaryTerm> do 0.2, agora automatizado: cada
+camada desembrulha a sua parte e entrega o recheio à de cima.
+
+Uma consequência importante: o Wireshark **interpreta** dados que vêm da rede, inclusive de
+máquinas hostis. Cada dissector é código que lê entrada não confiável, e dissectors já tiveram
+falhas de segurança. Guarde isso: é o motivo da separação de privilégios da seção 2.3.
+
+### 2.2 Como um pacote vira linha na tela
+
+Siga o diagrama da abertura, caixa a caixa.
+
+**A placa de rede.** Cada <GlossaryTerm term="frame">quadro</GlossaryTerm> Ethernet tem um MAC de
+destino. Normalmente, a placa descarta tudo o que não é para ela (nem para broadcast). Para
+capturar, a placa entra em <GlossaryTerm term="promiscuous mode">promiscuous mode</GlossaryTerm>
+(modo promíscuo): passa a entregar ao sistema todo quadro que chegar até ela. Atenção a "que
+chegar até ela": o modo promíscuo não puxa tráfego de lugar nenhum; ele só para de jogar fora o que
+já chegou. Onde é preciso estar para os quadros chegarem é o assunto da seção 2.8. Em Wi-Fi existe
+ainda o <GlossaryTerm term="monitor mode">monitor mode</GlossaryTerm> (modo monitor), que captura
+os quadros de rádio de uma rede sem se associar a ela; ele depende da placa e do driver, e não faz
+parte deste lab.
+
+**O kernel e o BPF.** Copiar todo quadro para um programa custa caro. Por isso o filtro de captura
+roda dentro do kernel, numa pequena máquina virtual chamada
+<GlossaryTerm term="BPF">BPF</GlossaryTerm> (*Berkeley Packet Filter*). Para cada quadro, o BPF
+responde "copia" ou "não copia" antes de qualquer outra coisa. O que ele recusa não é gravado e não
+volta mais.
+
+**A libpcap e o dumpcap.** A <GlossaryTerm term="libpcap">libpcap</GlossaryTerm> é a biblioteca que
+abre a interface, instala o filtro BPF e entrega as cópias. No Windows, o papel é da
+<GlossaryTerm term="Npcap">Npcap</GlossaryTerm>. Quem a usa no Wireshark é o
+<GlossaryTerm term="dumpcap">dumpcap</GlossaryTerm>, um programa pequeno cuja única função é
+capturar e gravar. É ele, e só ele, que precisa de privilégio.
+
+**O arquivo.** O dumpcap grava num arquivo, por padrão no formato
+<GlossaryTerm term="pcapng">pcapng</GlossaryTerm>. O formato clássico,
+<GlossaryTerm term="pcap">pcap</GlossaryTerm>, guarda só a hora e os bytes de cada pacote; o pcapng
+guarda também várias interfaces, comentários e metadados da captura. Mesmo quando você "só olha" a
+captura ao vivo, ela está sendo gravada num arquivo temporário. Captura é gravação.
+
+**O Wireshark.** A interface gráfica lê o arquivo, passa cada quadro pelos dissectors e só então
+aplica o filtro de exibição. Por isso você pode abrir uma captura salva semanas atrás, em outra
+máquina, sem privilégio nenhum, e analisá-la exatamente como se fosse ao vivo.
+
+### 2.3 Por que capturar exige privilégio, e como isso é dividido
+
+Ler todos os quadros de uma interface é um poder enorme: você vê o tráfego de todos os programas
+e de todos os usuários da máquina, e, dependendo da rede, de outras máquinas também. Por isso o
+Linux exige privilégio: root ou as *capabilities* certas (2.1). A
+<GlossaryTerm term="Linux capabilities">capability</GlossaryTerm> `CAP_NET_RAW` dá o acesso aos
+pacotes crus, e a `CAP_NET_ADMIN` permite mexer na interface, como ligar o modo promíscuo.
+
+O risco está em **quem** recebe esse poder. A wiki oficial do Wireshark é direta: rodar o Wireshark
+inteiro como root é "muito inseguro", porque qualquer falha explorável num dissector rodaria com a
+conta de administrador e comprometeria o sistema todo. A solução do projeto é a separação de
+privilégios: a interface gráfica (ou o `tshark`) roda como usuário comum, e só o dumpcap roda com
+privilégio. Nas distribuições, isso costuma virar um grupo `wireshark` cujos membros podem executar
+o dumpcap, ou capabilities dadas ao binário (`setcap cap_net_raw,cap_net_admin+eip` no dumpcap,
+segundo a mesma wiki).
+
+O dumpcap ainda reduz o próprio poder. Durante a escrita deste módulo, o dumpcap do Kali foi
+inspecionado enquanto capturava, a partir do `/proc` do processo:
+
+```console
+$ sudo dumpcap -i eth1 -a duration:4 -w /tmp/t4.pcapng -q &
+$ sudo grep -E "Uid|CapEff" /proc/$(pgrep -x dumpcap)/status
+Uid:	0	0	0	0
+CapEff:	0000000000000000
+```
+
+Ele continua com UID 0 (root), mas com o conjunto de capabilities efetivas **zerado**: depois de
+abrir a interface, largou todos os poderes extras. Isso tem uma consequência prática que você vai
+encontrar no lab (seção 3.2): um root sem capabilities não passa por cima das permissões de
+pastas, então o dumpcap com `sudo` não consegue gravar numa pasta do usuário `kali`.
+
+<Callout variant="info" title="E o lab usa sudo wireshark?">
+Usa, e é uma troca consciente, registrada no `docs/LABORATORIO.md`: o Kali do lab é um contêiner
+sem as capabilities que o dumpcap pediria (`NET_ADMIN`), e dá-las ao contêiner abriria mais do que
+fecharia. Então a interface gráfica roda como root, mas **dentro de uma caixa isolada, sem internet
+e que só conversa com o alvo**. No seu computador de verdade, siga a recomendação do projeto:
+Wireshark como usuário comum, captura pelo dumpcap.
+</Callout>
+
+### 2.4 Os três painéis
+
+A tela do Wireshark tem três partes, sempre as mesmas, para qualquer protocolo.
+
+<Figure
+  src={captura}
+  alt="Janela do Wireshark com o arquivo login-firefox-lab.pcapng aberto. No painel de cima, a lista de pacotes: o quadro 1 é um ICMPv6 Router Solicitation; os quadros 2 a 4 são o handshake TCP entre 192.168.0.2 e 192.168.0.3 na porta 80; o 5 é GET /login.php; o 7 é a resposta HTTP 200 OK. Embaixo à esquerda, a árvore do quadro 1, com Frame, Ethernet II, IPv6 e ICMPv6; à direita, os bytes em hexadecimal."
+  caption="A captura do lab aberta no Wireshark. Em cima, a lista de pacotes; embaixo à esquerda, a árvore de campos do quadro selecionado; à direita, os bytes crus. O quadro 1 é ruído de fundo: uma interface IPv6 perguntando se existe roteador."
+/>
+
+- **<GlossaryTerm term="packet list">Packet list</GlossaryTerm>** (lista de pacotes): uma linha
+  por quadro, com número, hora (em segundos desde o primeiro quadro), origem, destino, protocolo,
+  tamanho e a coluna *Info*, um resumo que o dissector da camada mais alta escreve. É aqui que você
+  aplica filtros e procura.
+- **<GlossaryTerm term="packet details">Packet details</GlossaryTerm>** (detalhes): a árvore do
+  quadro selecionado, uma linha por camada (*Frame*, *Ethernet II*, *Internet Protocol Version 4*,
+  *Transmission Control Protocol*, *Hypertext Transfer Protocol*), cada uma expansível até o campo.
+  Cada campo tem um nome de filtro (`ip.src`, `tcp.dstport`, `http.request.method`): clique com o
+  botão direito num campo e use *Apply as Filter* para criar um filtro sem digitar.
+- **<GlossaryTerm term="packet bytes">Packet bytes</GlossaryTerm>** (bytes): os bytes crus, em
+  hexadecimal à esquerda e em texto à direita, exatamente como no despejo do 0.2. Clicar num campo da
+  árvore destaca os bytes dele, e vice-versa.
+
+A primeira linha da imagem merece atenção. Ela não é do Kali nem do DVWA: é uma
+<GlossaryTerm term="Router Solicitation">Router Solicitation</GlossaryTerm> do
+<GlossaryTerm term="IPv6">IPv6</GlossaryTerm>, mandada por uma interface que acabou de subir para
+perguntar se existe roteador na rede. Toda captura real tem ruído assim: ARP, IPv6, descoberta de
+serviços. Saber reconhecê-lo e filtrá-lo é metade do trabalho.
+
+### 2.5 Dois filtros, duas linguagens
+
+O Wireshark tem dois filtros que fazem coisas diferentes, em momentos diferentes, com **linguagens
+diferentes**. Confundi-los é o erro mais comum de quem começa.
+
+<Figure
+  src={doisFiltros}
+  alt="À esquerda, o filtro de captura, na sintaxe BPF (host dvwa and tcp port 80), age antes da gravação; o quadro recusado nunca entra no arquivo. À direita, o filtro de exibição, na sintaxe do Wireshark (http.request.method == POST), age depois e só esconde quadros. Embaixo, uma tabela: só o DVWA é host dvwa na captura e ip.addr == 192.168.0.3 na exibição; só a porta web é tcp port 80 e tcp.port == 80; só pedidos com cookie não existe em BPF e é http.cookie na exibição."
+  caption="O filtro de captura decide o que é gravado; o de exibição, o que é mostrado. A tabela de baixo mostra a mesma intenção escrita nas duas línguas."
+/>
+
+O **<GlossaryTerm term="capture filter">capture filter</GlossaryTerm>** (filtro de captura) usa a
+sintaxe BPF, a mesma do `tcpdump`: palavras como `host`, `net`, `port`, `tcp`, `udp`, ligadas por
+`and`, `or` e `not`. Exemplo do lab: `host dvwa and tcp port 80`. Ele é rápido e economiza disco,
+mas é irreversível. Use-o quando a rede tem muito tráfego ou a captura vai durar horas, e você tem
+certeza do que não precisa.
+
+O **<GlossaryTerm term="display filter">display filter</GlossaryTerm>** (filtro de exibição) usa a
+linguagem do Wireshark, feita dos nomes de campos dos dissectors: `ip.addr == 192.168.0.3`,
+`tcp.port == 80`, `http.request.method == "POST"`. Ele entende protocolos que o BPF não conhece
+(`http.cookie`, `dns.qry.name`, `tls.handshake`), e você pode trocá-lo quantas vezes quiser, porque
+nada é apagado. A barra fica **verde** quando a expressão é válida e **vermelha** quando não é.
+
+Alguns operadores da linguagem de exibição, conforme o manual oficial (`wireshark-filter`):
+
+| Operador | Significado | Exemplo |
+|---|---|---|
+| `==` ou `eq` | igual | `tcp.port == 80` |
+| `!=` ou `ne` | todos os campos diferentes | `ip.addr != 192.168.0.3` |
+| `>`, `<`, `>=`, `<=` | maior, menor… | `frame.len > 1000` |
+| `contains` | contém a sequência | `http.cookie contains "PHPSESSID"` |
+| `matches` ou `~` | expressão regular (PCRE2) | `http.host matches "dvwa$"` |
+| `&&`/`and`, `\|\|`/`or`, `!`/`not` | lógica | `http && !(arp or icmpv6)` |
+
+O manual ainda recomenda escrever os textos entre aspas duplas: valores sem aspas são aceitos, mas
+estão marcados como obsoletos. Escreva `"POST"`, não `POST`.
+
+### 2.6 Do pacote à conversa: fluxos TCP e remontagem
+
+Um pacote isolado raramente conta a história. O que interessa é a **conversa**: a conexão TCP
+inteira, do <GlossaryTerm term="three-way handshake">three-way handshake</GlossaryTerm> ao FIN. O
+Wireshark identifica cada conexão pelo par de IPs e portas e dá a ela um número, o
+<GlossaryTerm term="TCP stream">TCP stream</GlossaryTerm>, contado a partir de zero. O filtro
+`tcp.stream eq 4` mostra só a quinta conexão do arquivo.
+
+Uma mensagem grande não cabe num pacote só. O TCP a corta em segmentos, e o Wireshark faz a
+<GlossaryTerm term="TCP reassembly">TCP reassembly</GlossaryTerm> (remontagem TCP): junta os
+segmentos na ordem e entrega a mensagem inteira ao dissector HTTP. Na captura do lab, a imagem do
+logotipo do DVWA (9088 bytes) chegou em dois segmentos; o Wireshark marca o primeiro com
+`[TCP PDU reassembled in 70]` e, no quadro 70, mostra `Reassembled TCP (9374 bytes)`: os 9088 bytes
+da imagem mais os cabeçalhos HTTP.
+
+Repare num detalhe estranho do mesmo exemplo: o primeiro segmento tem **7306 bytes**, muito mais
+que o <GlossaryTerm term="MTU">MTU</GlossaryTerm> de 1500 de uma rede Ethernet. Não é erro. Quando
+você captura na própria máquina, vê os dados antes de serem cortados (na saída) ou depois de serem
+juntados (na entrada), por causa do
+<GlossaryTerm term="segmentation offload">segmentation offload</GlossaryTerm>: a placa (ou o kernel)
+faz o corte e a junção no lugar do sistema. Um sensor no meio do cabo veria os pedaços de 1500.
+
+O recurso que transforma tudo isso em leitura humana é o
+<GlossaryTerm term="Follow Stream">Follow Stream</GlossaryTerm>. Em qualquer pacote de uma
+conexão, botão direito → *Follow* → *TCP Stream* (ou *HTTP Stream*): o Wireshark mostra a conversa
+inteira como texto corrido, com o que o cliente mandou em vermelho e o que o servidor respondeu em
+azul, e troca o filtro para `tcp.stream eq N`. O HTTP/1.1 ainda reaproveita conexões, a
+<GlossaryTerm term="persistent connection">persistent connection</GlossaryTerm> (*keep-alive*):
+numa mesma conexão podem passar vários pedidos e respostas, e o Follow Stream mostra todos.
+
+### 2.7 Por que texto claro é texto claro
+
+Um protocolo de <GlossaryTerm term="cleartext">cleartext</GlossaryTerm> (texto claro) é aquele em
+que os dados viajam sem criptografia. O <GlossaryTerm term="HTTP">HTTP</GlossaryTerm> é o exemplo
+principal: os cabeçalhos são texto ASCII e o corpo vai como a aplicação o montou. Quando você envia
+um formulário HTML, o navegador usa a
+<GlossaryTerm term="form URL encoding">form URL encoding</GlossaryTerm>
+(`application/x-www-form-urlencoded`): os campos viram `nome=valor`, separados por `&`, e os
+caracteres especiais viram `%XX`. É formatação, não proteção. O login do DVWA viaja literalmente
+assim:
+
+```text
+username=admin&password=password&Login=Login&user_token=b423d3fd3528e098acdf6d536550ed7a
+```
+
+Muitos servidores comprimem as respostas para economizar banda, a
+<GlossaryTerm term="HTTP compression">HTTP compression</GlossaryTerm>: o cabeçalho
+`Content-Encoding: gzip` avisa que o corpo foi comprimido. Nos bytes crus, isso parece lixo, e um
+iniciante às vezes conclui que "a página está criptografada". Não está. Compressão é um algoritmo
+público, sem chave: o Wireshark descomprime sozinho no dissector HTTP, e você vai ver os dois lados
+disso no lab.
+
+A única coisa que tira o conteúdo do alcance de quem captura é a criptografia. Com
+<GlossaryTerm term="TLS">TLS</GlossaryTerm> (o <GlossaryTerm term="HTTPS">HTTPS</GlossaryTerm>), a
+captura mostra o handshake e depois só registros cifrados (*Application Data*). Ainda sobram os
+metadados: quem fala com quem, quando, quanto, e em geral o nome do site pedido (seção 6.4).
+
+### 2.8 Onde é preciso estar
+
+Capturar exige **posição**. O modo promíscuo só ajuda se os quadros chegarem à sua placa, e isso
+depende de como a rede é montada.
+
+<Figure
+  src={ondeEscutar}
+  alt="Três cenários. No laboratório, o Kali é uma das pontas da conversa com o DVWA e vê tudo. Numa rede com switch, o switch entrega a cada porta só o tráfego dela; um terceiro computador vê só broadcast, a menos que haja porta espelho ou um ataque ativo. Num Wi-Fi aberto, todos dividem o ar e, sem cifra, qualquer um ao alcance grava os quadros de todos. Embaixo: a defesa que vale nos três é criptografia de ponta a ponta."
+  caption="O que cada posição enxerga. Sem posição, quem quer capturar precisa criar uma; com criptografia, mesmo na melhor posição, o conteúdo fica fora de alcance."
+/>
+
+- **Você é uma das pontas.** O tráfego que entra e sai da sua máquina sempre passa pela sua placa.
+  É o caso deste lab, e o caso legítimo mais comum: depurar a própria aplicação.
+- **Rede com <GlossaryTerm term="switch">switch</GlossaryTerm>.** O switch aprende em que porta está
+  cada MAC e entrega cada quadro só na porta certa. Um terceiro computador vê o próprio tráfego e o
+  <GlossaryTerm term="broadcast">broadcast</GlossaryTerm> (como o
+  <GlossaryTerm term="ARP">ARP</GlossaryTerm>), não a conversa alheia. O dono da rede, quando
+  precisa ver, usa <GlossaryTerm term="port mirroring">port mirroring</GlossaryTerm> (o switch copia
+  o tráfego de uma porta para outra) ou um <GlossaryTerm term="network tap">network tap</GlossaryTerm>
+  (um equipamento no meio do cabo). Quem não é dono e quer ver precisa enganar a rede, por exemplo
+  com <GlossaryTerm term="ARP spoofing">ARP spoofing</GlossaryTerm> (0.2), virando um
+  <GlossaryTerm term="man-in-the-middle">man-in-the-middle</GlossaryTerm>. Isso já não é captura
+  passiva: é um ataque ativo, que muda o comportamento da rede e pode ser detectado.
+- **Wi-Fi aberto.** O meio é o ar, compartilhado por todos ao alcance. Sem a criptografia do
+  <GlossaryTerm term="WPA2">WPA2</GlossaryTerm> (ou do WPA3), os quadros de todos podem ser gravados
+  por qualquer um com uma placa em modo monitor. É o cenário dos dois casos da seção 4.
+
+## 3. Como o ataque funciona — a mecânica
+
+Um ataque de <GlossaryTerm term="sniffing">sniffing</GlossaryTerm> (escuta) tem cinco etapas, e as
+quatro últimas são exatamente o que um analista de rede faz no dia a dia:
+
+1. **Posicionar-se** onde o tráfego passa (seção 2.8).
+2. **Capturar** na interface certa, com ou sem filtro de captura.
+3. **Filtrar** o que interessa no meio do ruído.
+4. **Seguir** as conversas para entender o contexto.
+5. **Extrair** o que tem valor: credenciais, cookies, arquivos, versões.
+
+Os exemplos abaixo usam capturas reais feitas no lab durante a escrita deste módulo. Os endereços
+foram trocados por exemplos: o Kali aparece como `192.168.0.2` e o DVWA como `192.168.0.3`, na
+`lab_net` (`eth1`); no seu lab, os números serão outros.
+
+### 3.1 Escolher a interface
+
+Antes de capturar, descubra em qual interface o alvo está. É o mesmo raciocínio do 2.4:
+
+```console
+$ ip -br addr
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+eth0@if130       UP             10.10.0.2/16
+eth1@if131       UP             192.168.0.2/16
+$ getent hosts dvwa
+192.168.0.3     dvwa
+$ sudo dumpcap -D
+1. eth0
+2. eth1
+3. any
+4. lo (Loopback)
+5. bluetooth-monitor
+6. nflog
+7. nfqueue
+8. dbus-system
+9. dbus-session
+```
+
+O DVWA está na faixa da `eth1`: é ali que se captura. A `eth0` é a `desktop_net`, o caminho da sua
+própria tela até o navegador (2.1). Medido no lab, com o desktop aberto e nada mais acontecendo,
+cinco segundos de captura deram **181 pacotes na `eth0`** (121 deles do protocolo VNC, a sua tela)
+e **0 na `eth1`**. Capturar na interface errada é capturar a si mesmo.
+
+### 3.2 Capturar pela linha de comando
+
+A interface gráfica é a forma mais comum, mas o dumpcap sozinho é útil em servidores, em capturas
+longas e em scripts. O primeiro impulso é este, e ele falha:
+
+```console
+$ sudo dumpcap -i eth1 -a duration:1 -w ~/capturas/teste.pcapng -q
+Capturing on 'eth1'
+dumpcap: The file to which the capture would be saved ("/home/kali/capturas/teste.pcapng") could not be opened: Permission denied.
+```
+
+É a consequência da seção 2.3: o dumpcap roda como root, mas larga as capabilities, e um root sem
+`CAP_DAC_OVERRIDE` não grava numa pasta de outro usuário. Em `/tmp`, que é de todos, ele grava,
+mas o arquivo fica de `root` com permissão `600`, e o usuário `kali` não consegue lê-lo. A saída
+limpa é mandar a captura para a saída padrão (`-w -`, "use - para stdout", segundo o manual) e
+deixar o **seu** shell gravar o arquivo:
+
+```console
+$ mkdir -p ~/capturas
+$ sudo dumpcap -i eth1 -f "host dvwa and tcp port 80" -w - -q > ~/capturas/login-curl.pcapng &
+$ curl -s -c jar -b jar http://dvwa/login.php -o login.html
+$ # ... o login com curl, pegando o user_token da página ...
+$ sudo pkill -INT dumpcap
+Capturing on 'eth1'
+File: -
+Packets captured: 30
+Packets received/dropped on interface 'eth1': 30/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)
+```
+
+O `-f` é o filtro de captura em BPF (entre aspas, porque tem espaços), o `-q` deixa a saída quieta
+até o fim, e o `pkill -INT` é o equivalente a um Ctrl+C. O
+<GlossaryTerm term="capinfos">capinfos</GlossaryTerm>, que vem com o Wireshark, resume o arquivo:
+
+```console
+$ capinfos ~/capturas/login-curl.pcapng
+File name:           /home/kali/capturas/login-curl.pcapng
+File type:           Wireshark/... - pcapng
+File encapsulation:  Ethernet
+Number of packets:   30
+File size:           12 kB
+Capture duration:    0.024042839 seconds
+Capture hardware:    (o modelo do processador do seu PC)
+Capture oper-sys:    Linux 6.x (o kernel do seu WSL)
+Capture application: Dumpcap (Wireshark) 4.6.6
+                     Filter string = host dvwa and tcp port 80
+```
+
+Trinta pacotes em 24 milissegundos: três conexões (a página de login, o POST e o `index.php`), com
+handshake, pedido, resposta e encerramento cada uma. Repare nas linhas *Capture hardware* e
+*Capture oper-sys*: o arquivo carrega o modelo do processador e a versão do sistema de quem
+capturou (aqui substituídos por descrições). Uma captura é também um documento sobre você.
+
+### 3.3 Filtrar o que interessa
+
+Na captura do login feita com o Firefox, que você vai repetir no lab, os filtros abaixo foram
+testados um por um. A coluna da direita diz quantos dos 131 quadros cada um mostrou:
+
+| Filtro de exibição | O que mostra | Quadros |
+|---|---|---|
+| `http` | tudo que o dissector HTTP reconheceu | 36 |
+| `http.request` | só os pedidos | 18 |
+| `http.request.method == "POST"` | o envio do formulário | 1 |
+| `http.response.code == 302` | o redirecionamento depois do login | 1 |
+| `tcp.flags.syn == 1 && tcp.flags.ack == 0` | o início de cada conexão | 10 |
+| `http.cookie contains "PHPSESSID"` | pedidos que levam o cookie de sessão | 14 |
+| `http.set_cookie` | respostas que entregam cookies | 3 |
+| `urlencoded-form.key == "password"` | o formulário com campo de senha | 1 |
+| `frame contains "password"` | quadros com essa palavra nos bytes | 1 |
+| `http.content_encoding == "gzip"` | respostas comprimidas | 10 |
+| `!(arp or icmpv6)` | tudo menos o ruído | 128 |
+| `tcp.port == 443` | HTTPS | 0 |
+
+Dois resultados merecem atenção. O `frame contains "password"` achou **um** quadro, o POST. A
+página de login também contém a palavra (o campo se chama `password`), mas ela foi comprimida com
+gzip, e procurar texto nos bytes crus de uma resposta comprimida não acha nada. E o
+`tcp.flags.syn == 1 && tcp.flags.ack == 0` mostrou **dez** conexões para um único login: o Firefox
+abre várias conexões em paralelo para buscar a página, a folha de estilos, as imagens e os scripts.
+
+### 3.4 Seguir a conversa
+
+Escolha um pacote da conexão que carregou a página de login e use *Follow → TCP Stream*:
+
+<Figure
+  src={followTcp}
+  alt="Janela Follow TCP Stream (tcp.stream eq 4). Em vermelho, o pedido GET /login.php do Firefox, com Host dvwa, User-Agent do Firefox 140 e Cookie security=low; PHPSESSID=.... Em azul, a resposta HTTP/1.1 200 OK com Server: Apache, X-Powered-By: PHP, Content-Encoding: gzip, Content-Length: 605, seguida de linhas de caracteres ilegíveis, que são o corpo comprimido. Depois, em vermelho, o próximo pedido na mesma conexão, GET /dvwa/css/login.css. Embaixo: Entire conversation (2570 bytes)."
+  caption="Follow TCP Stream: os bytes como passaram. Pedido em vermelho, resposta em azul; o corpo da resposta é gzip, ilegível. A mesma conexão ainda leva o pedido seguinte (keep-alive)."
+/>
+
+Agora a mesma conexão com *Follow → HTTP Stream*:
+
+<Figure
+  src={followHttp}
+  alt="Janela Follow HTTP Stream da mesma conexão. Os cabeçalhos são os mesmos, mas, depois de Content-Type, aparece o HTML legível da página de login: DOCTYPE html, html lang en-GB, a tag title Login :: Damn Vulnerable Web Application (DVWA) e o link para dvwa/css/login.css. Embaixo: Entire conversation (3743 bytes)."
+  caption="Follow HTTP Stream: o dissector HTTP descomprime o corpo. A mesma conversa passou de 2570 para 3743 bytes, a diferença do HTML descomprimido."
+/>
+
+As duas janelas mostram a mesma conexão (`tcp.stream eq 4`), com 2 pacotes do cliente, 2 do
+servidor e 3 trocas de turno. A diferença está só em quem lê: o Follow TCP mostra os bytes crus; o
+Follow HTTP passa pelo dissector, que entende `Content-Encoding: gzip` e descomprime. Lição dupla:
+para ler, use o Follow do protocolo mais alto que o Wireshark conhece; para provar o que passou na
+rede, o Follow TCP é a evidência crua.
+
+### 3.5 Extrair: credenciais, cookies e arquivos
+
+**Credenciais.** Com `http.request.method == "POST"`, a árvore do quadro tem uma camada
+*HTML Form URL Encoded* com cada campo e valor do formulário. Não há o que decodificar: a senha
+está ali. É o que a Missão 2 pede para você encontrar.
+
+**Cookies de sessão.** A web não guarda estado entre um pedido e outro. Para lembrar que você está
+logado, o servidor manda um <GlossaryTerm term="HTTP cookie">HTTP cookie</GlossaryTerm>, no
+cabeçalho `Set-Cookie`, e o navegador o devolve em todo pedido seguinte, no cabeçalho `Cookie`. O
+cookie que importa é o que guarda o <GlossaryTerm term="session ID">session ID</GlossaryTerm>
+(no PHP, o `PHPSESSID`): para o servidor, quem apresenta o ID **é** o usuário logado. Na captura do
+lab, a resposta do POST de login foi esta:
+
+```http
+HTTP/1.1 302 Found
+Server: Apache/2.4.68 (Debian)
+X-Powered-By: PHP/8.5.10
+Set-Cookie: PHPSESSID=f2dd47834fc0c98c986a9bbffb28f492; expires=Mon, 05 Oct 2026 21:40:46 GMT; Max-Age=86400; path=/
+Location: index.php
+Content-Length: 0
+```
+
+Três coisas saltam aos olhos. Primeiro, o cookie viaja em texto claro, então quem captura copia
+o ID e pode usá-lo: é o <GlossaryTerm term="session hijacking">session hijacking</GlossaryTerm>
+(sequestro de sessão), que o walkthrough 5.6 demonstra com a sua própria sessão. Segundo, o cookie
+não tem os atributos `Secure`, `HttpOnly` nem `SameSite` (seção 8.2). Terceiro, compare com a
+primeira resposta da captura, quando você ainda nem tinha feito login: o `PHPSESSID` era **o
+mesmo**. O servidor não trocou o ID ao autenticar, o que abre espaço para a
+<GlossaryTerm term="session fixation">session fixation</GlossaryTerm>: quem conhecer (ou plantar)
+o ID antes do login herda a sessão autenticada.
+
+**Arquivos.** O <GlossaryTerm term="Export Objects">Export Objects</GlossaryTerm>
+(*File → Export Objects → HTTP*) usa a remontagem TCP para reconstruir cada arquivo que passou por
+HTTP e deixa você salvá-lo. Na captura do login, a lista tinha 18 objetos: as páginas, as folhas de
+estilo, os scripts, as imagens, e até o corpo do próprio POST de login, como um "arquivo" de 88
+bytes do tipo `application/x-www-form-urlencoded`. Repare que os tamanhos são os do conteúdo já
+descomprimido: o `index.php` aparece com 6523 bytes, embora tenha viajado comprimido.
+
+<Figure
+  src={exportObjects}
+  alt="Janela Export HTTP object list com colunas Packet, Hostname, Content Type, Size e Filename. Há 18 linhas, todas do host dvwa: login.php (1342 bytes), login.css (842), login_logo.png (9088), favicon.ico (1406), repetidos para as cargas da página; o objeto do pacote 85 é application/x-www-form-urlencoded com 88 bytes e nome login.php; depois index.php (6523), dvwaPage.js (1240), main.css (5149), logo.png (5044), theme-light-dark.png (1029) e add_event_listeners.js (593)."
+  caption="Export Objects → HTTP: cada arquivo que passou pela rede, pronto para salvar. Até o formulário de login aparece como objeto (pacote 85, 88 bytes)."
+/>
+
+Se um documento confidencial, uma planilha ou um backup passar por HTTP, quem estiver na posição
+certa o reconstrói inteiro, byte a byte. A Missão 3 prova isso com um hash.
+
+### 3.6 Ler as estatísticas
+
+Diante de uma captura desconhecida, comece pelo menu *Statistics*. O
+<GlossaryTerm term="Protocol Hierarchy">Protocol Hierarchy</GlossaryTerm> mostra a árvore de
+protocolos com a porcentagem de pacotes e de bytes de cada um, e
+<GlossaryTerm term="Conversations">Conversations</GlossaryTerm> lista quem conversou com quem, por
+camada.
+
+<Figure
+  src={hierarquia}
+  alt="Janela Protocol Hierarchy Statistics da captura do lab. Frame: 131 pacotes, 100%. Ethernet: 131. IPv6: 1 pacote, com ICMPv6: 1. IPv4: 128 pacotes (97,7%), TCP: 128, HTTP: 36 pacotes (27,5% dos pacotes e 24,8% dos bytes), com subitens Portable Network Graphics (5 pacotes, 50,3% dos bytes), Media Type (2), Line-based text data (10, 30,2% dos bytes) e HTML Form URL Encoded (1 pacote, 88 bytes). Address Resolution Protocol: 2 pacotes."
+  caption="O raio-X da captura do lab: 128 dos 131 quadros são TCP, metade dos bytes HTTP são imagens PNG, e um único quadro é um formulário (HTML Form URL Encoded, 88 bytes). É assim que se acha a agulha antes de procurá-la."
+/>
+
+Num caso real, o Protocol Hierarchy responde em segundos perguntas como "tem algo em texto claro
+aqui?" (procure HTTP, FTP, Telnet, SMTP, POP, IMAP) e "tem protocolo estranho para esta rede?". O
+Conversations aponta quem falou mais, e isso costuma ser o servidor de arquivos, o backup… ou a
+exfiltração.
+
+<Callout variant="ethics" title="A mesma técnica, dois lados">
+Tudo o que esta seção mostrou é o que um administrador faz para depurar a própria rede e o que um
+perito faz numa investigação. A diferença entre isso e um crime é a **autorização** e a **posição
+legítima**: capturar a própria máquina, a rede que você administra ou uma rede listada na carta de
+autorização. Fora disso, é a interceptação do art. 10 da Lei 9.296/1996.
+</Callout>
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os dois casos abaixo são do mesmo ano, 2010, e mostram a captura de tráfego em texto claro de dois
+ângulos: uma ferramenta que pôs o ataque ao alcance de qualquer um, e uma empresa que capturou
+dados de milhões de redes sem querer.
+
+### Firesheep: o sequestro de sessão com um clique (outubro de 2010)
+
+**O que aconteceu.** Em 24 de outubro de 2010, Eric Butler publicou no seu blog que tinha acabado de
+anunciar, no ToorCon 12, o lançamento do <GlossaryTerm term="Firesheep">Firesheep</GlossaryTerm>,
+uma extensão para o Firefox. No mesmo texto, ele explica a técnica: "HTTP session hijacking (às
+vezes chamado de 'sidejacking') é quando um atacante consegue o cookie de um usuário, o que permite
+que ele faça qualquer coisa que o usuário pode fazer num site". A extensão capturava, em redes
+Wi-Fi abertas, os cookies de sessão que sites populares mandavam sem criptografia, e transformava
+cada um numa foto clicável. O próprio Butler cita o Facebook e o Twitter como exemplos de sites que
+não protegiam os usuários, apesar de o problema ser conhecido havia anos.
+
+**Por que funcionava.** Muitos sites da época usavam HTTPS só na página de login: a senha ia
+cifrada, mas, depois do login, o cookie de sessão voltava a viajar em HTTP. É exatamente o que você
+vai ver no DVWA, só que lá até a senha vai em claro. O Firesheep não inventou o ataque; ele o
+empacotou de forma que qualquer pessoa conseguisse fazer, e isso mudou a conversa. A solução que
+Butler apontou no mesmo post foi uma só: "a única correção efetiva para este problema é a
+criptografia de ponta a ponta, conhecida na web como HTTPS ou SSL".
+
+**O que veio depois.** Os grandes sites passaram a oferecer e depois a impor HTTPS em todas as
+páginas. O Twitter, por exemplo, tornou o HTTPS padrão para todos os usuários em fevereiro de 2012;
+a opção existia desde março de 2011, mas precisava ser ligada à mão. A Help Net Security, em 14 de
+fevereiro de 2012, citou o anúncio do Twitter: "Now, HTTPS will be on by default for all users,
+whenever you sign in to Twitter.com".
+
+**A lição.** O cookie de sessão vale tanto quanto a senha. Proteger só a página de login é proteger
+a porta da frente e deixar a chave pendurada do lado de fora. Toda a sessão tem que andar cifrada,
+e o cookie precisa do atributo `Secure` para nunca escapar por HTTP.
+
+- Fonte primária: [Eric Butler, "Firesheep" (24/10/2010)](https://codebutler.com/2010/10/24/firesheep/)
+- Sobre o Twitter: [Help Net Security, "Twitter turns on HTTPS by default" (14/02/2012)](https://www.helpnetsecurity.com/2012/02/14/twitter-turns-on-https-by-default/)
+
+### Google Street View: a captura que ninguém percebeu (maio a outubro de 2010)
+
+**O que aconteceu.** Os carros do Google Street View, que fotografam as ruas, também registravam o
+nome (SSID) e o MAC das redes Wi-Fi por onde passavam, para melhorar os serviços de localização.
+Em 14 de maio de 2010, Alan Eustace, vice-presidente sênior de Engenharia do Google, publicou no
+blog oficial da empresa que a coleta tinha ido além disso: "está claro agora que estivemos, por
+engano, coletando amostras de payload data de redes Wi-Fi abertas (isto é, sem senha)". Payload
+data, explica o próprio texto, é a informação enviada pela rede. A empresa disse que tinham ficado,
+em geral, só fragmentos, porque os carros estavam em movimento, alguém precisava estar usando a
+rede quando o carro passava, e o equipamento trocava de canal cerca de cinco vezes por segundo.
+
+**O que a auditoria e os reguladores encontraram.** Em 9 de junho de 2010, uma atualização no mesmo
+post informou que a consultoria Stroz Friedberg tinha revisado o software, e que o relatório
+confirmava que o Google coletou e armazenou payload data de redes Wi-Fi **sem criptografia**, mas
+**não** de redes com criptografia. Em 22 de outubro de 2010, num novo post, Eustace corrigiu a
+avaliação de maio: depois que reguladores de vários países inspecionaram os dados, ficou claro que,
+embora a maior parte fosse fragmentária, "em alguns casos e-mails e URLs inteiros foram capturados,
+assim como senhas".
+
+**A lição.** Nenhum carro "invadiu" rede nenhuma: as redes abertas transmitiam pelo ar, para
+qualquer receptor, o conteúdo das conversas, e um equipamento de captura gravou o que ouviu. A
+linha que separou o que foi exposto do que ficou protegido foi exatamente uma: a criptografia. As
+redes com criptografia não entregaram nada. É a seção 2.8 em escala mundial, e é a resposta para
+quem diz "ninguém vai se dar ao trabalho de capturar o meu tráfego".
+
+- Fonte primária: [Google, "WiFi data collection: An update" (14/05/2010, atualizado em 09/06/2010)](https://googleblog.blogspot.com/2010/05/wifi-data-collection-update.html)
+- Fonte primária: [Google, "Creating stronger privacy controls inside Google" (22/10/2010)](https://googleblog.blogspot.com/2010/10/creating-stronger-privacy-controls.html)
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá capturado a sua própria conversa com o DVWA, lido nos
+cabeçalhos o software e as versões que o servidor anuncia, encontrado a senha e o campo oculto do
+formulário de login dentro de um pacote, e remontado, a partir da captura, um arquivo idêntico ao
+original, provando com um hash. Cada missão rende uma flag. No fim, você vai usar o cookie
+capturado para entrar como `admin` sem digitar senha, e entender por que o Firesheep funcionava.
+
+O laboratório é o **`dvwa`**: o Kali e o DVWA na rede interna `lab_net`. O DVWA é uma aplicação
+vulnerável de propósito, feita para treinar, e não alcança nada fora do lab.
+
+### 5.1 Subir o lab e preparar a bancada (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Pelo terminal do WSL, a
+   alternativa é `scripts/lab.sh up dvwa`.
+2. Quando o desktop do Kali aparecer, clique nele e abra um terminal, como no 2.1.
+3. Crie a pasta das capturas e confira em que interface está o DVWA:
+
+```console
+$ mkdir -p ~/capturas
+$ ip -br addr
+$ getent hosts dvwa
+```
+
+Anote a interface cuja faixa contém o endereço do DVWA. No lab da plataforma, é a `eth1`.
+
+4. Abra o Wireshark pelo terminal, com `sudo` (no Kali do lab ele não pede senha), em segundo plano
+   para o terminal continuar livre:
+
+```console
+$ sudo wireshark &
+```
+
+<Callout variant="warning" title="Um laboratório por vez">
+Se outro lab estiver no ar, o botão vira **Trocar para este lab**. O DVWA traz junto o banco de
+dados; feche o que não estiver usando no Windows antes de subir.
+</Callout>
+
+### 5.2 A carta de autorização do exercício
+
+<Callout variant="info" title="Autorização — exercício 2.6 (laboratório local)">
+**Ativos autorizados:** a rede `lab_net` do lab `dvwa`, e somente o tráfego entre o seu Kali e o
+DVWA.
+
+**Técnicas autorizadas:** captura passiva de tráfego na interface do Kali ligada à `lab_net`,
+análise da captura, exportação de objetos, e o reuso da **sua própria** sessão no walkthrough 5.6.
+
+**Fora do escopo:** a rede `desktop_net` (a `eth0`, que carrega a sua tela) e qualquer técnica
+ativa contra a rede (ARP spoofing ou outras formas de man-in-the-middle).
+</Callout>
+
+### 5.3 Missão 1 — O servidor se apresenta (guiada)
+
+**Passo 1: comece a capturar.** Na tela inicial do Wireshark, dê dois cliques na interface `eth1`.
+A captura começa e a barra de título passa a dizer *Capturing from eth1*. Se nada estiver
+acontecendo na rede, a lista fica quase vazia: talvez apareça uma *Router Solicitation* ou um ARP,
+o ruído de fundo da seção 2.4.
+
+**Passo 2: gere tráfego.** Abra o Firefox do Kali e vá a `http://dvwa/login.php`. Para garantir que
+o navegador busque tudo do servidor, e não do cache, recarregue com **Ctrl+Shift+R**. Repare na
+barra de endereço:
+
+<Figure
+  src={firefoxNaoSeguro}
+  alt="Firefox no Kali com a página de login do DVWA em http://dvwa/login.php. À esquerda do endereço, um cadeado cortado e o texto Not Secure. O campo Username tem admin; o campo Password, oito pontos, e logo abaixo dele um aviso: This connection is not secure. Logins entered here could be compromised. Learn More."
+  caption="O próprio navegador avisa: a página é HTTP (Not Secure) e, ao focar o campo de senha, ele diz que logins digitados ali podem ser comprometidos. A Missão 2 mostra por quê."
+/>
+
+**Passo 3: filtre.** Volte ao Wireshark. Na barra verde, digite `http` e tecle Enter. A lista mostra
+só o que o dissector HTTP reconheceu: os pedidos (`GET /login.php`, `GET /dvwa/css/login.css`,
+`GET /dvwa/images/login_logo.png`…) e as respostas (`HTTP/1.1 200 OK`).
+
+<Figure
+  src={listaHttp}
+  alt="Lista de pacotes do Wireshark com o filtro http. Linhas alternam pedidos de 192.168.0.2 para 192.168.0.3 e respostas no sentido contrário: GET /login.php, HTTP/1.1 200 OK (text/html), GET /dvwa/css/login.css, 200 OK (text/css), GET /dvwa/images/login_logo.png, 200 OK (PNG), GET /favicon.ico, POST /login.php (application/x-www-form-urlencoded), HTTP/1.1 302 Found, GET /index.php, 200 OK (text/html), e os pedidos de main.css, dvwaPage.js, add_event_listeners.js, logo.png e theme-light-dark.png."
+  caption="O filtro http na captura do lab: a conversa toda do login, um pedido e uma resposta por vez. No fim da lista, você vai encontrar o POST da Missão 2."
+/>
+
+**Passo 4: leia uma resposta.** Clique numa linha `HTTP/1.1 200 OK (text/html)` e, no painel de
+detalhes, expanda *Hypertext Transfer Protocol*. Cada cabeçalho da resposta aparece numa linha. Dois
+deles são o servidor se apresentando, sem que ninguém tenha perguntado: um diz o servidor web e a
+versão; o outro, a linguagem da aplicação e a versão.
+
+**Sua tarefa:** quais são as versões do Apache e do PHP que o DVWA anuncia? A flag é
+`FLAG{apache-php}`, só com os números (por exemplo, `FLAG{1.2.3-4.5.6}`).
+
+<Hint title="Dica">
+Os cabeçalhos são `Server` e `X-Powered-By`. O `Server` vem no formato `Apache/x.y.z (Debian)`:
+use só o `x.y.z`. Se preferir, filtre direto por `http.server` para ver só as respostas que têm o
+cabeçalho.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Na captura do lab, toda resposta do DVWA traz `Server: Apache/2.4.68 (Debian)` e
+`X-Powered-By: PHP/8.5.10`. A flag é `FLAG{2.4.68-8.5.10}`.
+
+A mesma informação aparece no *Follow → HTTP Stream* de qualquer conexão:
+
+<Figure
+  src={followHttp}
+  alt="Follow HTTP Stream da conexão tcp.stream eq 4, com o pedido GET /login.php em vermelho e a resposta em azul, onde se leem Server: Apache/2.4.68 (Debian) e X-Powered-By: PHP/8.5.10, seguidos do HTML da página de login."
+  caption="Os dois cabeçalhos da Missão 1 na resposta à página de login."
+/>
+
+O nmap do 2.4 já tinha mostrado a versão do Apache, conversando ativamente com o serviço. Aqui
+você chegou a ela sem mandar um pacote sequer ao servidor além da navegação normal: o
+reconhecimento passivo de quem só escuta.
+</Solution>
+
+<FlagInput task="missao-1-o-servidor-se-apresenta" />
+
+**Para pensar:** você não pediu ao servidor que dissesse as versões; ele disse a todo mundo, em
+toda resposta. Na seção 8.3 está o que um administrador faz para isso parar.
+
+### 5.4 Missão 2 — A senha em texto claro (desafio)
+
+Com a captura ainda rodando, faça o login no DVWA com o usuário `admin` e a senha `password` (as
+credenciais padrão do DVWA). Se o Firefox oferecer para salvar a senha, recuse (*Not now*). Você
+cai na página *Welcome* do DVWA.
+
+Agora o objetivo é provar o aviso do Firefox: encontre, na captura, o pacote que levou a senha ao
+servidor e leia o que mais foi junto. O formulário tem só dois campos visíveis, mas o navegador
+mandou mais do que você digitou.
+
+**Sua tarefa:** qual é o nome do campo **oculto** que o formulário envia junto com o usuário e a
+senha, e qual é o tamanho em bytes do corpo desse envio (o valor do cabeçalho `Content-Length`)? A
+flag é `FLAG{campo-tamanho}`.
+
+<Hint title="Dica 1 — achar o pacote">
+Um formulário de login é enviado com o método `POST`. A tabela da seção 3.3 tem o filtro exato.
+</Hint>
+
+<Hint title="Dica 2 — ler os campos">
+Na árvore do pacote, a última camada se chama *HTML Form URL Encoded*. Expanda-a: cada *Form item*
+é um campo. Para o tamanho, expanda *Hypertext Transfer Protocol* no mesmo pacote; ou clique na
+camada do formulário e olhe a barra de status, embaixo da janela.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+Com o filtro `http.request.method == "POST"` sobra um único quadro, o `POST /login.php`. A camada
+*HTML Form URL Encoded* tem quatro campos:
+
+<Figure
+  src={postEmClaro}
+  alt="Painel de detalhes do quadro 85 (POST de 192.168.0.2 para 192.168.0.3, porta 80). A camada HTML Form URL Encoded está expandida com quatro Form items: username = admin, password = password, Login = Login e user_token = b423d3fd3528e098acdf6d536550ed7a. À direita, os bytes do formulário destacados em azul, com o texto username=admin&password=password&Login=Login&user_token=.... Na barra de status: HTML Form URL Encoded (urlencoded-form), 88 byte(s)."
+  caption="A senha do admin num pacote da captura, sem criptografia nenhuma. A barra de status confirma o tamanho do formulário: 88 bytes."
+/>
+
+- `username` e `password`: o que você digitou;
+- `Login`: o botão de enviar, que também é um campo do formulário;
+- `user_token`: o campo oculto. É um <GlossaryTerm term="CSRF token">CSRF token</GlossaryTerm>, um
+  valor aleatório que o servidor põe na página de login e confere no envio, para provar que o
+  formulário veio da página dele (uma defesa contra
+  <GlossaryTerm term="CSRF">CSRF</GlossaryTerm>, assunto da Trilha 4).
+
+O cabeçalho `Content-Length: 88` dá o tamanho do corpo: `username=admin` (14) + `&password=password`
+(18) + `&Login=Login` (12) + `&user_token=` (12) + 32 caracteres hexadecimais do token = 88. O token
+muda a cada carga da página, mas sempre tem 32 caracteres, por isso o tamanho é o mesmo no seu lab.
+A flag é `FLAG{user_token-88}`.
+
+Repare: o token anti-CSRF não protege nada contra quem captura. Ele viaja ao lado da senha, em
+claro, e o atacante passivo o lê junto. Cada defesa protege contra uma ameaça específica.
+</Solution>
+
+<FlagInput task="missao-2-a-senha-em-texto-claro" />
+
+### 5.5 Missão 3 — O arquivo remontado (desafio)
+
+A Missão 2 mostrou que dados digitados vazam. Esta mostra que **arquivos** vazam também, e por
+inteiro. Pare a captura (o quadrado vermelho na barra de ferramentas, ou Ctrl+E) e salve-a em
+`~/capturas` (*File → Save As*, com um nome como `login-firefox.pcapng`). Como o Wireshark roda com
+`sudo`, o arquivo salvo ficará do `root`, mas com permissão de leitura para todos.
+
+O seu objetivo: reconstruir, a partir da captura, o **maior arquivo** que passou pela rede durante
+o login, salvá-lo e provar que ele é idêntico ao original. A prova é um hash: se um único bit
+estivesse diferente, o <GlossaryTerm term="SHA-256">SHA-256</GlossaryTerm> seria outro.
+
+**Sua tarefa:** qual é o nome do maior objeto HTTP da sua captura, e quais são os 8 primeiros
+caracteres do SHA-256 do arquivo que o Wireshark exportou? A flag é `FLAG{arquivo-hash}`, com o nome
+do arquivo exatamente como aparece na lista (com a extensão) e o hash em minúsculas.
+
+<Hint title="Dica 1 — onde está o recurso">
+Releia a seção 3.5: o recurso está no menu *File* e se chama *Export Objects*. Escolha o protocolo
+HTTP. Clique no título da coluna *Size* para ordenar.
+</Hint>
+
+<Hint title="Dica 2 — a lista não tem imagens">
+Se a lista só tiver páginas, o Firefox usou o cache e o servidor nem mandou as imagens (ele
+responde `304 Not Modified`, sem corpo). Comece uma captura nova, recarregue a página de login com
+Ctrl+Shift+R e tente de novo. Para o hash, o comando é o mesmo do 1.5: `sha256sum`.
+</Hint>
+
+<Solution title="Solução da Missão 3">
+Em *File → Export Objects → HTTP*, ordenando por *Size*, o maior objeto é `login_logo.png`, com
+9088 bytes (o logotipo da tela de login; ele aparece uma vez para cada carga da página, sempre com o
+mesmo tamanho). Selecione uma das linhas, clique em **Save** e grave em
+`/home/kali/capturas/login_logo.png`. No terminal:
+
+```console
+$ cd ~/capturas
+$ ls -l login_logo.png
+-rw-r--r-- 1 root root 9088 Oct  4 21:45 login_logo.png
+$ sha256sum login_logo.png
+262b6ebc6a6721a40bbe32741463a0750af09febc12468ecc6b7f4be976f4842  login_logo.png
+$ curl -s http://dvwa/dvwa/images/login_logo.png | sha256sum
+262b6ebc6a6721a40bbe32741463a0750af09febc12468ecc6b7f4be976f4842  -
+```
+
+O arquivo remontado da captura e o arquivo baixado direto do servidor têm o mesmo hash: a
+reconstrução é perfeita, bit a bit, apesar de a imagem ter chegado em dois segmentos TCP (seção
+2.6). A flag é `FLAG{login_logo.png-262b6ebc}`.
+
+O mesmo vale para qualquer coisa que passe por HTTP: um PDF de proposta, uma planilha, um backup.
+Quem estiver na posição certa não precisa invadir o servidor para ter o arquivo.
+</Solution>
+
+<FlagInput task="missao-3-o-arquivo-remontado" />
+
+### 5.6 Walkthrough — a sessão que viajou em claro
+
+Este walkthrough não tem flag; ele fecha o círculo com o Firesheep. Você vai usar o cookie de
+sessão que está na **sua** captura para entrar no DVWA como `admin`, a partir de outro cliente, sem
+digitar senha. É a sua própria sessão, no seu laboratório: está dentro da carta (5.2).
+
+**Passo 1: o cookie.** Na captura, filtre por `http.cookie contains "PHPSESSID"`, escolha qualquer
+pedido feito **depois** do login (por exemplo, `GET /index.php`) e, em *Hypertext Transfer
+Protocol*, copie o valor do cabeçalho `Cookie` (botão direito → *Copy* → *Value*).
+
+**Passo 2: sem o cookie.** No terminal, peça a página inicial do DVWA sem cookie nenhum. O `curl`
+é um cliente separado do Firefox, sem nenhuma sessão:
+
+```console
+$ curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}\n" http://dvwa/index.php
+302 -> http://dvwa/login.php
+```
+
+Sem sessão, o DVWA redireciona para o login, como esperado.
+
+**Passo 3: com o cookie capturado.** Agora, o mesmo pedido levando o cookie que você copiou (troque
+pelo seu valor):
+
+```console
+$ curl -s -b "PHPSESSID=f2dd47834fc0c98c986a9bbffb28f492; security=low" http://dvwa/index.php > pagina.html
+$ grep -o "<title>[^<]*" pagina.html
+<title>Welcome :: Damn Vulnerable Web Application (DVWA)
+$ grep -o "Username:.\{0,20\}" pagina.html
+Username:</em> admin<br />
+```
+
+O servidor respondeu com a página *Welcome* e o rodapé diz `Username: admin`. O `curl` nunca soube
+a senha: bastou o ID de sessão que viajou em texto claro. Foi exatamente isso que o Firesheep
+automatizou em 2010, com uma foto clicável no lugar do `curl`.
+
+**Passo 4: feche a sessão.** No Firefox, clique em **Logout**. Rode o passo 3 de novo, agora
+olhando só o código de resposta:
+
+```console
+$ curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}\n" -b "PHPSESSID=f2dd47834fc0c98c986a9bbffb28f492; security=low" http://dvwa/index.php
+302 -> http://dvwa/login.php
+```
+
+O mesmo cookie que abria a página como `admin` agora volta para o login: o logout destruiu a
+sessão no servidor. Sair da conta invalida o ID roubado, desde que o servidor apague a sessão de
+verdade.
+
+### 5.7 Desligar o lab
+
+Feche o Wireshark e o Firefox. Os arquivos em `~/capturas` ficam no `/home/kali`, que persiste
+entre sessões (2.1). Trate-os como evidência: eles contêm uma senha e uma sessão (seção 8.6). No
+painel **Laboratório**, clique em **Parar** (ou, no terminal do WSL, `scripts/lab.sh down dvwa`).
+
+## 6. Variações e aprofundamento
+
+### 6.1 tcpdump e tshark: o Wireshark sem janela
+
+Em servidores e em scripts, a captura costuma ser feita pela linha de comando. O
+<GlossaryTerm term="tcpdump">tcpdump</GlossaryTerm>, o capturador clássico de terminal, usa a
+mesma libpcap e a mesma sintaxe BPF; o <GlossaryTerm term="tshark">tshark</GlossaryTerm> é o Wireshark de
+terminal, com os mesmos dissectors e os mesmos filtros de exibição (opção `-Y`). Um fluxo comum de
+trabalho é capturar no servidor com o tcpdump ou o dumpcap, copiar o arquivo e analisá-lo no
+Wireshark da sua máquina.
+
+O Kali do lab traz o Wireshark com o dumpcap e as ferramentas de arquivo (`capinfos`, `editcap`,
+`mergecap`, `reordercap`, `text2pcap`), mas **não** o `tcpdump` nem o `tshark`, que no Kali vêm em
+pacotes separados. Como o Kali do lab não tem internet, `apt install` lá dentro não funciona; o
+caminho seria acrescentá-los à imagem (`scripts/lab.sh rebuild`, pelo terminal). Para este módulo,
+o dumpcap e a interface gráfica bastam.
+
+### 6.2 Capturas longas: ring buffer, snaplen e autostop
+
+Para monitorar por horas ou dias sem lotar o disco, o dumpcap faz captura em anel, o
+<GlossaryTerm term="ring buffer">ring buffer</GlossaryTerm>. Segundo o manual, `-b filesize:N` troca
+de arquivo a cada N kB, `-b duration:N` a cada N segundos, e `-b files:N` recomeça pelo primeiro
+arquivo depois de N arquivos:
+
+```console
+$ dumpcap -i eth1 -b filesize:10240 -b files:10 -w /var/capturas/sensor.pcapng
+```
+
+Com `-b`, o dumpcap precisa de um nome de arquivo de verdade, para numerar os arquivos do anel. O
+truque da saída padrão (3.2) não serve, como o lab confirmou:
+
+```console
+$ sudo dumpcap -i eth1 -b files:2 -b filesize:10 -a duration:1 -w - -q > /dev/null
+Capturing on 'eth1'
+dumpcap: Ring buffer requested, but capture is being written to standard output or to a named pipe.
+```
+
+Numa máquina sua, com o dumpcap configurado como manda a seção 2.3 (sem `sudo`, gravando numa
+pasta em que o seu usuário pode escrever), isso não é problema. O `-a` para a captura
+sozinho: `-a duration:60`, `-a filesize:N`, `-a packets:N`. E o `-s` define o
+<GlossaryTerm term="snaplen">snaplen</GlossaryTerm>: quantos bytes de cada pacote guardar. Com
+`-s 128`, por exemplo, você guarda os cabeçalhos e quase nada do conteúdo, o que economiza disco e,
+mais importante, evita guardar dados pessoais que você não precisa.
+
+### 6.3 Outros protocolos que falam em claro
+
+O HTTP do lab é só o exemplo mais comum. A mesma técnica lê:
+
+- **FTP:** os comandos `USER` e `PASS` vão em texto, e os arquivos também (há *Export Objects* para
+  o canal de dados do FTP, o *FTP-DATA*).
+- **<GlossaryTerm term="Telnet">Telnet</GlossaryTerm>:** cada tecla digitada, inclusive a senha,
+  vai num pacote. O *Follow TCP Stream* mostra a sessão inteira.
+- **SMTP, POP3 e IMAP sem TLS:** os e-mails inteiros e, dependendo do método, as credenciais
+  (às vezes só em Base64, que é codificação, não cifra: a Trilha 3 trata disso).
+- **HTTP Basic Authentication:** o cabeçalho `Authorization: Basic ...` é usuário e senha em Base64.
+- **<GlossaryTerm term="DNS">DNS</GlossaryTerm> tradicional:** sem senha, mas com a lista de todos os
+  sites que uma máquina procura, em ordem e com horário.
+
+Uma das primeiras perguntas num pentest interno é: "o que ainda trafega em texto claro nesta
+rede?". O *Protocol Hierarchy* responde em segundos.
+
+### 6.4 O que o TLS ainda mostra, e como decifrar o seu próprio
+
+Mesmo com HTTPS, quem captura vê os metadados: os IPs e as portas das duas pontas, os horários, os
+tamanhos e o ritmo dos pacotes. E, em geral, vê o nome do site: o cliente o anuncia no início do
+handshake, na extensão <GlossaryTerm term="SNI">SNI</GlossaryTerm> (*Server Name Indication*),
+antes de a criptografia começar. Para um analista de defesa, isso basta para muita coisa: perceber
+uma máquina conversando com um destino estranho, num horário estranho, com um volume estranho.
+
+E quando você precisa ver o conteúdo do **seu** tráfego TLS, para depurar a sua aplicação? A wiki
+oficial do Wireshark descreve o mecanismo universal: iniciar o navegador com a variável
+`SSLKEYLOGFILE` apontando para um arquivo, onde ele anota os segredos de cada sessão, o
+<GlossaryTerm term="key log file">key log file</GlossaryTerm>:
+
+```console
+$ export SSLKEYLOGFILE=$HOME/Desktop/keylogfile.txt
+$ firefox
+```
+
+Depois, em *Edit → Preferences → Protocols → TLS*, informe o arquivo em
+*(Pre)-Master-Secret log filename*. O Wireshark passa a mostrar o HTTP dentro do TLS. A wiki
+ressalta que esse mecanismo funciona mesmo com troca de chaves Diffie-Hellman, ao contrário do
+método antigo de fornecer a chave privada RSA do servidor, que não funciona com (EC)DHE nem com
+TLS 1.3. Esse é o efeito do <GlossaryTerm term="forward secrecy">forward secrecy</GlossaryTerm>:
+quem grava uma conversa cifrada hoje e rouba a chave do servidor amanhã continua sem conseguir lê-la.
+
+Note o recado de segurança embutido: um key log file é a chave de todas as suas sessões HTTPS
+daquele navegador. Trate-o como uma senha e apague-o quando terminar.
+
+### 6.5 A captura como documento: metadados e evidência
+
+A seção 3.2 mostrou que o pcapng guarda o processador e o sistema de quem capturou. Antes de
+mandar uma captura para alguém (um fórum, um fornecedor, um relatório), confira o que ela contém
+com o `capinfos` e, no Wireshark, em *Statistics → Capture File Properties*. E lembre que a
+captura em si pode conter senhas, cookies e dados pessoais de terceiros: no 1.4 você viu o que a
+LGPD diz sobre isso, e no 1.5, como tratar evidência (hash, cadeia de custódia, retenção).
+
+### 6.6 O outro lado: a captura na defesa
+
+A mesma tecnologia é a base da <GlossaryTerm term="network security monitoring">network security
+monitoring</GlossaryTerm> (NSM, monitoração de segurança de rede). Sensores ligados a portas espelho
+ou taps gravam o tráfego (às vezes integralmente, às vezes só os cabeçalhos) e alimentam ferramentas
+como o <GlossaryTerm term="Suricata">Suricata</GlossaryTerm> (o IDS do 2.4), que alerta quando um
+pacote casa com uma regra, e o <GlossaryTerm term="Zeek">Zeek</GlossaryTerm>, que transforma o
+tráfego em registros por protocolo: cada conexão, cada pedido HTTP, cada consulta DNS, cada
+certificado TLS. Numa resposta a incidente, o pcap guardado é a prova do que saiu da rede, e o
+Wireshark é a lupa.
+
+## 7. Erros comuns
+
+- **Nenhuma interface aparece na tela inicial, ou a captura falha por permissão.** Faltou privilégio. No
+  lab, abra com `sudo wireshark`; num computador seu, configure o dumpcap e o grupo `wireshark`
+  (seção 2.3).
+- **A captura está cheia de VNC e nada do DVWA.** Você está na `eth0`, que leva a sua própria tela.
+  Medido no lab: 181 pacotes em 5 segundos na `eth0` contra 0 na `eth1`, sem nenhuma navegação.
+  Capture na interface cuja faixa contém o alvo (seção 3.1).
+- **A barra de filtro ficou vermelha.** Você escreveu um filtro de captura na barra de exibição, ou o
+  contrário. No lab, `host dvwa`, `port 80` e `tcp.port = 80` (com um `=` só) foram recusados como
+  filtro de exibição. Use `ip.addr == ...`, `tcp.port == 80` (seção 2.5).
+- **`ip.addr != X` não fez o que eu queria.** Com `!=`, o Wireshark exige que **todos** os campos
+  `ip.addr` do quadro sejam diferentes de X. Na captura do lab, `ip.addr != 192.168.0.3` mostrou 0
+  quadros (todo quadro IP tinha o DVWA numa das pontas) e `!(ip.addr == 192.168.0.3)` mostrou 3:
+  os quadros sem IPv4 (o ARP e o IPv6). Para excluir um host, a forma mais legível é
+  `!(ip.addr == X)`.
+- **"Permission denied" ao salvar com o dumpcap.** O dumpcap com `sudo` larga as capabilities e não
+  grava na sua pasta. Use `-w - > arquivo` (seção 3.2).
+- **O arquivo salvo pelo Wireshark é do root.** Com `sudo wireshark`, tudo o que a interface grava
+  fica do `root`. Ele é legível (permissão `644`), mas para apagá-lo você precisa de `sudo rm`.
+- **A página aparece como lixo no Follow TCP Stream.** É gzip, não criptografia. Use *Follow → HTTP
+  Stream* (seção 3.4).
+- **`frame contains "senha"` não acha a palavra que está na página.** Mesmo motivo: o corpo
+  comprimido não contém o texto em claro. Procure nos campos dos dissectors (`http.file_data`,
+  `urlencoded-form.value`) ou no Follow HTTP Stream.
+- **O Export Objects não lista imagens.** O navegador usou o cache; o servidor respondeu
+  `304 Not Modified`, sem corpo. Recarregue com Ctrl+Shift+R durante a captura.
+- **Pacotes com mais de 1500 bytes, "maiores que o MTU".** É o segmentation offload: você está
+  capturando na própria máquina (seção 2.6). Não é um erro da rede.
+- **Atalhos como Ctrl+Alt+Shift+T não abrem o Follow Stream no lab.** No navegador da plataforma,
+  Ctrl+Alt+Shift abre o menu do Guacamole (2.1). Use o botão direito → *Follow*.
+- **A captura não para / o arquivo ficou enorme.** Sempre defina um fim (`-a duration:N`) ou um
+  ring buffer em capturas que você vai deixar rodando (seção 6.2).
+
+## 8. Defesa e mitigação
+
+A defesa contra quem captura o tráfego tem uma ideia central e várias camadas de apoio. A ideia
+central é tirar o **conteúdo** do alcance de quem escuta; as camadas reduzem as **posições** de
+escuta, os **vazamentos** de informação e o **estrago** quando algo vaza.
+
+### 8.1 Criptografia de ponta a ponta: HTTPS em tudo, com HSTS
+
+Nos dois casos da seção 4, a linha entre o exposto e o protegido foi a criptografia. Na prática:
+
+- **HTTPS em todas as páginas,** não só no login: o Firesheep atacava justamente o cookie das
+  páginas depois do login.
+- **Redirecionar HTTP para HTTPS** e, depois, mandar o cabeçalho
+  <GlossaryTerm term="HSTS">HSTS</GlossaryTerm> (2.5), para o navegador nunca mais tentar o HTTP
+  naquele site. No Apache, com o módulo `headers` ligado e dentro do `VirtualHost` da porta 443:
+
+```apache
+<VirtualHost *:80>
+    ServerName app.exemplo.com.br
+    Redirect permanent / https://app.exemplo.com.br/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName app.exemplo.com.br
+    # ... SSLEngine on, certificado e chave ...
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</VirtualHost>
+```
+
+- **Trocar os protocolos legados** pelos equivalentes cifrados: Telnet → SSH, FTP → SFTP,
+  POP3/IMAP/SMTP → as versões com TLS.
+- **No Wi-Fi, nunca rede aberta para dados internos:** WPA2 ou WPA3. E lembre que isso protege só
+  o trecho do ar; da porta do ponto de acesso em diante, quem protege é o TLS da aplicação.
+
+### 8.2 O cookie de sessão: Secure, HttpOnly, SameSite e regeneração
+
+O DVWA é o exemplo do que não fazer. Os valores abaixo foram lidos do PHP do contêiner do lab:
+
+```console
+$ php -r 'foreach (["session.use_strict_mode","session.cookie_httponly","session.cookie_secure","session.cookie_samesite"] as $k) echo $k, "=", var_export(ini_get($k), true), PHP_EOL;'
+session.use_strict_mode='0'
+session.cookie_httponly='0'
+session.cookie_secure='0'
+session.cookie_samesite=''
+```
+
+Tudo desligado, de propósito. A seção de segurança de sessões do manual do PHP recomenda:
+
+```ini
+; php.ini — sessões
+session.use_strict_mode = On      ; recusa IDs que o servidor não criou
+session.cookie_secure   = On      ; o cookie só viaja por HTTPS
+session.cookie_httponly = On      ; o JavaScript da página não lê o cookie
+session.cookie_samesite = "Lax"   ; ou "Strict": limita o envio a partir de outros sites
+```
+
+- **<GlossaryTerm term="Secure (cookie)">Secure</GlossaryTerm>** faz o navegador só mandar o cookie
+  por HTTPS: é o que impede que um único link `http://` vaze a sessão para quem captura.
+- **<GlossaryTerm term="HttpOnly">HttpOnly</GlossaryTerm>** impede o JavaScript da página de ler o
+  cookie. Não ajuda contra a captura, mas fecha o roubo por injeção de script (Trilha 4).
+- **<GlossaryTerm term="SameSite">SameSite</GlossaryTerm>** limita o envio do cookie em pedidos
+  vindos de outros sites, uma defesa contra CSRF.
+- **Regenerar o ID no login.** O manual do PHP é explícito: os IDs de sessão devem ser regenerados
+  quando o privilégio do usuário sobe, como depois de autenticar, chamando `session_regenerate_id()`
+  antes de gravar os dados de autenticação na sessão. É o que falta no DVWA (o `PHPSESSID` antes e
+  depois do login era o mesmo, seção 3.5):
+
+```php
+<?php
+// Depois de conferir usuário e senha:
+session_regenerate_id(true);   // novo ID; o antigo deixa de valer
+$_SESSION['user'] = $username;
+```
+
+- **Logout de verdade e expiração curta:** destruir a sessão no servidor ao sair (o walkthrough 5.6
+  mostrou que isso invalida o ID roubado) e expirar sessões ociosas.
+
+### 8.3 Não se apresentar: esconder versões
+
+A Missão 1 leu as versões nos cabeçalhos `Server` e `X-Powered-By`. Isso é
+<GlossaryTerm term="version disclosure">version disclosure</GlossaryTerm> (exposição de versão). No
+contêiner do DVWA, a configuração é a que mais fala:
+
+```console
+$ grep -rhE "^\s*(ServerTokens|ServerSignature)" /etc/apache2/
+ServerTokens OS
+ServerSignature On
+$ php -r 'echo ini_get("expose_php"), PHP_EOL;'
+1
+```
+
+O ajuste é curto:
+
+```apache
+# Apache (por exemplo, em /etc/apache2/conf-available/security.conf)
+ServerTokens Prod      # o cabeçalho Server passa a dizer só "Apache"
+ServerSignature Off    # as páginas de erro deixam de mostrar versão e sistema
+```
+
+```ini
+; php.ini
+expose_php = Off       ; some o cabeçalho X-Powered-By
+```
+
+Como no 2.4: esconder versões é **higiene**, não proteção. Tira do atacante a informação mais fácil
+e atrapalha varreduras automáticas que procuram versões vulneráveis, mas a proteção real é manter
+o software atualizado.
+
+### 8.4 Reduzir as posições de escuta
+
+Se a criptografia protege o conteúdo, a arquitetura da rede reduz quem consegue ver os metadados e
+quem consegue se colocar no meio:
+
+- **Switches, não hubs, e segmentação.** Separe usuários, servidores e equipamentos em
+  <GlossaryTerm term="VLAN">VLANs</GlossaryTerm> diferentes, com regras entre elas (como no 2.4).
+- **Recursos de switch gerenciável contra o man-in-the-middle:** o
+  <GlossaryTerm term="DHCP snooping">DHCP snooping</GlossaryTerm> registra qual IP foi dado a qual MAC
+  em cada porta e só aceita respostas de DHCP do servidor legítimo; o
+  <GlossaryTerm term="Dynamic ARP Inspection">Dynamic ARP Inspection</GlossaryTerm> usa esse
+  registro para descartar respostas ARP falsas, barrando o ARP spoofing; o
+  <GlossaryTerm term="port security">port security</GlossaryTerm> limita quais MACs podem usar cada
+  porta. Os nomes variam entre fabricantes; os exemplos vêm do vocabulário da Cisco.
+- **Controle de quem tem acesso às portas espelho e aos taps.** O sensor de monitoração vê tudo:
+  ele mesmo é um alvo valioso e precisa estar protegido e auditado.
+
+### 8.5 Detectar quem escuta e quem se mete no meio
+
+A captura puramente passiva quase não deixa rastro: a placa só ouve. Mas a escalada para uma
+posição ativa deixa. Respostas ARP que trocam o MAC do gateway, um mesmo MAC respondendo por vários
+IPs e alertas do Dynamic ARP Inspection são sinais clássicos de ARP spoofing, que IDS como o
+Suricata e a monitoração do 6.6 conseguem apontar. E a melhor detecção de todas é a de
+**conteúdo**: se a monitoração encontra uma senha ou um cookie trafegando em claro na sua rede, o
+achado é seu antes de ser de outra pessoa.
+
+### 8.6 Cuidar das próprias capturas
+
+As capturas do pentester são material sensível: contêm credenciais e dados pessoais de terceiros.
+Trate-as como evidência (1.5): guarde-as cifradas, registre o hash, controle quem acessa, e
+apague-as conforme a política de retenção combinada. No relatório, mostre só o trecho necessário,
+com senhas e IDs de sessão mascarados (`password=********`). Prefira capturar só o que precisa
+(filtro de captura, snaplen menor) e confira os metadados do pcapng antes de compartilhar (6.5).
+
+## 9. Exercícios
+
+As três flags deste módulo estão nas missões da seção 5. O quiz abaixo cobre a teoria; ele conta
+para concluir o módulo.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar
+
+**a)** Um cliente diz: "Nosso sistema interno é HTTP, mas está numa rede com switch, então ninguém
+consegue capturar o tráfego dos outros". O que você responde?
+
+<Solution title="Discussão do cenário a">
+Que o switch torna a captura passiva mais difícil, mas não impossível, e não protege nada contra
+quem está numa posição legítima ou conquistada. Quem administra a rede tem portas espelho; um
+equipamento comprometido no caminho (o próprio servidor, um proxy, um balanceador) vê tudo; e um
+atacante na mesma rede local pode usar ARP spoofing para se colocar no meio (seção 2.8), a menos
+que o switch tenha recursos como o Dynamic ARP Inspection (8.4). A defesa que não depende da
+topologia é o TLS (8.1). E se for testar isso no pentest, a técnica ativa precisa estar na carta.
+</Solution>
+
+**b)** Durante um pentest autorizado, você captura um login HTTP com a senha de um funcionário. O
+que você faz com ela?
+
+<Solution title="Discussão do cenário b">
+Registra o achado (o sistema expõe credenciais em texto claro) com a evidência mínima necessária e
+a senha mascarada no relatório, e guarda a captura como evidência sensível (8.6). Usar a senha para
+entrar em outros sistemas só se a carta de autorização permitir explicitamente o uso de credenciais
+obtidas (1.3); se não permitir, ou se houver dúvida, pare e pergunte ao contato do cliente. Em
+qualquer caso, recomende a troca da senha ao fim do teste.
+</Solution>
+
+**c)** Um desenvolvedor argumenta: "O nosso cookie de sessão tem `HttpOnly`, então está protegido".
+Está?
+
+<Solution title="Discussão do cenário c">
+Contra um tipo de ataque, sim; contra a captura, não. O `HttpOnly` impede o JavaScript da página de
+ler o cookie, mas o cookie continua viajando em todo pedido. Se algum pedido for por HTTP, quem
+captura lê o cookie no cabeçalho, como no lab. Para isso servem o `Secure` (só HTTPS), o HTTPS em
+todas as páginas e o HSTS (8.1 e 8.2). Cada atributo fecha uma porta diferente.
+</Solution>
+
+### Exercícios práticos extras (sem flag)
+
+1. Com o lab no ar, capture com o filtro de captura `tcp port 80 and tcp[tcpflags] & tcp-syn != 0`
+   enquanto recarrega a página de login. Quantos pacotes a captura gravou? Compare com o filtro de
+   exibição `tcp.flags.syn == 1` aplicado a uma captura sem filtro.
+2. Na sua captura, use *Statistics → Conversations*, aba *TCP*. Quantas conexões o Firefox abriu
+   para o DVWA durante o login, e qual delas transferiu mais bytes?
+3. Clique com o botão direito no campo `Server` de uma resposta e use *Apply as Column*. O que muda
+   na lista de pacotes? Para que isso serve numa captura com centenas de servidores?
+4. Faça login com uma senha **errada** e compare o `Content-Length` do POST com o da Missão 2. Por
+   que mudou, e por quanto?
+5. No terminal, rode `capinfos` no arquivo salvo na Missão 3. Que informações sobre a sua máquina
+   ele mostra?
+
+<Solution title="Soluções dos exercícios extras">
+1. O filtro BPF grava só os quadros com a flag SYN: os SYN de cada conexão do Firefox e os SYN/ACK
+   do DVWA, dois por conexão. O filtro de exibição `tcp.flags.syn == 1` mostra os mesmos quadros,
+   mas o arquivo continua com todos os outros. No lab, o login com o Firefox abriu 10 conexões
+   (seção 3.3), então são 20 quadros com SYN.
+2. A aba TCP lista uma linha por conexão, com pacotes e bytes nos dois sentidos. As conexões que
+   levaram as imagens e o `index.php` são as maiores. O número de linhas é o mesmo do filtro de
+   SYN sem ACK (10 no lab).
+3. Aparece uma coluna nova com o valor do cabeçalho `Server` de cada resposta. Numa captura grande,
+   ordenar por essa coluna mostra num relance todos os softwares de servidor da rede e as versões:
+   um inventário passivo.
+4. O corpo tem 88 bytes com `password`; com outra senha, ele muda o mesmo tanto que a diferença de
+   tamanho entre as duas senhas (caracteres especiais viram `%XX` e contam 3 bytes cada). É a razão
+   de a Missão 2 pedir o login com `admin` e `password`.
+5. Além do formato, dos pacotes e da duração, o capinfos mostra o hardware (o processador) e o
+   sistema (o kernel do WSL) de quem capturou, o nome da interface e, se houve, o filtro de
+   captura. Arquivos salvos pela interface gráfica guardam os mesmos metadados.
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O Wireshark é um analisador de protocolos: captura os quadros e os decodifica com dissectors, uma
+  camada por vez. Começou como Ethereal (1998) e ganhou o nome atual em 2006.
+- Uma captura passa por placa → BPF no kernel → libpcap/dumpcap → arquivo pcapng → dissectors →
+  filtro de exibição. Captura é gravação.
+- Capturar exige privilégio; o Wireshark isola esse poder no dumpcap, que ainda larga as
+  capabilities depois de abrir a interface.
+- Filtro de captura (BPF, antes de gravar, irreversível) e filtro de exibição (campos do Wireshark,
+  depois, só esconde) são duas linguagens. Na dúvida, capture largo e filtre na exibição.
+- Follow Stream transforma pacotes em conversa; a remontagem TCP e o Export Objects reconstroem
+  mensagens e arquivos inteiros.
+- Texto claro é texto claro: HTTP, FTP, Telnet e e-mail sem TLS entregam senhas, cookies e arquivos
+  a quem estiver na posição certa. Compressão (gzip) e codificação não são proteção.
+- Capturar exige posição: ser uma das pontas, ter uma porta espelho ou um tap, estar no mesmo ar de
+  um Wi-Fi aberto, ou criar a posição com um ataque ativo.
+- O cookie de sessão vale tanto quanto a senha (Firesheep, 2010). As redes abertas entregaram até
+  senhas aos carros do Street View; as cifradas, nada (2010).
+- Defesa: HTTPS em tudo com HSTS; cookies `Secure`, `HttpOnly` e `SameSite`; ID de sessão
+  regenerado no login; versões escondidas; segmentação e recursos de switch; e as próprias capturas
+  tratadas como evidência sensível.
+
+### Cola rápida
+
+| Para... | Use |
+|---|---|
+| Ver as interfaces de captura | `sudo dumpcap -D` |
+| Abrir a interface gráfica no lab | `sudo wireshark &` |
+| Capturar pela linha de comando | `sudo dumpcap -i eth1 -f "filtro BPF" -w - > arquivo.pcapng` |
+| Parar sozinho | `-a duration:N`, `-a packets:N` |
+| Resumir um arquivo | `capinfos arquivo.pcapng` |
+| Só HTTP | `http` |
+| Só um host | `ip.addr == X` (excluir: `!(ip.addr == X)`) |
+| Só os envios de formulário | `http.request.method == "POST"` |
+| Procurar texto | `frame contains "texto"` (não acha em corpo comprimido) |
+| Uma conexão inteira | botão direito → *Follow* → *TCP/HTTP Stream* (`tcp.stream eq N`) |
+| Remontar arquivos | *File → Export Objects → HTTP* |
+| Raio-X da captura | *Statistics → Protocol Hierarchy* e *Conversations* |
+| Ver os metadados do arquivo | *Statistics → Capture File Properties* |
+| Decifrar o seu TLS | `SSLKEYLOGFILE` + *Preferences → Protocols → TLS* |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Wireshark User's Guide](https://www.wireshark.org/docs/wsug_html_chunked/) — o guia oficial,
+  incluindo a história do projeto e cada menu da interface.
+- [wireshark-filter(4)](https://www.wireshark.org/docs/man-pages/wireshark-filter.html) — a
+  referência da linguagem de filtros de exibição.
+- [dumpcap(1)](https://www.wireshark.org/docs/man-pages/dumpcap.html) — todas as opções de captura.
+- [CaptureSetup/CapturePrivileges](https://wiki.wireshark.org/CaptureSetup/CapturePrivileges) — como
+  capturar sem rodar o Wireshark como root.
+- [TLS na wiki do Wireshark](https://wiki.wireshark.org/TLS) — decifrar o seu próprio tráfego com o
+  key log file.
+- [Segurança de sessões no manual do PHP](https://www.php.net/manual/en/session.security.ini.php) —
+  as configurações da seção 8.2.

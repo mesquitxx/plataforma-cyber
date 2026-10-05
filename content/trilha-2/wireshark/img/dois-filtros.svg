@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
+  <title id="t">Filtro de captura e filtro de exibição: duas linguagens, dois momentos</title>
+  <desc id="d">À esquerda, o filtro de captura, na sintaxe BPF (por exemplo host dvwa and tcp port 80), age antes da gravação: o que ele recusa nunca entra no arquivo. É rápido e economiza disco, mas o erro é irreversível. À direita, o filtro de exibição, na sintaxe do Wireshark (por exemplo http.request.method == "POST"), age depois: o arquivo continua com todos os quadros, e o filtro apenas escolhe quais mostrar; dá para trocar à vontade. Embaixo, uma tabela compara a mesma intenção escrita nas duas linguagens: host dvwa contra ip.addr == 192.168.0.3, tcp port 80 contra tcp.port == 80, e mostra que o display filter entende campos de protocolos, como http.cookie, que o BPF não conhece.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .r { fill: #f08a7e; }
+    .flow { stroke: #5cc8d8; stroke-width: 2.5; marker-end: url(#ar); fill: none; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="400" fill="#121815"/>
+  <text class="t" x="30" y="32">Dois filtros, duas sintaxes, dois momentos</text>
+
+  <!-- capture filter -->
+  <rect x="20" y="52" width="420" height="170" rx="10" fill="#16201b" stroke="#e8c46a"/>
+  <text class="h y" x="36" y="78">filtro de CAPTURA (BPF)</text>
+  <text class="s" x="36" y="96">antes de gravar · dumpcap -f · tela inicial</text>
+  <text class="b" x="36" y="126">host dvwa and tcp port 80</text>
+  <rect x="36" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42"/>
+  <rect x="86" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42"/>
+  <rect x="136" y="142" width="40" height="22" rx="4" fill="#3a1f1c" stroke="#f08a7e"/>
+  <rect x="186" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42"/>
+  <path class="flow" d="M236,153 L278,153"/>
+  <text class="b" x="286" y="158">arquivo sem</text>
+  <text class="b" x="286" y="174">o vermelho</text>
+  <text class="b r" x="36" y="196">recusado = perdido para sempre</text>
+  <text class="s" x="36" y="212">bom para capturas longas e redes cheias</text>
+
+  <!-- display filter -->
+  <rect x="460" y="52" width="420" height="170" rx="10" fill="#16201b" stroke="#5ee08a"/>
+  <text class="h g" x="476" y="78">filtro de EXIBIÇÃO (Wireshark)</text>
+  <text class="s" x="476" y="96">depois de gravar · barra verde · tshark -Y</text>
+  <text class="b" x="476" y="126">http.request.method == "POST"</text>
+  <rect x="476" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42" opacity="0.35"/>
+  <rect x="526" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#5ee08a"/>
+  <rect x="576" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42" opacity="0.35"/>
+  <rect x="626" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42" opacity="0.35"/>
+  <path class="flow" d="M676,153 L718,153"/>
+  <text class="b" x="726" y="158">tela mostra 1;</text>
+  <text class="b" x="726" y="174">arquivo tem 4</text>
+  <text class="b g" x="476" y="196">escondido ≠ apagado: troque à vontade</text>
+  <text class="s" x="476" y="212">entende campos de protocolo (HTTP, TLS, DNS…)</text>
+
+  <!-- comparison table -->
+  <rect x="20" y="240" width="860" height="146" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="36" y="264">a mesma intenção nas duas línguas</text>
+  <text class="s" x="36" y="286">intenção</text>
+  <text class="s" x="300" y="286">captura (BPF)</text>
+  <text class="s" x="560" y="286">exibição (Wireshark)</text>
+  <text class="b" x="36" y="308">só o DVWA</text>
+  <text class="b y" x="300" y="308">host dvwa</text>
+  <text class="b g" x="560" y="308">ip.addr == 192.168.0.3</text>
+  <text class="b" x="36" y="330">só a porta web</text>
+  <text class="b y" x="300" y="330">tcp port 80</text>
+  <text class="b g" x="560" y="330">tcp.port == 80</text>
+  <text class="b" x="36" y="352">só pedidos com cookie</text>
+  <text class="b r" x="300" y="352">(não existe)</text>
+  <text class="b g" x="560" y="352">http.cookie</text>
+  <text class="s" x="36" y="374">trocar uma sintaxe pela outra é o erro nº 1: a barra verde fica vermelha</text>
+</svg>
