@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
+  <title id="t">Onde a palavra FUZZ pode entrar num pedido HTTP</title>
+  <desc id="d">Um pedido HTTP mostrado linha a linha, com cinco lugares diferentes marcados onde a palavra FUZZ pode ser inserida. No caminho da URL, para descobrir diretórios e arquivos: barra FUZZ. Logo depois do nome do arquivo, como extensão, para descobrir variantes: arquivo ponto FUZZ. No nome de um parâmetro da query, para descobrir parâmetros escondidos: interrogação FUZZ igual a um valor. No valor de um parâmetro, para testar muitos valores: parâmetro igual a FUZZ. E no cabeçalho Host, para descobrir hosts virtuais: Host dois-pontos FUZZ ponto o domínio. A ideia central: FUZZ é só um marcador de posição; você decide em que parte do pedido ele entra, e cada parte descobre uma coisa diferente.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 13px; }
+    .s { font-size: 11px; fill: #9fb0a6; }
+    .fz { fill: #e8c46a; font-weight: 700; }
+    .num { fill: #5ee08a; font-weight: 700; }
+    .ln { stroke: #3a4b42; stroke-width: 1.5; }
+  </style>
+  <rect width="900" height="430" fill="#121815"/>
+  <text class="t" x="30" y="34">FUZZ é só um marcador: o lugar onde você o põe decide o que descobre</text>
+
+  <!-- request block -->
+  <rect x="24" y="60" width="520" height="150" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="b" x="44" y="92">GET /<tspan class="fz">FUZZ</tspan>/admin<tspan class="fz">.FUZZ</tspan>?<tspan class="fz">FUZZ</tspan>=<tspan class="fz">FUZZ</tspan> HTTP/1.1</text>
+  <text class="b" x="44" y="120">Host: <tspan class="fz">FUZZ</tspan>.exemplo.com</text>
+  <text class="b" x="44" y="148">User-Agent: curl/8.5.0</text>
+  <text class="s" x="44" y="186">(um pedido real usa uma posição de cada vez; aqui estão todas juntas só para mostrar)</text>
+
+  <!-- numbered legend -->
+  <circle cx="40" cy="250" r="12" fill="#1d2a23" stroke="#e8c46a"/><text class="num" x="35" y="255">1</text>
+  <text class="b" x="64" y="246">caminho: <tspan class="fz">/FUZZ</tspan></text>
+  <text class="s" x="64" y="264">descobre diretórios e arquivos não linkados</text>
+
+  <circle cx="40" cy="300" r="12" fill="#1d2a23" stroke="#e8c46a"/><text class="num" x="35" y="305">2</text>
+  <text class="b" x="64" y="296">extensão: <tspan class="fz">arquivo.FUZZ</tspan></text>
+  <text class="s" x="64" y="314">acha variantes: .bak, .old, .dist, .zip, .txt</text>
+
+  <circle cx="40" cy="350" r="12" fill="#1d2a23" stroke="#e8c46a"/><text class="num" x="35" y="355">3</text>
+  <text class="b" x="64" y="346">nome de parâmetro: <tspan class="fz">?FUZZ=</tspan>valor</text>
+  <text class="s" x="64" y="364">revela parâmetros escondidos (debug, admin, id)</text>
+
+  <circle cx="490" cy="300" r="12" fill="#1d2a23" stroke="#e8c46a"/><text class="num" x="485" y="305">4</text>
+  <text class="b" x="514" y="296">valor de parâmetro: <tspan class="fz">?id=FUZZ</tspan></text>
+  <text class="s" x="514" y="314">testa muitos valores (ids, usuários, senhas)</text>
+
+  <circle cx="490" cy="350" r="12" fill="#1d2a23" stroke="#e8c46a"/><text class="num" x="485" y="355">5</text>
+  <text class="b" x="514" y="346">cabeçalho Host: <tspan class="fz">Host: FUZZ</tspan></text>
+  <text class="s" x="514" y="364">descobre virtual hosts no mesmo IP</text>
+
+  <rect x="486" y="236" width="390" height="40" rx="8" fill="#16201b" stroke="#5ee08a"/>
+  <text class="s g" x="502" y="253">Neste módulo você usa 1, 2 e 3 contra o DVWA.</text>
+  <text class="s" x="502" y="269">4 e 5 voltam nas trilhas de Web e de Redes.</text>
+</svg>

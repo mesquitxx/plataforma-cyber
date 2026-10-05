@@ -1,0 +1,615 @@
+---
+slug: wordlists-e-fuzzing
+track: trilha-2
+title: "Wordlists e fuzzing"
+prerequisites: [nmap]
+lab: dvwa
+tasks:
+  - slug: missao-1-descoberta
+    title: "Missão 1 — O arquivo que ninguém linkou"
+    type: flag
+    prompt: "Faça descoberta de conteúdo no DVWA com um laço de curl sobre uma wordlist. Entre os arquivos que aparecem e que nenhum link da página mostra, há um .ini que vaza a configuração do PHP. Abra-o e ache a diretiva que, ligada, permite INCLUIR (executar) um arquivo remoto — a base da remote file inclusion. A flag é FLAG{diretiva-valor}, com o nome da diretiva e o valor exatamente como aparecem no arquivo (por exemplo FLAG{display_errors-off})."
+    hint: "No loop, o php.ini responde 200 e tem só ~154 bytes, bem diferente do 404 de base (306 bytes). Dentro dele há duas diretivas allow_url_*. Uma habilita só ABRIR uma URL (fopen); a outra habilita INCLUIR uma URL como código — e é essa, com o valor que está escrito ali, que entra na flag."
+    flag:
+      hash: "scrypt$16384$8$1$c9cd6fd0f26aa4e62e07eace0fb571b01d9fd9f9c3d7272ea9f3642b132eb0df"
+      salt: "2ae7dca6228606d730d7be14de95e670"
+  - slug: missao-2-fonte-vazada
+    title: "Missão 2 — A fonte que vazou"
+    type: flag
+    prompt: "A configuração viva do DVWA (config/config.inc.php) responde 200 mas vem vazia — o PHP a executou. Faça fuzzing de extensão/sufixo sobre esse caminho e ache a variante que o servidor entrega como código-fonte em texto. Dentro dela, leia a senha padrão do banco (o fallback de db_password) e o nível de segurança padrão (o fallback de default_security_level). A flag é FLAG{senha-nivel} (por exemplo FLAG{troque-me-high})."
+    hint: "Um .php é executado e volta vazio; um arquivo com OUTRA extensão o Apache serve como texto puro. Tente os sufixos de cópia e de template mais comuns: ~, .bak, .old, .save e .dist. Um deles devolve ~2437 bytes de PHP legível. As duas linhas que você quer têm a forma getenv('...') ?: 'valor' — o que vem depois do ?: é o fallback."
+    flag:
+      hash: "scrypt$16384$8$1$c26187251d4ea98b77b8073a7e8dc341f69e98aab8d177626fffab0ef2be4619"
+      salt: "c665dfe90261bc676665d915d380a0e3"
+  - slug: missao-3-fuzzing-de-caminho
+    title: "Missão 3 — O mapa dos módulos"
+    type: flag
+    prompt: "Faça fuzzing na posição do caminho em http://dvwa/vulnerabilities/FUZZ/ para enumerar, sem estar logado, os módulos de vulnerabilidade que existem no DVWA. Conte quantos existem de verdade (os que respondem 'existe, mas redireciona para o login') e descarte os que respondem 'não existe'. A flag é FLAG{vulns-N}, com N = a quantidade de módulos encontrados (por exemplo FLAG{vulns-7})."
+    hint: "Sem login, um módulo que existe responde 302 (redireciona para login.php, 0 byte) e um que não existe responde 404 (306 bytes). Monte uma lista de candidatos (sqli, xss_r, csrf, upload... e alguns chutes como admin, lfi, rce, backup para ver a diferença), rode o laço contra vulnerabilities/FUZZ/ e conte só os 302. Não confunda com 403: aqui os módulos reais dão 302."
+    flag:
+      hash: "scrypt$16384$8$1$41a748d32cbfdd943417e8dfa24db87c14aa624cc84f5d83c5acaad97784d06e"
+      salt: "f2dbd04b9ca1933e1dc3715e1f1076d6"
+  - slug: quiz-final
+    title: "Quiz — Wordlists e fuzzing"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "O que é, na raiz, fazer 'fuzzing' de conteúdo numa aplicação web?"
+        options:
+          - "Quebrar a senha do administrador por força bruta"
+          - "Mandar muitos pedidos trocando uma parte do pedido (a posição FUZZ) por cada linha de uma wordlist e ler a resposta para descobrir o que existe"
+          - "Capturar o tráfego da rede e decodificar os protocolos"
+          - "Explorar uma injeção de SQL para extrair o banco"
+        answer: 1
+        explanation: "Fuzzing de conteúdo é automatizar a adivinhação: você marca uma posição do pedido (o caminho, uma extensão, um parâmetro) com FUZZ e a ferramenta a substitui, uma a uma, por cada palavra da wordlist, lendo a resposta. Não é quebrar senha (isso é brute force de credencial), nem capturar tráfego (Wireshark), nem injeção de SQL — ainda que a mesma mecânica de 'repetir pedidos variando um campo' apareça nessas outras técnicas."
+      - question: "Por que calibrar contra a 'resposta de base' (pedir um caminho que com certeza não existe) é o primeiro passo de qualquer fuzzing?"
+        options:
+          - "Para aquecer o servidor antes do ataque"
+          - "Para saber como o site responde a algo inexistente (código e tamanho) e assim reconhecer o que é ruído de fundo e o que é achado de verdade"
+          - "Porque a ferramenta exige isso para funcionar"
+          - "Para descobrir a versão do servidor web"
+        answer: 1
+        explanation: "Sem saber como é um 'não existe', você não sabe o que é um 'existe'. No DVWA o 404 vem com 306 bytes fixos: esse é o ruído de fundo. Alguns sites respondem 200 a QUALQUER caminho (soft 404), e aí o código engana — só o tamanho (ou o número de palavras/linhas) da resposta separa o achado do ruído. Calibrar é medir esse ruído antes."
+      - question: "No lab, por que config/config.inc.php respondeu 200 com 0 byte, mas config/config.inc.php.dist entregou ~2437 bytes de código PHP legível?"
+        options:
+          - "O arquivo .dist é maior por acaso"
+          - "O Apache executa arquivos .php (e o config não imprime nada, daí 0 byte), mas serve arquivos com outras extensões como texto puro — então a cópia .dist vaza o código-fonte"
+          - "O .dist tem uma senha diferente embutida"
+          - "O servidor bloqueia o .php por engano"
+        answer: 1
+        explanation: "A extensão decide quem processa o arquivo. O Apache passa .php ao PHP, que executa o código; como o config só define variáveis, a saída é vazia (0 byte). Já config.inc.php.dist tem extensão .dist, que o Apache não associa a nenhum interpretador, então ele devolve o conteúdo como texto — e o seu código-fonte, com os fallbacks de senha, fica exposto. É a mesma classe do .git e dos .bak vazados no mundo real."
+      - question: "Você fuzzou vulnerabilities/FUZZ/ sem estar logado e um módulo que existe respondeu 302. O que esse 302 está dizendo?"
+        options:
+          - "Que o módulo não existe"
+          - "Que o módulo existe, mas exige sessão: sem login o DVWA responde com um redirecionamento (302) para login.php em vez de entregar a página"
+          - "Que o acesso ao módulo foi proibido pelo firewall"
+          - "Que houve um erro interno no servidor"
+        answer: 1
+        explanation: "O 302 é um redirecionamento: o recurso existe, mas o servidor manda você para outro lugar — aqui, login.php, porque você não tem sessão. Isso é diferente do 404 (não existe) e do 403 (existe, mas o acesso/listagem foi negado sem redirecionar). Por isso, para enumerar os módulos sem login, você conta os 302 e descarta os 404."
+      - question: "Qual wordlist faz mais sentido como PRIMEIRO passo de descoberta de conteúdo num site qualquer?"
+        options:
+          - "A maior que existir, com milhões de linhas, para não perder nada"
+          - "Uma lista curta e curada de nomes comuns (como a common.txt do SecLists), que acha o óbvio rápido; só depois se parte para listas maiores e específicas"
+          - "Uma lista de senhas vazadas, como a rockyou.txt"
+          - "Uma lista aleatória de palavras do dicionário"
+        answer: 1
+        explanation: "Descoberta de conteúdo começa pelo barato e provável: uma lista curta e curada (common.txt tem alguns milhares de caminhos que de fato aparecem em sites) acha admin, backup, config, .git e afins em segundos. Partir direto para listas gigantes gasta tempo e barulho. A rockyou é de SENHAS (serve para brute force de credencial, não para caminhos); dicionário puro não reflete nomes reais de arquivos."
+      - question: "Qual defesa ataca a RAIZ do problema que você explorou (arquivos sensíveis achados por fuzzing), em vez de só disfarçá-lo?"
+        options:
+          - "Trocar a página de erro 404 para devolver 200, de modo que o fuzzing não ache nada"
+          - "Não deixar arquivos sensíveis no diretório público (remover .git, .bak, .dist, backups) e exigir autorização de verdade — e, como camadas extras, limitar a taxa de pedidos e monitorar o log"
+          - "Bloquear a ferramenta ffuf pelo User-Agent"
+          - "Renomear o servidor web para esconder a versão"
+        answer: 1
+        explanation: "A causa é ter conteúdo sensível acessível sem precisar estar linkado. A correção de fundo é tirá-lo do webroot (sem .git, sem .bak, sem .dist, sem backups) e proteger o que precisa existir com autenticação e autorização reais. Devolver 200 em tudo (soft 404) e bloquear por User-Agent são disfarces que um atacante contorna (filtra por tamanho, troca o User-Agent). Esconder a versão não impede a descoberta de arquivos."
+glossary:
+  - term: content discovery
+    definition: "Content discovery (descoberta de conteúdo): a técnica de encontrar páginas, arquivos e diretórios de um site que não estão linkados em lugar nenhum, pedindo caminhos candidatos um a um e vendo quais o servidor reconhece."
+  - term: forced browsing
+    definition: "Forced browsing (navegação forçada): acessar diretamente recursos que a aplicação não oferece por link nem menu (por exemplo /admin ou /backup.zip), em vez de navegar só pelo caminho que a interface mostra. É o nome formal da falha quando esses recursos ficam acessíveis sem autorização."
+  - term: fuzzing
+    definition: "Fuzzing: mandar muitos pedidos trocando automaticamente uma parte deles (a posição marcada como FUZZ) por cada entrada de uma wordlist, e analisar as respostas. Em descoberta de conteúdo serve para adivinhar caminhos; de forma mais ampla, também se usa para achar bugs jogando entradas inesperadas num programa."
+  - term: ffuf
+    definition: "ffuf (Fuzz Faster U Fool): fuzzer web em Go, rápido e muito usado, que substitui a palavra FUZZ na URL, nos cabeçalhos ou no corpo do pedido por cada linha da wordlist e filtra as respostas por código, tamanho, palavras ou linhas."
+  - term: gobuster
+    definition: "gobuster: ferramenta em Go para força bruta de caminhos web (modo dir), subdomínios (dns), virtual hosts (vhost) e mais. No modo dir, pede cada caminho de uma wordlist e mostra os que o servidor reconhece."
+  - term: SecLists
+    definition: "SecLists: coleção aberta e consagrada de wordlists para segurança (caminhos web, nomes de usuário, senhas, payloads), mantida por Daniel Miessler e colaboradores. A common.txt e as directory-list são as listas de descoberta de conteúdo mais usadas."
+  - term: soft 404
+    definition: "Soft 404: quando um site responde com código 200 (sucesso) a um caminho que não existe, em vez do 404 correto. Engana o fuzzing baseado em código de status, e por isso obriga a filtrar pelo tamanho ou pelo conteúdo da resposta."
+  - term: parameter discovery
+    definition: "Parameter discovery (descoberta de parâmetros): fuzzing dos NOMES de parâmetros que uma página aceita mas não anuncia (por exemplo ?debug=1 ou ?admin=true), procurando os que mudam a resposta e revelam funcionalidade escondida."
+---
+
+import triagem from "./img/triagem-de-respostas.svg";
+import ondeFuzz from "./img/onde-colocar-o-fuzz.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em **29 de agosto de 2018**, o pesquisador tcheco Vladimír Smitka publicou o resultado de uma varredura que fez em **mais de 230 milhões de domínios** da internet. Ele não explorou nenhuma falha sofisticada: só pediu, em cada site, o caminho `/.git/` — a pasta que o `git` cria e que jamais deveria estar num servidor público. **390 mil sites** responderam entregando essa pasta, e com ela o código-fonte, históricos de commits e, em muitos casos, **senhas de banco de dados e chaves de API em texto claro** (seção 4). Nenhum desses caminhos estava linkado em lugar nenhum. Eles foram **adivinhados** — e é exatamente essa a arte deste módulo.
+
+No 2.4 você usou o nmap para descobrir **quais portas e serviços** uma máquina expõe. Agora você desce um nível: dado um serviço web na porta 80, quais **páginas, arquivos e diretórios** ele guarda que nenhum link mostra? A resposta vem de duas ideias simples e poderosas: a <GlossaryTerm term="wordlist">wordlist</GlossaryTerm> (uma lista de nomes prováveis, um por linha) e o <GlossaryTerm term="fuzzing">fuzzing</GlossaryTerm> (pedir cada nome e ler a resposta). Com elas, você transforma "não sei o que tem aqui" em um mapa do que o site tenta esconder.
+
+**Ao final, você vai saber:**
+
+- explicar o que é uma wordlist, de onde vêm as boas (o <GlossaryTerm term="SecLists">SecLists</GlossaryTerm>) e por que a lista certa importa mais que a maior;
+- fazer <GlossaryTerm term="content discovery">content discovery</GlossaryTerm> (descoberta de conteúdo) com <GlossaryTerm term="ffuf">ffuf</GlossaryTerm>, <GlossaryTerm term="gobuster">gobuster</GlossaryTerm> e, quando eles não existem, com um laço de `curl`;
+- **interpretar as respostas**: o que 200, 301/302, 403 e 404 dizem, e por que calibrar contra a resposta de base (o <GlossaryTerm term="soft 404">soft 404</GlossaryTerm>) é o primeiro passo;
+- achar arquivos que vazam segredos (uma config em `.dist`, um `.bak`, o `/.git`) por <GlossaryTerm term="forced browsing">forced browsing</GlossaryTerm>;
+- enumerar seções de uma aplicação fuzzando a posição do caminho, e provar que entendeu a diferença entre "existe" e "não existe";
+- defender: tirar o que é sensível do diretório público, exigir autorização de verdade, e por que esconder não é proteger.
+
+**Pré-requisitos (relembrando em uma linha cada):**
+
+- **2.4 — Reconhecimento e nmap:** o funil do reconhecimento (de host para porta para serviço), ler a resposta de uma varredura e a ideia de <GlossaryTerm term="enumeration">enumeração</GlossaryTerm> — aqui você enumera *dentro* de um serviço web. O <GlossaryTerm term="HTTP">HTTP</GlossaryTerm>, os métodos `GET`/`HEAD` e o <GlossaryTerm term="status code">código de status</GlossaryTerm> você viu no 0.2 e no 2.6, e eles voltam em uma linha quando aparecem.
+
+**Tempo estimado:** 3 horas, incluindo o laboratório.
+
+<Callout variant="ethics" title="Fuzzing dispara milhares de pedidos — só onde você pode">
+Descoberta de conteúdo manda centenas ou milhares de requisições a um servidor em segundos. Num alvo sem autorização, isso é, no mínimo, acesso não autorizado, e cai no art. 154-A do Código Penal (invasão de dispositivo informático, Lei 12.737/2012); o volume ainda pode derrubar o serviço, o que agrava tudo. A varredura de Smitka citada acima funcionou porque ele só pediu um caminho por site e parou aí — e mesmo assim recebeu reclamações e uma ameaça de polícia. Tudo neste módulo se faz no laboratório local, que é seu, ou num pentest com escopo e autorização por escrito (1.3). Nunca aponte um `ffuf` para um site que você não tem permissão explícita de testar.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O problema: a web é um iceberg
+
+Quando você abre um site, vê só o que ele resolveu te mostrar: os links do menu, os botões, as páginas que a navegação alcança. Mas um servidor web é, no fundo, um sistema de arquivos atrás de uma porta. Ele responde a **qualquer** caminho que você pedir — `/`, `/login.php`, `/backup.zip`, `/config/config.inc.php.bak` —, exista ou não. Se o arquivo existe e o servidor está configurado para entregá-lo, ele entrega, **mesmo que nenhum link no site aponte para ele**.
+
+Essa é a diferença entre o que está *linkado* e o que está *acessível*. Um `spider` (robô que segue links, como o do Google) só enxerga o linkado. Mas o atacante não segue links: ele **adivinha caminhos**. Arquivos de backup esquecidos, painéis de administração, pastas de desenvolvimento, uma pasta `/.git` que vazou do deploy — nada disso aparece no menu, e quase tudo pode estar a um palpite de distância. Encontrar esses recursos pedindo caminhos candidatos é o que se chama <GlossaryTerm term="content discovery">content discovery</GlossaryTerm>; quando o recurso encontrado deveria ser restrito e não é, a falha tem nome: <GlossaryTerm term="forced browsing">forced browsing</GlossaryTerm>, a navegação forçada para onde a interface não leva.
+
+### 2.2 A wordlist: adivinhação informada, não aleatória
+
+Adivinhar um caminho byte a byte seria impossível. A graça é que os nomes **não são aleatórios**: desenvolvedores do mundo todo repetem os mesmos. Chamam a pasta de administração de `admin`, `administrator` ou `painel`; deixam cópias com sufixo `.bak`, `.old`, `~`; versionam com `git` e esquecem o `.git`; guardam uploads em `uploads`. Uma <GlossaryTerm term="wordlist">wordlist</GlossaryTerm> é a destilação dessa repetição: um arquivo de texto com um nome provável por linha, acumulado de anos de experiência coletiva.
+
+A coleção de referência se chama <GlossaryTerm term="SecLists">SecLists</GlossaryTerm>, mantida por Daniel Miessler e colaboradores. Dentro dela, para descoberta de conteúdo, as listas que importam ficam em `Discovery/Web-Content/`:
+
+- **`common.txt`** — alguns milhares de caminhos que aparecem em quase todo site. É por onde se começa: barata, rápida, acha o óbvio.
+- **`raft-*-directories.txt` / `raft-*-files.txt`** — listas maiores, derivadas de varreduras reais, separando diretórios de arquivos.
+- **`directory-list-2.3-*.txt`** — as clássicas listas do DirBuster, de médias a gigantes.
+
+A lição que separa o iniciante do resto: **a lista certa vale mais que a maior**. Jogar uma lista de milhões de linhas num site pequeno gasta tempo, faz barulho e raramente acha mais que a `common.txt` acharia em segundos. Começa-se curto e curado; só depois, se o alvo pedir, parte-se para listas maiores ou específicas da tecnologia (um alvo WordPress pede uma lista de WordPress).
+
+<Callout variant="info" title="Wordlist de caminho não é wordlist de senha">
+Você vai ouvir falar da `rockyou.txt`, uma lista de ~14 milhões de **senhas** vazadas. Ela é para *brute force de credencial* (tentar senhas num login), assunto da Trilha 3. Para **descoberta de conteúdo** você quer listas de **caminhos** (a `common.txt` e as `raft`), não de senhas. Usar uma pela outra é um erro comum: a `rockyou` num fuzzing de diretório não acha quase nada, porque senhas não são nomes de arquivo.
+</Callout>
+
+### 2.3 Fuzzing: o FUZZ é só um marcador de posição
+
+<GlossaryTerm term="fuzzing">Fuzzing</GlossaryTerm> é a mecânica que consome a wordlist. A ideia, que a ferramenta `ffuf` deixou célebre, é marcar uma posição do pedido com a palavra **`FUZZ`** e deixar a ferramenta substituí-la, uma a uma, por cada linha da wordlist. Se você escreve `http://alvo/FUZZ`, a ferramenta pede `http://alvo/admin`, `http://alvo/login`, `http://alvo/backup`... e assim por todas as linhas, lendo cada resposta.
+
+O detalhe que abre a cabeça: **`FUZZ` pode ir em qualquer lugar do pedido**, e cada lugar descobre uma coisa diferente.
+
+<Figure
+  src={ondeFuzz}
+  alt="Um pedido HTTP com cinco posições onde a palavra FUZZ pode entrar: no caminho da URL (/FUZZ) para achar diretórios e arquivos; como extensão (arquivo.FUZZ) para achar variantes como .bak e .dist; no nome de um parâmetro (?FUZZ=valor) para achar parâmetros escondidos; no valor de um parâmetro (?id=FUZZ) para testar muitos valores; e no cabeçalho Host (Host: FUZZ.exemplo.com) para achar virtual hosts. Neste módulo usam-se as três primeiras contra o DVWA."
+  caption="O mesmo marcador FUZZ, cinco posições diferentes. A posição decide o que você descobre; neste módulo você usa o caminho, a extensão e o nome de parâmetro."
+/>
+
+Esse é o pulo do gato que torna o fuzzing uma ferramenta geral, não só um "descobridor de pastas". A descoberta de diretórios é só a posição mais comum (o caminho). Trocar o marcador de lugar vira <GlossaryTerm term="parameter discovery">parameter discovery</GlossaryTerm> (achar parâmetros que a página aceita mas não anuncia), descoberta de *virtual hosts*, ou teste de valores. A técnica é uma; o alvo muda com a posição.
+
+### 2.4 Interpretar a resposta: o coração de tudo
+
+Disparar os pedidos é a parte fácil — qualquer ferramenta faz. O que separa um resultado útil de uma tela de lixo é **ler as respostas**. E a primeira leitura é o <GlossaryTerm term="status code">código de status</GlossaryTerm> do HTTP, aquele número de três dígitos que o servidor devolve na primeira linha (0.2 e 2.6):
+
+- **200 OK** — o recurso existe e o servidor o entregou. É o achado mais direto.
+- **301 / 302 (redirect)** — o recurso existe, mas o servidor te manda para outro lugar. Muitas vezes é "existe, mas exige login": ele te redireciona para a página de entrada. **Existe** é a informação que importa.
+- **403 Forbidden** — o recurso existe, mas o acesso foi negado (por exemplo, uma pasta cuja listagem está proibida). Um 403 é um dedo apontando: *tem algo aqui*.
+- **404 Not Found** — não existe. É a resposta de base, o ruído de fundo que você aprende a ignorar.
+
+<Figure
+  src={triagem}
+  alt="O laço do fuzzing: uma wordlist alimenta o motor (ffuf, gobuster ou um laço de curl), que troca a palavra FUZZ por cada linha e manda o pedido ao servidor web. A resposta é triada por código de status: 200 é um achado (existe e foi entregue); 301 ou 302 é existe mas redireciona (em geral login); 403 é existe mas acesso negado; 404 é não existe, a resposta de base. Ao pé, a regra de ouro: calibrar contra a resposta de base antes de confiar nos códigos, e, quando o site responde 200 a tudo (soft 404), filtrar pelo tamanho da resposta em vez do código."
+  caption="O laço do fuzzing e a triagem das respostas. A regra de ouro está embaixo: antes de confiar nos códigos, meça o ruído de fundo (o 404 de base) e, se o site responder 200 a tudo, filtre pelo tamanho."
+/>
+
+Aí mora a armadilha mais importante do módulo. Nem todo site responde 404 ao que não existe. Alguns, por um `.htaccess` mal feito ou um framework que captura tudo, respondem **200** a qualquer caminho — devolvendo uma página de erro bonitinha, mas com código de sucesso. Isso é o <GlossaryTerm term="soft 404">soft 404</GlossaryTerm>, e ele quebra o fuzzing ingênuo: se tudo é 200, como saber o que existe? A resposta é **parar de olhar só o código e olhar o tamanho**. A página de erro tem sempre o mesmo tamanho; um achado de verdade tem outro. Por isso toda ferramenta boa filtra também por tamanho em bytes, número de palavras e número de linhas — e por isso o **primeiro passo** de qualquer fuzzing é **calibrar**: pedir um caminho que com certeza não existe, anotar como é a resposta de base, e só então reconhecer o que foge dela.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos às ferramentas de verdade. Os comandos abaixo mostram a sintaxe real do `ffuf` e do `gobuster`; onde aparece um alvo, use o seu lab. (No lab desta plataforma, o Kali é enxuto e **não** traz `ffuf` nem `gobuster` — por isso, na seção 5, você faz o mesmo com um laço de `curl`. A sintaxe aqui é a que você usará num Kali completo ou numa máquina de trabalho, e é a que os relatórios e write-ups usam.)
+
+### 3.1 gobuster: o mais direto
+
+O `gobuster` no modo `dir` pede cada caminho de uma wordlist e mostra os que o servidor reconhece:
+
+```bash
+gobuster dir -u http://alvo/ -w /usr/share/wordlists/seclists/Discovery/Web-Content/common.txt
+```
+
+`dir` é o modo (descoberta de diretórios/arquivos), `-u` é a URL e `-w` é a wordlist. Para procurar também arquivos com extensões, o `-x` acrescenta cada extensão a cada palavra (pedindo `admin`, `admin.php`, `admin.bak`...):
+
+```bash
+gobuster dir -u http://alvo/ -w common.txt -x php,bak,old,txt,zip
+```
+
+Por padrão, o `gobuster` 3.x mostra tudo **menos** o que estiver na lista negra de status, que já vem com `404`; ou seja, ele esconde os "não existe" e te mostra o resto. Você controla isso com dois sinais **mutuamente exclusivos** (usar os dois ao mesmo tempo é erro):
+
+- `-b` (*status-codes-blacklist*): esconda estes códigos (padrão `404`).
+- `-s` (*status-codes*): mostre **apenas** estes códigos (uma lista branca). Ao usar `-s`, limpe a lista negra com `-b ""`.
+
+Para incluir o tamanho de cada resposta na saída — essencial contra soft 404 —, use `--include-length` (ou `-l`). Confira sempre o comportamento exato da sua versão com `gobuster dir --help`: os padrões mudaram entre as versões 2 e 3.
+
+### 3.2 ffuf: o fuzzer por posição
+
+O `ffuf` é mais geral: em vez de um "modo diretório", ele troca a palavra `FUZZ` onde você a colocar. Para descoberta de conteúdo, `FUZZ` vai no fim da URL:
+
+```bash
+ffuf -w common.txt -u http://alvo/FUZZ
+```
+
+A grande força do `ffuf` são os filtros, que separam o achado do ruído. Eles vêm em dois sabores: **match** (`-mc`, `-ms`, `-ml`, `-mw`), que diz o que **mostrar**, e **filter** (`-fc`, `-fs`, `-fl`, `-fw`), que diz o que **esconder**. Por padrão, o `ffuf` já casa um conjunto sensato de códigos:
+
+```text
+-mc  (match codes)   padrão: 200-299,301,302,307,401,403,405,500
+-fc  (filter codes)  esconde estes códigos de status
+-fs  (filter size)   esconde respostas deste tamanho (em bytes)
+-fw  (filter words)  esconde respostas com este número de palavras
+-fl  (filter lines)  esconde respostas com este número de linhas
+```
+
+O fluxo típico contra um soft 404: você roda uma vez, vê que **tudo** volta 200 com, digamos, 4242 bytes (a tal página de erro), e então esconde esse tamanho:
+
+```bash
+ffuf -w common.txt -u http://alvo/FUZZ -fs 4242
+```
+
+Agora só sobra o que tem tamanho diferente — os achados de verdade. Para procurar extensões, o `-e` estende o `FUZZ` (pedindo `admin`, `admin.php`...):
+
+```bash
+ffuf -w common.txt -u http://alvo/FUZZ -e .php,.bak,.old,.zip -fs 4242
+```
+
+E, quando um diretório é encontrado, o `-recursion` faz o `ffuf` entrar nele e fuzzar lá dentro também (só funciona com o `FUZZ` no fim da URL). Trocar a posição do `FUZZ` muda o alvo: `-u http://alvo/pagina?FUZZ=1` descobre nomes de parâmetro; `-H "Host: FUZZ.alvo"` descobre virtual hosts.
+
+### 3.3 O mesmo, na mão, com curl
+
+Por baixo, nenhuma dessas ferramentas faz mágica: elas mandam um pedido HTTP por palavra e leem a resposta. Dá para reproduzir a essência com o `curl` e um laço do shell (0.6) — e é assim que você vai trabalhar no lab, onde `ffuf` e `gobuster` não estão instalados. O truque é pedir ao `curl` que imprima só o que interessa, com a opção `-w` (*write-out*):
+
+```bash
+while read palavra; do
+  printf '%-24s %s\n' "/$palavra" \
+    "$(curl -s -o /dev/null -w '%{http_code}  %{size_download}b' "http://alvo/$palavra")"
+done < wordlist.txt
+```
+
+`-s` silencia a barra de progresso, `-o /dev/null` joga fora o corpo (você só quer os números), e `-w '%{http_code}  %{size_download}b'` imprime o código de status e o tamanho da resposta. É o `ffuf` reduzido ao osso: a wordlist, o pedido por linha, e a resposta triada por código e tamanho. Entender esta versão é entender todas as outras.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### 230 milhões de sites, 390 mil pastas `.git` abertas (2018)
+
+O exemplo mais limpo de por que a descoberta de conteúdo importa não é um ataque isolado: é a demonstração de que o problema é **a regra, não a exceção**. Em 2018, o pesquisador de segurança tcheco **Vladimír Smitka** resolveu medir quantos sites deixavam a pasta `/.git` acessível ao público — a pasta que o controle de versão `git` cria no diretório do projeto e que, num servidor, entrega o **código-fonte inteiro**, o histórico de alterações e tudo que um dia foi commitado (inclusive senhas que alguém "removeu depois").
+
+Começando em **julho de 2018** pela República Tcheca e pela Eslováquia, ele expandiu para uma varredura mundial a partir de um conjunto de logs de DNS de 3,5 TB. O resultado, publicado em **29 de agosto de 2018**, foi assustador: de **mais de 230 milhões de domínios** varridos, cerca de **390 mil** respondiam ao pedido de `/.git` entregando a pasta. Ao verificar uma amostra, Smitka encontrou **senhas de banco de dados** e até formulários de upload sem autenticação. Só na República Tcheca eram 1.925 repositórios expostos (55% foram corrigidos depois que ele avisou os donos); na Eslováquia, 931.
+
+O ponto para você: cada um desses 390 mil sites foi encontrado pedindo **um único caminho que ninguém linkou**. É forced browsing em escala industrial. Toda wordlist de descoberta de conteúdo tem `.git/HEAD` e `.git/config` nas primeiras linhas justamente por isso — e a defesa é não deixar a pasta no diretório público (seção 8), nunca "esperar que ninguém adivinhe".
+
+- **Impacto:** ~390 mil sites expondo código-fonte, histórico e, em muitos casos, credenciais de banco e chaves de API em texto claro.
+- **Lição:** o que não está linkado **não está protegido**. Segurança por obscuridade (contar que ninguém vai adivinhar o caminho) falha contra uma wordlist de poucos milhares de linhas.
+- **Fonte:** [Vladimír Smitka — "Global scan of exposed .git" (lynt.cz, 29/08/2018)](https://lynt.cz/blog/global-scan-exposed-git); cobertura em [The Register, 04/09/2018](https://www.theregister.com/2018/09/04/web_site_source_code_disclosure/).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá mapeado o DVWA pedindo caminhos que a interface nunca mostra, achado um arquivo de configuração vazado que entrega uma senha, e enumerado todos os módulos de vulnerabilidade da aplicação sem sequer estar logado — três flags no caminho, todas obtidas pela leitura das respostas.
+
+O lab é o **`dvwa`**. Como o Kali deste lab é enxuto e **não** tem `ffuf` nem `gobuster` (confira você mesmo com `command -v ffuf gobuster`), você vai fazer tudo com o `curl` e um laço de shell — a versão "na mão" da seção 3.3. É mais trabalho e mais aprendizado: você vê cada pedido e cada resposta, sem a mágica da ferramenta no meio.
+
+### 5.1 Subir o laboratório (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. O lab `dvwa` sobe o Kali e o DVWA na mesma rede interna, e o desktop do Kali abre ali mesmo, pelo navegador. (Regra de um lab por vez: pare outro lab se houver um rodando. No terminal, o equivalente é `scripts/lab.sh up dvwa`.)
+2. No Kali, abra um terminal. O DVWA atende pelo nome `dvwa` na rede interna; confirme:
+
+```console
+$ getent hosts dvwa
+10.0.0.3        dvwa
+$ curl -s -o /dev/null -w '%{http_code}\n' http://dvwa/
+302
+```
+
+No texto uso `10.0.0.3` para o DVWA; o IP do **seu** lab será outro, mas você vai sempre falar com ele pelo nome `dvwa`, então o número quase não aparece. O `302` da raiz já é a sua primeira pista: o site te redireciona (para o login), em vez de entregar a home — guarde isso.
+
+### 5.2 Missão 1 — o arquivo que ninguém linkou (guiado)
+
+Vamos calibrar e descobrir. Primeiro, **a resposta de base**: peça um caminho que com certeza não existe e veja como o DVWA responde a um "não existe".
+
+```console
+$ curl -s -o /dev/null -w 'code=%{http_code} size=%{size_download}\n' http://dvwa/estanaoexiste_xyz123
+code=404 size=306
+```
+
+Pronto: no DVWA, "não existe" é **404 com 306 bytes**. Esse é o seu ruído de fundo. Agora monte uma wordlist curta de caminhos comuns e rode o laço da seção 3.3:
+
+```console
+$ cat > paths.txt <<'EOF'
+login.php
+index.php
+setup.php
+instructions.php
+phpinfo.php
+security.php
+robots.txt
+README.md
+CHANGELOG.md
+php.ini
+config/
+docs/
+naoexiste
+EOF
+$ while read p; do
+    printf '%-20s %s\n' "/$p" \
+      "$(curl -s -o /dev/null -w '%{http_code}  %{size_download}b' "http://dvwa/$p")"
+  done < paths.txt
+/login.php           200  1342b
+/index.php           302  0b
+/setup.php           200  4429b
+/instructions.php    200  40861b
+/phpinfo.php         302  0b
+/security.php        302  0b
+/robots.txt          200  25b
+/README.md           200  33392b
+/CHANGELOG.md        200  7134b
+/php.ini             200  154b
+/config/             403  309b
+/docs/               403  309b
+/naoexiste           404  306b
+```
+
+Leia essa tabela como um mapa, usando a triagem da seção 2.4:
+
+- **200** (`login.php`, `setup.php`, `robots.txt`, `README.md`, `CHANGELOG.md`, `php.ini`): existem e foram entregues. Repare que `robots.txt`, `README.md`, `CHANGELOG.md` e `php.ini` **não aparecem em nenhum link** da interface do DVWA — você só os achou porque os pediu.
+- **302** (`index.php`, `phpinfo.php`, `security.php`): existem, mas redirecionam para o login (0 byte, só o cabeçalho `Location`). Precisam de sessão.
+- **403** (`config/`, `docs/`): existem, mas a listagem do diretório está proibida (309 bytes). O 403 confirma: *tem uma pasta aqui*.
+- **404** (`naoexiste`): o ruído de fundo (306 bytes), que você ignora.
+
+Um daqueles arquivos 200 é ouro: o **`php.ini`**, com apenas 154 bytes, é um arquivo de configuração do PHP que o site deixou no diretório público. Abra-o:
+
+```console
+$ curl -s http://dvwa/php.ini
+; This file attempts to overwrite the original php.ini file. Doesnt always work.
+
+magic_quotes_gpc = Off
+allow_url_fopen = on
+allow_url_include = on
+```
+
+Duas diretivas `allow_url_*` estão ligadas. Uma delas habilita o PHP a **abrir** uma URL como se fosse um arquivo; a outra habilita algo bem mais perigoso — **incluir** (executar) um arquivo vindo de uma URL, que é a base da *remote file inclusion* (RFI, assunto da Trilha 4). **Sua tarefa:** identifique a diretiva que habilita a inclusão remota e monte a flag `FLAG{diretiva-valor}` com o nome e o valor exatamente como aparecem no arquivo.
+
+<Hint title="Dica — qual das duas">
+`allow_url_fopen` libera *abrir* (fopen = file open) uma URL; `allow_url_include` libera *incluir* uma URL, ou seja, executá-la como código. A inclusão remota (RFI) depende da segunda. O valor dela, no arquivo, é `on`.
+</Hint>
+
+<FlagInput task="missao-1-descoberta" />
+
+### 5.3 Missão 2 — a fonte que vazou (desafio)
+
+Na Missão 1 você viu que a pasta `config/` existe (403). O arquivo de configuração do DVWA fica lá: `config/config.inc.php`. Peça-o:
+
+```console
+$ curl -s -o /dev/null -w 'code=%{http_code} size=%{size_download}\n' http://dvwa/config/config.inc.php
+code=200 size=0
+```
+
+Existe (200), mas vem **vazio** (0 byte). Faz sentido: é um `.php`, então o Apache o entrega ao PHP, que o **executa**; como o arquivo só define variáveis e não imprime nada, a saída é vazia. O código-fonte — com as senhas lá dentro — fica invisível por trás da execução.
+
+**Seu objetivo:** achar uma variante desse arquivo que o servidor entregue como **texto puro** (código-fonte), e dentro dela ler a **senha padrão do banco** e o **nível de segurança padrão**. A flag é `FLAG{senha-nivel}`.
+
+Pense no que você aprendeu sobre fuzzing de **extensão** (a posição 2 do diagrama da seção 2.3): se o problema é a extensão `.php` fazer o arquivo ser executado, que acontece se o mesmo arquivo tiver **outra** extensão?
+
+<Hint title="Dica 1 — por que mudar a extensão">
+O Apache decide quem processa o arquivo pela extensão. Só `.php` vai para o PHP. Um arquivo com extensão que o Apache não reconhece é servido como texto — e aí o código aparece cru. Editores, backups e instaladores deixam cópias assim o tempo todo.
+</Hint>
+
+<Hint title="Dica 2 — os sufixos que valem tentar">
+Faça um laço de `curl` sobre `config/config.inc.php` acrescentando sufixos comuns de cópia e de template: `~`, `.bak`, `.old`, `.save`, `.dist`, `.txt`. Compare o `code` e o `size` de cada um contra o 404 de base (306 bytes). Um deles foge do padrão com uns 2437 bytes.
+</Hint>
+
+<Solution title="Solução">
+Fuzzing de sufixo com um laço de `curl`:
+
+```console
+$ printf '%-32s %s\n' "/config/config.inc.php" \
+    "$(curl -s -o /dev/null -w '%{http_code}  %{size_download}b' http://dvwa/config/config.inc.php)"
+$ for s in '~' .bak .old .save .dist .txt; do
+    printf '%-32s %s\n' "/config/config.inc.php$s" \
+      "$(curl -s -o /dev/null -w '%{http_code}  %{size_download}b' "http://dvwa/config/config.inc.php$s")"
+  done
+/config/config.inc.php           200  0b
+/config/config.inc.php~          404  306b
+/config/config.inc.php.bak       404  306b
+/config/config.inc.php.old       404  306b
+/config/config.inc.php.save      404  306b
+/config/config.inc.php.dist      200  2437b
+/config/config.inc.php.txt       404  306b
+```
+
+A variante `.dist` (o arquivo de distribuição, o modelo que vem no instalador) existe e foi servida como texto: 2437 bytes. Leia as duas linhas que interessam:
+
+```console
+$ curl -s http://dvwa/config/config.inc.php.dist | grep -E "db_password|default_security_level"
+$_DVWA[ 'db_password' ] = getenv('DB_PASSWORD') ?: 'p@ssw0rd';
+$_DVWA[ 'default_security_level' ] = getenv('DEFAULT_SECURITY_LEVEL') ?: 'impossible';
+```
+
+A sintaxe `getenv('...') ?: 'valor'` quer dizer "use a variável de ambiente; se ela não existir, use este `valor` padrão". Então os fallbacks são a senha `p@ssw0rd` e o nível `impossible`. A flag se monta com esses dois valores.
+</Solution>
+
+<FlagInput task="missao-2-fonte-vazada" />
+
+<Callout variant="warning" title="Isto é exatamente o caso .git da seção 4, em miniatura">
+O `.dist` que você achou é a mesma classe de falha das 390 mil pastas `.git` de Smitka: um arquivo que **deveria** ficar fora do diretório público vaza o código-fonte e, com ele, uma credencial. No DVWA a senha é um fallback de exemplo; num site real, seria a senha de produção. A defesa (seção 8) é não deixar esses arquivos acessíveis — nunca contar que ninguém vai pedir `.dist`.
+</Callout>
+
+### 5.4 Missão 3 — o mapa dos módulos (desafio)
+
+Toda a graça do DVWA está em `/vulnerabilities/` — uma pasta com um subdiretório por tipo de falha (`sqli`, `xss_r`, ...). Sem login, o site não te mostra esse menu. Você vai **fuzzar a posição do caminho** para reconstruí-lo do lado de fora.
+
+**Seu objetivo:** descobrir quantos módulos de vulnerabilidade **existem** em `http://dvwa/vulnerabilities/FUZZ/`, sem estar logado, e montar a flag `FLAG{vulns-N}` com esse número `N`.
+
+A chave é a triagem da seção 2.4 aplicada a este alvo. Rode um teste pequeno primeiro, com um módulo que você sabe que existe (`sqli`) e um palpite que não deve existir (`rce`), e **leia a diferença**:
+
+```console
+$ for m in sqli rce; do
+    printf '%-8s %s\n' "$m" "$(curl -s -o /dev/null -w '%{http_code}' http://dvwa/vulnerabilities/$m/)"
+  done
+sqli     302
+rce      404
+```
+
+Agora você tem o seu critério. Monte uma lista de candidatos (misture nomes prováveis de módulos com alguns chutes para ver os dois comportamentos), rode o laço e **conte só os que existem**.
+
+<Hint title="Dica 1 — o que 302 e 404 dizem aqui">
+`sqli` existe e respondeu **302**: o módulo está lá, mas sem sessão o DVWA te redireciona para `login.php`. `rce` não existe e respondeu **404** (o 306-bytes de base). Então "existe" = 302 e "não existe" = 404. Conte os 302.
+</Hint>
+
+<Hint title="Dica 2 — uma lista de candidatos">
+Nomes comuns de módulos do DVWA e alguns chutes para calibrar: `sqli sqli_blind xss_r xss_s xss_d csrf brute exec fi upload captcha weak_id open_redirect javascript authbypass api bac cryptography csp` e os chutes `admin backup lfi rce ssrf`. Jogue num arquivo, uma por linha, e fuzze `vulnerabilities/FUZZ/`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ cat > mods.txt <<'EOF'
+sqli
+sqli_blind
+xss_r
+xss_s
+xss_d
+csrf
+brute
+exec
+fi
+upload
+captcha
+weak_id
+open_redirect
+javascript
+authbypass
+api
+bac
+cryptography
+csp
+admin
+backup
+lfi
+rce
+ssrf
+EOF
+$ while read m; do
+    printf '%-16s %s\n' "$m/" "$(curl -s -o /dev/null -w '%{http_code}' http://dvwa/vulnerabilities/$m/)"
+  done < mods.txt
+sqli/            302
+sqli_blind/      302
+xss_r/           302
+xss_s/           302
+xss_d/           302
+csrf/            302
+brute/           302
+exec/            302
+fi/              302
+upload/          302
+captcha/         302
+weak_id/         302
+open_redirect/   302
+javascript/      302
+authbypass/      302
+api/             302
+bac/             302
+cryptography/    302
+csp/             302
+admin/           404
+backup/          404
+lfi/             404
+rce/             404
+ssrf/            404
+```
+
+Conte os `302` — ou peça ao shell para contar por você:
+
+```console
+$ while read m; do
+    curl -s -o /dev/null -w '%{http_code}\n' http://dvwa/vulnerabilities/$m/
+  done < mods.txt | grep -c '^302'
+19
+```
+
+São **19** módulos reais (os cinco últimos candidatos — `admin`, `backup`, `lfi`, `rce`, `ssrf` — deram 404, não existem). Esse número é o `N` da flag. Você acabou de reconstruir o menu inteiro do DVWA sem nunca ter logado.
+</Solution>
+
+<FlagInput task="missao-3-fuzzing-de-caminho" />
+
+### 5.5 Desligar o laboratório
+
+Terminou? No painel **Laboratório**, clique em **Parar** para liberar a vaga (regra de um lab por vez). Se quiser refazer as missões do zero, use **Resetar**, que recria o DVWA no estado de fábrica. No terminal, o equivalente é `scripts/lab.sh down dvwa`.
+
+## 6. Variações e aprofundamento
+
+**O Burp Intruder como fuzzer gráfico.** Você já conhece o Burp do 2.5. O **Intruder** é o fuzzer dele: você captura um pedido, marca uma posição com `§...§` (o equivalente ao `FUZZ`), carrega a wordlist como *payload* e dispara. A leitura é a mesma do laço de `curl`: você ordena os resultados por **Status** e por **Length** (tamanho) e procura o que foge do padrão. É mais lento que o `ffuf` para listas grandes (a edição gratuita ainda limita a velocidade), mas insubstituível quando o pedido é complexo — com cookies de sessão, tokens anti-CSRF (2.6) ou corpo JSON. No lab, dá para repetir a Missão 3 pelo Intruder: marque o `FUZZ` em `/vulnerabilities/§x§/` e ordene por Status.
+
+**Recursão e extensões, de novo.** Num alvo real, o fluxo maduro é: rodar `common.txt` com `-recursion` (ou o `-r` do gobuster) para que, ao achar `/admin/`, a ferramenta já fuzze dentro de `/admin/`; e usar `-e`/`-x` com as extensões da tecnologia do alvo (`.php` num site PHP, `.aspx` num IIS, `.jsp` num Tomcat). Descobrir a tecnologia primeiro (pelos cabeçalhos, como no banner grabbing do 2.7) poupa milhares de pedidos inúteis.
+
+**Além do caminho: parâmetros e virtual hosts.** Mudando a posição do `FUZZ` (seção 2.3), o mesmo ffuf vira outra ferramenta. Em `-u http://alvo/pagina.php?FUZZ=1` ele faz <GlossaryTerm term="parameter discovery">parameter discovery</GlossaryTerm>: acha parâmetros que a página aceita mas não anuncia (um `?debug=1`, um `?admin=true`), e ferramentas como o `arjun` são especializadas nisso. Em `-H "Host: FUZZ.alvo.com"` ele descobre *virtual hosts* — sites diferentes servidos pelo mesmo IP, que só aparecem se você mandar o cabeçalho `Host` certo. São as dimensões que você vai explorar fundo nas Trilhas de Web e de Redes.
+
+**As listas certas e o "assetnote".** Além do SecLists, há listas geradas de varreduras massivas da internet (as *assetnote wordlists*), ordenadas por frequência real — as primeiras linhas são as mais prováveis. Num pentest com tempo curto, uma lista ordenada por probabilidade acha mais no mesmo número de pedidos. A arte não é ter a maior lista; é ter a lista certa, na ordem certa.
+
+## 7. Erros comuns
+
+- **"O fuzzing não achou nada / achou tudo."** Você não calibrou. Peça um caminho impossível primeiro: se ele voltar 404, filtre por código; se voltar **200** (soft 404), filtre pelo **tamanho** (`-fs` no ffuf) — o código é inútil aí. Nunca confie nos resultados sem medir a resposta de base.
+- **Usar a wordlist errada.** `rockyou.txt` (senhas) para descobrir diretórios não acha quase nada. Para caminhos, use `common.txt` e as `raft`/`directory-list`. Para parâmetros, listas de nomes de parâmetro. Lista de senha é para login.
+- **Confundir 403 com 404.** Um `403` não é "não existe": é "existe, mas negado". Muita gente filtra 403 junto com 404 e joga fora pistas — uma pasta `/admin/` que dá 403 está dizendo que ela está ali.
+- **Esquecer a barra final em diretórios.** `/.git` pode dar 404 e `/.git/` dar 403 ou 200 (ou o contrário), dependendo da configuração. Ao caçar pastas, teste com e sem a barra.
+- **`gobuster` reclama de status.** Mensagens como *"status-codes ('...') and status-codes-blacklist ('404') are both set"* vêm de usar `-s` e `-b` ao mesmo tempo (seção 3.1). Escolha um: ou lista branca (`-s`, com `-b ""`), ou lista negra (`-b`).
+- **Bater forte demais no alvo.** Centenas de *threads* (`-t`) podem derrubar um servidor pequeno — e, num pentest, isso é um incidente, não um achado. Comece devagar e respeite o escopo.
+- **No lab, procurar o `ffuf`.** Ele não está no Kali enxuto (`command -v ffuf` não devolve nada). Use o laço de `curl` da seção 3.3 — ou o Burp Intruder, que está lá.
+
+## 8. Defesa e mitigação
+
+A descoberta de conteúdo explora uma crença errada: a de que "se não tem link, ninguém acha". A defesa inteira gira em torno de abandonar essa crença.
+
+**1. Tire o que é sensível do diretório público (a causa raiz).** Um arquivo só é achável por fuzzing se ele estiver servível pelo servidor web. Então:
+
+- **Nunca faça deploy da pasta `.git`.** Publique só o resultado do build, não o repositório. Se o `.git` já estiver no servidor, remova-o — foi a lição dos 390 mil sites de Smitka.
+- **Não deixe backups, `.bak`, `.old`, `~` nem `.dist`/`.sample` com segredos no webroot.** O `config.inc.php.dist` que você leu no lab é inofensivo porque é só um modelo; o perigo é a versão com a senha de produção. Mantenha configurações **fora** da raiz web, e carregue-as por caminho absoluto.
+- **Mova diretórios de trabalho** (`/docs`, `/tests`, uploads administrativos) para fora do que o servidor serve, ou proteja-os de verdade.
+
+**2. Exija autorização de verdade — não obscuridade.** Um `/admin/` protegido por "ninguém sabe que ele existe" cai no primeiro fuzzing. Proteja-o com **autenticação e autorização** no servidor: toda rota sensível verifica sessão e papel antes de responder. Repare que, no lab, os módulos respondem **302** (redirecionam para o login) sem sessão — isso é certo: eles existem, mas não entregam nada a quem não está autenticado. O erro seria entregar.
+
+**3. Desligue a listagem de diretórios.** Quando um diretório sem `index.html` lista seus arquivos, ele entrega o mapa de graça. No Apache, `Options -Indexes` (o DVWA responde 403 nas pastas justamente por isso); no nginx, `autoindex off;` (o padrão). Assim, mesmo que a pasta exista, ela não revela o conteúdo.
+
+**4. Camadas extras: taxa, monitoração e um 404 honesto.** Nenhuma destas substitui as de cima, mas ajudam em profundidade:
+
+- **Rate limiting:** um `ffuf` dispara centenas de pedidos por segundo de um mesmo IP — um padrão fácil de barrar (por IP, com um WAF ou no próprio servidor). Isso **atrasa** o atacante, não o impede (ele diminui a velocidade).
+- **Monitoração do log:** uma enxurrada de 404 sequenciais no log do Apache é a assinatura clássica de um fuzzing. Vale um alerta (é o mesmo rastro que você viu nos logs do 2.4 e do 2.5).
+- **Não tente "esconder" com soft 404.** Devolver 200 para tudo atrapalha o fuzzing ingênuo, mas um atacante competente filtra por tamanho e contorna — e você ainda quebra ferramentas legítimas e SEO. É disfarce, não defesa.
+
+A regra que amarra tudo: **o que precisa ser secreto não pode depender de ser secreto o caminho.** Se a única coisa entre o atacante e o recurso é o nome do arquivo, uma wordlist de poucos milhares de linhas já venceu.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e refaça os desafios pensando no "porquê" de cada resposta.
+
+<Quiz task="quiz-final" />
+
+**Desafios práticos (as três flags da seção 5).** Para fixar, além delas: (a) rode o laço da Missão 1 acrescentando a opção `-w '%{redirect_url}'` ao `curl` e veja, nos 302, para **onde** o DVWA redireciona; (b) explique, em uma frase, por que filtrar o `403` junto com o `404` seria um erro ao caçar diretórios.
+
+<Solution title="Resposta do desafio (b)">
+Porque o `404` quer dizer "não existe" (ruído que você descarta), mas o `403` quer dizer "existe, mas o acesso foi negado" — é justamente uma pista de que há algo ali (uma pasta cuja listagem está proibida, por exemplo). Jogar o 403 fora junto com o 404 descartaria achados reais.
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- A web é um iceberg: o servidor responde a caminhos que **não** estão linkados. Achá-los pedindo nomes prováveis é **content discovery**; quando o achado deveria ser restrito, a falha é **forced browsing**.
+- Uma **wordlist** é adivinhação informada — nomes que os desenvolvedores repetem. A referência é o **SecLists**; a lista **certa** (curada, na ordem certa) vale mais que a maior.
+- **Fuzzing** é trocar a posição `FUZZ` do pedido por cada linha da wordlist. A posição decide o alvo: caminho, extensão, nome de parâmetro, valor, `Host`.
+- **Interpretar a resposta** é o coração: 200 (existe/entregue), 301-302 (existe/redireciona), 403 (existe/negado), 404 (não existe). Sempre **calibre** contra a resposta de base; contra **soft 404**, filtre pelo **tamanho**, não pelo código.
+- `ffuf` (por posição, filtros `-mc/-fc/-fs/-fw`) e `gobuster` (modo `dir`, `-x`, `-s`/`-b`) são as ferramentas; por baixo, é um `curl` num laço — como no lab.
+- A defesa de fundo é **não deixar o sensível acessível** (sem `.git`, sem `.bak`/`.dist`, sem listagem) e **exigir autorização de verdade**; taxa, log e 404 honesto são camadas extras. Esconder o caminho **não** é proteger.
+
+**Cola rápida:**
+
+```text
+# calibrar: como é um "não existe"?
+curl -s -o /dev/null -w 'code=%{http_code} size=%{size_download}\n' http://alvo/naoexiste_zzz
+
+# descoberta de conteúdo na mão (laço de curl)
+while read p; do printf '%-24s %s\n' "/$p" \
+  "$(curl -s -o /dev/null -w '%{http_code} %{size_download}b' "http://alvo/$p")"; done < lista.txt
+
+# ffuf: caminho, extensões, e filtro de tamanho contra soft 404
+ffuf -w common.txt -u http://alvo/FUZZ -e .php,.bak,.dist -fs <tamanho-do-erro>
+
+# gobuster: modo dir com extensões
+gobuster dir -u http://alvo/ -w common.txt -x php,bak,old,zip
+```
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [SecLists — a coleção de wordlists (GitHub)](https://github.com/danielmiessler/SecLists) — a `Discovery/Web-Content/common.txt` é por onde começar.
+- [ffuf — repositório e wiki oficiais](https://github.com/ffuf/ffuf) — a sintaxe dos filtros e das posições do `FUZZ`.
+- [gobuster — repositório oficial](https://github.com/OJ/gobuster) — os modos `dir`, `dns` e `vhost` e seus padrões (confira sempre com `--help`).
+- [OWASP WSTG — Review of Backup and Unreferenced Files](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/04-Review_Old_Backup_and_Unreferenced_Files_for_Sensitive_Information) — a metodologia formal do que você fez nas Missões 1 e 2.
+- [Vladimír Smitka — Global scan of exposed .git](https://lynt.cz/blog/global-scan-exposed-git) — o estudo da seção 4, na fonte.
