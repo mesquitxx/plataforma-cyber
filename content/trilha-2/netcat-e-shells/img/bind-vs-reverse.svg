@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-labelledby="t d">
+  <title id="t">Bind shell contra reverse shell: quem liga para quem</title>
+  <desc id="d">Dois cenários lado a lado, com o atacante à esquerda e o alvo à direita em cada um, e um firewall de borda no meio que, por padrão, barra conexões que chegam de fora e deixa passar as que saem. No primeiro cenário, o bind shell: o alvo abre uma porta e fica à escuta, e o atacante é quem inicia a conexão, de fora para dentro; essa seta bate no firewall e é barrada, então o bind shell em geral não atravessa a borda. No segundo cenário, o reverse shell: o atacante fica à escuta na própria máquina e o alvo é quem inicia a conexão, de dentro para fora; essa seta acompanha o sentido que o firewall deixa passar, então o reverse shell costuma funcionar. A lição: o que decide não é onde o shell roda, e sim quem começa a conexão, porque o firewall trata entrada e saída de formas diferentes.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .r { fill: #f08a7e; }
+    .ln { stroke: #3a4b42; stroke-width: 2; }
+    .ok { stroke: #5ee08a; stroke-width: 2.5; }
+    .no { stroke: #f08a7e; stroke-width: 2.5; stroke-dasharray: 6 4; }
+    .fw { stroke: #e8c46a; stroke-width: 2; stroke-dasharray: 3 4; }
+  </style>
+  <defs>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08a7e"/></marker>
+  </defs>
+  <rect width="900" height="460" fill="#121815"/>
+  <text class="t" x="30" y="34">O que decide não é onde o shell roda, e sim quem inicia a conexão</text>
+
+  <!-- panel 1: bind shell -->
+  <rect x="20" y="56" width="420" height="330" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="36" y="82">1. bind shell  —  o alvo escuta</text>
+
+  <rect x="40" y="110" width="120" height="70" rx="8" fill="#1d2a23" stroke="#e8c46a"/>
+  <text class="b y" x="54" y="140">atacante</text>
+  <text class="s" x="54" y="160">conecta (cliente)</text>
+
+  <rect x="300" y="110" width="120" height="70" rx="8" fill="#1d2a23" stroke="#5ee08a"/>
+  <text class="b g" x="314" y="140">alvo</text>
+  <text class="s" x="314" y="160">nc -lvnp 4444</text>
+  <text class="s" x="314" y="174">escuta a porta</text>
+
+  <!-- firewall -->
+  <line class="fw" x1="230" y1="96" x2="230" y2="300"/>
+  <text class="s y" x="196" y="314">firewall</text>
+  <text class="s y" x="196" y="328">de borda</text>
+
+  <!-- attacker -> target, blocked -->
+  <line class="no" x1="160" y1="145" x2="300" y2="145" marker-end="url(#ar)"/>
+  <text class="b r" x="176" y="135">conexão de entrada</text>
+  <text class="t r" x="222" y="162">✕</text>
+
+  <text class="b r" x="40" y="230">o firewall barra conexões</text>
+  <text class="b r" x="40" y="248">que chegam de fora:</text>
+  <text class="b r" x="40" y="266">o bind shell quase nunca</text>
+  <text class="b r" x="40" y="284">atravessa a borda</text>
+  <text class="s" x="40" y="314">útil só quando já se está na</text>
+  <text class="s" x="40" y="328">mesma rede do alvo (o nosso lab)</text>
+  <text class="s" x="40" y="356">no DVWA ainda falha por outro</text>
+  <text class="s" x="40" y="370">motivo: o alvo não tem nc (seção 5)</text>
+
+  <!-- panel 2: reverse shell -->
+  <rect x="460" y="56" width="420" height="330" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="476" y="82">2. reverse shell  —  o atacante escuta</text>
+
+  <rect x="480" y="110" width="120" height="70" rx="8" fill="#1d2a23" stroke="#5ee08a"/>
+  <text class="b g" x="494" y="140">atacante</text>
+  <text class="s" x="494" y="160">nc -lvnp 4444</text>
+  <text class="s" x="494" y="174">escuta a porta</text>
+
+  <rect x="740" y="110" width="120" height="70" rx="8" fill="#1d2a23" stroke="#e8c46a"/>
+  <text class="b y" x="754" y="140">alvo</text>
+  <text class="s" x="754" y="160">conecta de volta</text>
+
+  <!-- firewall -->
+  <line class="fw" x1="670" y1="96" x2="670" y2="300"/>
+  <text class="s y" x="636" y="314">firewall</text>
+  <text class="s y" x="636" y="328">de borda</text>
+
+  <!-- target -> attacker, allowed (arrow points left, to attacker) -->
+  <line class="ok" x1="740" y1="145" x2="600" y2="145" marker-end="url(#ag)"/>
+  <text class="b g" x="612" y="135">conexão de saída</text>
+  <text class="t g" x="662" y="162">✓</text>
+
+  <text class="b g" x="480" y="230">o firewall deixa sair</text>
+  <text class="b g" x="480" y="248">quase tudo:</text>
+  <text class="b g" x="480" y="266">o alvo liga para o atacante</text>
+  <text class="b g" x="480" y="284">e o shell se forma</text>
+  <text class="s" x="480" y="314">é o padrão em pentest real, e o</text>
+  <text class="s" x="480" y="328">que você faz no lab (missão 2)</text>
+  <text class="s" x="480" y="356">a defesa certa é controlar a SAÍDA</text>
+  <text class="s" x="480" y="370">(egress filtering, seção 8)</text>
+
+  <rect x="20" y="400" width="860" height="46" rx="10" fill="#16201b" stroke="#5ee08a"/>
+  <text class="b" x="36" y="422">A pergunta que separa os dois: quem dá o primeiro passo da conexão?</text>
+  <text class="s" x="36" y="438">Bind = o alvo escuta e o atacante liga. Reverse = o atacante escuta e o alvo liga de volta.</text>
+</svg>

