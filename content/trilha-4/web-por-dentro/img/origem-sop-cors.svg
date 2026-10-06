@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="t d">
+  <title id="t">Origem, same-origin policy e preflight do CORS</title>
+  <desc id="d">Parte de cima: a origem é a tupla esquema, host e porta. Comparando com http://localhost:8041: http://localhost:8041/outra/pagina é a mesma origem (só o caminho muda); http://localhost:8042 é outra origem porque a porta muda, mas é o mesmo site; https://localhost:8041 é outra origem porque o esquema muda; http://127.0.0.1:8041 é outra origem e outro site porque o host muda, embora seja a mesma máquina. Parte do meio: o que a same-origin policy faz com requisições entre origens: enviar (formulários, links, fetch simples) normalmente é permitido; embutir (img, script, iframe) normalmente é permitido; ler a resposta pelo JavaScript é bloqueado, a menos que o servidor libere com CORS. Parte de baixo: duas sequências reais da Missão 3. À esquerda, um POST com Content-Type text/plain é uma requisição simples: vai direto ao servidor, que a processa, e só a leitura da resposta é bloqueada. À direita, um PUT exige preflight: o navegador manda antes um OPTIONS com Origin e Access-Control-Request-Method; o servidor não responde com Access-Control-Allow-Origin, então o navegador nunca envia o PUT.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .c { fill: #5cc8d8; }
+    .r { fill: #ef7b6b; }
+    .life { stroke: #2c3a33; stroke-width: 2; }
+    .msg { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ar); fill: none; }
+    .back { stroke: #5ee08a; stroke-width: 2; marker-end: url(#ag); fill: none; }
+    .stop { stroke: #ef7b6b; stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
+    .panel { fill: #16201b; stroke: #2c3a33; stroke-width: 1.2; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="560" fill="#121815"/>
+  <text class="t" x="24" y="30">Origem = esquema + host + porta. A SOP deixa enviar, mas não ler.</text>
+
+  <rect class="panel" x="24" y="44" width="852" height="140" rx="8"/>
+  <text class="b" x="40" y="68">página em</text>
+  <text class="b c" x="124" y="68">http://localhost:8041</text>
+  <text class="s" x="400" y="68">origem?</text>
+  <text class="s" x="520" y="68">site?</text>
+  <text class="s" x="610" y="68">por quê</text>
+  <text class="b" x="40" y="96">http://localhost:8041/outra/pagina</text>
+  <text class="b g" x="400" y="96">mesma</text>
+  <text class="b g" x="520" y="96">mesmo</text>
+  <text class="s" x="610" y="96">só o caminho muda</text>
+  <text class="b" x="40" y="120">http://localhost:<tspan class="y">8042</tspan></text>
+  <text class="b r" x="400" y="120">outra</text>
+  <text class="b g" x="520" y="120">mesmo</text>
+  <text class="s" x="610" y="120">porta diferente</text>
+  <text class="b" x="40" y="144"><tspan class="y">https</tspan>://localhost:8041</text>
+  <text class="b r" x="400" y="144">outra</text>
+  <text class="b r" x="520" y="144">outro*</text>
+  <text class="s" x="610" y="144">esquema diferente</text>
+  <text class="b" x="40" y="168">http://<tspan class="y">127.0.0.1</tspan>:8041</text>
+  <text class="b r" x="400" y="168">outra</text>
+  <text class="b r" x="520" y="168">outro</text>
+  <text class="s" x="610" y="168">host diferente (mesma máquina!)</text>
+
+  <text class="s" x="24" y="204">* pela definição de "same site" do HTML Standard, que inclui o esquema (schemeful same-site).</text>
+
+  <rect class="panel" x="24" y="216" width="270" height="62" rx="8"/>
+  <text class="h g" x="40" y="240">ENVIAR</text>
+  <text class="s" x="40" y="260">form, link, fetch simples:</text>
+  <text class="s g" x="40" y="273">permitido</text>
+  <rect class="panel" x="315" y="216" width="270" height="62" rx="8"/>
+  <text class="h g" x="331" y="240">EMBUTIR</text>
+  <text class="s" x="331" y="260">img, script, iframe, css:</text>
+  <text class="s g" x="331" y="273">permitido</text>
+  <rect class="panel" x="606" y="216" width="270" height="62" rx="8"/>
+  <text class="h r" x="622" y="240">LER pelo JavaScript</text>
+  <text class="s" x="622" y="260">a resposta de outra origem:</text>
+  <text class="s r" x="622" y="273">bloqueado, salvo CORS</text>
+
+  <text class="h c" x="24" y="312">E6: POST text/plain (simples)</text>
+  <text class="h c" x="470" y="312">E5: PUT (precisa de preflight)</text>
+
+  <text class="s" x="40" y="336">página :8041</text>
+  <text class="s" x="300" y="336">API :8042</text>
+  <line class="life" x1="70" y1="342" x2="70" y2="540"/>
+  <line class="life" x1="330" y1="342" x2="330" y2="540"/>
+  <text class="s" x="80" y="364">POST /api/sem-cors  Origin: …8041</text>
+  <path class="msg" d="M72,372 L326,372"/>
+  <text class="s y" x="220" y="396">processado!</text>
+  <text class="s" x="80" y="420">200, sem Access-Control-Allow-Origin</text>
+  <path class="back" d="M328,428 L74,428"/>
+  <text class="b r" x="80" y="458">JS: TypeError (não lê)</text>
+  <text class="s" x="80" y="484">o efeito no servidor já aconteceu:</text>
+  <text class="s" x="80" y="498">é a raiz do CSRF (4.7)</text>
+
+  <text class="s" x="486" y="336">página :8041</text>
+  <text class="s" x="746" y="336">API :8042</text>
+  <line class="life" x1="516" y1="342" x2="516" y2="540"/>
+  <line class="life" x1="776" y1="342" x2="776" y2="540"/>
+  <text class="s" x="526" y="364">OPTIONS /api/sem-cors</text>
+  <text class="s" x="526" y="378">Access-Control-Request-Method: PUT</text>
+  <path class="msg" d="M518,386 L772,386"/>
+  <text class="s" x="526" y="410">204, sem Access-Control-Allow-*</text>
+  <path class="back" d="M774,418 L520,418"/>
+  <text class="s r" x="526" y="446">PUT /api/sem-cors</text>
+  <path class="stop" d="M518,454 L700,454"/>
+  <text class="b r" x="708" y="458">nunca sai</text>
+  <text class="s" x="526" y="484">o log do servidor só mostra o OPTIONS:</text>
+  <text class="s" x="526" y="498">o preflight protege o servidor</text>
+</svg>

@@ -1,0 +1,1850 @@
+---
+slug: web-por-dentro
+track: trilha-4
+title: "Como a web funciona por dentro (revisão aplicada)"
+prerequisites: [trilha-2, fundamentos-de-criptografia]
+lab: null
+tasks:
+  - slug: missao-1-o-que-o-servidor-recebe
+    title: "Missão 1 — O que o servidor realmente recebe"
+    type: flag
+    prompt: "O recibo (FLAG{ }) que o servidor devolve quando o pedido chega exatamente como ele exige."
+    hint: "O navegador normaliza tudo; aqui você precisa controlar cada byte. Use --resolve (ou -H Host) para o nome, --data-urlencode para o corpo e cuidado com o + e o & dentro dos valores."
+    flag:
+      hash: "scrypt$16384$8$1$be84925c72cede82f1632bae07d0b8b82cffc09b6c8b0443b360a2d6c16ef278"
+      salt: "850bfc1f927a515f0824c1b7346d7f9f"
+  - slug: missao-2-o-pote-de-biscoitos
+    title: "Missão 2 — O pote de biscoitos"
+    type: flag
+    prompt: "A flag (FLAG{ }) que o conferir.sh gera quando os nomes dos cookies de cada URL estão certos."
+    hint: "Domain, Path, Secure e Max-Age=0 decidem quem vai. Lembre: o curl não aplica o SameSite (ele não é navegador), e a porta não separa cookies."
+    flag:
+      hash: "scrypt$16384$8$1$e57a5cd6946b4704a6682853b868e05d1b5c349cd30a8c6f224ddc49f3a6c64d"
+      salt: "41e41ff778d19276b161828a739a338c"
+  - slug: missao-3-mesma-origem
+    title: "Missão 3 — Mesma origem?"
+    type: flag
+    prompt: "A flag (FLAG{ }) do conferir.sh quando, para E1 a E6, você acerta enviada/cookie/preflight/lida."
+    hint: "Olhe o log do servidor para enviada/cookie/preflight e a tabela da página para lida. A SOP bloqueia a leitura, não o envio; o PUT nem sai sem passar no preflight."
+    flag:
+      hash: "scrypt$16384$8$1$0a49a8a69f5ea64e3908d4617aa025dd522c43684d9d9e243a77cd396369a1a9"
+      salt: "c667fb72a1537467717c44f6cba3c384"
+  - slug: quiz-final
+    title: "Quiz — Como a web funciona por dentro"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Numa URL como `https://loja.exemplo/busca?q=caneca#avaliacoes`, o que NÃO é enviado ao servidor?"
+        options:
+          - "O caminho `/busca`"
+          - "A query string `?q=caneca`"
+          - "O fragmento `#avaliacoes`"
+          - "O cabeçalho `Host: loja.exemplo`"
+        answer: 2
+        explanation: "O fragmento (depois do `#`) fica no navegador: ele serve para rolar até um ponto da página ou para o roteamento de uma SPA, e nunca entra na requisição. Caminho, query e Host vão todos ao servidor."
+      - question: "Por que uma requisição HTTP/1.1 precisa do cabeçalho `Host`?"
+        options:
+          - "Para o servidor saber qual idioma responder"
+          - "Porque um mesmo IP e porta podem hospedar vários sites (virtual hosts), e o Host diz qual deles"
+          - "Para autenticar o usuário"
+          - "Porque o TLS exige, e sem ele a conexão cai"
+        answer: 1
+        explanation: "Vários sites costumam dividir o mesmo IP. O `Host` (e, no TLS, o SNI) diz a qual deles a requisição se destina. Por isso o RFC 9112 manda o servidor responder 400 a uma requisição HTTP/1.1 sem exatamente um `Host`."
+      - question: "Um servidor recebe uma requisição com `Content-Length: 5` E `Transfer-Encoding: chunked`. O que o RFC 9112 recomenda?"
+        options:
+          - "Usar o Content-Length, que é mais simples"
+          - "Somar os dois"
+          - "Tratar como erro: a mensagem é ambígua e pode ser uma tentativa de request smuggling"
+          - "Ignorar o corpo e responder 200"
+        answer: 2
+        explanation: "Com os dois cabeçalhos, servidores diferentes podem discordar de onde a mensagem termina. É exatamente a brecha do HTTP request smuggling. O RFC 9112 diz que o `Transfer-Encoding` prevalece, mas que a mensagem 'ought to be handled as an error'."
+      - question: "Um cookie é definido com `Set-Cookie: sid=abc; Secure; HttpOnly; SameSite=Lax`. O que o `HttpOnly` faz?"
+        options:
+          - "Envia o cookie só em páginas HTTP, não HTTPS"
+          - "Impede que o JavaScript da página leia o cookie (via document.cookie)"
+          - "Garante que o cookie não seja alterado pelo servidor"
+          - "Faz o cookie expirar ao fechar o navegador"
+        answer: 1
+        explanation: "`HttpOnly` esconde o cookie do JavaScript: mesmo um XSS não consegue lê-lo por `document.cookie`. Quem exige HTTPS é o `Secure`; quem controla o envio entre sites é o `SameSite`."
+      - question: "A página `http://localhost:8041` faz um `fetch` para `http://localhost:8042`. Isso é mesma origem?"
+        options:
+          - "Sim, porque é o mesmo host (localhost)"
+          - "Sim, porque é a mesma máquina"
+          - "Não: a porta faz parte da origem, então 8041 e 8042 são origens diferentes"
+          - "Depende do navegador"
+        answer: 2
+        explanation: "Origem é a tupla esquema + host + porta. Mudou a porta, mudou a origem. A same-origin policy trata :8042 como outra origem, e a leitura da resposta só acontece se o servidor liberar com CORS."
+      - question: "O que a same-origin policy (SOP) realmente impede por padrão?"
+        options:
+          - "Que o navegador ENVIE uma requisição para outra origem"
+          - "Que a página EMBUTA uma imagem ou script de outra origem"
+          - "Que o JavaScript LEIA a resposta de outra origem"
+          - "Que o servidor receba cookies"
+        answer: 2
+        explanation: "A SOP deixa enviar (formulários, links, fetch) e embutir (img, script, iframe) entre origens. O que ela bloqueia é a LEITURA da resposta pelo JavaScript. Por isso um CSRF funciona: a requisição é enviada e tem efeito, mesmo que o atacante não leia a resposta."
+      - question: "Um `fetch` com `method: \"PUT\"` para outra origem dispara um preflight. O que é esse preflight?"
+        options:
+          - "Um `OPTIONS` que o navegador manda ANTES, para perguntar se o `PUT` é permitido"
+          - "Um segundo `PUT` de confirmação"
+          - "Um aviso no console, sem requisição de rede"
+          - "Uma renegociação do TLS"
+        answer: 0
+        explanation: "Para métodos fora de GET/HEAD/POST (ou cabeçalhos não simples), o navegador envia antes um `OPTIONS` com `Access-Control-Request-Method`. Se o servidor não autorizar na resposta, o `PUT` real nunca sai. Por isso o preflight protege o servidor."
+      - question: "Por que validar a entrada só no navegador (JavaScript) não é segurança?"
+        options:
+          - "Porque o JavaScript é lento"
+          - "Porque o atacante controla o cliente e pode enviar a requisição direto, sem passar pela página"
+          - "Porque o navegador apaga a validação após 24 horas"
+          - "Porque validação no cliente viola a LGPD"
+        answer: 1
+        explanation: "Tudo o que chega na requisição — campos, cabeçalhos, cookies, método — é controlável pelo atacante com curl, nc ou o Repeater do Burp. A validação do cliente é experiência de usuário; a de segurança é sempre no servidor."
+      - question: "O mesmo texto `<b>` é inofensivo numa célula de planilha, mas vira tag ao cair no HTML de uma página. Qual é a lição de codificação?"
+        options:
+          - "Sanitizar a entrada uma única vez, na chegada, resolve todos os contextos"
+          - "A codificação correta depende do contexto de SAÍDA (HTML, URL, JS, SQL), aplicada na hora em que o dado entra nele"
+          - "Basta remover os caracteres `<` e `>`"
+          - "O problema não existe se o site usar HTTPS"
+        answer: 1
+        explanation: "Cada destino tem caracteres que mandam: `<` no HTML, `'` no SQL, `&` na URL. Não há uma 'limpeza universal': o certo é codificar na saída, conforme o contexto. É a base de XSS (4.3), SQLi (4.2) e path traversal."
+      - question: "No incidente do IIS (MS01-026, CVE-2001-0333), por que a 'decodificação dupla' driblava o filtro?"
+        options:
+          - "O filtro era lento e expirava"
+          - "O filtro checava `../` ANTES de uma segunda decodificação; `..%252f` não parecia `../` na hora do filtro, mas virava `../` depois"
+          - "O servidor não tinha senha de administrador"
+          - "O atacante adivinhava o caminho por força bruta"
+        answer: 1
+        explanation: "O IIS decodificava a URL, passava pela checagem de segurança e então decodificava de novo. `..%252f` sobrevive ao filtro (ainda é `..%2f`) e só vira `../` na segunda passada, escapando da pasta. Canonicalizar ANTES de validar é a correção."
+glossary:
+  - term: request line
+    definition: "A primeira linha de uma requisição HTTP, com três partes: método, alvo (caminho e query) e versão, por exemplo GET /busca?q=caneca HTTP/1.1."
+  - term: query string
+    definition: "A parte da URL depois do ?, com pares nome=valor separados por &, que passa parâmetros ao servidor (ex.: ?q=caneca&pagina=2)."
+  - term: URL fragment
+    definition: "A parte da URL depois do #. Fica no navegador (rolagem, roteamento de SPA) e nunca é enviada ao servidor."
+  - term: request body
+    definition: "O conteúdo que vem depois dos cabeçalhos numa requisição, separado por uma linha em branco. Carrega o formulário, o JSON ou o arquivo enviado."
+  - term: Content-Type
+    definition: "Cabeçalho que diz o formato do corpo (ex.: application/json, application/x-www-form-urlencoded, text/html), para o outro lado saber como interpretá-lo."
+  - term: MIME type
+    definition: "Rótulo padronizado de tipo de conteúdo no formato tipo/subtipo (ex.: text/html, image/png). É o valor que vai no Content-Type."
+  - term: Content-Length
+    definition: "Cabeçalho que informa, em bytes, o tamanho do corpo da mensagem, para o recebedor saber quando ela termina."
+  - term: chunked transfer encoding
+    definition: "Forma de enviar o corpo em pedaços (chunks), cada um prefixado pelo seu tamanho em hexadecimal, terminando num pedaço de tamanho zero. Usada quando o tamanho total não é conhecido de início."
+  - term: Host header
+    definition: "Cabeçalho obrigatório em HTTP/1.1 que diz para qual site (nome de domínio) a requisição se destina, já que vários sites podem dividir o mesmo IP e porta."
+  - term: virtual host
+    definition: "Um dos vários sites servidos pelo mesmo servidor no mesmo IP e porta, distinguidos pelo cabeçalho Host da requisição."
+  - term: safe method
+    definition: "Método HTTP que, por definição, só lê e não deveria mudar o estado do servidor: GET, HEAD, OPTIONS e TRACE (RFC 9110)."
+  - term: idempotent method
+    definition: "Método cujo efeito de repetir a mesma requisição é igual ao de fazê-la uma vez só: GET, HEAD, PUT, DELETE, OPTIONS e TRACE. POST não é idempotente."
+  - term: redirect
+    definition: "Resposta HTTP (status 3xx) com um cabeçalho Location que manda o navegador buscar outra URL."
+  - term: reverse proxy
+    definition: "Servidor que fica na frente da aplicação, recebe as requisições dos clientes e as repassa ao servidor de verdade (ex.: nginx). Pode fazer cache, TLS e balanceamento."
+  - term: load balancer
+    definition: "Componente que distribui as requisições entre vários servidores iguais, para aguentar mais carga e sobreviver à queda de um deles."
+  - term: web cache
+    definition: "Armazenamento intermediário (no navegador, numa CDN ou num proxy) que guarda respostas para reusá-las sem ir ao servidor de origem a cada vez."
+  - term: HTTP/2
+    definition: "Versão do HTTP (RFC 9113) que troca o texto do HTTP/1.1 por um formato binário e multiplexa várias requisições numa conexão só. A semântica (métodos, cabeçalhos, status) é a mesma."
+  - term: HTTP/3
+    definition: "Versão do HTTP (RFC 9114) que roda sobre o QUIC (em cima de UDP) em vez de TCP, reduzindo a latência de conexão. Mantém a mesma semântica das versões anteriores."
+  - term: stateless protocol
+    definition: "Protocolo em que cada requisição é independente e o servidor não lembra, por si só, das requisições anteriores. O HTTP é assim; o estado (login) é recriado a cada pedido por cookies ou tokens."
+  - term: server-side session
+    definition: "Estado do usuário (quem é, o que pode) guardado no servidor e referenciado por um identificador aleatório que vai ao cliente num cookie (o session ID)."
+  - term: session cookie
+    definition: "Cookie sem Expires nem Max-Age, que o navegador apaga ao fechar. Costuma carregar o identificador de sessão."
+  - term: persistent cookie
+    definition: "Cookie com Expires ou Max-Age, que o navegador guarda até a data marcada, sobrevivendo a reinícios."
+  - term: cookie prefix
+    definition: "Prefixo especial no nome do cookie que o navegador faz valer: __Secure- exige o atributo Secure; __Host- exige Secure, Path=/ e proíbe Domain, prendendo o cookie a um único host."
+  - term: ambient authority
+    definition: "Autoridade que acompanha a requisição automaticamente, sem o código pedir — como o cookie de sessão que o navegador anexa sozinho. É o que torna o CSRF possível."
+  - term: web origin
+    definition: "A tupla (esquema, host, porta) de uma URL. Duas URLs têm a mesma origem só se as três partes baterem; é a unidade de isolamento da web. Não confundir com o origin do Git (o remote padrão)."
+  - term: same-site
+    definition: "Relação mais larga que a origem: duas URLs são do mesmo site se compartilham o domínio registrável (e, hoje, o esquema), mesmo em subdomínios ou portas diferentes. Base do atributo SameSite."
+  - term: registrable domain
+    definition: "O domínio que se pode registrar, formado pelo rótulo à esquerda de um sufixo público mais o sufixo (ex.: loja.exemplo.com.br). Define o que conta como 'mesmo site'."
+  - term: Public Suffix List
+    definition: "Lista pública (mantida pela Mozilla) de sufixos sob os quais qualquer um registra domínios (com, co.uk, github.io). Os navegadores a usam para decidir o domínio registrável e impedir cookies em sufixos."
+  - term: CORS
+    definition: "Cross-Origin Resource Sharing: mecanismo pelo qual um servidor usa cabeçalhos (Access-Control-Allow-Origin e afins) para autorizar que páginas de outras origens leiam suas respostas, abrindo exceções à same-origin policy."
+  - term: preflight request
+    definition: "Requisição OPTIONS que o navegador envia antes da requisição de verdade, em CORS, para perguntar se um método ou cabeçalho não simples é permitido. Se não for autorizado, a requisição real não é enviada."
+  - term: Origin header
+    definition: "Cabeçalho que o navegador põe em requisições entre origens (e em POSTs) dizendo de qual origem a página partiu. O servidor o usa para decisões de CORS e contra CSRF."
+  - term: Referer header
+    definition: "Cabeçalho que indica a URL da página de onde a requisição partiu. Útil e, ao mesmo tempo, um vazamento de privacidade; seu envio é controlado pela Referrer-Policy. O nome traz o erro histórico de grafia de 'referrer'."
+  - term: HTML
+    definition: "HyperText Markup Language: a linguagem de marcação que descreve a estrutura das páginas, com elementos entre < e > (tags)."
+  - term: JavaScript
+    definition: "Linguagem de programação que roda no navegador e torna as páginas interativas. Pode ler o DOM, enviar requisições (fetch) e, se mal controlada, virar o veículo de um XSS."
+  - term: DOM
+    definition: "Document Object Model: a árvore de objetos que o navegador monta a partir do HTML e que o JavaScript lê e altera para mudar a página."
+  - term: DevTools
+    definition: "Ferramentas de desenvolvedor embutidas no navegador (abre com F12): mostram requisições, console de JavaScript, cookies e o DOM. Instrumento básico de quem testa web."
+  - term: curl
+    definition: "Ferramenta de linha de comando que faz requisições HTTP (e outros protocolos). Deixa controlar método, cabeçalhos e corpo, e por isso é o canivete de quem testa APIs."
+  - term: HTML entity
+    definition: "Forma de escrever no HTML um caractere que seria especial, por um código iniciado com & (ex.: &lt; para <, &amp; para &). É a codificação de saída que neutraliza o XSS."
+  - term: canonicalization
+    definition: "Reduzir uma entrada a uma forma única e padronizada (resolver ../, decodificar %2f, normalizar Unicode) antes de validá-la. Fazer isso DEPOIS de validar é fonte clássica de falha."
+  - term: double encoding
+    definition: "Codificar duas vezes uma sequência (ex.: / vira %2f e depois %252f) para enganar um filtro que decodifica uma vez só, e que então não reconhece o caractere perigoso."
+  - term: output encoding
+    definition: "Codificar um dado no momento em que ele é inserido num contexto (HTML, URL, JS, SQL), conforme as regras daquele contexto, para que seja tratado como dado e não como código."
+  - term: input validation
+    definition: "Conferir, no servidor, se a entrada tem o formato e os valores esperados (tipo, tamanho, faixa, lista). Reduz a superfície, mas não substitui a codificação de saída."
+  - term: trust boundary
+    definition: "A fronteira entre o que é controlado por quem você confia e o que vem de fora. Na web, tudo o que chega na requisição está fora dela e deve ser tratado como hostil."
+  - term: parser differential
+    definition: "Diferença de interpretação quando dois componentes leem os mesmos bytes de formas distintas (ex.: proxy e servidor discordando de onde a mensagem termina). Raiz de smuggling e de muitos bypasses."
+  - term: HTTP request smuggling
+    definition: "Ataque que explora o desacordo entre front-end e back-end sobre onde uma requisição termina (Content-Length x Transfer-Encoding), injetando uma requisição 'escondida' no fluxo de outra pessoa."
+  - term: Host header injection
+    definition: "Ataque em que um Host (ou cabeçalho afim) controlado pelo atacante é usado pela aplicação para montar links ou decidir rotas, levando, por exemplo, a um link de redefinição de senha apontando para o servidor do atacante."
+  - term: web cache poisoning
+    definition: "Ataque em que o atacante faz o cache guardar uma resposta maliciosa sob uma URL legítima, servindo-a depois a outras vítimas."
+  - term: open redirect
+    definition: "Falha em que a aplicação redireciona para uma URL vinda da entrada sem validá-la, deixando o atacante usar o domínio confiável para mandar a vítima a um site hostil."
+  - term: Content Security Policy
+    definition: "Cabeçalho (CSP) que declara de quais origens a página pode carregar scripts, estilos e outros recursos, e se pode ser enquadrada. É uma defesa em profundidade contra XSS e clickjacking."
+  - term: MIME sniffing
+    definition: "Comportamento do navegador de adivinhar o tipo de um conteúdo pelo seu conteúdo, ignorando o Content-Type. Desligado com X-Content-Type-Options: nosniff para evitar que um upload seja tratado como script."
+  - term: clickjacking
+    definition: "Ataque que embute o site da vítima num iframe invisível sobre a página do atacante, enganando o usuário a clicar em algo que não vê. Barrado por frame-ancestors (CSP) ou X-Frame-Options."
+  - term: Shellshock
+    definition: "Família de falhas no Bash (a partir de CVE-2014-6271, 2014) em que texto após uma definição de função, posto numa variável de ambiente, era executado. Via CGI, um cabeçalho HTTP virava comando no servidor."
+  - term: Nimda
+    definition: "Worm de setembro de 2001 que se espalhava por vários vetores, inclusive explorando a travessia de diretório por Unicode do IIS (CVE-2000-0884) e backdoors deixados por worms anteriores."
+---
+
+import caminho from "./img/caminho-da-requisicao.svg";
+import sessao from "./img/sessao-por-cookie.svg";
+import cors from "./img/origem-sop-cors.svg";
+import encoding from "./img/encoding-por-contexto.svg";
+import missao3 from "./img/missao-3-resultado.png";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Toda a Trilha 4 — SQL injection, XSS, falhas de sessão, IDOR, CSRF — é, no
+fundo, uma coleção de mal-entendidos sobre **cinco ou seis coisas que acontecem
+em cada requisição web**. Quem decora payloads aprende a explorar um alvo; quem
+entende o que o servidor faz com cada byte entende *qualquer* alvo, inclusive os
+que ainda não existiam quando você estudou. Este módulo é essa base. Ele não
+ensina um ataque novo: ele monta o mapa que todos os próximos módulos usam.
+
+Você já viu as peças de longe. Na Trilha 2, o Burp interceptou requisições
+(2.5) e o Wireshark mostrou uma senha e um cookie trafegando em texto claro no
+login do DVWA (2.6). Na Trilha 3, você desmontou Base64, percent-encoding e
+HMAC (3.1). Agora vamos abrir a requisição por dentro: o que é uma
+<GlossaryTerm term="request line">request line</GlossaryTerm>, por que o
+servidor confia (ou não) num cookie, por que o seu `fetch` para outra porta
+falha, e por que o mesmo caractere é inofensivo num lugar e vira código em
+outro.
+
+A tabela abaixo é o fio que liga este módulo ao resto da trilha:
+
+| O fundamento que você vai entender aqui | A falha que nasce dele | Módulo |
+| --- | --- | --- |
+| A aplicação monta um comando com a sua entrada | SQL injection, command injection | 4.2, 4.6 |
+| O navegador interpreta o que o servidor devolve | Cross-Site Scripting (XSS) | 4.3 |
+| O servidor guarda e confia numa sessão | Autenticação e sessões quebradas | 4.4 |
+| O servidor confia num identificador vindo do cliente | Broken Access Control, IDOR | 4.5 |
+| O navegador anexa o cookie sozinho | CSRF; e o alcance interno do SSRF | 4.7 |
+| Um parser antigo ou uma versão vulnerável | Componentes vulneráveis | 4.8 |
+
+**Ao final, você vai saber:**
+
+- descrever o caminho de uma requisição, da URL ao banco, e nomear cada
+  componente que a interpreta no meio;
+- ler e montar à mão uma mensagem HTTP (request line, cabeçalhos, corpo),
+  entendendo `Host`, `Content-Length`, `Content-Type` e os métodos;
+- explicar como cookies transformam o HTTP sem estado num login, e o que cada
+  atributo (`Secure`, `HttpOnly`, `SameSite`, `Domain`, `Path`) protege;
+- aplicar a same-origin policy: dizer quando duas URLs têm a mesma
+  <GlossaryTerm term="web origin">origem</GlossaryTerm>, o que ela bloqueia e como o
+  CORS abre exceções;
+- reconhecer os encodings da web e por que a codificação certa depende do
+  contexto de saída;
+- apontar, numa requisição, onde está a fronteira de confiança e onde as falhas
+  costumam nascer.
+
+**Pré-requisitos:**
+
+- **Trilha 2 — Kit do Pentester:** usar o proxy e o Repeater do Burp (2.5),
+  reconhecer HTTP em claro no Wireshark (2.6) e falar com um serviço por netcat
+  (2.7).
+- **3.1 — Fundamentos de criptografia:** encoding × hash × cifra, Base64,
+  percent-encoding e HMAC (a assinatura que protege a integridade de um token).
+
+**Tempo estimado:** de 5 a 6 horas, incluindo os exercícios no seu WSL.
+
+<Callout variant="ethics">
+Os exercícios deste módulo rodam **inteiramente no seu computador**: um servidor
+de treino que escuta só em `127.0.0.1`, sem nenhuma vulnerabilidade e sem tocar
+a rede. Montar requisições à mão, mexer em cabeçalhos ou testar CORS contra
+sites de terceiros sem **autorização por escrito** é outra história — é o que a
+Trilha 1 tratou, e é crime no Brasil. A regra da plataforma continua valendo:
+**só em ambiente seu ou autorizado.**
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 A viagem de uma requisição
+
+Quando você digita `https://loja.exemplo/busca?q=caneca#avaliacoes` e aperta
+Enter, muita coisa acontece antes de a página voltar. Vale separar a URL em
+partes, porque cada falha da trilha mora numa delas:
+
+```text
+  https://loja.exemplo:443/busca?q=caneca#avaliacoes
+  \___/   \__________/\_/\____/ \_______/\_________/
+  esquema     host    porta caminho  query    fragmento
+```
+
+- **esquema** (*scheme*): o protocolo, aqui `https`. Faz parte da origem.
+- **host**: o nome do servidor, `loja.exemplo`. Vira um IP via DNS (Trilha 0.2).
+- **porta**: `443` por padrão no HTTPS, `80` no HTTP. Faz parte da origem,
+  mesmo quando fica implícita.
+- **caminho** (*path*): `/busca`, o recurso pedido.
+- <GlossaryTerm term="query string">query string</GlossaryTerm>: `?q=caneca`,
+  pares `nome=valor` separados por `&` que passam parâmetros.
+- <GlossaryTerm term="URL fragment">fragmento</GlossaryTerm> (*fragment*):
+  `#avaliacoes`. **Este nunca sai do navegador.** Serve para rolar até um ponto
+  da página ou para o roteamento de uma *single-page application* (a SPA que
+  você viu no Juice Shop, 2.5). Guarde isto: um segredo posto no fragmento não
+  chega ao servidor, mas um posto na query vai parar em todos os logs do
+  caminho.
+
+A requisição não vai direto do seu navegador ao servidor. Ela atravessa uma
+fila de componentes, e **cada um a interpreta de novo**:
+
+<Figure
+  src={caminho}
+  alt="Da esquerda para a direita: navegador, DNS e TCP/TLS, CDN ou proxy reverso, servidor de aplicação e, por fim, banco/disco/shell. Cada caixa tem um losango amarelo marcando que ali há um parser. Abaixo, uma lista do que cada salto decide e a falha que nasce quando decide errado: navegador (o que enviar; CSRF, CORS frouxo), DNS (para qual IP; DNS rebinding), proxy (Host, enquadramento, cache; smuggling, cache poisoning), aplicação (decodificação, sessão, autorização; sessão, IDOR, path traversal) e banco/shell (dado ou comando; SQLi, command injection)."
+  caption="A mesma requisição é lida por vários programas em sequência. Quando dois deles entendem os mesmos bytes de formas diferentes, nasce uma falha. Cada módulo da Trilha 4 ataca um destes saltos."
+/>
+
+Um <GlossaryTerm term="reverse proxy">reverse proxy</GlossaryTerm> (servidor que
+fica na frente da aplicação e repassa as requisições, como o nginx), uma CDN, um
+<GlossaryTerm term="load balancer">load balancer</GlossaryTerm> (que distribui a
+carga entre vários servidores) e um <GlossaryTerm term="web cache">web cache</GlossaryTerm>
+(que guarda respostas para reusar) são comuns num site real. Cada salto é um
+*parser*: um programa que lê a mensagem e decide o que fazer. Quando dois
+parsers discordam — o proxy acha que a mensagem termina num ponto e o servidor,
+noutro — temos um <GlossaryTerm term="parser differential">parser differential</GlossaryTerm>,
+e é dessa fresta que saem os ataques mais sofisticados da seção 6.
+
+### 2.2 A mensagem HTTP, byte a byte
+
+O <GlossaryTerm term="HTTP">HTTP</GlossaryTerm> (que você já marcou no glossário
+na Trilha 2) é, na versão 1.1, **texto**. Uma requisição tem quatro partes, nesta
+ordem: a request line, os cabeçalhos, uma linha em branco e o corpo. O separador
+de linha é sempre `CRLF` — os dois bytes *carriage return* (`\r`, 0x0D) e *line
+feed* (`\n`, 0x0A). Veja os bytes de verdade de uma requisição mínima:
+
+```text
+00000000: 4745 5420 2f65 7370 656c 686f 2048 5454  GET /espelho HTT
+00000010: 502f 312e 310d 0a48 6f73 743a 206c 6f6a  P/1.1..Host: loj
+00000020: 612e 6578 656d 706c 6f0d 0a0d 0a         a.exemplo....
+```
+
+Os `0d 0a` (os `..` na coluna da direita) são os `CRLF`. Repare no `0d0a0d0a`
+no fim: é a linha em branco que separa os cabeçalhos do corpo. Essa estrutura
+rígida explica por que a injeção de um `CRLF` numa entrada pode "quebrar" um
+cabeçalho em dois (o *CRLF injection*, que você marcou no 2.6).
+
+A **request line** tem método, alvo e versão: `GET /espelho HTTP/1.1`.
+
+- O **método** diz a intenção. O RFC 9110 classifica os métodos por duas
+  propriedades que importam para segurança. Um método é
+  <GlossaryTerm term="safe method">safe</GlossaryTerm> quando "is intended only
+  for retrieving information and should not change the state of the server" —
+  `GET`, `HEAD`, `OPTIONS`, `TRACE`. Um método é
+  <GlossaryTerm term="idempotent method">idempotent</GlossaryTerm> quando repeti-lo
+  "with the same effect as making a single request" — os *safe* mais `PUT` e
+  `DELETE`. **`POST` não é nenhum dos dois**, e é por isso que o navegador avisa
+  antes de reenviar um formulário. Essa diferença não é burocracia: um `GET` que
+  muda estado (apaga algo, transfere dinheiro) é meio caminho para um CSRF, como
+  você verá em 4.7.
+- O **alvo** é o caminho mais a query.
+- A **versão** é `HTTP/1.1`.
+
+Depois vêm os **cabeçalhos** (*headers*), pares `Nome: valor`, um por linha. Dois
+mandam na interpretação do corpo:
+
+- O <GlossaryTerm term="Host header">Host</GlossaryTerm> é **obrigatório** em
+  HTTP/1.1, porque um mesmo IP e porta costumam hospedar vários sites — os
+  <GlossaryTerm term="virtual host">virtual hosts</GlossaryTerm>. O `Host` diz a
+  qual deles a requisição se destina. O RFC 9112 é taxativo: "A server MUST
+  respond with a 400 (Bad Request) status code to any HTTP/1.1 request message
+  that lacks a Host header field and to any request message that contains more
+  than one Host header field line". No HTTPS, o mesmo nome também viaja no SNI do
+  TLS (você viu o SNI no 2.6).
+- O <GlossaryTerm term="Content-Length">Content-Length</GlossaryTerm> diz, em
+  bytes, o tamanho do <GlossaryTerm term="request body">corpo</GlossaryTerm>, para
+  o recebedor saber quando a mensagem termina. A alternativa é o
+  <GlossaryTerm term="chunked transfer encoding">Transfer-Encoding: chunked</GlossaryTerm>,
+  que manda o corpo em pedaços, cada um prefixado pelo seu tamanho em
+  hexadecimal, fechando num pedaço de tamanho zero.
+
+O que acontece quando uma mensagem traz **os dois**, com valores que discordam?
+O RFC 9112 responde, e a resposta é a semente de um ataque inteiro: "If a
+message is received with both a Transfer-Encoding and a Content-Length header
+field, the Transfer-Encoding overrides the Content-Length. Such a message might
+indicate an attempt to perform request smuggling or response splitting and ought
+to be handled as an error." Guarde essa frase; ela volta na seção 6.
+
+O **corpo** carrega os dados de um `POST` ou `PUT`. O
+<GlossaryTerm term="Content-Type">Content-Type</GlossaryTerm> diz o formato dele
+— o seu <GlossaryTerm term="MIME type">MIME type</GlossaryTerm>. Há três que você
+vai encontrar o tempo todo:
+
+- `application/x-www-form-urlencoded`: o
+  <GlossaryTerm term="form URL encoding">form URL encoding</GlossaryTerm> que
+  você marcou no 2.6 — `campo1=valor1&campo2=valor2`, com os caracteres
+  especiais percent-encoded e o espaço virando `+`.
+- `multipart/form-data`: para enviar arquivos (RFC 7578).
+- `application/json`: o formato das APIs (4.9).
+
+A **resposta** tem a mesma estrutura, com uma *status line* no lugar da request
+line: `HTTP/1.1 200 OK`. As famílias de <GlossaryTerm term="status code">status
+code</GlossaryTerm> (que você marcou na Trilha 2) valem a pena de cor: **1xx**
+informativo, **2xx** sucesso, **3xx** <GlossaryTerm term="redirect">redirect</GlossaryTerm>
+(com um cabeçalho `Location` dizendo para onde ir), **4xx** erro do cliente
+(400 malformado, 401 sem autenticação, 403 sem autorização, 404 não existe) e
+**5xx** erro do servidor.
+
+<Callout variant="info" title="HTTP/2 e HTTP/3: mesma ideia, outra embalagem">
+O <GlossaryTerm term="HTTP/2">HTTP/2</GlossaryTerm> (RFC 9113, 2022) troca o texto
+por um formato binário e multiplexa várias requisições numa conexão. O
+<GlossaryTerm term="HTTP/3">HTTP/3</GlossaryTerm> (RFC 9114) roda sobre o QUIC (em
+cima de UDP, não TCP). Mas a **semântica** — métodos, cabeçalhos, status, a ideia
+de requisição e resposta — é a mesma, definida uma vez no RFC 9110 e reaproveitada
+pelas três versões. Por isso aprender o HTTP/1.1 em texto, que é o que você lê no
+Burp e monta no netcat, serve para todas.
+</Callout>
+
+### 2.3 Sem estado: quem guarda o login?
+
+O HTTP é um <GlossaryTerm term="stateless protocol">protocolo sem estado</GlossaryTerm>
+(*stateless*): cada requisição é independente, e o servidor, por si só, não liga
+uma à outra. Então, depois que você faz login, como a próxima página sabe que é
+você? A resposta clássica é o <GlossaryTerm term="HTTP cookie">cookie</GlossaryTerm>
+(que você marcou no 2.6): o servidor manda um `Set-Cookie` na resposta, e o
+navegador devolve aquele cookie em toda requisição seguinte ao mesmo site.
+
+O desenho mais comum é a <GlossaryTerm term="server-side session">sessão no
+servidor</GlossaryTerm>: o servidor sorteia um identificador aleatório — o
+<GlossaryTerm term="session ID">session ID</GlossaryTerm> — guarda no seu lado
+"este ID é a carla, papel cliente" e manda só o ID ao navegador num cookie.
+
+<Figure
+  src={sessao}
+  alt="Diagrama de sequência entre navegador, servidor e o armazenamento de sessões. 1: o navegador faz POST /login com usuário e senha. 2: o servidor confere a senha e sorteia um sid novo, gravando no armazenamento que 9f3c corresponde à carla, papel cliente. 3: o servidor responde 302 com Location /painel e Set-Cookie sid=9f3c; Path=/; Secure; HttpOnly; SameSite=Lax. 4: o navegador guarda o cookie no pote. 5: nas requisições seguintes, o navegador anexa sozinho Cookie: sid=9f3c. 6: o servidor procura o sid no armazenamento e descobre que é a carla. 7: responde a página dela. Um quadro à direita resume que o sid é uma credencial e que cada atributo fecha uma porta de roubo ou abuso."
+  caption="A sessão por cookie. Depois do login, quem apresenta o session ID é a carla aos olhos do servidor: o ID é uma credencial, e os atributos do cookie existem para protegê-lo."
+/>
+
+O `Set-Cookie` tem atributos que decidem **para onde e quando** o cookie volta, e
+cada um é uma defesa (seção 8):
+
+- `Domain` e `Path`: a quais hosts e caminhos o cookie é enviado. Sem `Domain`,
+  o cookie é *host-only* (só o host que o definiu). Com `Domain=loja.exemplo`,
+  vale também para os subdomínios.
+- `Expires`/`Max-Age`: se presentes, é um
+  <GlossaryTerm term="persistent cookie">cookie persistente</GlossaryTerm>, que
+  sobrevive a reinícios; sem eles, é um
+  <GlossaryTerm term="session cookie">cookie de sessão</GlossaryTerm>, apagado ao
+  fechar o navegador. `Max-Age=0` manda **apagar** o cookie.
+- <GlossaryTerm term="Secure (cookie)">Secure</GlossaryTerm>: só vai por HTTPS.
+- <GlossaryTerm term="HttpOnly">HttpOnly</GlossaryTerm>: o JavaScript não lê (nem
+  um XSS, por `document.cookie`).
+- <GlossaryTerm term="SameSite">SameSite</GlossaryTerm>: controla o envio em
+  requisições vindas de **outro site** — `Strict`, `Lax` (o padrão dos
+  navegadores atuais) ou `None` (que exige `Secure`).
+- Os <GlossaryTerm term="cookie prefix">prefixos</GlossaryTerm> `__Secure-` e
+  `__Host-`: o navegador recusa um cookie com esse nome que não cumpra as regras
+  (o `__Host-` exige `Secure`, `Path=/` e proíbe `Domain`).
+
+Há um detalhe que o RFC 6265 avisa e que vale ouro: o cookie não isola por porta
+nem por esquema. "If a cookie is readable by a service running on one port, the
+cookie is also readable by a service running on another port of the same server."
+Ou seja: a origem (seção 2.4) é mais rígida que o cookie. Você vai **ver** isso
+na Missão 2.
+
+A alternativa à sessão no servidor é guardar o estado no próprio cliente, num
+token assinado — o <GlossaryTerm term="JWT">JWT</GlossaryTerm> que você forjou em
+3.4. Em vez de procurar o ID numa tabela, o servidor confere a assinatura
+(aquele HMAC do 3.1) do token que o cliente trouxe. Os dois modelos têm trocas,
+e a 4.4 entra nelas.
+
+A parte perigosa dessa automação tem nome:
+<GlossaryTerm term="ambient authority">ambient authority</GlossaryTerm>. O
+navegador anexa o cookie **sozinho**, só porque a requisição vai para aquele
+site, sem o código pedir e sem saber *quem* disparou a requisição. Guarde: é
+exatamente isso que o CSRF (4.7) explora.
+
+### 2.4 O navegador como fronteira: origem, SOP e CORS
+
+Se qualquer página pudesse ler a resposta de qualquer outra, um site malicioso
+aberto numa aba leria o seu home banking na aba ao lado (usando, graças à
+*ambient authority*, o seu cookie). O que impede isso é a regra mais importante
+da segurança no navegador: a <GlossaryTerm term="same-origin policy">same-origin
+policy</GlossaryTerm> (SOP), que você marcou no 0.1.
+
+A unidade dela é a <GlossaryTerm term="web origin">origem</GlossaryTerm>: a tupla
+**(esquema, host, porta)**. Duas URLs só têm a mesma origem se as três partes
+baterem.
+
+<Figure
+  src={cors}
+  alt="Três blocos. Em cima, uma tabela comparando http://localhost:8041 com quatro URLs: /outra/pagina é mesma origem (só o caminho muda); :8042 é outra origem, mesmo site (porta diferente); https://localhost:8041 é outra origem (esquema diferente); http://127.0.0.1:8041 é outra origem e outro site (host diferente, mesma máquina). No meio, três caixas: ENVIAR (form, link, fetch simples) é permitido; EMBUTIR (img, script, iframe, css) é permitido; LER pelo JavaScript a resposta de outra origem é bloqueado, salvo CORS. Embaixo, duas sequências reais da Missão 3: um POST text/plain é requisição simples, vai ao servidor, só a leitura é bloqueada; um PUT precisa de preflight, o navegador manda um OPTIONS antes, o servidor não autoriza, e o PUT nunca sai."
+  caption="Origem = esquema + host + porta. A same-origin policy deixa a página enviar e embutir conteúdo de outras origens, mas bloqueia a leitura da resposta pelo JavaScript."
+/>
+
+O ponto que mais confunde iniciantes: **a SOP não impede a requisição de ser
+enviada.** O RFC/MDN resume assim o acesso entre origens:
+
+- *writes* entre origens (links, redirects, envio de formulário) são
+  **normalmente permitidos**;
+- *embedding* entre origens (elementos do
+  <GlossaryTerm term="HTML">HTML</GlossaryTerm> — a linguagem de marcação das
+  páginas — como `<img>`, `<script>`, `<iframe>`, além de CSS) é **normalmente
+  permitido**;
+- *reads* entre origens (ler a resposta pelo
+  <GlossaryTerm term="JavaScript">JavaScript</GlossaryTerm>, a linguagem que roda
+  no navegador) são **normalmente bloqueados**.
+
+É essa assimetria que faz o CSRF funcionar: a página maliciosa **envia** a
+requisição (e o cookie vai junto), tem efeito no servidor, e não importa que o
+atacante não consiga **ler** a resposta. É o JavaScript, lendo e alterando o
+<GlossaryTerm term="DOM">DOM</GlossaryTerm> (a árvore de objetos que o navegador
+monta a partir do HTML), que a SOP vigia.
+
+Vale distinguir **origem** de **site**. A origem é estrita (esquema + host +
+porta); o <GlossaryTerm term="same-site">same-site</GlossaryTerm> é mais largo:
+duas URLs são do mesmo site se compartilham o
+<GlossaryTerm term="registrable domain">domínio registrável</GlossaryTerm> — o
+nome que se pode registrar, como `loja.exemplo`, calculado com ajuda da
+<GlossaryTerm term="Public Suffix List">Public Suffix List</GlossaryTerm> (a
+lista de sufixos como `com` ou `com.br` sob os quais qualquer um registra). Por
+isso `api.loja.exemplo` e `app.loja.exemplo` são o **mesmo site**, mas **origens
+diferentes**. É essa noção de site, não a de origem, que o atributo `SameSite`
+do cookie (seção 2.3) usa.
+
+Quando uma aplicação legítima *precisa* que outra origem leia suas respostas —
+uma SPA em `app.loja.exemplo` consumindo a API em `api.loja.exemplo` — entra o
+<GlossaryTerm term="CORS">CORS</GlossaryTerm> (*Cross-Origin Resource Sharing*). O
+servidor opta por abrir a porta com cabeçalhos:
+
+- Requisição **simples** (métodos `GET`/`HEAD`/`POST` e só cabeçalhos da lista
+  segura, com `Content-Type` entre `application/x-www-form-urlencoded`,
+  `multipart/form-data` ou `text/plain`) vai direto; o navegador só entrega a
+  resposta ao JavaScript se vier um `Access-Control-Allow-Origin` compatível.
+- Qualquer outra coisa (um `PUT`, um `Content-Type: application/json`, um
+  cabeçalho próprio) dispara um
+  <GlossaryTerm term="preflight request">preflight</GlossaryTerm>: antes da
+  requisição de verdade, o navegador manda um `OPTIONS` com o
+  <GlossaryTerm term="Origin header">Origin</GlossaryTerm> e o
+  `Access-Control-Request-Method`, perguntando se pode. Se o servidor não
+  autorizar, **a requisição real nem é enviada**.
+
+Há uma regra do CORS que é fonte de falha e que você vai testar: para uma
+requisição **com credenciais** (com cookie), o servidor **não pode** responder
+`Access-Control-Allow-Origin: *`. Precisa ecoar a origem exata e somar
+`Access-Control-Allow-Credentials: true`. Ecoar a origem **sem conferir** contra
+uma allowlist é a configuração errada clássica — um CORS frouxo que deixa
+qualquer site ler respostas autenticadas.
+
+### 2.5 Encodings: o mesmo byte, significados diferentes
+
+Você já viu, em 3.1, que **encoding não é segurança**: é só representação. Na web,
+o problema é que um valor atravessa **vários** contextos, e cada um tem a sua
+sintaxe. O `&` separa parâmetros na URL; o `<` abre uma tag no HTML; a `'` fecha
+um literal no SQL. O mesmo caractere é inofensivo num e perigoso no outro. A
+defesa é a <GlossaryTerm term="output encoding">codificação de saída</GlossaryTerm>
+(*output encoding*): codificar o dado conforme o contexto em que ele entra —
+por exemplo, trocar `<` pela <GlossaryTerm term="HTML entity">entidade HTML</GlossaryTerm>
+`&lt;` ao inseri-lo no HTML, para que seja mostrado como texto, não interpretado
+como tag.
+
+<Figure
+  src={encoding}
+  alt="Em cima, o dado O'Neil <b> & Cia e uma tabela de cinco contextos. URL: mandam & = + # % espaço; cru, o & parte o parâmetro; certo, percent-encoding. HTML: mandam < > & aspas; cru, o <b> vira tag e um <script> vira XSS; certo, entidades HTML. JS: mandam aspas, barra invertida, </script>; cru, a aspa fecha a string; certo, escape JS ou JSON. SQL: mandam aspas, ponto e vírgula; cru, a aspa fecha o literal e vira SQL injection; certo, parâmetro num prepared statement. Shell: mandam ponto e vírgula, cifrão, crase, pipe; cru, command injection; certo, lista de argumentos sem shell. Embaixo, a decodificação dupla: ..%252f vira ..%2f na primeira decodificação e ../ na segunda; o filtro procura ../ na camada errada e deixa passar."
+  caption="O mesmo dado atravessa vários contextos. Não existe 'sanitizar uma vez para tudo': a codificação correta é a do contexto de SAÍDA, aplicada na hora em que o dado entra nele."
+/>
+
+Dois fenômenos nascem daí e aparecem a trilha inteira:
+
+- <GlossaryTerm term="canonicalization">Canonicalização</GlossaryTerm>: reduzir a
+  entrada a uma forma única antes de decidir sobre ela (resolver `../`,
+  decodificar `%2f`, normalizar Unicode). Fazer isso **depois** de validar é o
+  erro que abre path traversal.
+- <GlossaryTerm term="double encoding">Double encoding</GlossaryTerm>: codificar
+  duas vezes (`/` → `%2f` → `%252f`) para enganar um filtro que decodifica uma
+  vez só. Foi assim que o worm Nimda entrou em milhares de servidores IIS, como
+  a seção 4 conta.
+
+### 2.6 Onde as falhas nascem: a fronteira de confiança
+
+Junte tudo numa só ideia, a mais importante do módulo: o
+<GlossaryTerm term="trust boundary">trust boundary</GlossaryTerm>. **Tudo o que
+chega na requisição vem de fora da sua confiança** e pode ter sido forjado:
+
+- não só os campos do formulário, mas também a query, o caminho, o **método**;
+- os **cabeçalhos** — `User-Agent`, o
+  <GlossaryTerm term="Referer header">Referer</GlossaryTerm> (a URL da página de
+  onde você veio), `X-Forwarded-For`, e até o `Host`;
+- os **cookies**, inclusive os "escondidos";
+- os campos `hidden` e os valores de `<select>`, que o atacante edita à vontade.
+
+A consequência prática: **validação no cliente não é segurança**. O JavaScript
+que impede um campo vazio ou limita uma nota a 5 estrelas melhora a experiência,
+mas o atacante não usa a sua página — ele usa `curl`, `nc` ou o Repeater do Burp,
+e manda o que quiser. Você provou isso no 2.5, enviando pelo Repeater um feedback
+de 0 estrelas que a interface do Juice Shop proibia. A regra vira um lema: **toda
+decisão de segurança acontece no servidor.** A
+<GlossaryTerm term="input validation">input validation</GlossaryTerm>
+(conferir, **no servidor**, se a entrada tem o formato e os valores esperados)
+reduz a superfície, mas a defesa que vale é sempre a do servidor.
+
+Essa é também a espinha do **OWASP Top 10**, a lista das classes de falha web
+mais críticas, mantida pela OWASP (*Open Worldwide Application Security Project*).
+Na edição **2025**, a maioria das categorias — A01 Broken Access Control, A04
+Cryptographic Failures, A05 Injection — são, no fundo, confiar em algo que
+atravessou essa fronteira sem tratar.
+
+## 3. Na prática da segurança
+
+Este módulo não ensina um ataque específico; ensina a **ler** a conversa HTTP, o
+que é o primeiro trabalho de todo teste web. Veja como isso aparece no dia a dia.
+
+### 3.1 O inventário de entradas
+
+Antes de atacar qualquer coisa, um pentester mapeia a **superfície**: toda
+entrada que o atacante controla. Navegando pelo alvo com o Burp (2.5), ele anota,
+para cada requisição: o endpoint (método + caminho), os parâmetros de query, os
+campos do corpo e o seu `Content-Type`, os cookies e os cabeçalhos que a
+aplicação parece usar. Cada item dessa lista é um lugar onde um dos próximos
+módulos pode achar uma falha. "Entender a web por dentro" é, na prática, saber
+olhar uma requisição e enxergar todas as entradas de uma vez.
+
+### 3.2 Falar HTTP à mão
+
+O navegador é cômodo e, por isso, mente: ele normaliza a sua URL, reordena
+cabeçalhos, codifica o corpo. Para testar de verdade, você precisa controlar cada
+byte. As ferramentas:
+
+- O <GlossaryTerm term="curl">curl</GlossaryTerm> mostra a requisição e a
+  resposta cruas com `-v`, deixa trocar o método (`-X`), pôr cabeçalhos (`-H`) e
+  montar o corpo (`-d`, `--data-urlencode`):
+
+```console
+$ curl -sv -o /dev/null --resolve loja.exemplo:8041:127.0.0.1 \
+    -d 'item=caneca' 'http://loja.exemplo:8041/espelho?cor=azul'
+> POST /espelho?cor=azul HTTP/1.1
+> Host: loja.exemplo:8041
+> User-Agent: curl/8.18.0
+> Accept: */*
+> Content-Length: 11
+> Content-Type: application/x-www-form-urlencoded
+>
+< HTTP/1.1 200 OK
+< Server: LojaExemplo/4.1
+< Content-Type: text/plain; charset=utf-8
+< Content-Length: 389
+< Connection: close
+```
+
+- O `--resolve` força o nome a resolver para um IP **sem usar DNS**: você conversa
+  com `127.0.0.1`, mas manda o `Host: loja.exemplo`. É assim que se testa um
+  *virtual host* específico.
+- O `nc` (netcat, do 2.7) é ainda mais cru: você digita os bytes da requisição,
+  inclusive os `CRLF`, e vê a resposta exata. É o jeito de mandar algo que o
+  `curl` recusaria, como um `Content-Length` mentiroso.
+
+### 3.3 Identificar a tecnologia pelos cabeçalhos
+
+Os cabeçalhos de resposta e os nomes de cookie entregam a pilha do alvo, o que
+guia a busca por CVEs (4.8). Veja a resposta **real** do DVWA (lab `dvwa`),
+capturada do Kali:
+
+```http
+HTTP/1.1 200 OK
+Server: Apache/2.4.68 (Debian)
+X-Powered-By: PHP/8.5.10
+Set-Cookie: security=low; path=/
+Set-Cookie: PHPSESSID=0790dd6e3e7c90b64e990e890399006f; expires=...; path=/
+```
+
+Lê-se muita coisa aqui: é Apache sobre Debian, PHP; o `PHPSESSID` denuncia PHP
+(assim como `JSESSIONID` denuncia Java e `connect.sid`, Express/Node). E dois
+achados de segurança saltam: o `PHPSESSID` **não** tem `HttpOnly` nem `SameSite`
+(um XSS leria o cookie), e existe um cookie `security=low` — um estado que o
+**cliente** controla. Compare com o Juice Shop (lab `juice-shop`):
+
+```http
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Feature-Policy: payment 'self'
+```
+
+Aqui já há `nosniff` e `X-Frame-Options`, mas repare no
+`Access-Control-Allow-Origin: *`: a API libera leitura para qualquer origem.
+Como o `*` **não** vale para requisições com credenciais (seção 2.4), isso não
+expõe dados de sessão — mas, se um dia trocarem o `*` por refletir a origem com
+credenciais, vira o furo da seção 8.
+
+### 3.4 O outro lado: como o atacante usa
+
+- **Roubar a sessão:** com o session ID (do Wireshark em texto claro, 2.6, de um
+  XSS, 4.3, ou de um cookie sem `HttpOnly`), o atacante reenvia o cookie e *é*
+  você — sem senha. Você fez isso no 2.6, no espírito do Firesheep.
+- **Abusar de CORS frouxo:** se a API ecoa qualquer origem com credenciais, a
+  página do atacante lê os seus dados autenticados. É a Missão 3 ao contrário.
+- **Driblar filtro com encoding:** quando um filtro bloqueia `../` ou `<script>`,
+  o atacante tenta `%2e%2e%2f`, `..%252f` ou variações de maiúsculas — a
+  canonicalização mal-feita da seção 2.5.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### IIS: Unicode, decodificação dupla e o worm Nimda (2000–2001)
+
+O IIS 4.0 e 5.0, servidor web da Microsoft, tinha uma falha de
+canonicalização (seção 2.5). O filtro que barrava `../` nas URLs rodava **antes**
+de a URL ser totalmente decodificada. Bastava escrever a barra como um Unicode
+"supérfluo" — `%c0%af`, uma representação *overlong* de `/` — para o filtro não
+reconhecer `../` e, mesmo assim, o caminho escapar da pasta do site. É a
+**CVE-2000-0884**, descrita no boletim **MS00-078** (17 de outubro de 2000) como
+"Web Server Folder Traversal": "a particular type of malformed URL could be used
+to access files and folders that lie anywhere on the logical drive that contains
+the web folders", executando comandos como o usuário anônimo `IUSR_machinename`.
+
+Em maio de 2001, a Microsoft corrigiu uma variante no boletim **MS01-026**
+(**CVE-2001-0333**): a "decodificação dupla". Nas palavras do boletim, "a second,
+superfluous decoding pass is performed after the security checks are completed",
+então `..%255c` (ou `..%252f`) passava pela checagem e só então virava `..\`. É
+exatamente o mecanismo do diagrama da seção 2.5.
+
+Em **18 de setembro de 2001**, o worm <GlossaryTerm term="Nimda">Nimda</GlossaryTerm> juntou essa travessia de
+diretório (listada pelo CERT/CC como VU#111677) a outros vetores — e-mail,
+compartilhamentos de rede e backdoors deixados pelos worms Code Red II e
+sadmind/IIS — e se espalhou em massa. O CERT/CC registrou que, por essa falha,
+"intruders can execute arbitrary commands within the LocalSystem security context
+on machines running the unpatched versions of IIS".
+
+- **Impacto:** execução remota de comandos em milhares de servidores; o Nimda foi
+  um dos worms mais disruptivos de 2001.
+- **Lição:** **canonicalize antes de validar**, e nunca decodifique depois da
+  checagem de segurança.
+- **Fontes:** [MS00-078](https://learn.microsoft.com/en-us/security-updates/securitybulletins/2000/ms00-078),
+  [MS01-026](https://learn.microsoft.com/en-us/security-updates/securitybulletins/2001/ms01-026),
+  [CERT CA-2001-26 (Nimda)](https://www.cisa.gov/news-events/alerts/2001/09/18/nimda-worm) e
+  [CVE-2000-0884 (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2000-0884).
+
+### Shellshock: um cabeçalho HTTP vira comando (2014)
+
+Em **24 de setembro de 2014**, veio a público a **CVE-2014-6271**, a
+<GlossaryTerm term="Shellshock">Shellshock</GlossaryTerm>: o Bash executava
+código deixado logo após uma definição de função guardada numa **variável de
+ambiente**. Parece distante da web, mas o elo é direto e mostra por que
+"cabeçalho também é entrada": num script **CGI** (RFC 3875), o servidor copia
+cada cabeçalho HTTP para uma variável de ambiente — "The HTTP header field name
+is converted to upper case, has all occurrences of '-' replaced with '_' and has
+'HTTP_' prepended". Um `User-Agent` virava `HTTP_USER_AGENT`; se o alvo rodava um
+CGI em Bash, mandar `User-Agent: () { :; }; comando` fazia o servidor **executar o
+comando**. A descrição da NVD lista exatamente "the mod_cgi and mod_cgid modules
+in the Apache HTTP Server" entre os vetores.
+
+- **Impacto:** execução remota de código em incontáveis servidores Linux/Unix;
+  adicionada ao catálogo de exploradas da CISA. A primeira correção foi
+  incompleta (gerando a CVE-2014-7169).
+- **Lição:** **todo** cabeçalho é entrada controlada pelo atacante; nunca o
+  passe a um interpretador.
+- **Fontes:** [CVE-2014-6271 (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2014-6271),
+  [anúncio original de Florian Weimer (oss-sec)](https://seclists.org/oss-sec/2014/q3/649) e
+  [RFC 3875, §4.1.18](https://www.rfc-editor.org/rfc/rfc3875#section-4.1.18).
+
+### Apache 2.4.49 e 2.4.50: path traversal e a correção incompleta (2021)
+
+Mostra que o problema da seção 2.5 não é história antiga. Uma mudança na
+normalização de caminho do Apache HTTP Server **2.4.49** reintroduziu travessia
+de diretório: um `.%2e/` driblava a normalização e mapeava URLs para fora das
+pastas configuradas. É a **CVE-2021-41773**, reportada em 29 de setembro de 2021
+e corrigida na **2.4.50**, lançada em **4 de outubro de 2021**. Só que a correção
+era **insuficiente**: dois dias depois, a **CVE-2021-42013** mostrou que
+`.%%32%65/` (um double encoding) ainda passava, forçando a **2.4.51** em **7 de
+outubro de 2021**. Com CGI habilitado, as duas levavam a execução remota de
+código. A primeira entrou "known to be exploited in the wild" já no boletim.
+
+- **Impacto:** leitura de arquivos fora do site e, com CGI, execução remota; nos
+  dois casos em servidores expostos na internet. É a base de um dos labs
+  previstos (`vulhub`, Fase 7).
+- **Lição:** normalização de caminho é traiçoeira; uma correção de travessia
+  precisa cobrir também a forma duplamente codificada.
+- **Fontes:** [Apache httpd — vulnerabilities 2.4](https://httpd.apache.org/security/vulnerabilities_24.html),
+  [CVE-2021-41773 (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2021-41773) e
+  [CVE-2021-42013 (NVD)](https://nvd.nist.gov/vuln/detail/CVE-2021-42013).
+
+### Facebook "View As": roubo de access tokens em escala (2018)
+
+Em **28 de setembro de 2018**, o Facebook anunciou que atacantes tinham roubado
+*access tokens* — descritos pela empresa como "the equivalent of digital keys
+that keep people logged in" (os tokens de sessão da seção 2.3). A falha era "a
+complex interaction of three distinct software bugs" no recurso "View As". Em **12
+de outubro de 2018**, a empresa revisou os números: dos quase 50 milhões de
+tokens inicialmente estimados, o roubo atingiu **30 milhões** de pessoas — para
+15 milhões, nome e contato; para 14 milhões, também dados de perfil; para 1
+milhão, nenhum dado. Os atacantes partiram de cerca de 400 mil contas e usaram
+"an automated technique to move from account to account". A vulnerabilidade
+existiu entre julho de 2017 e setembro de 2018.
+
+- **Impacto:** o maior roubo de tokens da história do Facebook; tokens resetados e
+  o recurso desativado.
+- **Lição:** o token de sessão **é** a credencial; protegê-lo (e saber invalidá-lo
+  em massa) é parte do projeto, não um detalhe.
+- **Fontes:** [Facebook — Security Update (28/09/2018)](https://about.fb.com/news/2018/09/security-update/) e
+  [Facebook — Update on Security Issue (12/10/2018)](https://about.fb.com/news/2018/10/update-on-security-issue/).
+
+## 5. Mãos à obra — exercícios no seu WSL
+
+Este módulo não tem laboratório próprio: a web se entende **vendo o HTTP dos dois
+lados**. Você vai subir um servidor de treino — a "Loja Exemplo", **fictícia** —
+que escuta **só em `127.0.0.1`** (portas 8041 e 8042), **não tem nenhuma
+vulnerabilidade** e **não toca a rede**. Ele é um espelho: mostra o que recebeu,
+define cookies e responde com ou sem CORS. Assim você observa, do lado do
+servidor, exatamente o que o navegador e o `curl` fazem.
+
+**Objetivo:** ao terminar, você terá:
+
+1. montado à mão uma requisição que chega ao servidor exatamente como ele exige,
+   dominando `Host`, método, query, corpo de formulário e os encodings (Missão 1);
+2. previsto e conferido, cookie a cookie, para onde cada `Set-Cookie` volta,
+   entendendo `Domain`, `Path`, `Secure` e `Max-Age` (Missão 2);
+3. visto, no seu navegador, a same-origin policy e o CORS agindo de verdade:
+   o que é enviado, o que leva cookie, o que exige preflight e o que o JavaScript
+   consegue ler (Missão 3).
+
+Cada missão termina numa flag.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra o terminal do Ubuntu no WSL. Você vai usar `python3`, `curl` e `nc`,
+   todos presentes num Ubuntu padrão. Confira (a sua versão pode ser outra):
+
+   ```console
+   $ python3 --version
+   Python 3.14.4
+   $ curl --version | head -1
+   curl 8.18.0 (x86_64-pc-linux-gnu) libcurl/8.18.0 OpenSSL/3.5.5
+   ```
+
+2. Gere os arquivos. O bloco abaixo cria `~/treino-4-1/` com o servidor e uma
+   pasta por missão. Copie o bloco inteiro, cole no terminal e aperte Enter.
+   Rodá-lo de novo apaga e recria tudo: é o seu "resetar".
+
+<Callout variant="info" title="O bloco de preparação">
+O bloco é longo porque carrega o servidor inteiro. Use o botão de copiar no canto
+do bloco; ele copia tudo. Nenhum arquivo gerado deve ser executado além do
+`servidor.py` (que você inicia) e dos `conferir.sh` (que só conferem formato).
+</Callout>
+
+```bash
+mkdir -p ~/treino-4-1 && cd ~/treino-4-1 && rm -rf servidor.py missao-1 missao-2 missao-3 walkthrough && mkdir missao-1 missao-2 missao-3 walkthrough && (
+cat > servidor.py <<'PYEOF'
+#!/usr/bin/env python3
+"""Training server for module 4.1 (fictional "Loja Exemplo").
+
+Listens ONLY on 127.0.0.1, ports 8041 and 8042. It has no vulnerability on
+purpose: it mirrors what it receives, sets cookies and answers with or
+without CORS headers, so you can watch HTTP from the server side.
+Stop it with Ctrl+C.
+"""
+import hashlib
+import http.server
+import json
+import socket
+import sys
+import threading
+from urllib.parse import parse_qsl, urlsplit
+
+HOST = "127.0.0.1"
+PORTS = (8041, 8042)
+SESSION = "s3ss40-da-carla"
+
+
+def flag(*parts: str) -> str:
+    return "FLAG{" + hashlib.sha256("|".join(parts).encode()).hexdigest()[:12] + "}"
+
+
+def log(port: int, text: str) -> None:
+    print(f"[{port}] {text}", flush=True)
+
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+    timeout = 5
+
+    def version_string(self):
+        return "LojaExemplo/4.1"
+
+    def log_message(self, fmt, *args):  # quiet default log; we log our own
+        pass
+
+    def read_body(self):
+        """Return (body bytes, problem or None) honoring CL / chunked."""
+        te = self.headers.get_all("Transfer-Encoding") or []
+        cl = self.headers.get_all("Content-Length") or []
+        if te and cl:
+            return b"", "Content-Length e Transfer-Encoding juntos: mensagem ambígua, recusada (RFC 9112, 6.3)"
+        if len(cl) > 1:
+            return b"", "mais de um Content-Length: mensagem ambígua, recusada"
+        if te:
+            if te[-1].strip().lower() != "chunked":
+                return b"", "Transfer-Encoding desconhecido"
+            body = b""
+            while True:
+                size_line = self.rfile.readline(100).strip()
+                size = int(size_line.split(b";")[0], 16)
+                if size == 0:
+                    self.rfile.readline(100)
+                    return body, None
+                body += self.rfile.read(size)
+                self.rfile.readline(100)
+        if not cl:
+            return b"", None
+        want = int(cl[0])
+        got = b""
+        why = "o cliente fechou a conexão"
+        try:
+            while len(got) < want:
+                chunk = self.rfile.read1(want - len(got))
+                if not chunk:
+                    break
+                got += chunk
+        except (socket.timeout, TimeoutError):
+            why = f"esperei {self.timeout} s e nada mais chegou"
+        if len(got) < want:
+            return got, f"Content-Length prometeu {want} bytes, mas chegaram {len(got)} ({why})"
+        return got, None
+
+    def send(self, status: int, text: str, ctype="text/plain; charset=utf-8", extra=()):
+        data = text.encode()
+        self.send_response(status)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Connection", "close")
+        for name, value in extra:
+            self.send_header(name, value)
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(data)
+        self.close_connection = True
+
+    def handle_any(self):
+        port = self.server.server_address[1]
+        hosts = self.headers.get_all("Host") or []
+        log(port, f"{self.requestline}  Host={','.join(hosts) or '-'}  "
+                  f"Origin={self.headers.get('Origin', '-')}  "
+                  f"Cookie={self.headers.get('Cookie', '-')}")
+        if self.request_version == "HTTP/1.1" and len(hosts) != 1:
+            return self.send(400, "400: uma requisição HTTP/1.1 precisa de exatamente um Host (RFC 9112, 3.2)\n")
+        body, problem = self.read_body()
+        if problem:
+            return self.send(400, f"400: {problem}\n")
+        url = urlsplit(self.path)
+        route = getattr(self, "route_" + url.path.strip("/").replace("/", "_").replace("-", "_"), None)
+        if port == 8042 and url.path.startswith("/api/"):
+            return self.api(url, body)
+        if route:
+            return route(url, body)
+        return self.mirror(url, body)
+
+    do_GET = do_POST = do_PUT = do_DELETE = do_HEAD = do_OPTIONS = do_PATCH = handle_any
+
+    def mirror(self, url, body):
+        lines = ["=== O QUE CHEGOU AO SERVIDOR ===",
+                 f"linha de requisição: {self.requestline}",
+                 f"método: {self.command}",
+                 f"caminho (cru): {url.path}",
+                 f"query string (crua): {url.query or '(vazia)'}"]
+        for name, value in parse_qsl(url.query, keep_blank_values=True):
+            lines.append(f"  query  {name!r} = {value!r}")
+        lines.append("cabeçalhos:")
+        for name, value in self.headers.items():
+            lines.append(f"  {name}: {value}")
+        lines.append(f"corpo ({len(body)} bytes): {body.decode(errors='replace')!r}")
+        if self.headers.get("Content-Type", "").startswith("application/x-www-form-urlencoded"):
+            for name, value in parse_qsl(body.decode(errors="replace"), keep_blank_values=True):
+                lines.append(f"  campo  {name!r} = {value!r}")
+        self.send(200, "\n".join(lines) + "\n")
+
+    def route_pedido(self, url, body):
+        expected = {"item": "caneca & camiseta", "obs": "100% algodão = tamanho M", "cupom": "A+B"}
+        errors = []
+        if self.command != "POST":
+            errors.append(f"método {self.command}; o pedido exige POST")
+        if self.headers.get("Host") != "loja.exemplo:8041":
+            errors.append(f"Host {self.headers.get('Host')!r}; o pedido exige 'loja.exemplo:8041'")
+        if self.headers.get("X-Cliente") != "carla":
+            errors.append(f"X-Cliente {self.headers.get('X-Cliente')!r}; o pedido exige 'carla'")
+        query = parse_qsl(url.query, keep_blank_values=True)
+        if query != [("origem", "painel interno")]:
+            errors.append(f"query chegou como {query!r}; o pedido exige origem = 'painel interno'")
+        ctype = self.headers.get("Content-Type", "")
+        if ctype.split(";")[0].strip() != "application/x-www-form-urlencoded":
+            errors.append(f"Content-Type {ctype!r}; o pedido exige application/x-www-form-urlencoded")
+        try:
+            fields = parse_qsl(body.decode("utf-8"), keep_blank_values=True)
+        except UnicodeDecodeError:
+            fields = []
+            errors.append(f"corpo {body!r} não é um formulário válido")
+        names = [n for n, _ in fields]
+        for name, value in fields:
+            if name not in expected:
+                errors.append(f"campo inesperado {name!r} = {value!r}")
+            elif names.count(name) > 1:
+                errors.append(f"campo {name!r} chegou {names.count(name)} vezes")
+            elif value != expected[name]:
+                errors.append(f"campo {name!r} chegou como {value!r}; o pedido exige {expected[name]!r}")
+        for name in expected:
+            if name not in names:
+                errors.append(f"faltou o campo {name!r}")
+        if errors:
+            return self.send(400, "Pedido recusado:\n" + "\n".join(f"  - {e}" for e in dict.fromkeys(errors)) + "\n")
+        values = [dict(fields)[n] for n in ("item", "obs", "cupom")]
+        self.send(201, f"Pedido aceito. Recibo: {flag('pedido', *values)}\n")
+
+    def route_login(self, url, body):
+        cookies = [
+            "sessao=abc123; Path=/; HttpOnly; SameSite=Lax",
+            "tema=escuro; Domain=loja.exemplo; Path=/",
+            "carrinho=3-itens; Path=/carrinho",
+            "rastreio=xyz; Domain=loja.exemplo; Path=/; Max-Age=0",
+            "pagamento=cartao-final-4242; Path=/; Secure",
+            "promo=black-friday; Domain=exemplo; Path=/",
+            "idioma=pt-BR; Domain=api.loja.exemplo; Path=/",
+            "painel=admin; Domain=admin.loja.exemplo; Path=/",
+        ]
+        self.send(200, "Login feito. O servidor mandou 8 Set-Cookie (veja com curl -i).\n",
+                  extra=[("Set-Cookie", c) for c in cookies])
+
+    def route_entrar(self, url, body):
+        self.send(200, "Sessão criada para carla neste host (localhost). Volte à página da missão.\n",
+                  extra=[("Set-Cookie", f"sessao={SESSION}; Path=/; HttpOnly; SameSite=Lax")])
+
+    def route_missao_3(self, url, body):
+        self.send(200, MISSION3_PAGE, ctype="text/html; charset=utf-8")
+
+    def api(self, url, body):
+        logged = f"sessao={SESSION}" in self.headers.get("Cookie", "")
+        payload = json.dumps({"cliente": "carla", "saldo": "R$ 1.234,56"} if logged
+                             else {"erro": "sem sessão"}, ensure_ascii=False) + "\n"
+        origin = self.headers.get("Origin")
+        name = url.path[len("/api/"):]
+        cors = []
+        if name == "estrela":
+            cors = [("Access-Control-Allow-Origin", "*")]
+        elif name == "reflete" and origin:
+            cors = [("Access-Control-Allow-Origin", origin),
+                    ("Access-Control-Allow-Credentials", "true"),
+                    ("Access-Control-Allow-Methods", "GET, PUT"),
+                    ("Access-Control-Allow-Headers", "X-Teste"),
+                    ("Vary", "Origin")]
+        if self.command == "OPTIONS":
+            return self.send(204, "", extra=cors)
+        self.send(200, payload, ctype="application/json; charset=utf-8", extra=cors)
+
+
+MISSION3_PAGE = """<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Missão 3 — Mesma origem?</title>
+<style>body{font-family:system-ui,sans-serif;background:#121815;color:#e6ede8;max-width:900px;margin:2em auto}
+button{margin:.2em;padding:.4em .8em}td,th{border:1px solid #2c3a33;padding:.3em .6em;text-align:left}
+table{border-collapse:collapse;width:100%}code{color:#5cc8d8}</style></head>
+<body><h1>Missão 3 — Mesma origem?</h1>
+<p>Esta página tem a origem <code id="me"></code>. A API mora em <code>http://localhost:8042</code>.
+Clique em cada experimento e compare o resultado aqui, o console do DevTools (F12) e o log do servidor.</p>
+<p><button id="todos">Rodar todos</button></p>
+<table><thead><tr><th>#</th><th>O que o JavaScript tenta</th><th>Resultado para o JavaScript</th></tr></thead>
+<tbody id="linhas"></tbody></table>
+<script>
+const API = "http://localhost:8042/api/";
+const experiments = [
+  ["E1", "GET /api/sem-cors", () => fetch(API + "sem-cors")],
+  ["E2", "GET /api/estrela", () => fetch(API + "estrela")],
+  ["E3", "GET /api/estrela com credentials: 'include'", () => fetch(API + "estrela", {credentials: "include"})],
+  ["E4", "GET /api/reflete com credentials: 'include'", () => fetch(API + "reflete", {credentials: "include"})],
+  ["E5", "PUT /api/sem-cors", () => fetch(API + "sem-cors", {method: "PUT", body: "x"})],
+  ["E6", "POST text/plain /api/sem-cors", () => fetch(API + "sem-cors", {method: "POST", headers: {"Content-Type": "text/plain"}, body: "ola"})],
+];
+document.getElementById("me").textContent = location.origin;
+const tbody = document.getElementById("linhas");
+async function run([id, label, go], cell) {
+  cell.textContent = "...";
+  try {
+    const r = await go();
+    cell.textContent = "LIDA: status " + r.status + " — " + (await r.text()).trim();
+  } catch (e) {
+    cell.textContent = "ERRO: " + e.name + ": " + e.message;
+  }
+}
+for (const exp of experiments) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = "<td>" + exp[0] + "</td><td><button>" + exp[1] + "</button></td><td></td>";
+  const cell = tr.lastChild;
+  tr.querySelector("button").onclick = () => run(exp, cell);
+  tbody.appendChild(tr);
+}
+document.getElementById("todos").onclick = async () => {
+  const cells = tbody.querySelectorAll("tr td:last-child");
+  for (let i = 0; i < experiments.length; i++) await run(experiments[i], cells[i]);
+};
+</script></body></html>
+"""
+
+
+def main() -> None:
+    servers = []
+    for port in PORTS:
+        try:
+            servers.append(http.server.ThreadingHTTPServer((HOST, port), Handler))
+        except OSError as exc:
+            sys.exit(f"não consegui escutar em {HOST}:{port} ({exc.strerror}); "
+                     "já há um servidor rodando? Feche-o com Ctrl+C no outro terminal.")
+    for srv in servers:
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+    print(f"Loja Exemplo no ar, só em {HOST}: portas {PORTS[0]} e {PORTS[1]}. Ctrl+C para parar.", flush=True)
+    try:
+        threading.Event().wait()
+    except KeyboardInterrupt:
+        print("\nservidor parado.")
+
+
+if __name__ == "__main__":
+    main()
+PYEOF
+cat > missao-1/LEIA-ME.txt <<'EOF'
+MISSÃO 1 — O que o servidor realmente recebe
+A Loja Exemplo (FICTÍCIA) recebe pedidos em POST /pedido. Monte UMA
+requisição que chegue ao servidor (porta 8041) exatamente assim:
+  - método POST, caminho /pedido;
+  - Host: loja.exemplo:8041   (não existe DNS para esse nome: dê um jeito
+    de a conexão ir para 127.0.0.1 com esse Host);
+  - query string com UM parâmetro: origem = painel interno
+  - cabeçalho X-Cliente: carla
+  - corpo de formulário (application/x-www-form-urlencoded) com
+    exatamente três campos, cada um uma única vez:
+        item  = caneca & camiseta
+        obs   = 100% algodão = tamanho M
+        cupom = A+B
+O servidor diz o que chegou errado. Se tudo chegar certo, ele devolve um
+recibo: essa é a flag.
+EOF
+cat > missao-2/LEIA-ME.txt <<'EOF'
+MISSÃO 2 — O pote de biscoitos
+O GET /login da Loja Exemplo (FICTÍCIA) responde com 8 Set-Cookie.
+1. Leia os Set-Cookie (curl -i) e, ANTES de testar, preveja quais
+   cookies voltam em cada URL de respostas.txt.
+2. Confira de verdade com o pote de cookies do curl (-c para guardar,
+   -b para enviar) e com o espelho, que mostra o cabeçalho Cookie que
+   chegou. Os nomes loja.exemplo, api.loja.exemplo e admin.loja.exemplo
+   não existem no DNS: use --resolve para mandá-los a 127.0.0.1.
+3. Em cada linha, liste os NOMES dos cookies enviados, separados por
+   vírgula (a ordem não importa), ou - se nenhum. Depois: bash conferir.sh
+EOF
+cat > missao-2/respostas.txt <<'EOF'
+# U1 = http://loja.exemplo:8041/
+U1:?
+# U2 = http://loja.exemplo:8041/carrinho/itens
+U2:?
+# U3 = http://loja.exemplo:8041/carrinhos
+U3:?
+# U4 = http://api.loja.exemplo:8041/v1/pedidos
+U4:?
+# U5 = http://admin.loja.exemplo:8041/
+U5:?
+# U6 = http://loja.exemplo:8042/   (outra porta!)
+U6:?
+EOF
+cat > missao-2/conferir.sh <<'EOF'
+#!/usr/bin/env bash
+# Checks the FORMAT of respostas.txt (not the content) and derives the flag.
+set -euo pipefail
+cd "$(dirname "$0")"
+n=0
+out=()
+while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%$'\r'}
+    line=${line// /}
+    [ -z "$line" ] && continue
+    [[ $line == \#* ]] && continue
+    n=$((n + 1))
+    if ! [[ $line =~ ^U$n:(-|[a-z_]+(,[a-z_]+)*)$ ]]; then
+        echo "linha $n fora do formato: '$line' (esperado U$n:nome1,nome2 ou U$n:-)" >&2
+        exit 1
+    fi
+    names=${line#U$n:}
+    if [ "$names" != "-" ]; then
+        names=$(tr ',' '\n' <<<"$names" | LC_ALL=C sort -u | paste -sd, -)
+    fi
+    out+=("U$n:$names")
+done < respostas.txt
+[ "$n" -eq 6 ] || { echo "esperava 6 respostas, achei $n" >&2; exit 1; }
+echo "Formato OK. Flag candidata: FLAG{$(printf '%s\n' "${out[@]}" | sha256sum | cut -c1-12)}"
+EOF
+cat > missao-3/LEIA-ME.txt <<'EOF'
+MISSÃO 3 — Mesma origem?
+1. Com o servidor no ar, abra no navegador do Windows:
+     http://localhost:8042/entrar     (cria a sessão da carla)
+     http://localhost:8041/missao-3   (a página dos experimentos)
+2. Abra o DevTools (F12), aba Console, e clique em "Rodar todos".
+3. Para cada experimento E1 a E6, responda com sim ou nao:
+     enviada   a requisição com o método do experimento (GET, PUT ou
+               POST) chegou ao servidor? (veja o log no terminal)
+     cookie    essa requisição levou o cookie sessao? (log: Cookie=)
+     preflight chegou um OPTIONS antes dela? (log)
+     lida      o JavaScript conseguiu ler a resposta? (tabela da página)
+   Formato: E1:enviada:cookie:preflight:lida   ex.: E1:sim:nao:nao:sim
+Depois: bash conferir.sh
+EOF
+cat > missao-3/respostas.txt <<'EOF'
+E1:?:?:?:?
+E2:?:?:?:?
+E3:?:?:?:?
+E4:?:?:?:?
+E5:?:?:?:?
+E6:?:?:?:?
+EOF
+cat > missao-3/conferir.sh <<'EOF'
+#!/usr/bin/env bash
+# Checks the FORMAT of respostas.txt (not the content) and derives the flag.
+set -euo pipefail
+cd "$(dirname "$0")"
+n=0
+out=()
+while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%$'\r'}
+    line=${line// /}
+    line=${line//não/nao}
+    [ -z "$line" ] && continue
+    [[ $line == \#* ]] && continue
+    n=$((n + 1))
+    if ! [[ $line =~ ^E$n:(sim|nao):(sim|nao):(sim|nao):(sim|nao)$ ]]; then
+        echo "linha $n fora do formato: '$line' (esperado E$n:enviada:cookie:preflight:lida, cada um sim ou nao)" >&2
+        exit 1
+    fi
+    out+=("$line")
+done < respostas.txt
+[ "$n" -eq 6 ] || { echo "esperava 6 respostas, achei $n" >&2; exit 1; }
+echo "Formato OK. Flag candidata: FLAG{$(printf '%s\n' "${out[@]}" | sha256sum | cut -c1-12)}"
+EOF
+cat > walkthrough/filtro.py <<'EOF'
+#!/usr/bin/env python3
+"""Two path filters for a fictional download page whose files live in /srv/loja/arquivos.
+
+usage: python3 filtro.py '<raw path from the request>'
+"""
+import posixpath
+import sys
+from urllib.parse import unquote
+
+ROOT = "/srv/loja/arquivos"
+
+
+def check_then_decode(raw: str) -> str:
+    """Buggy: validates, then decodes (again). The IIS 2001 mistake."""
+    once = unquote(raw)
+    if "../" in once:
+        return "BLOQUEADO"
+    return posixpath.normpath(posixpath.join(ROOT, unquote(once)))
+
+
+def decode_then_check(raw: str) -> str:
+    """Fixed: decode exactly once, canonicalize, then check the final path."""
+    if "%" in unquote(raw):
+        return "RECUSADO (sobrou um % depois de decodificar: codificação dupla)"
+    path = posixpath.normpath(posixpath.join(ROOT, unquote(raw)))
+    if not path.startswith(ROOT + "/"):
+        return "RECUSADO (fora de " + ROOT + ")"
+    return path
+
+
+raw = sys.argv[1]
+print("cru:                  ", raw)
+print("decodificado 1 vez:   ", unquote(raw))
+print("decodificado 2 vezes: ", unquote(unquote(raw)))
+print("filtro com bug  ->    ", check_then_decode(raw))
+print("filtro corrigido ->   ", decode_then_check(raw))
+EOF
+) && echo "Pronto: $(find ~/treino-4-1 -type f | wc -l) arquivos em ~/treino-4-1"
+```
+
+A última linha deve ser `Pronto: 9 arquivos em ~/treino-4-1`.
+
+3. Num terminal, suba o servidor e **deixe-o rodando** (ele imprime o log das
+   requisições, que você vai ler nas missões):
+
+```console
+$ cd ~/treino-4-1 && python3 servidor.py
+Loja Exemplo no ar, só em 127.0.0.1: portas 8041 e 8042. Ctrl+C para parar.
+```
+
+Abra um **segundo** terminal para os comandos das missões.
+
+### 5.2 Missão 1 — O que o servidor realmente recebe (guiada, depois desafio)
+
+**Cenário:** a Loja Exemplo aceita pedidos em `POST /pedido`. O servidor é
+exigente: Host, método, query, cabeçalho e os três campos do formulário precisam
+chegar **exatamente** como ele espera, e os valores têm caracteres traiçoeiros
+(`&`, `=`, `+`, espaço, `%`). A cada tentativa, ele diz o que chegou errado.
+
+**Etapa 1: veja o espelho.** Antes do pedido, mande qualquer coisa para o
+`/espelho` e observe o que o servidor realmente recebe. Repare no fragmento e no
+`+`:
+
+```console
+$ curl -s 'http://127.0.0.1:8041/espelho?busca=caneca+azul&b=1%2B1&c=caf%C3%A9#segredo'
+=== O QUE CHEGOU AO SERVIDOR ===
+linha de requisição: GET /espelho?busca=caneca+azul&b=1%2B1&c=caf%C3%A9 HTTP/1.1
+método: GET
+caminho (cru): /espelho
+query string (crua): busca=caneca+azul&b=1%2B1&c=caf%C3%A9
+  query  'busca' = 'caneca azul'
+  query  'b' = '1+1'
+  query  'c' = 'café'
+cabeçalhos:
+  Host: 127.0.0.1:8041
+  User-Agent: curl/8.18.0
+  Accept: */*
+corpo (0 bytes): ''
+```
+
+Três lições num comando só: o `#segredo` **não** apareceu (ficou no cliente); o
+`+` virou espaço (`busca`); e, para o `+` **sobreviver** como `+`, foi preciso
+escrevê-lo como `%2B` (`b`).
+
+**Etapa 2: o Host sem DNS.** O pedido exige `Host: loja.exemplo:8041`, mas esse
+nome não existe no DNS. Faça o `curl` resolver o nome para `127.0.0.1` por conta
+própria:
+
+```console
+$ curl -s --resolve loja.exemplo:8041:127.0.0.1 http://loja.exemplo:8041/espelho | head -7
+```
+
+Veja no espelho que agora chegou `Host: loja.exemplo:8041`. (A alternativa é
+`-H 'Host: loja.exemplo:8041'` apontando para `127.0.0.1`.)
+
+**Etapa 3 (desafio): monte o pedido.** Agora é com você. O corpo tem que levar
+três campos com valores que contêm justamente os caracteres que **separam**
+campos (`&`) e **ligam** nome e valor (`=`), além de um `+` literal. Pense: como
+fazer o `curl` codificar cada valor sem você errar na conta? E como mandar a
+query `origem = painel interno` com o espaço certo? Tente, leia o que o servidor
+reclama e ajuste.
+
+<Hint title="Dica 1: deixe o curl codificar">
+O `--data-urlencode 'nome=valor'` codifica o **valor** para você — é o jeito certo
+de mandar `item=caneca & camiseta` sem o `&` quebrar o corpo. Compare, no espelho,
+`-d 'cupom=A+B'` (o `+` vira espaço) com `--data-urlencode 'cupom=A+B'` (vira
+`A%2BB`, que o servidor lê como `A+B`).
+</Hint>
+
+<Hint title="Dica 2: a query e o método">
+`--data-urlencode` já faz a requisição ser `POST`. Para a query, codifique o
+espaço: `...?origem=painel%20interno`. Confira cada reclamação do servidor: ele
+diz o nome do campo e o valor que recebeu, comparado com o que esperava.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Deixando o `curl` codificar cada valor e resolvendo o nome sem DNS (saída real):
+
+```console
+$ curl -s --resolve loja.exemplo:8041:127.0.0.1 \
+    'http://loja.exemplo:8041/pedido?origem=painel%20interno' \
+    -H 'X-Cliente: carla' \
+    --data-urlencode 'item=caneca & camiseta' \
+    --data-urlencode 'obs=100% algodão = tamanho M' \
+    --data-urlencode 'cupom=A+B'
+Pedido aceito. Recibo: FLAG{...}
+```
+
+(O recibo real traz a flag no lugar do `FLAG{...}`; é o que você envia abaixo.)
+
+O que daria errado:
+
+- `-d 'item=caneca & camiseta'` — o `&` separaria em campos `item=caneca ` e
+  ` camiseta`, e o servidor acusaria "campo inesperado".
+- `-d 'cupom=A+B'` — o `+` viraria espaço (`A B`). Por isso `--data-urlencode`.
+- esquecer o `--resolve`/`-H Host` — o `Host` chegaria como `127.0.0.1:8041`.
+
+Dá para montar a mesma requisição byte a byte com o `nc`, codificando o corpo à
+mão (`%26` para `&`, `%3D` para `=`, `%2B` para `+`, `+` para o espaço) e contando
+os bytes no `Content-Length`. O resultado — e a flag — é o mesmo.
+</Solution>
+
+<FlagInput task="missao-1-o-que-o-servidor-recebe" />
+
+### 5.3 Missão 2 — O pote de biscoitos (desafio)
+
+**Cenário:** o `GET /login` responde com **8** `Set-Cookie`, cada um com uma
+combinação diferente de `Domain`, `Path`, `Secure` e `Max-Age`. Seu objetivo:
+prever, para 6 URLs, **quais cookies o navegador (aqui, o `curl`) enviaria**.
+
+**Etapa 1: leia os cookies.** O `-i` mostra os cabeçalhos da resposta:
+
+```console
+$ curl -si --resolve loja.exemplo:8041:127.0.0.1 http://loja.exemplo:8041/login | grep -i '^set-cookie'
+Set-Cookie: sessao=abc123; Path=/; HttpOnly; SameSite=Lax
+Set-Cookie: tema=escuro; Domain=loja.exemplo; Path=/
+Set-Cookie: carrinho=3-itens; Path=/carrinho
+Set-Cookie: rastreio=xyz; Domain=loja.exemplo; Path=/; Max-Age=0
+Set-Cookie: pagamento=cartao-final-4242; Path=/; Secure
+Set-Cookie: promo=black-friday; Domain=exemplo; Path=/
+Set-Cookie: idioma=pt-BR; Domain=api.loja.exemplo; Path=/
+Set-Cookie: painel=admin; Domain=admin.loja.exemplo; Path=/
+```
+
+**Etapa 2: guarde num pote e teste.** O `-c` grava os cookies aceitos num arquivo
+(o "pote"), e o `-b` os reenvia. O espelho mostra o cabeçalho `Cookie` que chegou:
+
+```console
+$ R="--resolve loja.exemplo:8041:127.0.0.1 --resolve api.loja.exemplo:8041:127.0.0.1 --resolve admin.loja.exemplo:8041:127.0.0.1 --resolve loja.exemplo:8042:127.0.0.1"
+$ curl -s $R -c pote.txt http://loja.exemplo:8041/login >/dev/null
+$ curl -s $R -b pote.txt http://loja.exemplo:8041/ | grep '^  Cookie'
+```
+
+**Etapa 3 (desafio): preencha `respostas.txt`.** Para cada uma das 6 URLs, liste
+os **nomes** dos cookies que vão. Pense em cada atributo antes de rodar:
+
+- qual cookie o `curl` nem **guardou**? (Veja `cat pote.txt`.)
+- qual só vai no `Path` certo?
+- `Domain=loja.exemplo` vale para `api.loja.exemplo`? E `Domain=exemplo`?
+- a URL `U6` muda só a **porta** (8042). Isso separa cookies?
+
+<Hint title="Dica 1: o que nem entra no pote">
+Dois cookies não sobrevivem. O `rastreio` tem `Max-Age=0`: o comando de apagar.
+O `promo` tem `Domain=exemplo`, um domínio "pai" que não é o host — muitos
+clientes recusam (é o que o `curl` faz). Olhe o `pote.txt`: só o que está lá pode
+ser enviado.
+</Hint>
+
+<Hint title="Dica 2: Path, Domain e porta">
+`carrinho` tem `Path=/carrinho`: só vai para `/carrinho` e abaixo (`/carrinho/itens`
+**sim**; `/carrinhos` **não**, apesar de parecer). `pagamento` é `Secure`: não vai
+por `http://`. `sessao` e `tema` são do host `loja.exemplo` (o `tema` por `Domain`,
+válido para subdomínios; o `sessao` é host-only). E lembre do RFC 6265: a **porta
+não separa** cookies — por isso `U6`, mesmo em :8042, recebe os cookies de
+`loja.exemplo`.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+Rodando as 6 URLs (saída real, nomes resumidos):
+
+```console
+$ for u in http://loja.exemplo:8041/ http://loja.exemplo:8041/carrinho/itens \
+           http://loja.exemplo:8041/carrinhos http://api.loja.exemplo:8041/v1/pedidos \
+           http://admin.loja.exemplo:8041/ http://loja.exemplo:8042/; do
+    printf '%-40s ' "$u"; curl -s $R -b pote.txt "$u" | grep '^  Cookie' || echo '(nenhum)'
+  done
+http://loja.exemplo:8041/                Cookie: sessao=abc123; tema=escuro
+http://loja.exemplo:8041/carrinho/itens  Cookie: carrinho=3-itens; sessao=abc123; tema=escuro
+http://loja.exemplo:8041/carrinhos       Cookie: sessao=abc123; tema=escuro
+http://api.loja.exemplo:8041/v1/pedidos  Cookie: tema=escuro
+http://admin.loja.exemplo:8041/          Cookie: tema=escuro
+http://loja.exemplo:8042/                Cookie: sessao=abc123; tema=escuro
+```
+
+Então as respostas (nomes em ordem qualquer):
+
+```text
+U1:sessao,tema
+U2:sessao,tema,carrinho
+U3:sessao,tema
+U4:tema
+U5:tema
+U6:sessao,tema
+```
+
+Repare: em `U4`/`U5` só o `tema` vai, porque o `sessao` é host-only (preso a
+`loja.exemplo`) e o `tema` tem `Domain=loja.exemplo`, que alcança os subdomínios.
+O `pagamento` **nunca** apareceu nos testes por HTTP — é `Secure`. Preencha o
+`respostas.txt` e rode `bash conferir.sh` para obter a flag.
+</Solution>
+
+<FlagInput task="missao-2-o-pote-de-biscoitos" />
+
+### 5.4 Missão 3 — Mesma origem? (desafio, no navegador do Windows)
+
+**Cenário:** a página em `http://localhost:8041/missao-3` tenta, por `fetch`,
+falar com a API em `http://localhost:8042` — **outra origem** (a porta mudou).
+Você vai cruzar três fontes: a tabela da página (o que o JavaScript **leu**), o
+console do DevTools (o **erro** de CORS) e o log do servidor no terminal (o que
+**chegou**).
+
+**Etapa 1: crie a sessão e abra a página.** No navegador do Windows (Edge ou
+Chrome), que alcança o WSL por `localhost`, abra **nesta ordem**:
+
+1. `http://localhost:8042/entrar` — define o cookie de sessão da carla.
+2. `http://localhost:8041/missao-3` — a página dos experimentos.
+
+**Etapa 2: rode e observe.** Aperte **F12** (<GlossaryTerm term="DevTools">DevTools</GlossaryTerm>), vá à aba **Console**, e
+clique em **Rodar todos**. Esta é a tela real depois de logado:
+
+<Figure
+  src={missao3}
+  alt="A página 'Missão 3 — Mesma origem?' com uma tabela de seis experimentos. E1 GET /api/sem-cors: ERRO TypeError Failed to fetch. E2 GET /api/estrela: LIDA status 200 com {erro: sem sessão}. E3 GET /api/estrela com credentials include: ERRO TypeError. E4 GET /api/reflete com credentials include: LIDA status 200 com cliente carla e saldo R$ 1.234,56. E5 PUT /api/sem-cors: ERRO TypeError. E6 POST text/plain /api/sem-cors: ERRO TypeError."
+  caption="A tabela mostra só o que o JavaScript conseguiu LER. Mas 'não leu' não quer dizer 'não chegou': o log do servidor conta a outra metade da história."
+/>
+
+**Etapa 3 (desafio): cruze a página com o log.** Para cada experimento, a tabela
+diz se o JavaScript **leu**. O log do terminal diz se a requisição **chegou**, se
+levou o **cookie** e se houve um **OPTIONS** (preflight) antes. Responda, para E1
+a E6, as quatro colunas (`enviada:cookie:preflight:lida`). Preste atenção aos
+casos que surpreendem:
+
+- um experimento foi **lido** mesmo logado mostrando "sem sessão". Por quê?
+- um experimento **nunca chega** ao servidor (o log não o mostra), só o `OPTIONS`.
+- um experimento **vaza** o saldo da carla. Qual, e o que ele tem de diferente?
+
+<Hint title="Dica 1: o que o log revela">
+No terminal, cada linha do log traz `Origin=` e `Cookie=`. Procure: para E3 e E5,
+o método real (`GET` com credenciais e `PUT`) aparece no log? Para E5, o que
+aparece é só um `OPTIONS /api/sem-cors` — o preflight. O `PUT` real não está lá:
+ele foi barrado **antes** de sair, porque o servidor não respondeu os cabeçalhos
+`Access-Control-Allow-*` no preflight.
+</Hint>
+
+<Hint title="Dica 2: credenciais e CORS">
+E3 e E4 usam `credentials: 'include'`, então o cookie `sessao` vai junto — mas só
+quando a requisição **chega**. E3 pede `/api/estrela`, que responde
+`Access-Control-Allow-Origin: *`; como o `*` **não** vale com credenciais, o
+navegador **bloqueia a leitura** (e a requisição ainda assim chegou, com cookie).
+E4 pede `/api/reflete`, que **ecoa a origem** com `Allow-Credentials: true`: o
+navegador libera, e o saldo vaza. É o CORS frouxo da seção 2.4.
+</Hint>
+
+<Solution title="Solução da Missão 3">
+Lendo a tabela (lida) e o log (as outras três), chega-se a:
+
+```text
+E1:sim:nao:nao:nao
+E2:sim:nao:nao:sim
+E3:sim:sim:nao:nao
+E4:sim:sim:nao:sim
+E5:nao:nao:sim:nao
+E6:sim:nao:nao:nao
+```
+
+- **E1** (GET simples, sem CORS): **chega**, mas sem `Allow-Origin` o JS **não lê**.
+- **E2** (GET, `*`, sem credenciais): chega e **lê** (por isso mostra "sem sessão":
+  sem credenciais, não foi o cookie).
+- **E3** (GET, `*`, **com** credenciais): chega **com cookie**, mas `*` +
+  credenciais = leitura **bloqueada**.
+- **E4** (GET, origem refletida, com credenciais): chega com cookie e **lê** — o
+  saldo vaza. O furo.
+- **E5** (PUT): exige preflight; o `OPTIONS` chega, não é autorizado, e o PUT
+  real **nunca é enviado** (não lê).
+- **E6** (POST `text/plain`): é requisição **simples**, então **chega** (efeito no
+  servidor!), mas sem `Allow-Origin` o JS não lê. É o molde do CSRF (4.7).
+
+Preencha o `respostas.txt` da `missao-3` e rode `bash conferir.sh` para a flag.
+</Solution>
+
+<FlagInput task="missao-3-mesma-origem" />
+
+### 5.5 Walkthrough: desfazendo camadas de encoding (sem flag)
+
+O `walkthrough/filtro.py` tem os **dois** filtros de caminho da seção 2.5 lado a
+lado — o com bug (checa, depois decodifica de novo) e o corrigido (decodifica uma
+vez, canonicaliza, depois checa). Ele só **calcula caminhos**; não lê nenhum
+arquivo. Veja o `..%252f` driblar o filtro com bug, como no IIS de 2001:
+
+```console
+$ python3 ~/treino-4-1/walkthrough/filtro.py '..%252f..%252f..%252fetc%252fpasswd'
+cru:                   ..%252f..%252f..%252fetc%252fpasswd
+decodificado 1 vez:    ..%2f..%2f..%2fetc%2fpasswd
+decodificado 2 vezes:  ../../../etc/passwd
+filtro com bug  ->     /etc/passwd
+filtro corrigido ->    RECUSADO (sobrou um % depois de decodificar: codificação dupla)
+```
+
+Repare: depois de **uma** decodificação ainda é `..%2f` (sem `../`, então o filtro
+com bug "aprova"); na **segunda**, vira `../` e escapa. O filtro corrigido recusa
+porque sobra um `%` após a primeira decodificação. Teste também `../../etc/passwd`
+e `..%2f..%2fetc%2fpasswd`.
+
+### 5.6 Limpeza
+
+- No terminal do servidor, aperte **Ctrl+C** (ele imprime `servidor parado.`).
+- Para refazer do zero, rode de novo o bloco da seção 5.1 (ele apaga e recria).
+- Para remover tudo: `rm -rf ~/treino-4-1`.
+
+## 6. Variações e aprofundamento
+
+**<GlossaryTerm term="HTTP request smuggling">HTTP request smuggling</GlossaryTerm>.** É a exploração direta do parser differential da seção
+2.2. Quando um front-end (CDN/proxy) e um back-end discordam sobre onde a
+requisição termina — um segue o `Content-Length` (CL), o outro o
+`Transfer-Encoding` (TE) —, um atacante manda uma requisição ambígua que o
+front-end vê como uma e o back-end vê como duas, "injetando" uma requisição
+escondida na conexão de outra pessoa. As variantes clássicas são CL.TE e TE.CL. A
+técnica foi documentada pela Watchfire em 2005 e revivida em grande escala por
+James Kettle (PortSwigger) na pesquisa "HTTP Desync Attacks" (apresentada na
+Black Hat USA 2019). O seu servidor de treino já **recusa** mensagens com CL+TE,
+que é a defesa correta.
+
+**Ataques ao cabeçalho Host.** Se a aplicação usa o `Host` (controlado pelo
+atacante) para montar links — por exemplo, o link de redefinição de senha num
+e-mail —, um `Host: servidor-do-atacante` faz a vítima receber um link que
+aponta para o atacante: é o <GlossaryTerm term="Host header injection">Host
+header injection</GlossaryTerm>. A plataforma que você está lendo se defende disso
+conferindo o `Host` contra uma lista fechada (seção 8).
+
+**Web cache poisoning.** Se um cache guarda uma resposta influenciada por uma
+entrada não incluída na "chave" do cache (um cabeçalho, por exemplo), o atacante
+pode envenenar a entrada e servir conteúdo malicioso a todas as vítimas seguintes
+— o <GlossaryTerm term="web cache poisoning">web cache poisoning</GlossaryTerm>.
+
+**HTTP parameter pollution.** Mandar o mesmo parâmetro duas vezes
+(`?papel=user&papel=admin`) e torcer para que o filtro leia um valor e a lógica
+leia o outro. Você viu, na Missão 1, que o servidor rejeita campo repetido — mas
+nem toda aplicação faz isso, e frameworks diferentes escolhem o primeiro, o
+último ou juntam os dois.
+
+**Confusão de Content-Type.** Uma mesma rota que aceita form, JSON e multipart
+pode ter validações diferentes por formato; mandar JSON onde se esperava form (ou
+vice-versa) às vezes contorna um filtro. É um tema recorrente em APIs (4.9).
+
+**Open redirect.** Um `?next=/painel` que a aplicação obedece sem validar vira
+`?next=https://site-do-atacante` — um <GlossaryTerm term="open redirect">open
+redirect</GlossaryTerm>, útil em phishing porque o link começa no domínio
+confiável.
+
+**<GlossaryTerm term="clickjacking">Clickjacking</GlossaryTerm>.** Embutir o site
+da vítima num `<iframe>` transparente sobre a página do atacante, para roubar
+cliques. A defesa é o `frame-ancestors` do CSP (e o antigo `X-Frame-Options`), que
+esta plataforma usa (seção 8).
+
+## 7. Erros comuns
+
+- **"Failed to fetch" / erro de CORS no console.** Quase sempre **não** é bug do
+  servidor: é a SOP bloqueando a **leitura**. Confira no log do servidor se a
+  requisição chegou. Lembre: só o JavaScript é barrado; a requisição pode ter ido.
+- **`localhost` e `127.0.0.1` tratados como o mesmo.** São **origens diferentes**
+  (host diferente). Um cookie ou uma sessão em um não vale no outro. Na Missão 3,
+  use sempre `localhost`.
+- **O `+` na query/corpo virou espaço.** No `application/x-www-form-urlencoded`, `+`
+  **é** espaço. Para um `+` literal, use `%2B` (ou deixe o `--data-urlencode`
+  cuidar).
+- **Esqueci o `\r\n` no `nc`.** A requisição crua precisa de `CRLF` (`\r\n`) entre
+  linhas e uma linha em branco antes do corpo. Com `printf`, escreva `\r\n`
+  explicitamente; um `\n` sozinho pode não ser aceito.
+- **O servidor "travou" num POST pelo `nc`.** Você prometeu um `Content-Length`
+  maior que o corpo enviado: o servidor espera os bytes que faltam até o timeout.
+  Conte os bytes certos (ou use `chunked`).
+- **`--resolve` não "pegou".** A sintaxe é `--resolve host:porta:IP`, e a porta
+  tem que ser a **mesma** da URL. Sem isso, o nome não resolve e o `curl` erra.
+- **O cookie não voltou no `curl`.** O `curl` não guarda cookies sozinho: use `-c`
+  para gravar e `-b` para enviar. E confira os atributos: `Secure` barra por
+  HTTP, `Path` restringe, `Max-Age=0` apaga.
+- **O proxy do Burp ainda ligado no navegador.** Depois do 2.5, é comum esquecer
+  o proxy configurado; aí o `localhost` pode se comportar de forma estranha.
+  Desligue o proxy para esta missão.
+
+## 8. Boas práticas e segurança
+
+A defesa aqui é desenhar cada mecanismo para **não confiar no que atravessa o
+trust boundary**. Os exemplos abaixo são concretos e, vários, retirados do código
+desta própria plataforma.
+
+**Cookie de sessão endurecido.** Um session ID deve ser aleatório, longo, e o
+cookie deve carregar todos os atributos de proteção:
+
+```http
+Set-Cookie: __Host-sid=9f3c...; Path=/; Secure; HttpOnly; SameSite=Lax
+```
+
+O prefixo `__Host-` faz o navegador recusar o cookie se faltar `Secure`, se tiver
+`Domain` ou se o `Path` não for `/` — prendendo-o a um único host. No servidor:
+**gere um sid novo no login** (contra fixação de sessão), aplique expiração e
+saiba **invalidar** a sessão no logout e em massa (a lição do Facebook).
+
+**CORS com allowlist, nunca refletindo.** O furo da Missão 3 (E4) é ecoar a
+origem com credenciais. O certo é conferir contra uma lista fechada:
+
+```python
+ALLOWED = {"https://app.loja.exemplo"}
+
+def cors_headers(origin):
+    if origin in ALLOWED:                       # exato, nunca "startswith"
+        return {"Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+                "Vary": "Origin"}
+    return {}                                   # origem desconhecida: sem CORS
+```
+
+Nunca combine `Access-Control-Allow-Origin: *` com `Allow-Credentials: true` — o
+navegador bloqueia, mas o pior é refletir qualquer origem **achando** que está
+seguro.
+
+**Canonicalize antes de validar.** A lição do IIS e do Apache: decodifique a
+entrada **uma vez**, reduza à forma canônica (resolva `../`, normalize) e **só
+então** compare com o permitido. Recuse o que ainda tiver `%` depois de
+decodificar (double encoding), como faz o `decode_then_check` da Missão 5.5.
+
+**Codifique na saída, por contexto.** Contra XSS (4.3), aplique a codificação do
+contexto no momento da saída: entidades no HTML, escape no JavaScript,
+percent-encoding na URL. Contra SQLi (4.2), não "escape": use
+<GlossaryTerm term="prepared statement">prepared statement</GlossaryTerm>, que
+manda dado e comando em canais separados.
+
+**Recuse mensagens ambíguas.** Um servidor não deve aceitar `Content-Length` +
+`Transfer-Encoding` juntos (contra smuggling), nem mais de um `Host`. O seu
+servidor de treino já faz as duas coisas — reveja o `read_body` e o `handle_any`.
+
+**Cabeçalhos de segurança.** Esta plataforma envia, em `next.config.ts`:
+
+```ts
+{ key: "X-Frame-Options", value: "DENY" },
+{ key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+{ key: "X-Content-Type-Options", value: "nosniff" },
+{ key: "Referrer-Policy", value: "no-referrer" },
+```
+
+O `frame-ancestors 'none'` (e o `X-Frame-Options: DENY`) barram clickjacking; o
+`nosniff` impede o <GlossaryTerm term="MIME sniffing">MIME sniffing</GlossaryTerm>
+(um upload tratado como script); a `Referrer-Policy` evita vazar a URL no
+`Referer`. Um <GlossaryTerm term="Content Security Policy">Content Security
+Policy</GlossaryTerm> completo (com *nonces* de script) é a defesa mais forte
+contra XSS, e você o verá em 4.3.
+
+**Confira Host e Origin (DNS rebinding e CSRF).** A plataforma só escuta em
+`127.0.0.1`, mas um site malicioso poderia apontar o próprio domínio para
+`127.0.0.1` e falar com ela (DNS rebinding). O `proxy.ts` recusa qualquer `Host`
+fora de uma lista fechada e, em requisições que mudam estado, exige um `Origin`
+local:
+
+```ts
+const ALLOWED_HOSTS = new Set(["127.0.0.1:3000", "localhost:3000"]);
+const ALLOWED_ORIGINS = new Set(["http://127.0.0.1:3000", "http://localhost:3000"]);
+// ...
+if (!ALLOWED_HOSTS.has(host)) return forbidden("unexpected Host header");
+if (!SAFE_METHODS.has(request.method)) {
+  const origin = request.headers.get("origin")?.toLowerCase() ?? "";
+  if (!ALLOWED_ORIGINS.has(origin)) return forbidden("unexpected Origin header");
+}
+```
+
+É a seção 2.6 virando código: tratar `Host` e `Origin` como entrada hostil.
+
+**Log para quem defende.** O boletim MS00-078 dizia que um `GET` bem-sucedido com
+`/../` na URL era sinal de ataque. Registrar requisições e vigiar padrões
+anômalos (travessia, cabeçalhos estranhos, métodos raros) é o lado azul da mesma
+moeda.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e faça os desafios de
+fixação. As flags das três missões (seção 5) completam a parte prática.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar (sem flag)
+
+1. Um site põe o token de redefinição de senha no **fragmento** da URL
+   (`.../reset#token=abc`) "para não aparecer nos logs do servidor". Isso protege
+   o token? De quem?
+
+<Solution title="Resposta 1">
+Do **servidor** e dos intermediários, sim: o fragmento não é enviado (seção 2.1),
+então não entra nos logs de acesso nem passa por proxies. Mas não protege de quem
+está **no navegador** da vítima: um JavaScript na página (inclusive um XSS) lê o
+fragmento por `location.hash`, e ele fica no histórico. É uma troca, não uma bala
+de prata.
+</Solution>
+
+2. Uma API responde `Access-Control-Allow-Origin: *` para o endpoint público
+   `/precos`. Isso é um problema de segurança?
+
+<Solution title="Resposta 2">
+Para dados **públicos e sem credenciais**, `*` é aceitável — é o caso do Juice
+Shop (seção 3.3). O `*` **não** entrega respostas autenticadas, porque o navegador
+proíbe `*` com credenciais. O problema aparece se alguém, para "fazer funcionar"
+um endpoint com cookie, troca o `*` por **refletir a origem** e adiciona
+`Allow-Credentials: true` sem allowlist — aí qualquer site lê os dados logados
+(o E4 da Missão 3).
+</Solution>
+
+3. Um filtro anti-XSS remove a string `<script>`. Por que isso não basta?
+
+<Solution title="Resposta 3">
+Porque a codificação é por **contexto** e há muitas formas de chegar ao mesmo
+efeito: maiúsculas (`<ScRiPt>`), outros elementos e atributos
+(`<img onerror=...>`), ou encodings (`%3Cscript%3E`, entidades). Remover uma
+string específica é uma "lista de proibidos" que sempre tem buraco. O certo é
+**codificar na saída** conforme o contexto (seção 8), tema do módulo 4.3.
+</Solution>
+
+### Exercício prático extra (sem flag)
+
+Com o servidor no ar, mande ao `/espelho`, pelo `nc`, uma requisição com **dois**
+cabeçalhos `Host` e veja o servidor responder `400`. Depois mande uma com
+`Content-Length` e `Transfer-Encoding: chunked` juntos e observe a recusa. Releia,
+no `read_body` do `servidor.py`, as linhas que implementam essas duas defesas e
+relacione cada uma com a seção 6.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Uma requisição HTTP atravessa vários parsers (navegador, proxy, aplicação,
+  banco); as falhas da web nascem onde dois deles **interpretam os mesmos bytes
+  de formas diferentes**.
+- A mensagem tem request line, cabeçalhos, linha em branco e corpo, separados por
+  `CRLF`. `Host`, `Content-Length`/`Transfer-Encoding` e `Content-Type` decidem
+  como ela é lida.
+- O HTTP é sem estado; cookies (ou tokens) recriam o login. Os atributos do
+  cookie (`Secure`, `HttpOnly`, `SameSite`, `Domain`, `Path`, prefixos) são
+  defesas, e o navegador anexa o cookie **sozinho** (*ambient authority*) — a raiz
+  do CSRF.
+- A **origem** é (esquema, host, porta). A same-origin policy deixa **enviar** e
+  **embutir** entre origens, mas bloqueia a **leitura**; o CORS abre exceções, e
+  refletir a origem com credenciais é um furo.
+- **Tudo** na requisição é entrada hostil. Validação de segurança é sempre no
+  servidor; a codificação correta depende do **contexto de saída**; canonicalize
+  **antes** de validar.
+
+### Cola rápida
+
+```text
+Requisição:  MÉTODO /caminho?query HTTP/1.1  +  cabeçalhos  +  (linha vazia)  +  corpo
+Host obrigatório (HTTP/1.1) · fragmento #... fica no navegador
+Corpo: Content-Length  OU  Transfer-Encoding: chunked  (os dois juntos = recusar)
+Cookie:  Set-Cookie: nome=valor; Domain=; Path=; Secure; HttpOnly; SameSite=Lax
+         __Host-  => Secure + Path=/ + sem Domain      Max-Age=0 => apagar
+Origem = esquema + host + porta  (muda qualquer uma => outra origem)
+SOP: envia e embute SIM, LÊ a resposta NÃO (salvo CORS)
+CORS: simples (GET/HEAD/POST, Content-Type simples) vai direto;
+      resto => preflight OPTIONS; "*" não vale com credenciais
+Encoding certo = o do contexto de SAÍDA (HTML/URL/JS/SQL); canonicalize antes de validar
+```
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [MDN — HTTP](https://developer.mozilla.org/pt-BR/docs/Web/HTTP) — a referência
+  prática de HTTP, cookies, CORS e cabeçalhos, em português.
+- [RFC 9110 — HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110) — a fonte
+  primária dos métodos, status e cabeçalhos (densa, mas definitiva).
+- [PortSwigger Web Security Academy](https://portswigger.net/web-security) — labs
+  gratuitos de cada falha da Trilha 4, dos mesmos autores do Burp.
+- [OWASP Top 10](https://owasp.org/Top10/) — as classes de falha web mais
+  críticas, o mapa que a Trilha 4 percorre.

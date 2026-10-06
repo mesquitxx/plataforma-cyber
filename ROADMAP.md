@@ -228,7 +228,13 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   uma chave RSA de brinquedo com a receita do Shor, o inventário quântico de uma empresa
   fictícia a partir de certificados, varreduras e políticas, e um handshake TLS 1.3 híbrido
   X25519MLKEM768 com certificado ML-DSA capturado num servidor só em `127.0.0.1`, e walkthrough
-  de ML-KEM e ML-DSA com o `openssl` 3.5) escrito.
+  de ML-KEM e ML-DSA com o `openssl` 3.5) escrito. Trilha 4: 4.1 "Como a web funciona por dentro"
+  (sem lab; um servidor de treino em `127.0.0.1` que espelha o HTTP, com três missões no WSL:
+  montar à mão com `curl`/`nc` um pedido que chega exatamente como o servidor exige, prever e
+  conferir no pote de cookies do `curl` para onde cada `Set-Cookie` volta, e ver no navegador a
+  same-origin policy e o CORS agindo — o que é enviado, o que leva cookie, o que exige preflight
+  e o que o JavaScript lê —, e walkthrough da decodificação dupla do IIS num filtro de caminho)
+  escrito.
 
 ## Fase 11 — Conteúdo: Trilhas 6–8 e consolidação
 **Entrega:** Trilhas 6–8 e o fechamento do projeto.

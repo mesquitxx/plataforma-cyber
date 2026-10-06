@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t d">
+  <title id="t">O caminho de uma requisição web e os pontos onde ela é interpretada</title>
+  <desc id="d">Da esquerda para a direita: o navegador monta a requisição a partir da URL (e guarda o fragmento depois do # para si); o resolvedor DNS traduz o nome em IP; a conexão TCP e o TLS levam os bytes; uma CDN ou proxy reverso recebe a mensagem, interpreta e repassa; o servidor de aplicação interpreta de novo e chama o banco de dados. Cada caixa marcada com um losango amarelo é um parser: um programa diferente que lê os mesmos bytes e pode entendê-los de um jeito diferente. Abaixo, a lista do que cada salto decide: o navegador decide o que mandar e o que o JavaScript pode ler; o proxy decide para onde encaminhar pelo Host e onde termina a mensagem pelo Content-Length ou Transfer-Encoding, e o que guardar em cache; a aplicação decodifica caminho, query, corpo e cookies e decide quem é você e o que pode fazer; o banco e o sistema operacional recebem dados que, se misturados com comando, viram injeção.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .c { fill: #5cc8d8; }
+    .r { fill: #ef7b6b; }
+    .box { fill: #16201b; stroke: #5ee08a; stroke-width: 1.4; }
+    .net { fill: #1b2a3a; stroke: #5cc8d8; stroke-width: 1.2; }
+    .arrow { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ar); fill: none; }
+    .dash { stroke: #2c3a33; stroke-width: 1.5; stroke-dasharray: 5 4; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="520" fill="#121815"/>
+  <text class="t" x="24" y="32">Uma requisição, vários leitores: cada salto interpreta os mesmos bytes</text>
+
+  <text class="b" x="24" y="66">https://loja.exemplo:443/busca?q=caneca#avaliacoes</text>
+  <text class="s c" x="24" y="82">esquema</text>
+  <text class="s c" x="168" y="82">porta</text>
+  <text class="s c" x="241" y="82">query string</text>
+  <text class="s y" x="82" y="96">host</text>
+  <text class="s y" x="197" y="96">caminho</text>
+  <text class="s y" x="306" y="96">fragmento (não sai do navegador)</text>
+
+  <!-- browser -->
+  <rect class="box" x="24" y="110" width="140" height="92" rx="8"/>
+  <text class="h g" x="40" y="134">Navegador</text>
+  <text class="s" x="40" y="154">monta a mensagem</text>
+  <text class="s" x="40" y="170">anexa cookies</text>
+  <text class="s" x="40" y="186">aplica a SOP</text>
+  <path d="M150,104 l8,8 l-8,8 l-8,-8 z" fill="#e8c46a"/>
+
+  <!-- DNS -->
+  <rect class="net" x="196" y="110" width="110" height="40" rx="8"/>
+  <text class="h c" x="214" y="135">DNS</text>
+  <text class="s" x="252" y="135">nome→IP</text>
+  <!-- TCP/TLS -->
+  <rect class="net" x="196" y="162" width="110" height="40" rx="8"/>
+  <text class="h c" x="206" y="187">TCP + TLS</text>
+
+  <!-- proxy -->
+  <rect class="box" x="338" y="110" width="160" height="92" rx="8"/>
+  <text class="h g" x="352" y="134">CDN / proxy</text>
+  <text class="h g" x="352" y="150">reverso</text>
+  <text class="s" x="352" y="170">lê Host, enquadra,</text>
+  <text class="s" x="352" y="186">guarda em cache</text>
+  <path d="M484,104 l8,8 l-8,8 l-8,-8 z" fill="#e8c46a"/>
+
+  <!-- app -->
+  <rect class="box" x="530" y="110" width="170" height="92" rx="8"/>
+  <text class="h g" x="544" y="134">Servidor de</text>
+  <text class="h g" x="544" y="150">aplicação</text>
+  <text class="s" x="544" y="170">decodifica, roteia,</text>
+  <text class="s" x="544" y="186">sessão, autorização</text>
+  <path d="M686,104 l8,8 l-8,8 l-8,-8 z" fill="#e8c46a"/>
+
+  <!-- db -->
+  <rect class="box" x="732" y="110" width="144" height="92" rx="8"/>
+  <text class="h g" x="746" y="134">Banco, disco,</text>
+  <text class="h g" x="746" y="150">shell</text>
+  <text class="s" x="746" y="170">SQL, caminhos,</text>
+  <text class="s" x="746" y="186">comandos</text>
+  <path d="M862,104 l8,8 l-8,8 l-8,-8 z" fill="#e8c46a"/>
+
+  <path class="arrow" d="M166,156 L192,156"/>
+  <path class="arrow" d="M308,156 L334,156"/>
+  <path class="arrow" d="M500,156 L526,156"/>
+  <path class="arrow" d="M702,156 L728,156"/>
+
+  <line class="dash" x1="24" y1="226" x2="876" y2="226"/>
+  <path d="M30,248 l8,8 l-8,8 l-8,-8 z" fill="#e8c46a"/>
+  <text class="b y" x="46" y="261">= parser: um programa diferente lendo os mesmos bytes. Se dois discordam, nasce uma falha.</text>
+
+  <text class="h c" x="24" y="300">O que cada salto decide (e a falha que nasce quando decide errado)</text>
+  <text class="b g" x="24" y="328">Navegador</text>
+  <text class="b" x="200" y="328">o que enviar (cookies!) e o que o JavaScript pode ler</text>
+  <text class="b r" x="660" y="328">CSRF, CORS frouxo</text>
+  <text class="b g" x="24" y="356">DNS</text>
+  <text class="b" x="200" y="356">para qual IP vai a conexão</text>
+  <text class="b r" x="660" y="356">DNS rebinding</text>
+  <text class="b g" x="24" y="384">Proxy / CDN</text>
+  <text class="b" x="200" y="384">para onde encaminhar (Host), onde a</text>
+  <text class="b" x="200" y="400">mensagem termina, o que guardar em cache</text>
+  <text class="b r" x="660" y="384">smuggling, cache</text>
+  <text class="b r" x="660" y="400">poisoning</text>
+  <text class="b g" x="24" y="428">Aplicação</text>
+  <text class="b" x="200" y="428">decodifica caminho, query, corpo e cookie;</text>
+  <text class="b" x="200" y="444">quem é você e o que você pode fazer</text>
+  <text class="b r" x="660" y="428">sessão, IDOR,</text>
+  <text class="b r" x="660" y="444">path traversal</text>
+  <text class="b g" x="24" y="472">Banco / shell</text>
+  <text class="b" x="200" y="472">recebe texto: dado ou comando?</text>
+  <text class="b r" x="660" y="472">SQLi, command injection</text>
+  <text class="s" x="24" y="504">Trilha 4: cada módulo ataca um destes saltos. Este módulo mostra o que cada um faz quando funciona.</text>
+</svg>
