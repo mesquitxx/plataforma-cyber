@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
+  <title id="t">Reset de senha por pergunta de segurança: três passos do atacante</title>
+  <desc id="d">Fluxo em três passos de como um atacante troca a senha de uma vítima abusando da recuperação por pergunta de segurança. Passo 1, enumeração: o atacante consulta o endpoint de pergunta de segurança com um e-mail; se a conta existe, o servidor devolve a pergunta, revelando de quebra que a conta existe. Passo 2, OSINT: a pergunta é uma informação pública ou pesquisável, como o nome do meio do irmão mais velho; o atacante acha a resposta em perfis, resenhas ou enciclopédias. Passo 3, reset: o atacante envia e-mail, resposta e a nova senha ao endpoint de redefinição, que troca a senha sem exigir a senha antiga nem um token enviado por e-mail. No fim, o atacante entra na conta com a senha nova. Uma caixa lateral mostra a defesa: trocar a pergunta de segurança por um token aleatório de uso único, com prazo, enviado a um canal que só a vítima controla.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 12.5px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 11.5px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .r { fill: #f08a7e; }
+    .y { fill: #e8c46a; }
+    .g { fill: #5ee08a; }
+    .arr { stroke: #9fb0a6; stroke-width: 1.5; marker-end: url(#ar); fill: none; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="900" height="430" fill="#121815"/>
+  <text class="t" x="30" y="32">Trocar a senha de outra pessoa sem a senha dela</text>
+
+  <rect x="30" y="54" width="250" height="150" rx="10" fill="#1d2a23" stroke="#5cc8d8"/>
+  <text class="h" x="46" y="78">1. Enumerar</text>
+  <text class="s" x="46" y="100">GET /rest/user/</text>
+  <text class="s" x="46" y="114">security-question</text>
+  <text class="s" x="46" y="128">?email=jim@juice-sh.op</text>
+  <text class="b y" x="46" y="154">-> {"question":"...irmao</text>
+  <text class="b y" x="46" y="170">mais velho?"}</text>
+  <text class="s r" x="46" y="194">existe? a pergunta prova que sim</text>
+
+  <rect x="325" y="54" width="250" height="150" rx="10" fill="#1d2a23" stroke="#e8c46a"/>
+  <text class="h y" x="341" y="78">2. OSINT</text>
+  <text class="s" x="341" y="100">a pergunta pede um dado</text>
+  <text class="s" x="341" y="114">publico ou pesquisavel</text>
+  <text class="b" x="341" y="140">resenhas do Jim citam</text>
+  <text class="b" x="341" y="156">Star Trek -> James Kirk</text>
+  <text class="b g" x="341" y="182">resposta = "Samuel"</text>
+
+  <rect x="620" y="54" width="250" height="150" rx="10" fill="#16201b" stroke="#f08a7e"/>
+  <text class="h r" x="636" y="78">3. Resetar</text>
+  <text class="s" x="636" y="100">POST /rest/user/</text>
+  <text class="s" x="636" y="114">reset-password</text>
+  <text class="s" x="636" y="132">{email, answer, new}</text>
+  <text class="s r" x="636" y="158">sem a senha antiga</text>
+  <text class="s r" x="636" y="174">sem token no e-mail</text>
+  <text class="b g" x="636" y="196">-> conta tomada</text>
+
+  <path class="arr" d="M280,129 L323,129"/>
+  <path class="arr" d="M575,129 L618,129"/>
+
+  <rect x="30" y="236" width="840" height="76" rx="10" fill="#101a2a" stroke="#5cc8d8"/>
+  <text class="h" x="46" y="260">A raiz do problema</text>
+  <text class="s" x="46" y="284">A "pergunta secreta" é, na prática, uma segunda senha — só que fraca: baixa entropia, imutável e</text>
+  <text class="s" x="46" y="300">muitas vezes pública. Quem a sabe, reseta a conta. Vale como fator extra, nunca como recuperação sozinha.</text>
+
+  <rect x="30" y="330" width="840" height="76" rx="10" fill="#16201b" stroke="#5ee08a"/>
+  <text class="h g" x="46" y="354">A defesa</text>
+  <text class="s" x="46" y="378">Reset correto: o servidor gera um token aleatório de uso único e curto, manda para um canal que só a</text>
+  <text class="s" x="46" y="394">vítima controla (o e-mail dela), e só esse token autoriza a troca. Pergunta de segurança, no máximo, como 2º fator.</text>
+</svg>

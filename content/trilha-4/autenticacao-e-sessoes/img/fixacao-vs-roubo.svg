@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
+  <title id="t">Session fixation e session hijacking lado a lado</title>
+  <desc id="d">Comparação de dois ataques a sessão. À esquerda, session fixation (fixação de sessão): o atacante obtém um identificador de sessão antes do login e engana a vítima para que ela entre usando justamente esse identificador; como o servidor não troca o identificador ao autenticar, o atacante, que já o conhece, passa a compartilhar a sessão autenticada da vítima. A defesa é emitir um identificador novo no momento do login. À direita, session hijacking (roubo de sessão): a vítima já está logada com o seu token; o atacante captura esse token, seja por XSS lendo o armazenamento do navegador, por sniffing de tráfego sem HTTPS, ou por um token sem prazo que vazou, e o reaproveita para agir como a vítima. As defesas são cookies HttpOnly e Secure, HTTPS em tudo, e tokens com expiração e invalidação no servidor.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #f08a7e; }
+    .b { font-size: 11.5px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+  </style>
+  <rect width="900" height="400" fill="#121815"/>
+  <text class="t" x="30" y="32">Dois jeitos de assumir a sessão de alguém</text>
+
+  <rect x="30" y="52" width="400" height="258" rx="10" fill="#16201b" stroke="#f08a7e"/>
+  <text class="h" x="46" y="78">Session fixation</text>
+  <text class="s" x="46" y="98">o atacante FIXA o id antes do login</text>
+  <text class="b" x="46" y="128">1. atacante pega um id de sessão em branco</text>
+  <text class="b" x="46" y="150">2. induz a vítima a logar com ESSE id</text>
+  <text class="b" x="46" y="172">   (link com o id, cookie plantado...)</text>
+  <text class="b" x="46" y="194">3. servidor NÃO troca o id ao autenticar</text>
+  <text class="b y" x="46" y="216">4. o id antigo agora é uma sessão logada</text>
+  <text class="b y" x="46" y="232">   que o atacante já conhecia</text>
+  <text class="g" x="46" y="264">Defesa: emitir um id NOVO no login</text>
+  <text class="s" x="46" y="284">(rotacionar o identificador ao autenticar;</text>
+  <text class="s" x="46" y="300">nunca aceitar id vindo do cliente)</text>
+
+  <rect x="470" y="52" width="400" height="258" rx="10" fill="#16201b" stroke="#f08a7e"/>
+  <text class="h" x="486" y="78">Session hijacking</text>
+  <text class="s" x="486" y="98">o atacante ROUBA um id já logado</text>
+  <text class="b" x="486" y="128">1. vítima já está logada (tem o token)</text>
+  <text class="b" x="486" y="150">2. atacante captura o token por:</text>
+  <text class="b" x="486" y="172">   - XSS lendo o localStorage</text>
+  <text class="b" x="486" y="194">   - sniffing de tráfego sem HTTPS</text>
+  <text class="b" x="486" y="216">   - token sem prazo que vazou em log</text>
+  <text class="b y" x="486" y="238">3. reaproveita o token: vira a vítima</text>
+  <text class="g" x="486" y="264">Defesa: HttpOnly + Secure, HTTPS,</text>
+  <text class="s" x="486" y="284">expiração curta e invalidação no servidor</text>
+  <text class="s" x="486" y="300">(a Missão 3 explora a falta disso)</text>
+
+  <rect x="30" y="330" width="840" height="52" rx="10" fill="#101a2a" stroke="#5cc8d8"/>
+  <text class="s" x="46" y="352">Em comum: quem tem o identificador de sessão válido É a sessão. O servidor não vê a pessoa, só o token.</text>
+  <text class="s" x="46" y="370">Por isso o identificador precisa ser imprevisível, protegido no transporte e no armazenamento, e descartável.</text>
+</svg>

