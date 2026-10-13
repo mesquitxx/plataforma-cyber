@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t d">
+  <title id="t">IDOR: trocar o identificador do objeto na requisição</title>
+  <desc id="d">Sequência de duas requisições do atacante ao servidor. Na primeira, o atacante, autenticado como o usuário 25 e dono do carrinho de número 6, pede o seu próprio carrinho em GET barra rest barra basket barra 6; o servidor responde com os dados do carrinho 6 — comportamento legítimo. Na segunda, o atacante troca apenas o número na URL para GET barra rest barra basket barra 1; o servidor verifica que o token é válido (o atacante está logado) mas não verifica se o carrinho 1 pertence a ele, e devolve o carrinho 1, que é do administrador. O ponto crítico, marcado em vermelho, é a checagem que falta: comparar o dono do objeto pedido com o usuário do token. Essa checagem ausente é o coração do IDOR, Insecure Direct Object Reference, referência direta e insegura a objeto.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; }
+    .b { font-size: 11.5px; }
+    .c { font-size: 11.5px; fill: #e8c46a; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .r { fill: #f08a7e; }
+  </style>
+  <rect width="900" height="520" fill="#121815"/>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <marker id="agr" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5ee08a"/></marker>
+  </defs>
+  <text class="t" x="30" y="34">IDOR: muda o número, muda o dono — e ninguém confere</text>
+
+  <text class="h" x="120" y="72" text-anchor="middle" fill="#f08a7e">atacante</text>
+  <text class="s" x="120" y="90" text-anchor="middle">logado como user 25 (basket 6)</text>
+  <text class="h" x="700" y="72" text-anchor="middle" fill="#5cc8d8">servidor</text>
+  <line x1="120" y1="100" x2="120" y2="490" stroke="#2a3a31" stroke-width="1"/>
+  <line x1="700" y1="100" x2="700" y2="490" stroke="#2a3a31" stroke-width="1"/>
+
+  <!-- legit request -->
+  <text class="c" x="140" y="132">1) pede o PRÓPRIO carrinho (legítimo)</text>
+  <line x1="120" y1="148" x2="700" y2="148" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text class="b" x="150" y="142">GET /rest/basket/6  + token</text>
+  <rect x="470" y="162" width="300" height="52" rx="8" fill="#16201b" stroke="#5ee08a"/>
+  <text class="b g" x="486" y="184">token válido? sim. dono do 6? você.</text>
+  <text class="s" x="486" y="202">as duas conferem → responde</text>
+  <line x1="700" y1="232" x2="120" y2="232" stroke="#5ee08a" stroke-width="1.5" marker-end="url(#agr)"/>
+  <text class="b g" x="150" y="226">200 { carrinho 6: o seu }</text>
+
+  <!-- idor request -->
+  <text class="c" x="140" y="286">2) troca SÓ o número: 6 → 1</text>
+  <line x1="120" y1="302" x2="700" y2="302" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text class="b" x="150" y="296">GET /rest/basket/1  + o MESMO token</text>
+  <rect x="440" y="316" width="330" height="86" rx="8" fill="#16201b" stroke="#f08a7e"/>
+  <text class="b g" x="456" y="340">token válido? sim (você está logado)</text>
+  <text class="b r" x="456" y="362">dono do 1? o admin — mas NINGUÉM</text>
+  <text class="b r" x="456" y="380">compara o dono com o seu id.</text>
+  <text class="s" x="456" y="396">a checagem de posse não existe</text>
+  <line x1="700" y1="420" x2="120" y2="420" stroke="#f08a7e" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text class="b r" x="150" y="414">200 { carrinho 1: do ADMIN }</text>
+
+  <rect x="30" y="446" width="840" height="56" rx="8" fill="#16201b" stroke="#5ee08a"/>
+  <text class="b g" x="46" y="470">A checagem que faltava (uma linha): o dono do objeto pedido é igual ao usuário do token?</text>
+  <text class="s" x="46" y="490">Se não for, responde 403/404. Nunca confie no identificador que veio do cliente como prova de posse.</text>
+</svg>

