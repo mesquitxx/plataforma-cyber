@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="t d">
+  <title id="t">Como um ataque CSRF usa o navegador da vítima como deputado confuso</title>
+  <desc id="d">Três colunas. À esquerda, o navegador da vítima, que já fez login em banco.com e guarda o cookie de sessão desse site. No meio, a página do atacante (mal.com), que a vítima abre em outra aba ainda logada. À direita, o servidor banco.com. Passo 1: a vítima faz login em banco.com e o servidor devolve um cookie de sessão, que fica guardado no navegador. Passo 2: a vítima, ainda logada, abre a página do atacante. Passo 3: essa página contém um formulário escondido que dispara sozinho um POST para banco.com barra transferir, com os parâmetros da transferência. Passo 4: como o pedido vai para banco.com, o navegador ANEXA SOZINHO o cookie de sessão de banco.com, mesmo o pedido tendo partido de mal.com. Passo 5: o servidor vê um cookie válido, acha que é a própria vítima e executa a transferência. Passo 6: a resposta volta para o navegador da vítima, não para o atacante — a mesma-origem impede o atacante de ler a resposta —, mas a transferência já aconteceu. O ponto central, no rodapé: o CSRF não rouba o cookie; ele faz o navegador usá-lo. Por isso ações que mudam estado e dependem só do cookie são o alvo, e por isso não ler a resposta não protege.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 15.5px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; }
+    .b { font-size: 11.5px; }
+    .code { font-size: 11px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .n { font-size: 12px; font-weight: 700; fill: #121815; }
+    .g { fill: #5ee08a; }
+    .c { fill: #5cc8d8; }
+    .r { fill: #ef7b6b; font-weight: 700; }
+    .y { fill: #e8c46a; }
+    .victim { fill: #16201b; stroke: #5ee08a; stroke-width: 1.4; }
+    .attacker { fill: #241717; stroke: #ef7b6b; stroke-width: 1.4; }
+    .server { fill: #1b2a3a; stroke: #5cc8d8; stroke-width: 1.3; }
+    .arrc { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ac); fill: none; }
+    .arrr { stroke: #ef7b6b; stroke-width: 2; marker-end: url(#ar); fill: none; }
+    .cookie { fill: #15130f; stroke: #e8c46a; stroke-width: 1.2; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ef7b6b"/></marker>
+  </defs>
+  <rect width="900" height="540" fill="#121815"/>
+  <text class="t" x="24" y="30">CSRF: o atacante não rouba o cookie — faz o navegador da vítima usá-lo</text>
+
+  <!-- column headers -->
+  <text class="h g" x="40" y="66">Navegador da vítima</text>
+  <text class="h r" x="360" y="66">Página do atacante (mal.com)</text>
+  <text class="h c" x="720" y="66">Servidor banco.com</text>
+
+  <!-- victim box -->
+  <rect class="victim" x="24" y="80" width="220" height="150" rx="10"/>
+  <text class="s" x="40" y="104">logada em banco.com</text>
+  <rect class="cookie" x="40" y="118" width="188" height="40" rx="6"/>
+  <text class="b y" x="52" y="135">cookie de sessão</text>
+  <text class="s" x="52" y="150">session=banco.com (guardado)</text>
+  <text class="s" x="40" y="182">o navegador anexa esse</text>
+  <text class="s" x="40" y="198">cookie a TODO pedido</text>
+  <text class="s" x="40" y="214">para banco.com, sozinho</text>
+
+  <!-- attacker box -->
+  <rect class="attacker" x="330" y="80" width="250" height="150" rx="10"/>
+  <text class="s" x="346" y="104">a vítima abre esta página</text>
+  <text class="code" x="346" y="128">&lt;form action=</text>
+  <text class="code c" x="346" y="144">  "https://banco.com/transferir"</text>
+  <text class="code" x="346" y="160">  method="POST"&gt;</text>
+  <text class="code r" x="346" y="176">  para=atacante  valor=100000</text>
+  <text class="code" x="346" y="192">&lt;/form&gt;</text>
+  <text class="s" x="346" y="214">dispara sozinho (submit no onload)</text>
+
+  <!-- server box -->
+  <rect class="server" x="676" y="80" width="200" height="150" rx="10"/>
+  <text class="s" x="692" y="104">recebe POST /transferir</text>
+  <text class="b c" x="692" y="128">tem cookie válido?</text>
+  <text class="b g" x="692" y="148">sim → é a vítima</text>
+  <text class="b r" x="692" y="172">executa a transferência</text>
+  <text class="s" x="692" y="196">o servidor não distingue</text>
+  <text class="s" x="692" y="212">um pedido legítimo de um forjado</text>
+
+  <!-- step arrows -->
+  <circle cx="300" cy="300" r="11" fill="#5ee08a"/><text class="n" x="296" y="304">1</text>
+  <path class="arrc" d="M135,232 C135,270 250,270 300,290"/>
+  <text class="s" x="150" y="262">login → recebe o cookie</text>
+
+  <circle cx="455" cy="270" r="11" fill="#ef7b6b"/><text class="n" x="451" y="274">2</text>
+  <path class="arrr" d="M245,150 C280,150 420,160 450,255"/>
+  <text class="s" x="250" y="300">2) a vítima, ainda logada, abre mal.com</text>
+
+  <!-- the forged request path -->
+  <circle cx="610" cy="330" r="11" fill="#ef7b6b"/><text class="n" x="606" y="334">3</text>
+  <path class="arrr" d="M455,232 C470,300 560,315 740,315 L776,290"/>
+  <text class="code r" x="300" y="360">3) POST /transferir forjado → banco.com</text>
+
+  <rect class="cookie" x="300" y="380" width="300" height="34" rx="6"/>
+  <circle cx="318" cy="397" r="10" fill="#e8c46a"/><text class="n" x="314" y="401">4</text>
+  <text class="b y" x="336" y="401">o navegador ANEXA o cookie de banco.com sozinho</text>
+
+  <circle cx="790" cy="430" r="11" fill="#5ee08a"/><text class="n" x="786" y="434">5</text>
+  <text class="b g" x="610" y="434">5) cookie OK → transfere</text>
+
+  <path class="arrc" d="M776,250 C650,250 500,250 320,440"/>
+  <circle cx="300" cy="452" r="11" fill="#5cc8d8"/><text class="n" x="296" y="456">6</text>
+  <text class="s" x="330" y="456">6) a resposta volta ao navegador da vítima — o atacante NÃO a lê (mesma-origem)…</text>
+  <text class="s r" x="330" y="472">…mas a transferência já aconteceu</text>
+
+  <!-- footer -->
+  <rect x="24" y="486" width="852" height="42" rx="10" fill="#15130f" stroke="#e8c46a" stroke-width="1.2"/>
+  <text class="s" x="40" y="504" style="font-size:11.5px">Alvo do CSRF: ações que <tspan class="y">mudam estado</tspan> e são autorizadas <tspan class="y">só pelo cookie</tspan>. Não ler a resposta não protege:</text>
+  <text class="s" x="40" y="520" style="font-size:11.5px">o efeito colateral (a transferência) acontece no envio. É o "confused deputy": o navegador é o deputado confuso.</text>
+</svg>

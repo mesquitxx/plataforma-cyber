@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
+  <title id="t">Topologia do laboratório webgoat: quem fala com quem nas duas missões</title>
+  <desc id="d">À esquerda, o Kali, a sua máquina de ataque, dentro da rede interna lab_net. No centro, um único contêiner chamado webgoat, com duas aplicações no mesmo host: o WebGoat na porta 8080, que é a vítima com as lições, e o WebWolf na porta 9090, que faz o papel do site do atacante e hospeda arquivos. Na Missão 1, o Kali manda o POST de review ao WebGoat simulando o navegador da vítima, com o cookie JSESSIONID e o cabeçalho Referer que você escolhe. Uma nota lembra que webgoat:8080 e webgoat:9090 são o mesmo site, porque a porta não conta para o site nem para o cookie. Na Missão 2, o Kali manda ao WebGoat um parâmetro url; o próprio servidor do WebGoat é quem tenta abrir essa URL, saindo em direção à internet. Essa saída bate num muro: a lab_net é interna e não tem rota para fora, então a conexão falha. À direita, fora do muro, ficam a internet e o seu PC, que nenhum contêiner alcança.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 15.5px; font-weight: 700; }
+    .h { font-size: 12.5px; font-weight: 700; }
+    .b { font-size: 11px; }
+    .s { font-size: 10px; fill: #9fb0a6; }
+    .code { font-size: 10.5px; fill: #5cc8d8; }
+    .g { fill: #5ee08a; }
+    .c { fill: #5cc8d8; }
+    .r { fill: #ef7b6b; font-weight: 700; }
+    .y { fill: #e8c46a; }
+    .net { fill: none; stroke: #5ee08a; stroke-width: 1.2; stroke-dasharray: 6 4; }
+    .box { fill: #16201b; stroke: #5ee08a; stroke-width: 1.4; }
+    .vic { fill: #1b2a3a; stroke: #5cc8d8; stroke-width: 1.3; }
+    .atk { fill: #2a1f12; stroke: #e8c46a; stroke-width: 1.3; }
+    .out { fill: #241717; stroke: #ef7b6b; stroke-width: 1.2; }
+    .a1 { stroke: #e8c46a; stroke-width: 2; marker-end: url(#ay); fill: none; }
+    .a2 { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ac); fill: none; }
+    .a3 { stroke: #ef7b6b; stroke-width: 2; marker-end: url(#ar); fill: none; stroke-dasharray: 5 4; }
+  </style>
+  <defs>
+    <marker id="ay" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8c46a"/></marker>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ef7b6b"/></marker>
+  </defs>
+  <rect width="900" height="430" fill="#121815"/>
+  <text class="t" x="24" y="30">O lab webgoat: quem fala com quem nas duas missões</text>
+
+  <!-- lab_net -->
+  <rect class="net" x="16" y="48" width="652" height="366" rx="12"/>
+  <text class="s g" x="30" y="66">lab_net (rede interna do Docker, sem rota para fora)</text>
+
+  <!-- Kali -->
+  <rect class="box" x="34" y="150" width="170" height="112" rx="10"/>
+  <text class="h g" x="50" y="176">Kali</text>
+  <text class="b" x="50" y="196">sua máquina de ataque</text>
+  <text class="s" x="50" y="216">curl faz o papel do</text>
+  <text class="s" x="50" y="230">navegador da vítima</text>
+  <text class="s" x="50" y="248">(Missão 1) e do cliente</text>
+
+  <!-- webgoat container -->
+  <rect class="box" x="300" y="84" width="350" height="316" rx="12"/>
+  <text class="h g" x="316" y="106">contêiner "webgoat" (um único host)</text>
+
+  <rect class="vic" x="318" y="122" width="314" height="120" rx="9"/>
+  <text class="h c" x="334" y="146">WebGoat  webgoat:8080/WebGoat</text>
+  <text class="s" x="334" y="166">a vítima: lições CSRF e SSRF</text>
+  <text class="code" x="334" y="186">POST /csrf/review</text>
+  <text class="code" x="334" y="204">POST /SSRF/task1  /SSRF/task2</text>
+  <text class="s" x="334" y="226">cookie JSESSIONID (HttpOnly, sem SameSite)</text>
+
+  <rect class="atk" x="318" y="262" width="314" height="78" rx="9"/>
+  <text class="h y" x="334" y="286">WebWolf  webgoat:9090/WebWolf</text>
+  <text class="s" x="334" y="306">o "site do atacante": hospeda a página</text>
+  <text class="s" x="334" y="320">com o formulário forjado</text>
+
+  <text class="s y" x="318" y="362">8080 e 9090 = mesmo host = mesmo SITE:</text>
+  <text class="s y" x="318" y="376">a porta não conta para o site nem para o cookie.</text>
+
+  <!-- arrows from Kali -->
+  <path class="a1" d="M204,180 C250,180 270,176 316,176"/>
+  <text class="b y" x="210" y="160">Missão 1</text>
+  <text class="s" x="210" y="196">Cookie + Referer</text>
+  <path class="a2" d="M204,236 C252,236 268,204 316,204"/>
+  <text class="b c" x="210" y="270">Missão 2</text>
+  <text class="s" x="210" y="284">url=...</text>
+
+  <!-- SSRF outbound -->
+  <path class="a3" d="M632,196 L674,196"/>
+  <text class="h r" x="681" y="201" style="font-size:16px">✕</text>
+  <text class="s r" x="640" y="186">o SERVIDOR tenta</text>
+  <text class="s r" x="640" y="214">abrir a URL</text>
+
+  <!-- wall -->
+  <rect x="680" y="60" width="14" height="354" fill="#ef7b6b" opacity="0.35"/>
+  <text class="h r" x="700" y="252">muro: sem</text>
+  <text class="h r" x="700" y="270">internet e</text>
+  <text class="h r" x="700" y="288">sem acesso</text>
+  <text class="h r" x="700" y="306">ao seu PC</text>
+
+  <rect class="out" x="746" y="150" width="138" height="80" rx="9"/>
+  <text class="h r" x="760" y="176">internet</text>
+  <text class="s" x="760" y="196">ifconfig.pro,</text>
+  <text class="s" x="760" y="210">metadata de nuvem</text>
+
+  <rect class="out" x="746" y="330" width="138" height="56" rx="9"/>
+  <text class="h r" x="760" y="354">seu PC</text>
+  <text class="s" x="760" y="372">fora do alcance</text>
+</svg>
