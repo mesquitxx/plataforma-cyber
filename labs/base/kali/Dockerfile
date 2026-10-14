@@ -8,6 +8,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
+# Crypto track (Track 3): openssl, xxd and python3-cryptography for symmetric
+# crypto (3.3); hashcat and john for offline hash cracking (3.2).
 # Wireshark: keep dumpcap non-setuid; capture with `sudo wireshark`.
 RUN echo "wireshark-common wireshark-common/install-setuid boolean false" \
         | debconf-set-selections \
@@ -22,6 +24,7 @@ RUN echo "wireshark-common wireshark-common/install-setuid boolean false" \
         sudo procps iproute2 iputils-ping dnsutils net-tools less nano \
         firefox-esr burpsuite \
         nmap netcat-traditional curl sqlmap wireshark \
+        openssl xxd python3-cryptography hashcat john \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
