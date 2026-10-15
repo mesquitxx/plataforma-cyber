@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="t d">
+  <title id="t">A cadeia de ataque do mini-projeto, elo por elo</title>
+  <desc id="d">Fluxo em seis estágios que parte de um atacante anônimo e termina na tomada de uma conta protegida por segundo fator. Estágio 1: atacante anônimo, sem conta. Estágio 2: SQL injection do tipo UNION na busca de produtos vaza a tabela de usuários inteira, 24 credenciais com e-mail e hash MD5. Estágio 3: quebra de senha offline com o John the Ripper; só as senhas fracas caem (a conta demo), enquanto os hashes do admin e do wurstbrot resistem à wordlist, então esse caminho trava. Estágio 4: um segundo SQL injection, agora escolhendo a coluna totpSecret, rouba a semente de autenticação em dois fatores do usuário wurstbrot; e um SQL injection no login (wurstbrot aspa traço traço) ignora a senha e cai no portão do segundo fator. Estágio 5: o código de uso único é calculado a partir da semente roubada, por HMAC-SHA1. Estágio 6: a sessão de wurstbrot é obtida, a conta protegida por dois fatores foi tomada. Uma faixa verde embaixo avisa que quebrar qualquer um dos elos, por exemplo com query parametrizada, hash salgado, semente de segundo fator guardada de forma protegida ou limite de tentativas no código, derruba a cadeia inteira.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 12.5px; font-weight: 700; }
+    .b { font-size: 10.5px; }
+    .s { font-size: 9.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .r { fill: #f08a7e; }
+    .c { fill: #5cc8d8; }
+  </style>
+  <rect width="900" height="560" fill="#121815"/>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <marker id="arx" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f08a7e"/></marker>
+  </defs>
+  <text class="t" x="30" y="34">Uma cadeia de seis elos: do anônimo à conta tomada</text>
+
+  <!-- Stage 1 -->
+  <rect x="30" y="70" width="180" height="78" rx="10" fill="#16201b" stroke="#5cc8d8"/>
+  <text class="h c" x="46" y="96">1 · Anônimo</text>
+  <text class="s" x="46" y="116">sem conta, só acessa</text>
+  <text class="s" x="46" y="130">a loja pública</text>
+
+  <!-- Stage 2 -->
+  <rect x="270" y="70" width="200" height="78" rx="10" fill="#16201b" stroke="#e8c46a"/>
+  <text class="h y" x="286" y="96">2 · SQLi UNION</text>
+  <text class="s" x="286" y="116">vaza a tabela Users</text>
+  <text class="b g" x="286" y="132">→ 24 credenciais (MD5)</text>
+
+  <!-- Stage 3 -->
+  <rect x="530" y="70" width="210" height="78" rx="10" fill="#16201b" stroke="#e8c46a"/>
+  <text class="h y" x="546" y="96">3 · Quebra offline</text>
+  <text class="s" x="546" y="116">John: só a senha fraca</text>
+  <text class="b r" x="546" y="132">demo cai; admin resiste ✗</text>
+
+  <line x1="210" y1="109" x2="270" y2="109" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="470" y1="109" x2="530" y2="109" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- turn down from stage 2/3 to stage 4: the dump also feeds the deep SQLi -->
+  <line x1="370" y1="148" x2="370" y2="300" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text class="s" x="380" y="230">a base vazada mostra</text>
+  <text class="s" x="380" y="244">quem usa 2FA</text>
+
+  <!-- Stage 4 -->
+  <rect x="150" y="300" width="440" height="96" rx="10" fill="#16201b" stroke="#e8c46a"/>
+  <text class="h y" x="166" y="326">4 · Dois SQL injection que se somam</text>
+  <text class="b" x="166" y="348">coluna totpSecret → rouba a semente 2FA do wurstbrot</text>
+  <text class="b" x="166" y="366">login: wurstbrot@...'--  → ignora a senha</text>
+  <text class="b g" x="166" y="384">→ cai no portão do segundo fator (totp_token_required)</text>
+
+  <!-- Stage 5 -->
+  <rect x="150" y="430" width="300" height="78" rx="10" fill="#16201b" stroke="#5cc8d8"/>
+  <text class="h c" x="166" y="456">5 · OTP calculado</text>
+  <text class="s" x="166" y="476">HMAC-SHA1(semente, tempo)</text>
+  <text class="b g" x="166" y="492">→ código de uso único válido</text>
+  <line x1="370" y1="396" x2="370" y2="430" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- Stage 6 -->
+  <rect x="540" y="430" width="300" height="78" rx="10" fill="#16201b" stroke="#f08a7e"/>
+  <text class="h r" x="556" y="456">6 · Conta tomada</text>
+  <text class="s" x="556" y="476">sessão de wurstbrot:</text>
+  <text class="b r" x="556" y="492">senha E 2FA derrotados</text>
+  <line x1="450" y1="469" x2="540" y2="469" stroke="#f08a7e" stroke-width="1.5" marker-end="url(#arx)"/>
+
+  <!-- cut-any-link band -->
+  <rect x="600" y="300" width="270" height="96" rx="10" fill="#16201b" stroke="#5ee08a"/>
+  <text class="h g" x="616" y="326">Defesa em profundidade</text>
+  <text class="s" x="616" y="348">Quebrar QUALQUER elo para a cadeia:</text>
+  <text class="s" x="616" y="364">query parametrizada · hash salgado ·</text>
+  <text class="s" x="616" y="380">semente 2FA protegida · limite de OTP</text>
+</svg>

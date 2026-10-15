@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
+  <title id="t">Árvore de ataque: dois caminhos até assumir uma conta privilegiada</title>
+  <desc id="d">Uma árvore de ataque com o objetivo no topo, assumir uma conta privilegiada, ligado por um nó do tipo OU a dois caminhos independentes. Caminho A: um SQL injection de bypass no login com a carga aspa OR true traço traço entra como administrador (escalonamento vertical) e, com esse token, um IDOR lê os carrinhos de outros clientes. Caminho B: um SQL injection vaza a semente de autenticação em dois fatores do usuário wurstbrot, outro SQL injection ignora a senha dele e o código de uso único calculado a partir da semente roubada completa o segundo fator, tomando a conta protegida. Abaixo de cada etapa, em verde, está a defesa que corta aquele ramo: query parametrizada corta os dois caminhos na origem, controle de acesso no servidor corta o IDOR, hash salgado e não guardar a semente de forma reversível cortam o caminho B, e limite de tentativas no segundo fator o encarece. A moral da figura é que, como o objetivo tem um nó OU, basta um caminho aberto para o atacante vencer; fechar a árvore exige cortar todos os ramos.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 12.5px; font-weight: 700; }
+    .b { font-size: 10.5px; }
+    .s { font-size: 9.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .r { fill: #f08a7e; }
+    .c { fill: #5cc8d8; }
+  </style>
+  <rect width="900" height="500" fill="#121815"/>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <text class="t" x="30" y="34">Árvore de ataque: o objetivo é um nó OU</text>
+
+  <!-- objective -->
+  <rect x="330" y="56" width="240" height="56" rx="10" fill="#16201b" stroke="#f08a7e"/>
+  <text class="h r" x="346" y="80">OBJETIVO</text>
+  <text class="b" x="346" y="98">assumir uma conta privilegiada</text>
+  <text class="s" x="580" y="90">nó OU: 1 caminho basta</text>
+
+  <!-- branch lines -->
+  <line x1="420" y1="112" x2="200" y2="150" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="480" y1="112" x2="700" y2="150" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- Path A -->
+  <rect x="40" y="150" width="330" height="60" rx="10" fill="#16201b" stroke="#e8c46a"/>
+  <text class="h y" x="56" y="174">Caminho A · SQLi bypass no login</text>
+  <text class="b" x="56" y="194">' OR true--  → entra como admin (vertical)</text>
+
+  <rect x="40" y="235" width="330" height="56" rx="10" fill="#16201b" stroke="#e8c46a"/>
+  <text class="h y" x="56" y="259">+ IDOR com o token de admin</text>
+  <text class="b" x="56" y="278">lê carrinhos / dados de outros clientes</text>
+  <line x1="205" y1="210" x2="205" y2="235" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- Path B -->
+  <rect x="530" y="150" width="340" height="60" rx="10" fill="#16201b" stroke="#e8c46a"/>
+  <text class="h y" x="546" y="174">Caminho B · SQLi rouba a semente 2FA</text>
+  <text class="b" x="546" y="194">coluna totpSecret do wurstbrot</text>
+
+  <rect x="530" y="235" width="340" height="80" rx="10" fill="#16201b" stroke="#e8c46a"/>
+  <text class="h y" x="546" y="259">+ burla senha + OTP calculado</text>
+  <text class="b" x="546" y="279">wurstbrot'-- ignora a senha;</text>
+  <text class="b" x="546" y="297">HMAC-SHA1(semente) vence o 2FA</text>
+  <line x1="700" y1="210" x2="700" y2="235" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- defenses band -->
+  <rect x="40" y="350" width="830" height="118" rx="10" fill="#16201b" stroke="#5ee08a"/>
+  <text class="h g" x="56" y="376">Onde cada defesa corta a árvore</text>
+  <text class="b" x="56" y="398">• Query parametrizada no login e na busca → corta A e B na origem (sem SQLi, nada começa).</text>
+  <text class="b" x="56" y="416">• Controle de acesso por objeto no servidor → corta o IDOR do Caminho A.</text>
+  <text class="b" x="56" y="434">• Hash salgado (bcrypt) + semente 2FA guardada de forma não reversível → esvazia o Caminho B.</text>
+  <text class="s" x="56" y="454">Como o topo é um nó OU, um só ramo aberto já vence: fechar a árvore exige cortar TODOS.</text>
+</svg>
