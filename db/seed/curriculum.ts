@@ -274,8 +274,8 @@ export const TRACKS: TrackSeed[] = [
         prerequisites: ["web-por-dentro"],
         lab: "webgoat",
       },
-      // Phase 6: after the OWASP basics. The lab target is a candidate (DVGA),
-      // confirmed in Phase 10 (Track 4 content).
+      // Phase 6: after the OWASP basics. The DVGA target was confirmed and
+      // built in Phase 10, with the module.
       {
         slug: "seguranca-de-apis-e-graphql",
         title: "Segurança de APIs e GraphQL",

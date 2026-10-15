@@ -9,7 +9,7 @@ com o alvo usado.
 - **Idioma:** conteúdo em português; termos técnicos em inglês, explicados na
   primeira ocorrência (alimentam o Glossário automático).
 - **Alvos de lab:** apenas projetos vulneráveis-por-design consagrados —
-  DVWA, OWASP Juice Shop, OWASP WebGoat, Vulhub. Nunca exploit/malware sob medida.
+  DVWA, OWASP Juice Shop, OWASP WebGoat, Vulhub e DVGA. Nunca exploit/malware sob medida.
 - **Sandboxes de prática:** contêineres sem nenhuma vulnerabilidade e sem rede
   (ex.: `linux-sandbox`), só para treinar comandos. São permitidos; não são
   alvos de ataque.
@@ -70,6 +70,11 @@ com o alvo usado.
     3. **CVE-2017-5638 — Apache Struts2 S2-045** (RCE via header `Content-Type`).
        Imagem com Tomcat/JVM (~400–600 MB). Encaixa forte em **5.4** e **5.3**
        (módulo `struts2_code_exec_jakarta`); boa para **5.6** (ponta a ponta).
+- **Decisão da Fase 10 — alvo de APIs/GraphQL (MESQUITA):** o 4.9 usa a
+  **DVGA** (`dvga`, Damn Vulnerable GraphQL Application 2.2.0), montada nesta
+  fase com as mesmas regras dos outros alvos (troca T11 em
+  [`LABORATORIO.md`](LABORATORIO.md)). A parte REST do módulo fica na teoria e
+  numa demonstração guiada que retoma o Juice Shop do 4.5, sem segundo lab.
 
 ---
 
@@ -327,9 +332,9 @@ As principais classes de falha web, na prática, em alvos consagrados.
 - **Objetivos:** como APIs REST e GraphQL expõem dados; OWASP API Security Top
   10 (BOLA, autenticação quebrada, exposição excessiva de dados, falta de
   limite de taxa); introspecção e consultas abusivas em GraphQL; JWT em APIs.
-- **Lab:** sim — alvo próprio de APIs. **Candidato:** DVGA (Damn Vulnerable
-  GraphQL Application, `dvga`) para GraphQL, com a parte REST no Juice Shop.
-  A escolha final sai na Fase 10, junto com o conteúdo da Trilha 4.
+- **Lab:** sim — **DVGA** (Damn Vulnerable GraphQL Application, `dvga`,
+  disponível desde a Fase 10). A parte REST fica na teoria e retoma o Juice
+  Shop do 4.5, sem segundo lab.
 
 ### 4.10 — Mini-projeto web: encadear falhas
 - **Pré-requisitos:** 4.2–4.9.

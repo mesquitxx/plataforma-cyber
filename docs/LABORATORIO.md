@@ -13,11 +13,11 @@ ativo por vez**. Por baixo, tudo passa por um único executor,
 | `rede-de-alvos` | desktop | O Kali + DVWA + Juice Shop na mesma rede interna, para nmap e enumeração. *(Fase 7)* |
 | `webgoat` | desktop | O Kali + o OWASP WebGoat (Java), aulas guiadas de falhas web. *(Fase 7)* |
 | `vulhub` | desktop | O Kali + um alvo Vulhub com CVE real. **Provisório:** Apache 2.4.49 / CVE-2021-41773. *(Fase 7)* |
+| `dvga` | desktop | O Kali + a Damn Vulnerable GraphQL Application (Python), API GraphQL vulnerável do módulo 4.9. *(Fase 10)* |
 
-O lab **previsto** `dvga` (Damn Vulnerable GraphQL Application) já está no
-catálogo (`lib/labs/catalog.ts`) e aparece na interface, mas só pode ser ligado
-na fase que o traz (candidato de APIs/GraphQL, decidido na fase de conteúdo da
-Trilha 4).
+O `dvga` foi decidido e montado na Fase 10, junto com o módulo 4.9 (antes era
+só um lab previsto no catálogo). Como os da Fase 7, a imagem precisa de
+`scripts/lab.sh pull dvga` no terminal antes da primeira subida.
 
 Os labs da Fase 7 (`juice-shop`, `rede-de-alvos`, `webgoat`, `vulhub`) usam
 imagens que **ainda não estão baixadas**: na primeira vez, rode
@@ -472,6 +472,22 @@ nmap -sV dvwa                # funciona: 80/tcp aberto
   duas configurações erradas que a CVE-2021-41773 exige — não há exploit sob
   medida (ver `labs/vulhub/Dockerfile`).
 
+### Fase 10 (aprovadas pelo MESQUITA antes da implementação)
+- **T11 — DVGA: execução de comandos e SSRF por design, presos no contêiner.**
+  A DVGA (imagem `dolevf/dvga:2.2.0`, fixada por digest) tem cenários que, de
+  propósito, rodam comandos do sistema e buscam URLs **de dentro do próprio
+  contêiner**. **Mitigações:** o alvo fica só na `lab_net` interna (sem
+  internet, sem NAT, sem acesso ao host), não publica porta, roda como o
+  usuário `dvga` (sem privilégios), com `no-new-privileges`, `restart: "no"`,
+  sem `privileged` e sem `docker.sock`. **Risco residual aceito:** um comando
+  rodado no DVGA alcança o Kali na `lab_net`, o mesmo cenário já aceito para os
+  outros alvos (T6). O `scripts/lab.sh verify dvga` prova o isolamento como nos
+  outros labs (a imagem tem `bash`, então as sondas de dentro do alvo valem).
+  **Primeira validação (2026-10-15):** 149 PASS, 0 FAIL, 2 SKIP (ICMP sem
+  `ping` nas imagens do DVGA e do Guacamole), código 0. Os controles de sonda
+  do DVGA (DNS em `127.0.0.11`, Kali → `dvga:5013`) passaram, então os
+  "blocked" de dentro do alvo são reais.
+
 ## linux-sandbox (módulo 0.3)
 
 Contêiner de prática **sem nenhuma vulnerabilidade**: só guarda os arquivos das
@@ -537,7 +553,7 @@ para os seus alvos (controles positivos de HTTP por alvo e sondas de porta). Com
 as imagens ainda não foram baixadas, a validação fica pendente do `pull`:
 
 ```bash
-scripts/lab.sh pull juice-shop     # idem: webgoat, vulhub, rede-de-alvos
+scripts/lab.sh pull juice-shop     # idem: webgoat, vulhub, rede-de-alvos, dvga
 scripts/lab.sh up juice-shop
 scripts/lab.sh verify juice-shop   # espera-se todos PASS, código 0
 scripts/lab.sh down juice-shop

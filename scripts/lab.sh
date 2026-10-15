@@ -212,6 +212,7 @@ summary() {
         juice-shop) echo "  Inside Kali, Juice Shop is at http://juice-shop:3000/" ;;
         webgoat) echo "  Inside Kali, WebGoat is at http://webgoat:8080/WebGoat/" ;;
         vulhub) echo "  Inside Kali, the Vulhub target is at http://vulhub/ (provisional: CVE-2021-41773)" ;;
+        dvga) echo "  Inside Kali, DVGA is at http://dvga:5013/ (GraphQL API: http://dvga:5013/graphql)" ;;
         rede-de-alvos)
             echo "  Inside Kali: http://dvwa/ (admin / password) and http://juice-shop:3000/" ;;
     esac

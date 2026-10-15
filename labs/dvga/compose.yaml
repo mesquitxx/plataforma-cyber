@@ -1,0 +1,45 @@
+# Damn Vulnerable GraphQL Application target, layered on top of
+# labs/base/compose.yaml (lab "dvga"). Never run it alone: scripts/lab.sh
+# passes both files.
+#
+# DVGA is reachable only from Kali, through lab_net (internal, declared in the
+# base file). It serves the web UI and the GraphQL endpoint on 5013; the port
+# is not published to the host. The image runs as the unprivileged "dvga" user.
+#
+# Some DVGA scenarios run OS commands or fetch URLs from inside the container
+# (by design). That stays inside the container: lab_net has no internet and no
+# route to the host (trade-off T11 in docs/LABORATORIO.md).
+#
+# No volume: DVGA keeps its SQLite database inside the container, so recreating
+# the container is a full reset.
+
+x-hardening: &hardening
+  restart: "no"
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  dvga:
+    <<: *hardening
+    image: dolevf/dvga:2.2.0@sha256:040aa33c199d99f3380c9ff9a1ee5d725e9abca7b189c63a35a2a73bda79c957
+    hostname: dvga
+    environment:
+      # Bind to every interface so Kali reaches it by hostname; the default is
+      # the container's loopback only.
+      WEB_HOST: 0.0.0.0
+      WEB_PORT: "5013"
+      TZ: UTC
+    # The image ships no healthcheck. Ask the home page with the image's own
+    # Python, so nothing extra is needed inside the container.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5013/', timeout=3)"
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks: [lab_net]
+    mem_limit: 512m

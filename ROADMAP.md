@@ -215,7 +215,7 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
 **Entrega:** Trilhas 3–5 escritas em MDX, com os labs já prontos.
 - Trilha 3 (Criptografia): `kali` sem alvo e `juice-shop` (JWT).
 - Trilha 4 (Hacking Web / OWASP Top 10 e APIs): `dvwa`, `juice-shop`, `webgoat`
-  e o alvo de APIs/GraphQL (candidato DVGA, decidido nesta fase se necessário).
+  e o alvo de APIs/GraphQL (`dvga`, decidido e montado nesta fase, com o 4.9).
 - Trilha 5 (Redes e Serviços): `vulhub`, Metasploit, CVEs reais (incluindo a
   escolha da CVE final do lab `vulhub`).
 - Andamento: Trilha 3: 3.1 "Fundamentos de criptografia" (sem lab; três missões no WSL

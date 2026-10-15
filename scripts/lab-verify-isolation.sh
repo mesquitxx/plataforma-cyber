@@ -144,6 +144,9 @@ case "$LAB_ACTIVE" in
     vulhub)
         targets=(vulhub); back_nets=(); back_bridges=(); back_dbs=()
         target_http=([vulhub]="http://vulhub/"); target_port=([vulhub]=80) ;;
+    dvga)
+        targets=(dvga); back_nets=(); back_bridges=(); back_dbs=()
+        target_http=([dvga]="http://dvga:5013/"); target_port=([dvga]=5013) ;;
     rede-de-alvos)
         targets=(dvwa juice-shop); back_nets=(dvwa_back); back_bridges=(cl-dvwaback); back_dbs=(dvwa-db)
         target_http=([dvwa]="http://dvwa/login.php" [juice-shop]="http://juice-shop:3000/")

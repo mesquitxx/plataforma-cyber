@@ -44,7 +44,6 @@ export type LabDefinition = {
 
 const DESKTOP_ISOLATION =
   "Rede interna sem internet; o alvo só é alcançável pelo Kali, e o Kali só pela tela do Guacamole em 127.0.0.1:8080.";
-const PLANNED_RESET = "Definido quando o lab for montado.";
 
 const DVWA_TARGET: LabTarget = {
   host: "dvwa",
@@ -157,14 +156,13 @@ export const LAB_CATALOG: LabDefinition[] = [
     slug: "dvga",
     title: "DVGA (GraphQL)",
     kind: "desktop",
-    summary:
-      "Kali + Damn Vulnerable GraphQL Application, para falhas de APIs GraphQL. Candidato: a escolha final sai na Fase 10 (conteúdo da Trilha 4).",
-    run: null,
-    plannedPhase: 10,
+    summary: "Kali + Damn Vulnerable GraphQL Application, uma API GraphQL cheia de falhas de autorização, introspecção e consultas abusivas.",
+    run: { project: "cyberlab", composeFiles: ["base/compose.yaml", "dvga/compose.yaml"] },
+    plannedPhase: null,
     targets: [{ host: "dvga", title: "DVGA", url: "http://dvga:5013/" }],
     localPort: 8080,
-    ram: "a medir na Fase 10",
-    reset: PLANNED_RESET,
+    ram: "≈ 0,58 GB ocioso (medido na Fase 10) · ≈ 1,4 GB no pico (estimado: o pico do Kali)",
+    reset: "Recria o contêiner do DVGA (banco SQLite interno; volta de fábrica). O que está em /home/kali continua lá.",
     isolationNotes: DESKTOP_ISOLATION,
   },
 ];

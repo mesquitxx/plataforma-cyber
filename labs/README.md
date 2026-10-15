@@ -16,11 +16,12 @@ plataforma (`lib/labs/catalog.ts`); o `npm test` confere.
 | `dvwa/compose.yaml` | Alvo DVWA, que entra por cima da base (lab `dvwa`) |
 | `juice-shop/compose.yaml` | Alvo OWASP Juice Shop (lab `juice-shop`; também usado pela `rede-de-alvos`) |
 | `webgoat/compose.yaml` | Alvo OWASP WebGoat (lab `webgoat`) |
+| `dvga/compose.yaml` | Alvo Damn Vulnerable GraphQL Application (lab `dvga`, módulo 4.9) |
 | `vulhub/` | Alvo Vulhub com CVE real (lab `vulhub`); **provisório:** Apache 2.4.49 / CVE-2021-41773, construído por `vulhub/Dockerfile` |
 | `linux-sandbox/` | Contêiner de prática sem rede do módulo 0.3 (lab `linux-sandbox`) |
 | `.env.example` | Modelo de senhas (o `lab.sh` gera o `.env` real) |
 
 O lab `rede-de-alvos` (DVWA + Juice Shop) não tem pasta própria: ele combina
 `base/`, `dvwa/` e `juice-shop/` pelo registro em `scripts/lab-common.sh`. O
-único alvo ainda planejado é o `dvga` (APIs/GraphQL), no catálogo de labs
-(`lib/labs/catalog.ts`).
+catálogo de labs (`lib/labs/catalog.ts`) não tem mais nenhum alvo só
+planejado: o `dvga` (APIs/GraphQL) foi montado na Fase 10.

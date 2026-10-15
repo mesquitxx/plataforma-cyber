@@ -105,6 +105,25 @@ Guacamole aberta no painel (Chromium headless), parada.
   depois; o disco atual é tratado por `scripts/windows/compact-wsl.ps1`
   (ver [`MANUTENCAO.md`](MANUTENCAO.md)).
 
+## Fase 10 — `dvga` (medido em 2026-10-15)
+
+Primeira subida do lab, logo depois do `scripts/lab.sh pull dvga`, com o lab
+ocioso (`docker stats --no-stream`):
+
+| Contêiner | Ocioso | Limite |
+|---|---:|---:|
+| `kali` | 265 MiB | 3 GiB |
+| `guacamole` | 220 MiB | 768 MiB |
+| `dvga` | 47 MiB | 512 MiB |
+| `guac-db` | 44 MiB | 256 MiB |
+| `guacd` | 13 MiB | 256 MiB |
+| `guac-proxy` | 3 MiB | 64 MiB |
+| **Total** | **≈ 0,58 GiB** | |
+
+O DVGA (Python/Flask) é o alvo mais leve do catálogo. O pico continua ditado
+pelo Kali (≈ 1,35 GB, medido na Fase 6); o do lab em uso fica para a medição
+durante o módulo 4.9.
+
 ## Fase 7 — labs novos (estimativas; medição pendente)
 
 Os labs da Fase 7 (`juice-shop`, `webgoat`, `vulhub`, `rede-de-alvos`) **ainda

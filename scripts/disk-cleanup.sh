@@ -38,7 +38,7 @@ size_of() { du -sb "$1" 2>/dev/null | cut -f1; }
 
 # Repositories of the images the lab stacks use, to spot their old versions.
 LAB_IMAGE_REPOS="cyberlab/ guacamole/guacamole guacamole/guacd postgres mariadb ghcr.io/digininja/dvwa \
-bkimminich/juice-shop webgoat/webgoat httpd nginxinc/nginx-unprivileged debian kalilinux/kali-rolling"
+bkimminich/juice-shop webgoat/webgoat dolevf/dvga httpd nginxinc/nginx-unprivileged debian kalilinux/kali-rolling"
 
 # Image IDs that must stay: every image any registered lab starts from, and
 # the bases its Dockerfiles build on (FROM), so local builds keep working.

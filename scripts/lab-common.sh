@@ -14,14 +14,16 @@ LAB_PROJECT="cyberlab"
 # project directory.
 # Order matters: it must match the order of the available labs in
 # lib/labs/catalog.ts (the deepEqual in lib/labs/catalog.test.ts).
-LAB_SLUGS=(kali dvwa linux-sandbox juice-shop rede-de-alvos webgoat vulhub)
+LAB_SLUGS=(kali dvwa linux-sandbox juice-shop rede-de-alvos webgoat vulhub dvga)
 declare -A LAB_KIND=(
     [kali]=desktop [dvwa]=desktop [linux-sandbox]=sandbox
     [juice-shop]=desktop [rede-de-alvos]=desktop [webgoat]=desktop [vulhub]=desktop
+    [dvga]=desktop
 )
 declare -A LAB_PROJECT_OF=(
     [kali]=cyberlab [dvwa]=cyberlab [linux-sandbox]=cyberlab-sandbox
     [juice-shop]=cyberlab [rede-de-alvos]=cyberlab [webgoat]=cyberlab [vulhub]=cyberlab
+    [dvga]=cyberlab
 )
 declare -A LAB_FILES=(
     [kali]="base/compose.yaml"
@@ -31,17 +33,18 @@ declare -A LAB_FILES=(
     [rede-de-alvos]="base/compose.yaml dvwa/compose.yaml juice-shop/compose.yaml"
     [webgoat]="base/compose.yaml webgoat/compose.yaml"
     [vulhub]="base/compose.yaml vulhub/compose.yaml"
+    [dvga]="base/compose.yaml dvga/compose.yaml"
 )
 # What "reset" throws away: these services are recreated and these named
 # volumes (without the project prefix) are deleted. kali_home is never here.
 declare -A LAB_RESET_SERVICES=(
     [kali]="kali" [dvwa]="dvwa dvwa-db" [linux-sandbox]="sandbox"
     [juice-shop]="juice-shop" [rede-de-alvos]="dvwa dvwa-db juice-shop"
-    [webgoat]="webgoat" [vulhub]="vulhub"
+    [webgoat]="webgoat" [vulhub]="vulhub" [dvga]="dvga"
 )
 declare -A LAB_RESET_VOLUMES=(
     [kali]="" [dvwa]="dvwa_db_data" [linux-sandbox]=""
-    [juice-shop]="" [rede-de-alvos]="dvwa_db_data" [webgoat]="" [vulhub]=""
+    [juice-shop]="" [rede-de-alvos]="dvwa_db_data" [webgoat]="" [vulhub]="" [dvga]=""
 )
 
 lab_is_known() {
