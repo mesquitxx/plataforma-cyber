@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t2 d2">
+  <title id="t2">Como a detecção de versão (-sV) funciona por dentro</title>
+  <desc id="d2">Um diagrama de sequência entre o nmap (à esquerda, rodando -sV no Kali) e o serviço na porta aberta do alvo (à direita), com um painel do arquivo nmap-service-probes. Primeiro o nmap abre uma conexão TCP completa com a porta aberta. Depois espera alguns segundos por um banner espontâneo (o chamado NULL probe): serviços como SSH e FTP se apresentam sozinhos. Como o HTTP não fala primeiro, o nmap manda uma sonda do arquivo nmap-service-probes, a GetRequest, que é um "GET / HTTP/1.0". O serviço responde com os cabeçalhos, entre eles Server dois pontos Apache barra 2.4.49 abre parêntese Unix fecha parêntese. O nmap compara a resposta com as linhas match do arquivo e reconhece: produto Apache httpd, versão 2.4.49, sistema Unix, e monta o identificador CPE cpe dois pontos barra a dois pontos apache dois pontos http_server dois pontos 2.4.49. O painel mostra uma linha de Probe e uma linha de match do arquivo.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 12.5px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 11px; }
+    .s { font-size: 10px; fill: #9fb0a6; }
+    .life { stroke: #4a5a52; stroke-width: 1.5; }
+    .out { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#a1); }
+    .in { stroke: #5ee08a; stroke-width: 2; marker-end: url(#a2); }
+    .wait { stroke: #9fb0a6; stroke-width: 2; stroke-dasharray: 5 4; }
+    .panel { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .match { fill: #e8c46a; }
+    .g { fill: #5ee08a; }
+  </style>
+  <defs>
+    <marker id="a1" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+    <marker id="a2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="520" fill="#121815"/>
+  <text class="t" x="30" y="32">Detecção de versão (-sV): o nmap conversa com a porta e compara a resposta</text>
+
+  <!-- lifelines -->
+  <text class="h" x="120" y="68" text-anchor="middle">nmap -sV (Kali)</text>
+  <line class="life" x1="120" y1="78" x2="120" y2="470"/>
+  <text class="h" x="470" y="68" text-anchor="middle">serviço na porta 80 (alvo)</text>
+  <line class="life" x1="470" y1="78" x2="470" y2="470"/>
+
+  <!-- 1 TCP handshake -->
+  <line class="out" x1="122" y1="100" x2="468" y2="112"/>
+  <text class="b" x="150" y="98">abre conexão TCP (handshake)</text>
+  <text class="s" x="300" y="130" text-anchor="middle">porta aberta: dá para conversar</text>
+
+  <!-- 2 NULL probe wait -->
+  <line class="wait" x1="122" y1="162" x2="468" y2="162"/>
+  <text class="b" x="150" y="156">NULL probe: espera um banner</text>
+  <text class="s" x="300" y="180" text-anchor="middle">HTTP não fala primeiro — silêncio</text>
+
+  <!-- 3 GetRequest probe -->
+  <line class="out" x1="122" y1="222" x2="468" y2="234"/>
+  <text class="b" x="150" y="218">sonda GetRequest:</text>
+  <text class="b" x="150" y="233">"GET / HTTP/1.0"</text>
+
+  <!-- 4 response -->
+  <line class="in" x1="468" y1="288" x2="122" y2="300"/>
+  <text class="b g" x="150" y="276">resposta HTTP/1.1 200, cabeçalhos:</text>
+  <text class="b g" x="150" y="320">Server: Apache/2.4.49 (Unix)</text>
+
+  <!-- 5 match -->
+  <text class="b match" x="120" y="372" text-anchor="middle">compara com as linhas match →</text>
+  <text class="b match" x="120" y="392" text-anchor="middle">Apache httpd 2.4.49 (Unix)</text>
+  <text class="s" x="120" y="420" text-anchor="middle">cpe:/a:apache:http_server:2.4.49</text>
+
+  <!-- probes panel -->
+  <rect class="panel" x="610" y="150" width="268" height="250" rx="8"/>
+  <text class="h" x="626" y="176">arquivo nmap-service-probes</text>
+  <text class="s" x="626" y="200">Probe TCP GetRequest</text>
+  <text class="s" x="626" y="216">  q|GET / HTTP/1.0\r\n\r\n|</text>
+  <text class="s" x="626" y="246">match http m|^HTTP/1\.[01]|</text>
+  <text class="s" x="626" y="262">  p/Apache httpd/</text>
+  <text class="s" x="626" y="278">  v/$1/ cpe:/a:apache:...</text>
+  <text class="s" x="626" y="312">softmatch http m|...|</text>
+  <text class="s" x="626" y="344">intensidade (--version-all = 9)</text>
+  <text class="s" x="626" y="360">decide quais sondas enviar</text>
+  <line class="wait" x1="500" y1="360" x2="608" y2="300"/>
+  <text class="s" x="505" y="378">o nmap lê daqui</text>
+</svg>

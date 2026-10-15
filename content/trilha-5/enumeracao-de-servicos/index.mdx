@@ -1,0 +1,653 @@
+---
+slug: enumeracao-de-servicos
+track: trilha-5
+title: "Enumeração de serviços em profundidade"
+prerequisites: [nmap]
+lab: vulhub
+tasks:
+  - slug: mapear-o-alvo
+    title: "Mapear o alvo e achar a flag"
+    type: flag
+    prompt: "A versão exata do Apache (como o -sV mostra), o caminho interno que um cabeçalho de resposta vaza (só o nome, sem as barras) e os 12 primeiros caracteres do SHA-256 do arquivo de inventário que você baixar, no formato FLAG{versao-caminho-hash}."
+    hint: "Comece pela versão com nmap -sV. Depois leia os cabeçalhos da resposta (curl -I, ou o script http-headers): um deles aponta um diretório que não deveria estar à mostra. Liste esse diretório, baixe o arquivo e passe os bytes por sha256sum."
+    flag:
+      hash: "scrypt$16384$8$1$c550ff78c12ef1a42fc4a91559bb8b6d7213a7b5e08275f6253ba18a0e7dfdf0"
+      salt: "37f752244a203a10f3df21b7267a80d7"
+  - slug: quiz-final
+    title: "Quiz — Enumeração de serviços em profundidade"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Sem -sV, o nmap mostrou 80/tcp open http. Com -sV, mostrou Apache httpd 2.4.49. De onde vem cada um?"
+        options:
+          - "Os dois vêm da mesma sonda; o -sV só formata melhor"
+          - "Sem -sV, http é só o nome que o arquivo nmap-services associa ao número da porta (um palpite); com -sV, o nmap conversou com a porta, mandou sondas do nmap-service-probes e comparou a resposta com assinaturas conhecidas"
+          - "Sem -sV o nmap lê o banner; com -sV ele adivinha pela porta"
+          - "Os dois exigem root"
+        answer: 1
+        explanation: "A coluna SERVICE sem -sV é uma tradução do número da porta pelo arquivo nmap-services — porta 80 costuma ser http, mas é só estatística. O -sV é outra coisa: abre a conexão, envia as sondas do nmap-service-probes e casa a resposta com as linhas match. Por isso só o -sV traz produto e versão."
+      - question: "Qual a diferença entre uma linha match e uma softmatch no nmap-service-probes?"
+        options:
+          - "match é para TCP e softmatch para UDP"
+          - "match identifica o serviço E a versão e encerra; softmatch só identifica a família do serviço (ex.: http) e deixa o nmap continuar mandando sondas específicas daquela família para tentar a versão"
+          - "softmatch é mais confiável que match"
+          - "Não há diferença prática"
+        answer: 1
+        explanation: "Um match fecha o diagnóstico (serviço + versão). Um softmatch é parcial: diz 'isto é http', mas sem versão, e orienta o nmap a insistir com as sondas daquele protocolo. Entender isso explica por que às vezes o -sV diz só o serviço e, com mais intensidade (--version-all), chega à versão."
+      - question: "A NVD dá à CVE-2021-41773 duas notas: 9.8 (crítica) e 7.5 (alta). O que essa diferença reflete?"
+        options:
+          - "Um erro da NVD"
+          - "A nota muda com o tempo; 7.5 é antiga"
+          - "9.8 considera o pior caso — path traversal que vira execução de código (RCE) quando o CGI está ligado (C:H/I:H/A:H); 7.5 considera só a leitura de arquivos fora da raiz (C:H/I:N/A:N), sem execução"
+          - "7.5 é para o Windows e 9.8 para o Linux"
+        answer: 2
+        explanation: "A mesma falha tem dois desfechos conforme a configuração: se o mod_cgi/mod_cgid estiver ligado nos caminhos alcançados, dá RCE (impacto total, 9.8); se não, 'só' vaza o conteúdo de arquivos (7.5). É exatamente por isso que a enumeração importa: descobrir se o CGI está presente muda a gravidade real."
+      - question: "Esconder a versão (ServerTokens Prod, que deixa só 'Apache') conserta a CVE-2021-41773?"
+        options:
+          - "Sim: sem a versão, o exploit não sabe o que atacar"
+          - "Não: é só atrito. Reduz o que a enumeração por banner entrega e atrasa quem procura alvos pela versão, mas o servidor continua com a falha; a detecção de versão também olha o comportamento, não só o banner. O que conserta é atualizar (2.4.51+)"
+          - "Sim, desde que o firewall esteja ligado"
+          - "Só conserta se o CGI estiver desligado"
+        answer: 1
+        explanation: "ServerTokens Prod é higiene: corta o banner e o trabalho fácil de quem varre por versão. Mas a falha é no código da 2.4.49; esconder o número não a remove, e o -sV muitas vezes deduz a versão pelo comportamento mesmo sem banner. A correção é subir para 2.4.51 ou mais novo; desligar o CGI reduz o impacto de RCE para leitura de arquivo."
+      - question: "Você achou um cabeçalho X-Backend-Config: /internal/ e, ao abrir /internal/, o servidor listou os arquivos. Como se classifica cada achado?"
+        options:
+          - "São dois exploits de execução de código"
+          - "São dois casos de information disclosure (divulgação de informação): o cabeçalho vaza um caminho interno, e o directory listing (listagem de diretório) expõe arquivos que deveriam ficar escondidos — nenhum é execução de código, mas ambos ampliam a superfície e podem levar a dados sensíveis"
+          - "O cabeçalho é normal; só a listagem é um problema"
+          - "Nenhum é problema de segurança"
+        answer: 1
+        explanation: "Nenhum dos dois executa código, mas os dois entregam informação de graça: o caminho interno e a lista de arquivos. É assim que a enumeração encadeia achados — um banner leva a um cabeçalho, que leva a um diretório, que leva a um arquivo. Information disclosure raramente é o fim, mas quase sempre é um degrau."
+      - question: "Para que serve o identificador CPE (ex.: cpe:/a:apache:http_server:2.4.49) que o nmap associa ao serviço?"
+        options:
+          - "É o número de série da licença do software"
+          - "É um nome padronizado e legível por máquina para o produto e a versão, que casa direto com as bases de vulnerabilidade (NVD, KEV) e automatiza a pergunta 'esta versão tem CVE conhecida?'"
+          - "É o endereço MAC do servidor"
+          - "É um código interno do nmap, sem uso fora dele"
+        answer: 1
+        explanation: "O CPE (Common Platform Enumeration) é um dicionário padronizado de produtos. Quando o nmap devolve um CPE, você tem uma chave que casa com a NVD e com o catálogo KEV da CISA — é o que transforma 'achei Apache 2.4.49' em 'isto tem CVE-2021-41773, que a CISA marca como explorada no mundo real'."
+glossary:
+  - term: nmap-service-probes
+    definition: "Arquivo de dados do nmap que lista as sondas (probes) a enviar a uma porta aberta e as assinaturas (match/softmatch) para reconhecer o serviço e a versão pela resposta. É o cérebro do -sV."
+  - term: version intensity
+    definition: "Intensidade da detecção de versão no nmap (0 a 9): decide quantas sondas do nmap-service-probes serão enviadas. --version-all força 9 (todas); --version-light usa 2 (as mais comuns, mais rápido)."
+  - term: softmatch
+    definition: "Casamento parcial no -sV: o nmap reconhece a família do serviço (ex.: http) mas ainda não a versão, e segue mandando sondas específicas daquele protocolo para tentar fechar a identificação."
+  - term: CPE
+    definition: "Common Platform Enumeration: nome padronizado e legível por máquina de um produto e versão (ex.: cpe:/a:apache:http_server:2.4.49). Serve de chave para casar um serviço com bases de vulnerabilidade."
+  - term: NVD
+    definition: "National Vulnerability Database: a base do governo dos EUA (NIST) que enriquece cada CVE com nota CVSS, versões afetadas (por CPE) e referências. Fonte primária para avaliar uma falha."
+  - term: KEV
+    definition: "Known Exploited Vulnerabilities: o catálogo da CISA que lista CVEs comprovadamente exploradas no mundo real, com data de inclusão e prazo de correção. Prioriza o que já está sendo usado em ataques."
+  - term: information disclosure
+    definition: "Divulgação de informação: qualquer resposta que entrega ao atacante dados que deveriam ficar privados (versões, caminhos internos, listas de arquivos, mensagens de erro detalhadas). Raramente é o ataque final, quase sempre é um degrau."
+  - term: directory listing
+    definition: "Listagem de diretório: quando um servidor web, sem uma página índice e com o autoindex ligado, devolve a lista dos arquivos de uma pasta. Expõe arquivos que o dono não pretendia mostrar."
+  - term: ServerTokens
+    definition: "Diretiva do Apache que controla quanto o cabeçalho Server revela: Full mostra 'Apache/2.4.49 (Unix)', Prod mostra só 'Apache'. Reduz o banner, não a vulnerabilidade."
+  - term: searchsploit
+    definition: "Ferramenta de linha de comando do Exploit-DB que busca, num banco local (offline), exploits e provas de conceito por produto e versão. Atalho comum para ligar uma versão enumerada a falhas conhecidas."
+---
+
+import ondeEntra from "./img/onde-a-enumeracao-entra.svg";
+import deteccaoDeVersao from "./img/deteccao-de-versao.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em 5 de outubro de 2021, o projeto Apache publicou um boletim sobre a
+<GlossaryTerm term="CVE">CVE</GlossaryTerm>-2021-41773 — uma falha que afetava
+**uma única versão** do servidor web mais usado do mundo, a 2.4.49. Em menos de
+um mês, em 3 de novembro, a CISA (a agência de segurança cibernética dos EUA)
+já a listava como **explorada no mundo real**. Entre uma data e outra, atacantes
+varreram a internet fazendo exatamente a pergunta que este módulo ensina a
+responder: *"qual é a versão exata do serviço que está rodando aqui?"*. Quem
+respondia "Apache 2.4.49" virava alvo; quem respondia "2.4.48" ou "2.4.51",
+não. A diferença entre ser invadido e passar despercebido cabia num número de
+versão.
+
+No módulo 2.4 você aprendeu a usar o <GlossaryTerm term="Nmap">nmap</GlossaryTerm>
+para descobrir **quais** portas estão abertas. Este módulo é o passo seguinte e
+mais profundo: dada uma porta aberta, descobrir **o que exatamente** fala nela —
+o produto, a versão, o sistema, os caminhos expostos — e transformar isso num
+**mapa da superfície de ataque** do host. Esse trabalho tem um nome na área:
+<GlossaryTerm term="enumeration">enumeração</GlossaryTerm> (enumeration), o
+levantamento detalhado e metódico de tudo o que um alvo expõe. É a etapa que
+separa "achei um servidor web" de "achei um Apache 2.4.49 com CGI e um diretório
+listável", e é de longe onde um pentester passa mais tempo.
+
+<Figure
+  src={ondeEntra}
+  alt="Esteira de cinco etapas: recon passivo (2.2) e host discovery (2.4), apagados; enumerar serviços/versões e montar o mapa da superfície com a ponte versão→CVE, destacados como deste módulo (5.1); e exploração (5.4), tracejada e fora deste módulo."
+  caption="A enumeração fica entre descobrir que um host existe e explorá-lo. Neste módulo você vai até o mapa da superfície e a identificação da CVE — e para antes de explorar (isso é o 5.4)."
+/>
+
+**Ao final, você vai saber:**
+
+- enumerar a versão exata de um serviço com o `nmap -sV`, e explicar **como** o
+  nmap chega a ela (sondas, assinaturas, intensidade);
+- enriquecer a enumeração na camada da aplicação: cabeçalhos HTTP, métodos
+  aceitos, páginas padrão, <GlossaryTerm term="directory listing">listagem de
+  diretório</GlossaryTerm> e outros vazamentos;
+- montar um mapa da superfície de ataque de um host e fazer a ponte da versão
+  para uma vulnerabilidade conhecida usando <GlossaryTerm term="CPE">CPE</GlossaryTerm>,
+  <GlossaryTerm term="NVD">NVD</GlossaryTerm> e o catálogo <GlossaryTerm term="KEV">KEV</GlossaryTerm>;
+- reduzir a sua própria pegada e, do lado da defesa, diminuir o que um servidor
+  entrega a quem o enumera.
+
+**Pré-requisitos:** 2.4 — Reconhecimento e nmap (você vai usar varredura de
+portas, estados de porta e a ideia de <GlossaryTerm term="service detection">detecção
+de serviço</GlossaryTerm> `-sV`, agora olhando por dentro dela).
+
+**Tempo estimado:** 2,5 a 3 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Enumerar um serviço manda tráfego para ele e deixa rastro. Só faça isso contra o
+laboratório local ou contra um alvo com **autorização por escrito** no escopo
+(relembre o 1.3). Varrer serviços de terceiros sem permissão é, no Brasil,
+conduta que pode se enquadrar no art. 154-A do Código Penal (1.4).
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 Porta aberta não é serviço: o que o nmap realmente sabe
+
+No 2.4 você viu o nmap classificar portas em estados (open, closed, filtered) e
+mostrar uma coluna `SERVICE`. É fácil confundir essa coluna com "o serviço que
+roda ali", mas ela é, na varredura padrão, só um **palpite pelo número da
+porta**. O nmap tem um arquivo, o <GlossaryTerm term="nmap-services">nmap-services</GlossaryTerm>,
+que associa cada número a um nome e à frequência com que aparece aberto. Quando
+ele vê a porta 80 aberta, consulta essa tabela e escreve `http` — sem ter trocado
+um único byte com o programa que está lá. Se alguém puser um servidor SSH na
+porta 80, a varredura padrão ainda vai dizer `http`. A tabela é estatística, não
+observação.
+
+A enumeração de verdade começa quando o nmap **conversa** com a porta. É isso que
+a opção `-sV` (de *version*) faz, e vale a pena entender o mecanismo, porque ele
+explica todos os acertos e erros que você vai ver.
+
+### 2.2 Como o -sV descobre a versão: sondas e assinaturas
+
+Quando você pede `-sV`, o nmap abre uma conexão completa com a porta aberta e
+entra num roteiro guiado por um arquivo de dados chamado
+<GlossaryTerm term="nmap-service-probes">nmap-service-probes</GlossaryTerm>. Esse
+arquivo é o cérebro da detecção de versão: ele lista **sondas** (probes — textos
+a enviar) e **assinaturas** (padrões que reconhecem a resposta).
+
+O roteiro, simplificado, é:
+
+1. **Escuta primeiro (o NULL probe).** Muitos serviços se apresentam sozinhos
+   assim que você conecta: um servidor SSH manda `SSH-2.0-OpenSSH_9.2`, um FTP
+   manda `220 ...`. Ler essa saudação espontânea é o
+   <GlossaryTerm term="banner grabbing">banner grabbing</GlossaryTerm> (coleta de
+   banner), a forma mais simples de identificação. O nmap espera alguns segundos
+   por esse banner antes de falar.
+2. **Se ninguém fala, o nmap provoca.** O HTTP não se apresenta sozinho: ele
+   espera um pedido. Então o nmap envia uma sonda do arquivo — para HTTP, a
+   `GetRequest`, que é um literal `GET / HTTP/1.0`. Outros protocolos têm suas
+   sondas próprias.
+3. **Compara a resposta com as assinaturas.** Cada linha `match` do arquivo diz
+   "se a resposta casar com este padrão, o serviço é X, versão Y, e o
+   <GlossaryTerm term="CPE">CPE</GlossaryTerm> é Z". Uma linha
+   <GlossaryTerm term="softmatch">softmatch</GlossaryTerm> é um casamento parcial:
+   reconhece a família (ex.: "isto é http") sem a versão, e manda o nmap insistir
+   com as sondas daquele protocolo.
+
+<Figure
+  src={deteccaoDeVersao}
+  alt="Diagrama de sequência entre nmap -sV (Kali) e o serviço na porta 80: abre conexão TCP; espera um banner (NULL probe) que não vem; envia a sonda GetRequest 'GET / HTTP/1.0'; recebe a resposta com o cabeçalho Server: Apache/2.4.49 (Unix); compara com as linhas match do nmap-service-probes e conclui Apache httpd 2.4.49 com o CPE cpe:/a:apache:http_server:2.4.49. Um painel lateral mostra as linhas Probe e match do arquivo."
+  caption="A detecção de versão é uma conversa guiada por arquivo: o nmap manda sondas conhecidas e casa a resposta com assinaturas. Quem decide a versão é a linha match, não a porta."
+/>
+
+Quantas sondas o nmap envia depende da
+<GlossaryTerm term="version intensity">intensidade</GlossaryTerm> (version
+intensity), de 0 a 9. O padrão é 7; `--version-light` usa 2 (rápido, só as
+sondas mais prováveis) e `--version-all` usa 9 (manda todas, mais lento e mais
+teimoso). Em serviços exóticos ou numa porta trocada, subir a intensidade é o
+que faz a versão aparecer.
+
+Quando nenhuma assinatura casa, o nmap imprime a
+<GlossaryTerm term="service fingerprint">impressão digital</GlossaryTerm> crua do
+serviço (linhas `SF:`) e pede que você a envie ao projeto. Foi assim, no 2.4,
+que a porta 3000 do Juice Shop apareceu sem nome: era um serviço que o banco de
+assinaturas ainda não conhecia bem.
+
+### 2.3 Por que a versão vale ouro: a ponte para a vulnerabilidade
+
+Saber que "roda Apache" é quase inútil; saber que roda "Apache **2.4.49**" é
+quase um exploit. A razão é a cadeia de dados públicos que liga uma versão a
+falhas conhecidas:
+
+- Uma <GlossaryTerm term="CVE">CVE</GlossaryTerm> (Common Vulnerabilities and
+  Exposures) é um identificador único para uma vulnerabilidade pública, como
+  `CVE-2021-41773`.
+- A <GlossaryTerm term="NVD">NVD</GlossaryTerm> (National Vulnerability Database,
+  do NIST) enriquece cada CVE com a nota <GlossaryTerm term="CVSS">CVSS</GlossaryTerm>
+  (de 0 a 10), as versões afetadas (descritas por CPE) e referências.
+- O catálogo <GlossaryTerm term="KEV">KEV</GlossaryTerm> (Known Exploited
+  Vulnerabilities) da CISA diz quais dessas CVEs já foram **vistas em ataques
+  reais** — a diferença entre "teoricamente explorável" e "sendo explorada agora".
+
+O <GlossaryTerm term="CPE">CPE</GlossaryTerm> é a cola dessa ponte: quando o nmap
+devolve `cpe:/a:apache:http_server:2.4.49`, você tem uma chave legível por
+máquina que casa direto com a NVD. É o que permite a uma ferramenta (ou a você)
+perguntar automaticamente "esta versão tem CVE conhecida?". Neste módulo você faz
+a ponte à mão para entendê-la; ferramentas como o
+<GlossaryTerm term="searchsploit">searchsploit</GlossaryTerm> (o cliente offline
+do Exploit-DB) e o script `vulners` do nmap a automatizam.
+
+### 2.4 Enumeração não para no nmap: a camada da aplicação
+
+A versão é o começo. Um host tem muito mais a entregar, e boa parte está na
+camada da aplicação — para um serviço web, no HTTP:
+
+- **Cabeçalhos de resposta.** Além de `Server`, cabeçalhos como `X-Powered-By`,
+  `X-AspNet-Version` ou cabeçalhos internos deixados por engano entregam versões
+  e **caminhos**. Tudo isso é <GlossaryTerm term="information disclosure">information
+  disclosure</GlossaryTerm> (divulgação de informação): não é execução de código,
+  mas é informação de graça para o atacante.
+- **Métodos HTTP aceitos.** Um `OPTIONS` revela os métodos; métodos como `TRACE`
+  ou `PUT` habilitados podem ser problema.
+- **Páginas e arquivos padrão.** A página "It works!" do Apache, um
+  `/server-status`, um `robots.txt`, um diretório sem índice que o servidor
+  **lista** (<GlossaryTerm term="directory listing">directory listing</GlossaryTerm>).
+
+Cada um desses é um degrau. A arte da enumeração é encadeá-los: o banner leva a
+um cabeçalho, que aponta um diretório, que lista um arquivo, que contém uma
+credencial. No laboratório você vai percorrer um encadeamento curto desses.
+
+## 3. Como a enumeração funciona — a mecânica
+
+Vamos à mecânica concreta, com os comandos que você vai repetir no laboratório.
+Todos foram rodados de verdade contra o alvo do lab; as saídas abaixo são reais
+(com o endereço do meu ambiente trocado por um genérico).
+
+**Passo 1 — a varredura de versão.** O `-sV` é a espinha dorsal. Combine-o com
+`-p-` (todas as 65535 portas, para não perder um serviço numa porta alta) e com
+`--version-all` (intensidade máxima):
+
+```console
+$ nmap -Pn -p- -sV --version-all alvo
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-10-15 04:47 +0000
+Nmap scan report for alvo (172.20.0.3)
+Host is up (0.00022s latency).
+Not shown: 65534 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.49 ((Unix))
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 10.31 seconds
+```
+
+Leia com atenção: a coluna `VERSION` agora diz `Apache httpd 2.4.49 ((Unix))`.
+Esse `(Unix)` entre parênteses é o que o servidor anunciou sobre o sistema — ele
+veio do banner. Compare com o 2.4, onde o DVWA anunciava `(Debian)`: o mesmo
+Apache, empacotado por distribuições diferentes, se apresenta diferente. O
+`Not shown: 65534 closed tcp ports` confirma que **só** a 80 está aberta: a
+superfície de rede do host é um único serviço.
+
+**Passo 2 — os cabeçalhos da resposta.** O `-sV` resume; o HTTP cru mostra tudo.
+Peça só os cabeçalhos com `curl -I`:
+
+```console
+$ curl -sI http://alvo/
+HTTP/1.1 200 OK
+Date: Thu, 15 Oct 2026 04:47:29 GMT
+Server: Apache/2.4.49 (Unix)
+Last-Modified: Mon, 11 Jun 2007 18:53:14 GMT
+ETag: "2d-432a5e4a73a80"
+Accept-Ranges: bytes
+Content-Length: 45
+X-Backend-Config: /internal/
+Content-Type: text/html
+```
+
+Três coisas saltam. O `Server` confirma a versão sem precisar do nmap. O
+`Last-Modified: Mon, 11 Jun 2007` é a data da página padrão "It works!" do
+Apache — um sinal clássico de que o servidor está na configuração de fábrica. E
+o `X-Backend-Config: /internal/` não é um cabeçalho normal: alguém o deixou
+apontando um caminho interno. Isso é information disclosure pura.
+
+**Passo 3 — os mesmos fatos pelo NSE.** O <GlossaryTerm term="NSE">NSE</GlossaryTerm>
+(o motor de scripts do nmap) traz os mesmos dados e mais um pouco:
+
+```console
+$ nmap -Pn -p80 --script http-server-header,http-methods,http-title alvo
+PORT   STATE SERVICE
+80/tcp open  http
+|_http-server-header: Apache/2.4.49 (Unix)
+| http-methods:
+|   Supported Methods: GET POST OPTIONS HEAD TRACE
+|_  Potentially risky methods: TRACE
+|_http-title: Site doesn't have a title (text/html).
+```
+
+O `http-methods` lista os verbos aceitos e marca o `TRACE` como arriscado (ele
+ecoa o pedido de volta e já foi peça de ataques de *cross-site tracing*). O
+`http-title` vazio confirma a página mínima de fábrica.
+
+**Passo 4 — a página e o caminho vazado.** O corpo da raiz é a página padrão:
+
+```console
+$ curl -s http://alvo/
+<html><body><h1>It works!</h1></body></html>
+```
+
+Agora siga o caminho que o cabeçalho entregou. Como não há índice em
+`/internal/` e o servidor está com o autoindex ligado, ele **lista** a pasta:
+
+```console
+$ curl -s http://alvo/internal/
+<h1>Index of /internal</h1>
+<ul><li><a href="/"> Parent Directory</a></li>
+<li><a href="service-inventory.txt"> service-inventory.txt</a></li>
+</ul>
+```
+
+Esse é um directory listing: o servidor entregou o nome de um arquivo que
+ninguém linkou em lugar nenhum. Baixá-lo fecha o encadeamento banner → cabeçalho
+→ diretório → arquivo.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### CVE-2021-41773 — a versão do Apache que virou alvo em semanas (2021)
+
+O alvo do seu laboratório não é fictício: é a reconstrução de um dos incidentes
+de enumeração mais didáticos dos últimos anos.
+
+- **2021-09-29:** a falha é reportada ao time de segurança do Apache.
+- **2021-10-04:** sai a versão 2.4.50, que a corrige.
+- **2021-10-05:** a NVD publica a **CVE-2021-41773**. O boletim do Apache é
+  explícito: *"This issue is known to be exploited in the wild. This issue only
+  affects Apache 2.4.49 and not earlier versions."* Ou seja, uma falha de
+  **uma única versão** — e já explorada.
+- **2021-10-07:** descobre-se que a correção da 2.4.50 era **insuficiente**
+  (a **CVE-2021-42013**), e sai a 2.4.51, a que de fato resolve.
+- **2021-11-03:** a CISA inclui a CVE-2021-41773 no catálogo **KEV**, com prazo
+  de correção para 2021-11-17 e a marca de uso em campanhas de ransomware.
+
+A falha era um *path traversal* na normalização de caminhos: uma URL com
+`%2e%2e` escapava da pasta pública e lia arquivos do sistema; se o CGI estivesse
+ligado nos caminhos alcançados, virava execução remota de código. Repare na nota
+da NVD: a métrica **primária é 9.8 (crítica)**, pensando no pior caso (RCE), mas
+há uma secundária de **7.5**, pensando só na leitura de arquivos. A mesma versão,
+dois desfechos — e qual deles vale depende de uma pergunta de **enumeração**: o
+CGI está ligado? É por isso que enumerar a fundo (não só "é Apache 2.4.49", mas
+"tem CGI alcançável?") muda a avaliação de risco.
+
+- **Impacto:** varreduras em massa à procura de servidores 2.4.49 começaram em
+  dias; a CISA registrou exploração real e uso em ransomware.
+- **Lição:** o intervalo entre "falha pública" e "exploração em massa" se mede em
+  dias. Quem expõe a versão e demora a atualizar é encontrado por quem varre a
+  internet inteira — exatamente a técnica mapeada no MITRE ATT&CK como
+  **T1046 (Network Service Discovery)**.
+- **Fontes:** [Apache HTTP Server 2.4 vulnerabilities](https://httpd.apache.org/security/vulnerabilities_24.html),
+  [NVD — CVE-2021-41773](https://nvd.nist.gov/vuln/detail/CVE-2021-41773) e
+  [CISA KEV Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá enumerado o alvo do zero — a versão exata do
+serviço, os cabeçalhos que ele vaza e um diretório exposto — e montado a flag
+`FLAG{versao-caminho-hash}` a partir de três fatos que só a enumeração entrega.
+O alvo é o lab **vulhub** (um Apache 2.4.49, o do caso real da seção 4).
+
+<Callout variant="warning">
+Um laboratório ativo por vez (regra dos 16 GB). Se outro lab estiver rodando,
+pare-o antes. O alvo do `vulhub` só é alcançável de dentro do Kali, pelo nome
+`vulhub` — ele não tem internet e não enxerga o seu PC.
+</Callout>
+
+### 5.1 Subir o laboratório (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar** e
+   espere o Kali abrir na tela (pode levar alguns segundos).
+2. No Kali, abra um terminal. O alvo responde em `http://vulhub/`. Confirme que
+   você o alcança:
+
+```console
+$ curl -s -o /dev/null -w "HTTP %{http_code}\n" http://vulhub/
+HTTP 200
+```
+
+Se vier `HTTP 200`, está tudo pronto. (Pelo terminal do WSL, a alternativa é
+`scripts/lab.sh up vulhub`.)
+
+### 5.2 Primeiro passo guiado — a versão
+
+Rode a detecção de versão com intensidade máxima e em todas as portas, como na
+seção 3:
+
+```console
+$ nmap -Pn -p- -sV --version-all vulhub
+...
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.49 ((Unix))
+```
+
+Anote a versão exata: ela é a **primeira parte** da flag. Repare que só a 80 está
+aberta — a superfície de rede é mínima, então todo o resto do trabalho vai ser na
+camada da aplicação.
+
+### 5.3 Desafio A — o cabeçalho que não deveria estar ali
+
+A varredura de versão é só o começo. **Seu objetivo:** achar, entre os cabeçalhos
+da resposta HTTP, um que vaze um caminho interno do servidor. Esse nome de
+caminho (só o nome, sem as barras) é a **segunda parte** da flag.
+
+Pense: o `-sV` resume a resposta; como ver os cabeçalhos **crus**? Há pelo menos
+dois jeitos — um com o `curl`, outro com um script NSE que você já viu no 2.4.
+
+<Hint title="Dica 1">
+Os cabeçalhos de resposta vêm num pedido `HEAD` ou num `GET`. O `curl` tem uma
+opção que pede só os cabeçalhos. Pelo nmap, há um script `http-headers`.
+</Hint>
+
+<Hint title="Dica 2">
+O cabeçalho que interessa não é um dos padrões (`Server`, `Date`, `Content-Type`).
+É um que começa com `X-` e contém uma barra no valor.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ curl -sI http://vulhub/
+HTTP/1.1 200 OK
+Server: Apache/2.4.49 (Unix)
+...
+X-Backend-Config: /internal/
+Content-Type: text/html
+```
+
+O cabeçalho `X-Backend-Config: /internal/` vaza o caminho. A segunda parte da
+flag é o nome do caminho **sem as barras**.
+</Solution>
+
+### 5.4 Desafio B — o diretório que se entrega
+
+Agora siga o caminho vazado. **Seu objetivo:** acessar esse diretório, descobrir
+o arquivo que ele expõe, baixá-lo e calcular o **SHA-256** do conteúdo. Os **12
+primeiros caracteres** desse hash são a **terceira parte** da flag.
+
+<Hint title="Dica 1">
+Abra `http://vulhub/internal/` com o `curl`. Sem uma página índice, um Apache com
+autoindex ligado devolve a lista dos arquivos (um directory listing).
+</Hint>
+
+<Hint title="Dica 2">
+Baixe o arquivo e passe os bytes por `sha256sum`. Use `curl -s` e um cano (`|`)
+para não salvar em disco: `curl -s URL | sha256sum`. Pegue os 12 primeiros
+caracteres do hash.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ curl -s http://vulhub/internal/
+<h1>Index of /internal</h1>
+<ul><li><a href="/"> Parent Directory</a></li>
+<li><a href="service-inventory.txt"> service-inventory.txt</a></li>
+</ul>
+$ curl -s http://vulhub/internal/service-inventory.txt | sha256sum
+f1a0976b949d893f41b908d5b4cf90fe4b87f1a2ac2d9c231703028d31502a21  -
+```
+
+Os 12 primeiros caracteres (`f1a0976b949d`) são a terceira parte. Agora junte as
+três: a versão, o nome do caminho e o início do hash, no formato
+`FLAG{versao-caminho-hash}`.
+</Solution>
+
+Monte a flag com os três fatos que você enumerou e valide abaixo.
+
+<FlagInput task="mapear-o-alvo" />
+
+### 5.5 Desligar o laboratório
+
+Terminou? No painel **Laboratório**, clique em **Parar** (libera a vaga do único
+lab ativo). Use **Resetar** se quiser refazer a enumeração do zero.
+
+## 6. Variações e aprofundamento
+
+- **Automatizar a ponte versão → CVE.** À mão, você levou o `2.4.49` até a NVD.
+  Num Kali completo, o <GlossaryTerm term="searchsploit">searchsploit</GlossaryTerm>
+  faz isso offline (`searchsploit apache 2.4.49`), e o script `nmap --script
+  vulners` consulta uma base de CVEs por CPE (precisa de internet, então não no
+  lab isolado). O caminho profissional é alimentar os CPEs enumerados num
+  scanner de vulnerabilidade (OpenVAS, Nessus).
+- **Serviços que mentem ou se calam.** Um servidor pode trocar o banner
+  (`ServerTokens Prod`), devolver um banner falso, ou rodar numa porta trocada.
+  É aí que `--version-all` e a leitura da impressão digital crua (as linhas
+  `SF:`) valem: o nmap também deduz pelo **comportamento**, não só pelo texto.
+- **Enumeração além do HTTP.** O mesmo método vale para SSH (versão no banner,
+  algoritmos aceitos), SMB (`nmap --script smb-os-discovery`, nomes de máquina e
+  domínio), DNS, SNMP (comunidades `public`). O 5.2 ataca esses serviços; aqui o
+  ponto é saber **enumerá-los** primeiro.
+- **A escala industrial.** O que você fez contra um host, o
+  <GlossaryTerm term="Shodan">Shodan</GlossaryTerm> faz contra a internet
+  inteira, continuamente: ele enumera versões de todo IP alcançável e deixa tudo
+  pesquisável. Procurar `product:"Apache httpd" version:"2.4.49"` no Shodan lista
+  alvos reais — a razão pela qual uma CVE de uma versão específica vira ataque em
+  massa em dias.
+
+## 7. Erros comuns
+
+- **"Só vejo `http`, não a versão."** Faltou o `-sV`. A coluna `SERVICE` sem
+  `-sV` é só o nome da tabela nmap-services, não observação.
+- **"O `-sV` não achou a versão de um serviço."** Suba a intensidade
+  (`--version-all`) e leia a impressão digital crua (`SF:`): a resposta costuma
+  estar ali. Serviços raros ou numa porta incomum precisam disso.
+- **"Esqueci o `-p-` e perdi um serviço."** A varredura padrão vê só as 1000
+  portas mais comuns. Um serviço numa porta alta (8080, 9000, 50000) só aparece
+  com `-p-`. Enumeração incompleta é a fonte nº 1 de "não achei nada".
+- **"O hash da flag não bate."** Você hashou o arquivo errado, ou salvou-o e o
+  editor adicionou uma quebra de linha. Use `curl -s URL | sha256sum`, sem passar
+  por disco, e confira que baixou `service-inventory.txt`, não a listagem.
+- **"O `curl` não resolve `vulhub`."** Você está rodando fora do Kali. O nome
+  `vulhub` só existe na rede interna do lab; enumere de dentro do Kali.
+
+## 8. Defesa e mitigação
+
+Enumerar é inevitável — qualquer serviço exposto será enumerado. A defesa não é
+"impedir a enumeração" (impossível), e sim **entregar o mínimo** e **detectar**
+quem está olhando.
+
+**1. Reduza o banner (atrito, não cura).** Diminua o que o Apache anuncia com a
+diretiva <GlossaryTerm term="ServerTokens">ServerTokens</GlossaryTerm>:
+
+<CodeBlock
+  title="httpd.conf (endurecido)"
+  lang="apacheconf"
+  code={`# antes (padrão): "Apache/2.4.49 (Unix)" em todo cabeçalho Server
+ServerTokens Full
+ServerSignature On
+
+# depois: só "Apache", e sem assinatura nas páginas de erro
+ServerTokens Prod
+ServerSignature Off`}
+/>
+
+<Callout variant="warning">
+Isto é atrito, não correção. A própria documentação do Apache diz que esconder o
+cabeçalho **não traz benefício real de segurança**: o `-sV` muitas vezes deduz a
+versão pelo comportamento, e a falha continua lá. Serve para cortar o trabalho
+fácil de quem varre por banner — nunca como defesa principal.
+</Callout>
+
+**2. Feche o que vaza informação.** No caso do laboratório, dois problemas de
+<GlossaryTerm term="information disclosure">information disclosure</GlossaryTerm>
+tinham correção trivial:
+
+<CodeBlock
+  title="httpd.conf (fechando vazamentos)"
+  lang="apacheconf"
+  code={`# não devolva listagem de diretório (desligue o autoindex)
+<Directory "/usr/local/apache2/htdocs">
+    Options -Indexes
+</Directory>
+
+# não deixe cabeçalhos internos escaparem
+Header unset X-Backend-Config
+
+# desligue métodos arriscados como TRACE
+TraceEnable off`}
+/>
+
+**3. O que de fato conserta: atualizar e reduzir superfície.** Contra a
+CVE-2021-41773, a única correção real é subir para **2.4.51 ou mais novo** (a
+2.4.50 não bastava — veja a CVE-2021-42013). Em paralelo: desligue módulos que
+você não usa (um `mod_cgid` ligado à toa foi o que transformou leitura de arquivo
+em RCE), e aplique `Require all denied` por padrão, liberando só o necessário
+(<GlossaryTerm term="default deny">default deny</GlossaryTerm>).
+
+**4. Detecte a enumeração.** Você não impede a varredura, mas pode vê-la. Uma
+enumeração agressiva deixa rastro: muitas requisições, `User-Agent` de ferramenta,
+pedidos a caminhos que não existem. Um <GlossaryTerm term="NSE">NSE</GlossaryTerm>
+`http-enum`, por exemplo, deixa milhares de linhas no log do Apache. Um IDS como
+o <GlossaryTerm term="Suricata">Suricata</GlossaryTerm> tem regras para padrões de
+varredura. E, do lado de fora, um `curl -I` repetido a diretórios aleatórios num
+curto intervalo é um sinal.
+
+**5. Priorize pelo que está sendo explorado.** Do lado do defensor, o catálogo
+<GlossaryTerm term="KEV">KEV</GlossaryTerm> da CISA é ouro: ele diz quais CVEs
+inventariadas no seu parque já estão sendo usadas em ataques, para você corrigir
+essas primeiro. A mesma ponte versão → CVE que o atacante usa para escolher o
+alvo, o defensor usa para escolher o que corrigir.
+
+## 9. Exercícios
+
+O desafio principal é o laboratório da seção 5 (a flag `FLAG{versao-caminho-hash}`).
+Além dele, responda ao quiz — ele cobra o *porquê* da mecânica, não a decoreba dos
+comandos.
+
+<Quiz task="quiz-final" />
+
+**Exercício prático (opcional).** No Kali, com o lab de pé, rode
+`nmap -Pn -p80 --script http-enum vulhub` e compare com a enumeração manual que
+você fez. O `http-enum` encontra o `/internal/`? Por quê? (Pense no que a seção
+2.4 diz sobre como o atacante encadeia um cabeçalho até um diretório — o
+`http-enum` testa uma lista de caminhos comuns, e um caminho inventado pode não
+estar nela.)
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Porta aberta não é serviço: a coluna `SERVICE` da varredura padrão é um palpite
+  pela tabela nmap-services. Só o `-sV` conversa com a porta e descobre a versão.
+- O `-sV` é guiado pelo arquivo nmap-service-probes: ele manda sondas e casa a
+  resposta com assinaturas `match`/`softmatch`; a intensidade decide quantas
+  sondas. A versão sai da assinatura, não da porta.
+- A versão vira risco pela ponte CPE → NVD → KEV: um `cpe:/a:apache:http_server:2.4.49`
+  casa com a CVE-2021-41773, que a CISA marca como explorada no mundo real.
+- Enumeração não para no nmap: cabeçalhos, métodos, páginas padrão e directory
+  listing são information disclosure que encadeiam um achado no próximo.
+- Defesa: reduzir o banner é só atrito; o que conserta é atualizar, reduzir
+  superfície, fechar vazamentos e **detectar** a enumeração.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Apache HTTP Server 2.4 vulnerabilities](https://httpd.apache.org/security/vulnerabilities_24.html) — o boletim primário da CVE-2021-41773 e da 42013.
+- [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) — o que priorizar, do lado da defesa.
+- [MITRE ATT&CK T1046 — Network Service Discovery](https://attack.mitre.org/techniques/T1046/) — a enumeração como técnica catalogada.
+- [Nmap: Service and Version Detection](https://nmap.org/book/vscan.html) — como o `-sV` e o nmap-service-probes funcionam por dentro.
