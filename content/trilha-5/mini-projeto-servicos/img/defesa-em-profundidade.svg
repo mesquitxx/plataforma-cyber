@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">Defesa em profundidade: cada camada sozinha quebra a cadeia</title>
+  <desc id="d">Uma coluna central lista os cinco elos da cadeia de ataque, de cima para baixo, ligados por uma linha vertical: versão 2.4.49 vulnerável; CGI ligado e diretório raiz liberado; banner e /internal vazando informação; senha fraca no /admin; e exfiltração sem detecção. À direita de cada elo há uma caixa verde com a defesa que corta aquele elo: atualizar para a 2.4.51; desligar o CGI e negar o acesso ao diretório raiz; ServerTokens Prod e remover o /internal; senha forte com bloqueio de conta e segundo fator; e registrar e alertar sobre o padrão de traversal nos logs. Cada defesa tem uma tesoura indicando que, sozinha, ela interrompe a cadeia. A legenda abaixo reforça: o atacante precisa de todos os elos; o defensor precisa de apenas um.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .step { font-size: 12px; font-weight: 700; }
+    .sub { font-size: 10px; fill: #9fb0a6; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .def { fill: #13201a; stroke: #5ee08a; stroke-width: 1.8; }
+    .dt { font-size: 11px; font-weight: 700; fill: #5ee08a; }
+    .ds { font-size: 9.5px; fill: #86b79a; }
+    .chain { stroke: #4a5a52; stroke-width: 3; fill: none; }
+    .cut { stroke: #5ee08a; stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
+    .cap { font-size: 11.5px; fill: #9fb0a6; }
+  </style>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="32">Defesa em profundidade: cada camada sozinha quebra a cadeia</text>
+
+  <!-- vertical chain line -->
+  <path class="chain" d="M250,70 L250,404"/>
+
+  <!-- rows: y centers 84,150,216,282,348 ... use 5 rows -->
+  <!-- 1 -->
+  <rect class="box" x="120" y="60" width="260" height="48" rx="7"/>
+  <text class="step" x="250" y="80" text-anchor="middle">1. Versão 2.4.49 vulnerável</text>
+  <text class="sub" x="250" y="97" text-anchor="middle">CVE-2021-41773</text>
+  <rect class="def" x="520" y="60" width="330" height="48" rx="7"/>
+  <text class="dt" x="536" y="80">Atualizar para a 2.4.51</text>
+  <text class="ds" x="536" y="97">a 2.4.50 não bastou (CVE-2021-42013)</text>
+
+  <!-- 2 -->
+  <rect class="box" x="120" y="134" width="260" height="48" rx="7"/>
+  <text class="step" x="250" y="154" text-anchor="middle">2. CGI ligado + raiz liberada</text>
+  <text class="sub" x="250" y="171" text-anchor="middle">mod_cgid · &lt;Directory /&gt;</text>
+  <rect class="def" x="520" y="134" width="330" height="48" rx="7"/>
+  <text class="dt" x="536" y="154">Desligar CGI · Require all denied</text>
+  <text class="ds" x="536" y="171">sem interpretador no caminho, sem RCE</text>
+
+  <!-- 3 -->
+  <rect class="box" x="120" y="208" width="260" height="48" rx="7"/>
+  <text class="step" x="250" y="228" text-anchor="middle">3. Banner e /internal vazam</text>
+  <text class="sub" x="250" y="245" text-anchor="middle">ServerTokens Full · autoindex</text>
+  <rect class="def" x="520" y="208" width="330" height="48" rx="7"/>
+  <text class="dt" x="536" y="228">ServerTokens Prod · remover /internal</text>
+  <text class="ds" x="536" y="245">menos pistas para o atacante mapear</text>
+
+  <!-- 4 -->
+  <rect class="box" x="120" y="282" width="260" height="48" rx="7"/>
+  <text class="step" x="250" y="302" text-anchor="middle">4. Senha fraca no /admin</text>
+  <text class="sub" x="250" y="319" text-anchor="middle">superman · password1 (reúso)</text>
+  <rect class="def" x="520" y="282" width="330" height="48" rx="7"/>
+  <text class="dt" x="536" y="302">Senha forte · lockout · MFA</text>
+  <text class="ds" x="536" y="319">tira o reúso e trava o spraying</text>
+
+  <!-- 5 -->
+  <rect class="box" x="120" y="356" width="260" height="48" rx="7"/>
+  <text class="step" x="250" y="376" text-anchor="middle">5. Ação sem detecção</text>
+  <text class="sub" x="250" y="393" text-anchor="middle">traversal e queries silenciosos</text>
+  <rect class="def" x="520" y="356" width="330" height="48" rx="7"/>
+  <text class="dt" x="536" y="376">Registrar e alertar no traversal</text>
+  <text class="ds" x="536" y="393">logs + alerta cortam o tempo de permanência</text>
+
+  <!-- cut links from chain to each defense -->
+  <path class="cut" d="M380,84 L520,84"/>
+  <path class="cut" d="M380,158 L520,158"/>
+  <path class="cut" d="M380,232 L520,232"/>
+  <path class="cut" d="M380,306 L520,306"/>
+  <path class="cut" d="M380,380 L520,380"/>
+
+  <text class="cap" x="30" y="440">O atacante precisa de TODOS os elos; o defensor precisa de apenas UM. É isso que "defense in depth" compra.</text>
+</svg>

