@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" role="img" aria-labelledby="t d">
+  <title id="t">Linha do tempo da CVE-2021-41773 e da correção incompleta</title>
+  <desc id="d">Linha do tempo horizontal, da esquerda para a direita, com seis marcos datados. 16/09/2021: o Apache httpd 2.4.49 é lançado e introduz o bug de normalização de caminho. 29/09/2021: a falha é reportada ao time de segurança do Apache, já sendo explorada na internet. 04/10/2021: sai a versão 2.4.50, a primeira tentativa de correção — marcada em vermelho porque foi insuficiente. 05/10/2021: o NVD publica a CVE-2021-41773 com nota CVSS 9.8, crítica. 07/10/2021: sai a versão 2.4.51, que corrige de verdade; o furo do patch anterior virou a CVE-2021-42013. 03/11/2021: a CISA adiciona a falha ao catálogo KEV de vulnerabilidades exploradas, com prazo de correção em 17/11/2021. Uma faixa vermelha ligando 2.4.50 a 2.4.51 destaca a janela da correção incompleta.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .date { font-size: 12px; font-weight: 700; fill: #5cc8d8; }
+    .ev { font-size: 12px; font-weight: 700; }
+    .sub { font-size: 10.5px; fill: #9fb0a6; }
+    .bad { fill: #ff6b6b; }
+    .bads { font-size: 10.5px; fill: #ff6b6b; }
+    .good { fill: #5ee08a; }
+    .axis { stroke: #4a5a52; stroke-width: 2; }
+    .tick { stroke: #4a5a52; stroke-width: 2; }
+    .node { fill: #16201b; stroke: #2c3a33; stroke-width: 2; }
+    .nodebad { fill: #16201b; stroke: #ff6b6b; stroke-width: 2.5; }
+    .nodegood { fill: #16201b; stroke: #5ee08a; stroke-width: 2.5; }
+    .gapline { stroke: #ff6b6b; stroke-width: 2; stroke-dasharray: 5 4; fill: none; }
+  </style>
+  <rect width="960" height="400" fill="#121815"/>
+  <text class="t" x="30" y="34">Uma CVE do nascimento ao catálogo: a história da correção incompleta</text>
+
+  <!-- axis -->
+  <line class="axis" x1="60" y1="210" x2="915" y2="210"/>
+  <path d="M915,210 l-10,-5 l0,10 z" fill="#4a5a52"/>
+
+  <!-- incomplete-fix gap band between 2.4.50 and 2.4.51 -->
+  <path class="gapline" d="M530,150 C590,120 640,120 700,150"/>
+  <text class="bads" x="615" y="118" text-anchor="middle">correção incompleta</text>
+
+  <!-- node 1: 2.4.49 (above) -->
+  <line class="tick" x1="90" y1="210" x2="90" y2="150"/>
+  <circle class="node" cx="90" cy="210" r="7"/>
+  <text class="date" x="90" y="140" text-anchor="middle">16/09</text>
+  <text class="ev" x="90" y="124" text-anchor="middle">2.4.49</text>
+  <text class="sub" x="90" y="108" text-anchor="middle">bug nasce</text>
+
+  <!-- node 2: reported (below) -->
+  <line class="tick" x1="250" y1="210" x2="250" y2="270"/>
+  <circle class="node" cx="250" cy="210" r="7"/>
+  <text class="date" x="250" y="288" text-anchor="middle">29/09</text>
+  <text class="ev" x="250" y="304" text-anchor="middle">reportada</text>
+  <text class="sub" x="250" y="320" text-anchor="middle">já explorada</text>
+
+  <!-- node 3: 2.4.50 bad (above) -->
+  <line class="tick" x1="410" y1="210" x2="410" y2="168"/>
+  <circle class="nodebad" cx="410" cy="210" r="7"/>
+  <text class="date bad" x="410" y="158" text-anchor="middle">04/10</text>
+  <text class="ev bad" x="410" y="142" text-anchor="middle">2.4.50</text>
+  <text class="bads" x="410" y="126" text-anchor="middle">não bastou</text>
+
+  <!-- node 4: NVD (below) -->
+  <line class="tick" x1="540" y1="210" x2="540" y2="270"/>
+  <circle class="node" cx="540" cy="210" r="7"/>
+  <text class="date" x="540" y="288" text-anchor="middle">05/10</text>
+  <text class="ev" x="540" y="304" text-anchor="middle">NVD publica</text>
+  <text class="sub" x="540" y="320" text-anchor="middle">CVSS 9.8</text>
+
+  <!-- node 5: 2.4.51 good (above) -->
+  <line class="tick" x1="700" y1="210" x2="700" y2="168"/>
+  <circle class="nodegood" cx="700" cy="210" r="7"/>
+  <text class="date good" x="700" y="158" text-anchor="middle">07/10</text>
+  <text class="ev good" x="700" y="142" text-anchor="middle">2.4.51</text>
+  <text class="sub" x="700" y="126" text-anchor="middle">CVE-2021-42013</text>
+
+  <!-- node 6: CISA KEV (below) -->
+  <line class="tick" x1="870" y1="210" x2="870" y2="270"/>
+  <circle class="node" cx="870" cy="210" r="7"/>
+  <text class="date" x="870" y="288" text-anchor="middle">03/11</text>
+  <text class="ev" x="870" y="304" text-anchor="middle">CISA KEV</text>
+  <text class="sub" x="870" y="320" text-anchor="middle">prazo 17/11</text>
+
+  <text class="sub" x="60" y="375">2.4.49 é a única versão afetada pela 41773; a 2.4.50 ainda cai na 42013. Datas das fontes do Apache, NVD e CISA.</text>
+</svg>

