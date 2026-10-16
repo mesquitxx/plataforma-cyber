@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 560" role="img" aria-labelledby="t d">
+  <title id="t">O lugar da escalação de privilégio na cadeia de ataque e suas superfícies</title>
+  <desc id="d">Em cima, uma linha de quatro caixas da esquerda para a direita mostra a cadeia de um ataque: reconhecimento, acesso inicial (foothold de baixo privilégio), escalação de privilégio (destacada em ciano) e pós-exploração. Setas ligam uma à outra. Da caixa destacada de escalação descem duas colunas de superfícies. À esquerda, as superfícies no Linux: SUID/SGID fora do padrão; sudo mal configurado; Linux capabilities; cron ou timer gravável; PATH sequestrável; serviço rodando como root; credenciais em arquivos; kernel desatualizado. À direita, as superfícies no Windows: serviço com binário ou pasta gravável; unquoted service path; AlwaysInstallElevated; tarefa agendada; DLL hijacking; privilégios de token (SeImpersonate); credenciais no registro e em arquivos; driver de kernel vulnerável. No rodapé, uma faixa resume o método do pentester: enumerar, listar candidatos, priorizar por confiabilidade e ruído, explorar.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .step { font-size: 12px; font-weight: 700; }
+    .sub { font-size: 10px; fill: #9fb0a6; }
+    .cur { fill: #5cc8d8; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .boxcur { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
+    .h { font-size: 12.5px; font-weight: 700; }
+    .item { font-size: 10.5px; fill: #cfe0d6; }
+    .flow { stroke: #4a5a52; stroke-width: 2; fill: none; marker-end: url(#a); }
+    .drop { stroke: #5cc8d8; stroke-width: 2; fill: none; marker-end: url(#ac); }
+    .method { font-size: 11px; font-weight: 700; fill: #5ee08a; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#4a5a52"/></marker>
+    <marker id="ac" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="920" height="560" fill="#121815"/>
+  <text class="t" x="30" y="34">Onde a escalação acontece — e o que ela procura</text>
+
+  <!-- chain -->
+  <rect class="box" x="30" y="56" width="180" height="54" rx="8"/>
+  <text class="step" x="120" y="80" text-anchor="middle">1. Reconhecimento</text>
+  <text class="sub" x="120" y="98" text-anchor="middle">mapear o alvo</text>
+
+  <rect class="box" x="246" y="56" width="180" height="54" rx="8"/>
+  <text class="step" x="336" y="80" text-anchor="middle">2. Acesso inicial</text>
+  <text class="sub" x="336" y="98" text-anchor="middle">foothold de baixo privilégio</text>
+
+  <rect class="boxcur" x="462" y="56" width="196" height="54" rx="8"/>
+  <text class="step cur" x="560" y="80" text-anchor="middle">3. Escalação de</text>
+  <text class="step cur" x="560" y="96" text-anchor="middle">privilégio</text>
+
+  <rect class="box" x="694" y="56" width="196" height="54" rx="8"/>
+  <text class="step" x="792" y="80" text-anchor="middle">4. Pós-exploração</text>
+  <text class="sub" x="792" y="98" text-anchor="middle">persistência · saque</text>
+
+  <path class="flow" d="M210,83 L244,83"/>
+  <path class="flow" d="M426,83 L460,83"/>
+  <path class="flow" d="M658,83 L692,83"/>
+
+  <!-- drops to the two surface columns -->
+  <path class="drop" d="M520,110 L300,150"/>
+  <path class="drop" d="M600,110 L620,150"/>
+
+  <!-- Linux surfaces -->
+  <rect class="box" x="40" y="156" width="390" height="360" rx="8"/>
+  <text class="h cur" x="60" y="182">Superfícies no LINUX</text>
+  <text class="item" x="60" y="212">• SUID / SGID fora do padrão</text>
+  <text class="item" x="60" y="248">• sudo mal configurado (sudo -l)</text>
+  <text class="item" x="60" y="284">• Linux capabilities (getcap)</text>
+  <text class="item" x="60" y="320">• cron / timer gravável rodado por root</text>
+  <text class="item" x="60" y="356">• PATH sequestrável</text>
+  <text class="item" x="60" y="392">• serviço rodando como root</text>
+  <text class="item" x="60" y="428">• credenciais em arquivos de config</text>
+  <text class="item" x="60" y="464">• kernel desatualizado (ex.: Dirty COW)</text>
+
+  <!-- Windows surfaces -->
+  <rect class="box" x="490" y="156" width="390" height="360" rx="8"/>
+  <text class="h cur" x="510" y="182">Superfícies no WINDOWS</text>
+  <text class="item" x="510" y="212">• serviço com binário / pasta gravável</text>
+  <text class="item" x="510" y="248">• unquoted service path</text>
+  <text class="item" x="510" y="284">• AlwaysInstallElevated</text>
+  <text class="item" x="510" y="320">• tarefa agendada gravável</text>
+  <text class="item" x="510" y="356">• DLL hijacking (ordem de busca)</text>
+  <text class="item" x="510" y="392">• privilégios de token (SeImpersonate)</text>
+  <text class="item" x="510" y="428">• credenciais no registro / Unattend.xml</text>
+  <text class="item" x="510" y="464">• driver de kernel vulnerável (ex.: CLFS)</text>
+
+  <!-- method band -->
+  <rect class="box" x="40" y="524" width="840" height="24" rx="6"/>
+  <text class="method" x="460" y="540" text-anchor="middle">método: enumerar → listar candidatos → priorizar (confiabilidade · ruído · estabilidade) → explorar</text>
+</svg>

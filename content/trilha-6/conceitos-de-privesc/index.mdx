@@ -1,0 +1,554 @@
+---
+slug: conceitos-de-privesc
+track: trilha-6
+title: "Conceitos de privilégio e superfícies de escalação"
+prerequisites: [trilha-5]
+lab: null
+tasks:
+  - slug: missao-1-modelo-no-wsl
+    title: "Missão 1 — O modelo de privilégio no seu WSL"
+    type: flag
+    prompt: "O modo em octal que você deu ao arquivo SUID de teste, a letra que aparece no lugar do x do dono no ls -l desse arquivo, e o nome do programa SUID root que deixa um usuário comum trocar a própria senha. Formato: FLAG{octal-letra-programa}."
+    hint: "O octal você mesmo define com chmod 4755. A letra sai do ls -l (o campo de permissão do dono). O programa é aquele clássico em /usr/bin que o find -perm -4000 lista e que serve para trocar senha."
+    flag:
+      hash: "scrypt$16384$8$1$7bceecfd6affc8d5c800cf129be969bd2601e46e860844e40b47436e575216cc"
+      salt: "9cb280b16c2143c5d6c2973a4fc40a5d"
+  - slug: missao-2-triagem-linux
+    title: "Missão 2 — Triagem de uma enumeração Linux"
+    type: flag
+    prompt: "Monte FLAG{script-usuario-octal}: o nome do arquivo (só o basename) que é o vetor real de escalação na enumeração, o usuário privilegiado que o executa de forma automática, e o modo em octal que o torna gravável por qualquer um. Formato: FLAG{backup.sh-root-NNN}."
+    hint: "Vetor real = algo gravável por você QUE ALGO PRIVILEGIADO EXECUTA. Procure o cruzamento entre a lista de arquivos graváveis e a lista de tarefas agendadas. rwxrwxrwx em octal é 7-7-7."
+    flag:
+      hash: "scrypt$16384$8$1$6aa790fd04638777f48681813709f484dd9c6b21f9ea8b1cce7787c3c09c7566"
+      salt: "17596631f75705aac709061224c765c5"
+  - slug: missao-3-triagem-windows
+    title: "Missão 3 — Triagem de um token no Windows"
+    type: flag
+    prompt: "Monte FLAG{privilegio-servico}: o nome exato (com maiúsculas) do privilégio habilitado que permite a esta conta de serviço se passar por um token e virar SYSTEM, e o nome do serviço que roda como LocalSystem e cuja pasta do binário é gravável pelo grupo Users. Formato: FLAG{SeXxxxPrivilege-NomeDoServico}."
+    hint: "O privilégio está no whoami /priv, com State Enabled, e é o preferido dos ataques da família Potato. O serviço sai do cruzamento entre o sc qc (SERVICE_START_NAME: LocalSystem) e o icacls que mostra BUILTIN\\Users com (F) na pasta do binário."
+    flag:
+      hash: "scrypt$16384$8$1$b338965b3d3ba10eed6067d03b64cfd575e263b65dd51d9220f62ae5d2926d77"
+      salt: "4fc89362c5f3867faf4f26b77c6a1d4f"
+  - slug: quiz-final
+    title: "Quiz — Conceitos de privilégio e superfícies de escalação"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "No fim do mini-projeto 5.6, o seu RCE rodava como a conta daemon, não como root. Como se chama o passo que falta para ir de daemon a root, e em que momento da cadeia de ataque ele acontece?"
+        options:
+          - "Reconhecimento; acontece antes de qualquer acesso"
+          - "Escalação de privilégio (privilege escalation); acontece depois do acesso inicial (foothold) e antes da pós-exploração"
+          - "Acesso inicial; é a mesma coisa que o foothold"
+          - "Exfiltração; acontece sempre no primeiro pacote"
+        answer: 1
+        explanation: "O foothold te dá execução, mas com o poder da conta que roda o serviço. Transformar esse acesso limitado em controle total é a escalação de privilégio — o elo entre o acesso inicial e a pós-exploração. É exatamente o buraco que o daemon do 5.6 deixou e que a Trilha 6 preenche."
+      - question: "Qual a diferença entre escalação vertical e horizontal de privilégio?"
+        options:
+          - "Vertical é no Linux, horizontal é no Windows"
+          - "Vertical é ganhar MAIS poder (virar root ou SYSTEM); horizontal é virar OUTRO usuário do mesmo nível, para acessar o que é dele"
+          - "Vertical usa exploit, horizontal usa senha"
+          - "São dois nomes para a mesma coisa"
+        answer: 1
+        explanation: "Vertical sobe na escada de poder: de usuário comum a administrador. Horizontal anda de lado: você continua com o mesmo nível, mas passa a agir como a conta do colega — útil para ler os dados dele ou reaproveitar o acesso dele a outro sistema. As duas são escalação porque as duas quebram a fronteira que separava uma identidade da outra."
+      - question: "Por que o bit SUID existe, e por que ele é uma superfície de escalação tão comum no Linux?"
+        options:
+          - "Ele existe para acelerar programas; não tem relação com segurança"
+          - "Ele faz um programa rodar com o ID efetivo do DONO do arquivo (quase sempre root), não de quem o executa; isso é necessário para coisas como trocar a senha, mas se o programa SUID tiver um bug ou puder ser desviado, o usuário herda o poder do dono"
+          - "Ele impede que usuários comuns executem o programa"
+          - "Ele só vale para scripts em Bash"
+        answer: 1
+        explanation: "Trocar a senha exige escrever em /etc/shadow, que é de root. O passwd resolve isso sendo SUID root: ele roda com o poder do dono. O preço é que todo binário SUID root é um pedaço de código que roda como root a pedido de qualquer um — se ele tiver uma falha (Baron Samedit) ou chamar outro programa de forma controlável (GTFOBins), o usuário vira root. Por isso a lista de SUID é a primeira coisa que se enumera."
+      - question: "No Windows, você conquistou uma conta de serviço cujo whoami /priv mostra SeImpersonatePrivilege: Enabled. Por que isso costuma ser o fim do jogo?"
+        options:
+          - "Porque esse privilégio desliga o antivírus"
+          - "Porque ele permite à conta se passar por (impersonar) o token de outro cliente que se conecta a ela; com as técnicas da família Potato, a conta força o SYSTEM a se conectar e rouba o token dele, virando SYSTEM"
+          - "Porque ele dá acesso à internet"
+          - "Porque ele é igual ao root do Linux por definição"
+        answer: 1
+        explanation: "SeImpersonatePrivilege é dado de propósito a contas de serviço (elas precisam atender clientes em nome deles). O abuso inverte a lógica: a conta engana o SYSTEM para que ele se conecte a um canal controlado, captura o token dele e passa a agir como SYSTEM. É o vetor preferido quando se cai numa conta de serviço — daí o apelido Potato."
+      - question: "A enumeração de um host Linux mostra o binário /usr/bin/find com o bit SUID e uma entrada sudo -l que permite rodar /usr/bin/id como root sem senha. Qual é o vetor mais promissor e por quê?"
+        options:
+          - "O sudo para id, porque roda como root"
+          - "O find SUID, porque o find consegue executar outros comandos (-exec) e, rodando como root, isso vira um shell root; já o id não tem como devolver um shell, mesmo rodando como root"
+          - "Nenhum dos dois leva a nada"
+          - "Os dois são equivalentes"
+        answer: 1
+        explanation: "Rodar como root não basta: o programa precisa te DAR controle. O id só imprime a identidade e sai — sem saída para um shell. O find tem -exec, que roda um comando arbitrário; SUID root, esse comando roda como root. É a diferença que o GTFOBins cataloga: não é 'o que roda como root', é 'o que roda como root E me deixa executar algo meu'."
+      - question: "Por que 'estar como root dentro de um contêiner' não é, por si só, ter comprometido o host que roda o contêiner?"
+        options:
+          - "Porque root no contêiner é um usuário falso, sem poder nenhum"
+          - "Porque o contêiner isola processos, sistema de arquivos e rede do host; root ali é root naquele namespace, não na máquina — virar root no host exige mais um passo (uma falha de configuração do contêiner, um bug de kernel ou um volume/soquete perigoso montado)"
+          - "Porque contêineres não têm usuário root"
+          - "Porque o Docker converte root em usuário comum automaticamente"
+        answer: 1
+        explanation: "O contêiner é uma fronteira: namespaces e cgroups dão ao processo a ilusão de uma máquina só dele. Ser root lá dentro permite muita coisa naquele mundo, mas não no host — a menos que a fronteira esteja mal desenhada (privileged, docker.sock montado, capabilities a mais) ou o kernel compartilhado tenha um bug. Confundir os dois é um erro clássico de quem começa."
+      - question: "Um defensor diz: 'nosso serviço web roda como uma conta dedicada e sem privilégios, então um RCE nele não é grave'. Qual é a avaliação mais correta?"
+        options:
+          - "Ele está errado: um RCE sempre dá root"
+          - "Ele está certo em parte: rodar com o mínimo de privilégio (least privilege) reduz MUITO o estrago imediato do RCE, mas não o elimina — o atacante ainda pode escalar por uma das superfícies (SUID, sudo, kernel, credenciais) se elas existirem; a conta de baixo privilégio é uma camada, não a única"
+          - "Ele está certo: conta sem privilégio torna a máquina invulnerável"
+          - "Ele está errado: contas dedicadas não mudam nada"
+        answer: 1
+        explanation: "Least privilege é exatamente a defesa que faz o foothold cair como daemon e não como root — e isso é ouro, porque obriga o atacante a um passo a mais e dá tempo ao defensor. Mas é uma camada: se o kernel estiver desatualizado ou houver um SUID vulnerável, a escalação acontece mesmo assim. A conclusão certa é 'reduz o impacto e força a escalação', não 'elimina o risco'."
+glossary:
+  - term: local privilege escalation
+    definition: "Ganhar mais poder a partir de um acesso que você já tem na máquina (um usuário comum ou uma conta de serviço), sem passar pela rede. É o oposto da escalação remota: o atacante já está dentro e quer subir. Em inglês costuma aparecer abreviada como LPE."
+  - term: effective user ID
+    definition: "O ID de usuário que o kernel do Linux realmente usa para decidir as permissões de um processo em cada operação. Normalmente é igual ao ID de quem iniciou o processo, mas um programa SUID o troca pelo do dono do arquivo — é por isso que o passwd, rodado por você, consegue escrever num arquivo de root."
+  - term: SGID
+    definition: "O bit set-group-ID: como o SUID, mas para o grupo. Um arquivo com SGID roda com o grupo do dono do arquivo, não com o grupo de quem o executa; em diretórios, faz os arquivos novos herdarem o grupo da pasta. É uma superfície de escalação irmã do SUID."
+  - term: kernel exploit
+    definition: "Um ataque que explora uma falha no próprio kernel do sistema operacional (o núcleo que controla tudo). Como o kernel roda com poder máximo, uma falha nele costuma levar direto a root ou SYSTEM — mas é também o vetor mais arriscado, porque um erro pode derrubar a máquina."
+  - term: DLL hijacking
+    definition: "No Windows, enganar um programa para que ele carregue uma biblioteca (DLL) maliciosa no lugar da legítima, aproveitando a ordem em que o sistema procura as DLLs. Se o programa enganado roda com privilégio alto, o código da DLL plantada roda com esse mesmo privilégio."
+  - term: token impersonation
+    definition: "No Windows, fazer um processo assumir (impersonar) o token de acesso de outra conta, passando a agir com a identidade e os privilégios dela. É um recurso legítimo de contas de serviço que, abusado, permite a uma conta de serviço roubar o token do SYSTEM."
+  - term: potato attack
+    definition: "A família de técnicas (Rotten Potato, Juicy Potato, PrintSpoofer, RoguePotato…) que transforma o SeImpersonatePrivilege de uma conta de serviço em acesso SYSTEM: a conta engana o SYSTEM para que ele se autentique num canal controlado e então rouba (impersona) o token dele."
+  - term: AlwaysInstallElevated
+    definition: "Uma política do Windows que, se ligada, faz os pacotes de instalação (.msi) rodarem como SYSTEM mesmo quando um usuário comum os instala. Quando as duas chaves de registro que a ativam estão presentes, qualquer usuário vira SYSTEM instalando um .msi feito sob medida — uma má configuração clássica."
+---
+
+import modeloDePrivilegio from "./img/modelo-de-privilegio.svg";
+import superficiesDeEscalacao from "./img/superficies-de-escalacao.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No fim do mini-projeto da trilha passada (5.6), você levou um serviço do reconhecimento ao comprometimento e conquistou um <GlossaryTerm term="foothold">foothold</GlossaryTerm> (o acesso inicial, de onde se executa comando no alvo). Mas, quando você rodou `id`, a resposta não foi `root`: foi `daemon`, uma conta de serviço sem poder nenhum. Você estava **dentro**, e ainda assim preso. Esse teto tem nome, e tirá-lo é todo um ramo da arte: a **escalação de privilégio**.
+
+Este módulo é o mapa antes da viagem. Ele não ensina um vetor específico a fundo — isso vem nos próximos (6.2 a 6.6). Ele ensina o que você precisa saber **antes**: como o Linux e o Windows decidem quem pode o quê, por que esse sistema de poderes existe, e **onde**, na prática, ele costuma falhar. Sem esse mapa, enumerar uma máquina é olhar uma parede de saída sem saber o que é pista e o que é ruído. Com ele, cada linha de uma enumeração vira uma pergunta: *isto me dá um caminho para cima?*
+
+<Figure
+  src={modeloDePrivilegio}
+  alt="Duas colunas comparando o modelo de privilégio do Linux e do Windows. No Linux, uma conta de serviço de baixo privilégio (www-data, uid 33) sobe até root (uid 0) por uma faixa de pontes de elevação (SUID/SGID, sudo, capability, bug). No Windows, uma conta de serviço (svc_web, integridade Média) sobe até SYSTEM, passando por Administrador, por pontes equivalentes (token, UAC, serviço mal configurado, bug). Embaixo, uma seta horizontal liga dois usuários de mesmo nível, ilustrando a escalação horizontal."
+  caption="A mesma ideia nos dois sistemas: sair de uma conta de baixo privilégio e subir até a conta todo-poderosa, por uma das 'pontes de elevação'. Subir é escalação vertical; andar de lado, para outra conta do mesmo nível, é horizontal."
+/>
+
+**Ao final, você vai saber:**
+
+- explicar o que é escalação de privilégio e distinguir a forma **vertical** (ganhar mais poder) da **horizontal** (virar outro usuário de mesmo nível);
+- descrever por dentro o modelo de privilégio do Linux (uid/gid, root, SUID/SGID, sudo, capabilities) e do Windows (contas e SIDs, UAC, tokens e privilégios, integridade);
+- reconhecer as superfícies onde a escalação costuma morar nos dois sistemas e classificar um vetor pela sua promessa e pelo seu risco;
+- situar a escalação na cadeia de um ataque e entender como o defensor a corta reduzindo a superfície.
+
+**Pré-requisitos:** toda a **Trilha 5** (serviços). Em especial, você vai reaproveitar a ideia de que um serviço roda sob uma conta própria, de baixo privilégio (o `daemon` do 5.6); a base de Linux das trilhas 0 (uid/gid, permissões e `cron` do 0.3/0.4) e a base de Windows do módulo 0.5 (contas, SID, UAC, tokens, serviços e o SYSTEM) são relembradas em uma linha cada quando aparecem.
+
+**Tempo estimado:** 2 a 3 horas, incluindo as três missões no seu WSL.
+
+<Callout variant="ethics">
+Enumerar e escalar privilégio só é legítimo na sua própria máquina, no laboratório local ou em um alvo com autorização por escrito. As missões deste módulo rodam no **seu** WSL, contra arquivos de treino que **você** cria — nada de mirar máquina de terceiros. Escalar privilégio em um sistema sem autorização é crime (lei 12.737/2012; veja o módulo 1.4).
+</Callout>
+
+## 2. Teoria aprofundada — o privilégio por dentro
+
+### 2.1 O que é privilégio, e por que os sistemas separam poderes
+
+<GlossaryTerm term="privilege escalation">Privilege escalation</GlossaryTerm> (escalação de privilégio) é passar de um nível de poder para um nível maior do que o que lhe foi concedido. Para entender a escalação, é preciso entender por que existe o degrau.
+
+Um sistema operacional moderno não trata todos os programas igual. Ele separa o mundo em dois: o <GlossaryTerm term="kernel">kernel</GlossaryTerm> (o núcleo, que fala direto com o hardware e controla memória, disco e processos) roda num modo protegido do processador, onde tudo é permitido; os programas comuns rodam num modo restrito, onde cada acesso a disco, rede ou memória de outro processo precisa pedir licença ao kernel. Essa separação existe para que um erro (ou um ataque) num programa qualquer não derrube a máquina inteira nem leia o que não deve. É a primeira fronteira de privilégio.
+
+Dentro do modo restrito há uma segunda separação: a de **contas de usuário**. Cada processo pertence a um usuário, e o kernel usa essa identidade para decidir o que ele pode tocar. Um usuário comum não lê os arquivos de outro, não mexe na configuração do sistema, não mata processos alheios. Existe, porém, uma conta acima de todas — <GlossaryTerm term="root">root</GlossaryTerm> no Linux, SYSTEM no Windows — para a qual essas checagens praticamente não valem. Ela precisa existir: alguém tem que poder instalar programas, criar usuários, ler qualquer log. O problema de segurança nasce daí: **se um atacante que entrou como usuário comum conseguir virar essa conta, todas as fronteiras caem de uma vez.**
+
+Toda escalação é, no fundo, isto: explorar uma brecha para que o kernel passe a tratar o seu processo como se fosse de uma conta mais poderosa. A brecha pode ser uma configuração errada, um bug num programa que já roda com poder, ou uma credencial que você achou. O resto deste módulo é o catálogo dessas brechas.
+
+Antes do catálogo, duas direções. A escalação <GlossaryTerm term="vertical privilege escalation">vertical</GlossaryTerm> é subir: de `www-data` para `root`, de usuário para administrador. É a que primeiro vem à cabeça. A <GlossaryTerm term="horizontal privilege escalation">horizontal</GlossaryTerm> é andar de lado: continuar no mesmo nível, mas assumir a identidade de **outro** usuário de igual poder — para ler os dados dele, usar o acesso dele a um terceiro sistema, ou agir em nome dele. Um IDOR (que você viu em 4.5) que te deixa ver o pedido de outro cliente é escalação horizontal. As duas quebram a fronteira que separava uma identidade da outra; por isso as duas contam.
+
+### 2.2 O modelo do Linux: uid, root, SUID, sudo e capabilities
+
+No Linux, toda conta é um número: o **uid** (user ID). O `root` é simplesmente o uid **0**, e o kernel tem no código a regra "uid 0 pula quase todas as checagens". Grupos são os **gid**. Quando um processo tenta abrir um arquivo, o kernel compara o uid/gid do processo com as permissões do arquivo (aquele `rwxr-xr--` do `ls -l` que você viu em 0.3) e decide.
+
+Mas o uid de um processo não é um número só. O kernel guarda, entre outros, o uid **real** (quem iniciou o processo) e o <GlossaryTerm term="effective user ID">effective user ID</GlossaryTerm> (o uid efetivo, que é o que ele de fato usa para decidir cada permissão). Normalmente os dois são iguais. O que os separa é o bit **SUID**.
+
+<GlossaryTerm term="SUID">SUID</GlossaryTerm> (set-user-ID) é um bit na permissão de um arquivo executável. Quando ligado, o programa roda com o uid efetivo do **dono do arquivo**, não de quem o executou. O exemplo canônico é o `passwd`: trocar sua senha exige escrever em `/etc/shadow`, um arquivo que só o root pode tocar. Como o `passwd` é SUID root, ao rodá-lo **você** passa a ter, por aqueles instantes, o poder de escrever ali. No `ls -l`, o SUID aparece como um `s` no lugar do `x` do dono: `-rwsr-xr-x`. O <GlossaryTerm term="SGID">SGID</GlossaryTerm> (set-group-ID) é o irmão para o grupo.
+
+Essa é a primeira grande superfície: **todo binário SUID root é um trecho de código que roda como root a pedido de qualquer um.** Se ele tiver um bug (como o sudo de 2021, na seção 4) ou se puder ser levado a executar algo que você escolhe (o caso do `find -exec`, catalogado no <GlossaryTerm term="GTFOBins">GTFOBins</GlossaryTerm>), o seu uid efetivo vira 0.
+
+O `root` tudo-ou-nada, porém, é grosseiro demais. Um servidor web precisa abrir a porta 80 (privilégio de root), mas não precisa do poder de formatar o disco. Para quebrar esse monólito, o Linux tem duas ferramentas:
+
+- O <GlossaryTerm term="sudo">sudo</GlossaryTerm> dá poder **pontual**: o arquivo `/etc/sudoers` lista quais comandos cada usuário pode rodar como root. Bem configurado, é menor privilégio; mal configurado (um comando que pode virar shell, um `NOPASSWD` perigoso), é uma rampa direta para root. Você confere o seu com `sudo -l`.
+- As <GlossaryTerm term="Linux capabilities">Linux capabilities</GlossaryTerm> fatiam o poder de root em dezenas de pedaços independentes. Em vez de ser root, um programa recebe só a capability `cap_net_raw` (abrir pacotes crus) ou `cap_net_bind_service` (abrir portas baixas). Você vê isso no `ping`: nas distribuições modernas ele não é mais SUID root, e sim um binário comum com a capability certa — você vai conferir isso na Missão 1. Uma capability dada a mais (`cap_setuid`, `cap_dac_override`) também é uma ponte para root.
+
+Por fim, os serviços. Um servidor bem configurado não roda como root: roda sob uma conta dedicada de baixo privilégio — `www-data` para o Apache, `daemon` para outros. É por isso que o seu RCE no 5.6 caiu como `daemon`. Essa é uma defesa (o atacante não ganha a máquina de graça), mas também o ponto de partida da escalação.
+
+### 2.3 O modelo do Windows: SID, UAC, tokens e integridade
+
+O Windows resolve o mesmo problema com peças diferentes, que você viu no módulo 0.5. Toda conta e todo grupo são identificados por um <GlossaryTerm term="SID">SID</GlossaryTerm> (security identifier), não por um número simples. O equivalente ao root não é bem o Administrador: é o **SYSTEM** (SID `S-1-5-18`), a conta com que o próprio sistema e muitos serviços rodam, com poder acima até do administrador comum. Em pentest, o objetivo da escalação no Windows costuma ser chegar a SYSTEM.
+
+Entre o usuário e o poder existem três mecanismos que importam para a escalação:
+
+- O <GlossaryTerm term="UAC">UAC</GlossaryTerm> (User Account Control) faz com que, mesmo sendo administrador, você trabalhe por padrão com um **token filtrado** — um crachá rebaixado, de integridade Média. Só ao aprovar a elevação você recebe o token cheio, de integridade Alta. Escalar, aqui, muitas vezes é "contornar o UAC" para rodar algo já com o token cheio.
+- Todo processo carrega um <GlossaryTerm term="access token">access token</GlossaryTerm> (token de acesso): um crachá que lista quem você é (seu SID), seus grupos e seus **privilégios** nomeados. Alguns privilégios são, na prática, chaves-mestras. O <GlossaryTerm term="SeImpersonatePrivilege">SeImpersonatePrivilege</GlossaryTerm> — dado a contas de serviço para que atendam clientes em nome deles — permite a <GlossaryTerm term="token impersonation">token impersonation</GlossaryTerm>: assumir o token de outra conta. Abusado, ele vira SYSTEM, por meio do que se chama <GlossaryTerm term="potato attack">potato attack</GlossaryTerm> (a família de técnicas Rotten/Juicy Potato, PrintSpoofer e afins). O `SeBackupPrivilege` lê qualquer arquivo; o `SeDebugPrivilege` mexe em qualquer processo. Você lista os seus com `whoami /priv`.
+- O <GlossaryTerm term="integrity level">integrity level</GlossaryTerm> (nível de integridade) é um carimbo (Baixo, Médio, Alto, Sistema) que limita o que um processo escreve, independentemente do usuário. É mais uma fronteira que a escalação precisa vencer.
+
+A lição a guardar: Linux e Windows são duas respostas para a **mesma** pergunta — como dar poder suficiente para o trabalho e nem um pingo a mais. Onde a resposta vaza, mora a escalação.
+
+### 2.4 O princípio que amarra tudo: menor privilégio
+
+Há um fio que costura as duas seções: o **princípio do menor privilégio** (<GlossaryTerm term="least privilege">least privilege</GlossaryTerm>). Cada conta, processo e usuário deveria ter exatamente o poder necessário para a sua função, e nada além. O SUID existe para dar poder pontual; o sudo, para dar poder nomeado; as capabilities, para fatiar o poder; as contas de serviço, para rodar sem poder. Todos são tentativas de aplicar menor privilégio.
+
+E é por isso que **toda escalação é a exploração de uma violação do menor privilégio.** Reduza as classes a quatro e você tem o catálogo inteiro:
+
+1. **Má configuração** — alguém deu poder a mais: um `sudoers` frouxo, um arquivo de root gravável por todos, uma pasta de serviço que qualquer um edita.
+2. **Software vulnerável** — um programa que já roda com poder tem um bug: um binário SUID, um serviço, o próprio kernel (um <GlossaryTerm term="kernel exploit">kernel exploit</GlossaryTerm>).
+3. **Credenciais** — uma senha, uma chave ou um hash de uma conta mais poderosa, esquecido num arquivo, no histórico ou na memória.
+4. **Abuso de recurso legítimo** — um privilégio de token, uma capability ou um recurso do sistema usado para o que não era (a token impersonation da família Potato).
+
+Guardadas essas quatro classes, qualquer enumeração passa a se encaixar numa delas.
+
+## 3. Na prática da segurança — o mapa das superfícies
+
+A teoria diz por que a escalação é possível. A prática responde **onde** procurar. As quatro classes da seção 2.4 se materializam em lugares concretos que todo pentester varre — e que o diagrama abaixo resume.
+
+<Figure
+  src={superficiesDeEscalacao}
+  alt="A cadeia de ataque em quatro caixas no topo — reconhecimento, acesso inicial (foothold), escalação de privilégio (destacada) e pós-exploração — com a escalação derramando em duas colunas de superfícies. No Linux: SUID/SGID fora do padrão, sudo mal configurado, Linux capabilities, cron/timer gravável rodado por root, PATH sequestrável, serviço como root, credenciais em arquivos, kernel desatualizado. No Windows: serviço com binário/pasta gravável, unquoted service path, AlwaysInstallElevated, tarefa agendada, DLL hijacking, privilégios de token, credenciais no registro/arquivos, driver de kernel. No rodapé, o método: enumerar, listar candidatos, priorizar, explorar."
+  caption="A escalação é o terceiro elo da cadeia, entre o acesso inicial e a pós-exploração. Dela derivam as superfícies típicas de cada sistema — o que você vai enumerar nos próximos módulos."
+/>
+
+### 3.1 Onde a escalação mora no Linux
+
+- **SUID/SGID fora do padrão.** A lista de binários SUID (via `find / -perm -4000 -type f 2>/dev/null`) sempre tem os suspeitos de sempre (`passwd`, `sudo`, `su`, `mount`). O que interessa é o que **não** deveria estar ali: um `find`, um `vim`, um `python`, um binário caseiro. O GTFOBins cataloga exatamente como cada um vira shell quando é SUID.
+- **sudo mal configurado.** O `sudo -l` mostra o que você pode rodar como root. Um comando que abre um editor, um pager ou um shell (ou que o GTFOBins liste) é uma rampa.
+- **Capabilities a mais.** `getcap -r / 2>/dev/null` lista binários com capabilities. `cap_setuid`, `cap_dac_override` e amigos levam a root.
+- **`cron` e timers graváveis.** Uma tarefa agendada (<GlossaryTerm term="cron">cron</GlossaryTerm> ou timer do systemd) que roda como root e executa um script que **você** pode editar é um dos vetores mais limpos que existem: você reescreve o script e espera o root rodá-lo. É o coração da Missão 2.
+- **PATH sequestrável.** Um programa privilegiado que chama outro só pelo nome (sem caminho completo) pode acabar rodando o **seu** binário, se você controlar o `PATH` — a versão Linux do que o 0.5 mostrou no Windows.
+- **Serviço rodando como root** quando não precisava, e **credenciais em arquivos** (senhas em `config.php`, chaves em `.bash_history`, `.htpasswd` — como você saqueou no 5.6).
+- **Kernel desatualizado.** Quando nada mais abre, um kernel antigo quase sempre tem uma falha local conhecida (a seção 4 traz uma).
+
+### 3.2 Onde a escalação mora no Windows
+
+- **Serviço com binário ou pasta gravável.** Se um serviço roda como SYSTEM e você pode sobrescrever o `.exe` dele (ou a pasta onde ele está), você troca o executável e, no próximo start, o seu código roda como SYSTEM. É o coração da Missão 3.
+- **`unquoted service path`.** Um caminho de serviço com espaços e **sem aspas** (`C:\Program Files\...`) faz o Windows tentar executar `C:\Program.exe` primeiro — se você puder criá-lo, vira SYSTEM.
+- **<GlossaryTerm term="AlwaysInstallElevated">AlwaysInstallElevated</GlossaryTerm>.** Com as duas chaves de registro ligadas, qualquer `.msi` roda como SYSTEM.
+- **Tarefas agendadas** graváveis e <GlossaryTerm term="DLL hijacking">DLL hijacking</GlossaryTerm> (plantar uma DLL que um programa privilegiado carrega pela ordem de busca).
+- **Privilégios de token.** `SeImpersonatePrivilege` (a família Potato), `SeBackupPrivilege`, `SeDebugPrivilege` — cada um é uma chave.
+- **Credenciais** no registro, em `Unattend.xml`, no cofre, ou na memória do LSASS, e **drivers de kernel vulneráveis** (a seção 4 traz um).
+
+### 3.3 O método: enumerar, listar, priorizar, explorar
+
+Diante dessa parede de possibilidades, o profissional não sai tentando tudo. Ele segue um ciclo:
+
+1. **Enumerar** tudo — à mão ou com um script. Os mais usados são o **linpeas** (Linux) e o **winpeas** (Windows), do projeto PEASS-ng, que varrem todas essas superfícies e colorem o que merece atenção. (Nos próximos módulos você vai rodá-los; aqui só precisa saber o que eles fazem.)
+2. **Listar os candidatos** — cada achado que se encaixa numa das quatro classes.
+3. **Priorizar.** Nem todo vetor é igual. Pesa-se três coisas: a **confiabilidade** (um script gravável rodado por `cron` é quase garantido; um kernel exploit pode falhar), o **ruído** (um exploit de kernel pode travar a máquina e acender alarmes) e a **estabilidade** (vou deixar o sistema de pé depois?). Um bom pentester prefere o vetor mais confiável e silencioso primeiro.
+4. **Explorar** — e, de novo, enumerar a partir do novo nível.
+
+<Callout variant="tip" title="A pergunta que organiza tudo">
+Para cada linha de uma enumeração, pergunte: **isto é algo que eu controlo e que algo mais privilegiado usa?** Um arquivo gravável só importa se algo com poder o lê ou executa. Um binário SUID só importa se ele me deixa executar o que eu quero. A escalação vive sempre nesse cruzamento entre "o que eu toco" e "o que tem poder".
+</Callout>
+
+## 4. Casos reais — o que aconteceu no mundo
+
+A escalação de privilégio não é teoria de laboratório: é um elo obrigatório de quase toda intrusão séria. Três casos verificados, um por superfície.
+
+### Dirty COW — o kernel que todos tinham (2016)
+
+A **CVE-2016-5195**, apelidada de **Dirty COW**, foi uma <GlossaryTerm term="race condition">race condition</GlossaryTerm> (condição de corrida) no arquivo `mm/gup.c` do kernel do Linux, no tratamento do mecanismo de *copy-on-write* (COW). Explorando a corrida, um usuário **local** comum conseguia escrever em uma área de memória que era só de leitura — e, com isso, alterar arquivos de root e virar root. A falha atingia os kernels Linux da série 2.x até a 4.x anteriores à **4.8.3**: ou seja, praticamente toda máquina Linux em produção na época, incluindo Android. Reportada por Phil Oester, foi publicada em **10 de novembro de 2016** e, segundo o próprio registro da CVE, já estava sendo **explorada ativamente** em outubro de 2016.
+
+- **Impacto:** <GlossaryTerm term="local privilege escalation">escalação local</GlossaryTerm> confiável para root em quase todo o parque Linux instalado; a correção exigia atualizar o kernel (4.8.3+) e reiniciar.
+- **Lição:** o <GlossaryTerm term="kernel exploit">kernel exploit</GlossaryTerm> é o último recurso e o mais poderoso — quando o kernel está velho, nenhuma configuração de menor privilégio no espaço do usuário segura a escalação. Manter o kernel atualizado é uma defesa de base.
+- **Fonte:** [Registro CVE-2016-5195 (MITRE)](https://www.cve.org/CVERecord?id=CVE-2016-5195).
+
+### Baron Samedit — o próprio sudo com o bug (2021)
+
+Se o `sudo` é a ferramenta que dá poder pontual com segurança, o que acontece quando o bug está nele mesmo? Em **26 de janeiro de 2021**, a Qualys divulgou a **CVE-2021-3156**, apelidada de **Baron Samedit**: um *off-by-one* que levava a um *heap buffer overflow* no `sudo` e permitia a qualquer usuário local virar root — mesmo sem estar no `sudoers` — por meio de `sudoedit -s` e um argumento terminado em uma única barra invertida. Atingia as versões **1.7.7 a 1.7.10p9, 1.8.2 a 1.8.31p2 e 1.9.0 a 1.9.5p1**, corrigidas na **1.8.32** e na **1.9.5p2**. A falha vivia no código do sudo havia quase dez anos.
+
+- **Impacto:** root local garantido em quase toda instalação Linux/Unix padrão, já que o `sudo` vem em praticamente todas e a condição independia de o usuário ter permissão de sudo.
+- **Lição:** um binário SUID root é confiável só enquanto o código dele é — a superfície "SUID" inclui os próprios programas que confiamos. Atualizar o pacote (`apt upgrade`) foi a correção.
+- **Fonte:** [Aviso de segurança do projeto sudo (Baron Samedit)](https://www.sudo.ws/security/advisories/unescape_overflow/).
+
+### CLFS — o degrau de um ataque de ransomware (2023)
+
+A **CVE-2023-28252** foi uma falha de *elevation of privilege* no driver **CLFS** (Common Log File System) do Windows — um *heap buffer overflow* (CWE-122) com nota CVSS **7.8**. Manipulando um arquivo de log (`.BLF`), um atacante que já tinha um acesso de baixo privilégio virava SYSTEM. O que a torna didática é o contexto: ela foi descoberta pela equipe GReAT da Kaspersky sendo usada como **zero-day** (falha ainda sem correção) em ataques reais, para elevar privilégio e então implantar o **ransomware Nokoyawa** em pequenas e médias empresas no Oriente Médio, na América do Norte e na Ásia. A Microsoft a corrigiu no Patch Tuesday de **11 de abril de 2023**, e a CISA a incluiu no catálogo de vulnerabilidades exploradas ativamente (KEV).
+
+- **Impacto:** o elo que transformava um acesso inicial num comprometimento total da máquina, que então era criptografada pelo ransomware — a escalação como etapa necessária do ataque, não como curiosidade.
+- **Lição:** no mundo real, a escalação quase nunca é o fim: é o meio. Entre "entrei" e "fiz o estrago" há sempre um "virei SYSTEM/root". Cortar esse elo (patch, menor privilégio, detecção) quebra a cadeia inteira.
+- **Fonte:** [Registro CVE-2023-28252 (MITRE)](https://www.cve.org/CVERecord?id=CVE-2023-28252) e [análise da Kaspersky (Nokoyawa)](https://www.kaspersky.com/about/press-releases/2023_zero-day-in-microsoft-windows-used-in-nokoyawa-ransomware-attacks).
+
+## 5. Mãos à obra — enxergando as superfícies
+
+Este módulo não tem lab próprio: ele é conceitual, e a prática roda no **seu próprio WSL**, contra arquivos de treino que você mesmo gera. Você não vai *explorar* nada aqui (isso é dos próximos módulos) — vai treinar o olho que separa um vetor real de um ruído, que é a habilidade que faz toda a diferença depois.
+
+**Objetivo:** ao terminar, você terá (1) visto, na sua máquina, o modelo de privilégio do Linux funcionando de verdade; (2) feito a triagem de uma enumeração Linux, achando o único vetor real no meio de distrações; e (3) feito o mesmo com uma enumeração Windows, identificando o caminho até SYSTEM. Três flags, uma por missão.
+
+### 5.1 Preparar o terreno (passo a passo)
+
+Abra o seu terminal do Ubuntu (WSL) e crie a pasta de treino com os dois arquivos de enumeração que as missões 2 e 3 usam. Cole o bloco inteiro de uma vez — ele gera exatamente o mesmo conteúdo para todo mundo:
+
+```bash
+mkdir -p /tmp/privesc-6.1 && cd /tmp/privesc-6.1
+
+cat > linux-enum.txt <<'EOF'
+### Enumeração do alvo web-01 (192.168.0.10) — coletada como www-data
+### (saída resumida de um script estilo linpeas; cenário de treino)
+
+== id ==
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+== sudo -l ==
+Matching Defaults entries for www-data on web-01:
+    env_reset, mail_badpass, secure_path=/usr/sbin:/usr/bin:/sbin:/bin
+
+User www-data may run the following commands on web-01:
+    (root) NOPASSWD: /usr/bin/id
+
+== SUID (find / -perm -4000 -type f 2>/dev/null) ==
+-rwsr-xr-x 1 root root   72504 /usr/bin/passwd
+-rwsr-xr-x 1 root root   55528 /usr/bin/mount
+-rwsr-xr-x 1 root root   44784 /usr/bin/chsh
+-rwsr-xr-x 1 root root  166056 /usr/bin/sudo
+-rwsr-xr-x 1 root root   40152 /usr/bin/su
+
+== Arquivos graváveis pelo nosso usuário (www-data) ==
+-rw-rw-rw- 1 root     root       612 /var/www/html/config.php
+-rwxrwxrwx 1 root     root       148 /opt/scripts/backup.sh
+
+== Tarefas agendadas (/etc/crontab, /etc/cron.d/*) ==
+# m h dom mon dow user  command
+*/1 *  *   *   *   root  /opt/scripts/backup.sh
+17  *  *   *   *   root  cd / && run-parts --report /etc/cron.hourly
+EOF
+
+cat > windows-enum.txt <<'EOF'
+### Enumeração do alvo WIN-APP01 — coletada como a conta de serviço svc_web
+### (cenário de treino; saída resumida)
+
+== whoami ==
+win-app01\svc_web
+
+== whoami /priv ==
+Privilege Name                Description                               State
+============================= ========================================= ========
+SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled
+SeCreateGlobalPrivilege       Create global objects                     Enabled
+
+== whoami /groups (trecho) ==
+BUILTIN\Users                 Alias            S-1-5-32-545
+NT AUTHORITY\SERVICE          Well-known group S-1-5-6
+Mandatory Label\High Mandatory Level  Label    S-1-16-12288
+
+== sc.exe qc UpdaterSvc ==
+SERVICE_NAME: UpdaterSvc
+        TYPE               : 10  WIN32_OWN_PROCESS
+        START_TYPE         : 2   AUTO_START
+        BINARY_PATH_NAME   : C:\Program Files\Updater\updater.exe
+        SERVICE_START_NAME : LocalSystem
+
+== icacls "C:\Program Files\Updater" ==
+C:\Program Files\Updater BUILTIN\Users:(OI)(CI)(F)
+                         NT AUTHORITY\SYSTEM:(OI)(CI)(F)
+                         BUILTIN\Administrators:(OI)(CI)(F)
+EOF
+
+ls -l
+```
+
+Você deve ver os dois arquivos, `linux-enum.txt` e `windows-enum.txt`. Pronto.
+
+### 5.2 Missão 1 — O modelo de privilégio no seu WSL (guiada)
+
+Antes de olhar máquina de outro, veja a sua. Vamos tocar no modelo de privilégio do Linux com as próprias mãos. Rode, um a um:
+
+```console
+$ id
+uid=1000(voce) gid=1000(voce) groups=1000(voce),27(sudo),...
+$ grep '^root:' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+```
+
+Repare no `0:0`: o `root` é o uid 0. É o número, não o nome, que dá o poder. Agora veja um binário SUID de verdade e o que o `s` significa:
+
+```console
+$ ls -l /usr/bin/passwd
+-rwsr-xr-x 1 root root 93640 ... /usr/bin/passwd
+$ getcap /usr/bin/ping
+/usr/bin/ping cap_net_raw=ep
+```
+
+Aquele `s` no lugar do `x` do dono é o SUID: o `passwd`, rodado por você, trabalha com o poder do root. E o `ping` mostra o outro modelo: nas distribuições modernas ele não é mais SUID root — ganhou só a capability `cap_net_raw`, o pedaço de poder de que precisa.
+
+Agora crie o seu próprio arquivo SUID de teste e observe o bit:
+
+```console
+$ cp /bin/true /tmp/privesc-6.1/suid-demo
+$ chmod 4755 /tmp/privesc-6.1/suid-demo
+$ ls -l /tmp/privesc-6.1/suid-demo
+-rwsr-xr-x 1 voce voce ... /tmp/privesc-6.1/suid-demo
+$ find /tmp/privesc-6.1 -perm -4000 -type f
+/tmp/privesc-6.1/suid-demo
+```
+
+Você acabou de fazer o que o pentester faz primeiro: marcar o SUID (`chmod 4755`) e **encontrá-lo** com `find -perm -4000`. Observe que o `4` na frente do `755` é justamente o bit SUID.
+
+A flag da Missão 1 junta três coisas que você acabou de ver: o **modo em octal** que você deu ao `suid-demo`, a **letra** que apareceu no lugar do `x` do dono no `ls -l`, e o **nome** do programa SUID root que troca a senha de um usuário comum. Monte `FLAG{octal-letra-programa}`.
+
+<FlagInput task="missao-1-modelo-no-wsl" />
+
+### 5.3 Missão 2 — Triagem de uma enumeração Linux (desafio)
+
+Abra o `linux-enum.txt` que você gerou:
+
+```console
+$ cat /tmp/privesc-6.1/linux-enum.txt
+```
+
+Você é o `www-data` do host `web-01`. A enumeração tem quatro achados que *parecem* promissores. Seu trabalho é dizer qual é o **vetor de escalação real** — e, de quebra, perceber por que os outros três não levam a nada. Lembre da pergunta da seção 3.3: *o que eu controlo e que algo mais privilegiado usa?*
+
+<Hint title="Dica 1 — elimine os ruídos">
+- O `sudo -l` deixa você rodar `/usr/bin/id` como root. `id` roda como root, sim — mas só imprime a identidade e sai. Ele te dá um shell? (Pense no caso do `find` da seção 3.1.)
+- A lista de SUID só tem os suspeitos de sempre (`passwd`, `mount`, `chsh`, `sudo`, `su`). Nada de `find`, `vim`, `python`. Vetor?
+- O `config.php` é gravável por você (`rw-rw-rw-`). Mas quem, com poder, **executa** um `config.php`? Ele é lido pelo PHP como dado, não rodado como root.
+</Hint>
+
+<Hint title="Dica 2 — ache o cruzamento">
+Olhe ao mesmo tempo a lista de **arquivos graváveis** e a lista de **tarefas agendadas**. Existe um arquivo que aparece nas duas? Um que **você** pode editar e que o **root** executa sozinho, de tempos em tempos?
+</Hint>
+
+<Solution title="Solução">
+O vetor é o `/opt/scripts/backup.sh`. Ele aparece no cruzamento das duas listas:
+
+- em **Arquivos graváveis**, está como `-rwxrwxrwx` — ou seja, modo **777**, qualquer um pode reescrevê-lo;
+- em **Tarefas agendadas**, o `cron` o executa **como root**, a cada minuto (`*/1`).
+
+Então: você reescreve o `backup.sh` com o que quiser, espera no máximo um minuto, e o root roda o seu código. É o vetor "cron + script gravável", um dos mais confiáveis que existem. Os outros três são ruído: `sudo id` não dá shell, o SUID é todo padrão, e ninguém privilegiado executa o `config.php`.
+
+A flag junta, nessa ordem, o **basename** do script (o `backup.sh`), o **usuário** que o executa (visto na linha do `cron`) e o **octal** do `-rwxrwxrwx` que o torna gravável por todos. Monte-a você mesmo no formato `FLAG{script-usuario-octal}` que o cartão pede.
+</Solution>
+
+<FlagInput task="missao-2-triagem-linux" />
+
+### 5.4 Missão 3 — Triagem de um token no Windows (desafio)
+
+Agora o `windows-enum.txt`. Você caiu na conta de serviço `svc_web` do host `WIN-APP01` e quer chegar a SYSTEM.
+
+```console
+$ cat /tmp/privesc-6.1/windows-enum.txt
+```
+
+Há **dois** caminhos independentes até SYSTEM escondidos nessa saída. Ache os dois.
+
+<Hint title="Dica 1 — o token">
+Releia o `whoami /priv`. Um dos privilégios habilitados é a chave-mestra das contas de serviço — o que a seção 2.3 ligou à família Potato. Qual é o nome exato dele (com as maiúsculas)?
+</Hint>
+
+<Hint title="Dica 2 — o serviço">
+Cruze o `sc.exe qc` com o `icacls`. O serviço roda como quem (`SERVICE_START_NAME`)? E a pasta do binário dele — quem tem `(F)`, controle total, sobre ela? Se o grupo `Users` pode escrever na pasta do `.exe` que roda como SYSTEM, você troca o `.exe`.
+</Hint>
+
+<Solution title="Solução">
+Os dois caminhos:
+
+1. **Token:** o `whoami /priv` mostra `SeImpersonatePrivilege` com `State: Enabled`. Com um ataque da família Potato, a conta de serviço impersona o token do SYSTEM e vira SYSTEM.
+2. **Serviço gravável:** o `UpdaterSvc` roda como `LocalSystem` (no `sc.exe qc`), e o `icacls` mostra `BUILTIN\Users:(OI)(CI)(F)` na pasta `C:\Program Files\Updater` — ou seja, você pode sobrescrever o `updater.exe`. No próximo start do serviço, o seu executável roda como SYSTEM.
+
+A flag junta o **privilégio** do caminho 1 (o nome exato, com as maiúsculas, que aparece no `whoami /priv`) e o **nome do serviço** vulnerável do caminho 2 (o do `sc.exe qc`). Monte-a no formato `FLAG{privilegio-servico}` que o cartão pede.
+</Solution>
+
+<FlagInput task="missao-3-triagem-windows" />
+
+### 5.5 Limpar
+
+As missões não mexeram em nada do seu sistema, só criaram arquivos de treino em `/tmp`. Para apagar:
+
+```console
+$ rm -rf /tmp/privesc-6.1
+```
+
+## 6. Variações e aprofundamento
+
+**Vertical e horizontal, de novo e mais fundo.** A horizontal é fácil de subestimar. Virar outro usuário do mesmo nível raramente parece "escalação", mas em uma rede corporativa é ela que move o ataque: de um usuário qualquer para o usuário que tem acesso ao servidor de arquivos, dele para o que administra o backup, e assim por diante. Em Active Directory (Trilha 7), quase tudo é escalação horizontal encadeada até cair numa conta que, por acaso, é administradora do domínio. A fronteira entre horizontal e vertical é mais borrada do que parece.
+
+**Contêiner não é host.** Com a popularização do Docker, um engano virou epidemia: achar que ser <GlossaryTerm term="root">root</GlossaryTerm> dentro de um <GlossaryTerm term="container">contêiner</GlossaryTerm> é ter o host. Não é. O contêiner isola o processo em <GlossaryTerm term="namespace">namespaces</GlossaryTerm> próprios; root ali é root naquele mundo, não na máquina. Escapar para o host é outra escalação, que depende de uma brecha: o contêiner rodar como `privileged`, montar o `docker.sock` (justamente a regra de isolamento inegociável que o CLAUDE.md deste projeto proíbe), receber capabilities a mais, ou um bug no kernel compartilhado. Reconhecer essa fronteira muda o que você tenta a seguir.
+
+**As camadas que atrapalham a escalação.** Linux e Windows têm defesas que não impedem a escalação, mas a dificultam: no Linux, o **SELinux** e o **AppArmor** confinam o que cada processo pode fazer mesmo sendo root, e o **seccomp** corta chamadas de sistema; no Windows, o **integrity level** e o **UAC**. Um vetor que funcionaria "no papel" pode esbarrar nelas — e um bom pentester nota a camada antes de perder uma hora.
+
+**Living off the land.** Quando dá, o atacante prefere não trazer ferramenta nenhuma: usa o que já está na máquina. No Windows, os binários legítimos que podem ser subvertidos estão catalogados no **LOLBAS**; no Linux, os SUID/sudo exploráveis, no GTFOBins. Essa escolha — o <GlossaryTerm term="living off the land">living off the land</GlossaryTerm> — é mais silenciosa e é o padrão em operações maduras.
+
+**Kernel vs. espaço do usuário.** O kernel exploit (Dirty COW) é o martelo: funciona quando tudo mais falha, mas é arriscado (pode travar a máquina) e barulhento. A escalação por configuração (o `backup.sh` da Missão 2) é o bisturi: silenciosa, estável, confiável. A experiência está em preferir o bisturi e guardar o martelo.
+
+## 7. Erros comuns
+
+- **"Roda como root, então me dá root."** Não. O que importa é se o programa te deixa **executar algo seu** como root (o `find -exec` dá; o `id` não). Confundir "privilegiado" com "explorável" faz perder horas num beco.
+- **"Sou root no contêiner, ganhei a máquina."** Já visto na seção 6: root no contêiner ≠ root no host. Cheque a fronteira antes de comemorar.
+- **Pular direto para o kernel exploit.** O iniciante baixa um exploit de kernel e roda de cara. Ele pode travar a máquina (péssimo num teste autorizado) e acender todo alarme. Esgote primeiro os vetores de configuração, mais confiáveis e silenciosos.
+- **Enumerar demais e ler de menos.** Rodar o linpeas e olhar só o que está em vermelho. Metade dos vetores reais está no cruzamento de duas seções (um arquivo gravável **e** uma tarefa que o executa) — e nenhum script pinta esse cruzamento para você.
+- **No Windows, confundir Administrador com SYSTEM.** Chegar a administrador não é o fim: com o UAC, o seu token ainda é filtrado, e há coisas que só o SYSTEM faz. O objetivo costuma ser SYSTEM.
+- **"Não achei nada, a máquina é segura."** Quase sempre quer dizer "não enumerei direito". Faltou olhar os timers do systemd, as capabilities, o histórico de comandos, as variáveis de ambiente de um processo privilegiado.
+
+## 8. Boas práticas e segurança
+
+A escalação é a etapa que transforma um incidente pequeno (um RCE numa conta de serviço) num desastre (controle total). Cortá-la é das defesas de maior retorno — e quase tudo se resume a aplicar o menor privilégio de verdade.
+
+**No Linux:**
+
+- **Rode serviços com contas dedicadas e sem privilégio.** Um RCE que cai como `www-data` em vez de `root` já é meia batalha ganha. Foi o que segurou o ataque do 5.6 no `daemon`.
+- **Reduza o conjunto SUID.** Liste o que é SUID (`find / -perm -4000`) e tire o bit do que não precisa (`chmod u-s`). Prefira capabilities a SUID root quando possível.
+- **Trave o `sudoers`.** Nada de `NOPASSWD` para comandos que abrem shell, editor ou pager. Dê o comando mais específico possível, nunca `ALL`.
+- **Endureça os serviços com o systemd.** Opções como `NoNewPrivileges=yes` (impede o processo e os filhos de ganharem privilégio, inclusive via SUID), `ProtectSystem=strict` e `PrivateTmp=yes` fecham superfícies inteiras de uma vez.
+- **Mantenha o kernel e os pacotes atualizados.** `apt upgrade` é o que fecha o Dirty COW e o Baron Samedit. Um kernel velho anula todo o resto.
+
+**No Windows:**
+
+- **Corrija as permissões de serviços.** Nenhum serviço que roda como SYSTEM deve ter o `.exe` ou a pasta graváveis por `Users`. Ponha aspas nos caminhos (acaba o `unquoted service path`).
+- **Rode serviços como contas virtuais ou gMSA**, não como `LocalSystem`, quando o serviço não precisar desse poder.
+- **Tire privilégios de token perigosos** (`SeImpersonate`, `SeDebug`) das contas que não precisam deles, e deixe o **UAC** no nível mais alto.
+- **Desligue o `AlwaysInstallElevated`** (ele quase nunca deveria estar ligado) e use o **LAPS** para que cada máquina tenha uma senha de administrador local única.
+- **Mantenha o patch em dia.** A CLFS de 2023 fechou no Patch Tuesday; máquinas atrasadas é que viraram ransomware.
+
+**Nos dois — detecção.** Menor privilégio reduz a superfície; a detecção pega quem passou mesmo assim. No Linux, o **auditd** pode registrar execução de binários SUID e mudanças em `/etc/sudoers`. No Windows, o **Sysmon** registra criação de processos, e vale alertar quando um processo de integridade Alta/Sistema nasce de um pai de baixo privilégio, ou quando o binário de um serviço muda. A escalação costuma deixar esse rastro — um processo "pulando" de nível — e é nele que o <GlossaryTerm term="blue team">blue team</GlossaryTerm> mira.
+
+<Callout variant="info" title="A assimetria que favorece o defensor">
+O atacante precisa de **uma** superfície aberta para escalar; o defensor que fecha o `sudoers`, tira o SUID a mais, atualiza o kernel, corrige as ACLs dos serviços e liga a detecção força o atacante a acertar todas. É a mesma lógica de defesa em profundidade do 5.6: várias camadas imperfeitas valem mais que uma perfeita, porque o atacante tem de vencer todas e o defensor só precisa de uma que segure.
+</Callout>
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e, para fixar, encare também os dois cenários logo depois.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar (sem flag)
+
+1. **O arquivo `.bash_history` de um usuário mostra a linha `mysql -u root -pSenhaForte123`.** Em qual das quatro classes de escalação (seção 2.4) isso se encaixa? Por que uma senha num histórico é um vetor tão comum, e o que o dono deveria ter feito diferente?
+
+2. **Você está num contêiner Docker, é root lá dentro, e descobre que o `/var/run/docker.sock` do host está montado dentro dele.** Por que isso transforma "root no contêiner" em "root no host"? (Pense no que quem fala com o `docker.sock` pode mandar o Docker fazer.) E por que o CLAUDE.md deste projeto proíbe, de forma inegociável, montar o `docker.sock` num contêiner de lab?
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Escalação de privilégio é o elo entre o acesso inicial (foothold) e a pós-exploração: sair de uma conta de baixo privilégio e chegar a root (Linux) ou SYSTEM (Windows). Pode ser **vertical** (mais poder) ou **horizontal** (outra conta de mesmo nível).
+- Os dois sistemas respondem à mesma pergunta — dar o poder mínimo necessário — com peças diferentes: no Linux, uid/root, SUID/SGID, sudo e capabilities; no Windows, SID, UAC, tokens/privilégios e integridade.
+- Toda escalação é a exploração de uma violação do menor privilégio, em uma de quatro classes: **má configuração, software vulnerável, credenciais ou abuso de recurso legítimo**.
+- O vetor real vive no cruzamento entre **o que você controla** e **o que tem poder**. A prática é enumerar, listar candidatos, priorizar (confiabilidade, ruído, estabilidade) e explorar.
+- A defesa é o menor privilégio aplicado de verdade (contas de serviço sem poder, SUID enxuto, sudoers travado, serviços endurecidos, patch em dia) somado à detecção do "pulo" de nível.
+
+### Cola rápida
+
+```text
+# Linux — enumeração de superfícies
+id ; sudo -l                          # quem sou eu; o que posso como root
+find / -perm -4000 -type f 2>/dev/null # binários SUID
+getcap -r / 2>/dev/null                # capabilities
+cat /etc/crontab ; ls -la /etc/cron.*  # tarefas agendadas
+# cruze: arquivos graváveis  x  algo privilegiado que os usa
+
+# Windows — enumeração de superfícies
+whoami /priv                           # privilégios de token
+whoami /groups                         # grupos e integridade
+sc.exe qc <servico>                    # conta e caminho do binário
+icacls "<pasta do binario>"            # quem pode escrever ali
+```
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [GTFOBins](https://gtfobins.github.io/) — catálogo de binários Unix que viram escalação quando SUID ou via sudo. A referência para a Missão 2 e para 6.3.
+- [LOLBAS](https://lolbas-project.github.io/) — o equivalente para binários legítimos do Windows. Referência para o living off the land.
+- [`capabilities(7)` — man pages do Linux](https://man7.org/linux/man-pages/man7/capabilities.7.html) — a lista completa das Linux capabilities e o que cada uma permite.
+- [Access tokens — Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/secauthz/access-tokens) — a documentação oficial de como o Windows monta e usa os tokens de acesso.
+- [PEASS-ng (linpeas e winpeas)](https://github.com/peass-ng/PEASS-ng) — os enumeradores que você vai rodar nos próximos módulos.
