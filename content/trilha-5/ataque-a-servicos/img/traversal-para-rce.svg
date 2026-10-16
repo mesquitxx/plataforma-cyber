@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t2 d2">
+  <title id="t2">Como a requisição vira execução de comando no Apache 2.4.49</title>
+  <desc id="d2">À esquerda, o Kali envia com o curl um POST usando --path-as-is para a URL http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh, com o comando no corpo. À direita, uma caixa representa o Apache 2.4.49 com três passos internos empilhados: primeiro ele casa o prefixo /cgi-bin/, que é um ScriptAlias e portanto será executado; segundo, ele normaliza a sequência %2e para ponto só depois de ter checado o caminho, então o ../ escapa da pasta pública; terceiro, o caminho alcança /bin/sh e o mod_cgid executa o corpo da requisição como um script CGI. Uma seta de volta ao Kali mostra a saída do comando, que roda como o usuário daemon. Um rótulo diz que esta é a visão caixa-preta e que os bytes do bug são detalhados no módulo 5.4.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; }
+    .step { font-size: 11.5px; }
+    .mono { font-size: 11px; fill: #5cc8d8; }
+    .sub { font-size: 10.5px; fill: #9fb0a6; }
+    .n { font-size: 12px; font-weight: 700; fill: #5ee08a; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .boxk { fill: #16201b; stroke: #5cc8d8; stroke-width: 2; }
+    .inner { fill: #141a17; stroke: #3a4a42; stroke-width: 1.2; }
+    .flow { stroke: #5cc8d8; stroke-width: 2.5; fill: none; marker-end: url(#ac2); }
+    .back { stroke: #5ee08a; stroke-width: 2.5; fill: none; marker-end: url(#ag2); stroke-dasharray: 6 4; }
+  </style>
+  <defs>
+    <marker id="ac2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+    <marker id="ag2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="900" height="400" fill="#121815"/>
+  <text class="t" x="30" y="34">Como a requisição vira execução de comando (visão caixa-preta)</text>
+
+  <!-- Kali -->
+  <rect class="boxk" x="24" y="120" width="214" height="150" rx="8"/>
+  <text class="h" x="131" y="148" text-anchor="middle">Kali — curl</text>
+  <text class="step" x="40" y="174">POST, corpo = comando</text>
+  <text class="mono" x="40" y="196">/cgi-bin/</text>
+  <text class="mono" x="40" y="214">.%2e/%2e%2e/%2e%2e/</text>
+  <text class="mono" x="40" y="232">%2e%2e/bin/sh</text>
+  <text class="sub" x="40" y="256">--path-as-is (não normaliza)</text>
+
+  <!-- Apache -->
+  <rect class="box" x="330" y="70" width="430" height="250" rx="8"/>
+  <text class="h" x="545" y="98" text-anchor="middle">Apache httpd 2.4.49</text>
+
+  <rect class="inner" x="350" y="112" width="390" height="54" rx="6"/>
+  <text class="step" x="366" y="134">1 · casa o prefixo /cgi-bin/ (ScriptAlias)</text>
+  <text class="sub" x="366" y="152">decide: isto será executado como CGI</text>
+
+  <rect class="inner" x="350" y="176" width="390" height="54" rx="6"/>
+  <text class="step" x="366" y="198">2 · normaliza %2e DEPOIS de checar o caminho</text>
+  <text class="sub" x="366" y="216">o ../ escapa da pasta pública (o bug)</text>
+
+  <rect class="inner" x="350" y="240" width="390" height="54" rx="6"/>
+  <text class="step" x="366" y="262">3 · alcança /bin/sh → mod_cgid EXECUTA</text>
+  <text class="sub" x="366" y="280">o corpo da requisição roda como comando</text>
+
+  <!-- flows -->
+  <path class="flow" d="M238,180 L328,150"/>
+  <path class="back" d="M330,300 C240,320 150,310 131,276"/>
+  <text class="n" x="250" y="352" text-anchor="middle">saída do comando — executado como o usuário daemon</text>
+</svg>

