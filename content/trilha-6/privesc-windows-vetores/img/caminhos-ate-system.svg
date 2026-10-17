@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="t d">
+  <title id="t">As três famílias de vetor de escalação local no Windows convergindo para NT AUTHORITY\SYSTEM</title>
+  <desc id="d">À esquerda, uma caixa representa você: uma conta de serviço de baixo privilégio, por exemplo a conta do pool do IIS, com integridade média e o privilégio SeImpersonatePrivilege ligado. Dela partem três trilhas horizontais, cada uma uma família de vetor. Trilha 1, serviços: você controla a configuração ou o binário de um serviço mal protegido; o poder vem da conta sob a qual o serviço roda, em geral LocalSystem; a ação típica é sc config binPath= apontando para o seu programa, ou plantar um executável num caminho sem aspas. Trilha 2, tokens: você controla um named pipe ou um processo; o poder vem de um privilégio como SeImpersonatePrivilege ou SeDebugPrivilege; a ação típica é o PrintSpoofer, que faz o SYSTEM se conectar ao seu pipe e empresta o token dele. Trilha 3, permissões: você controla um arquivo ou uma chave de registro gravável; o poder vem do que o SYSTEM lê ou executa a partir dali; a ação típica é AlwaysInstallElevated com um MSI, ou ler a base SAM por uma volume shadow copy. As três trilhas convergem para uma caixa destacada em ciano à direita: SYSTEM, a conta mais poderosa da máquina. Abaixo, uma faixa lembra a regra do módulo 6.1: o vetor mora no cruzamento entre o que você controla e o que tem poder.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .vec { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .ctl { font-size: 10px; fill: #9fb0a6; }
+    .act { font-size: 11px; font-weight: 700; fill: #5ee08a; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .you { fill: #16201b; stroke: #9fb0a6; stroke-width: 2; }
+    .sys { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
+    .lbl { font-size: 12.5px; font-weight: 700; }
+    .flow { stroke: #5cc8d8; stroke-width: 2; fill: none; marker-end: url(#ac); }
+    .rule { font-size: 11.5px; fill: #cfe0d6; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="960" height="560" fill="#121815"/>
+  <text class="t" x="30" y="34">Três famílias, um destino: da conta de serviço a SYSTEM</text>
+
+  <!-- you -->
+  <rect class="you" x="30" y="195" width="160" height="120" rx="8"/>
+  <text class="lbl" x="110" y="238" text-anchor="middle">VOCÊ</text>
+  <text class="ctl" x="110" y="258" text-anchor="middle">conta de serviço</text>
+  <text class="ctl" x="110" y="274" text-anchor="middle">(ex.: pool do IIS)</text>
+  <text class="ctl" x="110" y="290" text-anchor="middle">integridade média</text>
+  <text class="ctl" x="110" y="306" text-anchor="middle">SeImpersonate on</text>
+
+  <!-- system -->
+  <rect class="sys" x="788" y="205" width="150" height="100" rx="8"/>
+  <text class="lbl" x="863" y="247" text-anchor="middle" fill="#5cc8d8">SYSTEM</text>
+  <text class="ctl" x="863" y="267" text-anchor="middle">NT AUTHORITY\</text>
+  <text class="ctl" x="863" y="283" text-anchor="middle">SYSTEM</text>
+  <text class="ctl" x="863" y="299" text-anchor="middle">controle total</text>
+
+  <!-- lane 1: servicos -->
+  <rect class="box" x="300" y="70" width="340" height="80" rx="8"/>
+  <text class="vec" x="318" y="94">1 · serviços</text>
+  <text class="ctl" x="318" y="112">controla: a config/o binário do serviço</text>
+  <text class="ctl" x="318" y="127">poder: a conta do serviço (LocalSystem)</text>
+  <text class="act" x="318" y="144">sc config binPath= · unquoted path</text>
+  <path class="flow" d="M190,225 C245,130 255,110 298,110"/>
+  <path class="flow" d="M640,110 C725,110 735,195 786,228"/>
+
+  <!-- lane 2: tokens -->
+  <rect class="box" x="300" y="215" width="340" height="80" rx="8"/>
+  <text class="vec" x="318" y="239">2 · tokens</text>
+  <text class="ctl" x="318" y="257">controla: um named pipe ou processo</text>
+  <text class="ctl" x="318" y="272">poder: SeImpersonate / SeDebug</text>
+  <text class="act" x="318" y="289">PrintSpoofer · roubar o token do SYSTEM</text>
+  <path class="flow" d="M190,255 C250,255 255,255 298,255"/>
+  <path class="flow" d="M640,255 C720,255 725,255 786,255"/>
+
+  <!-- lane 3: permissoes -->
+  <rect class="box" x="300" y="360" width="340" height="80" rx="8"/>
+  <text class="vec" x="318" y="384">3 · permissões</text>
+  <text class="ctl" x="318" y="402">controla: arquivo/registro gravável</text>
+  <text class="ctl" x="318" y="417">poder: o que o SYSTEM lê/executa dali</text>
+  <text class="act" x="318" y="434">AlwaysInstallElevated · SAM via shadow copy</text>
+  <path class="flow" d="M190,285 C250,400 255,400 298,400"/>
+  <path class="flow" d="M640,400 C720,400 730,290 786,282"/>
+
+  <!-- rule -->
+  <rect class="box" x="30" y="500" width="908" height="40" rx="8"/>
+  <text class="rule" x="484" y="525" text-anchor="middle">regra do 6.1: o vetor mora no cruzamento entre o que VOCÊ controla e o que tem PODER</text>
+</svg>
