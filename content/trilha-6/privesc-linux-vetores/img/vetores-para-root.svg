@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="t d">
+  <title id="t">Os quatro vetores de escalação local no Linux convergindo para uid 0</title>
+  <desc id="d">À esquerda, uma caixa representa você: a conta de baixo privilégio app, uid 1000, sem grupos interessantes. Dela partem quatro trilhas horizontais, cada uma um vetor de escalação. Trilha 1, SUID: um binário com o bit setuid de root fora do padrão (por exemplo uma cópia do find); o que você controla é a execução dele, o poder vem do euid 0; a ação é find com -exec barra bin barra sh -p. Trilha 2, sudo: uma regra NOPASSWD que deixa você rodar um programa como root; você controla o argumento, o poder é o root do sudo; a ação é sudo env barra bin barra sh. Trilha 3, cron: um script que o root executa de tempos em tempos e que é gravável por você; você controla o conteúdo do script, o poder é o root que o cron usa; a ação é reescrever o script e esperar. Trilha 4, capabilities: um binário comum, como uma cópia do python, que carrega a capability cap_setuid; você controla o que ele roda, o poder é a capability; a ação é chamar setuid 0. As quatro trilhas convergem para uma caixa destacada em ciano à direita: ROOT, uid 0. Abaixo, uma faixa lembra a regra do módulo 6.1: o vetor mora no cruzamento entre o que você controla e o que tem poder.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .vec { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .ctl { font-size: 10px; fill: #9fb0a6; }
+    .act { font-size: 11px; font-weight: 700; fill: #5ee08a; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .you { fill: #16201b; stroke: #9fb0a6; stroke-width: 2; }
+    .root { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
+    .lbl { font-size: 12.5px; font-weight: 700; }
+    .flow { stroke: #5cc8d8; stroke-width: 2; fill: none; marker-end: url(#ac); }
+    .rule { font-size: 11.5px; fill: #cfe0d6; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="960" height="560" fill="#121815"/>
+  <text class="t" x="30" y="34">Quatro caminhos, um destino: de uid 1000 a uid 0</text>
+
+  <!-- you -->
+  <rect class="you" x="30" y="190" width="150" height="110" rx="8"/>
+  <text class="lbl" x="105" y="235" text-anchor="middle">VOCÊ</text>
+  <text class="ctl" x="105" y="255" text-anchor="middle">app · uid 1000</text>
+  <text class="ctl" x="105" y="271" text-anchor="middle">sem grupos</text>
+  <text class="ctl" x="105" y="287" text-anchor="middle">interessantes</text>
+
+  <!-- root -->
+  <rect class="root" x="782" y="200" width="148" height="90" rx="8"/>
+  <text class="lbl" x="856" y="240" text-anchor="middle" fill="#5cc8d8">ROOT</text>
+  <text class="ctl" x="856" y="260" text-anchor="middle">uid=0</text>
+  <text class="ctl" x="856" y="276" text-anchor="middle">controle total</text>
+
+  <!-- lane 1: SUID -->
+  <rect class="box" x="300" y="60" width="330" height="70" rx="8"/>
+  <text class="vec" x="318" y="84">1 · SUID</text>
+  <text class="ctl" x="318" y="102">controla: executar o binário · poder: euid 0</text>
+  <text class="act" x="318" y="121">find . -exec /bin/sh -p \;</text>
+  <path class="flow" d="M180,215 C240,120 250,95 298,95"/>
+  <path class="flow" d="M630,95 C720,95 730,180 780,222"/>
+
+  <!-- lane 2: sudo -->
+  <rect class="box" x="300" y="145" width="330" height="70" rx="8"/>
+  <text class="vec" x="318" y="169">2 · sudo</text>
+  <text class="ctl" x="318" y="187">controla: o argumento · poder: root do sudo</text>
+  <text class="act" x="318" y="206">sudo env /bin/sh</text>
+  <path class="flow" d="M180,230 C240,190 250,180 298,180"/>
+  <path class="flow" d="M630,180 C710,180 720,215 780,232"/>
+
+  <!-- lane 3: cron -->
+  <rect class="box" x="300" y="300" width="330" height="70" rx="8"/>
+  <text class="vec" x="318" y="324">3 · cron</text>
+  <text class="ctl" x="318" y="342">controla: o conteúdo do script · poder: root do cron</text>
+  <text class="act" x="318" y="361">reescrever o script e esperar</text>
+  <path class="flow" d="M180,265 C240,335 250,335 298,335"/>
+  <path class="flow" d="M630,335 C710,335 720,275 780,258"/>
+
+  <!-- lane 4: capabilities -->
+  <rect class="box" x="300" y="385" width="330" height="70" rx="8"/>
+  <text class="vec" x="318" y="409">4 · capabilities</text>
+  <text class="ctl" x="318" y="427">controla: o que o binário roda · poder: cap_setuid</text>
+  <text class="act" x="318" y="446">python -c 'os.setuid(0)'</text>
+  <path class="flow" d="M180,280 C240,420 250,420 298,420"/>
+  <path class="flow" d="M630,420 C715,420 730,285 780,268"/>
+
+  <!-- rule -->
+  <rect class="box" x="30" y="500" width="900" height="40" rx="8"/>
+  <text class="rule" x="480" y="525" text-anchor="middle">regra do 6.1: o vetor mora no cruzamento entre o que VOCÊ controla e o que tem PODER</text>
+</svg>

