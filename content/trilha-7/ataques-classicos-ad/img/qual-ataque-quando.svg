@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" role="img" aria-labelledby="t d">
+  <title id="t">Árvore de decisão: qual dos três ataques clássicos de Active Directory se aplica a cada achado da enumeração</title>
+  <desc id="d">No topo, uma caixa representa o ponto de partida: um achado da enumeração de domínio feita no módulo 7.2. Dela descem três ramos, um para cada ataque, cada ramo com uma pergunta, o ataque correspondente e o que se obtém. Ramo da esquerda: a pergunta é "tenho só o NT hash de uma conta, sem a senha em claro?"; se sim, o ataque é pass-the-hash, e o resultado é autenticar usando o próprio hash como credencial, sem quebrar nada e sem nunca aprender a senha. Ramo do meio: a pergunta é "é uma conta de usuário com servicePrincipalName preenchido?"; se sim, o ataque é Kerberoasting, e o resultado é pedir o ticket de serviço ao KDC e quebrar offline a senha da conta de serviço. Ramo da direita: a pergunta é "a conta tem o bit DONT_REQ_PREAUTH ligado?"; se sim, o ataque é AS-REP roasting, e o resultado é pedir o AS-REP e quebrar offline a senha do usuário, sem nem precisar de uma credencial inicial. Uma faixa embaixo resume: Kerberoasting e AS-REP roasting recuperam a senha quebrando offline; pass-the-hash dispensa a senha porque o hash já é a credencial.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .q { font-size: 11px; font-weight: 700; fill: #e6ede8; }
+    .ctl { font-size: 10px; fill: #9fb0a6; }
+    .res { font-size: 10px; fill: #cfe0d6; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .root { fill: #16201b; stroke: #9fb0a6; stroke-width: 2; }
+    .atk { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2.5; }
+    .atktx { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .flow { stroke: #9fb0a6; stroke-width: 2; fill: none; marker-end: url(#ac); }
+    .rule { font-size: 11.5px; fill: #cfe0d6; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="960" height="520" fill="#121815"/>
+  <text class="t" x="30" y="34">Qual ataque quando: do achado da enumeração ao ataque certo</text>
+
+  <!-- root -->
+  <rect class="root" x="360" y="56" width="240" height="46" rx="8"/>
+  <text class="q" x="480" y="78" text-anchor="middle">achado da enumeração (7.2)</text>
+  <text class="ctl" x="480" y="94" text-anchor="middle">uma conta e seus atributos</text>
+
+  <!-- branch connectors -->
+  <path class="flow" d="M400,102 C300,120 160,120 160,150"/>
+  <path class="flow" d="M480,102 L480,150"/>
+  <path class="flow" d="M560,102 C660,120 800,120 800,150"/>
+
+  <!-- COL A: pass-the-hash -->
+  <rect class="box" x="24" y="152" width="272" height="66" rx="8"/>
+  <text class="q" x="40" y="176">tenho só o NT hash</text>
+  <text class="q" x="40" y="192">da conta?</text>
+  <text class="ctl" x="40" y="209">(dumpado do SAM/LSASS, não a senha)</text>
+  <path class="flow" d="M160,218 L160,252"/>
+  <rect class="atk" x="24" y="254" width="272" height="44" rx="8"/>
+  <text class="atktx" x="160" y="281" text-anchor="middle">pass-the-hash</text>
+  <path class="flow" d="M160,298 L160,332"/>
+  <rect class="box" x="24" y="334" width="272" height="78" rx="8"/>
+  <text class="res" x="40" y="356">autentica usando o hash</text>
+  <text class="res" x="40" y="372">como se fosse a senha —</text>
+  <text class="res" x="40" y="388">não quebra nada, nunca</text>
+  <text class="res" x="40" y="404">aprende a senha em claro</text>
+
+  <!-- COL B: Kerberoasting -->
+  <rect class="box" x="344" y="152" width="272" height="66" rx="8"/>
+  <text class="q" x="360" y="176">conta de usuário</text>
+  <text class="q" x="360" y="192">com SPN?</text>
+  <text class="ctl" x="360" y="209">(servicePrincipalName povoado)</text>
+  <path class="flow" d="M480,218 L480,252"/>
+  <rect class="atk" x="344" y="254" width="272" height="44" rx="8"/>
+  <text class="atktx" x="480" y="281" text-anchor="middle">Kerberoasting</text>
+  <path class="flow" d="M480,298 L480,332"/>
+  <rect class="box" x="344" y="334" width="272" height="78" rx="8"/>
+  <text class="res" x="360" y="356">pede o TGS-REP ao KDC e</text>
+  <text class="res" x="360" y="372">quebra offline a senha da</text>
+  <text class="res" x="360" y="388">service account que cifra</text>
+  <text class="res" x="360" y="404">o ticket</text>
+
+  <!-- COL C: AS-REP roasting -->
+  <rect class="box" x="664" y="152" width="272" height="66" rx="8"/>
+  <text class="q" x="680" y="176">conta com</text>
+  <text class="q" x="680" y="192">DONT_REQ_PREAUTH?</text>
+  <text class="ctl" x="680" y="209">(bit 0x400000 no userAccountControl)</text>
+  <path class="flow" d="M800,218 L800,252"/>
+  <rect class="atk" x="664" y="254" width="272" height="44" rx="8"/>
+  <text class="atktx" x="800" y="281" text-anchor="middle">AS-REP roasting</text>
+  <path class="flow" d="M800,298 L800,332"/>
+  <rect class="box" x="664" y="334" width="272" height="78" rx="8"/>
+  <text class="res" x="680" y="356">pede o AS-REP e quebra</text>
+  <text class="res" x="680" y="372">offline a senha do usuário —</text>
+  <text class="res" x="680" y="388">nem precisa de uma</text>
+  <text class="res" x="680" y="404">credencial inicial</text>
+
+  <!-- rule -->
+  <rect class="box" x="24" y="452" width="912" height="44" rx="8"/>
+  <text class="rule" x="480" y="479" text-anchor="middle">roasting recupera a senha quebrando offline; pass-the-hash dispensa a senha — o hash já é a credencial</text>
+</svg>
