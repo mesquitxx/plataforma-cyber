@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 470" role="img" aria-labelledby="t3 d3">
+  <title id="t3">Mapa das famílias de persistência: gatilho, onde vive e como detectar</title>
+  <desc id="d3">Uma tabela de seis famílias de persistência. Cada linha traz o gatilho que dispara o payload, onde o mecanismo vive e como o defensor o detecta. Linux: cron, com gatilho de tempo (timer), vivendo em /etc/cron.d e crontab, detectado por listar essas entradas; serviço systemd, com gatilho de boot, vivendo em arquivos .service, detectado listando as unidades habilitadas e lendo o ExecStart; chave SSH, com gatilho de login remoto, vivendo em ~/.ssh/authorized_keys, detectada comparando as chaves com uma baseline. Windows: scheduled task, gatilho de agenda ou logon, vivendo em C:\Windows\System32\Tasks, detectada por schtasks e Autoruns; Run key, gatilho de logon, vivendo no registro em HKCU ou HKLM Run, detectada por Autoruns; WMI event subscription, gatilho de evento do sistema, vivendo no repositório WMI (fileless), detectada consultando __EventFilter e os consumidores. O modelo comum de todas: gatilho vezes payload vezes privilégio.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .sys { font-size: 12px; font-weight: 700; fill: #5cc8d8; }
+    .hd { font-size: 11px; font-weight: 700; fill: #9fb0a6; }
+    .fam { font-size: 12px; font-weight: 700; }
+    .cell { font-size: 10.5px; fill: #cfe0d6; }
+    .row { fill: #16201b; stroke: #2c3a33; stroke-width: 1; }
+    .rowalt { fill: #141d18; stroke: #2c3a33; stroke-width: 1; }
+    .note { font-size: 11px; fill: #9fb0a6; }
+  </style>
+  <rect width="980" height="470" fill="#121815"/>
+  <text class="t" x="30" y="32">Famílias de persistência = gatilho × payload × privilégio</text>
+
+  <!-- column headers -->
+  <text class="hd" x="196" y="72">GATILHO</text>
+  <text class="hd" x="398" y="72">ONDE VIVE</text>
+  <text class="hd" x="648" y="72">COMO DETECTAR</text>
+
+  <!-- LINUX -->
+  <text class="sys" x="30" y="104">LINUX</text>
+  <rect class="row" x="150" y="88" width="800" height="34"/>
+  <text class="fam" x="40" y="110">cron</text>
+  <text class="cell" x="196" y="110">tempo (timer)</text>
+  <text class="cell" x="398" y="110">/etc/cron.d, crontab -l</text>
+  <text class="cell" x="648" y="110">listar cron.d e crontab de cada conta</text>
+
+  <rect class="rowalt" x="150" y="122" width="800" height="34"/>
+  <text class="fam" x="40" y="144">systemd service</text>
+  <text class="cell" x="196" y="144">boot</text>
+  <text class="cell" x="398" y="144">/etc/systemd/system/*.service</text>
+  <text class="cell" x="648" y="144">unit-files habilitados + ler o ExecStart</text>
+
+  <rect class="row" x="150" y="156" width="800" height="34"/>
+  <text class="fam" x="40" y="178">SSH key</text>
+  <text class="cell" x="196" y="178">login remoto</text>
+  <text class="cell" x="398" y="178">~/.ssh/authorized_keys</text>
+  <text class="cell" x="648" y="178">comparar chaves com uma baseline</text>
+
+  <!-- WINDOWS -->
+  <text class="sys" x="30" y="226">WINDOWS</text>
+  <rect class="rowalt" x="150" y="210" width="800" height="34"/>
+  <text class="fam" x="40" y="232">scheduled task</text>
+  <text class="cell" x="196" y="232">agenda / logon</text>
+  <text class="cell" x="398" y="232">C:\Windows\System32\Tasks</text>
+  <text class="cell" x="648" y="232">schtasks /query, Autoruns</text>
+
+  <rect class="row" x="150" y="244" width="800" height="34"/>
+  <text class="fam" x="40" y="266">Run key</text>
+  <text class="cell" x="196" y="266">logon</text>
+  <text class="cell" x="398" y="266">registro: HKCU/HKLM ...\Run</text>
+  <text class="cell" x="648" y="266">Autoruns, reg query</text>
+
+  <rect class="rowalt" x="150" y="278" width="800" height="34"/>
+  <text class="fam" x="40" y="300">WMI subscription</text>
+  <text class="cell" x="196" y="300">evento do sistema</text>
+  <text class="cell" x="398" y="300">repositório WMI (fileless)</text>
+  <text class="cell" x="648" y="300">consultar __EventFilter + consumers</text>
+
+  <!-- model box -->
+  <rect x="150" y="344" width="800" height="96" rx="8" fill="#141d18" stroke="#27332c" stroke-width="1.3"/>
+  <text class="note" x="170" y="372">O modelo é sempre o mesmo: um GATILHO (boot, login, timer, evento) dispara um</text>
+  <text class="note" x="170" y="392">PAYLOAD (o que executa) com um certo PRIVILÉGIO. Trocar o gatilho ou o payload</text>
+  <text class="note" x="170" y="412">dá uma variante nova — mas a defesa é a mesma: conhecer a baseline e caçar o que</text>
+  <text class="note" x="170" y="432">destoa dela. O que é fileless (WMI) não deixa arquivo; caça-se pelo repositório, não no disco.</text>
+</svg>

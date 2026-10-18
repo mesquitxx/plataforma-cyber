@@ -1,0 +1,621 @@
+---
+slug: pos-exploracao-e-persistencia
+track: trilha-6
+title: "Pós-exploração e persistência"
+prerequisites:
+  - mini-projeto-privesc
+lab: null
+tasks:
+  - slug: missao-1-loot
+    title: "Missão 1 — Loot: recuperar a credencial do backup"
+    type: flag
+    prompt: "A senha vazada que você recupera fazendo a coleta (loot) como root: ela está escondida num backup do banco que só o root lê, e o backup está comprimido. Cole no formato FLAG{...}."
+    hint: "Como root, enumere /var/backups. Há um dump do banco em .gz — não dá para ler com cat direto. Descomprima no ato (zcat) e procure por 'pass' ou 'cred' na saída; um comentário de ops entrega a senha."
+    flag:
+      hash: "scrypt$16384$8$1$793f8dee08d963f73509c3b59224199d27753abfac7880f9bd22767d8e138a48"
+      salt: "424d58b82ef80688746794390bd1cb4d"
+  - slug: missao-2-persistencia
+    title: "Missão 2 — Caçar a persistência do operador anterior"
+    type: flag
+    prompt: "O payload escondido no mecanismo de persistência mais furtivo que o operador anterior deixou neste host. Há três famílias plantadas (cron, chave SSH e serviço systemd); uma delas executa um comando ofuscado em base64. Decodifique esse payload. Cole no formato FLAG{...}."
+    hint: "Caçe as três famílias: /etc/cron.d, ~/.ssh/authorized_keys e /etc/systemd/system/*.service. Uma unit tem um ExecStart que roda 'echo <base64> | base64 -d' — isso é o IoC. Isole o base64 e decodifique."
+    flag:
+      hash: "scrypt$16384$8$1$9ba8d01424f29d05bac2b5459e329eda3ca27abe668e1430e62ca22ed5c4c274"
+      salt: "f09b37bcb6a5734654d0548c895e38dd"
+  - slug: missao-3-windows
+    title: "Missão 3 — Qual persistência Windows é a fileless"
+    type: flag
+    prompt: "O FLAG{...} do único mecanismo de persistência Windows que é fileless (sem payload em disco), dispara por um evento do sistema (não logon, não agenda) e roda como SYSTEM sobrevivendo ao boot. Há quatro candidatos com tokens em base64; decodifique o do mecanismo certo. Cole no formato FLAG{...}."
+    hint: "Descarte os três que deixam artefato em disco: a scheduled task (arquivo em Tasks), a Run key (aponta um .exe e só no logon) e o serviço (precisa de um .exe no ImagePath). Sobra o que vive no repositório WMI."
+    flag:
+      hash: "scrypt$16384$8$1$22ba3cd46f2725cc832eac637456ded6c51d47e6352736fae1a0c3b89cad4264"
+      salt: "c41c153963c7abb49936ed0355957cd8"
+  - slug: quiz-final
+    title: "Quiz — Pós-exploração e persistência"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Depois de virar root/SYSTEM num engajamento autorizado, o que define o que você PODE fazer a seguir (loot, persistência, pivoting)?"
+        options:
+          - "Nada: virar root autoriza qualquer ação, porque você já provou o acesso"
+          - "O que o cliente não vai perceber: se passar despercebido, está permitido"
+          - "O escopo e as regras de engajamento acordados por escrito: eles dizem o que coletar, se pode instalar persistência, até onde pivotar e o que nunca tocar"
+          - "A lei brasileira permite tudo contra um alvo que você já comprometeu"
+        answer: 2
+        explanation: "Root não é um cheque em branco. A pós-exploração é a fase em que é mais fácil causar dano (apagar dados, derrubar serviço, vazar informação de terceiros) e em que mais se invade a privacidade. O que você pode fazer vem do escopo e das regras de engajamento da Trilha 1 — coleta mínima necessária para provar o impacto, persistência só se autorizada e documentada, e limites claros. Virar root não revoga o contrato; ele é o que te protege e protege o cliente."
+      - question: "Por que a persistência por chave SSH (uma linha extra em authorized_keys) é tão perigosa quanto furtiva?"
+        options:
+          - "Porque ela reinstala o sistema operacional no próximo boot"
+          - "Porque ela sobrevive à troca de senha e ao MFA do usuário: autenticação por chave pública não usa a senha, então resetar a senha do dono não fecha a porta; e uma linha num arquivo de texto passa fácil despercebida"
+          - "Porque ela só funciona se o atacante for root"
+          - "Porque ela desativa o firewall do host"
+        answer: 1
+        explanation: "O acesso por chave SSH independe da senha: o servidor confere a assinatura feita com a chave privada do atacante contra a chave pública que ele plantou em authorized_keys. Trocar a senha do usuário (a reação clássica a um incidente) não remove a chave, então o acesso continua. E é discreto: mais uma linha num arquivo que já costuma ter chaves legítimas. Por isso a detecção é comparar authorized_keys com uma baseline e alertar em qualquer mudança."
+      - question: "O que todas as famílias de persistência (cron, serviço, chave SSH, scheduled task, Run key, WMI) têm em comum?"
+        options:
+          - "Todas exigem um exploit de kernel para funcionar"
+          - "Todas só existem no Linux"
+          - "Todas deixam o sistema mais lento, e é assim que se detecta"
+          - "Todas são um par gatilho × payload: um evento (boot, login, timer, evento do sistema) dispara um comando; mudam o gatilho e onde o mecanismo vive, não a ideia"
+        answer: 3
+        explanation: "Persistência é sempre a mesma receita: amarrar a execução de um payload a um gatilho que vai se repetir. cron e scheduled task usam tempo; serviço systemd e serviço Windows usam o boot; chave SSH e Run key usam o login; a WMI subscription usa um evento do sistema. Entender o modelo gatilho × payload × privilégio é o que permite reconhecer uma variante nova sem ter decorado o comando exato dela."
+      - question: "Na caça (threat hunting) do laboratório, por que o ExecStart que roda 'echo <base64> | base64 -d' é um indicador de comprometimento (IoC) tão forte?"
+        options:
+          - "Porque base64 é um formato proibido em servidores"
+          - "Porque serviços legítimos quase nunca precisam decodificar um comando em base64 para rodar; ofuscar o payload assim é típico de quem quer esconder o que executa de uma leitura rápida"
+          - "Porque base64 deixa o serviço mais lento"
+          - "Porque o systemd não sabe executar base64"
+        answer: 1
+        explanation: "O conteúdo em si (base64) não é malicioso — é a combinação que denuncia: uma unit de sistema cujo ExecStart ofusca o comando real. Software legítimo roda um binário ou um script nomeado; não tem motivo para decodificar uma string para só então executá-la. Esse padrão (ofuscação dentro de um mecanismo de autostart) é um IoC clássico, e foi o que separou a unit plantada da unit benigna ao lado dela."
+      - question: "Qual é a diferença essencial entre a limpeza que um pentester faz e o anti-forensics de um atacante, se os comandos podem ser parecidos?"
+        options:
+          - "A intenção e a honestidade: o pentester remove os PRÓPRIOS artefatos de teste e documenta cada remoção para devolver o ambiente como estava; o atacante apaga logs e evidências para esconder que esteve ali e dificultar a investigação"
+          - "Nenhuma: apagar rastro é apagar rastro"
+          - "O pentester usa Windows e o atacante usa Linux"
+          - "O pentester só limpa se o cliente não estiver olhando"
+        answer: 0
+        explanation: "A limpeza do pentester é combinada e registrada: você tira as flags, o backdoor de teste, a chave que plantou, e anota no relatório o que removeu, para que o cliente confirme. É o oposto do anti-forensics, em que o atacante adultera ou apaga logs justamente para que ninguém reconstrua o que houve. Apagar os logs do cliente nunca é 'limpeza' num pentest honesto — destrói a evidência que o time de resposta precisa."
+      - question: "Por que ter uma baseline (um retrato do estado normal do sistema) é o que torna a detecção de persistência viável?"
+        options:
+          - "Porque a baseline impede que qualquer persistência seja criada"
+          - "Porque a baseline criptografa os arquivos de sistema"
+          - "Porque persistência quase sempre se parece com configuração legítima; sem saber o que é 'normal' naquele host, você não distingue a unit, o cron ou a chave plantada dos que sempre estiveram lá — a baseline é o que faz o item estranho saltar"
+          - "Porque a baseline reinicia o host periodicamente"
+        answer: 2
+        explanation: "Um cron, uma unit ou uma chave SSH plantados são, por desenho, indistinguíveis de uma configuração comum olhados isoladamente. O que os entrega é destoarem do estado conhecido-bom: uma unit que não existia ontem, uma chave que ninguém reconhece, um arquivo recém-modificado. Por isso file integrity monitoring e inventário (a baseline) são a espinha da detecção — e por que o 'find por arquivos recém-alterados' só vale quando você sabe com o quê comparar."
+      - question: "Entre uma Run key em HKCU, uma scheduled task e uma WMI event subscription, por que a subscription WMI costuma ser a mais difícil de achar?"
+        options:
+          - "Porque ela roda mais rápido que as outras"
+          - "Porque ela só funciona em servidores de domínio"
+          - "Porque ela não sobrevive ao boot, então ninguém procura por ela"
+          - "Porque é fileless: o comando vive no repositório WMI, não num arquivo em disco, então ferramentas que varrem o sistema de arquivos ou as pastas de autostart não a veem; é preciso consultar as classes __EventFilter e os consumidores"
+        answer: 3
+        explanation: "A Run key é um valor de registro apontando um .exe em disco; a scheduled task deixa um arquivo em C:\\Windows\\System32\\Tasks. Ambas são visíveis a quem varre disco/registro (o Autoruns, por exemplo). A WMI event subscription amarra um __EventFilter (o gatilho) a um CommandLineEventConsumer (o payload) dentro do próprio repositório WMI — sem arquivo solto —, dispara por um evento do sistema e roda como SYSTEM. Por ser fileless, escapa das varreduras ingênuas e exige consultar o WMI diretamente."
+glossary:
+  - term: persistence
+    definition: "Técnica de pós-exploração em que o atacante amarra a execução de um payload a um gatilho recorrente (boot, login, timer, evento) para manter o acesso mesmo após reinícios, logout ou troca de senha. É o que transforma um acesso efêmero em presença duradoura; a tática TA0003 do MITRE ATT&CK."
+  - term: loot
+    definition: "A coleta sistemática, depois de comprometer um host, do que tem valor para o engajamento: evidências do impacto, credenciais, chaves, arquivos de configuração e informações do sistema. Também chamada pillaging. Feita com disciplina e dentro do escopo, é o que prova o alcance do acesso no relatório."
+  - term: anti-forensics
+    definition: "Conjunto de técnicas com que um atacante dificulta a investigação de um incidente: apagar ou adulterar logs, alterar carimbos de tempo (timestomping), remover ferramentas e esconder artefatos. É o oposto da limpeza honesta de um pentest, que remove os próprios artefatos de teste e documenta cada remoção."
+  - term: baseline
+    definition: "Um retrato do estado normal (conhecido-bom) de um sistema — serviços, tarefas agendadas, chaves, binários, hashes de arquivos. Comparar o estado atual com a baseline é o que faz um item plantado (uma unit nova, uma chave desconhecida, um arquivo recém-alterado) saltar aos olhos; é a base do file integrity monitoring."
+  - term: WMI event subscription
+    definition: "Mecanismo de persistência do Windows que liga um __EventFilter (o gatilho, um evento do sistema) a um consumidor (o payload, por exemplo um CommandLineEventConsumer). O comando vive no repositório WMI, não em disco (fileless), dispara por evento e costuma rodar como SYSTEM — o que o torna furtivo e difícil de detectar."
+---
+
+import ciclo from "./img/ciclo-pos-exploracao.svg";
+import familias from "./img/familias-de-persistencia.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No mini-projeto do 6.6 você chegou ao topo: virou `root` no Linux e leu a cadeia até `SYSTEM` no Windows. E aí, no meio do engajamento, surge a pergunta que separa quem explora de quem entrega valor: **ganhei o acesso máximo — agora o quê?** Virar `root` não é o objetivo de um pentest; é o meio. O objetivo é **provar o impacto** (o que esse acesso permite alcançar), muitas vezes **garantir que você consegue voltar** para continuar o teste, e — sempre — **deixar o ambiente como estava** e documentar tudo. Essa é a fase de <GlossaryTerm term="post-exploitation">post-exploitation</GlossaryTerm> (pós-exploração): tudo o que se faz **depois** de conseguir o acesso.
+
+Este módulo fecha a Trilha 6 com as três atividades dessa fase. A **coleta** (o <GlossaryTerm term="loot">loot</GlossaryTerm>): reunir, com disciplina e dentro do escopo, evidências, credenciais e informações do host. A **persistência** (<GlossaryTerm term="persistence">persistence</GlossaryTerm>): os mecanismos — `cron`, serviço, chave SSH, tarefa agendada — que um atacante usa para voltar mesmo depois de um reboot ou de uma troca de senha, e, sobretudo, **como detectá-los**, porque metade do seu valor aqui é saber caçar o que um invasor plantou. E a **limpeza**: remover os próprios artefatos de teste e devolver a máquina ao estado anterior — o compromisso profissional que diferencia um pentester de um invasor.
+
+**Ao final, você vai saber:**
+
+- fazer o loot de um host comprometido (credenciais, evidências, informação do sistema) de forma metódica e dentro do escopo;
+- explicar e reconhecer as famílias de persistência em Linux (`cron`, serviço `systemd`, chave SSH) e em Windows (scheduled task, Run key, WMI event subscription) pelo modelo gatilho × payload × privilégio;
+- **caçar** persistência plantada por outra pessoa, usando uma <GlossaryTerm term="baseline">baseline</GlossaryTerm> e os indicadores certos, e decodificar um payload ofuscado;
+- distinguir a **limpeza** honesta de um pentest do <GlossaryTerm term="anti-forensics">anti-forensics</GlossaryTerm> de um atacante, e documentar o que você tocou;
+- defender um host contra persistência: onde cada mecanismo vive, como monitorá-lo e como responder.
+
+**Pré-requisitos:** 6.6 — Mini-projeto: da shell ao root/SYSTEM (você parte do ponto em que já é `root`/`SYSTEM`; aqui começa o "depois"). Também usa, da Trilha 1, a ideia de **escopo** e **regras de engajamento** (1.3), que governam tudo nesta fase.
+
+**Tempo estimado:** 3 a 4 horas, incluindo montar o host de treino e escrever a sua lista de limpeza.
+
+<Callout variant="ethics">
+A pós-exploração é a fase mais delicada de um teste: é onde se lê dado de terceiros, se instala acesso duradouro e se mexe no estado da máquina. Tudo aqui só é legítimo **dentro do escopo autorizado por escrito** (relembre o 1.3): o que coletar, se pode haver persistência, até onde pivotar e o que nunca tocar vêm do contrato, não da sua vontade. No laboratório, tudo acontece num contêiner descartável, na sua máquina, **sem rede**. Instalar persistência ou coletar dados num sistema de terceiros sem autorização é crime no Brasil (Lei 12.737/2012 — ver 1.4). Virar `root` não é um cheque em branco.
+</Callout>
+
+## 2. Teoria aprofundada — o que vem depois do acesso
+
+### 2.1 Onde a pós-exploração entra
+
+Relembre a <GlossaryTerm term="kill chain">kill chain</GlossaryTerm> do 6.6: reconhecimento, acesso inicial, escalação, e então a **ação sobre o objetivo**. A pós-exploração é essa última parte — e, num engajamento real, é onde mora boa parte do valor. Ninguém contrata um pentest para ouvir "virei root"; contrata para saber **o que um invasor conseguiria fazer a partir daí** e **como impedir**. As três atividades desta fase respondem a isso.
+
+<Figure
+  src={ciclo}
+  alt="A kill chain em cima, com a escalação (6.2 a 6.6) levando ao marco root/SYSTEM. A partir dele, a fase de pós-exploração com três caixas encadeadas: Coletar (loot de evidências, credenciais e info do host), Persistir (cron, serviço systemd, chave SSH, tarefa agendada) e Limpar e Relatar (remover os próprios artefatos, restaurar e documentar). Uma faixa inferior marca o limite ético e contrasta o atacante (coleta para roubar, persiste para voltar, limpa para esconder) com o pentester (coleta como prova, evita persistência fora do combinado, limpa para deixar como estava)."
+  caption="As três atividades da pós-exploração, a partir do momento em que você já é root/SYSTEM. A mesma ação muda de sentido conforme a intenção — e o escopo é o que separa as duas colunas da faixa de baixo."
+/>
+
+### 2.2 Coleta (loot): provar o impacto sem exagerar
+
+Virar `root` dá acesso; o loot é o que **transforma acesso em evidência**. Um host comprometido guarda tesouros para o engajamento: credenciais em arquivos de configuração e backups, hashes de senha em `/etc/shadow` ou na `SAM`, chaves SSH privadas, históricos de shell, tokens em variáveis de ambiente, e informações do sistema que explicam o alcance (quem são os usuários, a que a máquina se conecta, que dados ela hospeda). Essas credenciais são o combustível do próximo passo — a <GlossaryTerm term="credential reuse">credential reuse</GlossaryTerm> e o <GlossaryTerm term="lateral movement">lateral movement</GlossaryTerm> que você viu no 6.6, e o <GlossaryTerm term="pivoting">pivoting</GlossaryTerm> para outras máquinas.
+
+Mas há uma disciplina inegociável: **coleta mínima necessária**, dentro do escopo. Um pentester prova que **conseguiria** ler a base de clientes capturando um registro de amostra ou um hash, não exfiltrando o banco inteiro. Copiar dados de terceiros além do necessário é, por si só, um dano — e pode ser ilegal mesmo num teste autorizado se o escopo não cobrir aquele dado. A regra: colete o suficiente para o relatório ser inegável, e nada além disso.
+
+### 2.3 Persistência: amarrar um payload a um gatilho
+
+<GlossaryTerm term="persistence">Persistence</GlossaryTerm> é a resposta do atacante a um problema prático: o acesso é frágil. O processo morre, a máquina reinicia, a senha é trocada, a sessão cai — e o acesso some. Para não ter de invadir de novo toda vez, o atacante planta um mecanismo que **restabelece o acesso sozinho**. E todo mecanismo de persistência, não importa o sistema, é a mesma receita:
+
+> um **gatilho** (um evento que vai se repetir) dispara um **payload** (o que executa) com um certo **privilégio**.
+
+Troque o gatilho e onde o mecanismo vive, e você tem uma família diferente — mas a ideia é uma só. É por isso que vale aprender o **modelo**, não decorar comandos:
+
+- **Gatilho de tempo:** o <GlossaryTerm term="cron">cron</GlossaryTerm> no Linux e a scheduled task no Windows repetem o payload num horário ou intervalo.
+- **Gatilho de boot:** um serviço — uma <GlossaryTerm term="systemd unit">systemd unit</GlossaryTerm> no Linux, um Windows service — sobe o payload toda vez que a máquina liga.
+- **Gatilho de login:** uma <GlossaryTerm term="SSH key">SSH key</GlossaryTerm> plantada em `authorized_keys` reabre a porta a cada conexão SSH; uma <GlossaryTerm term="Run key">Run key</GlossaryTerm> no registro do Windows roda o payload a cada logon.
+- **Gatilho de evento:** uma <GlossaryTerm term="WMI event subscription">WMI event subscription</GlossaryTerm> no Windows dispara o payload quando algo acontece no sistema (um processo inicia, um horário chega), sem deixar arquivo em disco.
+
+Repare numa propriedade preciosa para o atacante: a chave SSH e a Run key **sobrevivem à troca de senha**, porque não dependem dela — autenticação por chave não usa a senha, e a Run key só precisa do logon acontecer. É por isso que "resetar a senha" quase nunca basta para expulsar um invasor de verdade.
+
+### 2.4 Por que detectar é difícil — e por que a baseline resolve
+
+Eis o incômodo central da defesa: **persistência se parece com configuração legítima.** Um `cron` que roda um script, um serviço que sobe no boot, uma chave em `authorized_keys` — tudo isso é o funcionamento normal de um servidor. Olhado isoladamente, um mecanismo plantado é indistinguível de um legítimo. O que o denuncia não é a aparência, é **destoar do normal**: uma unit que não existia na semana passada, uma chave que ninguém reconhece, um binário modificado ontem às 3h.
+
+Daí a ferramenta mais poderosa do defensor não ser um antivírus, e sim uma <GlossaryTerm term="baseline">baseline</GlossaryTerm>: um retrato do estado conhecido-bom do sistema (serviços, tarefas, chaves, hashes dos binários). Com a baseline, a pergunta deixa de ser "isto parece malicioso?" (difícil) e vira "isto estava aqui antes?" (respondível). É o princípio do *file integrity monitoring* e o motivo de o truque de "procurar arquivos recém-alterados" só valer quando você sabe com o quê comparar. Guarde isto: a Seção 8 inteira gira em torno de conhecer o normal para caçar o que foge dele.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos ver, com os comandos reais do host de treino que você monta na Seção 5, as três atividades em ação. Você acabou de virar `root` e está no prompt do host comprometido.
+
+### 3.1 O loot, passo a passo
+
+A primeira coisa é saber quem você é e o que alcança:
+
+```console
+root@prod-web-01:/# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+`root` pleno. Agora a coleta metódica. Credenciais raramente estão num lugar óbvio como `/etc/shadow` apenas; elas vazam em **backups**, em históricos e em arquivos de configuração. Um alvo clássico é `/var/backups`:
+
+```console
+root@prod-web-01:/# ls -la /var/backups
+total 12
+drwx------ 1 root root 4096 Oct 18 02:40 .
+drwxr-xr-x 1 root root 4096 Sep 18 00:00 ..
+-rw------- 1 root root  230 Oct 18 02:40 app-db-2026-01.sql.gz
+```
+
+Um dump do banco, só legível pelo `root` (modo `600`) — e comprimido, então `cat` não ajuda. O loot tem de saber ler o formato: descomprima no ato e procure por segredos.
+
+```console
+root@prod-web-01:/# zcat /var/backups/app-db-2026-01.sql.gz | grep -iE "pass|cred"
+CREATE TABLE users (id INT, username VARCHAR(32), pass VARCHAR(80));
+-- ops: appsvc DB password (reused on the host) = FLAG{exemplo-nao-e-a-flag}
+```
+
+Uma senha de serviço, deixada num comentário de ops dentro de um backup. É `credential reuse` esperando para acontecer — exatamente o combustível do lateral movement do 6.6. **Esse** é o tipo de achado que o loot busca: não o acesso que você já tem, mas o próximo que ele destrava.
+
+### 3.2 Persistência, por dentro de cada família
+
+Com `root`, plantar persistência é trivial — e é por isso que você precisa conhecer cada mecanismo para **caçá-lo**. A chave SSH é a mais limpa: uma linha a mais num arquivo de texto.
+
+```console
+root@prod-web-01:/# cat /root/.ssh/authorized_keys
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF8mZ2Jr0kE5xT9exampleKEYnotReal000000000000000000 attacker@c2
+```
+
+Essa chave `attacker@c2` não deveria estar aqui: quem tem a chave privada correspondente entra como `root` por SSH **sem senha**, e trocar a senha do `root` não fecha a porta. O gatilho é o login; o payload é a sessão; o privilégio é o do dono do arquivo.
+
+O `cron` usa o gatilho de tempo. Um arquivo em `/etc/cron.d` roda um comando num intervalo:
+
+```console
+root@prod-web-01:/# cat /etc/cron.d/system-update
+# Managed by ops automation - do not edit
+*/5 * * * * root /usr/local/bin/.sysupdate >/dev/null 2>&1
+```
+
+A cada 5 minutos, como `root`, roda `/usr/local/bin/.sysupdate` — um script com nome de manutenção e começando com ponto (oculto). O gatilho é o tempo; o payload é o script; o comentário "do not edit" é disfarce.
+
+O serviço (`systemd`) usa o gatilho de boot, e é onde um atacante costuma **esconder o comando**:
+
+```console
+root@prod-web-01:/# cat /etc/systemd/system/network-online-sync.service
+[Unit]
+Description=Network Online Sync
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'echo Ukx...(base64)... | base64 -d'
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Um serviço legítimo roda um binário ou um script nomeado. Este decodifica uma string base64 para só então executá-la — não há razão honesta para isso. Esse padrão (ofuscação dentro de um mecanismo de autostart) é um <GlossaryTerm term="indicator of compromise">indicator of compromise</GlossaryTerm> (IoC) clássico. No <GlossaryTerm term="command and control">command and control</GlossaryTerm> real, o payload decodificado seria um beacon que liga de volta ao atacante; no treino, sem rede, ele apenas imprime a flag.
+
+### 3.3 A limpeza — e a linha que não se cruza
+
+No fim do engajamento, o pentester desfaz o que plantou: remove a chave, o `cron`, a unit, apaga as flags, e **anota cada remoção**. Isso é o oposto do <GlossaryTerm term="anti-forensics">anti-forensics</GlossaryTerm> do atacante, que apaga ou adultera os **logs do alvo** para esconder que esteve ali. A diferença não está no comando — às vezes é o mesmo `rm` —, está na intenção e na honestidade: você remove os **seus** artefatos de teste e documenta; nunca destrói a evidência de que o cliente (e o time de resposta a incidentes) vai precisar. Apagar os logs do cliente não é "limpeza"; é destruir prova.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### SUNBURST / SolarWinds (2020) — a pós-exploração de um ator de ponta
+
+Em **13 de dezembro de 2020**, a FireEye (Mandiant) divulgou uma das maiores invasões já documentadas: um ataque de cadeia de suprimentos que trojanizava as atualizações do software **SolarWinds Orion** para distribuir um backdoor batizado de **SUNBURST**. O arquivo adulterado (`SolarWinds.Orion.Core.BusinessLayer.dll`) foi assinado em **24 de março de 2020**, e as atualizações comprometidas foram distribuídas entre março e maio de 2020. Mas o que interessa a este módulo não é a entrada — é a **pós-exploração**, descrita no relatório com uma precisão que vale como aula.
+
+O relatório observa que o ator "prefere manter uma pegada de malware leve, optando por credenciais legítimas e acesso remoto" — ou seja, depois de entrar, ele vivia da terra (<GlossaryTerm term="living off the land">living off the land</GlossaryTerm>), usando o que já existia, em vez de largar ferramentas que denunciariam sua presença. E, sobre persistência e limpeza, a descrição é literal: *"They similarly manipulated scheduled tasks by updating an existing legitimate task to execute their tools and then returning the scheduled task to its original configuration"* — modificavam uma **scheduled task** legítima para rodar as próprias ferramentas e **a devolviam à configuração original** depois. E ainda: *"They routinely removed their tools, including removing backdoors once legitimate remote access was achieved"* — removiam rotineiramente suas ferramentas e backdoors assim que garantiam acesso por credenciais legítimas.
+
+- **Impacto:** comprometimento de dezenas de milhares de organizações (empresas e órgãos de governo) no mundo, por meses, antes da descoberta.
+- **Lição:** é o retrato invertido da ética deste módulo. O ator **restaurava** o estado original e **removia** seus artefatos — exatamente os gestos que você faz na limpeza —, só que para **esconder o rastro** (`anti-forensics`), não para ser honesto. Mesma mecânica, intenção oposta. E ensina a defesa: contra quem restaura a task e remove a ferramenta, a detecção não pode depender do artefato ficar lá; ela depende de registrar a **mudança no momento em que acontece** (a `baseline` e os logs de execução).
+- **Fonte:** [Highly Evasive Attacker Leverages SolarWinds Supply Chain to Compromise Multiple Global Victims With SUNBURST Backdoor (Mandiant/FireEye, 2020-12-13)](https://cloud.google.com/blog/topics/threat-intelligence/evasive-attacker-leverages-solarwinds-supply-chain-compromises-with-sunburst-backdoor).
+
+### TeamTNT (desde 2019) — persistência em contêineres, por chave SSH e serviço
+
+O grupo **TeamTNT**, catalogado pelo MITRE ATT&CK como **G0139** e ativo desde ao menos **outubro de 2019**, mira justamente o ambiente deste laboratório: **nuvem e contêineres**, onde instala mineradores de criptomoeda (<GlossaryTerm term="credential reuse">cryptojacking</GlossaryTerm>). Para garantir o retorno, ele usa duas das famílias que você vai caçar na Seção 5, e o MITRE descreve cada uma:
+
+- **Chave SSH** (técnica T1098.004): *"TeamTNT has added RSA keys in `authorized_keys`"* — exatamente o vetor da chave `attacker@c2` do treino.
+- **Serviço systemd** (técnica T1543.002): *"TeamTNT has established persistence through the creation of a cryptocurrency mining system service using `systemctl`"* — o serviço que sobe no boot, como a unit plantada do treino.
+
+- **Impacto:** campanhas amplas de cryptojacking em hosts de nuvem e contêineres expostos, consumindo recursos das vítimas para minerar.
+- **Lição:** a persistência do laboratório não é um exercício artificial — é o que grupos reais fazem em contêineres, usando os mesmos arquivos (`authorized_keys`, uma unit `systemd`). Conhecer esses dois caminhos é conhecer o repertório de um adversário documentado.
+- **Fonte:** [MITRE ATT&CK — TeamTNT (G0139)](https://attack.mitre.org/groups/G0139/) e [Account Manipulation: SSH Authorized Keys (T1098.004)](https://attack.mitre.org/techniques/T1098/004/).
+
+## 5. Mãos à obra — loot, caça de persistência e limpeza
+
+Este módulo **não tem lab próprio** na plataforma, pelo mesmo motivo do 6.6: um host para treinar pós-exploração é uma máquina deliberadamente "suja" (com credenciais plantadas e persistência de um invasor anterior), e a plataforma só orquestra alvos consagrados. Então você monta, **na sua própria máquina (WSL)**, um contêiner descartável — como no 6.6, mas agora você **já começa como `root`**, porque o assunto é o que vem depois. A parte Windows é análise de saídas que você gera no WSL.
+
+<Callout variant="info" title="Por que um contêiner, e por que sem rede">
+O `uid 0` **dentro** do contêiner não é o `root` do seu WSL/Windows (releia o 6.1): ele é isolado por namespaces e capabilities. Por isso dá para plantar e caçar persistência ali dentro sem risco nenhum para a sua máquina. Tudo sobe com `--network none` (sem rede, então nenhum beacon de C2 sai de lugar nenhum) e `--rm` (o contêiner some ao sair). É o ambiente certo para treinar isto com segurança.
+</Callout>
+
+**Objetivo:** ao terminar, você terá (1) feito o **loot** do host e recuperado uma credencial escondida num backup — a flag da Missão 1; (2) **caçado** as três famílias de persistência que um operador anterior deixou e decodificado o payload ofuscado — a flag da Missão 2; (3) decidido, entre quatro mecanismos Windows, qual é a persistência **fileless** por evento — a flag da Missão 3; e (4) escrito a sua **lista de limpeza** para devolver o host como estava.
+
+### 5.1 Montar o host de treino (passo a passo)
+
+Abra o terminal do Ubuntu (WSL), crie a pasta `~/postex-lab/` e, dentro dela, os dois arquivos abaixo. O `Dockerfile` é a receita do host comprometido: ele planta o backup com a credencial e as três famílias de persistência do "operador anterior". O `entrypoint.sh` liga o ambiente e te deixa como `root`.
+
+```text
+# ~/postex-lab/Dockerfile
+FROM debian:trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    cron gzip procps findutils coreutils \
+ && rm -rf /var/lib/apt/lists/*
+
+# --- Loot target: a root-only DB backup; flag 1 hides inside it (gzipped). ---
+RUN install -d -m 700 /var/backups \
+ && { echo '-- MySQL dump of app DB (automated nightly backup)'; \
+      echo 'CREATE TABLE users (id INT, username VARCHAR(32), pass VARCHAR(80));'; \
+      echo "INSERT INTO users VALUES (1,'admin','bcrypt:REDACTED');"; \
+      echo "-- ops: appsvc DB password (reused on the host) = $(echo RkxBR3tsb290LWRiLWJhY2t1cC1jcmVkcy1yZWNvdmVyZWR9 | base64 -d)"; \
+    } | gzip -c > /var/backups/app-db-2026-01.sql.gz \
+ && chmod 600 /var/backups/app-db-2026-01.sql.gz
+
+# --- Persistence left by a previous operator: family 1, a cron job. ---
+RUN printf '%s\n' \
+    '# Managed by ops automation - do not edit' \
+    '*/5 * * * * root /usr/local/bin/.sysupdate >/dev/null 2>&1' \
+    > /etc/cron.d/system-update \
+ && chmod 644 /etc/cron.d/system-update \
+ && printf '%s\n' '#!/bin/sh' '# beacon placeholder (no network in the lab)' 'exit 0' \
+    > /usr/local/bin/.sysupdate \
+ && chmod 755 /usr/local/bin/.sysupdate
+
+# --- Persistence family 2: a rogue SSH key in root's authorized_keys. ---
+RUN install -d -m 700 /root/.ssh \
+ && echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF8mZ2Jr0kE5xT9exampleKEYnotReal000000000000000000 attacker@c2' \
+    > /root/.ssh/authorized_keys \
+ && chmod 600 /root/.ssh/authorized_keys
+
+# --- Persistence family 3: a backdoored systemd unit (carries flag 2 in its
+#     ExecStart payload). A benign unit sits beside it so the odd one stands out. ---
+RUN install -d /etc/systemd/system \
+ && printf '%s\n' \
+    '[Unit]' \
+    'Description=Clean temporary files daily' \
+    '' \
+    '[Service]' \
+    'Type=oneshot' \
+    'ExecStart=/usr/bin/find /tmp -type f -mtime +7 -delete' \
+    '' \
+    '[Install]' \
+    'WantedBy=multi-user.target' \
+    > /etc/systemd/system/cleanup-tmp.service \
+ && printf '%s\n' \
+    '[Unit]' \
+    'Description=Network Online Sync' \
+    'After=network-online.target' \
+    '' \
+    '[Service]' \
+    'Type=oneshot' \
+    "ExecStart=/bin/sh -c 'echo RkxBR3twZXJzaXN0LXN5c3RlbWQtYmFja2Rvb3ItZm91bmR9 | base64 -d'" \
+    '' \
+    '[Install]' \
+    'WantedBy=multi-user.target' \
+    > /etc/systemd/system/network-online-sync.service
+
+COPY entrypoint.sh /usr/local/sbin/entrypoint.sh
+RUN chmod 755 /usr/local/sbin/entrypoint.sh
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
+```
+
+```bash
+# ~/postex-lab/entrypoint.sh
+#!/bin/sh
+# Map the hostname (silences warnings) and drop you into a root shell: you land
+# here already as root, because this module is about what happens AFTER root.
+echo "127.0.0.1 localhost $(hostname)" > /etc/hosts
+exec /bin/bash -l
+```
+
+As flags vão **em base64** no `Dockerfile` de propósito: o texto não aparece em claro no módulo, mas o arquivo nasce com a flag **certa** (a que a plataforma valida). Você só a lê depois de fazer o exercício. Construa a imagem (isto usa a internet da sua máquina, uma vez só) e suba o contêiner **sem rede**:
+
+```console
+$ cd ~/postex-lab
+$ docker build -t postex-lab:local .
+$ docker run -it --rm --network none --hostname prod-web-01 postex-lab:local
+```
+
+Você cai num shell já como `root`. Confirme:
+
+```console
+root@prod-web-01:/# id
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+<Callout variant="tip" title="Se o docker pedir permissão">
+Se `docker` reclamar, rode com `sudo docker ...` ou adicione seu usuário ao grupo `docker` (lembre do 6.2: estar no grupo `docker` já é, por si só, um caminho a root no host). No WSL com Docker Desktop isso costuma já estar pronto.
+</Callout>
+
+### 5.2 Missão 1 — Loot: recuperar a credencial (guiada)
+
+Você é `root` e quer coletar o que esse acesso destrava. O objetivo aqui é recuperar uma **credencial de serviço** que a equipe deixou escapar — ela não está em `/etc/shadow`, está escondida num backup. Comece pela regra do loot: credenciais vazam em backups, históricos e configs. Enumere `/var/backups`.
+
+```console
+root@prod-web-01:/# ls -la /var/backups
+total 12
+drwx------ 1 root root 4096 Oct 18 02:40 .
+drwxr-xr-x 1 root root 4096 Sep 18 00:00 ..
+-rw------- 1 root root  230 Oct 18 02:40 app-db-2026-01.sql.gz
+```
+
+Há um dump do banco, só seu (modo `600`) — e comprimido. Seu objetivo: ler o conteúdo e achar a senha vazada. Ela é a flag.
+
+<Hint title="Dica 1 — não dá para ler com cat">
+O arquivo termina em `.gz`: está comprimido com gzip. `cat` mostra lixo binário. Use `zcat` (ou `gunzip -c`) para descomprimir **para a saída**, sem gravar nada, e filtre com `grep` por palavras como `pass` ou `cred`.
+</Hint>
+
+<Solution title="Solução">
+```console
+root@prod-web-01:/# zcat /var/backups/app-db-2026-01.sql.gz | grep -iE "pass|cred"
+CREATE TABLE users (id INT, username VARCHAR(32), pass VARCHAR(80));
+-- ops: appsvc DB password (reused on the host) = FLAG{...}
+```
+
+O comentário de ops entrega a senha de serviço — e avisa que ela é reaproveitada no host (`credential reuse`). O valor `FLAG{...}` é a flag; mande no cartão. **Lição:** o loot não é copiar tudo; é saber **onde** os segredos vazam (backups, históricos, configs) e **como** ler cada formato. Uma senha de serviço num backup é o começo do próximo salto.
+</Solution>
+
+<FlagInput task="missao-1-loot" />
+
+### 5.3 Missão 2 — Caçar a persistência do operador anterior (desafio)
+
+Este host já foi comprometido antes de você: um operador anterior deixou **três** mecanismos de persistência, um de cada família (`cron`, chave SSH e serviço `systemd`). Sua tarefa agora é a do **defensor**: encontrar os três e, no mais furtivo deles, decodificar o payload ofuscado — essa é a flag. Trate como *threat hunting*: você conhece as famílias (Seção 3.2), agora cace onde cada uma vive.
+
+<Hint title="Dica 1 — varra as três famílias">
+Uma por vez: `cat /etc/cron.d/*` (e veja o script que ele chama); `cat /root/.ssh/authorized_keys` (há uma chave que não deveria estar lá); `ls -1 /etc/systemd/system/*.service` e leia cada unit. Duas são "barulhentas" (um script, uma chave); uma esconde o comando.
+</Hint>
+
+<Hint title="Dica 2 — o IoC do payload ofuscado">
+Entre as units, uma tem um `ExecStart` que roda `echo <base64> | base64 -d`. Serviço legítimo não decodifica comando para executar — esse é o IoC. Isole a string base64 (o que está entre `echo` e `|`) e passe para `base64 -d`.
+</Hint>
+
+<Solution title="Solução">
+As três famílias, caçadas:
+
+```console
+root@prod-web-01:/# cat /etc/cron.d/system-update
+# Managed by ops automation - do not edit
+*/5 * * * * root /usr/local/bin/.sysupdate >/dev/null 2>&1
+root@prod-web-01:/# cat /root/.ssh/authorized_keys
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF8mZ2Jr0kE5xT9exampleKEYnotReal000000000000000000 attacker@c2
+root@prod-web-01:/# ls -1 /etc/systemd/system/*.service
+/etc/systemd/system/cleanup-tmp.service
+/etc/systemd/system/network-online-sync.service
+```
+
+A `cleanup-tmp.service` é benigna (roda um `find` nomeado). A `network-online-sync.service` é a suspeita — o `ExecStart` decodifica base64. Decodifique o payload dela:
+
+```console
+root@prod-web-01:/# grep -rl base64 /etc/systemd/system
+/etc/systemd/system/network-online-sync.service
+root@prod-web-01:/# echo 'RkxBR3twZXJzaXN0LXN5c3RlbWQtYmFja2Rvb3ItZm91bmR9' | base64 -d; echo
+FLAG{...}
+```
+
+(Use a string base64 que estiver no **seu** `ExecStart`.) A saída é a flag. **Lição:** a caça é sistemática — você percorre cada família onde ela vive e compara com o que seria normal. O que entregou a unit maliciosa não foi a aparência (ela imita um serviço de rede), foi o padrão de **ofuscação** num mecanismo de autostart: um IoC.
+</Solution>
+
+<FlagInput task="missao-2-persistencia" />
+
+### 5.4 Missão 3 — Qual persistência Windows é a fileless (análise)
+
+O Windows não roda no seu WSL, mas a decisão que importa — **qual mecanismo é o mais furtivo** — você treina com saídas sanitizadas (host `prod-web-01`, IP `192.168.0.10`, conta de serviço genérica). Cole o bloco inteiro de uma vez no terminal do Ubuntu; ele cria em `/tmp/postex-win` o retrato de um host Windows já comprometido, com **quatro** mecanismos de persistência candidatos, cada um com um token em base64.
+
+```bash
+ROOT=/tmp/postex-win; rm -rf "$ROOT"; mkdir -p "$ROOT"; cd "$ROOT"
+
+cat > persistencia.txt <<'EOF'
+Host Windows comprometido (foothold ja como SYSTEM). O operador anterior deixou
+QUATRO mecanismos de persistencia candidatos. Cada um tem um token(base64).
+Objetivo: achar o UNICO que e fileless (sem payload em disco), dispara por um
+EVENTO do sistema (nao logon, nao agenda) e roda como SYSTEM sobrevivendo ao boot.
+
+[A] Scheduled Task "OneDriveSync" (schtasks) rodando como SYSTEM no boot.
+    token=ZGVjb3k6IGEgc2NoZWR1bGVkIHRhc2sgY3JpYSB1bSBhcnF1aXZvIGVtIEM6XFxXaW5kb3dzXFxTeXN0ZW0zMlxcVGFza3MgZSBkaXNwYXJhIHBvciBhZ2VuZGEvbG9nb247IHNvYnJldml2ZSBhbyBib290LCBtYXMgZGVpeGEgYXJ0ZWZhdG8gZW0gZGlzY28gKG5hbyBlIGZpbGVsZXNzKQ==
+
+[B] Valor em HKCU\...\Run apontando para C:\Users\svc\AppData\Roaming\upd.exe.
+    token=ZGVjb3k6IGEgY2hhdmUgUnVuIChIS0NVKSBzbyBkaXNwYXJhIG5vIGxvZ29uIGRhcXVlbGUgdXN1YXJpbyBlIGFwb250YSBwYXJhIHVtIC5leGUgbm8gZGlzY287IG5hbyBlIGZpbGVsZXNzIG5lbSByb2RhIGNvbW8gU1lTVEVNIG5vIGJvb3Q=
+
+[C] Servico "UpdateSvc" (ImagePath -> C:\Windows\Temp\svc.exe) rodando como SYSTEM.
+    token=ZGVjb3k6IG8gc2VydmljbyBwcmVjaXNhIGRlIHVtIGJpbmFyaW8gLmV4ZSBubyBkaXNjbyBhcG9udGFkbyBwZWxvIEltYWdlUGF0aDsgcm9kYSBjb21vIFNZU1RFTSwgbWFzIGUgcnVpZG9zbyBlIG5hbyBlIGZpbGVsZXNz
+
+[D] WMI Event Subscription: __EventFilter + CommandLineEventConsumer disparado
+    por um evento do sistema; o comando vive no repositorio WMI, nao em disco.
+    token=RkxBR3t3aW4tcGVyc2lzdC13bWktZXZlbnQtc3Vic2NyaXB0aW9ufQ==
+EOF
+
+echo "Cenario pronto em $ROOT"; ls -1 "$ROOT"
+```
+
+Para decodificar um token, isole o valor depois de `token=` e passe para `base64 -d`. Seu objetivo: decidir qual mecanismo é o **fileless, por evento, como SYSTEM** e decodificar o token dele — essa é a flag. Os outros três decodificam para um `decoy:` que explica por que não servem.
+
+<Hint title="Dica 1 — o que 'fileless' elimina">
+Fileless quer dizer **sem payload em disco**. A scheduled task deixa um arquivo em `C:\Windows\System32\Tasks`. A Run key aponta para um `.exe` no disco. O serviço precisa de um `.exe` no `ImagePath`. Todos os três têm um arquivo. Sobra um.
+</Hint>
+
+<Hint title="Dica 2 — o gatilho de evento">
+Reveja a Seção 2.3: o gatilho de **evento** (não tempo, não login) é a marca da WMI event subscription, que liga um `__EventFilter` a um consumidor dentro do repositório WMI — nada em disco.
+</Hint>
+
+<Solution title="Solução">
+O único fileless, por evento e como SYSTEM é o **[D]**, a WMI event subscription. Decodifique o token do [D]:
+
+```console
+$ cd /tmp/postex-win
+$ awk '/^\[D\]/{f=1} f&&/token=/{sub(/.*token=/,"");print;exit}' persistencia.txt | base64 -d; echo
+FLAG{...}
+```
+
+A saída é a flag — mande no cartão. (Os tokens de [A], [B] e [C] decodificam para `decoy:` explicando por que cada um deixa artefato em disco.) **Lição:** entre mecanismos que todos "sobrevivem ao boot", o que mais custa a achar é o que **não deixa arquivo** — por isso a WMI subscription é a predileta de quem quer durar sem ser visto, e por isso a detecção dela exige consultar o WMI, não varrer o disco.
+</Solution>
+
+<FlagInput task="missao-3-windows" />
+
+### 5.5 Escreva a sua lista de limpeza
+
+Antes de desligar, faça o que todo pentester faz no fim: liste o que você (ou o teste) tocou, para **devolver o host como estava**. Num engajamento real, esta lista vira uma seção do relatório e o cliente confirma cada item. Um modelo mínimo para este treino:
+
+```text
+# Cleanup list — host de treino prod-web-01
+
+## Artefatos de TESTE que eu plantei (remover)
+- (nenhum nesta missão; você só caçou — mas se tivesse plantado uma chave
+  ou um cron para provar a persistência, removê-los entraria aqui)
+
+## Achados do operador anterior (NÃO remover: são evidência; reportar ao cliente)
+- /etc/cron.d/system-update + /usr/local/bin/.sysupdate  (persistência por cron)
+- /root/.ssh/authorized_keys: chave "attacker@c2"        (persistência por SSH key)
+- /etc/systemd/system/network-online-sync.service        (serviço com payload base64)
+- /var/backups/app-db-2026-01.sql.gz: senha de serviço vazada (credential reuse)
+
+## Como o cliente corta cada um (para o relatório)
+- cron: remover o arquivo e o script; auditar /etc/cron.* contra a baseline.
+- SSH: remover a chave; gerenciar authorized_keys e alertar em qualquer mudança.
+- serviço: desabilitar e remover a unit; file integrity monitoring em /etc/systemd.
+- backup: tirar segredos do dump; senha distinta por serviço; rotacionar o que vazou.
+```
+
+Repare na distinção: o que **você** plantou, você remove; o que o **invasor anterior** deixou é **evidência** — você reporta, não apaga (apagar seria destruir prova, o `anti-forensics` que o profissional não faz).
+
+### 5.6 Desligar e limpar
+
+Saia do shell (`exit`). Como você subiu com `--rm`, o contêiner **desaparece sozinho**. Para apagar também a imagem e o cenário Windows:
+
+```console
+$ docker rmi postex-lab:local
+$ rm -rf /tmp/postex-win
+```
+
+## 6. Variações e aprofundamento
+
+**Mais famílias de persistência no Linux.** Além das três do treino, procure (e saiba caçar): `cron` por usuário (`crontab -l` de cada conta, não só `/etc/cron.d`), os diretórios `/etc/cron.{hourly,daily,weekly}`, os `systemd` *timers* (`.timer`, uma alternativa ao cron), os arquivos de inicialização de shell (`~/.bashrc`, `/etc/profile.d/*.sh`, que rodam a cada login), `/etc/rc.local`, módulos de PAM e, no nível mais fundo, um <GlossaryTerm term="rootkit">rootkit</GlossaryTerm> de kernel — este último esconde o próprio mecanismo do sistema operacional, e por isso a resposta a um host com rootkit confirmado costuma ser reinstalar, não limpar.
+
+**Persistência no Windows além da Missão 3.** O repertório é vasto: além de scheduled task, Run key, serviço e WMI subscription, há *startup folder*, *Image File Execution Options* (sequestrar um executável legítimo), *AppInit_DLLs*, *COM hijacking* e *BITS jobs*. Todas se enquadram na mesma tática TA0003 do MITRE ATT&CK; a ferramenta **Autoruns** (da Sysinternals) foi feita para listar quase todos esses pontos de autostart de uma vez — é o primeiro lugar onde um defensor Windows olha.
+
+**Redundância: o atacante nunca aposta num mecanismo só.** Um adversário cuidadoso planta **vários** mecanismos de famílias diferentes — uma chave SSH *e* um cron *e* um serviço — para que, se o defensor achar e remover um, os outros mantenham o acesso. É o espelho da lição do 6.6 (o atacante quer todos os elos; o defensor só precisa cortar um): na persistência, o atacante quer **vários caminhos de volta**, e o defensor precisa achar **todos**. Por isso a caça nunca para no primeiro achado.
+
+**Da persistência ao movimento.** Garantir o retorno num host costuma ser meio, não fim. Com as credenciais do loot e o acesso estável, o passo seguinte é o <GlossaryTerm term="lateral movement">lateral movement</GlossaryTerm> e o <GlossaryTerm term="pivoting">pivoting</GlossaryTerm> para o resto da rede — o tema que liga esta trilha à de Active Directory (Trilha 7), onde a persistência ganha formas específicas de domínio (como o *Golden Ticket*).
+
+## 7. Erros comuns
+
+- **Confundir limpeza com anti-forensics.** "Apaguei os logs para não deixar rastro" não é limpeza de pentest — é destruir evidência do cliente. Você remove só os **seus** artefatos de teste e **documenta**; os logs e os achados ficam.
+- **Coletar demais.** Exfiltrar um banco inteiro "para provar que dava" pode ser dano e pode estourar o escopo. Prove o acesso com uma **amostra** mínima; a evidência é qualitativa, não um despejo completo.
+- **Parar na primeira persistência achada.** O operador anterior quase sempre planta redundância. Achou a chave SSH? Continue: há provavelmente um cron e/ou um serviço também. Varra as três famílias sempre.
+- **`cat` num arquivo `.gz`.** Dá lixo binário. Use `zcat`/`gunzip -c` para ler comprimido, e `strings` para binários.
+- **Achar que trocar a senha expulsa o invasor.** Chave SSH e Run key não dependem de senha. Sem remover o mecanismo de persistência, o acesso volta mesmo após o reset — um erro clássico de resposta a incidente.
+- **Caçar sem baseline.** Sem saber o que é "normal" no host, todo serviço parece suspeito e nenhum parece. Estabeleça (ou peça ao cliente) o estado conhecido-bom antes de decidir o que destoa.
+- **Decodificar o token errado na Missão 3.** Se o `base64 -d` devolve algo que começa com `decoy:`, você escolheu um mecanismo que deixa artefato em disco — releia o que "fileless" elimina e tente o [D].
+
+## 8. Defesa e mitigação
+
+A pós-exploração é, para o defensor, o momento de **negar o loot, achar a persistência e conter o alcance**. Como toda a Trilha 6 mostrou, a defesa é mais fácil quando você sabe o que o atacante procura.
+
+<Figure
+  src={familias}
+  alt="Uma tabela de seis famílias de persistência com três colunas: gatilho, onde vive e como detectar. Linux: cron (gatilho de tempo; vive em /etc/cron.d e crontab; detecta-se listando essas entradas); serviço systemd (boot; arquivos .service; unit-files habilitados e leitura do ExecStart); chave SSH (login remoto; ~/.ssh/authorized_keys; comparar com baseline). Windows: scheduled task (agenda ou logon; C:\Windows\System32\Tasks; schtasks e Autoruns); Run key (logon; registro HKCU/HKLM Run; Autoruns e reg query); WMI subscription (evento do sistema; repositório WMI, fileless; consultar __EventFilter e consumidores). Abaixo, uma caixa lembra que o modelo é sempre gatilho vezes payload vezes privilégio, e que o fileless se caça pelo repositório, não no disco."
+  caption="Onde cada família de persistência vive e como detectá-la. A defesa é a mesma ideia repetida: conhecer o estado normal (a baseline) e caçar o que destoa."
+/>
+
+**Negue o loot (segredos fora do alcance).** A credencial do treino estava num backup legível e reaproveitada. Contra isso: nunca deixe segredos em dumps, configs ou históricos; use um cofre de segredos (*secrets manager*); dê senha **distinta** por serviço e por conta (mata o `credential reuse`); e restrinja quem lê os backups. Exemplo do que **não** fazer e do caminho melhor:
+
+```text
+# RUIM: senha em texto claro dentro do backup, legivel e reusada no host.
+-- ops: appsvc DB password (reused on the host) = <senha>
+
+# MELHOR: o backup nao contem segredos; a senha vem de um cofre, so para o
+# processo, distinta por servico, e o dump e cifrado e com leitura restrita.
+```
+
+**Ache a persistência (baseline + monitoramento).** Para cada família, saiba onde olhar e automatize a comparação com a <GlossaryTerm term="baseline">baseline</GlossaryTerm>:
+
+- **`cron`:** inventarie `/etc/cron.d`, `/etc/cron.{hourly,daily,weekly}` e o `crontab` de cada usuário; alerte em qualquer arquivo novo ou alterado.
+- **Serviço `systemd`:** `systemctl list-unit-files --state=enabled` e compare com o conjunto conhecido; leia o `ExecStart` de units novas (um comando ofuscado em base64 é IoC).
+- **Chave SSH:** monitore `~/.ssh/authorized_keys` de toda conta com *file integrity monitoring*; qualquer linha nova é um alerta, porque chave sobrevive à troca de senha.
+- **Windows:** rode o **Autoruns** (Sysinternals) para varrer scheduled tasks, Run keys, serviços e startup folders de uma vez; para o fileless, consulte o WMI (`Get-WMIObject -Namespace root\Subscription -Class __EventFilter` e os consumidores).
+
+No Linux, o `auditd` registra a criação desses artefatos no momento em que acontece; no Windows, o `Sysmon` (evento 1 para processos, 19–21 para WMI) e um EDR fazem o mesmo. Monitorar a **criação** é o que pega até o atacante que, como no SUNBURST, **restaura** o estado depois: o arquivo volta ao normal, mas o log da mudança fica.
+
+**Contenha o alcance (menos privilégio, menos retorno).** Mesmo que um mecanismo escape, limite o estrago: rode serviços com <GlossaryTerm term="least privilege">least privilege</GlossaryTerm> (contas virtuais/gMSA no Windows, usuários dedicados no Linux), segmente a rede para encurtar o <GlossaryTerm term="blast radius">blast radius</GlossaryTerm> (o que faltou na Equifax do 6.6), e trate hosts críticos como **imutáveis** — reconstruídos a partir de uma imagem conhecida-boa, em vez de remendados, o que apaga qualquer persistência de uma vez. E lembre do princípio que atravessa toda a trilha: contra persistência, o defensor precisa achar **todos** os mecanismos; por isso a resposta a um comprometimento confirmado de `root`/`SYSTEM` é, não raro, **reinstalar** — a única forma de ter certeza de que nenhum caminho de volta ficou.
+
+## 9. Exercícios
+
+Primeiro o quiz de teoria (ele conta para concluir o módulo e cobra o *porquê* da pós-exploração — escopo, famílias, detecção e a ética da limpeza —, não a decoreba de comandos):
+
+<Quiz task="quiz-final" />
+
+Depois, as três missões da Seção 5, cada uma com sua flag:
+
+- **Missão 1 — loot:** recupere a senha de serviço escondida no backup comprimido de `/var/backups`.
+- **Missão 2 — caça de persistência:** encontre as três famílias que o operador anterior deixou e decodifique o payload ofuscado da unit `systemd`.
+- **Missão 3 — persistência Windows:** decida qual dos quatro mecanismos é o fileless por evento e decodifique o token certo.
+
+Para ir além, **sem flag**: no host de treino, **plante** a sua própria persistência (adicione uma linha em `/root/.ssh/authorized_keys` com uma chave sua, ou um `cron`), depois **cace-a** como se fosse de outra pessoa e **remova-a**, anotando na lista de limpeza. Fazer os dois lados — plantar e depois caçar/remover — é a melhor forma de internalizar que persistência e detecção são a mesma moeda.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- **Pós-exploração** é tudo o que se faz **depois** do acesso: coletar (loot), persistir e limpar/relatar. Virar `root` é o meio; provar o impacto e deixar o ambiente como estava é o fim.
+- O **loot** busca o que o acesso destrava — credenciais, chaves, evidências — com **coleta mínima necessária** e dentro do escopo.
+- **Persistência** é sempre **gatilho × payload × privilégio**: `cron`/scheduled task (tempo), serviço (boot), chave SSH/Run key (login), WMI subscription (evento). Chave SSH e Run key **sobrevivem à troca de senha**.
+- **Detectar** exige uma **baseline**: persistência imita configuração legítima, então o que a entrega é destoar do normal (uma unit nova, uma chave desconhecida, um payload ofuscado — um IoC).
+- A **limpeza** honesta remove os **próprios** artefatos de teste e documenta; apagar logs e evidência do cliente é **anti-forensics**, não limpeza.
+- Defender é **negar o loot** (segredos isolados, sem reuso), **achar toda** a persistência (baseline, `auditd`/Sysmon, Autoruns) e **conter o alcance** (least privilege, segmentação, hosts imutáveis).
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [MITRE ATT&CK — Persistence (TA0003)](https://attack.mitre.org/tactics/TA0003/) — o catálogo das técnicas de persistência, o vocabulário comum do relatório.
+- [Mandiant/FireEye — SUNBURST Backdoor (2020-12-13)](https://cloud.google.com/blog/topics/threat-intelligence/evasive-attacker-leverages-solarwinds-supply-chain-compromises-with-sunburst-backdoor) — o relato oficial da pós-exploração e da limpeza do caso da Seção 4.
+- [MITRE ATT&CK — TeamTNT (G0139)](https://attack.mitre.org/groups/G0139/) — persistência real em contêineres por chave SSH e serviço.
