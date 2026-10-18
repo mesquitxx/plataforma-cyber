@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" role="img" aria-labelledby="t d">
+  <title id="t">A cadeia que vai de uma credencial qualquer ao controle total do domínio</title>
+  <desc id="d">Um fluxo da esquerda para a direita em cinco estágios. Estágio 1: uma credencial inicial (um NT hash ou um ticket vindo do módulo 7.3). Estágio 2: movimento lateral — essa credencial é reutilizada para executar comandos em outras máquinas da rede, pelos canais SMB (PsExec), WMI, WinRM ou RDP; a técnica MITRE é T1550.003 Pass the Ticket e T1021 Remote Services. Estágio 3: ao pousar numa máquina onde um administrador de domínio deixou sessão ou credencial, o atacante captura uma credencial privilegiada e, com direitos de replicação, roda DCSync (MITRE T1003.006), que pede ao controlador de domínio os hashes de todas as contas — inclusive o da conta krbtgt. Estágio 4: com o hash do krbtgt, o atacante forja um golden ticket (MITRE T1558.001), um ticket-granting ticket válido para qualquer conta. Estágio 5: resultado — Domain Admin, controle total e persistente do domínio. Uma faixa embaixo resume: cada seta é uma reutilização de credencial; o hash do krbtgt é a chave-mestra de que todo o Kerberos depende.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .st { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .lab { font-size: 10px; fill: #9fb0a6; }
+    .det { font-size: 10px; fill: #cfe0d6; }
+    .mit { font-size: 9.5px; fill: #5ee08a; }
+    .box { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2; }
+    .start { fill: #16201b; stroke: #9fb0a6; stroke-width: 2; }
+    .win { fill: #16201b; stroke: #5ee08a; stroke-width: 2.5; }
+    .flow { stroke: #9fb0a6; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
+    .rule { font-size: 11.5px; fill: #cfe0d6; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="960" height="440" fill="#121815"/>
+  <text class="t" x="30" y="34">Da credencial ao domínio: a espinha dorsal de 7.4</text>
+
+  <!-- stage 1 -->
+  <rect class="start" x="24" y="70" width="168" height="96" rx="8"/>
+  <text class="st" x="108" y="94" text-anchor="middle" fill="#9fb0a6">1 · credencial</text>
+  <text class="lab" x="108" y="116" text-anchor="middle">NT hash ou</text>
+  <text class="lab" x="108" y="130" text-anchor="middle">ticket (do 7.3)</text>
+  <text class="det" x="108" y="152" text-anchor="middle">o ponto de partida</text>
+
+  <!-- stage 2 -->
+  <rect class="box" x="216" y="70" width="168" height="96" rx="8"/>
+  <text class="st" x="300" y="94" text-anchor="middle">2 · lateral</text>
+  <text class="lab" x="300" y="114" text-anchor="middle">SMB · WMI</text>
+  <text class="lab" x="300" y="128" text-anchor="middle">WinRM · RDP</text>
+  <text class="mit" x="300" y="150" text-anchor="middle">T1550.003 · T1021</text>
+
+  <!-- stage 3 -->
+  <rect class="box" x="408" y="70" width="168" height="96" rx="8"/>
+  <text class="st" x="492" y="94" text-anchor="middle">3 · DCSync</text>
+  <text class="lab" x="492" y="114" text-anchor="middle">replica os hashes</text>
+  <text class="lab" x="492" y="128" text-anchor="middle">do DC → krbtgt</text>
+  <text class="mit" x="492" y="150" text-anchor="middle">T1003.006</text>
+
+  <!-- stage 4 -->
+  <rect class="box" x="600" y="70" width="168" height="96" rx="8"/>
+  <text class="st" x="684" y="94" text-anchor="middle">4 · golden ticket</text>
+  <text class="lab" x="684" y="114" text-anchor="middle">forja um TGT</text>
+  <text class="lab" x="684" y="128" text-anchor="middle">para qualquer conta</text>
+  <text class="mit" x="684" y="150" text-anchor="middle">T1558.001</text>
+
+  <!-- stage 5 -->
+  <rect class="win" x="792" y="70" width="144" height="96" rx="8"/>
+  <text class="st" x="864" y="94" text-anchor="middle" fill="#5ee08a">5 · Domain</text>
+  <text class="st" x="864" y="110" text-anchor="middle" fill="#5ee08a">Admin</text>
+  <text class="det" x="864" y="132" text-anchor="middle">controle total</text>
+  <text class="det" x="864" y="148" text-anchor="middle">e persistente</text>
+
+  <!-- arrows -->
+  <path class="flow" d="M192,118 L214,118"/>
+  <path class="flow" d="M384,118 L406,118"/>
+  <path class="flow" d="M576,118 L598,118"/>
+  <path class="flow" d="M768,118 L790,118"/>
+
+  <!-- bottom rule -->
+  <rect x="24" y="220" width="912" height="180" rx="10" fill="#0f1712" stroke="#2c3a33" stroke-width="1.5"/>
+  <text class="st" x="44" y="250" fill="#9fb0a6">A leitura do fluxo</text>
+  <text class="rule" x="44" y="282">• Cada seta é uma <tspan fill="#5cc8d8">reutilização de credencial</tspan>: nenhum exploit novo, só identidade emprestada.</text>
+  <text class="rule" x="44" y="310">• Movimento lateral (2) procura a máquina onde uma conta privilegiada deixou sessão ou segredo.</text>
+  <text class="rule" x="44" y="338">• DCSync (3) é o salto para o poder: pedir ao DC os hashes como se você fosse outro DC.</text>
+  <text class="rule" x="44" y="366">• O hash do <tspan fill="#5ee08a">krbtgt</tspan> é a chave-mestra de que todo o Kerberos depende: com ele, o golden ticket (4)</text>
+  <text class="rule" x="44" y="384" dx="14">forja o crachá de qualquer um — inclusive um Domain Admin.</text>
+</svg>

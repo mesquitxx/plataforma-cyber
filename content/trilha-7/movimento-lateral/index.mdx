@@ -1,0 +1,612 @@
+---
+slug: movimento-lateral
+track: trilha-7
+title: "Movimento lateral e escalação no domínio"
+prerequisites: [ataques-classicos-ad]
+lab: null
+tasks:
+  - slug: missao-1-golden
+    title: "Missão 1 — forjar o golden ticket com o hash do krbtgt"
+    type: flag
+    prompt: "Decifre a parte cifrada do TGT forjado (m1-golden.txt) com o golden.py, usando o NT hash do krbtgt e a key usage correta da parte cifrada do ticket. O conteúdo que aparece traz a flag. Cole no formato FLAG{...}."
+    hint: "A parte cifrada de um ticket (o enc-part) não usa a mesma key usage do TGS-REP do 7.3. Pense em qual troca do Kerberos gera o TGT: é a do AS, e o ticket em si é cifrado com a key usage 2. A chave é o NT hash do krbtgt que já está no arquivo — você não precisa quebrar nada, só decifrar."
+    flag:
+      hash: "scrypt$16384$8$1$2d966bc6135d33a5f7e6c0a570f79559d743040bfb6066bdcad292a1b87ca15a"
+      salt: "51846c55c56b1a7b8d27edba7412ebc7"
+  - slug: missao-2-silver
+    title: "Missão 2 — o ticket furtivo que abre o alvo"
+    type: flag
+    prompt: "Dos quatro tickets forjados do m2-tickets.json, decodifique a nota (base64) do ÚNICO que abre a share CIFS de fs01.corp.local SEM tocar no KDC. Cole o FLAG{...} que aparece."
+    hint: "O objetivo pede dois adjetivos ao mesmo tempo: o serviço certo (cifs do fs01) e furtividade (sem falar com o KDC). O golden ticket abre tudo, mas é apresentado ao KDC. Um silver ticket é forjado com a chave da conta de serviço e vai direto ao serviço — mas só serve para o serviço e a máquina daquela chave. Procure o silver do serviço e host certos. As notas erradas começam com 'decoy:'."
+    flag:
+      hash: "scrypt$16384$8$1$53a889a8760c311fcaa1bab24d64230e72ee723bf9f92495c3b9662ed1d6d89a"
+      salt: "994308eb97c0f18d23fbf4c141e3c079"
+  - slug: missao-3-caminho
+    title: "Missão 3 — o caminho mais curto até Domain Admin"
+    type: flag
+    prompt: "No grafo m3-graph.json, ache o caminho mais curto de j.silva (que você controla) até o grupo Domain Admins. Decodifique a nota (base64) da aresta final desse caminho. Cole o FLAG{...} que aparece."
+    hint: "É um problema de menor caminho num grafo direcionado — pense em busca em largura (BFS) a partir de j.silva. As arestas são MemberOf, AdminTo, HasSession e GenericAll. Os becos sem saída têm notas que começam com 'decoy:'. A nota que importa é a da última aresta do caminho vencedor, a que entra em Domain Admins."
+    flag:
+      hash: "scrypt$16384$8$1$c9123806f0e4a99418f35b46e97ded1e6590db7c9610035cb0b5931168314a9a"
+      salt: "d35d6a9612fda40c657e7885d6a745be"
+  - slug: quiz-final
+    title: "Quiz — Movimento lateral e escalação no domínio"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que ter o NT hash da conta krbtgt equivale a controlar o domínio inteiro (ataque golden ticket)?"
+        options:
+          - "Porque o krbtgt é membro de Domain Admins, e usar o hash dele já loga como administrador"
+          - "Porque todo TGT do domínio é cifrado e assinado com a chave derivada da senha do krbtgt; quem tem esse hash forja um TGT válido para qualquer conta e quaisquer grupos (inclusive Domain Admins), e o KDC o aceita como legítimo"
+          - "Porque o hash do krbtgt é a senha de todos os usuários do domínio ao mesmo tempo"
+          - "Porque o krbtgt desativa a pré-autenticação de todas as contas"
+        answer: 1
+        explanation: "O krbtgt não é um usuário que você loga (A) nem a senha de todo mundo (C). Ele é a conta de serviço do KDC: a chave derivada da senha dele cifra e assina TODO ticket-granting ticket do domínio. Com esse hash, o atacante monta offline um TGT dizendo 'sou o Administrador, membro de Domain Admins', cifra com a chave do krbtgt, e o KDC — que valida tickets justamente com essa chave — acredita. Não tem a ver com pré-autenticação (D), que é assunto do AS-REP roasting."
+      - question: "Qual é a diferença essencial entre um golden ticket e um silver ticket, e por que o silver costuma ser mais furtivo?"
+        options:
+          - "O golden é forjado com a chave do krbtgt e é apresentado ao KDC (gera evento no controlador), valendo para o domínio todo; o silver é forjado com a chave de uma conta de serviço e é apresentado direto ao serviço, sem tocar o KDC — por isso é mais furtivo, mas só vale para aquele serviço"
+          - "O silver é mais poderoso que o golden porque não expira nunca"
+          - "O golden funciona em NTLM e o silver em Kerberos"
+          - "Não há diferença prática; são dois nomes para o mesmo ataque"
+        answer: 0
+        explanation: "Golden e silver são ambos tickets Kerberos forjados (C e D estão errados). A diferença é a chave e o alcance: o golden usa a chave do krbtgt e é um TGT, então, para virar acesso, o atacante o apresenta ao KDC (TGS-REQ) e gera o evento 4769 — alcance de domínio, mais ruído. O silver usa a chave da conta de serviço do alvo e já é um service ticket, apresentado direto ao serviço (AP-REQ): o KDC nunca é contatado, o que o torna mais difícil de detectar, ao custo de servir só àquele serviço e máquina. Poder não é imortalidade (B)."
+      - question: "O que o DCSync realmente faz, e por que ele não precisa rodar código no controlador de domínio nem tocar no processo de credenciais (LSASS) dele?"
+        options:
+          - "Ele explora uma vulnerabilidade de execução remota no controlador para instalar um agente"
+          - "Ele abusa da interface de replicação do Active Directory: uma conta com o direito de replicação pede ao controlador, pela rede, os hashes das contas — como se fosse outro controlador se sincronizando — então não precisa de código nem de acesso à memória do DC"
+          - "Ele lê o arquivo NTDS.dit diretamente do disco do controlador por um compartilhamento aberto"
+          - "Ele intercepta o tráfego de autenticação e extrai os hashes dos pacotes"
+        answer: 1
+        explanation: "DCSync não é um exploit (A) nem leitura de arquivo (C) nem sniffing (D). Controladores de domínio se replicam entre si por um protocolo legítimo (Directory Replication Service). O DCSync finge ser um DC e pede os dados de senha de uma conta por esse protocolo — basta ter os direitos de replicação (Replicating Directory Changes / ...All), que contas privilegiadas têm. Por isso ele roda da máquina do atacante, pela rede, sem executar nada no DC nem tocar o LSASS dele — e é assim que o atacante pega o hash do krbtgt para o golden ticket."
+      - question: "Você extraiu da memória de uma estação o NT hash da conta svc_app (não a senha). Qual a diferença entre usar esse hash em pass-the-hash, overpass-the-hash e pass-the-ticket?"
+        options:
+          - "São três nomes para a mesma coisa"
+          - "Pass-the-hash usa o hash no NTLM; overpass-the-hash usa o hash para pedir um TGT Kerberos legítimo (e daí age como Kerberos); pass-the-ticket reutiliza um ticket Kerberos já existente (roubado ou forjado), sem nem precisar do hash"
+          - "Pass-the-ticket só funciona se você tiver a senha em claro"
+          - "Overpass-the-hash exige privilégio de Domain Admin para funcionar"
+        answer: 1
+        explanation: "Os três reutilizam credencial, mas em pontos diferentes. Pass-the-hash (visto no 7.3) prova identidade no NTLM com o hash. Overpass-the-hash (pass-the-key) usa o mesmo hash, só que para pedir um TGT ao Kerberos — convertendo um segredo NTLM em uma sessão Kerberos, bem mais discreta. Pass-the-ticket pula o hash: injeta um ticket Kerberos já pronto (um TGT/TGS roubado da memória ou forjado, como golden/silver) na sua sessão. Não são sinônimos (A), não precisam de senha em claro (C) nem de ser DA (D)."
+      - question: "Depois de um comprometimento de krbtgt, por que a Microsoft recomenda resetar a senha do krbtgt DUAS vezes, com um intervalo de pelo menos 10 horas, em vez de uma só?"
+        options:
+          - "Porque o primeiro reset falha silenciosamente e o segundo corrige"
+          - "Porque a conta krbtgt guarda as duas senhas mais recentes (histórico de 2); um único reset deixa a senha anterior ainda válida para validar tickets, então golden tickets forjados com o hash antigo continuariam funcionando até o segundo reset expurgar essa senha"
+          - "Porque é preciso resetar em dois controladores diferentes, um por vez"
+          - "Porque o intervalo de 10 horas serve para avisar os usuários por e-mail"
+        answer: 1
+        explanation: "O krbtgt mantém as duas chaves mais recentes para não quebrar tickets em trânsito durante a replicação. Se você reseta só uma vez, a chave antiga — a que o atacante roubou — ainda é aceita para validar tickets, então o golden ticket dele sobrevive. O segundo reset empurra a chave comprometida para fora do histórico de duas, invalidando-a. O intervalo (≥10 horas, o tempo de vida máximo do ticket) existe para a primeira troca se replicar e os tickets legítimos renovarem antes da segunda, não para avisar ninguém (D). Não é falha (A) nem questão de dois DCs (C)."
+glossary:
+  - term: overpass-the-hash
+    definition: "Técnica (também chamada pass-the-key) que usa o NT hash de uma conta para pedir ao Kerberos um TGT legítimo, convertendo um segredo do NTLM numa sessão Kerberos — mais discreta que o pass-the-hash puro."
+  - term: pass-the-ticket
+    definition: "Reutilização de um ticket Kerberos já existente (TGT ou service ticket), roubado da memória ou forjado, injetando-o na própria sessão para autenticar sem senha e sem hash."
+  - term: golden ticket
+    definition: "Ticket-granting ticket (TGT) forjado com o NT hash da conta krbtgt. Como o KDC valida todo TGT com a chave do krbtgt, ele aceita o ticket forjado para qualquer conta e grupos, dando acesso de domínio."
+  - term: silver ticket
+    definition: "Service ticket (TGS) forjado com o NT hash de uma conta de serviço. É apresentado direto ao serviço (sem passar pelo KDC), então é furtivo, mas só vale para aquele serviço e máquina."
+  - term: krbtgt
+    definition: "Conta de serviço embutida do KDC (RID 502). A chave derivada da senha dela cifra e assina todos os tickets do domínio; comprometê-la permite forjar golden tickets e é equivalente a dominar o domínio."
+  - term: DCSync
+    definition: "Técnica que abusa da interface de replicação do Active Directory: uma conta com direito de replicação finge ser um controlador de domínio e pede pela rede os hashes das contas (inclusive o krbtgt), sem rodar código no DC."
+  - term: PAC
+    definition: "Privilege Attribute Certificate: estrutura dentro do ticket Kerberos que carrega os SIDs dos grupos do usuário (quem ele é e a que grupos pertence). Forjar um ticket é, na prática, forjar um PAC com os grupos que o atacante quiser."
+  - term: PsExec
+    definition: "Ferramenta da Sysinternals (e técnica homônima do impacket) que executa comandos em uma máquina remota pelo compartilhamento administrativo ADMIN$ via SMB, criando um serviço temporário — um dos canais clássicos de movimento lateral."
+---
+
+import daCredencialAoDominio from "./img/da-credencial-ao-dominio.svg";
+import goldenVsSilver from "./img/golden-vs-silver.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No 7.3 você saiu com um troféu pequeno: uma credencial. Um NT hash de `svc_mssql`, a senha quebrada de `svc_legacy`, talvez um ticket. E parou numa pergunta que todo iniciante faz ao chegar aqui: *"tenho uma conta de serviço qualquer — e daí? Isso não é Domain Admin."* Este módulo é a ponte entre esses dois pontos. Ele mostra como uma credencial comum vira **execução em outras máquinas** (o <GlossaryTerm term="lateral movement">movimento lateral</GlossaryTerm>, mover-se de host em host dentro da rede) e como essa travessia encontra, em algum ponto, a chave que entrega o domínio inteiro.
+
+A ideia que amarra tudo é a mesma do 7.3, levada ao extremo: **no Windows em rede, identidade é um segredo reutilizável.** Um hash autentica no NTLM sem a senha; um ticket Kerberos autentica sem o hash; e um hash muito específico — o da conta `krbtgt` — permite **fabricar** tickets válidos para qualquer pessoa. O atacante não "invade" o controlador com um exploit mágico; ele junta credenciais emprestadas até achar a que vale ouro. Entender esse encadeamento é o que separa quem roda uma ferramenta de quem sabe o que está acontecendo — e, do lado da defesa, é o que explica por que redes Windows caem em horas e por que a resposta a um comprometimento de `krbtgt` é tão dolorosa.
+
+Praticamente todo ataque sério de ransomware em rede corporativa percorre esse caminho: comprometer uma conta, mover-se lateralmente, capturar uma credencial privilegiada, replicar os segredos do domínio e forjar persistência. Você vai ver a mecânica dos dois lados.
+
+**Ao final, você vai saber:**
+
+- distinguir e explicar <GlossaryTerm term="pass-the-ticket">pass-the-ticket</GlossaryTerm>, <GlossaryTerm term="overpass-the-hash">overpass-the-hash</GlossaryTerm> e os canais de execução remota (SMB/<GlossaryTerm term="PsExec">PsExec</GlossaryTerm>, WMI, WinRM, RDP);
+- entender por que o hash do <GlossaryTerm term="krbtgt">krbtgt</GlossaryTerm> é a chave-mestra do domínio, a ponto de forjar um <GlossaryTerm term="golden ticket">golden ticket</GlossaryTerm> você mesmo, à mão, em Python;
+- diferenciar golden ticket e <GlossaryTerm term="silver ticket">silver ticket</GlossaryTerm> por alcance e furtividade;
+- explicar o <GlossaryTerm term="DCSync">DCSync</GlossaryTerm> e por que ele não precisa rodar nada no controlador;
+- ler um grafo de ataque estilo <GlossaryTerm term="BloodHound">BloodHound</GlossaryTerm> e achar o caminho mais curto até Domain Admin;
+- defender o domínio: rotação dupla do `krbtgt`, tiering, LAPS e a detecção pelos eventos certos.
+
+**Pré-requisitos:** 7.3 — Ataques clássicos (você vai reusar daqui: o <GlossaryTerm term="pass-the-hash">pass-the-hash</GlossaryTerm>, a ideia de que a chave do <GlossaryTerm term="RC4-HMAC (etype 23)">RC4-HMAC (etype 23)</GlossaryTerm> é o NT hash, e o cracker em Python puro que você vai estender aqui). Do 7.2, o grafo do BloodHound e as arestas de abuso (`GenericAll`). Da Trilha 3, a noção de chave derivada de senha.
+
+**Tempo estimado:** 3 a 4 horas, incluindo as três missões.
+
+<Callout variant="ethics">
+Forjar tickets, replicar segredos e reutilizar credenciais de contas de uma organização só é legítimo no laboratório ou em um engajamento com autorização por escrito que inclua o domínio no escopo (Trilha 1; no Brasil, acesso não autorizado a sistema informático é crime, Lei 12.737/2012). Este módulo **não tem lab próprio**: a Trilha 7 é teoria + walkthrough guiado, e as missões são de **forja, decifragem e análise de artefatos fictícios que você mesmo gera no seu WSL**. Nenhum domínio real é tocado.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+Movimento lateral e escalação parecem dois temas; são o mesmo, visto de duas alturas. Movimento lateral é **andar de lado** — da conta que você tem para outras máquinas e contas do mesmo nível. Escalação é **subir** — da conta que você tem para uma com mais poder. Na prática eles se intercalam: você anda de lado até pousar numa máquina onde uma conta poderosa deixou um rastro, aí sobe. A figura abaixo é o mapa inteiro do módulo.
+
+<Figure
+  src={daCredencialAoDominio}
+  alt="Fluxo em cinco estágios: credencial inicial do 7.3; movimento lateral reutilizando a credencial por SMB/WMI/WinRM/RDP (T1550.003, T1021); DCSync que replica os hashes do DC incluindo o krbtgt (T1003.006); golden ticket forjado com o hash do krbtgt (T1558.001); e o resultado, Domain Admin com controle total e persistente. Uma faixa resume que cada seta é uma reutilização de credencial e que o krbtgt é a chave-mestra do Kerberos."
+  caption="A espinha dorsal de 7.4: cada seta é uma credencial reutilizada; o DCSync é o salto para o poder; o hash do krbtgt fecha o domínio."
+/>
+
+### 2.1 Reutilização de credencial: do hash ao ticket
+
+No 7.3 você viu o pass-the-hash: o NT hash **é** a credencial no NTLM. Aqui vêm os primos no mundo Kerberos.
+
+O <GlossaryTerm term="overpass-the-hash">overpass-the-hash</GlossaryTerm> (ou *pass-the-key*) é a ponte entre os dois protocolos. Em vez de usar o NT hash no NTLM, o atacante usa esse mesmo hash para **pedir um TGT** ao <GlossaryTerm term="KDC">KDC</GlossaryTerm> — afinal, a chave que prova a identidade na pré-autenticação do Kerberos é derivada da senha, e no RC4 ela é justamente o NT hash. O resultado é um <GlossaryTerm term="TGT">TGT</GlossaryTerm> legítimo: daí em diante o atacante age como um usuário Kerberos comum, o que levanta muito menos suspeita do que NTLM solto pela rede.
+
+O <GlossaryTerm term="pass-the-ticket">pass-the-ticket</GlossaryTerm> dispensa até o hash: se o atacante consegue um ticket **já pronto** — roubado da memória de uma máquina onde o usuário logou, ou forjado — ele simplesmente injeta esse ticket na própria sessão e passa a ser aquele usuário. Um TGT roubado dá acesso a tudo que o dono podia pedir; um service ticket roubado dá acesso àquele serviço. É a técnica [T1550.003](https://attack.mitre.org/techniques/T1550/003/) do MITRE ATT&CK.
+
+A diferença entre os três, que o quiz cobra:
+
+- **pass-the-hash** — hash no NTLM (prova identidade com o hash).
+- **overpass-the-hash** — hash para obter um TGT Kerberos (converte NTLM em Kerberos).
+- **pass-the-ticket** — ticket pronto injetado na sessão (nem precisa do hash).
+
+### 2.2 Movimento lateral: executar como outra conta, em outra máquina
+
+Ter uma credencial válida de uma conta que é **administradora local** de uma máquina remota significa poder executar comandos nela. Os canais clássicos, todos catalogados sob [T1021 — Remote Services](https://attack.mitre.org/techniques/T1021/):
+
+- **SMB / compartilhamentos administrativos** (o `ADMIN$`, o `C$`). A técnica <GlossaryTerm term="PsExec">PsExec</GlossaryTerm> ([T1021.002](https://attack.mitre.org/techniques/T1021/002/)) copia um executável para o `ADMIN$` e cria um serviço temporário para rodá-lo. Barulhento, mas eficaz.
+- **WMI** (Windows Management Instrumentation, a interface de gestão do Windows). Executa processos remotos sem criar serviço — mais discreto.
+- **WinRM** (Windows Remote Management, o serviço de administração remota por HTTP/SOAP). É o que ferramentas como `evil-winrm` usam; deixa um shell interativo.
+- **RDP** (Remote Desktop Protocol, a área de trabalho remota). Visual, legítimo, e dá sessão interativa — cobiçado porque deixa credenciais na memória da máquina destino.
+
+A escolha não é estética: cada canal deixa um rastro diferente e exige um privilégio diferente. O atacante maduro escolhe pelo que o ambiente registra menos.
+
+### 2.3 O krbtgt e o golden ticket: a chave-mestra
+
+Aqui está o coração da escalação. Lembre do 7.3: o KDC emite tickets e os cifra com a chave da conta sob a qual o serviço roda. Mas quem cifra e **assina o próprio TGT**? Uma conta de serviço embutida chamada <GlossaryTerm term="krbtgt">krbtgt</GlossaryTerm> (RID 502), que existe em todo domínio e cuja senha só o KDC conhece. Todo TGT do domínio é cifrado com a chave derivada da senha do `krbtgt`. A documentação da Microsoft diz, sem rodeios, que *"the KRBTGT password is the key from which all trust in Kerberos chains up to"* — a chave de que toda a confiança do Kerberos depende.
+
+A consequência é brutal. Se o atacante obtém o **NT hash do `krbtgt`**, ele pode montar um TGT do zero, na própria máquina, dizendo "sou o Administrador, membro de Domain Admins e Enterprise Admins", cifrar esse TGT com a chave do `krbtgt` e apresentá-lo ao KDC. O KDC valida o TGT justamente com a chave do `krbtgt` — então ele **acredita**. Isso é o <GlossaryTerm term="golden ticket">golden ticket</GlossaryTerm> ([T1558.001](https://attack.mitre.org/techniques/T1558/001/)): *"Adversaries who have the KRBTGT account password hash may forge Kerberos ticket-granting tickets (TGT), also known as a golden ticket"*.
+
+O que de fato é forjado dentro do ticket é o <GlossaryTerm term="PAC">PAC</GlossaryTerm> (Privilege Attribute Certificate), a estrutura que carrega os SIDs dos grupos do usuário. Forjar um golden ticket é, na prática, escrever um PAC que diz "este usuário é Domain Admin" e cifrá-lo com a chave certa. É por isso que o golden ticket vale para **qualquer** conta e dura até a senha do `krbtgt` ser trocada — e trocada **duas vezes**, como a seção 8 explica.
+
+### 2.4 Silver ticket e DCSync
+
+O <GlossaryTerm term="silver ticket">silver ticket</GlossaryTerm> ([T1558.002](https://attack.mitre.org/techniques/T1558/002/)) é o irmão furtivo. Em vez da chave do `krbtgt`, ele usa a chave de **uma conta de serviço** para forjar um <GlossaryTerm term="TGS">service ticket</GlossaryTerm> pronto. A diferença decisiva, nas palavras do MITRE: o atacante *"are able to create TGS tickets without interacting with the Key Distribution Center (KDC), potentially making detection more difficult"*. O golden passa pelo KDC (e gera evento lá); o silver vai direto ao serviço. O preço: o silver só abre aquele serviço, naquela máquina.
+
+<Figure
+  src={goldenVsSilver}
+  alt="Comparação em duas colunas. Golden ticket: forjado com o hash do krbtgt, é um TGT, e é apresentado ao KDC num TGS-REQ (que gera o evento 4769), dando alcance de domínio inteiro mas com mais ruído. Silver ticket: forjado com o hash da conta de serviço do alvo, já é um service ticket, e é apresentado direto ao serviço num AP-REQ, sem nunca contatar o KDC, por isso é furtivo, mas só vale para aquele serviço e máquina. A faixa de baixo resume a troca entre alcance (golden) e furtividade (silver)."
+  caption="Golden × silver: o golden passa pelo KDC e vale para o domínio; o silver pula o KDC e vale só para um serviço — mais furtivo, menos alcance."
+/>
+
+E como o atacante chega ao hash do `krbtgt`, que não fica à toa? Quase sempre por <GlossaryTerm term="DCSync">DCSync</GlossaryTerm> ([T1003.006](https://attack.mitre.org/techniques/T1003/006/)). Controladores de domínio se replicam entre si por um protocolo legítimo (Directory Replication Service). O DCSync **finge ser um controlador** e pede, pela rede, os dados de senha de uma conta — inclusive o `krbtgt` — a um DC real. Como diz o MITRE, uma conta com os direitos certos *"are able to run DCSync to pull password data from Active Directory, which may include current and historical hashes of potentially useful accounts such as KRBTGT"*. Não roda código no DC, não toca a memória de credenciais (o LSASS) dele: só usa uma API que o Active Directory oferece de propósito — para quem tem o direito de replicação, que contas privilegiadas têm.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos aos comandos reais, do ponto de vista de um Kali, contra o domínio fictício `corp.local` (controlador `dc01.corp.local` em `192.168.56.10`), a partir de uma credencial do 7.3. Você não tem um domínio para rodar isto agora — a seção 5 treina a **forja e a análise** offline. Aqui a sessão é demonstrada para você reconhecer cada passo. (As ferramentas são as do Kali; IPs e nomes são genéricos.)
+
+### 3.1 Overpass-the-hash e pass-the-ticket
+
+Com o NT hash de `svc_mssql` (do 7.3), o `impacket-getTGT` troca o hash por um TGT Kerberos legítimo e salva num arquivo de cache (`.ccache`):
+
+```console
+$ impacket-getTGT corp.local/svc_mssql -hashes :72f0eefcc213ea8f350773b831cf2c9c -dc-ip 192.168.56.10
+[*] Saving ticket in svc_mssql.ccache
+$ export KRB5CCNAME=$PWD/svc_mssql.ccache
+```
+
+Esse `export` é o pass-the-ticket: qualquer ferramenta impacket com `-k -no-pass` agora usa o ticket do cache, sem hash nem senha. É também a porta para o overpass-the-hash — você converteu um segredo NTLM (o hash) numa sessão Kerberos.
+
+### 3.2 Movimento lateral: executar em outra máquina
+
+Suponha que `svc_mssql` seja administradora local de `192.168.56.20`. Os canais da seção 2.2, com impacket:
+
+```console
+$ impacket-psexec -hashes :72f0eefcc213ea8f350773b831cf2c9c corp.local/svc_mssql@192.168.56.20
+[*] Found writable share ADMIN$
+[*] Creating service xZkq on 192.168.56.20.....
+C:\Windows\system32> whoami
+corp\svc_mssql
+```
+
+Trocar `psexec` por `wmiexec` faz o mesmo por WMI, sem criar serviço (mais discreto); `evil-winrm -i 192.168.56.20 -u svc_mssql -H 72f0...` usa WinRM. A escolha é pelo rastro: o PsExec cria um serviço (evento `7045`); o WMI deixa pegada no WMI-Activity; o WinRM, no log do próprio serviço.
+
+### 3.3 DCSync: replicar os segredos do domínio
+
+Quando o movimento lateral finalmente pousa numa conta com direito de replicação (um Domain Admin, ou uma conta com `Replicating Directory Changes All` delegado), o DCSync pede o hash do `krbtgt` sem pisar no controlador:
+
+```console
+$ impacket-secretsdump -just-dc-user krbtgt corp.local/admin@192.168.56.10 -hashes :<hash-do-admin>
+[*] Dumping Domain Credentials (domain\uid:rid:lmhash:nthash)
+[*] Using the DRSUAPI method to get NTDS.DIT secrets
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:43d0741fff228e8f56d41e66b684fd77:::
+```
+
+O `aad3b435...` é o LM hash vazio padrão; o que importa é o NT hash do `krbtgt` (`43d07...`). No `mimikatz`, o equivalente é `lsadump::dcsync /user:krbtgt`.
+
+### 3.4 Golden e silver ticket
+
+Com o hash do `krbtgt`, o `impacket-ticketer` forja o golden ticket — repare que ele precisa do **domain SID** e já embute os grupos no PAC:
+
+```console
+$ impacket-ticketer -nthash 43d0741fff228e8f56d41e66b684fd77 -domain-sid S-1-5-21-1111111111-2222222222-3333333333 -domain corp.local Administrator
+[*] Saving ticket in Administrator.ccache
+```
+
+O `mimikatz` faz o mesmo com `kerberos::golden /user:Administrator /domain:corp.local /sid:... /krbtgt:43d07... /ptt`. O silver é idêntico, mas com a chave de uma conta de serviço (`-nthash <hash-do-servico>`) e um SPN alvo (`-spn cifs/fs01.corp.local`), e **não** toca o KDC.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### A origem do golden ticket — Duckwall & Delpy, Black Hat USA 2014
+
+O golden ticket, como o Kerberoasting do 7.3, nasceu como pesquisa pública. Em **7 de agosto de 2014**, na Black Hat USA, **Alva "Skip" Duckwall** e **Benjamin Delpy** (autor do <GlossaryTerm term="Mimikatz">Mimikatz</GlossaryTerm>) apresentaram *"Abusing Microsoft Kerberos: Sorry You Guys Don't Get It"*, mostrando que, com o hash do `krbtgt`, dá para forjar tickets válidos por anos — e liberaram o código no Mimikatz.
+
+- **Impacto:** a palestra transformou o `krbtgt` de detalhe obscuro em um dos ativos mais críticos de qualquer domínio. Mostrou que comprometer um DC uma única vez pode significar persistência silenciosa de longuíssimo prazo: enquanto a senha do `krbtgt` não for trocada (duas vezes), o golden ticket continua valendo, mesmo que todas as outras senhas mudem.
+- **Lição:** a resposta a um comprometimento de DC **tem** que incluir a rotação dupla do `krbtgt` — caso contrário o atacante mantém as chaves do reino. É a defesa da seção 8.
+- **Fonte:** [Black Hat USA 2014 — "Abusing Microsoft Kerberos: Sorry You Guys Don't Get It" (slides oficiais, PDF)](https://www.blackhat.com/docs/us-14/materials/us-14-Duckwall-Abusing-Microsoft-Kerberos-Sorry-You-Guys-Don't-Get-It.pdf); [MITRE ATT&CK T1558.001 — Golden Ticket](https://attack.mitre.org/techniques/T1558/001/).
+
+### Movimento lateral em escala — Conti ransomware (CISA AA21-265A)
+
+Em **22 de setembro de 2021** (advisory atualizada em 9 de março de 2022), CISA, FBI e NSA publicaram o alerta conjunto **AA21-265A**, afirmando terem observado o ransomware Conti em *"more than 400 attacks on U.S. and international organizations"*. A advisory documenta o padrão exato deste módulo: acesso inicial por phishing (TrickBot) ou por credenciais de **Remote Desktop Protocol (RDP)** comprometidas (mapeado como [T1078 — Valid Accounts](https://attack.mitre.org/techniques/T1078/)), e propagação lateral em que *"Conti ransomware can spread via SMB"* usando compartilhamentos administrativos do Windows ([T1021.002](https://attack.mitre.org/techniques/T1021/002/)).
+
+- **Impacto:** o Conti foi um dos ransomwares mais prolíficos do período (os ataques reportados subiram para mais de mil na atualização de 2022, quando o Serviço Secreto dos EUA entrou como coautor), atingindo inclusive saúde e infraestrutura — o que levou ao alerta governamental.
+- **Lição:** o que derruba uma rede inteira não é um exploit exótico, é **credencial válida reutilizada e movimento lateral por SMB** — precisamente os canais da seção 2.2. A defesa (segmentação, MFA, LAPS, restrição dos compartilhamentos administrativos) é a mesma que trava o pentester.
+- **Fonte:** [CISA — Alert AA21-265A, "Conti Ransomware" (22 set. 2021, atualizado 9 mar. 2022)](https://www.cisa.gov/news-events/alerts/2021/09/22/conti-ransomware); [documento TLP:WHITE (PDF)](https://www.cisa.gov/sites/default/files/publications/AA21-265A-Conti_Ransomware_TLP_WHITE.pdf).
+
+## 5. Mãos à obra — forjar o golden ticket, achar o caminho
+
+Este módulo **não tem lab próprio** (a Trilha 7 fica enxuta, sem subir um domínio inteiro nos seus 16 GB). Mas o coração destes ataques não é apertar botão de ferramenta: é entender que o hash do `krbtgt` **é** a chave que valida os tickets, e que a escalação é um problema de caminho num grafo. É isso que você vai fazer — forjando e decifrando criptografia Kerberos de verdade (o mesmo RC4-HMAC do 7.3) e resolvendo um grafo de ataque, tudo 100% offline, contra artefatos sanitizados (`corp.local`, conta controlada `j.silva`).
+
+**Objetivo:** ao terminar, você terá (1) decifrado um **golden ticket** forjado com o hash do `krbtgt` e lido a identidade que estava dentro dele; (2) identificado, entre quatro tickets, o **silver ticket** furtivo que abre o alvo; e (3) achado o **caminho mais curto** até Domain Admin num grafo estilo BloodHound. Três flags, uma por missão.
+
+<Callout variant="info" title="Por que forjar à mão, e não com o impacket?">
+Contra um domínio real, você usaria `impacket-ticketer`/`secretsdump` (seção 3). Aqui, para rodar offline e **ver a matemática**, os artefatos foram forjados para o exercício: a parte cifrada do ticket guarda uma identidade e uma flag em vez da estrutura binária real do Kerberos, e um script curto reproduz fielmente a cifra RC4-HMAC (etype 23) — o mesmo `MD4` + RC4 + HMAC-MD5 do 7.3. A lição criptográfica é idêntica; só a escala muda.
+</Callout>
+
+### 5.1 Preparar o terreno (passo a passo)
+
+Abra o terminal do Ubuntu (WSL) e cole o bloco inteiro de uma vez. Ele cria, em `/tmp/ad-lateral`, os artefatos das três missões:
+
+```bash
+ROOT=/tmp/ad-lateral
+rm -rf "$ROOT"; mkdir -p "$ROOT"; cd "$ROOT"
+
+# Missao 1: parte cifrada de um TGT forjado (golden ticket). O krbtgt NT hash
+# abaixo e como se voce o tivesse extraido do DC por DCSync (secao 3.3).
+cat > m1-golden.txt <<'DOC'
+krbtgt_nt_hash = 43d0741fff228e8f56d41e66b684fd77
+cipher = a8be9a739f9b88e6a9c6642b86e0fe0fc5200c662cec9d1be2fc87f998ad55a6ae98d574f0766ddb2d9cc91d29f5e7acddbd3741905f8a18ee394942600610f6b238f6bde604d6951592ab4639f1ecf278811d2450a19d053888841f4ce69772bfaf42eeebd804f313299f9382457679cca9f62f5b265dde1e4a904f15ea23ac24ec0ec1087d1e70a541e44d67cfb9faa78a459c13341df9d4bd658b4dc83a
+DOC
+
+# Missao 2: quatro tickets forjados (notas em base64). Qual abre o alvo sem tocar o KDC?
+cat > m2-tickets.json <<'DOC'
+{
+  "objetivo": "acessar a share CIFS de fs01.corp.local SEM tocar no KDC",
+  "tickets": [
+    { "id": "T1", "kind": "golden", "spn": "(qualquer)", "host": "(todos)",
+      "note": "ZGVjb3k6IG8gZ29sZGVuIHRpY2tldCBmb3JqYWRvIGNvbSBhIGNoYXZlIGRvIGtyYnRndCBhYnJlIHR1ZG8sIG1hcyBlIGFwcmVzZW50YWRvIGFvIEtEQyAoVEdTLVJFUSk6IGdlcmEgZXZlbnRvIDQ3Njkgbm8gREMgZSBlIGFsY2FuY2UgZGUgZG9taW5pbywgbmFvIG8gcGVkaWRvIGZ1cnRpdm8gZGUgdW0gc2VydmljbyBzby4=" },
+    { "id": "T2", "kind": "silver", "spn": "MSSQLSvc/sql01.corp.local:1433", "host": "sql01",
+      "note": "ZGVjb3k6IHNpbHZlciB0aWNrZXQgdmFsaWRvLCBtYXMgcGFyYSBvIE1TU1FMIGRvIHNxbDAxIC0gc2VydmljbyBlIGhvc3QgZXJyYWRvczsgbmFvIGFicmUgYSBzaGFyZSBDSUZTIGRvIGZpbGVzZXJ2ZXIu" },
+    { "id": "T3", "kind": "silver", "spn": "cifs/fs01.corp.local", "host": "fs01",
+      "note": "RkxBR3tzaWx2ZXItdGlja2V0LWZvcmdlZC13aXRoLXRoZS1zZXJ2aWNlLWtleS1za2lwcy10aGUta2RjfQ==" },
+    { "id": "T4", "kind": "silver", "spn": "http/web01.corp.local", "host": "web01",
+      "note": "ZGVjb3k6IHNpbHZlciB0aWNrZXQgZG8gc2VydmljbyBIVFRQIGRvIHdlYjAxIC0gb3V0cm8gaG9zdCwgb3V0cm8gc2VydmljbzsgaXJyZWxldmFudGUgcGFyYSBvIG9iamV0aXZvLg==" }
+  ]
+}
+DOC
+
+# Missao 3: grafo de ataque estilo BloodHound (notas em base64 nas arestas)
+cat > m3-graph.json <<'DOC'
+{
+  "start": "j.silva",
+  "target": "Domain Admins",
+  "nodes": [
+    { "name": "j.silva", "type": "user", "owned": true },
+    { "name": "IT-Support", "type": "group" },
+    { "name": "Desktop-Users", "type": "group" },
+    { "name": "WS01", "type": "computer" },
+    { "name": "WS09", "type": "computer" },
+    { "name": "PRN01", "type": "computer" },
+    { "name": "h.santos", "type": "user" },
+    { "name": "p.costa", "type": "user" },
+    { "name": "Server-Admins", "type": "group" },
+    { "name": "Domain Admins", "type": "group", "high_value": true }
+  ],
+  "edges": [
+    { "src": "j.silva", "dst": "IT-Support", "type": "MemberOf", "note": "dm9jZSBjb250cm9sYSBqLnNpbHZhOyBlbGUgZSBtZW1icm8gZG8gZ3J1cG8gSVQtU3VwcG9ydA==" },
+    { "src": "IT-Support", "dst": "WS01", "type": "AdminTo", "note": "SVQtU3VwcG9ydCBlIGFkbWluIGxvY2FsIGRlIFdTMDEgKGFyZXN0YSBBZG1pblRvKQ==" },
+    { "src": "WS01", "dst": "h.santos", "type": "HasSession", "note": "aC5zYW50b3MgdGVtIHNlc3NhbyBhdGl2YSBlbSBXUzAxOiBkYSBwYXJhIHJvdWJhciBvIHRva2VuL2NyZWRlbmNpYWwgZGVsZQ==" },
+    { "src": "h.santos", "dst": "Server-Admins", "type": "MemberOf", "note": "aC5zYW50b3MgZSBtZW1icm8gZGUgU2VydmVyLUFkbWlucw==" },
+    { "src": "Server-Admins", "dst": "Domain Admins", "type": "GenericAll", "note": "RkxBR3tvd25lZC11c2VyLXRvLWRvbWFpbi1hZG1pbi12aWEtc2Vzc2lvbi1hbmQtZ2VuZXJpY2FsbH0=" },
+    { "src": "j.silva", "dst": "Desktop-Users", "type": "MemberOf", "note": "ZGVjb3k6IGJlY28gc2VtIHNhaWRhLCBEZXNrdG9wLVVzZXJzIG5hbyBsZXZhIGEgbHVnYXIgdXRpbA==" },
+    { "src": "Desktop-Users", "dst": "WS09", "type": "AdminTo", "note": "ZGVjb3k6IFdTMDkgbmFvIHRlbSBzZXNzYW8gZGUgY29udGEgcHJpdmlsZWdpYWRh" },
+    { "src": "WS09", "dst": "p.costa", "type": "HasSession", "note": "ZGVjb3k6IHAuY29zdGEgZSB1c3VhcmlvIGNvbXVtLCBzZW0gY2FtaW5obyBwYXJhIERB" },
+    { "src": "IT-Support", "dst": "PRN01", "type": "AdminTo", "note": "ZGVjb3k6IFBSTjAxIGUgdW1hIGltcHJlc3NvcmEsIHNlbSBzZXNzYW8gdXRpbA==" }
+  ]
+}
+DOC
+
+echo "artefatos prontos em $ROOT"; ls -1 "$ROOT"
+```
+
+Agora o forjador/decifrador. Ele reusa o `MD4` + RC4 + HMAC-MD5 do 7.3 (o `hashlib` moderno não traz mais o `MD4`). **Salve como `golden.py` dentro de `/tmp/ad-lateral`:**
+
+```python
+import sys, struct, hmac, hashlib
+
+def md4(msg):
+    def F(x, y, z): return (x & y) | (~x & z)
+    def G(x, y, z): return (x & y) | (x & z) | (y & z)
+    def H(x, y, z): return x ^ y ^ z
+    def lr(x, s):
+        x &= 0xFFFFFFFF
+        return ((x << s) | (x >> (32 - s))) & 0xFFFFFFFF
+    msg = bytearray(msg)
+    ln = (8 * len(msg)) & 0xFFFFFFFFFFFFFFFF
+    msg.append(0x80)
+    while len(msg) % 64 != 56:
+        msg.append(0)
+    msg += struct.pack("<Q", ln)
+    a0, b0, c0, d0 = 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476
+    for off in range(0, len(msg), 64):
+        X = struct.unpack("<16I", msg[off:off + 64])
+        a, b, c, d = a0, b0, c0, d0
+        for k, s in [(0,3),(1,7),(2,11),(3,19),(4,3),(5,7),(6,11),(7,19),
+                     (8,3),(9,7),(10,11),(11,19),(12,3),(13,7),(14,11),(15,19)]:
+            a, b, c, d = d, lr((a + F(b, c, d) + X[k]) & 0xFFFFFFFF, s), b, c
+        for k, s in [(0,3),(4,5),(8,9),(12,13),(1,3),(5,5),(9,9),(13,13),
+                     (2,3),(6,5),(10,9),(14,13),(3,3),(7,5),(11,9),(15,13)]:
+            a, b, c, d = d, lr((a + G(b, c, d) + X[k] + 0x5A827999) & 0xFFFFFFFF, s), b, c
+        for k, s in [(0,3),(8,9),(4,11),(12,15),(2,3),(10,9),(6,11),(14,15),
+                     (1,3),(9,9),(5,11),(13,15),(3,3),(11,9),(7,11),(15,15)]:
+            a, b, c, d = d, lr((a + H(b, c, d) + X[k] + 0x6ED9EBA1) & 0xFFFFFFFF, s), b, c
+        a0 = (a0 + a) & 0xFFFFFFFF
+        b0 = (b0 + b) & 0xFFFFFFFF
+        c0 = (c0 + c) & 0xFFFFFFFF
+        d0 = (d0 + d) & 0xFFFFFFFF
+    return struct.pack("<4I", a0, b0, c0, d0)
+
+def rc4(key, data):
+    S = list(range(256))
+    j = 0
+    for i in range(256):
+        j = (j + S[i] + key[i % len(key)]) & 0xFF
+        S[i], S[j] = S[j], S[i]
+    out = bytearray()
+    i = j = 0
+    for ch in data:
+        i = (i + 1) & 0xFF
+        j = (j + S[i]) & 0xFF
+        S[i], S[j] = S[j], S[i]
+        out.append(ch ^ S[(S[i] + S[j]) & 0xFF])
+    return bytes(out)
+
+def hm(key, data):
+    return hmac.new(key, data, hashlib.md5).digest()
+
+def decrypt(key, usage, cipher):
+    # RC4-HMAC (etype 23), RFC 4757: checksum(16) + RC4(confounder(8)|dados)
+    k1 = hm(key, struct.pack("<I", usage))
+    checksum, edata = cipher[:16], cipher[16:]
+    blob = rc4(hm(k1, checksum), edata)
+    return blob[8:], hm(k1, blob) == checksum
+
+def main():
+    fields = {}
+    for line in open(sys.argv[1]):
+        if "=" in line:
+            k, v = line.split("=", 1)
+            fields[k.strip()] = v.strip()
+    key = bytes.fromhex(fields["krbtgt_nt_hash"])  # a chave do krbtgt (NT hash)
+    cipher = bytes.fromhex(fields["cipher"])
+    usage = int(sys.argv[2])
+    plain, ok = decrypt(key, usage, cipher)
+    if ok:
+        print("[+] key usage", usage, "-> checksum OK; conteudo forjado do TGT:")
+        print(plain.decode(errors="replace"))
+    else:
+        print("[-] key usage", usage, "-> checksum nao fecha (chave ou usage errada)")
+
+if __name__ == "__main__":
+    main()
+```
+
+### 5.2 Missão 1 — forjar o golden ticket (guiada)
+
+Você tem o NT hash do `krbtgt` (no `m1-golden.txt`, como se viesse de um DCSync) e a parte cifrada de um TGT forjado com ele. O `golden.py` decifra com a chave do `krbtgt` e uma **key usage** — o número que o Kerberos usa para derivar a chave de cada tipo de mensagem (você viu isso no 7.3: 2 para o TGS-REP, 8 para o AS-REP). A parte cifrada **do ticket em si** (o enc-part do TGT) usa a key usage **2**:
+
+```console
+$ cd /tmp/ad-lateral
+$ python3 golden.py m1-golden.txt 2
+[+] key usage 2 -> checksum OK; conteudo forjado do TGT:
+client=Administrator@CORP.LOCAL rid=500 groups=512(Domain Admins),519(Enterprise Admins),513 FLAG{...}
+```
+
+Leia o que saiu: o ticket forjado afirma ser o `Administrator` (RID 500), membro de `512` (Domain Admins) e `519` (Enterprise Admins). **Ninguém autorizou isso** — o atacante escreveu essa identidade no PAC e cifrou com a chave do `krbtgt`, e o KDC aceitaria. Esse é o golden ticket inteiro, em miniatura: com um único hash, você fabrica a identidade mais poderosa do domínio. A flag estava dentro do ticket.
+
+<FlagInput task="missao-1-golden" />
+
+### 5.3 Missão 2 — o ticket furtivo que abre o alvo (desafio)
+
+Você forjou quatro tickets (`m2-tickets.json`): um golden e três silvers. Seu objetivo é **acessar a share CIFS de `fs01.corp.local` sem tocar no KDC**. Só **um** ticket satisfaz as duas exigências ao mesmo tempo. Decodifique a nota (base64) dele — essa nota é a flag. As notas erradas começam com `decoy:`.
+
+<Hint title="Dica 1">
+Duas exigências: (a) o serviço certo — `cifs` do host `fs01`; (b) furtividade — sem falar com o KDC. O golden ticket abre tudo, mas é um TGT: para usá-lo você vai ao KDC (TGS-REQ), que registra o evento. Um silver ticket já é um service ticket e vai direto ao serviço — mas só vale para o SPN e host da chave usada. Procure o silver cujo SPN é exatamente `cifs/fs01.corp.local`.
+</Hint>
+
+<Hint title="Dica 2">
+Liste os tickets com a nota decodificada e veja qual **não** começa com `decoy:`:
+
+```console
+$ python3 -c "
+import json, base64
+d = json.load(open('m2-tickets.json'))
+for t in d['tickets']:
+    print(t['id'], t['kind'], t['spn'], '->', base64.b64decode(t['note']).decode())
+"
+```
+</Hint>
+
+<Solution title="Solução">
+O ticket certo é o `T3`: um silver ticket cujo SPN é `cifs/fs01.corp.local`. Ele abre exatamente a share-alvo e, por ser silver, é apresentado direto ao serviço, sem passar pelo KDC. Os outros são iscas: `T1` é o golden (abre tudo, mas toca o KDC e gera evento 4769); `T2` é silver do MSSQL de `sql01` (serviço e host errados); `T4` é silver do HTTP de `web01` (idem).
+
+```console
+$ python3 -c "
+import json, base64
+d = json.load(open('m2-tickets.json'))
+for t in d['tickets']:
+    print(t['id'], t['kind'], t['spn'], '->', base64.b64decode(t['note']).decode())
+"
+T1 golden (qualquer) -> decoy: o golden ticket forjado com a chave do krbtgt abre tudo, mas e apresentado ao KDC ...
+T2 silver MSSQLSvc/sql01.corp.local:1433 -> decoy: silver ticket valido, mas para o MSSQL do sql01 ...
+T3 silver cifs/fs01.corp.local -> FLAG{...}
+T4 silver http/web01.corp.local -> decoy: silver ticket do servico HTTP do web01 ...
+```
+
+**Lição:** o silver ticket troca alcance por furtividade. Escolher entre golden e silver é escolher entre "abrir tudo e aparecer no KDC" e "abrir um serviço e sumir do radar".
+</Solution>
+
+<FlagInput task="missao-2-silver" />
+
+### 5.4 Missão 3 — o caminho mais curto até Domain Admin (desafio)
+
+O `m3-graph.json` é um grafo estilo BloodHound: os nós são usuários, grupos e computadores; as arestas são relações de abuso (`MemberOf`, `AdminTo`, `HasSession`, `GenericAll`). Você controla `j.silva`. Seu objetivo: achar o **caminho mais curto** até o grupo `Domain Admins` e decodificar a nota (base64) da **aresta final** desse caminho — ela é a flag. Os becos sem saída têm notas `decoy:`.
+
+<Hint title="Dica 1">
+É um problema de menor caminho num grafo direcionado. A partir de `j.silva`, siga as arestas e pergunte: "para onde isto me leva, e aquilo tem caminho para `Domain Admins`?". Uma busca em largura (BFS) acha o caminho mais curto sem você adivinhar. Leia o significado de cada aresta: `HasSession` significa que há uma sessão de outra conta naquela máquina — você pode roubá-la; `GenericAll` sobre um grupo significa que você pode se adicionar a ele.
+</Hint>
+
+<Hint title="Dica 2">
+Salve este `path.py` e rode — ele faz a BFS e já decodifica a nota da aresta final:
+
+```python
+import json, base64
+from collections import deque
+
+g = json.load(open("m3-graph.json"))
+adj, emap = {}, {}
+for e in g["edges"]:
+    adj.setdefault(e["src"], []).append(e["dst"])
+    emap[(e["src"], e["dst"])] = e
+
+start, target = g["start"], g["target"]
+prev = {start: None}
+q = deque([start])
+while q:
+    cur = q.popleft()
+    if cur == target:
+        break
+    for nxt in adj.get(cur, []):
+        if nxt not in prev:
+            prev[nxt] = cur
+            q.append(nxt)
+
+path, node = [], target
+while node is not None:
+    path.append(node)
+    node = prev.get(node)
+path.reverse()
+
+print("caminho mais curto:")
+for a, b in zip(path, path[1:]):
+    print(f"  {a} --{emap[(a, b)]['type']}--> {b}")
+final = emap[(path[-2], path[-1])]
+print("\nnota da aresta final:", base64.b64decode(final["note"]).decode())
+```
+</Hint>
+
+<Solution title="Solução">
+O caminho mais curto tem cinco arestas: `j.silva` entra em `IT-Support`, que é admin local de `WS01`, onde `h.santos` tem sessão ativa (você rouba o token dele), e `h.santos` é de `Server-Admins`, que tem `GenericAll` sobre `Domain Admins` (você se adiciona ao grupo). A nota da última aresta é a flag.
+
+```console
+$ python3 path.py
+caminho mais curto:
+  j.silva --MemberOf--> IT-Support
+  IT-Support --AdminTo--> WS01
+  WS01 --HasSession--> h.santos
+  h.santos --MemberOf--> Server-Admins
+  Server-Admins --GenericAll--> Domain Admins
+
+nota da aresta final: FLAG{...}
+```
+
+**Lição:** escalação em AD raramente é um pulo; é uma sequência de arestas pequenas — pertencer a um grupo, ser admin de uma máquina, pegar uma sessão alheia, abusar de uma permissão. O BloodHound existe para achar essa sequência automaticamente, e é a ferramenta do atacante **e** do defensor.
+</Solution>
+
+<FlagInput task="missao-3-caminho" />
+
+Quando terminar, as três flags entram nos cartões e o quiz da seção 9 fecha o módulo. Nenhum lab para desligar — você só gerou arquivos no `/tmp`.
+
+## 6. Variações e aprofundamento
+
+**Diamond e sapphire ticket.** O golden ticket "clássico" forja o PAC do zero, o que deixa inconsistências que defensores detectam. O *diamond ticket* é mais sofisticado: o atacante pede um TGT legítimo ao KDC e só **modifica** o PAC dele (decifrando e recifrando com a chave do `krbtgt`), produzindo um ticket muito mais parecido com os reais. É a evolução natural quando a detecção aperta.
+
+**Targeted Kerberoasting encontra o movimento lateral.** Lembre do 7.3: com `GenericWrite` sobre uma conta, você escreve um SPN nela e a torna Kerberoastável. As arestas `GenericAll`/`GenericWrite` do grafo da Missão 3 são as mesmas que habilitam isso — enumeração (7.2), roasting (7.3) e escalação (7.4) são o mesmo grafo lido de ângulos diferentes.
+
+**Unconstrained e constrained delegation, RBCD.** Há uma família inteira de ataques de **delegação** Kerberos (unconstrained, constrained, resource-based constrained delegation) em que uma máquina ou conta é configurada para agir em nome de outros — e o atacante abusa disso para virar Domain Admin. É assunto avançado; por ora, saiba que existe e que o BloodHound marca essas arestas (`AllowedToDelegate`, `AllowedToAct`).
+
+**Trusts entre domínios.** Em florestas com vários domínios, relações de confiança (`domain trust`, visto no 7.2) permitem pular de um domínio comprometido para outro — às vezes com um golden ticket "entre domínios" (SID history). O 7.5 encosta nisso ao fechar o mini-projeto.
+
+**Overpass-the-hash como evasão.** Em redes que monitoram NTLM de perto, converter o hash em TGT (seção 3.1) e viver no Kerberos é mais silencioso. É por isso que a técnica aparece tanto em operações reais: o mesmo segredo, um protocolo mais discreto.
+
+## 7. Erros comuns
+
+- **`golden.py` diz "checksum nao fecha" com a usage 2:** confira se você copiou o `cipher` inteiro (é uma linha longa). Um hex truncado quebra o checksum mesmo com a chave e a usage certas.
+- **Confundir a key usage do ticket com a do 7.3:** a parte cifrada do TGT (enc-part do ticket) é usage **2**; não é 8 (aquela era o enc-part do AS-REP, no 7.3). Errar a usage dá "checksum nao fecha".
+- **`KRB_AP_ERR_SKEW` / "clock skew too great":** num domínio real, o Kerberos recusa se o relógio diverge do DC em mais de ~5 minutos. Vale para tickets forjados também — um golden ticket com timestamps fora da janela falha.
+- **Silver ticket com o SPN errado:** o silver só vale para o SPN exato com que foi forjado. `cifs/fs01` não abre `cifs/fs01.corp.local` se o serviço espera o FQDN — atenção ao nome completo, como na Missão 2.
+- **Pass-the-ticket sem exportar o cache:** esquecer o `export KRB5CCNAME=...` faz as ferramentas ignorarem o ticket e voltarem a pedir senha. O ticket só é usado se o ambiente apontar para ele.
+- **Achar que resetar o `krbtgt` uma vez resolve:** não resolve — a senha antiga continua válida até o segundo reset (seção 8). É o erro de resposta a incidente que mantém o atacante dentro.
+
+## 8. Defesa e mitigação
+
+A escalação deste módulo tem uma causa raiz: **segredos de identidade reutilizáveis e contas privilegiadas espalhadas**. A defesa ataca os três elos — a reutilização, o movimento lateral e a chave-mestra — e escuta o atacante nos pontos certos.
+
+**Proteger a chave-mestra (`krbtgt`):**
+
+- **Rotacione a senha do `krbtgt` periodicamente e, após qualquer suspeita de comprometimento de DC, duas vezes.** A Microsoft é explícita: *"resetting the password twice ... invalidates existing Kerberos tickets to help prevent Golden Ticket attacks"*, com um intervalo de **pelo menos 10 horas** entre os resets. O motivo é o histórico de duas senhas do `krbtgt`: um único reset deixa a chave roubada ainda válida; o segundo a expurga. Resetar uma vez só é o erro clássico de resposta a incidente.
+
+**Matar o movimento lateral e a reutilização de credencial:**
+
+- **LAPS** (Local Administrator Password Solution): cada máquina ganha uma senha de administrador local **única e rotacionada**. Assim, um hash roubado de uma estação não abre as outras — exatamente o que faria o silver/pass-the-hash voar pela rede, como no Conti.
+- **Credential Guard** isola os segredos na memória (o LSASS) num ambiente protegido por virtualização, de onde o Mimikatz não os lê; combine com LSA protection.
+- **Administração em camadas (tiering) e estações administrativas dedicadas (PAW).** Nunca use uma conta Domain Admin para logar numa estação comum: é isso que deixa a sessão privilegiada que a Missão 3 roubou (`HasSession`). Contas de Tier 0 só tocam sistemas de Tier 0.
+- **Restrinja os compartilhamentos administrativos** (`ADMIN$`, `C$`) e o uso de contas de serviço como admin local em massa; coloque contas sensíveis no grupo **Protected Users** (que bloqueia NTLM e RC4 para elas).
+- **Force AES e desabilite o RC4** nos tickets (via GPO): tira o atalho criptográfico do 7.3 e dificulta silver tickets forjados em RC4.
+
+**Detectar quem ataca:**
+
+- **DCSync anômalo:** monitore o evento `4662` com a máscara de acesso `0x100` (Control Access) referenciando as GUIDs de replicação `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2` (DS-Replication-Get-Changes) e `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` (DS-Replication-Get-Changes-All) **vindo de uma conta que não é um controlador de domínio**. Replicação pedida por quem não é DC é, por definição, suspeita.
+- **Golden/silver ticket:** o golden gera pedidos ao KDC (eventos `4768`/`4769`) com anomalias no PAC ou tempos de vida absurdos; o silver, por pular o KDC, só aparece como logon no serviço (`4624`) **sem** o `4768`/`4769` correspondente — a ausência é a pista.
+- **Movimento lateral:** criação de serviço remoto (`7045`, assinatura do PsExec), logons de rede (`4624` LogonType 3) em rajada, e o grafo do BloodHound rodado **pela defesa** para achar e cortar os caminhos curtos até Tier 0 antes do atacante.
+
+A ideia que fecha a visão completa: como a reutilização de identidade é o mecanismo, a defesa madura torna cada segredo descartável (LAPS, Credential Guard), impede que uma conta poderosa deixe rastro onde não devia (tiering, PAW), protege a chave de que tudo depende (rotação dupla do `krbtgt`) e **escuta** a replicação e os tickets anômalos.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e complete as três missões da seção 5 — cada uma entrega uma flag.
+
+<Quiz task="quiz-final" />
+
+**Desafios extras (sem flag, para fixar):**
+
+- No `golden.py`, por que a key usage entra no cálculo antes mesmo de a chave tocar os dados? (Dica: `k1 = HMAC(chave do krbtgt, usage)` — a usage escolhe uma sub-chave diferente para cada tipo de mensagem.)
+- Explique, em duas frases, por que um silver ticket forjado para `cifs/fs01` não serve para pedir tickets de outros serviços, enquanto um golden serve.
+- Você comprometeu uma conta com `GenericAll` sobre o grupo `Domain Admins`, mas não sobre o `krbtgt`. Liste dois caminhos para virar Domain Admin a partir daí — e diga qual deixa persistência mesmo depois de a senha do admin mudar.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Movimento lateral e escalação são a mesma viagem vista de duas alturas: andar de lado reutilizando credencial, subir ao capturar uma credencial privilegiada.
+- As três reutilizações: **pass-the-hash** (hash no NTLM), **overpass-the-hash** (hash → TGT Kerberos) e **pass-the-ticket** (ticket pronto injetado).
+- Os canais de movimento lateral (SMB/PsExec, WMI, WinRM, RDP) diferem por rastro e privilégio — o atacante escolhe pelo que o ambiente registra menos.
+- O **krbtgt** é a chave-mestra: seu hash forja um **golden ticket** (T1558.001) para qualquer conta. O **silver ticket** (T1558.002) usa a chave de um serviço, pula o KDC e é furtivo, mas limitado. O atacante pega o hash do krbtgt por **DCSync** (T1003.006), que replica os segredos sem rodar nada no DC.
+- Escalação é um problema de caminho: o grafo do BloodHound acha a sequência curta de arestas até Domain Admin.
+- Defesa: rotação **dupla** do krbtgt, LAPS, Credential Guard, tiering/PAW, Protected Users, AES em vez de RC4, e detecção pelo evento 4662 (DCSync de não-DC), pelo 4624 sem 4768/4769 (silver) e pelo 7045 (PsExec).
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [MITRE ATT&CK — T1558.001 Golden Ticket](https://attack.mitre.org/techniques/T1558/001/), [T1558.002 Silver Ticket](https://attack.mitre.org/techniques/T1558/002/), [T1003.006 DCSync](https://attack.mitre.org/techniques/T1003/006/) e [T1550.003 Pass the Ticket](https://attack.mitre.org/techniques/T1550/003/) — as técnicas no catálogo, com detecção.
+- [Black Hat USA 2014 — Duckwall & Delpy, "Abusing Microsoft Kerberos" (PDF)](https://www.blackhat.com/docs/us-14/materials/us-14-Duckwall-Abusing-Microsoft-Kerberos-Sorry-You-Guys-Don't-Get-It.pdf) — a palestra que apresentou o golden ticket.
+- [CISA — Alert AA21-265A, Conti Ransomware](https://www.cisa.gov/news-events/alerts/2021/09/22/conti-ransomware) — movimento lateral por SMB e credenciais válidas em escala real.
+- [Microsoft Learn — Reset the krbtgt password (forest recovery)](https://learn.microsoft.com/windows-server/identity/ad-ds/manage/forest-recovery-guide/ad-forest-recovery-reset-the-krbtgt-password) — por que resetar duas vezes, com 10 horas de intervalo.

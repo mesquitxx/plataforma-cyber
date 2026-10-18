@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" role="img" aria-labelledby="t d">
+  <title id="t">Golden ticket contra silver ticket: alcance e furtividade</title>
+  <desc id="d">Duas colunas comparam os dois tickets forjados. À esquerda, o golden ticket: é forjado com o hash da conta krbtgt, é um ticket-granting ticket, e para usá-lo o atacante o apresenta ao controlador de domínio (KDC) num pedido TGS-REQ para obter tickets de serviço. Isso gera o evento 4769 no controlador e dá alcance de domínio inteiro, para qualquer serviço. É poderoso mas mais ruidoso, porque passa pelo KDC. À direita, o silver ticket: é forjado com o hash da conta de serviço do alvo, já é um ticket de serviço pronto, e o atacante o apresenta diretamente ao serviço de aplicação (por exemplo o compartilhamento CIFS de um servidor de arquivos), num pedido AP-REQ, sem nunca falar com o controlador de domínio. Por isso ele não gera evento no KDC e é mais furtivo, mas seu alcance é limitado àquele único serviço e máquina. A faixa de baixo resume a troca: golden é alcance total mas passa pelo KDC; silver é um serviço só, mas pula o KDC e por isso é mais difícil de detectar.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 14px; font-weight: 700; fill: #5cc8d8; }
+    .lab { font-size: 11px; fill: #cfe0d6; }
+    .sub { font-size: 10px; fill: #9fb0a6; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .atk { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2; }
+    .kdc { fill: #16201b; stroke: #e0a15e; stroke-width: 2; }
+    .svc { fill: #16201b; stroke: #5ee08a; stroke-width: 2; }
+    .flow { stroke: #9fb0a6; stroke-width: 2; fill: none; marker-end: url(#ac); }
+    .noisy { stroke: #e0a15e; stroke-width: 2.5; fill: none; marker-end: url(#ao); }
+    .quiet { stroke: #5ee08a; stroke-width: 2.5; fill: none; marker-end: url(#ag); }
+    .rule { font-size: 11.5px; fill: #cfe0d6; }
+    .tag { font-size: 9.5px; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+    <marker id="ao" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#e0a15e"/></marker>
+    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5ee08a"/></marker>
+  </defs>
+  <rect width="960" height="500" fill="#121815"/>
+  <text class="t" x="30" y="34">Golden × Silver ticket: alcance × furtividade</text>
+  <line x1="480" y1="56" x2="480" y2="372" stroke="#2c3a33" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+  <!-- GOLDEN (left) -->
+  <text class="h" x="40" y="80">GOLDEN TICKET</text>
+  <text class="sub" x="40" y="98">chave = hash do krbtgt · T1558.001</text>
+
+  <rect class="atk" x="40" y="116" width="150" height="64" rx="8"/>
+  <text class="lab" x="115" y="142" text-anchor="middle">atacante</text>
+  <text class="sub" x="115" y="160" text-anchor="middle">forja um TGT</text>
+
+  <rect class="kdc" x="275" y="116" width="150" height="64" rx="8"/>
+  <text class="lab" x="350" y="142" text-anchor="middle" fill="#e0a15e">KDC (DC)</text>
+  <text class="sub" x="350" y="160" text-anchor="middle">evento 4769</text>
+
+  <path class="noisy" d="M190,148 L273,148"/>
+  <text class="tag" x="232" y="138" text-anchor="middle" fill="#e0a15e">TGS-REQ</text>
+
+  <rect class="svc" x="275" y="232" width="150" height="64" rx="8"/>
+  <text class="lab" x="350" y="258" text-anchor="middle" fill="#5ee08a">qualquer serviço</text>
+  <text class="sub" x="350" y="276" text-anchor="middle">alcance de domínio</text>
+  <path class="flow" d="M350,180 L350,230"/>
+
+  <rect x="40" y="200" width="200" height="150" rx="8" fill="none"/>
+  <text class="sub" x="40" y="224">+ alcance: o domínio inteiro</text>
+  <text class="sub" x="40" y="246">− furtivo: passa pelo KDC,</text>
+  <text class="sub" x="40" y="260" dx="14">deixa rastro (4769)</text>
+  <text class="sub" x="40" y="288">− morre quando o krbtgt</text>
+  <text class="sub" x="40" y="302" dx="14">é rotacionado (2x)</text>
+
+  <!-- SILVER (right) -->
+  <text class="h" x="520" y="80" fill="#5ee08a">SILVER TICKET</text>
+  <text class="sub" x="520" y="98">chave = hash da conta de serviço · T1558.002</text>
+
+  <rect class="atk" x="520" y="116" width="150" height="64" rx="8"/>
+  <text class="lab" x="595" y="142" text-anchor="middle">atacante</text>
+  <text class="sub" x="595" y="160" text-anchor="middle">forja um TGS</text>
+
+  <rect class="svc" x="755" y="116" width="170" height="64" rx="8"/>
+  <text class="lab" x="840" y="142" text-anchor="middle" fill="#5ee08a">serviço-alvo</text>
+  <text class="sub" x="840" y="160" text-anchor="middle">ex.: CIFS do fs01</text>
+
+  <path class="quiet" d="M670,148 L753,148"/>
+  <text class="tag" x="712" y="138" text-anchor="middle" fill="#5ee08a">AP-REQ</text>
+
+  <rect class="kdc" x="755" y="232" width="170" height="52" rx="8" stroke-dasharray="4 4"/>
+  <text class="sub" x="840" y="254" text-anchor="middle" fill="#e0a15e">KDC nunca é</text>
+  <text class="sub" x="840" y="270" text-anchor="middle" fill="#e0a15e">contatado</text>
+  <path d="M712,180 C712,215 780,210 800,230" stroke="#2c3a33" stroke-width="1.5" fill="none" stroke-dasharray="3 3"/>
+  <text class="tag" x="690" y="210" fill="#9fb0a6">sem desvio</text>
+
+  <text class="sub" x="520" y="316">+ furtivo: não toca o DC, sem evento no KDC</text>
+  <text class="sub" x="520" y="334">− alcance: só aquele serviço e máquina</text>
+
+  <!-- bottom rule -->
+  <rect x="24" y="392" width="912" height="88" rx="10" fill="#0f1712" stroke="#2c3a33" stroke-width="1.5"/>
+  <text class="h" x="44" y="420" fill="#9fb0a6">A troca</text>
+  <text class="rule" x="44" y="448"><tspan fill="#5cc8d8">Golden</tspan>: forjado com o krbtgt, apresentado ao KDC (TGS-REQ) → alcance de domínio, mas gera 4769 no DC.</text>
+  <text class="rule" x="44" y="468"><tspan fill="#5ee08a">Silver</tspan>: forjado com a chave do serviço, apresentado direto a ele (AP-REQ) → um serviço só, mas pula o KDC.</text>
+</svg>
