@@ -1,0 +1,581 @@
+---
+slug: enumeracao-de-dominio
+track: trilha-7
+title: "Enumeração de domínio"
+prerequisites: [o-que-e-active-directory]
+lab: null
+tasks:
+  - slug: missao-1-spn
+    title: "Missão 1 — a conta Kerberoastável"
+    type: flag
+    prompt: "O FLAG{...} que você recupera decodificando a nota (em base64) do ÚNICO objeto que é, de fato, um alvo de Kerberoasting — uma conta de usuário (não de computador) com servicePrincipalName povoado. Cole no formato FLAG{...}."
+    hint: "Nem todo objeto com servicePrincipalName serve. Compare o sAMAccountType de cada entrada: 805306368 é conta de usuário; 805306369 é conta de computador. Só a conta de usuário com SPN é roastável; a do computador tem senha de máquina de 120 caracteres, e o krbtgt é o KDC. A nota (base64) do alvo certo decodifica para o FLAG{...}; as outras, para um aviso que começa com 'decoy:'."
+    flag:
+      hash: "scrypt$16384$8$1$2e13d5cf44081395ade6ae4192ef1ea0a344380812e8f9e49a1d11597012f750"
+      salt: "a07e997a432c2233ef5613f374a50604"
+  - slug: missao-2-asrep
+    title: "Missão 2 — a conta AS-REP roastável"
+    type: flag
+    prompt: "O FLAG{...} da nota (base64) do ÚNICO usuário que você consegue AS-REP roastar: o bit DONT_REQ_PREAUTH (0x400000) ligado no userAccountControl E a conta habilitada (sem o bit 0x2). Cole no formato FLAG{...}."
+    hint: "Converta o userAccountControl de cada conta e faça o E lógico (AND) com 0x400000 (4194304). Dois usuários passam nesse teste — mas um deles também tem o bit 0x2 (ACCOUNTDISABLE) ligado, e uma conta desligada não autentica. Pegue a nota do que está habilitado. A do desligado decodifica para um 'decoy:' que explica a armadilha."
+    flag:
+      hash: "scrypt$16384$8$1$f91588036271fe68d654680a5606bca1ad04287fb7bb1c9839108192016f183c"
+      salt: "76d8b4ae9c873eb7532ffbb24cf4d52b"
+  - slug: missao-3-grafo
+    title: "Missão 3 — o caminho até Domain Admins"
+    type: flag
+    prompt: "O FLAG{...} da nota (base64) do único grupo de alto valor que você REALMENTE alcança, a partir de j.silva, seguindo as arestas do grafo. Cole no formato FLAG{...}."
+    hint: "Faça uma busca em largura (BFS) a partir de j.silva pelas arestas (MemberOf, GenericAll). Dois grupos parecem o prêmio — Domain Admins e Enterprise Admins —, mas só um é alcançável pelas arestas que saem de quem você controla. A nota do grupo alcançável é a flag; a do inalcançável decodifica para um 'decoy:'."
+    flag:
+      hash: "scrypt$16384$8$1$bea0693fca8426f7fb1b63635d5f9fe58cb8dd4e263d13cbdbbb4cb1db9ca344"
+      salt: "2843ce44ee279fcce3b20bd7c1b83a29"
+  - slug: quiz-final
+    title: "Quiz — Enumeração de domínio"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que um usuário de domínio comum, sem nenhum privilégio de administrador, consegue listar quase todos os usuários, grupos e atributos do Active Directory?"
+        options:
+          - "Porque o controlador de domínio não exige autenticação para consultas LDAP"
+          - "Porque o AD foi desenhado para ser um diretório consultável: o grupo Authenticated Users recebe permissão de leitura na maior parte dos objetos por padrão, então ler o diretório é o uso pretendido, não uma falha"
+          - "Porque todo usuário de domínio é, na verdade, membro do grupo Domain Admins"
+          - "Porque a enumeração explora uma vulnerabilidade de buffer overflow no serviço LDAP"
+        answer: 1
+        explanation: "A leitura ampla é por desenho, não por bug. O AD é um diretório feito para que aplicações e usuários encontrem recursos, então Authenticated Users (todo mundo que logou) tem leitura na maioria dos objetos e atributos. É isso que torna a enumeração tão barata para o atacante e tão difícil de 'desligar' para o defensor: não há um botão que corte a leitura sem quebrar o funcionamento do domínio. As outras opções descrevem coisas que não acontecem — a consulta exige, sim, uma sessão autenticada, o usuário comum não é Domain Admin, e não há overflow envolvido."
+      - question: "Você encontra uma conta de usuário com o atributo `servicePrincipalName` preenchido. Por que isso é interessante para um atacante?"
+        options:
+          - "Porque o SPN contém a senha do serviço em texto claro"
+          - "Porque qualquer usuário autenticado pode pedir ao KDC um ticket de serviço para aquele SPN, e esse ticket é cifrado com uma chave derivada da senha da conta — que pode ser quebrada offline (Kerberoasting)"
+          - "Porque a presença de um SPN desabilita a autenticação da conta"
+          - "Porque o SPN concede automaticamente a essa conta o direito de administrar o domínio"
+        answer: 1
+        explanation: "Um SPN liga um serviço (um SQL Server, um IIS) a uma conta. Quando um serviço roda sob uma conta de usuário (e não sob uma conta de máquina), a chave que cifra o ticket de serviço vem da senha dessa conta — muitas vezes uma senha fraca, escolhida por humano, que nunca expira. Qualquer usuário do domínio pode pedir esse ticket ao KDC e tentar quebrá-lo offline, sem tocar na conta-alvo. É o Kerberoasting, detalhado no 7.3. O SPN não guarda senha, não desliga a conta e não dá privilégio: ele só revela um alvo cuja senha protege um ticket."
+      - question: "Na enumeração, você precisa achar contas com a pré-autenticação Kerberos desligada. Qual teste sobre o `userAccountControl` identifica essas contas?"
+        options:
+          - "Verificar se o valor é exatamente igual a 4194304"
+          - "Verificar se o bit 0x400000 está ligado (um E lógico com 4194304), porque o userAccountControl é um campo de bits e a conta normal tem vários outros bits ligados ao mesmo tempo"
+          - "Verificar se o valor é um número par"
+          - "Verificar se o atributo `servicePrincipalName` está vazio"
+        answer: 1
+        explanation: "O userAccountControl é um campo de bits (bitmask): cada bit liga uma propriedade, e uma conta real combina vários (NORMAL_ACCOUNT, DONT_EXPIRE_PASSWD, etc.). Comparar com igualdade (== 4194304) só acha a conta que tivesse SÓ esse bit, o que quase nunca ocorre. O correto é isolar o bit com um E lógico: `uac & 0x400000`. É exatamente isso que o filtro LDAP com a regra de bits `1.2.840.113556.1.4.803` faz no servidor. Número par e SPN vazio não têm relação com a pré-autenticação."
+      - question: "O que o BloodHound acrescenta a uma enumeração que já produziu as listas de usuários e grupos?"
+        options:
+          - "Nada: ele só reapresenta as mesmas listas com cores"
+          - "Ele transforma as relações (quem é membro de quê, quem tem qual permissão sobre quem) em um grafo e calcula caminhos — por exemplo, o caminho mais curto de uma conta comum até Domain Admins — que seriam quase impossíveis de enxergar nas listas"
+          - "Ele quebra as senhas dos usuários automaticamente"
+          - "Ele desliga as defesas do controlador de domínio"
+        answer: 1
+        explanation: "O salto do BloodHound é de listas para grafo. Membership aninhada e permissões (ACLs) formam uma teia de relações; achar, nessa teia, uma cadeia de arestas que leva um usuário comum até o controle do domínio é um problema de caminho em grafo — trivial para um computador, exaustivo para um humano lendo tabelas. É isso que ele resolve em segundos. Ele não quebra senhas (isso é o Kerberoasting, offline) nem desliga defesas; ele revela o caminho."
+      - question: "Qual medida realmente reduz a superfície de enumeração de SPNs e AS-REP, em vez de só 'esconder'?"
+        options:
+          - "Bloquear a porta 389 no firewall entre as estações e o controlador de domínio"
+          - "Remover SPNs de contas de usuário que não precisam deles (preferindo contas gerenciadas, gMSA, com senha longa e rotacionada) e exigir pré-autenticação Kerberos em todas as contas, além de monitorar os eventos 4769/4768 e usar contas-isca (honey accounts)"
+          - "Renomear o grupo Domain Admins para algo que o atacante não adivinhe"
+          - "Desligar o log de auditoria do controlador para o atacante não deixar rastro"
+        answer: 1
+        explanation: "A defesa de verdade ataca a causa: menos contas de usuário com SPN (e as que precisam, com senha longa e rotacionada por gMSA, que torna o Kerberoasting inútil) e pré-autenticação exigida em todas as contas (que elimina o AS-REP roasting). Isso se soma a detecção (os eventos de pedido de ticket 4768/4769) e a iscas que disparam alerta. Bloquear a 389 quebra o domínio e ainda deixa o SAMR na 445; renomear o grupo é security through obscurity (o SID do Domain Admins é fixo, 512, e o atacante enumera por SID); desligar auditoria ajuda o atacante, não você."
+glossary:
+  - term: LDAP
+    definition: "Lightweight Directory Access Protocol: o protocolo padrão para consultar e alterar um serviço de diretório. No Active Directory, é o canal (porta TCP 389) pelo qual se lê usuários, grupos e atributos."
+  - term: distinguished name (DN)
+    definition: "O caminho completo de um objeto na árvore do diretório, lido da folha até a raiz (ex.: CN=Ana,OU=TI,DC=corp,DC=local). Identifica unicamente onde o objeto vive no domínio."
+  - term: Authenticated Users
+    definition: "Grupo que contém todo principal que se autenticou no domínio. O AD lhe concede leitura na maior parte do diretório por padrão, e é por isso que qualquer usuário comum consegue enumerar."
+  - term: SAMR
+    definition: "Security Account Manager Remote: interface sobre RPC/SMB (porta TCP 445) que consulta a base de contas do controlador. É o canal clássico do enum4linux e do rpcclient, alternativo ao LDAP."
+  - term: RID cycling
+    definition: "Técnica de enumeração que itera os RIDs (a parte final e sequencial do SID de cada conta) para traduzir número em nome, revelando contas que a consulta normal pode esconder."
+  - term: servicePrincipalName (SPN)
+    definition: "Atributo que liga um serviço de rede (SQL Server, IIS) a uma conta. Quando o serviço roda sob uma conta de usuário, a senha dela protege o ticket Kerberos do serviço — o que habilita o Kerberoasting."
+  - term: userAccountControl
+    definition: "Campo de bits de uma conta de usuário no AD; cada bit liga uma propriedade (conta desabilitada, senha que não expira, pré-autenticação dispensada). Enumerar é testar bits, não comparar o valor inteiro."
+  - term: Kerberos
+    definition: "O protocolo de autenticação do Active Directory, baseado em tickets emitidos por um servidor central (o KDC). Vários ataques de AD abusam de como esses tickets são pedidos e cifrados."
+  - term: Kerberoasting
+    definition: "Ataque que pede ao KDC o ticket de serviço de uma conta com SPN e quebra offline a senha dessa conta a partir da parte do ticket cifrada com ela. Detalhado no módulo 7.3."
+  - term: AS-REP roasting
+    definition: "Ataque contra contas com a pré-autenticação Kerberos desligada (bit DONT_REQ_PREAUTH): o atacante obtém, sem nem ter a senha, um material cifrado que pode quebrar offline. Detalhado no 7.3."
+  - term: BloodHound
+    definition: "Ferramenta que representa o Active Directory como um grafo de relações (membership, permissões) e calcula caminhos de ataque — por exemplo, o caminho mais curto de uma conta comum até Domain Admins."
+  - term: domain trust
+    definition: "Relação de confiança que permite a um domínio autenticar usuários de outro. Enumerar os trusts revela caminhos entre domínios e florestas, muitas vezes para um vizinho mais frágil."
+---
+
+import canaisDeEnumeracao from "./img/canais-de-enumeracao.svg";
+import arvoreDeAtributos from "./img/arvore-de-atributos.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Você comprometeu uma estação de trabalho, achou a senha de um funcionário comum, e agora tem um par de credenciais de domínio. E daí? Essa conta não é administradora de nada. O que ela te dá, e é enorme, é **visão**: a partir dela você consegue ler o mapa inteiro da rede corporativa — todos os usuários, todos os grupos, quem administra o quê, quais contas são frágeis, e qual sequência de passos leva daquela conta sem graça até o controle total do domínio. Transformar "um usuário qualquer" nesse mapa é a **enumeração de domínio**, e é a dobradiça entre ter um pé na porta e dominar a empresa.
+
+No Active Directory (AD), o serviço de diretório da Microsoft que centraliza contas e permissões de quase toda rede corporativa Windows (você viu os conceitos no módulo 7.1), essa fase é decisiva. Praticamente todo ataque sério a uma rede Windows — dos operadores de ransomware aos times de red team — passa por aqui antes de qualquer "ataque" de fato. Entender a enumeração é, ao mesmo tempo, aprender a atacar e aprender o que o defensor precisa vigiar: a enumeração é barulhenta se você souber ouvir, e muda tudo se o defensor não souber.
+
+**Ao final, você vai saber:**
+
+- explicar **por que** um usuário de domínio comum consegue ler quase todo o diretório, e por que isso é desenho do AD, não um bug;
+- enumerar usuários, grupos e relações pelos dois canais — `LDAP` e `SAMR` — com os comandos reais (`ldapsearch`, `nxc`, `enum4linux-ng`, `bloodhound-python`);
+- ler os atributos que viram vetor — `servicePrincipalName`, `userAccountControl`, ACLs — e decidir qual achado importa;
+- interpretar um grafo do BloodHound e achar o caminho de uma conta comum até **Domain Admins**;
+- defender o domínio contra a enumeração: o que dá para reduzir, o que dá para detectar, e por que "esconder" não resolve.
+
+**Pré-requisitos:** 7.1 — O que é AD e por que importa (você vai usar daqui: domínio, floresta, controlador de domínio, usuários, grupos e GPO). Da Trilha 3, você vai reusar base64; da Trilha 6, a ideia de olhar um sistema do ponto de vista "o que eu controlo × o que tem poder".
+
+**Tempo estimado:** 3 a 4 horas, incluindo as missões de análise.
+
+<Callout variant="ethics">
+Enumerar um domínio é ler o diretório de uma organização inteira — nomes, cargos, estrutura. Isso só é legítimo no laboratório ou em um engajamento com autorização por escrito que inclua o domínio no escopo (você viu o enquadramento na Trilha 1; no Brasil, acesso não autorizado a sistema informático é crime). Este módulo **não tem lab próprio**: a Trilha 7 é teoria + walkthrough guiado, e as missões são de **análise de dados fictícios que você mesmo gera no seu WSL**. Nenhum domínio real é tocado.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+Para enumerar bem, você precisa entender uma coisa que surpreende quem vem só do mundo web: no AD, ler quase tudo é o comportamento **pretendido**. Não existe uma falha a explorar para "conseguir enumerar" — você já tem a permissão no instante em que autentica. A habilidade está em saber o que pedir e o que fazer com a resposta.
+
+### 2.1 O domínio é um banco de dados LDAP
+
+Por baixo, um domínio AD é um banco de dados hierárquico que fala <GlossaryTerm term="LDAP">LDAP</GlossaryTerm> (Lightweight Directory Access Protocol, o protocolo padrão para consultar e alterar serviços de diretório, na porta TCP 389). Cada usuário, grupo, computador e política é um **objeto**, e cada objeto é uma coleção de **atributos** (`sAMAccountName`, `memberOf`, `servicePrincipalName`...). Os objetos vivem numa árvore, e a posição de cada um na árvore é o seu <GlossaryTerm term="distinguished name (DN)">distinguished name</GlossaryTerm> (DN) — o "caminho completo" do objeto, lido da folha para a raiz. Um domínio `corp.local` vira a raiz `DC=corp,DC=local`, e um usuário dentro de uma unidade organizacional fica, por exemplo, em `CN=Ana Silva,OU=TI,DC=corp,DC=local`.
+
+Consultar o diretório é mandar um **filtro LDAP** e pedir alguns atributos de volta. O filtro `(objectClass=user)` traz todos os usuários; `(servicePrincipalName=*)` traz todo objeto que tem ao menos um SPN. Essa linguagem de filtro é o coração da enumeração: quem a domina pede exatamente o que quer.
+
+### 2.2 Por que qualquer usuário autenticado lê (quase) tudo
+
+Aqui está o ponto que muda a sua cabeça. Quando o AD cria o domínio, ele concede ao grupo <GlossaryTerm term="Authenticated Users">Authenticated Users</GlossaryTerm> — ao qual pertence **todo mundo que conseguiu logar**, incluindo a conta mais insignificante — permissão de **leitura** na maior parte dos objetos e atributos do diretório. Faz sentido: o diretório existe para ser consultado (o Outlook precisa achar endereços, o computador precisa achar impressoras, a aplicação precisa validar um grupo). Essa leitura ampla é o que faz a rede funcionar.
+
+O efeito colateral é que o atacante com uma única senha lê o mesmo diretório. Ele não "invade" o LDAP; ele usa o LDAP como foi feito para ser usado. É por isso que a enumeração é tão difícil de impedir: cortar a leitura quebraria metade da rede. O defensor não elimina a enumeração — ele reduz o que há de perigoso para ler, e aprende a detectar quem lê demais.
+
+### 2.3 Os dois canais: LDAP e SAMR
+
+Há dois jeitos de perguntar "quem existe neste domínio", e um bom enumerador usa os dois, porque eles mostram coisas ligeiramente diferentes.
+
+- **LDAP** (TCP 389), que vimos: a consulta rica ao diretório, com filtros e atributos. É onde moram `servicePrincipalName`, `userAccountControl`, `memberOf` e as ACLs.
+- **SAMR** (Security Account Manager Remote protocol, uma interface <GlossaryTerm term="SAMR">SAMR</GlossaryTerm> sobre <GlossaryTerm term="RPC">RPC</GlossaryTerm> e <GlossaryTerm term="SMB">SMB</GlossaryTerm>, na porta TCP 445): pergunta direto à base de contas (o "SAM") do controlador. É o canal clássico do `enum4linux` e do `rpcclient`, e às vezes responde onde o LDAP está mais fechado — inclusive, em configurações antigas, a uma <GlossaryTerm term="null session">null session</GlossaryTerm> (uma conexão sem usuário nem senha).
+
+<Figure
+  src={canaisDeEnumeracao}
+  alt="Diagrama mostrando um usuário de domínio comum à esquerda, dois canais horizontais (LDAP/ADWS na porta 389 em cima e SAMR/RPC na porta 445 embaixo) que alimentam uma caixa central chamada GRAFO, com nós de usuários e grupos ligados por arestas MemberOf, GenericAll e AdminTo, e uma seta final para uma caixa destacada: Domain Admins."
+  caption="Os dois canais de enumeração partem de um único usuário comum e preenchem um grafo de relações que converge para o grupo que controla o domínio."
+/>
+
+### 2.4 Dos atributos ao grafo: por que o BloodHound mudou o jogo
+
+Por muito tempo, enumerar era produzir listas: a lista de usuários, a lista de grupos, os membros do Domain Admins. O problema é que o perigo real quase nunca está numa lista — está nas **relações entre elas**. Ana é membro do grupo Helpdesk; o Helpdesk tem permissão de redefinir a senha do grupo Server Admins; Server Admins é membro aninhado de Domain Admins. Nenhuma lista isolada grita "a Ana pode virar Domain Admin em três passos", mas a cadeia de relações diz exatamente isso.
+
+Em 2016, a ferramenta <GlossaryTerm term="BloodHound">BloodHound</GlossaryTerm> (um analisador que representa o AD como um grafo e calcula caminhos de ataque) virou essa chave: ela coleta usuários, grupos e, crucialmente, as **permissões** (as ACLs — Access Control Lists — que dizem quem pode o quê sobre cada objeto) e monta um grafo. Achar "o caminho mais curto até Domain Admins" vira uma consulta de grafo, resolvida em segundos. As arestas têm nomes que você vai reencontrar: `MemberOf` (membro de um grupo), `AdminTo` (admin local de uma máquina), `GenericAll`/`GenericWrite`/`WriteDacl` (controle total ou parcial sobre um objeto — dá para redefinir senha ou se auto-adicionar a um grupo).
+
+### 2.5 Os atributos que viram vetor
+
+A enumeração vira ataque quando você reconhece, nos atributos, as portas que eles abrem. Duas merecem destaque desde já (a execução dos ataques é o 7.3):
+
+- O <GlossaryTerm term="servicePrincipalName (SPN)">servicePrincipalName</GlossaryTerm> (SPN) liga um serviço de rede — um SQL Server, um IIS — a uma conta. Quando o serviço roda sob uma **conta de usuário**, a senha dessa conta protege um ticket que qualquer um pode pedir; é o alvo do <GlossaryTerm term="Kerberoasting">Kerberoasting</GlossaryTerm>.
+- O <GlossaryTerm term="userAccountControl">userAccountControl</GlossaryTerm> (um campo de bits que liga propriedades da conta) pode ter o bit `DONT_REQ_PREAUTH`, que desliga a pré-autenticação do <GlossaryTerm term="Kerberos">Kerberos</GlossaryTerm> (o protocolo de autenticação do AD) e abre o <GlossaryTerm term="AS-REP roasting">AS-REP roasting</GlossaryTerm> — pegar um hash quebrável sem nem ter a senha.
+
+<Figure
+  src={arvoreDeAtributos}
+  alt="Árvore de decisão com uma raiz 'atributo achado na enumeração' e cinco ramos: servicePrincipalName em um user leva a Kerberoasting; userAccountControl com 0x400000 e sem 0x2 leva a AS-REP roasting; adminCount=1 ou memberOf forte leva a alvo de alto valor; ACL GenericAll/WriteDacl leva a takeover do objeto; description/info com segredo leva a credencial de graça."
+  caption="Cada atributo que você encontra aponta para um ataque possível. Enumerar é ler esses atributos e decidir qual vira caminho."
+/>
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos aos comandos reais, do ponto de vista de um Kali que já tem um par de credenciais do domínio `corp.local` (usuário `j.silva`, senha conhecida), contra o controlador de domínio `dc01.corp.local` em `192.168.56.10`. (Você não tem um domínio para rodar isto agora — a Trilha 7 é guiada; a seção 5 treina a **análise** das saídas. Aqui a sessão é demonstrada para você reconhecer cada passo.)
+
+### 3.1 Primeiro contato com `nxc` (NetExec)
+
+O `nxc` (**NetExec**, o sucessor mantido do antigo CrackMapExec) é a canivete suíço da enumeração autenticada. Com credenciais válidas, ele despeja usuários e grupos num comando:
+
+```console
+$ nxc ldap 192.168.56.10 -u j.silva -p 'Ver@o2026!' --users
+LDAP  192.168.56.10  389  DC01  [+] corp.local\j.silva:Ver@o2026!
+LDAP  192.168.56.10  389  DC01  [*] Enumerated 42 domain users
+LDAP  192.168.56.10  389  DC01  -Username-   -Last PW Set-  -Description-
+LDAP  192.168.56.10  389  DC01  Administrator 2025-11-02     Built-in admin
+LDAP  192.168.56.10  389  DC01  j.silva       2026-01-20
+LDAP  192.168.56.10  389  DC01  svc_mssql     2024-03-11     SQL Server service
+...
+```
+
+O `--groups` faz o mesmo com grupos. Repare que o `Description` já pode vazar algo — é um dos lugares onde administradores esquecem senhas.
+
+### 3.2 Consulta LDAP crua com `ldapsearch`
+
+Quando você quer precisão, vai direto ao LDAP. O `ldapsearch` (cliente de linha de comando do OpenLDAP) faz um *bind* autenticado (`-x` para autenticação simples, `-D` com o DN/usuário, `-w` com a senha, `-b` com a base de busca) e aceita qualquer filtro. Para listar **todas as contas de usuário com um SPN** (os alvos de Kerberoasting):
+
+```console
+$ ldapsearch -x -H ldap://192.168.56.10 \
+    -D 'j.silva@corp.local' -w 'Ver@o2026!' \
+    -b 'DC=corp,DC=local' \
+    '(&(objectClass=user)(servicePrincipalName=*))' \
+    sAMAccountName servicePrincipalName
+# svc_mssql, Users, corp.local
+dn: CN=svc_mssql,OU=Service Accounts,DC=corp,DC=local
+sAMAccountName: svc_mssql
+servicePrincipalName: MSSQLSvc/dc01.corp.local:1433
+```
+
+E para achar as contas **sem pré-autenticação** (AS-REP roasting), o truque é o filtro de bits. A regra `1.2.840.113556.1.4.803` (um `LDAP_MATCHING_RULE_BIT_AND`) faz o servidor aplicar um E lógico; `:=4194304` testa o bit `0x400000`:
+
+```console
+$ ldapsearch -x -H ldap://192.168.56.10 \
+    -D 'j.silva@corp.local' -w 'Ver@o2026!' \
+    -b 'DC=corp,DC=local' \
+    '(&(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304))' \
+    sAMAccountName
+dn: CN=svc_legacy,OU=Service Accounts,DC=corp,DC=local
+sAMAccountName: svc_legacy
+```
+
+Esse `4194304` é o valor decimal de `0x400000`, que a documentação da Microsoft chama de `ADS_UF_DONT_REQUIRE_PREAUTH`: "this account does not require Kerberos pre-authentication for logon".
+
+### 3.3 O canal SAMR com `enum4linux-ng`
+
+Em paralelo, o `enum4linux-ng` (reescrita moderna do `enum4linux`) ataca o canal SAMR/RPC e consolida tudo — usuários, grupos, políticas de senha, e o mapeamento de SIDs por **RID cycling**:
+
+```console
+$ enum4linux-ng -u j.silva -p 'Ver@o2026!' 192.168.56.10
+ ====================( Users via RPC )====================
+[+] Found 42 users:
+  svc_mssql (RID: 1106)
+  svc_legacy (RID: 1110)
+  j.silva (RID: 1134)
+```
+
+O <GlossaryTerm term="RID cycling">RID cycling</GlossaryTerm> (iterar os RIDs — a parte final e sequencial do SID de cada conta — para traduzir número em nome) às vezes revela contas que o LDAP, mais fechado, não devolveria.
+
+### 3.4 Coletando o grafo com `bloodhound-python`
+
+Para montar o grafo, o coletor `bloodhound-python` faz, de uma vez, centenas de consultas LDAP e empacota tudo num conjunto de arquivos JSON que o BloodHound importa:
+
+```console
+$ bloodhound-python -u j.silva -p 'Ver@o2026!' \
+    -d corp.local -ns 192.168.56.10 -c All --zip
+INFO: Found 42 users, 31 groups, 7 computers
+INFO: Compressing output into 20260120_bloodhound.zip
+```
+
+Carregado o `.zip`, a consulta "Shortest Path to Domain Admins" desenha a cadeia de arestas que leva da sua conta ao controle do domínio. É esse raciocínio de grafo que você vai treinar na Missão 3.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### O playbook vazado do Conti (2021)
+
+Em **2 de setembro de 2021**, a Cisco Talos publicou a tradução de um conjunto de manuais internos do grupo de ransomware **Conti**, vazados por um afiliado insatisfeito que usava o apelido **"m1Geelka"**. Os documentos não eram teoria: eram o passo a passo que qualquer afiliado seguia para transformar um acesso inicial no comprometimento de uma rede corporativa inteira — e a **enumeração de Active Directory** aparece logo no começo do roteiro.
+
+O playbook instrui o operador a usar o comando `net` para listar usuários e a ferramenta **AdFind** (um utilitário de consulta LDAP de linha de comando) para enumerar as contas com acesso ao Active Directory, combinando isso com OSINT e LinkedIn para identificar quem tem acesso privilegiado. É exatamente a sequência deste módulo: autenticar, listar usuários e grupos por LDAP, e caçar as contas de alto valor.
+
+- **Impacto:** a Talos destacou que o nível de detalhe do manual é tão alto que **permite que adversários amadores** conduzam ataques destrutivos de ransomware contra grandes redes — uma barreira de entrada muito mais baixa do que a de outros ataques. A enumeração de domínio, antes "conhecimento de especialista", virou item de checklist copiável.
+- **Lição:** a enumeração não é um passo opcional de curiosos; é o primeiro movimento padronizado de operações de ransomware que causaram prejuízos bilionários. Entendê-la é entender como o atacante pensa no minuto seguinte a conseguir a primeira senha.
+- **Fonte:** [Cisco Talos — "Translated: Talos' insights from the recently leaked Conti ransomware playbook"](https://blog.talosintelligence.com/conti-leak-translation/) (2 set. 2021).
+
+Essa técnica tem nome no catálogo **MITRE ATT&CK**: [T1087.002 — Account Discovery: Domain Account](https://attack.mitre.org/techniques/T1087/002/), que a própria MITRE associa a ferramentas como `net`, `dsquery`, `ldapsearch`, `AdFind`, `CrackMapExec` e BloodHound, e documenta em uso por famílias de ransomware como Ryuk e BlackByte.
+
+### BloodHound, a ferramenta que redesenhou a defesa (2016)
+
+Em **2016**, na conferência DEF CON 24, Andy Robbins, Will Schroeder e Rohan Vazarkar apresentaram o BloodHound. O impacto foi tão grande para os **defensores** quanto para os atacantes: pela primeira vez, caminhos de ataque que levavam dias para um especialista mapear à mão passaram a ser calculados em segundos — e, com isso, os times de defesa puderam enxergar e **cortar** esses caminhos antes do atacante.
+
+- **Impacto:** o BloodHound tornou-se padrão de mercado em avaliações de AD, dos dois lados. A noção de "attack path" (caminho de ataque) entrou no vocabulário da defesa de identidade.
+- **Lição:** enumeração deixou de ser sobre listas e passou a ser sobre **relações**. Defender virou "reduzir os caminhos", não só "trancar as contas".
+- **Fonte:** [SpecterOps — página oficial do BloodHound](https://specterops.io/bloodhound-overview/) e o registro da palestra na DEF CON 24.
+
+## 5. Mãos à obra — ler o diretório e achar o caminho
+
+Este módulo **não tem lab próprio** (a decisão da plataforma é manter a Trilha 7 enxuta, sem subir um domínio inteiro nos seus 16 GB). Mas a habilidade central da enumeração **não** é apertar um botão: é **ler uma saída de diretório e decidir qual achado vira ataque**. É isso que você vai treinar, contra cenários que você mesmo gera no seu Ubuntu (WSL), a partir de saídas realistas e sanitizadas (domínio `corp.local`, controlador `dc01`, usuário que você controla `j.silva`).
+
+**Objetivo:** ao terminar, você terá (1) identificado, entre vários objetos com SPN, a única conta realmente Kerberoastável; (2) achado, por operação de bits no `userAccountControl`, a única conta AS-REP roastável que não é uma armadilha; e (3) traçado, num grafo, o único caminho real de `j.silva` até **Domain Admins**. Três flags, uma por missão. Cada flag está escondida em **base64** (que você viu na Trilha 3) na nota do objeto certo; decodificar a nota de um objeto errado devolve um aviso que começa com `decoy:`, não a flag.
+
+### 5.1 Preparar o terreno (passo a passo)
+
+Abra o terminal do Ubuntu (WSL) e cole o bloco inteiro de uma vez. Ele cria, em `/tmp/ad-enum`, os três artefatos de enumeração — iguais para todo mundo — de um domínio `corp.local` que você enumerou com a conta `j.silva`:
+
+```bash
+ROOT=/tmp/ad-enum
+rm -rf "$ROOT"; mkdir -p "$ROOT"
+cd "$ROOT"
+
+# --- Missao 1: ldapsearch filtrando objetos com servicePrincipalName ---
+cat > m1-ldap-spn.txt <<'EOF'
+# ldapsearch -b DC=corp,DC=local '(servicePrincipalName=*)' sAMAccountName sAMAccountType servicePrincipalName
+# sAMAccountType 805306368 = conta de USUARIO ; 805306369 = conta de COMPUTADOR
+
+dn: CN=svc_mssql,OU=Service Accounts,DC=corp,DC=local
+sAMAccountName: svc_mssql
+sAMAccountType: 805306368
+servicePrincipalName: MSSQLSvc/dc01.corp.local:1433
+# note(base64)=RkxBR3tzcG4tb24tYS11c2VyLWFjY291bnQtaXMta2VyYmVyb2FzdGFibGV9
+
+dn: CN=WS01,CN=Computers,DC=corp,DC=local
+sAMAccountName: WS01$
+sAMAccountType: 805306369
+servicePrincipalName: HOST/WS01.corp.local
+servicePrincipalName: TERMSRV/WS01
+# note(base64)=ZGVjb3k6IHRoaXMgaXMgYSBjb21wdXRlciBhY2NvdW50IChXT1JLU1RBVElPTl9UUlVTVF9BQ0NPVU5UKTsgaXRzIDEyMC1jaGFyIG1hY2hpbmUgcGFzc3dvcmQgaXMgbm90IHJvYXN0YWJsZQ==
+
+dn: CN=Ana Lima,OU=TI,DC=corp,DC=local
+sAMAccountName: alice
+sAMAccountType: 805306368
+# note(base64)=ZGVjb3k6IG5vIHNlcnZpY2VQcmluY2lwYWxOYW1lIG9uIHRoaXMgdXNlciwgbm90aGluZyB0byByZXF1ZXN0IGEgdGlja2V0IGZvcg==
+
+dn: CN=krbtgt,CN=Users,DC=corp,DC=local
+sAMAccountName: krbtgt
+sAMAccountType: 805306368
+servicePrincipalName: kadmin/changepw
+# note(base64)=ZGVjb3k6IGtyYnRndCBjYXJyaWVzIFNQTnMgYnV0IGl0IGlzIHRoZSBLREMgYWNjb3VudCwgbmV2ZXIgYSByb2FzdGluZyB0YXJnZXQ=
+EOF
+
+# --- Missao 2: userAccountControl de quatro contas (em decimal) ---
+cat > m2-ldap-uac.txt <<'EOF'
+# ldapsearch ... sAMAccountName userAccountControl  (valor em DECIMAL)
+# bits: 0x2=ACCOUNTDISABLE  0x20=PASSWD_NOTREQD  0x200=NORMAL_ACCOUNT
+#       0x10000=DONT_EXPIRE_PASSWD  0x400000=DONT_REQ_PREAUTH
+
+dn: CN=svc_legacy,OU=Service Accounts,DC=corp,DC=local
+sAMAccountName: svc_legacy
+userAccountControl: 4260352
+# note(base64)=RkxBR3tuby1wcmVhdXRoLWlzLWFuLWFzcmVwLXJvYXN0fQ==
+
+dn: CN=Bruno Reis,OU=TI,DC=corp,DC=local
+sAMAccountName: bob
+userAccountControl: 544
+# note(base64)=ZGVjb3k6IFBBU1NXRF9OT1RSRVFEICgweDIwKSBpcyBzZXQgaGVyZSwgbm90IERPTlRfUkVRX1BSRUFVVEggKDB4NDAwMDAwKTsgd3JvbmcgYml0
+
+dn: CN=Carla Dias,OU=TI,DC=corp,DC=local
+sAMAccountName: carol
+userAccountControl: 66048
+# note(base64)=ZGVjb3k6IHRoaXMgYWNjb3VudCByZXF1aXJlcyBLZXJiZXJvcyBwcmUtYXV0aCwgbm90aGluZyB0byBBUy1SRVAgcm9hc3Q=
+
+dn: CN=Davi Nunes,OU=Disabled,DC=corp,DC=local
+sAMAccountName: dave
+userAccountControl: 4260354
+# note(base64)=ZGVjb3k6IHRoZSBET05UX1JFUV9QUkVBVVRIIGJpdCBpcyBzZXQgYnV0IEFDQ09VTlRESVNBQkxFICgweDIpIGlzIHRvbzsgYSBkaXNhYmxlZCBhY2NvdW50IGlzIGEgZGVhZCBlbmQ=
+EOF
+
+# --- Missao 3: export simplificado do grafo (estilo BloodHound) ---
+cat > m3-bloodhound.json <<'EOF'
+{
+  "you_control": "j.silva",
+  "nodes": [
+    { "name": "j.silva",          "type": "User",  "note": null },
+    { "name": "IT-Support",       "type": "Group", "note": null },
+    { "name": "Server Admins",    "type": "Group", "note": null },
+    { "name": "Printer Operators","type": "Group", "note": null },
+    { "name": "Domain Admins",    "type": "Group", "note": "RkxBR3tuZXN0ZWQtZ3JvdXAtcGF0aC10by1kb21haW4tYWRtaW5zfQ==" },
+    { "name": "Enterprise Admins","type": "Group", "note": "ZGVjb3k6IG5vIGVkZ2UgZnJvbSBhbnkgcHJpbmNpcGFsIHlvdSBjb250cm9sIHJlYWNoZXMgRW50ZXJwcmlzZSBBZG1pbnM=" },
+    { "name": "Backup Operators", "type": "Group", "note": "ZGVjb3k6IGEgcG93ZXJmdWwtc291bmRpbmcgZ3JvdXAsIGJ1dCBubyBwYXRoIGZyb20gai5zaWx2YSBhbmQgbm8gRG9tYWluIEFkbWlucyBtZW1iZXJzaGlw" }
+  ],
+  "edges": [
+    { "from": "j.silva",       "to": "IT-Support",        "type": "MemberOf" },
+    { "from": "IT-Support",    "to": "Server Admins",     "type": "GenericAll" },
+    { "from": "IT-Support",    "to": "Printer Operators", "type": "MemberOf" },
+    { "from": "Server Admins", "to": "Domain Admins",     "type": "MemberOf" }
+  ]
+}
+EOF
+
+echo "Cenario pronto em $ROOT"; ls -1 "$ROOT"
+```
+
+Para decodificar uma nota, isole o valor depois de `note(base64)=` e passe para o `base64 -d`. Por exemplo:
+
+```console
+$ grep 'note(base64)' m1-ldap-spn.txt | head -1 | cut -d= -f2- | base64 -d; echo
+```
+
+### 5.2 Missão 1 — a conta Kerberoastável (guiada)
+
+Você quer o alvo de Kerberoasting: uma conta cuja senha protege um ticket que você pode pedir e quebrar offline. Comece olhando todo objeto com SPN:
+
+```console
+$ grep -E 'sAMAccountName|sAMAccountType|servicePrincipalName' m1-ldap-spn.txt
+sAMAccountName: svc_mssql
+sAMAccountType: 805306368
+servicePrincipalName: MSSQLSvc/dc01.corp.local:1433
+sAMAccountName: WS01$
+sAMAccountType: 805306369
+servicePrincipalName: HOST/WS01.corp.local
+...
+```
+
+Quatro objetos têm SPN. Mas só um é um bom alvo de Kerberoasting. Seu objetivo: decidir **qual** e decodificar a nota dele — essa nota é a flag.
+
+<Hint title="Dica 1">
+Nem todo SPN é roastável. Separe pelo `sAMAccountType`: `805306368` é conta de **usuário**; `805306369` é conta de **computador**. A senha de uma conta de computador é gerada pela máquina, tem ~120 caracteres aleatórios e é impossível de quebrar — então computadores não são alvos de Kerberoasting.
+</Hint>
+
+<Hint title="Dica 2">
+Sobram, entre as contas de usuário com SPN, o `svc_mssql` e o `krbtgt`. O `krbtgt` é a conta do próprio KDC (o serviço que emite os tickets Kerberos) — ela tem SPN mas nunca é alvo de roasting. Logo o alvo é o serviço de aplicação. Decodifique a `note(base64)` **dele**.
+</Hint>
+
+<Solution title="Solução">
+O único objeto que é, ao mesmo tempo, conta de usuário (`805306368`), com SPN de um serviço de aplicação, e não é o `krbtgt`, é o **svc_mssql** — um SQL Server rodando sob uma conta de usuário, o clássico alvo de Kerberoasting. Decodifique a nota dele:
+
+```console
+$ awk '/sAMAccountName: svc_mssql/{f=1} f&&/note/{print;exit}' m1-ldap-spn.txt | cut -d= -f2- | base64 -d; echo
+```
+
+A saída é a flag. (A nota do `WS01$` decodifica para `decoy: this is a computer account ...` e a do `krbtgt`, para `decoy: krbtgt carries SPNs but it is the KDC account ...` — cada uma explica por que não serve.) **Lição:** ter SPN não basta; o alvo é a conta de **usuário** cuja senha humana e fraca protege o ticket.
+</Solution>
+
+<FlagInput task="missao-1-spn" />
+
+### 5.3 Missão 2 — a conta AS-REP roastável (desafio)
+
+Agora você quer as contas com a pré-autenticação Kerberos desligada (`DONT_REQ_PREAUTH`, bit `0x400000`). O `m2-ldap-uac.txt` traz quatro contas com o `userAccountControl` em decimal. Seu objetivo: achar a **única** conta que é de fato AS-REP roastável e decodificar a nota dela.
+
+O cuidado: `userAccountControl` é um campo de **bits**. Não procure um valor igual a `4194304`; procure as contas em que o bit `0x400000` está **ligado** (um E lógico). E lembre: uma conta desligada não autentica — então o bit `0x2` (`ACCOUNTDISABLE`) desqualifica.
+
+<Hint title="Dica 1">
+Converta cada valor e teste o bit. No shell dá para fazer aritmética com `$(( ... ))` e máscaras em hexadecimal: `$(( 4260352 & 0x400000 ))` devolve `4194304` (ligado) ou `0` (desligado). Faça o mesmo com `& 0x2` para ver se a conta está desabilitada.
+</Hint>
+
+<Hint title="Dica 2">
+Duas contas têm o bit `0x400000` ligado. Uma delas tem **também** o bit `0x2`: está desabilitada, é uma armadilha. Pegue a nota da que tem `0x400000` ligado **e** `0x2` desligado.
+</Hint>
+
+<Solution title="Solução">
+Testando as quatro contas:
+
+```console
+$ for uac in 4260352 544 66048 4260354; do
+    printf "%s  preauth_off=%s  disabled=%s\n" "$uac" \
+      "$(( (uac & 0x400000) != 0 ))" "$(( (uac & 0x2) != 0 ))"
+  done
+4260352  preauth_off=1  disabled=0
+544      preauth_off=0  disabled=0
+66048    preauth_off=0  disabled=0
+4260354  preauth_off=1  disabled=1
+```
+
+O `svc_legacy` (`4260352`) tem a pré-autenticação desligada **e** está habilitado — é o alvo. O `dave` (`4260354`) também tem o bit, mas está desabilitado (a armadilha). Decodifique a nota do `svc_legacy`:
+
+```console
+$ awk '/sAMAccountName: svc_legacy/{f=1} f&&/note/{print;exit}' m2-ldap-uac.txt | cut -d= -f2- | base64 -d; echo
+```
+
+**Lição:** é por isso que o filtro LDAP de verdade combina `(userAccountControl:1.2.840.113556.1.4.803:=4194304)` com `(!(userAccountControl:1.2.840.113556.1.4.803:=2))` — pegar o bit certo e excluir as contas desligadas.
+</Solution>
+
+<FlagInput task="missao-2-asrep" />
+
+### 5.4 Missão 3 — o caminho até Domain Admins (desafio)
+
+Você controla `j.silva`. No `m3-bloodhound.json` há grupos de alto valor e as arestas entre os objetos. Seu objetivo: descobrir qual grupo poderoso você **realmente alcança** a partir de `j.silva` seguindo as arestas, e decodificar a nota dele. Dois grupos parecem o prêmio — `Domain Admins` e `Enterprise Admins` —, mas só um está ao alcance das arestas que saem de quem você controla.
+
+<Hint title="Dica 1">
+Isto é um problema de **alcance em grafo**: partindo de `j.silva`, siga cada aresta (`from → to`) e veja aonde dá para chegar. Uma busca em largura (BFS) resolve. As arestas `MemberOf` e `GenericAll` são ambas "caminhos" que o atacante percorre (no `GenericAll`, você se adiciona ao grupo).
+</Hint>
+
+<Hint title="Dica 2">
+Complete e rode este esqueleto em Python (só biblioteca padrão):
+
+```python
+import json, collections
+g = json.load(open('/tmp/ad-enum/m3-bloodhound.json'))
+adj = collections.defaultdict(list)
+for e in g['edges']:
+    adj[e['from']].append(e['to'])
+# BFS a partir de quem voce controla:
+start = g['you_control']
+seen, queue = {start}, collections.deque([start])
+while queue:
+    n = queue.popleft()
+    for m in adj[n]:
+        if m not in seen:
+            seen.add(m); queue.append(m)
+print('alcançáveis:', seen)
+# agora: qual grupo de alto valor esta em 'seen'? pegue a 'note' dele.
+```
+</Hint>
+
+<Solution title="Solução">
+A BFS a partir de `j.silva` alcança: `IT-Support` (MemberOf), daí `Printer Operators` (MemberOf) e `Server Admins` (GenericAll), e de `Server Admins` chega a `Domain Admins` (MemberOf aninhado). O conjunto alcançável **inclui `Domain Admins`** mas **não** `Enterprise Admins` nem `Backup Operators` (nenhuma aresta leva até eles a partir de quem você controla). Então o prêmio real é o `Domain Admins`:
+
+```console
+$ python3 -c "
+import json
+g=json.load(open('/tmp/ad-enum/m3-bloodhound.json'))
+note=[n['note'] for n in g['nodes'] if n['name']=='Domain Admins'][0]
+import base64; print(base64.b64decode(note).decode())
+"
+```
+
+A saída é a flag. (A nota do `Enterprise Admins` decodifica para `decoy: no edge ... reaches Enterprise Admins` — o aviso de que, por mais poderoso que seja, você não chega nele.) **Lição:** no AD, o prêmio não é o grupo mais poderoso que existe, é o grupo mais poderoso que o **caminho de arestas** alcança. É exatamente o que o BloodHound calcula.
+</Solution>
+
+<FlagInput task="missao-3-grafo" />
+
+Quando terminar, as três flags entram nos cartões acima e o quiz da seção 9 fecha o módulo. Nenhum lab para desligar — você só gerou arquivos de texto no `/tmp`.
+
+## 6. Variações e aprofundamento
+
+**Enumeração sem credenciais.** Nem sempre você já tem uma senha. Em domínios mal configurados, uma <GlossaryTerm term="null session">null session</GlossaryTerm> (conexão SMB anônima) ainda responde a parte do SAMR, e o **RID cycling** anônimo lista contas. Outra via é o AS-REP roasting **sem nenhuma senha**: se você já tem uma lista de nomes de usuário (de OSINT, da Trilha 2), pode pedir o AS-REP de cada um e descobrir quais têm a pré-autenticação desligada — enumeração e ataque no mesmo movimento.
+
+**Enumeração de trusts.** Empresas raramente têm um domínio só. Um <GlossaryTerm term="domain trust">domain trust</GlossaryTerm> (relação de confiança que deixa um domínio autenticar usuários de outro) abre caminhos entre domínios e florestas. Enumerar os trusts (atributo `trustAttributes`, ou `nltest /domain_trusts`) revela se há um domínio vizinho mais frágil, ou se a floresta inteira cai junto. É a técnica [T1482 — Domain Trust Discovery](https://attack.mitre.org/techniques/T1482/) do ATT&CK.
+
+**Enumeração "OPSEC-safe".** A coleta `-c All` do BloodHound é completa, mas barulhenta — milhares de consultas num instante, mais sessões de rede que acendem alertas. Em um engajamento realista, prefere-se coletar por partes (`-c DCOnly`, que lê só do controlador e evita tocar cada estação), em horários de pico, com um ritmo mais lento. Enumerar bem é também enumerar **discreto**.
+
+**LDAP vs. LDAPS e o Global Catalog.** A porta 389 é LDAP em claro; a 636 é LDAPS (sobre TLS). O **Global Catalog** (portas 3268/3269) é uma cópia parcial de **toda a floresta** num só lugar — ótimo para enumerar além do seu domínio num único ponto. Saber qual porta responde o quê acelera (e pode driblar um LDAP local mais fechado).
+
+## 7. Erros comuns
+
+- **`ldap_bind: Invalid credentials (49)`:** usuário ou senha errados — mas cuidado com o formato do `-D`. O bind simples costuma aceitar `usuario@dominio` (UPN) ou o DN completo; `CORP\usuario` nem sempre funciona no `ldapsearch`. Teste o UPN primeiro.
+- **"clock skew too great" ao usar Kerberos:** o Kerberos recusa se o relógio da sua máquina diverge do controlador em mais de ~5 minutos. Sincronize a hora (no lab, `ntpdate`/`rdate` contra o DC) antes de qualquer coisa que use ticket.
+- **Usar o IP em vez do nome e o Kerberos falhar:** a autenticação Kerberos é por nome de serviço (SPN), não por IP. Para `bloodhound-python` e ferramentas Kerberos, resolva e use o **FQDN** do controlador (`dc01.corp.local`), com o DNS apontando para o DC (`-ns`).
+- **Filtro de bits "não acha nada":** comparar `userAccountControl=4194304` com igualdade quase nunca casa (a conta tem outros bits ligados). Use sempre a regra de bits `:1.2.840.113556.1.4.803:=`.
+- **"0 resultados" interpretado como "domínio seguro":** quase sempre é filtro ou base de busca (`-b`) errada, não ausência de alvos. Confirme a base com uma consulta ampla (`(objectClass=domain)`) antes de concluir.
+- **Esquecer o canal SAMR:** se o LDAP está fechado para o seu usuário, não desista — o `enum4linux-ng` na 445 pode responder o que o 389 negou.
+
+## 8. Defesa e mitigação
+
+A enumeração não se "desliga" sem quebrar o domínio, mas se **reduz** (menos coisa perigosa para achar) e se **detecta** (ver quem lê demais). O defensor trabalha nos dois.
+
+**Reduzir a superfície:**
+
+- **SPNs em contas de usuário são dívida.** Cada conta de usuário com SPN é um alvo de Kerberoasting. Troque-as, onde possível, por **gMSA** (group Managed Service Accounts): o AD gera e **rotaciona** uma senha de 120+ caracteres, impossível de quebrar offline. Onde o gMSA não cabe, imponha senha longa (25+ caracteres) na conta de serviço.
+- **Exija pré-autenticação em todas as contas.** O `DONT_REQ_PREAUTH` quase nunca tem motivo legítimo moderno. Audite periodicamente:
+
+```console
+Get-ADUser -Filter 'useraccountcontrol -band 4194304' -Properties useraccountcontrol |
+  Select-Object SamAccountName
+```
+
+- **Limpe membership e `adminCount`.** Menos contas em grupos privilegiados e menos ACLs frouxas significam **menos arestas** no grafo — menos caminhos para o BloodHound achar. Rode o BloodHound **você mesmo**, como defensor, e corte os caminhos curtos até Domain Admins antes que o atacante os use.
+- **Não dependa de esconder nomes.** Renomear o grupo "Domain Admins" não adianta: o SID do grupo é fixo (`...-512`) e o atacante enumera por SID. Security through obscurity não é defesa.
+
+**Detectar quem enumera:**
+
+- Ative a auditoria de **pedidos de ticket Kerberos** — eventos `4768` (AS-REQ) e `4769` (TGS-REQ). Uma rajada de `4769` para muitos SPNs diferentes vinda de uma conta é a assinatura clássica do Kerberoasting; um `4768` com pré-autenticação ausente aponta AS-REP roasting.
+- Monitore volumes anômalos de consulta LDAP (a coleta do BloodHound faz centenas de uma vez) e de sessões SMB/SAMR.
+- Plante **honey accounts** (contas-isca): uma conta de usuário com um SPN atraente e **sem uso legítimo nenhum**. Qualquer pedido de ticket para ela é, por definição, malicioso — um alarme de altíssima confiança, sem falso positivo.
+
+A ideia que fecha a visão completa: como a leitura é por desenho, a defesa madura não aposta em "impedir a enumeração", e sim em **tornar o que se enumera inútil** (senhas que não quebram, caminhos que não existem) e em **ouvir** o atacante enquanto ele enumera.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e complete as três missões da seção 5 — cada uma entrega uma flag.
+
+<Quiz task="quiz-final" />
+
+**Desafios extras (sem flag, para fixar):**
+
+- Escreva o filtro LDAP que lista **somente** as contas de usuário com SPN que **não** estejam desabilitadas. (Dica: combine `(servicePrincipalName=*)` com a exclusão do bit `0x2` pela regra de bits.)
+- No grafo da Missão 3, qual **uma** aresta você removeria para cortar o caminho de `j.silva` até Domain Admins com o menor impacto? Justifique.
+- Explique, em duas frases, por que uma conta `gMSA` com SPN não é um alvo prático de Kerberoasting, mesmo tendo SPN.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- No AD, um usuário comum lê quase todo o diretório **por desenho** (Authenticated Users tem leitura); enumerar é usar o LDAP/SAMR como foram feitos.
+- Os dois canais se complementam: **LDAP** (389) para filtros ricos e atributos; **SAMR** (445) para o SAM e RID cycling.
+- Os atributos que viram vetor: `servicePrincipalName` (→ Kerberoasting), `userAccountControl` com `DONT_REQ_PREAUTH` (→ AS-REP roasting), ACLs frouxas (→ takeover).
+- O **BloodHound** transforma relações em grafo: o prêmio é o grupo poderoso que o **caminho de arestas** alcança, não o mais poderoso que existe.
+- A defesa reduz (gMSA, pré-auth, menos arestas) e detecta (eventos 4768/4769, honey accounts); esconder nome não é defesa.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [MITRE ATT&CK — T1087.002 Account Discovery: Domain Account](https://attack.mitre.org/techniques/T1087/002/) — o catálogo da técnica, com ferramentas e grupos que a usam.
+- [Microsoft Learn — User-Account-Control attribute](https://learn.microsoft.com/en-us/windows/win32/adschema/a-useraccountcontrol) — a tabela oficial dos bits do `userAccountControl`.
+- [SpecterOps — BloodHound](https://specterops.io/bloodhound-overview/) — a ferramenta que redesenhou a análise de caminhos de ataque em AD.
+- [Cisco Talos — Conti ransomware playbook](https://blog.talosintelligence.com/conti-leak-translation/) — a enumeração de domínio vista pelo manual de um grupo de ransomware.
