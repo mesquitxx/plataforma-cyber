@@ -1,0 +1,548 @@
+---
+slug: metodologia-completa
+track: trilha-8
+title: "Metodologia completa de ataque (revisão integrada)"
+prerequisites: [trilha-2, trilha-3, trilha-4, trilha-5, trilha-6, trilha-7]
+lab: null
+tasks:
+  - slug: missao-1-espinha
+    title: "Missão 1 — reconstruir a espinha da campanha"
+    type: flag
+    prompt: "Ordene os 9 eventos de m1-events.json em ordem cronológica do ataque, monte m1-answer.txt (um ID por linha) e rode o chain.py. A flag está na saída. Cole no formato FLAG{...}."
+    hint: "A ordem é a da própria metodologia: recon → acesso → escalação → pós-exploração. Comece pela varredura do perímetro e termine pela exfiltração. Os IDs E1..E9 estão embaralhados de propósito; releia a descrição de cada um e reordene pela história do ataque, não pelo número."
+    flag:
+      hash: "scrypt$16384$8$1$808d362b9968e03ad802e7b8a5e382282e1c94f37d2561da232e88267525386f"
+      salt: "680530681b2b2527e1a6c0e00d9d11a4"
+  - slug: missao-2-proximo-passo
+    title: "Missão 2 — decidir o próximo passo (do caos às joias da coroa)"
+    type: flag
+    prompt: "No m2-enum.json, ache o ÚNICO vetor de enumeração que leva de verdade a root e, dali, às joias da coroa. Decodifique a nota (base64) dele: é a flag. Cole no formato FLAG{...}."
+    hint: "Não é o vetor mais chamativo, é o que leva a algum lugar. Para cada vetor, pergunte: isto me dá root AGORA, de forma confiável, e me aproxima do objetivo? Um SUID padrão do sistema, um cron sem escrita, uma senha de serviço morto e um kernel sem exploit confiável são ruído. As notas das iscas começam com decoy:."
+    flag:
+      hash: "scrypt$16384$8$1$2ce23b701e84dbf0555dbf07e069254cb317308b93ecfa861e4c0ce9423578dd"
+      salt: "656cad48cf5cfe81454e652610439441"
+  - slug: missao-3-relatorio
+    title: "Missão 3 — do ataque ao relatório (mapear ao ATT&CK)"
+    type: flag
+    prompt: "No m3-findings.json, mapeie cada um dos 9 eventos (já em ordem cronológica) ao ID MITRE ATT&CK correto, monte m3-answer.txt (um ID por linha) e rode o report.py. A flag só decifra se o mapeamento inteiro estiver certo. Cole no formato FLAG{...}."
+    hint: "Cada evento tem uma página no attack.mitre.org. Cuidado com os parecidos: varredura ativa é T1595 (Reconnaissance), não a descoberta interna T1046 (Discovery); Kerberoasting é T1558.003. O techniques_available traz iscas (T1053.003, T1566, T1003.006) que NÃO entram. A chave de decifragem é a sequência inteira: um ID errado embaralha tudo."
+    flag:
+      hash: "scrypt$16384$8$1$c3e34364a1bbf57bd308d2f19012165381c266e3b796ec1f0ae37dfa0624c2e2"
+      salt: "6f7c21faf5b09190ace3a293e0317c76"
+  - slug: quiz-final
+    title: "Quiz — Metodologia completa de ataque"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "A tese que amarra este módulo é que um pentest é uma metodologia, não uma coleção de truques. O que isso quer dizer na prática?"
+        options:
+          - "Que cada técnica (SQLi, Kerberoasting, privesc) é um assunto isolado, e vence quem decorou mais truques"
+          - "Que é preciso um exploit de dia-zero em cada fase para avançar"
+          - "Que o trabalho é uma linha única e repetível — recon → acesso → escalação → pós-exploração → relatório —, cada fase alimentando a próxima, e o mesmo laço se repetindo em cada host"
+          - "Que a metodologia só se aplica a redes Active Directory"
+        answer: 2
+        explanation: "A espinha é uma só e se repete: cada fase produz o insumo da seguinte (o recon decide onde atacar; o acesso dá o foothold; a escalação amplia; a pós-exploração colhe; o relatório entrega). Não são assuntos isolados nem questão de decorar truques, raramente há dia-zero no caminho crítico, e a espinha vale para web, rede, privesc e AD igualmente."
+      - question: "Por que a enumeração é o centro de gravidade da metodologia, e não a exploração?"
+        options:
+          - "Porque o próximo passo correto é decidido pelo que a enumeração revela; atacar às cegas desperdiça a janela do teste e faz barulho à toa"
+          - "Porque enumerar é sempre mais rápido do que explorar"
+          - "Porque a enumeração nunca aciona nenhum alerta"
+          - "Porque sem enumeração não é possível escrever o relatório"
+        answer: 0
+        explanation: "Enumerar é o que transforma uma lista de possibilidades num alvo: você só sabe qual vetor leva às joias da coroa depois de cruzar o que a máquina revela. Não é só questão de velocidade; enumeração ativa pode, sim, gerar ruído e alertas; e o relatório depende de muito mais que a enumeração."
+      - question: "No MITRE ATT&CK, qual é a diferença entre uma tactic e uma technique?"
+        options:
+          - "Tactic é a ferramenta usada; technique é o alvo"
+          - "Tactic é uma falha de software; technique é o patch"
+          - "São sinônimos; a diferença é só o número do ID"
+          - "Tactic é o objetivo do adversário naquele momento (o \"porquê\", ex.: Credential Access); technique é o \"como\" ele o alcança (ex.: Kerberoasting, T1558.003)"
+        answer: 3
+        explanation: "A tática é a coluna (o objetivo: Initial Access, Privilege Escalation, Exfiltration...); a técnica é como aquele objetivo é atingido, com um ID como T1558.003. Não é ferramenta versus alvo, não tem relação com falha versus patch, e não são sinônimos — uma mesma tática reúne muitas técnicas."
+      - question: "O que é dwell time e por que ele é a métrica central para quem defende?"
+        options:
+          - "O tempo que o pentester tem contratado para o engajamento"
+          - "O tempo entre o comprometimento inicial e a detecção; quanto maior, mais o atacante avança até as joias da coroa e exfiltra — na Equifax, foram 76 dias sem detecção"
+          - "O tempo que um exploit leva para rodar"
+          - "O intervalo entre dois relatórios de status ao cliente"
+        answer: 1
+        explanation: "Dwell time é a janela em que o atacante já está dentro mas ainda não foi percebido. Reduzi-lo limita o estrago: na Equifax, os 76 dias (com um dispositivo de inspeção cego por um certificado expirado) foram o que permitiu exfiltrar dados de dezenas de bancos. Não é a duração do contrato, do exploit nem o ciclo de status report."
+      - question: "Dos três mapas vistos (Cyber Kill Chain, MITRE ATT&CK e PTES), qual inclui uma fase de relatório — e por que isso importa?"
+        options:
+          - "A Cyber Kill Chain, porque foi criada pela Lockheed Martin"
+          - "Nenhum dos três trata de relatório"
+          - "O PTES; importa porque o entregável de um pentest é o relatório, não a invasão — é o que separa um teste de uma anedota"
+          - "Todos os três terminam numa fase de relatório idêntica"
+        answer: 2
+        explanation: "A Cyber Kill Chain e as táticas do ATT&CK descrevem o ataque e param nos objetivos do adversário; só uma metodologia de teste como o PTES fecha com Reporting. O valor que o cliente compra é o relatório reproduzível, não o fato de alguém ter entrado."
+      - question: "Lendo o ID T1021.004, o que você sabe de imediato?"
+        options:
+          - "Que é uma sub-technique (o sufixo .004) de Remote Services (T1021): especificamente SSH — ou seja, movimento lateral por SSH"
+          - "Que é a 4ª vulnerabilidade de uma lista chamada T1021"
+          - "Que é uma tática de número 1021"
+          - "Que é um CVE do ano de 2021"
+        answer: 0
+        explanation: "O sufixo .004 marca uma sub-técnica de uma técnica-mãe (T1021, Remote Services); a .004 é SSH. Não é um índice de vulnerabilidade, não é uma tática (as táticas têm o formato TA####) e não é um CVE, que teria o formato CVE-ANO-NÚMERO."
+      - question: "A Missão 3 exige mapear cada passo ao ATT&CK. Por que isso é parte essencial do relatório, e não burocracia?"
+        options:
+          - "Porque o cliente paga por quantidade de siglas"
+          - "Porque o mapeamento ATT&CK quebra senhas automaticamente"
+          - "Porque ligar cada passo a uma técnica conhecida dá ao defensor uma narrativa reproduzível e aponta as detecções e mitigações já catalogadas — um achado sem narrativa mapeada é só uma anedota"
+          - "Porque a ordem cronológica serve apenas para a capa do relatório"
+        answer: 2
+        explanation: "O mapa ATT&CK transforma \"a gente entrou\" numa história que o defensor pode reproduzir, priorizar e cortar: cada técnica vem com detecções e mitigações públicas. Não é volume de siglas, não executa ataque nenhum, e a cronologia é o fio da narrativa, não um enfeite de capa."
+      - question: "Você conseguiu root num host interno durante um teste autorizado. Pela metodologia, o que decide o próximo passo?"
+        options:
+          - "Escalar e pivotar o máximo possível, em todos os hosts alcançáveis, para mostrar poder"
+          - "Instalar persistência em todas as máquinas antes de qualquer outra coisa"
+          - "Encerrar o teste, porque root já é o objetivo final"
+          - "Verificar se aquele host aproxima você das joias da coroa — nova enumeração para decidir se há credencial, pivô ou dado a coletar ali; poder só o necessário, com OPSEC"
+        answer: 3
+        explanation: "Root não é o fim; é um meio. O próximo passo sai de nova enumeração orientada ao objetivo (as joias da coroa), com menor privilégio e OPSEC — ruído demais estoura alertas e sai do propósito. Escalar e persistir em tudo \"para mostrar poder\" é ruído sem valor e fora de escopo, e root num host qualquer quase nunca é o objetivo final do engajamento."
+glossary:
+  - term: dwell time
+    definition: "Tempo entre o comprometimento inicial de um ambiente e o momento em que a intrusão é detectada. Quanto maior o dwell time, mais o atacante avança, coleta e exfiltra antes de ser percebido; reduzi-lo é a métrica central da defesa."
+  - term: crown jewels
+    definition: "As joias da coroa: os ativos cuja perda causa o maior dano a uma organização (banco de dados de clientes, segredos de negócio, chaves de domínio). A metodologia inteira se orienta a alcançá-los (ataque) ou protegê-los primeiro (defesa)."
+---
+
+import espinha from "./img/espinha-da-metodologia.svg";
+import tresMapas from "./img/tres-mapas-alinhados.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Você chega a este módulo sabendo fazer muita coisa: encontrar uma <GlossaryTerm term="SQL injection">SQL injection</GlossaryTerm> (a Trilha 4), quebrar um hash (a Trilha 3), explorar uma CVE de serviço (a Trilha 5), escalar privilégio num Linux (a Trilha 6), fazer <GlossaryTerm term="Kerberoasting">Kerberoasting</GlossaryTerm> num domínio (a Trilha 7). São peças poderosas. Mas peças soltas não derrubam uma rede — e, pior, um iniciante com dez técnicas na cabeça e nenhum método **trava** no momento decisivo: ele consegue uma shell numa máquina desconhecida e fica olhando para o cursor, sem saber o que fazer a seguir.
+
+Este módulo é sobre a coisa que nenhuma trilha anterior ensinou de forma direta: o **método** que liga todas as peças. A tese é simples e vale repetir até virar reflexo: **um pentest não é uma coleção de truques, é uma metodologia única e repetível** — <GlossaryTerm term="reconnaissance">reconhecimento</GlossaryTerm> → acesso → <GlossaryTerm term="privilege escalation">escalação</GlossaryTerm> → <GlossaryTerm term="post-exploitation">pós-exploração</GlossaryTerm> → relatório — em que cada fase produz o insumo da seguinte, e o mesmo laço se repete em cada máquina. Quem enxerga essa espinha sabe **o que fazer a seguir** mesmo num alvo que nunca viu; quem não a enxerga depende de sorte.
+
+No mundo real, é exatamente essa espinha que os incidentes seguem. Quando a Target perdeu 40 milhões de cartões em 2013, o próprio Senado dos Estados Unidos analisou o caso como uma <GlossaryTerm term="kill chain">kill chain</GlossaryTerm>, fase por fase (seção 4). Quando a Equifax perdeu os dados de 145 milhões de pessoas em 2017, o ataque foi varredura → exploração de uma aplicação pública → credenciais → **76 dias escondido** → exfiltração. Nenhum dos dois foi mágica; os dois foram a metodologia deste módulo, rodando contra quem não a entendia.
+
+**Ao final, você vai saber:**
+
+- descrever a metodologia completa de um ataque como **uma espinha de cinco fases**, e situar cada técnica das Trilhas 2–7 na fase a que pertence;
+- alinhar os três mapas que a indústria usa — a <GlossaryTerm term="Cyber Kill Chain">Cyber Kill Chain</GlossaryTerm> da Lockheed Martin, o <GlossaryTerm term="MITRE ATT&CK">MITRE ATT&CK</GlossaryTerm> e o <GlossaryTerm term="PTES">PTES</GlossaryTerm> — e saber para que serve cada um;
+- **decidir o próximo passo** a partir da enumeração, cruzando o que a máquina revela com o objetivo (as <GlossaryTerm term="crown jewels">joias da coroa</GlossaryTerm>), em vez de atacar às cegas;
+- transformar uma campanha numa **linha do tempo** ordenada e num mapa de técnicas ATT&CK — o produto final de um pentest;
+- entender a defesa espelhada: por que o <GlossaryTerm term="dwell time">dwell time</GlossaryTerm> é a métrica que mais importa a quem protege.
+
+**Pré-requisitos:** as Trilhas 2 a 7 inteiras. Este é um módulo de síntese — ele **usa** o que você já sabe (nmap e Burp da Trilha 2; cripto da 3; web da 4; serviços e CVEs da 5; escalação da 6; Active Directory da 7) e não ensina técnica nova. Se alguma dessas trilhas ainda estiver incompleta, volte a ela antes.
+
+**Tempo estimado:** 3 a 4 horas, incluindo as três missões.
+
+<Callout variant="ethics">
+A metodologia que você vai consolidar aqui só é legítima dentro do laboratório ou de um engajamento com **autorização por escrito** e <GlossaryTerm term="scope">escopo</GlossaryTerm> definido (Trilha 1; no Brasil, acesso não autorizado a sistema informático é crime, Lei 12.737/2012). Este módulo **não tem lab próprio**: as três missões são de **análise e documentação de artefatos fictícios que você mesmo gera no seu WSL**. Nenhum sistema real é tocado — e a disciplina de escopo e de registro que você treina aqui é justamente o que mantém um teste dentro da lei.
+</Callout>
+
+## 2. Teoria aprofundada — a metodologia por dentro
+
+### 2.1 Por que existe uma metodologia (e por que o atacante tem vantagem)
+
+Um teste de intrusão sem método é um chute. Você pode ter sorte e achar a falha de cara, mas não consegue **garantir cobertura** (testei tudo o que importa?), não consegue **repetir** (como cheguei aqui?) e não consegue **entregar** (o que o cliente faz com isso?). A <GlossaryTerm term="methodology">methodology</GlossaryTerm> (metodologia: a sequência ordenada e repetível de fases de um teste) existe para resolver os três problemas de uma vez. Ela é o que separa o profissional do curioso.
+
+Há uma assimetria incômoda no fundo disso. O atacante precisa de **um** caminho que funcione; o defensor precisa fechar **todos**. O método é o que organiza a busca do atacante por aquele um caminho — e é também, virado do avesso, o que dá ao defensor a lista do que precisa cobrir. É por isso que estudar a metodologia ofensiva é, ao mesmo tempo, aprender a defender: as duas leem o mesmo mapa.
+
+A forma desse mapa, nesta plataforma, tem cinco fases:
+
+1. **Reconhecimento.** Mapear a superfície de ataque: que hosts, que serviços, que versões, que gente. Sem tocar fundo ainda — só desenhar o terreno (Trilha 2).
+2. **Acesso.** Conseguir o primeiro <GlossaryTerm term="foothold">foothold</GlossaryTerm> (o primeiro pé dentro): explorar uma aplicação pública, uma CVE de serviço, uma credencial fraca (Trilhas 4 e 5).
+3. **Escalação.** Ganhar mais poder e mais alcance: virar root ou admin, arrancar credenciais, descobrir a rede interna, mover-se de lado (<GlossaryTerm term="lateral movement">lateral movement</GlossaryTerm>) (Trilhas 3, 6 e 7).
+4. **Pós-exploração.** Consolidar: persistir, localizar e coletar as joias da coroa, exfiltrar (Trilha 6).
+5. **Relatório.** Entregar o valor: a linha do tempo, os <GlossaryTerm term="finding">findings</GlossaryTerm>, o risco e a <GlossaryTerm term="remediation">remediation</GlossaryTerm> (Trilhas 1 e 8).
+
+<Figure
+  src={espinha}
+  alt="Cinco caixas em fluxo da esquerda para a direita — recon, acesso, escalação, pós-exploração e relatório —, e sob cada uma a tática correspondente do MITRE ATT&CK, a ferramenta típica e a trilha da plataforma que a ensinou. A última caixa, relatório, está destacada em verde e não tem tática de ataque, só documentação. Uma faixa embaixo lembra que é a mesma espinha repetida: dentro de cada host o atacante refaz o laço enumerar, explorar e consolidar."
+  caption="A espinha da metodologia: cada fase alimenta a próxima, e cada uma reúne o que você aprendeu nas Trilhas 2 a 7. A fase 5 é a que nenhuma técnica, sozinha, entrega."
+/>
+
+O detalhe que a figura esconde de propósito: **a espinha não é percorrida uma vez só, de forma linear**. Dentro de cada host você reinicia um laço menor — enumerar, explorar, consolidar — e a cada pivô para uma máquina nova o laço recomeça. A linearidade do desenho é uma simplificação didática; a realidade é uma espiral que avança.
+
+### 2.2 Os três mapas: kill chain, ATT&CK e PTES
+
+A indústria descreve esse mesmo processo com três vocabulários diferentes. Confundi-los é comum; entendê-los como **complementares** é o que organiza a cabeça.
+
+A **Cyber Kill Chain**, publicada pela Lockheed Martin em 2011, descreve um ataque em sete etapas (reconnaissance, <GlossaryTerm term="weaponization">weaponization</GlossaryTerm>, <GlossaryTerm term="delivery">delivery</GlossaryTerm>, <GlossaryTerm term="exploitation">exploitation</GlossaryTerm>, <GlossaryTerm term="installation">installation</GlossaryTerm>, <GlossaryTerm term="command and control">command and control</GlossaryTerm>, <GlossaryTerm term="actions on objectives">actions on objectives</GlossaryTerm>). Ela conta a **história** de uma intrusão, do ponto de vista de quem defende, e foi pensada para mostrar que interromper **qualquer** elo quebra o ataque. Sua limitação: é linear e centrada em malware; não descreve bem o que acontece **depois** do foothold, que é onde um pentest passa a maior parte do tempo.
+
+O **MITRE ATT&CK** resolve essa limitação. Em vez de uma linha, é uma **matriz**: colunas são <GlossaryTerm term="tactic">tactics</GlossaryTerm> (os objetivos do adversário — Initial Access, Credential Access, Lateral Movement...) e, dentro de cada coluna, dezenas de <GlossaryTerm term="technique">techniques</GlossaryTerm> (o **como**), cada uma com um ID (ex.: `T1558.003`, Kerberoasting). Ele não impõe ordem — reconhece que ataques reais pulam, voltam e repetem — e cataloga, para cada técnica, como ela foi vista no mundo real, como detectar e como mitigar. É o **vocabulário comum** entre ataque e defesa (você o usou em quase todos os módulos).
+
+O **PTES** (*Penetration Testing Execution Standard*) é de uma natureza diferente: é um **processo de engajamento**, não um catálogo de ataque. Suas fases vão de pre-engagement (contrato, escopo) a intelligence gathering, threat modeling, vulnerability analysis, exploitation, post-exploitation e — a diferença crucial — **reporting**. Enquanto a kill chain e o ATT&CK param nos objetivos do adversário, o PTES lembra que, num teste, o trabalho só termina no relatório.
+
+<Figure
+  src={tresMapas}
+  alt="Uma tabela com três linhas (Cyber Kill Chain, MITRE ATT&CK e PTES) alinhadas às cinco colunas de fase (recon, acesso, escalação, pós-exploração, relatório). As três linhas preenchem as fases de ataque de forma parecida, mas só a linha do PTES tem uma célula na coluna relatório, destacada em verde; as células de relatório da kill chain e do ATT&CK estão vazias."
+  caption="Os três mapas quase coincidem no ataque. Só o PTES fecha com uma fase de relatório — a que separa um pentest de uma invasão, e a que este módulo mais cobra."
+/>
+
+A lição da figura é a tese do módulo em uma imagem: os mapas concordam quase inteiramente sobre **como se ataca**; onde eles divergem é justamente no fim. A kill chain e o ATT&CK são ferramentas do atacante e do caçador de ameaças; o PTES lembra o pentester de que ninguém paga pela invasão — paga-se pelo **relatório** que diz como a rede caiu e como consertá-la.
+
+### 2.3 Enumeração: o centro de gravidade
+
+Se há uma única frase para levar deste módulo, é esta: **a enumeração decide tudo**. Em qualquer fase, o próximo passo correto não vem de adivinhação, vem do que a <GlossaryTerm term="enumeration">enumeração</GlossaryTerm> revela. No recon, você enumera a superfície externa; depois do foothold, enumera o host e a rede interna; depois de cada escalação, enumera de novo, agora com mais poder. Atacar antes de enumerar é o erro número um do iniciante: ele queima a janela do teste e faz barulho perseguindo um vetor que não leva a lugar nenhum.
+
+A diferença entre ruído e sinal é o **cruzamento**. Uma lista de vinte serviços não é um alvo; um serviço cujo cruzamento com a versão, a CVE e a exposição aponta para um foothold, é. Uma conta de serviço <GlossaryTerm term="Kerberoasting">roastável</GlossaryTerm> não é um alvo; uma que, roastada, abre um caminho (<GlossaryTerm term="attack path">attack path</GlossaryTerm>) até as joias da coroa, é. Enumerar é levantar os fatos; **decidir** é cruzá-los com o objetivo. A Missão 2 treina exatamente isso.
+
+### 2.4 O objetivo e o relógio: joias da coroa e dwell time
+
+Dois conceitos fecham a teoria, um de cada lado.
+
+Do lado do ataque, tudo se orienta às **joias da coroa** (<GlossaryTerm term="crown jewels">crown jewels</GlossaryTerm>): os ativos cuja perda dói mais — o banco de clientes, os segredos de negócio, as chaves do domínio. Um teste sem esse norte vira um passeio: você escala e pivota sem rumo. Com ele, cada decisão tem um critério — *isto me aproxima das joias da coroa?*. É o que impede a escalação pela escalação.
+
+Do lado da defesa, o conceito-espelho é o **dwell time** (<GlossaryTerm term="dwell time">dwell time</GlossaryTerm>): o tempo entre a invasão e a **detecção**. Enquanto o atacante percorre a espinha, o relógio corre. Se a defesa detecta na fase 2, o estrago é pequeno; se só percebe na fase 4, depois de semanas, o atacante já chegou às joias e exfiltrou. É por isso que, para quem defende, dwell time é **a** métrica: não dá para impedir toda intrusão, mas dá para encurtar o tempo até vê-la. A Equifax (seção 4) é a lição definitiva: 76 dias de dwell time, por um detector cego, viraram 145 milhões de registros vazados.
+
+## 3. Na prática da segurança — uma campanha de ponta a ponta
+
+Como este é um módulo de síntese, esta seção mostra a espinha **inteira** rodando contra um alvo fictício, para você reconhecer cada fase e já vê-la com o rótulo que vai para o relatório. O cenário: um engajamento autorizado contra a empresa fictícia *Acme*, com uma aplicação web na borda (`203.0.113.10`, um endereço da faixa de documentação TEST-NET-3) e uma rede interna (`10.10.10.0/24`) com um host Linux e um domínio Windows. Os comandos são os das trilhas anteriores; IPs e nomes são genéricos.
+
+### 3.1 Recon (T1595 → Reconnaissance)
+
+Tudo começa mapeando a superfície, sem tocar fundo. OSINT para achar os domínios e faixas, e <GlossaryTerm term="active reconnaissance">varredura ativa</GlossaryTerm> ([T1595](https://attack.mitre.org/techniques/T1595/)) para ver o que responde (a Trilha 2):
+
+```console
+$ nmap -sV -Pn 203.0.113.10
+PORT    STATE SERVICE VERSION
+22/tcp  open  ssh     OpenSSH 8.2p1 Ubuntu
+80/tcp  open  http    Apache httpd 2.4.41
+443/tcp open  ssl/http Apache httpd 2.4.41
+```
+
+Uma aplicação web e um SSH. O recon não explora nada; ele desenha o terreno e aponta onde vale cavar — aqui, o HTTP(S).
+
+### 3.2 Acesso (T1190, T1078 → Initial Access)
+
+Na aplicação web, uma SQL injection no login (a Trilha 4) é o vetor de acesso ([T1190](https://attack.mitre.org/techniques/T1190/), Exploit Public-Facing Application). Ela devolve uma credencial de aplicação, que você reutiliza para entrar de verdade — credencial válida é, no ATT&CK, [T1078](https://attack.mitre.org/techniques/T1078/):
+
+```console
+$ sqlmap -u 'https://203.0.113.10/login' --data='user=a&pass=a' --dump -T users
+Database: acme  Table: users
+| id | username | password (hash)                  |
+| 1  | webadmin | 5f4dcc3b5aa765d61d8327deb882cf99 |
+```
+
+O foothold é o fim da fase 2 e o começo de tudo o que vem depois. Repare: o acesso raramente dá poder — dá **presença**. O poder vem na escalação.
+
+### 3.3 Escalação (T1110.002, T1046, T1558.003, T1021.004 → do crack ao domínio)
+
+Aqui mora a maior parte do trabalho, e aqui o laço de enumeração gira mais rápido. Primeiro, o hash capturado é quebrado offline (a Trilha 3) — <GlossaryTerm term="password cracking">password cracking</GlossaryTerm>, [T1110.002](https://attack.mitre.org/techniques/T1110/002/):
+
+```console
+$ hashcat -m 0 5f4dcc3b5aa765d61d8327deb882cf99 rockyou.txt
+5f4dcc3b5aa765d61d8327deb882cf99:password
+```
+
+Com acesso ao host, você enumera a rede interna ([T1046](https://attack.mitre.org/techniques/T1046/), Network Service Discovery), encontra um domínio Windows, faz Kerberoasting de uma conta de serviço fraca ([T1558.003](https://attack.mitre.org/techniques/T1558/003/)) e, com a credencial, move-se de lado por SSH para um host interno ([T1021.004](https://attack.mitre.org/techniques/T1021/004/)). Cada passo é uma leitura nova do mesmo grafo — a lição central da Trilha 7, agora como parte da espinha maior.
+
+### 3.4 Pós-exploração (T1548.003, T1048 → persistir e exfiltrar)
+
+No host interno, uma regra de `sudo` mal configurada vira root ([T1548.003](https://attack.mitre.org/techniques/T1548/003/), a Trilha 6). De root, você localiza as joias da coroa — o banco de PII em `db01` — e as exfiltra por um protocolo alternativo ([T1048](https://attack.mitre.org/techniques/T1048/)). É aqui que o objetivo definido lá no começo (as joias da coroa) fecha o ciclo: tudo o que veio antes existia para chegar neste dado.
+
+### 3.5 Relatório (a fase sem ATT&CK)
+
+Nenhuma técnica de ataque pertence a esta fase, e é por isso que ela é a mais esquecida — e a que mais importa. O que entra no relatório é a **narrativa**: a linha do tempo em UTC (seção 8 e módulo 1.5), cada passo com seu ID ATT&CK, o risco de cada <GlossaryTerm term="finding">finding</GlossaryTerm> e a recomendação. Oito comandos viraram uma campanha; a campanha precisa virar um documento que o cliente use. É exatamente essa tradução que a Missão 3 vai te fazer praticar.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Target (2013): o Senado dos EUA analisa uma invasão como kill chain
+
+Entre o fim de novembro e dezembro de 2013, criminosos comprometeram a varejista Target e, em **19 de dezembro de 2013**, a empresa confirmou o vazamento. O número final: cerca de **40 milhões** de contas de cartão de crédito e débito e dados pessoais de **até 70 milhões** de clientes. O que torna este caso perfeito para o módulo é o que veio depois: em **março de 2014**, o Comitê de Comércio do Senado dos EUA publicou um relatório que analisa o incidente **explicitamente como uma kill chain**, no modelo da Lockheed Martin — fase por fase, mostrando onde cada elo poderia ter sido cortado.
+
+A cadeia reconstruída pelo relatório é a espinha deste módulo. O **acesso** inicial não foi na Target: os atacantes roubaram credenciais de um **terceiro**, a Fazio Mechanical Services, uma pequena empresa de refrigeração/HVAC da Pensilvânia com acesso ao portal de fornecedores da Target. Dali **pivotaram** para a rede interna, **se moveram de lado** até os sistemas de pagamento, instalaram malware nos terminais de ponto de venda (coleta) e **exfiltraram** os dados dos cartões. Um foothold periférico virou 40 milhões de cartões porque a rede era plana e a detecção falhou.
+
+- **Impacto:** ~40 milhões de cartões e até 70 milhões de registros pessoais; o relatório destaca que a Target teve **várias oportunidades** de deter a invasão (inclusive alertas automáticos ignorados) e não as aproveitou.
+- **Lição:** o comprometimento foi uma **cadeia**, e o elo inicial foi um fornecedor — o escopo e a segmentação importam tanto quanto o patch. Como é uma cadeia, cortar **qualquer** elo (segmentar a rede do fornecedor, detectar o movimento lateral, barrar a exfiltração) teria quebrado o ataque.
+- **Fonte:** [U.S. Senate Committee on Commerce — "A 'Kill Chain' Analysis of the 2013 Target Data Breach" (25 mar. 2014)](https://www.commerce.senate.gov/2014/3/rockefeller-staff-report-details-target-s-missed-opportunities-to-stop-massive-data-breach).
+
+### Equifax (2017): 76 dias de dwell time por um certificado vencido
+
+Em 2017, a agência de crédito Equifax sofreu um dos maiores vazamentos da história. O relatório oficial do **GAO** (o órgão de auditoria do governo dos EUA), **GAO-18-559**, de agosto de 2018, reconstrói a espinha com uma clareza didática rara. Os atacantes **varreram** a web em busca de servidores vulneráveis, acharam o portal público de disputas da Equifax rodando uma versão vulnerável do **Apache Struts** (a falha [CVE-2017-5638](https://nvd.nist.gov/vuln/detail/CVE-2017-5638), divulgada em 7 de março de 2017, com patch disponível no dia seguinte) e **exploraram** essa aplicação pública. Dali localizaram **servidores e credenciais** adicionais e, segundo o próprio GAO, *"were able to remain hidden while maintaining presence"* — permaneceram escondidos — enquanto *"data extraction extends over 76 days"*, extraindo dados de **51 bancos** em pequenos incrementos para evitar a detecção. O total: **ao menos 145,5 milhões** de pessoas.
+
+Por que 76 dias sem ninguém notar? O relatório da Câmara dos Deputados dos EUA, de dezembro de 2018, dá a resposta que é a aula sobre dwell time: o dispositivo que inspecionava o tráfego de rede estava **inativo havia 19 meses** por causa de um **certificado digital expirado**. Em **29 de julho de 2017**, a Equifax renovou o certificado e **imediatamente** viu o tráfego malicioso — e só então descobriu a invasão. A empresa havia deixado mais de 300 certificados vencerem, 79 deles de domínios críticos.
+
+- **Impacto:** ao menos 145,5 milhões de pessoas; acesso não autorizado de **13 de maio a 30 de julho de 2017**; o maior vazamento de dados sensíveis de uma agência de crédito até então.
+- **Lição:** a falha de software (um patch não aplicado em tempo) abriu a porta, mas foi o **dwell time** — um detector cego por 19 meses — que transformou um incidente em catástrofe. Reduzir o tempo até a detecção é tão decisivo quanto evitar a entrada.
+- **Fontes:** [GAO-18-559 — "Data Protection: Actions Taken by Equifax and Federal Agencies in Response to the 2017 Breach" (ago. 2018)](https://www.gao.gov/products/gao-18-559) e [U.S. House Committee on Oversight — relatório sobre a violação da Equifax (dez. 2018)](https://oversight.house.gov/report/committee-releases-report-revealing-new-information-on-equifax-data-breach/).
+
+Os dois casos contam a mesma história de ângulos opostos: a Target mostra que o ataque é uma **cadeia** que se quebra em qualquer elo; a Equifax mostra que, quando nenhum elo é cortado, o que decide o tamanho do dano é o **relógio** da detecção.
+
+## 5. Mãos à obra — da enumeração ao relatório
+
+Este módulo **não tem lab próprio**. As três missões rodam 100% offline, no seu WSL, sobre um dossiê fictício de engajamento da *Acme* — e treinam as três habilidades que nenhum módulo anterior cobrou sozinhas: **ver a espinha inteira** (Missão 1), **decidir o próximo passo** (Missão 2) e **documentar** (Missão 3).
+
+**Objetivo:** ao terminar, você terá (1) reconstruído a ordem cronológica de uma campanha que cruza web, rede, AD e privesc; (2) escolhido, de um dump de enumeração cheio de iscas, o único vetor que leva às joias da coroa; e (3) mapeado a campanha inteira ao MITRE ATT&CK, do jeito que entra num relatório. Três flags, uma por missão.
+
+<Callout variant="info" title="Por que offline, com artefatos fictícios?">
+Num engajamento real você usaria nmap, Burp, sqlmap, hashcat, as ferramentas de AD e o `sudo`/GTFOBins das trilhas anteriores. Aqui o objetivo não é repetir a execução — é treinar o **raciocínio de metodologia**: ordenar, decidir e documentar. Por isso os artefatos são de papel (JSON e texto), gerados por você no `/tmp`, e as flags saem de operações determinísticas (SHA-256 e base64) sobre a resposta certa. Nenhum sistema é tocado.
+</Callout>
+
+### 5.1 Preparar o terreno (passo a passo)
+
+Abra o terminal do Ubuntu (WSL) e cole o bloco inteiro. Ele cria, em `/tmp/metodologia-8-1`, os artefatos das três missões:
+
+```bash
+ROOT=/tmp/metodologia-8-1
+rm -rf "$ROOT"; mkdir -p "$ROOT"; cd "$ROOT"
+
+# Missao 1: eventos da campanha (IDs embaralhados). Ordene-os em ordem cronologica.
+cat > m1-events.json <<'DOC'
+{
+  "events": [
+    { "id": "E1", "desc": "Login com a credencial de app vazada; foothold no host da DMZ" },
+    { "id": "E2", "desc": "Movimento lateral por SSH para um host interno, reusando a credencial" },
+    { "id": "E3", "desc": "Descoberta de servicos na rede interna 10.10.10.0/24 (acha um DC Windows)" },
+    { "id": "E4", "desc": "Varredura do perimetro (OSINT + nmap) do range publico 203.0.113.0/24" },
+    { "id": "E5", "desc": "Exfiltracao do banco de PII (as joias da coroa) por protocolo alternativo" },
+    { "id": "E6", "desc": "Kerberoasting de uma conta de servico do dominio" },
+    { "id": "E7", "desc": "Exploracao de SQL injection na aplicacao web publica (DMZ)" },
+    { "id": "E8", "desc": "Escalacao local de privilegio por uma regra de sudo mal configurada" },
+    { "id": "E9", "desc": "Quebra offline de um hash de senha reutilizado, achado no host" }
+  ],
+  "cipher": "140b801e4e1b64c911ac8c836cdd2d08e79f3378699ebe4f265c4eb884bbb69409217cec4b428b2cd8b74fc9b69e0c8d6000855ef1d9202609d8bccd"
+}
+DOC
+
+# Missao 2: dump de enumeracao no host interno. Ache o UNICO vetor que leva a root
+# e, dali, as joias da coroa. As notas das iscas comecam com "decoy:".
+cat > m2-enum.json <<'DOC'
+{
+  "whoami": "www-data",
+  "goal": "chegar a root e, de la, ao banco de PII em db01 (as joias da coroa)",
+  "vectors": [
+    { "id": "sudo_find",   "evidence": "sudo -l  =>  (root) NOPASSWD: /usr/bin/find",
+      "note": "RkxBR3tlbnVtZXJhdGUtZmlyc3QtdGhlbi1kZWNpZGUtdGhlLW9uZS1wYXRoLXRvLXRoZS1jcm93bi1qZXdlbHN9" },
+    { "id": "suid_passwd", "evidence": "find / -perm -4000  =>  /usr/bin/passwd",
+      "note": "ZGVjb3k6IC91c3IvYmluL3Bhc3N3ZCBlIFNVSUQgZGUgcm9vdCwgbWFzIGUgbyBiaW5hcmlvIHBhZHJhbyBkbyBzaXN0ZW1hICh0cm9jYSBkZSBzZW5oYSk7IG5hbyBlIHVtIHZldG9yLCBzbyBydWlkbyBkZSBlbnVtZXJhY2Fv" },
+    { "id": "cron_root",   "evidence": "/etc/crontab  =>  * * * * * root /opt/app/backup.sh",
+      "note": "ZGVjb3k6IGhhIHVtIGNyb24gZGUgcm9vdCwgbWFzIG8gc2NyaXB0IHF1ZSBlbGUgcm9kYSBlIG9zIGRpcmV0b3Jpb3MgZG8gUEFUSCBuYW8gc2FvIGdyYXbDoXZlaXMgcG9yIHZvY2U7IHNlbSBlc2NyaXRhLCBzZW0gc2VxdWVzdHJv" },
+    { "id": "world_conf",  "evidence": "/var/www/.old.env (644)  =>  DB_PASS=Somm3r2019",
+      "note": "ZGVjb3k6IGNvbmZpZyBsZWdpdmVsIHBvciB0b2RvcyBjb20gdW1hIHNlbmhhLCBtYXMgZWxhIGUgZGUgdW0gc2VydmljbyBkZXNhdGl2YWRvIGUgbmFvIHJldXNhIGVtIG5lbmh1bWEgY29udGEgdml2YTogYmVjbyBzZW0gc2FpZGE=" },
+    { "id": "kernel_old",  "evidence": "uname -r  =>  5.4.0-42-generic",
+      "note": "ZGVjb3k6IGtlcm5lbCBhbnRpZ28sIG1hcyBhIHZlcnNhbyBleGF0YSBuYW8gY2FzYSBjb20gbmVuaHVtIGV4cGxvaXQgcHVibGljbyBjb25maWF2ZWw7IGNodXRhciBleHBsb2l0IGRlIGtlcm5lbCBjb3N0dW1hIGRlcnJ1YmFyIG8gaG9zdA==" }
+  ]
+}
+DOC
+
+# Missao 3: mapear cada evento (ja em ordem cronologica) ao ID MITRE ATT&CK.
+cat > m3-findings.json <<'DOC'
+{
+  "ordered_events": [
+    "Varredura ativa do perimetro",
+    "Exploracao da aplicacao web publica (SQLi)",
+    "Uso de credencial valida para foothold",
+    "Quebra offline de senha (credential access)",
+    "Descoberta de servicos na rede interna",
+    "Kerberoasting de conta de servico",
+    "Movimento lateral por SSH",
+    "Escalacao local via sudo",
+    "Exfiltracao por protocolo alternativo"
+  ],
+  "techniques_available": [
+    "T1046","T1048","T1078","T1110.002","T1190","T1021.004",
+    "T1548.003","T1558.003","T1595","T1053.003","T1566","T1003.006"
+  ],
+  "cipher": "14c332df792c5754e2e005b93e73041bc8c3ef2743d5d6424033a524ec217e14ee7fdb952da6f483a50d71640a78c548e6956c6c7105eca4367cc4e120e4"
+}
+DOC
+
+echo "artefatos prontos em $ROOT"; ls -1 "$ROOT"
+```
+
+Saída real:
+
+```text
+artefatos prontos em /tmp/metodologia-8-1
+m1-events.json
+m2-enum.json
+m3-findings.json
+```
+
+### 5.2 Missão 1 — reconstruir a espinha (guiada)
+
+O `m1-events.json` traz 9 eventos de uma campanha que cruza todas as trilhas — mas com os IDs `E1..E9` **embaralhados** de propósito. Seu objetivo é colocá-los na ordem **cronológica** do ataque, montar o `m1-answer.txt` (um ID por linha) e rodar o `chain.py`, que decifra a flag só se a ordem estiver certa.
+
+A ordem é a da própria metodologia: recon → acesso → escalação → pós-exploração. Comece pela varredura do perímetro (fase 1) e termine na exfiltração (fase 4). Salve o `chain.py` em `/tmp/metodologia-8-1`:
+
+```python
+import sys, json, hashlib
+data = json.load(open("m1-events.json"))
+order = [l.strip() for l in open(sys.argv[1]) if l.strip()]
+ks = hashlib.sha256("|".join(order).encode()).digest()
+cipher = bytes.fromhex(data["cipher"]); stream = b""; i = 0
+while len(stream) < len(cipher):
+    stream += hashlib.sha256(ks + i.to_bytes(2, "big")).digest(); i += 1
+out = bytes(a ^ b for a, b in zip(cipher, stream))
+try: print(out.decode())
+except UnicodeDecodeError: print("[-] ordem incorreta: nao decifra")
+```
+
+**Desafio:** leia as 9 descrições e escreva os IDs na ordem cronológica. Pense na fase de cada um antes de olhar a dica.
+
+<Hint title="Dica — o mapa das fases">
+Classifique cada evento numa fase e ordene por fase: **recon** = varredura do perímetro (E4); **acesso** = exploração da web (E7) e o foothold com a credencial (E1); **escalação** = quebra do hash (E9), descoberta interna (E3), Kerberoasting (E6), movimento lateral (E2), escalação por sudo (E8); **pós-exploração** = exfiltração (E5). Dentro da escalação, a ordem é a da cadeia: primeiro você quebra o hash para ter a credencial, depois enxerga a rede, depois ataca o domínio, depois se move, depois vira root.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ cd /tmp/metodologia-8-1
+$ printf 'E4\nE7\nE1\nE9\nE3\nE6\nE2\nE8\nE5\n' > m1-answer.txt
+$ python3 chain.py m1-answer.txt
+FLAG{...}
+```
+A ordem é `E4 (recon) → E7, E1 (acesso) → E9, E3, E6, E2, E8 (escalação) → E5 (pós-exploração)`. A flag diz o recado do módulo: do recon ao relatório é **uma espinha só**, não sete truques separados. Se você errar a ordem, a chave de decifragem muda e o `chain.py` não devolve nada legível.
+</Solution>
+
+<FlagInput task="missao-1-espinha" />
+
+### 5.3 Missão 2 — decidir o próximo passo (desafio)
+
+Você tem um foothold como `www-data` num host interno e rodou a enumeração. O `m2-enum.json` traz **cinco vetores** candidatos. Só **um** leva de verdade a root e, dali, às joias da coroa (o banco de PII em `db01`). Seu objetivo é identificar esse vetor; a nota dele (em base64) é a flag. As notas das iscas começam com `decoy:`.
+
+Este é o coração da metodologia: enumerar é fácil, **decidir** é o que vale. Para cada vetor, pergunte: *isto me dá root agora, de forma confiável, e me aproxima do objetivo?*
+
+<Hint title="Dica 1 — descarte as iscas">
+Quatro dos cinco são ruído, e cada um por um motivo diferente: um SUID que é o binário **padrão** do sistema (todo Linux tem), um cron de root cujo script e PATH você **não** consegue escrever, uma senha num arquivo legível por todos mas de um serviço **morto**, e um kernel antigo **sem** exploit público confiável (chutar exploit de kernel costuma derrubar o host). Sobra um.
+</Hint>
+
+<Hint title="Dica 2 — o que resta">
+O vetor que sobra é o `sudo -l` mostrando `(root) NOPASSWD: /usr/bin/find`. Um binário que você pode rodar como root e que executa comandos (como o `find` com `-exec`) é um caminho direto e confiável para root — é o tipo de entrada que você procuraria no GTFOBins (Trilha 6). Decodifique a nota dele.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ python3 -c "
+import json, base64
+d = json.load(open('m2-enum.json'))
+v = next(x for x in d['vectors'] if x['id'] == 'sudo_find')
+print(base64.b64decode(v['note']).decode())
+"
+FLAG{...}
+```
+O vetor certo é o `sudo_find`: `sudo` sem senha num binário que executa comandos é root garantido. Os outros quatro são iscas realistas — do tipo que faz um iniciante perder uma hora. A flag resume a Missão: enumere primeiro, depois **decida** o único caminho até as joias da coroa.
+</Solution>
+
+<FlagInput task="missao-2-proximo-passo" />
+
+### 5.4 Missão 3 — do ataque ao relatório (desafio)
+
+Você comprometeu a *Acme*. Falta a fase que entrega valor: traduzir a campanha para o vocabulário comum do relatório. O `m3-findings.json` traz os 9 eventos **já em ordem cronológica** e uma lista `techniques_available` (com iscas). Seu objetivo: mapear cada evento ao **ID MITRE ATT&CK** correto, montar o `m3-answer.txt` (um ID por linha, na ordem) e rodar o `report.py` — que só decifra se o mapeamento inteiro estiver certo.
+
+<Hint title="Dica 1 — o report.py">
+O mecanismo é o mesmo do `chain.py`, mas a chave é a sequência de técnicas. Salve:
+
+```python
+import sys, json, hashlib
+data = json.load(open("m3-findings.json"))
+ids = [l.strip() for l in open(sys.argv[1]) if l.strip()]
+ks = hashlib.sha256("|".join(ids).encode()).digest()
+cipher = bytes.fromhex(data["cipher"]); stream = b""; i = 0
+while len(stream) < len(cipher):
+    stream += hashlib.sha256(ks + i.to_bytes(2, "big")).digest(); i += 1
+out = bytes(a ^ b for a, b in zip(cipher, stream))
+try: print(out.decode())
+except UnicodeDecodeError: print("[-] ordem/mapeamento incorretos: nao decifra")
+```
+</Hint>
+
+<Hint title="Dica 2 — o mapeamento">
+Cada evento tem uma página no `attack.mitre.org`. Os corretos: `T1595` (Active Scanning), `T1190` (Exploit Public-Facing Application), `T1078` (Valid Accounts), `T1110.002` (Password Cracking), `T1046` (Network Service Discovery), `T1558.003` (Kerberoasting), `T1021.004` (Remote Services: SSH), `T1548.003` (Sudo and Sudo Caching), `T1048` (Exfiltration Over Alternative Protocol). Cuidado: `T1053.003` (Cron), `T1566` (Phishing) e `T1003.006` (DCSync) são iscas — a campanha não os usou.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ printf 'T1595\nT1190\nT1078\nT1110.002\nT1046\nT1558.003\nT1021.004\nT1548.003\nT1048\n' > m3-answer.txt
+$ python3 report.py m3-answer.txt
+FLAG{...}
+```
+Se você errar um ID (trocar a varredura `T1595` pela descoberta interna `T1046`, ou cair numa isca), a chave muda e nada legível aparece — porque a chave de decifragem **é** o mapeamento correto. A flag é a lição: um achado sem narrativa mapeada é só uma anedota. A linha do tempo ordenada + o mapa ATT&CK são o produto final do pentest, a ponte direta para o 8.4 (o relatório) e o 8.5 (o projeto final).
+</Solution>
+
+<FlagInput task="missao-3-relatorio" />
+
+Quando terminar, as três flags entram nos cartões e o quiz da seção 9 fecha o módulo. Nenhum lab para desligar — você só gerou arquivos no `/tmp`.
+
+## 6. Variações e aprofundamento
+
+**A espinha muda de forma conforme o alvo.** Num teste **só de aplicação web**, as fases 3 e 4 encolhem (muitas vezes não há sistema operacional a escalar) e o peso vai para o recon da aplicação e a exploração; o WSTG (Trilha 1) é o mapa fino aqui. Numa **rede interna**, a escalação e o movimento lateral dominam. Num **domínio Active Directory**, a Trilha 7 inteira cabe dentro da fase 3. A metodologia é a mesma; o que muda é onde o tempo é gasto.
+
+**Black-box, grey-box, white-box.** O quanto do mapa você já recebe pronto muda o engajamento (Trilha 1). No <GlossaryTerm term="black-box testing">black-box testing</GlossaryTerm>, você começa do zero e o recon é a maior parte; no <GlossaryTerm term="grey-box testing">grey-box</GlossaryTerm>, recebe um foothold ou credenciais e pula direto para a escalação; no <GlossaryTerm term="white-box testing">white-box</GlossaryTerm>, tem o código e a arquitetura, e o foco vira profundidade e cobertura. A espinha não muda; muda o ponto de entrada.
+
+**Assume breach e adversary emulation.** Muitos engajamentos modernos não testam o perímetro — eles **assumem o breach** (<GlossaryTerm term="assumed breach">assumed breach</GlossaryTerm>), entregando um foothold de propósito para medir a **contenção** da cadeia e o dwell time. Quando o objetivo é imitar um grupo específico, fala-se em <GlossaryTerm term="adversary emulation">adversary emulation</GlossaryTerm>: reproduzir as TTPs reais de um <GlossaryTerm term="threat actor">threat actor</GlossaryTerm> catalogado no ATT&CK, para testar se a defesa detecta **aquele** adversário.
+
+**A Unified Kill Chain.** A <GlossaryTerm term="Unified Kill Chain">Unified Kill Chain</GlossaryTerm> (2017, Paul Pols) junta a kill chain da Lockheed e o ATT&CK em 18 fases, cobrindo justamente o que a kill chain original deixava de fora: todo o ciclo **depois** do foothold (pivotar, escalar, agir). É a formalização mais próxima da espiral que a seção 2.1 descreveu — útil quando você quer um mapa único que vá do OSINT à exfiltração sem trocar de vocabulário.
+
+**Purple team: a espinha dos dois lados ao mesmo tempo.** Em vez de o <GlossaryTerm term="red team">red team</GlossaryTerm> atacar e o <GlossaryTerm term="blue team">blue team</GlossaryTerm> defender em segredo, um exercício de <GlossaryTerm term="purple team">purple team</GlossaryTerm> roda a cadeia **colaborativamente**: o atacante executa cada técnica e o defensor confere, na hora, se detectou — a forma mais rápida de encurtar o dwell time.
+
+## 7. Erros comuns
+
+- **Pular a enumeração e ir direto ao exploit.** O erro número um. Você queima a janela do teste perseguindo um vetor que não leva a lugar nenhum. Enumere, cruze, **depois** decida (a Missão 2 é todo esse ponto).
+- **Escalar e pivotar sem rumo.** Virar root num host e sair pivotando "porque dá" é passeio, não pentest. A pergunta é sempre *isto me aproxima das joias da coroa?*. Sem esse norte, você gera ruído e sai do escopo.
+- **Confundir tática com técnica.** "Kerberoasting é uma tática" está errado: Kerberoasting é a técnica `T1558.003`; a **tática** é Credential Access. Trocar os dois no relatório confunde o defensor.
+- **Tratar a kill chain como ordem obrigatória.** Ataques reais pulam e voltam. A kill chain conta a história; o ATT&CK reconhece que a ordem é fluida. Não force um incidente real na linha reta de sete etapas.
+- **Deixar o relatório para o fim e escrever de memória.** Reconstruir a linha do tempo no último dia perde horários e passos. Anote **enquanto** ataca, em UTC (módulo 1.5). A Missão 3 simula exatamente a dor de reconstruir uma cadeia fora de ordem.
+- **"Entrei, logo acabou."** Um foothold ou um root não é o entregável. Sem a narrativa mapeada ao ATT&CK e a recomendação, o cliente recebe uma anedota, não um relatório — e não conserta nada.
+
+## 8. Boas práticas e segurança
+
+A metodologia tem um espelho defensivo exato: para cada fase do atacante, há um controle e uma forma de detectar. Dominar as duas leituras é o que este módulo pede.
+
+### 8.1 Um método repetível, do seu lado
+
+- **Trabalhe por fases e com checklist.** Antes de explorar, pergunte-se em que fase está e se já enumerou o suficiente para decidir. Use o WSTG (web) e o PTES/NIST SP 800-115 (processo) como listas de cobertura — é o que garante que você não esqueceu metade da superfície.
+- **Defina as joias da coroa no começo.** Combine com o cliente, no pre-engagement, qual é o ativo-alvo. Toda decisão técnica passa a ter um critério objetivo.
+- **Registre tudo, em UTC, enquanto faz.** Cada comando, saída e horário. É a matéria-prima do relatório e da <GlossaryTerm term="chain of custody">cadeia de custódia</GlossaryTerm> (módulo 1.5). O `tee -a` da Trilha 0 é o hábito base.
+
+### 8.2 OPSEC e menor privilégio, mesmo autorizado
+
+- **Faça só o necessário para provar o ponto.** <GlossaryTerm term="OPSEC">OPSEC</GlossaryTerm> não é só para não ser pego — é para não causar dano nem sair do escopo. Depois de provar que consegue root, você não precisa escalar em todos os hosts da rede.
+- **Prefira o caminho de menor ruído.** Um teste de qualidade mede também o que o blue team detecta; ruído gratuito contamina essa medição. O <GlossaryTerm term="least privilege">least privilege</GlossaryTerm> vale para o atacante também: use a credencial mais fraca que resolve.
+
+### 8.3 A defesa, fase por fase (o espelho da espinha)
+
+| Fase do atacante | Controle que a atrapalha | Como detectar |
+|---|---|---|
+| **Recon** | Reduzir a superfície exposta; só o necessário na borda | Picos de varredura nos logs do WAF e do firewall |
+| **Acesso** | Patch em dia, WAF, MFA, validação de entrada | Erros de exploração, logins anômalos, 500 em rajada |
+| **Escalação** | Menor privilégio, segmentação, senhas fortes/gMSA | SUID/sudo anômalos, Kerberoasting (muitos TGS), logons de rede em rajada |
+| **Pós-exploração** | Segmentar as joias da coroa, controlar saída de dados (DLP) | Exfiltração para destinos estranhos, volume incomum, novos serviços/cron |
+| **Dwell time** | **Detectar rápido**: logs íntegros, alertas que funcionam | Monitoração que não está cega — o oposto do certificado vencido da Equifax |
+
+### 8.4 A lição da Equifax, transformada em regra
+
+O caso da Equifax rende três práticas concretas, cada uma atacando o dwell time:
+
+- **Patch com prazo e verificação.** A CVE do Apache Struts tinha patch um dia depois da divulgação; o que faltou foi **aplicar e conferir**. Um inventário que confirma que o patch entrou vale mais que uma política que manda aplicá-lo.
+- **Monitore o monitor.** O detector cego por 19 meses é o alerta: certificados, sensores e pipelines de log **expiram e quebram em silêncio**. Teste a detecção de propósito (é o que o purple team faz).
+- **Segmente as joias da coroa.** Os atacantes alcançaram dezenas de bancos a partir de um portal. Separar o dado mais sensível em uma zona própria, com saída controlada, teria limitado o estrago mesmo depois do foothold.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e complete as três missões da seção 5 — cada uma entrega uma flag.
+
+<Quiz task="quiz-final" />
+
+**Desafios extras (sem flag, para fixar):**
+
+- Pegue **um** módulo prático que você já fez (por exemplo, a SQL injection da 4.2 ou o Kerberoasting da 7.3) e escreva, em 4–6 frases, onde ele se encaixa na espinha de cinco fases, qual a tática e a técnica ATT&CK dele, e qual seria a defesa. Esse é, em miniatura, um parágrafo de relatório.
+- Na Missão 2, descreva o que precisaria mudar no dump para que o vetor `world_conf` (a senha no arquivo legível) **passasse** a ser o caminho certo. (Dica: pense em reúso de credencial.)
+- Releia os dois casos da seção 4 e diga, para cada um, **qual elo da cadeia**, se cortado, teria evitado o pior — e a que fase da espinha esse elo pertence.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Um pentest é **uma metodologia, não um punhado de truques**: recon → acesso → escalação → pós-exploração → relatório, com o mesmo laço (enumerar → explorar → consolidar) repetido em cada host.
+- Os três mapas se complementam: a **Cyber Kill Chain** conta a história, o **MITRE ATT&CK** dá o vocabulário comum (tática = objetivo; técnica = como), e o **PTES** é o único que fecha com uma fase de **relatório**.
+- A **enumeração** é o centro de gravidade: o próximo passo sai do cruzamento do que a máquina revela com o objetivo (as **joias da coroa**), não de adivinhação.
+- Do lado da defesa, o **dwell time** é a métrica central — a Equifax (76 dias, detector cego) mostra que o tempo até a detecção decide o tamanho do dano.
+- O entregável não é a invasão, é o **relatório**: linha do tempo em UTC + mapa ATT&CK + risco + remediação. Um achado sem narrativa mapeada é só uma anedota.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [MITRE ATT&CK — Enterprise Matrix](https://attack.mitre.org/matrices/enterprise/) — a matriz de táticas e técnicas que é o vocabulário comum de todo o módulo.
+- [Lockheed Martin — The Cyber Kill Chain](https://www.lockheedmartin.com/en-us/capabilities/cyber/cyber-kill-chain.html) — a fonte original do modelo de sete etapas.
+- [Penetration Testing Execution Standard (PTES)](http://www.pentest-standard.org/index.php/Main_Page) — o processo de engajamento, da pré-contratação ao relatório.
+- [GAO-18-559 — Equifax (ago. 2018)](https://www.gao.gov/products/gao-18-559) e [U.S. Senate — "A 'Kill Chain' Analysis of the 2013 Target Data Breach"](https://www.commerce.senate.gov/2014/3/rockefeller-staff-report-details-target-s-missed-opportunities-to-stop-massive-data-breach) — os dois casos da seção 4, nas fontes primárias.
+- [The Unified Kill Chain (Paul Pols)](https://www.unifiedkillchain.com/) — a fusão da kill chain com o ATT&CK em 18 fases.
+
+**O que vem a seguir:** o módulo 8.2, "Máquina CTF guiada", onde você aplica esta espinha de ponta a ponta numa máquina boot2root — com dicas, mas já sozinho no comando.
