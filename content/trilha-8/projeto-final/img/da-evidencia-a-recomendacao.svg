@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" role="img" aria-labelledby="t d">
+  <title id="t">De um passo do ataque a uma linha de achado no relatório</title>
+  <desc id="d">Uma esteira em cinco caixas, da esquerda para a direita, usando o achado real do laboratório. Caixa 1, evidência: o comando sudo -l mostra a regra NOPASSWD para o find e a exploração sudo find -exec bin sh leva a uid igual a zero, root. Caixa 2, achado: regra sudo permissiva que permite escalar a root, com um título claro e um identificador. Caixa 3, risco: a probabilidade é alta porque qualquer usuário local explora, e o impacto é alto porque dá controle total do host; probabilidade vezes impacto resulta em severidade crítica. Caixa 4, técnica: o passo é mapeado para MITRE ATT&amp;CK T1548.003, Sudo and Sudo Caching. Caixa 5, recomendação: atacar a causa-raiz removendo a regra NOPASSWD e aplicando o menor privilégio, não apenas trocar o binário. A faixa de rodapé diz que todo achado do relatório nasce desta esteira: sem evidência não há achado, sem risco não há prioridade e sem recomendação de causa-raiz o relatório não gera ação.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .st { font-size: 12px; font-weight: 700; fill: #5cc8d8; }
+    .mono { font-size: 9.5px; fill: #cfe0d6; }
+    .big { font-size: 13px; font-weight: 700; fill: #5ee08a; }
+    .crit { font-size: 13px; font-weight: 700; fill: #e0657a; }
+    .att { font-size: 12px; font-weight: 700; fill: #e0a15e; }
+    .box { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2; }
+    .ev { fill: #0c1410; stroke: #30423a; stroke-width: 1.5; }
+    .flow { stroke: #9fb0a6; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
+    .rule { font-size: 11.5px; fill: #cfe0d6; }
+    .lab { font-size: 9px; fill: #9fb0a6; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="960" height="420" fill="#121815"/>
+  <text class="t" x="30" y="34">De um passo do ataque a uma linha de achado (exemplo real do lab)</text>
+
+  <!-- 1 evidencia -->
+  <rect class="ev" x="24" y="70" width="190" height="210" rx="8"/>
+  <text class="st" x="119" y="96" text-anchor="middle">1 · evidência</text>
+  <text class="lab" x="40" y="124">o que você capturou:</text>
+  <text class="mono" x="40" y="148">$ sudo -l</text>
+  <text class="mono" x="40" y="164">(root) NOPASSWD:</text>
+  <text class="mono" x="40" y="178">  /usr/bin/find</text>
+  <text class="mono" x="40" y="206">$ sudo find . -exec</text>
+  <text class="mono" x="40" y="220">  /bin/sh \;</text>
+  <text class="mono" x="40" y="244"># id</text>
+  <text class="mono" x="40" y="258">uid=0(root)</text>
+
+  <!-- 2 achado -->
+  <rect class="box" x="238" y="70" width="170" height="210" rx="8"/>
+  <text class="st" x="323" y="96" text-anchor="middle">2 · achado</text>
+  <text class="lab" x="254" y="124">título claro:</text>
+  <text class="mono" x="254" y="148">Regra sudo</text>
+  <text class="mono" x="254" y="162">permissiva</text>
+  <text class="mono" x="254" y="176">(NOPASSWD: find)</text>
+  <text class="mono" x="254" y="190">permite virar root</text>
+  <text class="lab" x="254" y="224">id: PF-03</text>
+
+  <!-- 3 risco -->
+  <rect class="box" x="432" y="70" width="170" height="210" rx="8"/>
+  <text class="st" x="517" y="96" text-anchor="middle">3 · risco</text>
+  <text class="lab" x="448" y="124">prob. × impacto:</text>
+  <text class="mono" x="448" y="150">prob.: alta</text>
+  <text class="mono" x="448" y="166">(qualquer user local)</text>
+  <text class="mono" x="448" y="192">impacto: alto</text>
+  <text class="mono" x="448" y="208">(controle do host)</text>
+  <text class="lab" x="448" y="244">severidade:</text>
+  <text class="crit" x="448" y="262">CRÍTICA</text>
+
+  <!-- 4 tecnica -->
+  <rect class="box" x="626" y="70" width="150" height="210" rx="8"/>
+  <text class="st" x="701" y="96" text-anchor="middle">4 · técnica</text>
+  <text class="lab" x="642" y="124">MITRE ATT&amp;CK:</text>
+  <text class="att" x="642" y="152">T1548.003</text>
+  <text class="mono" x="642" y="176">Sudo and</text>
+  <text class="mono" x="642" y="190">Sudo Caching</text>
+  <text class="lab" x="642" y="224">dá detecção e</text>
+  <text class="lab" x="642" y="238">mitigação prontas</text>
+
+  <!-- 5 recomendacao -->
+  <rect class="box" x="800" y="70" width="150" height="210" rx="8"/>
+  <text class="st" x="875" y="96" text-anchor="middle">5 · recomendação</text>
+  <text class="lab" x="816" y="124">causa-raiz:</text>
+  <text class="mono" x="816" y="150">remover a regra</text>
+  <text class="mono" x="816" y="164">NOPASSWD e aplicar</text>
+  <text class="mono" x="816" y="178">menor privilégio</text>
+  <text class="lab" x="816" y="210">não só trocar o</text>
+  <text class="lab" x="816" y="224">binário: matar a</text>
+  <text class="lab" x="816" y="238">classe inteira</text>
+
+  <!-- flows -->
+  <path class="flow" d="M214,175 L238,175"/>
+  <path class="flow" d="M408,175 L432,175"/>
+  <path class="flow" d="M602,175 L626,175"/>
+  <path class="flow" d="M776,175 L800,175"/>
+
+  <text class="rule" x="30" y="366">Todo achado nasce desta esteira: sem evidência não há achado, sem risco não há prioridade,</text>
+  <text class="rule" x="30" y="384">e sem recomendação de causa-raiz o relatório não gera ação — é só a anedota de que alguém entrou.</text>
+</svg>
