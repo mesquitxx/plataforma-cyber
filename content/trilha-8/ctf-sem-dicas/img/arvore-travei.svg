@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 470" role="img" aria-labelledby="t d">
+  <title id="t">Árvore de decisão: travei num CTF sem dicas, e agora?</title>
+  <desc id="d">Uma árvore de decisão que começa na pergunta "travei, e agora?" e desce por verificações, cada uma com uma resposta e uma ação. Primeiro: enumerei TUDO o que esta identidade vê? Se não, a ação é voltar e enumerar por completo, de forma sistemática. Se sim, segue. Segundo: estou insistindo no mesmo vetor há mais do que o meu time-box? Se sim, a ação é abandonar esse vetor, que virou um rabbit hole, e marcar como descartado nas notas. Se não, segue. Terceiro: re-enumerei como a identidade atual, e não como a anterior? Se não, a ação é rodar de novo sudo menos l, id, getcap e grupos com a nova identidade. Se sim, segue. Quarto: o que achei é um achado real ou uma isca? Se parece uma isca, a ação é descartá-la e voltar à enumeração. Se é um achado real, a ação final é levantar uma nova hipótese e testá-la dentro de um novo time-box. Todas as setas de ação acabam reconduzindo ao laço da autonomia.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .q { font-size: 11px; font-weight: 700; fill: #5cc8d8; }
+    .qbox { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2; }
+    .a { font-size: 10px; fill: #cfe0d6; }
+    .abox { fill: #16201b; stroke: #5ee08a; stroke-width: 2; }
+    .start { fill: #201a16; stroke: #e0a15e; stroke-width: 2.5; }
+    .sx { font-size: 13px; font-weight: 700; fill: #e0a15e; }
+    .flow { stroke: #9fb0a6; stroke-width: 2.2; fill: none; marker-end: url(#ac); }
+    .lbl { font-size: 10px; font-weight: 700; }
+    .yes { fill: #e0a15e; }
+    .no { fill: #5ee08a; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="820" height="470" fill="#121815"/>
+  <text class="t" x="30" y="34">Travei, e agora? — a árvore que te tira do lugar (sem dica externa)</text>
+
+  <!-- start -->
+  <rect class="start" x="40" y="60" width="190" height="52" rx="8"/>
+  <text class="sx" x="135" y="83" text-anchor="middle">TRAVEI</text>
+  <text class="a" x="135" y="101" text-anchor="middle">desça a árvore, em ordem</text>
+
+  <!-- Q1 -->
+  <rect class="qbox" x="300" y="56" width="300" height="60" rx="8"/>
+  <text class="q" x="450" y="80" text-anchor="middle">1 · enumerei TUDO que esta</text>
+  <text class="q" x="450" y="96" text-anchor="middle">identidade vê?</text>
+  <!-- Q1 no -> action -->
+  <rect class="abox" x="630" y="54" width="170" height="64" rx="8"/>
+  <text class="a" x="715" y="78" text-anchor="middle">NÃO → enumere por</text>
+  <text class="a" x="715" y="93" text-anchor="middle">completo, sistemático</text>
+  <text class="a" x="715" y="108" text-anchor="middle">(script + manual)</text>
+
+  <!-- Q2 -->
+  <rect class="qbox" x="300" y="156" width="300" height="60" rx="8"/>
+  <text class="q" x="450" y="180" text-anchor="middle">2 · estou no mesmo vetor</text>
+  <text class="q" x="450" y="196" text-anchor="middle">há mais que o time-box?</text>
+  <rect class="abox" x="630" y="154" width="170" height="64" rx="8"/>
+  <text class="a" x="715" y="178" text-anchor="middle">SIM → é rabbit hole:</text>
+  <text class="a" x="715" y="193" text-anchor="middle">abandone e marque</text>
+  <text class="a" x="715" y="208" text-anchor="middle">como descartado</text>
+
+  <!-- Q3 -->
+  <rect class="qbox" x="300" y="256" width="300" height="60" rx="8"/>
+  <text class="q" x="450" y="280" text-anchor="middle">3 · re-enumerei como a</text>
+  <text class="q" x="450" y="296" text-anchor="middle">identidade ATUAL?</text>
+  <rect class="abox" x="630" y="254" width="170" height="64" rx="8"/>
+  <text class="a" x="715" y="278" text-anchor="middle">NÃO → rode de novo</text>
+  <text class="a" x="715" y="293" text-anchor="middle">sudo -l, id, getcap,</text>
+  <text class="a" x="715" y="308" text-anchor="middle">grupos (nova id)</text>
+
+  <!-- Q4 -->
+  <rect class="qbox" x="300" y="356" width="300" height="60" rx="8"/>
+  <text class="q" x="450" y="380" text-anchor="middle">4 · é achado real ou isca?</text>
+  <text class="q" x="450" y="396" text-anchor="middle">(leva a algum lugar?)</text>
+  <rect class="abox" x="630" y="354" width="170" height="64" rx="8"/>
+  <text class="a" x="715" y="378" text-anchor="middle">ISCA → descarte e</text>
+  <text class="a" x="715" y="393" text-anchor="middle">volte à enumeração</text>
+  <text class="a" x="715" y="408" text-anchor="middle">(decoy ≠ vetor)</text>
+
+  <!-- bottom: real finding -->
+  <rect class="abox" x="300" y="420" width="300" height="38" rx="8"/>
+  <text class="a" x="450" y="444" text-anchor="middle">ACHADO REAL → nova hipótese + teste (novo time-box)</text>
+
+  <!-- start -> Q1 -->
+  <path class="flow" d="M230,86 L296,86"/>
+  <!-- Q1 yes down to Q2 ; no to action -->
+  <path class="flow" d="M600,86 L626,86"/>
+  <text class="lbl no" x="614" y="78" text-anchor="middle"></text>
+  <path class="flow" d="M450,116 L450,152"/>
+  <text class="lbl no" x="466" y="138">sim</text>
+  <!-- Q2 no down; yes to action -->
+  <path class="flow" d="M600,186 L626,186"/>
+  <path class="flow" d="M450,216 L450,252"/>
+  <text class="lbl no" x="466" y="238">não</text>
+  <!-- Q3 yes down; no to action -->
+  <path class="flow" d="M600,286 L626,286"/>
+  <path class="flow" d="M450,316 L450,352"/>
+  <text class="lbl no" x="466" y="338">sim</text>
+  <!-- Q4 -> real finding; isca to action -->
+  <path class="flow" d="M600,386 L626,386"/>
+  <path class="flow" d="M450,416 L450,418"/>
+  <!-- yes labels on the side arrows to actions -->
+  <text class="lbl yes" x="614" y="48" text-anchor="middle">não</text>
+  <text class="lbl yes" x="614" y="148" text-anchor="middle">sim</text>
+  <text class="lbl yes" x="614" y="248" text-anchor="middle">não</text>
+  <text class="lbl yes" x="614" y="348" text-anchor="middle">isca</text>
+</svg>
