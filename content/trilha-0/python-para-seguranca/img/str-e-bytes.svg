@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" role="img" aria-labelledby="t d">
+  <title id="t">A fronteira entre str e bytes: encode na saída, decode na entrada</title>
+  <desc id="d">À esquerda, o mundo do seu programa, onde texto é str, uma sequência de caracteres Unicode: a palavra ação tem 4 caracteres. À direita, o mundo do kernel, do socket e da rede, onde só existem bytes: a mesma palavra em UTF-8 vira 6 bytes, 61 c3 a7 c3 a3 6f, porque ç e ã ocupam dois bytes cada. Na saída, str.encode('utf-8') transforma texto em bytes antes do sendall. Na entrada, recv devolve bytes, e bytes.decode('utf-8') os transforma em texto. Embaixo, três erros típicos na fronteira: misturar str com bytes dá TypeError; decodificar com o codec errado, como ascii, dá UnicodeDecodeError; e bytes inválidos vindos de um serviço podem ser tratados com errors='replace', que troca o byte ruim pelo caractere de substituição em vez de derrubar o script.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 13.5px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7ab8f0"/></marker>
+  </defs>
+  <rect width="900" height="420" fill="#121815"/>
+  <rect x="30" y="20" width="330" height="230" rx="12" fill="none" stroke="#5ee08a" stroke-dasharray="6 5"/>
+  <text class="t" x="46" y="48" style="fill:#5ee08a">seu programa: str</text>
+  <text class="s" x="46" y="70">caracteres Unicode</text>
+  <rect class="box" x="46" y="86" width="298" height="70" rx="10"/>
+  <text class="m" x="60" y="112">"ação"</text>
+  <text class="s" x="60" y="134">len(s) == 4 caracteres</text>
+  <rect class="box" x="46" y="168" width="298" height="66" rx="10"/>
+  <text class="s" x="60" y="192">"SSH-2.0-TreinoSSH_0.7"</text>
+  <text class="s" x="60" y="212">split(), strip(), f-strings...</text>
+
+  <rect x="540" y="20" width="330" height="230" rx="12" fill="none" stroke="#7ab8f0" stroke-dasharray="6 5"/>
+  <text class="t" x="556" y="48" style="fill:#7ab8f0">kernel, socket, rede: bytes</text>
+  <text class="s" x="556" y="70">números de 0 a 255</text>
+  <rect class="box" x="556" y="86" width="298" height="70" rx="10"/>
+  <text class="m" x="570" y="112">b'a\xc3\xa7\xc3\xa3o'</text>
+  <text class="s" x="570" y="134">len(b) == 6 bytes (UTF-8)</text>
+  <rect class="box" x="556" y="168" width="298" height="66" rx="10"/>
+  <text class="s" x="570" y="192">b'SSH-2.0-TreinoSSH_0.7\r\n'</text>
+  <text class="s" x="570" y="212">sendall() e recv() só aceitam isto</text>
+
+  <g stroke-width="1.6">
+    <line x1="360" y1="104" x2="536" y2="104" stroke="#5ee08a" marker-end="url(#g)"/>
+    <line x1="540" y1="198" x2="364" y2="198" stroke="#7ab8f0" marker-end="url(#b)"/>
+  </g>
+  <text class="m" x="378" y="94" style="fill:#5ee08a">.encode("utf-8")</text>
+  <text class="s" x="384" y="124">antes de enviar</text>
+  <text class="m" x="378" y="188" style="fill:#7ab8f0">.decode("utf-8")</text>
+  <text class="s" x="384" y="218">depois de receber</text>
+
+  <text class="t" x="30" y="290" style="fill:#f08c7a">Erros na fronteira (saídas reais)</text>
+  <rect class="box" x="30" y="306" width="270" height="94" rx="10"/>
+  <text class="m" x="44" y="330">"x" + b"y"</text>
+  <text class="s" x="44" y="352" style="fill:#f08c7a">TypeError: can only</text>
+  <text class="s" x="44" y="368" style="fill:#f08c7a">concatenate str (not</text>
+  <text class="s" x="44" y="384" style="fill:#f08c7a">"bytes") to str</text>
+  <rect class="box" x="315" y="306" width="270" height="94" rx="10"/>
+  <text class="m" x="329" y="330">b.decode("ascii")</text>
+  <text class="s" x="329" y="352" style="fill:#f08c7a">UnicodeDecodeError: 'ascii'</text>
+  <text class="s" x="329" y="368" style="fill:#f08c7a">codec can't decode byte</text>
+  <text class="s" x="329" y="384" style="fill:#f08c7a">0xc3 in position 1</text>
+  <rect class="box" x="600" y="306" width="270" height="94" rx="10" style="stroke:#5ee08a"/>
+  <text class="m" x="614" y="330">errors="replace"</text>
+  <text class="s" x="614" y="352">b"\xff\xfeSSH" vira "��SSH":</text>
+  <text class="s" x="614" y="368">o byte ruim vira � e o</text>
+  <text class="s" x="614" y="384">script segue vivo</text>
+</svg>

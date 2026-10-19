@@ -174,7 +174,12 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   "Linux: processos, pacotes e edição" (sem lab; três missões no `linux-sandbox` do
   0.3 e walkthrough de `apt` e `vim` no WSL), 0.6 "Scripting: Bash" (sem lab; três
   missões de script no `linux-sandbox`, com dados fictícios gerados no próprio
-  sandbox, e walkthrough do ShellCheck no WSL) e 0.8 "Git e versionamento básico"
+  sandbox, e walkthrough do ShellCheck no WSL), 0.7 "Scripting: Python para segurança"
+  (sem lab; um servidor de treino só com a stdlib, que escuta só em `127.0.0.1`, e três
+  missões no WSL: o resumo de uma varredura XML fictícia do nmap com parser, um connect
+  scan com banner grabbing e um cliente de protocolo de linha que aguenta mensagens
+  partidas, e um coletor HTTP que faz login, pagina e respeita 429 e 500 sem mentir na
+  contagem, e walkthrough de venv, `requests` e Bandit numa ferramenta suspeita) e 0.8 "Git e versionamento básico"
   (sem lab; três missões no WSL sobre repositórios fictícios gerados com autor e
   datas fixos, flags derivadas de hashes, e walkthroughs de merge, remote local e
   GitHub privado) escritos. Trilha 1: 1.1 "O que é pentest e tipos de teste" (sem lab;

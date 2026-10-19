@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="t d">
+  <title id="t">O ciclo de vida de um socket TCP, do lado do cliente e do servidor, e o que o script enxerga</title>
+  <desc id="d">À esquerda, as chamadas do cliente: socket, settimeout, connect, sendall, recv e close. À direita, as do servidor: socket, bind em 127.0.0.1 e uma porta, listen, accept, recv, sendall e close. No meio, o que passa pelo fio: o connect dispara o three-way handshake (SYN, SYN-ACK, ACK) e só volta quando ele termina; depois os dados fluem como um fluxo de bytes, sem fronteiras de mensagem; no fim, FIN encerra. Embaixo, a tabela do que um scanner em Python vê em cada caso: se a porta responde RST, o connect lança ConnectionRefusedError, porta fechada; se nada volta, o connect lança TimeoutError, sem resposta, que é o que o nmap chama de filtered; se o connect dá certo e o serviço fala primeiro, o recv devolve o banner; se o connect dá certo mas o recv estoura o timeout, a porta está aberta e o serviço espera o cliente falar, como o HTTP; e se o recv devolve b'' vazio, o outro lado fechou a conexão.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 13.5px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7ab8f0"/></marker>
+  </defs>
+  <rect width="900" height="540" fill="#121815"/>
+  <text class="t" x="30" y="32" style="fill:#5ee08a">cliente (seu script)</text>
+  <text class="t" x="640" y="32" style="fill:#7ab8f0">servidor (o serviço)</text>
+
+  <g class="s">
+    <rect class="box" x="30" y="46" width="230" height="250" rx="10"/>
+    <text class="s" x="44" y="72">s = socket.socket()</text>
+    <text class="s" x="44" y="96">s.settimeout(1.0)</text>
+    <text class="s" x="44" y="128" style="fill:#5ee08a">s.connect((ip, porta))</text>
+    <text class="s" x="44" y="186">s.sendall(b"HELLO\n")</text>
+    <text class="s" x="44" y="218">dados = s.recv(1024)</text>
+    <text class="s" x="44" y="276">s.close()</text>
+
+    <rect class="box" x="640" y="46" width="230" height="250" rx="10"/>
+    <text class="s" x="654" y="72">srv = socket.socket()</text>
+    <text class="s" x="654" y="96">srv.bind((ip, 8071))</text>
+    <text class="s" x="654" y="112">srv.listen()</text>
+    <text class="s" x="654" y="128" style="fill:#7ab8f0">c, end = srv.accept()</text>
+    <text class="s" x="654" y="186">c.recv(1024)</text>
+    <text class="s" x="654" y="218">c.sendall(b"banner\r\n")</text>
+    <text class="s" x="654" y="276">c.close()</text>
+  </g>
+
+  <g stroke-width="1.5">
+    <line x1="270" y1="112" x2="630" y2="112" stroke="#5ee08a" marker-end="url(#g)"/>
+    <line x1="630" y1="128" x2="270" y2="128" stroke="#7ab8f0" marker-end="url(#b)"/>
+    <line x1="270" y1="144" x2="630" y2="144" stroke="#5ee08a" marker-end="url(#g)"/>
+    <line x1="270" y1="182" x2="630" y2="182" stroke="#5ee08a" marker-end="url(#g)"/>
+    <line x1="630" y1="214" x2="270" y2="214" stroke="#7ab8f0" marker-end="url(#b)"/>
+    <line x1="270" y1="272" x2="630" y2="272" stroke="#5ee08a" marker-end="url(#g)"/>
+  </g>
+  <text class="s" x="420" y="106">SYN</text>
+  <text class="s" x="400" y="124">SYN-ACK</text>
+  <text class="s" x="420" y="160">ACK  (connect volta)</text>
+  <text class="s" x="330" y="200">fluxo de bytes, sem fronteiras</text>
+  <text class="s" x="330" y="234">um recv pode trazer meia linha</text>
+  <text class="s" x="330" y="250">ou duas linhas de uma vez</text>
+  <text class="s" x="420" y="290">FIN</text>
+
+  <text class="t" x="30" y="336" style="fill:#e8c46a">O que o script enxerga</text>
+  <rect class="box" x="30" y="350" width="840" height="170" rx="10"/>
+  <text class="m" x="44" y="374">resposta da porta</text>
+  <text class="m" x="290" y="374">em Python</text>
+  <text class="m" x="640" y="374">conclusão</text>
+  <line x1="44" y1="384" x2="856" y2="384" stroke="#34413b"/>
+  <text class="s" x="44" y="406">RST (recusa)</text>
+  <text class="s" x="290" y="406" style="fill:#f08c7a">ConnectionRefusedError [Errno 111]</text>
+  <text class="s" x="640" y="406">fechada</text>
+  <text class="s" x="44" y="430">nada volta</text>
+  <text class="s" x="290" y="430" style="fill:#e8c46a">TimeoutError no connect</text>
+  <text class="s" x="640" y="430">sem resposta ("filtered")</text>
+  <text class="s" x="44" y="454">aceita e fala primeiro</text>
+  <text class="s" x="290" y="454" style="fill:#5ee08a">recv devolve o banner</text>
+  <text class="s" x="640" y="454">aberta, com banner</text>
+  <text class="s" x="44" y="478">aceita e espera você</text>
+  <text class="s" x="290" y="478" style="fill:#e8c46a">TimeoutError no recv</text>
+  <text class="s" x="640" y="478">aberta, sem banner (HTTP)</text>
+  <text class="s" x="44" y="502">fecha depois de aceitar</text>
+  <text class="s" x="290" y="502">recv devolve b"" (vazio)</text>
+  <text class="s" x="640" y="502">o outro lado encerrou</text>
+</svg>

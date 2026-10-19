@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">Como o CPython roda um script, e nomes como etiquetas de objetos</title>
+  <desc id="d">Em cima, o caminho de um script: o arquivo sondar.py, que é texto, passa pelo compilador do CPython, que confere a sintaxe e gera bytecode; o bytecode pode ficar guardado em arquivos .pyc dentro de __pycache__; a máquina virtual executa uma instrução de bytecode por vez, como LOAD_NAME, BINARY_OP e STORE_NAME; quando o programa precisa de rede ou de arquivos, a máquina virtual pede ao kernel por system calls. Um erro de sintaxe para tudo antes de qualquer linha rodar; um erro de tipo só aparece quando aquela linha é executada. Embaixo, nomes e objetos: os nomes portas e outra apontam para o mesmo objeto lista [22, 80, 443, 8080]; por isso outra.append(8080) mudou também portas. O nome copia aponta para outro objeto, criado por list(portas).</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 13.5px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c46a"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="34" style="fill:#5ee08a">Do texto à execução (CPython)</text>
+
+  <rect class="box" x="30" y="54" width="150" height="86" rx="10"/>
+  <text class="m" x="44" y="78">sondar.py</text>
+  <text class="s" x="44" y="100">texto que você</text>
+  <text class="s" x="44" y="116">escreveu</text>
+
+  <rect class="box" x="206" y="54" width="170" height="86" rx="10"/>
+  <text class="m" x="220" y="78">compilador</text>
+  <text class="s" x="220" y="100">confere a sintaxe</text>
+  <text class="s" x="220" y="116">e gera bytecode</text>
+
+  <rect class="box" x="402" y="54" width="200" height="86" rx="10"/>
+  <text class="m" x="416" y="78">bytecode</text>
+  <text class="s" x="416" y="100">LOAD_NAME porta</text>
+  <text class="s" x="416" y="116">BINARY_OP (+)</text>
+  <text class="s" x="416" y="132">STORE_NAME total</text>
+
+  <rect class="box" x="628" y="54" width="242" height="86" rx="10" style="stroke:#5ee08a"/>
+  <text class="m" x="642" y="78" style="fill:#5ee08a">máquina virtual</text>
+  <text class="s" x="642" y="100">executa uma instrução</text>
+  <text class="s" x="642" y="116">por vez, em laço</text>
+
+  <g stroke="#5ee08a" stroke-width="1.5">
+    <line x1="180" y1="97" x2="202" y2="97" marker-end="url(#g)"/>
+    <line x1="376" y1="97" x2="398" y2="97" marker-end="url(#g)"/>
+    <line x1="602" y1="97" x2="624" y2="97" marker-end="url(#g)"/>
+    <line x1="749" y1="140" x2="749" y2="164" marker-end="url(#g)"/>
+    <line x1="502" y1="140" x2="502" y2="164" marker-end="url(#g)"/>
+  </g>
+  <rect class="box" x="402" y="168" width="200" height="50" rx="10"/>
+  <text class="s" x="416" y="190">cache: __pycache__/</text>
+  <text class="s" x="416" y="206">*.cpython-314.pyc</text>
+  <rect class="box" x="628" y="168" width="242" height="50" rx="10"/>
+  <text class="s" x="642" y="190">rede e arquivos: pede</text>
+  <text class="s" x="642" y="206">ao kernel (syscalls)</text>
+
+  <text class="s" x="30" y="174" style="fill:#e8c46a">SyntaxError: para ANTES de rodar</text>
+  <text class="s" x="30" y="192" style="fill:#e8c46a">qualquer linha.</text>
+  <text class="s" x="30" y="214" style="fill:#f08c7a">TypeError: só aparece quando</text>
+  <text class="s" x="30" y="232" style="fill:#f08c7a">AQUELA linha é executada.</text>
+
+  <line x1="30" y1="252" x2="870" y2="252" stroke="#34413b" stroke-width="1.5"/>
+  <text class="t" x="30" y="282" style="fill:#e8c46a">Nomes são etiquetas; o objeto mora em outro lugar</text>
+
+  <rect class="box" x="30" y="304" width="150" height="40" rx="8"/>
+  <text class="m" x="44" y="329">portas</text>
+  <rect class="box" x="30" y="356" width="150" height="40" rx="8"/>
+  <text class="m" x="44" y="381">outra</text>
+  <rect class="box" x="30" y="408" width="150" height="40" rx="8"/>
+  <text class="m" x="44" y="433">copia</text>
+
+  <rect class="box" x="330" y="318" width="300" height="64" rx="10" style="stroke:#e8c46a"/>
+  <text class="m" x="344" y="342">objeto list (id 0x7f…a0)</text>
+  <text class="s" x="344" y="364">[22, 80, 443, 8080]</text>
+  <rect class="box" x="330" y="398" width="300" height="56" rx="10"/>
+  <text class="m" x="344" y="420">objeto list (outro id)</text>
+  <text class="s" x="344" y="440">[22, 80, 443, 8080, 9999]</text>
+
+  <g stroke="#e8c46a" stroke-width="1.5" fill="none">
+    <path d="M180 324 L326 340" marker-end="url(#y)"/>
+    <path d="M180 376 L326 362" marker-end="url(#y)"/>
+    <path d="M180 428 L326 426" marker-end="url(#y)"/>
+  </g>
+  <text class="s" x="650" y="330">outra = portas</text>
+  <text class="s" x="650" y="348">não copia: cola outra</text>
+  <text class="s" x="650" y="366">etiqueta no MESMO objeto.</text>
+  <text class="s" x="650" y="390">outra.append(8080) muda</text>
+  <text class="s" x="650" y="408">o que portas enxerga.</text>
+  <text class="s" x="650" y="432">copia = list(portas)</text>
+  <text class="s" x="650" y="450">cria um objeto novo.</text>
+</svg>

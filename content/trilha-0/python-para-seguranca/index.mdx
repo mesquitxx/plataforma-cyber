@@ -1,0 +1,2871 @@
+---
+slug: python-para-seguranca
+track: trilha-0
+title: "Scripting: Python para segurança"
+prerequisites: [scripting-bash]
+lab: null
+tasks:
+  - slug: missao-1-resumo-xml
+    title: "Missão 1 — Do XML ao resumo"
+    type: flag
+    prompt: "Hosts ativos, portas TCP abertas e o serviço aberto mais comum, segundo o seu resumo_nmap.py, no formato FLAG{hosts-portas-servico}."
+    hint: "Conte só portas com protocol=\"tcp\" e state exatamente \"open\". UDP e open|filtered não entram."
+    flag:
+      hash: "scrypt$16384$8$1$f98a76694da71b7ca1123fb978e2ef8d88111b1c77e36962e212bfa40b440304"
+      salt: "5647d4581cd08584c3f6af0e89b331db"
+  - slug: missao-2-sockets
+    title: "Missão 2 — Quem está escutando?"
+    type: flag
+    prompt: "Quantas portas de 8070 a 8079 estão abertas e o token que o serviço de desafios devolve, no formato FLAG{portas-token}."
+    hint: "Leia linha a linha (socket.makefile), ignore as linhas INFO e responda só às linhas DESAFIO."
+    flag:
+      hash: "scrypt$16384$8$1$09b1b9cf718da732c9325e6cd7ac3575c7ff42a004e78ff567e55090282191cd"
+      salt: "2bbb121d5275a4a56491ca1803c84098"
+  - slug: missao-3-coletor-http
+    title: "Missão 3 — O coletor educado"
+    type: flag
+    prompt: "Hosts únicos do inventário e quantos deles têm ao menos uma versão crítica, no formato FLAG{unicos-criticos}."
+    hint: "Trate o 429 (Retry-After) e o 500 (tente de novo), elimine IPs repetidos e normalize as versões com strip() e lower()."
+    flag:
+      hash: "scrypt$16384$8$1$8819abb7a54d78bc961ef531915b8a14fc1258d61a31aaa354fc86c62214eea7"
+      salt: "8e1b40ff4121a68e7e3838c637788730"
+  - slug: quiz-final
+    title: "Quiz — Scripting: Python para segurança"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que `\"80\" + 1` gera `TypeError` em Python, enquanto no Bash `porta=80` e uma conta com `$(( porta + 1 ))` funcionam?"
+        options:
+          - "Porque o Python tem tipagem forte: texto e número são tipos diferentes e ele não converte sozinho; no Bash, tudo é texto e a expansão aritmética interpreta o texto como número"
+          - "Porque o Python não sabe somar números"
+          - "Porque faltam aspas no 1"
+          - "Porque o Python exige declarar o tipo da variável antes"
+        answer: 0
+        explanation: "O Python tem tipagem dinâmica (o tipo está no objeto, não no nome) e forte (ele não mistura tipos por conta própria). Para somar, converta: `int(\"80\") + 1` dá 81. Ninguém declara tipos em Python; o erro vem da operação entre tipos incompatíveis."
+      - question: "Num scanner, `s.recv(1024)` devolveu só a metade de uma linha do protocolo. O que isso significa?"
+        options:
+          - "Que o servidor está com defeito"
+          - "Que o buffer de 1024 é pequeno demais e basta aumentar para 65535"
+          - "Que o TCP é um fluxo de bytes sem fronteiras de mensagem: um recv pode trazer meia linha ou várias; é preciso acumular até o delimitador (por exemplo, com makefile e readline)"
+          - "Que a conexão foi recusada"
+        answer: 2
+        explanation: "O TCP entrega bytes em ordem, mas não preserva o 'tamanho' de cada envio. Na Missão 2, o servidor manda alguns desafios em dois pedaços, e o cliente ingênuo com um recv por mensagem quebrou no desafio 7. Ler linha a linha resolve; aumentar o buffer não."
+      - question: "Qual o tipo devolvido por `sock.recv()` e como transformá-lo em texto sem derrubar o script se vier um byte inválido?"
+        options:
+          - "str; não precisa converter"
+          - "bytes; `dados.decode(\"utf-8\", errors=\"replace\")`"
+          - "bytes; `str(dados)`"
+          - "int; `chr(dados)`"
+        answer: 1
+        explanation: "Socket, arquivos binários e rede trabalham com bytes. `decode` transforma bytes em str; com `errors=\"replace\"`, um byte inválido vira o caractere de substituição em vez de lançar UnicodeDecodeError. `str(dados)` só dá o texto `b'...'`, com o prefixo e as barras."
+      - question: "Um scanner tenta `connect` numa porta. Em qual caso aparece `ConnectionRefusedError` e em qual aparece `TimeoutError`?"
+        options:
+          - "Refused quando nada volta; Timeout quando o host responde RST"
+          - "Os dois significam a mesma coisa"
+          - "Refused só acontece em UDP"
+          - "Refused quando o host responde com RST (porta fechada); Timeout quando nada volta dentro do prazo (sem resposta, o que o nmap chama de filtered)"
+        answer: 3
+        explanation: "RST é uma recusa ativa: há alguém lá dizendo que a porta está fechada. Silêncio total esgota o timeout: um firewall descartando pacotes, ou um host que não existe. Sem settimeout, esse caso pode travar o scanner por muito tempo."
+      - question: "`subprocess.run(f\"ping -c 1 {alvo}\", shell=True)` recebe `alvo = \"127.0.0.1; id\"`. O que acontece e qual a forma segura?"
+        options:
+          - "Dá erro de sintaxe; a forma segura é usar aspas simples"
+          - "O shell executa ping e depois id (command injection); a forma segura é passar uma lista, `[\"ping\", \"-c\", \"1\", alvo]`, sem shell=True"
+          - "O Python bloqueia o ponto e vírgula automaticamente"
+          - "Só executa o ping, porque o subprocess ignora o resto"
+        answer: 1
+        explanation: "Com shell=True, o texto vai para /bin/sh -c, e o ; vira separador de comandos. Com uma lista, o Python chama o programa direto (execve) e o alvo inteiro é um único argumento. É a mesma lição do eval no 0.6."
+      - question: "Por que um coletor com `try: ... except Exception: pass` em volta de cada página pode ser pior do que um coletor que trava?"
+        options:
+          - "Porque ele esconde os erros (429, 500) e entrega um número errado como se estivesse certo: o relatório mente sem nenhum aviso"
+          - "Porque except é lento"
+          - "Porque except Exception não pega HTTPError"
+          - "Não é pior: é a forma recomendada"
+        answer: 0
+        explanation: "No módulo, o coletor ingênuo contou 32 hosts sem mostrar erro nenhum; o certo eram 94. Um script que trava avisa que algo deu errado; um script que engole exceções produz falso negativo silencioso. Trate só as exceções que você sabe tratar e deixe as outras aparecerem."
+      - question: "A API responde `429 Too Many Requests` com o cabeçalho `Retry-After: 1`. O que o coletor deve fazer?"
+        options:
+          - "Pular a página e seguir para a próxima"
+          - "Repetir imediatamente, mais rápido"
+          - "Esperar 1 segundo e repetir o mesmo pedido, com um limite de tentativas"
+          - "Trocar o User-Agent para escapar do limite"
+        answer: 2
+        explanation: "O 429 é o servidor pedindo calma, e o Retry-After diz quanto esperar. Respeitar isso é ser educado com o alvo (e com o escopo do teste); pular a página é perder dados; contornar o limite sem autorização é sair do combinado."
+      - question: "Um script faz `tarfile.open(arq).extractall(\"destino\")` num arquivo vindo de fora, que contém o membro `../.bashrc`. Qual é o risco e a correção?"
+        options:
+          - "Nenhum risco: o tarfile ignora caminhos com .."
+          - "O arquivo pode ser gravado fora do destino (path traversal, CVE-2007-4559); use `extractall(\"destino\", filter=\"data\")`, que recusa esses membros"
+          - "O risco é só de ocupar disco; a correção é comprimir antes"
+          - "O risco é o arquivo ser lido como bytes"
+        answer: 1
+        explanation: "É a falha de 2007 que a Trellix reestudou em 2022. A PEP 706 criou os filtros de extração; no Python 3.14, o padrão passou a ser 'data', mas passar filter='data' explicitamente protege também quem roda versões anteriores, e deixa a intenção clara para quem revisa (o Bandit aponta extractall sem validação mesmo no 3.14)."
+      - question: "No Ubuntu, `pip install requests` fora de um ambiente virtual termina em `error: externally-managed-environment`. Por quê, e qual o caminho certo?"
+        options:
+          - "O PyPI está fora do ar; tente mais tarde"
+          - "Falta sudo; use sudo pip install"
+          - "O pacote requests não existe para Python 3"
+          - "A PEP 668 deixa a distribuição marcar o Python do sistema como gerenciado pelo apt; o caminho certo é criar um venv (python3 -m venv) e instalar lá"
+        answer: 3
+        explanation: "Misturar pacotes do pip com os do apt pode quebrar ferramentas do próprio sistema. O venv isola as dependências de cada projeto. `sudo pip install` ou `--break-system-packages` contornam a proteção, e é exatamente o que não se quer."
+      - question: "Alguém digita `pip install reqeusts` (letras trocadas). Que tipo de ataque esse erro favorece?"
+        options:
+          - "Dependency confusion"
+          - "Typosquatting: um pacote com nome parecido, publicado de propósito para quem erra a digitação"
+          - "SQL injection"
+          - "Path traversal"
+        answer: 1
+        explanation: "Typosquatting explora o erro de digitação. A dependency confusion, do caso PyTorch, é outra coisa: um nome igual ao de um pacote interno, publicado num índice público que o pip consulta com prioridade. Nos dois casos, instalar um pacote executa código de terceiros."
+      - question: "Para contar portas abertas na saída do nmap, por que um parser de XML é mais confiável que `grep 'state=\"open\"'`?"
+        options:
+          - "Porque o grep não lê arquivos XML"
+          - "Não há diferença"
+          - "Porque o XML é mais rápido"
+          - "Porque o parser entende a estrutura: separa TCP de UDP, distingue open de open|filtered e associa cada porta ao seu host; o grep só casa texto, e na Missão 1 deu 170 ou 236 em vez de 163"
+        answer: 3
+        explanation: "O grep não sabe a que elemento um texto pertence. O próprio nmap recomenda o XML para programas. Regex continua ótima para linhas soltas (um banner, um log); para dados estruturados, use o parser do formato."
+glossary:
+  - term: Python
+    definition: "Linguagem de programação interpretada, de propósito geral, com tipagem dinâmica e forte. É a linguagem mais comum em ferramentas e exploits públicos de segurança."
+  - term: CPython
+    definition: "A implementação de referência do Python, escrita em C, distribuída em python.org e pelas distribuições Linux. Compila o código para bytecode e o executa numa máquina virtual."
+  - term: bytecode
+    definition: "Instruções intermediárias que o CPython gera a partir do código-fonte e executa na sua máquina virtual. Ficam em cache nos arquivos .pyc da pasta __pycache__."
+  - term: REPL
+    definition: "Read-Eval-Print Loop: o modo interativo do Python (python3 sem argumentos), que lê uma linha, executa e mostra o resultado. Ideal para testar uma ideia antes de pô-la num script."
+  - term: dynamic typing
+    definition: "Tipagem dinâmica: o tipo pertence ao objeto, não ao nome. A mesma variável pode apontar para um número e depois para um texto, sem declarar nada."
+  - term: strong typing
+    definition: "Tipagem forte: a linguagem não converte tipos sozinha em operações ambíguas. Em Python, \"80\" + 1 é TypeError; é preciso converter com int() ou str()."
+  - term: object
+    definition: "Em Python, todo valor é um objeto, com tipo, identidade (id) e valor. Variáveis são nomes que apontam para objetos; dois nomes podem apontar para o mesmo objeto."
+  - term: mutability
+    definition: "Mutabilidade: se um objeto pode ser alterado depois de criado. list, dict e set são mutáveis; str, int, tuple e bytes são imutáveis."
+  - term: list
+    definition: "Sequência ordenada e mutável de valores, escrita entre colchetes: [22, 80, 443]. Acessada por índice, a partir de 0."
+  - term: tuple
+    definition: "Sequência ordenada e imutável, escrita entre parênteses: (\"192.168.0.10\", 80). Boa para pares e registros que não devem mudar."
+  - term: dictionary
+    definition: "Dicionário (dict): mapeamento de chaves para valores, como {22: \"ssh\"}. A busca por chave é rápida, e chaves repetidas se sobrescrevem, o que serve para eliminar duplicados."
+  - term: set
+    definition: "Conjunto: coleção sem ordem e sem repetição, como {22, 80}. Suporta interseção (&), união (|) e diferença (-)."
+  - term: list comprehension
+    definition: "Forma compacta de criar uma lista a partir de outra, com filtro opcional: [p for p in portas if p > 100]."
+  - term: f-string
+    definition: "String com prefixo f em que expressões entre chaves são avaliadas e formatadas, como f\"{ip}:{porta}\". Usada para montar texto, nunca para montar comandos de shell."
+  - term: indentation
+    definition: "Indentação: o recuo no começo da linha. Em Python ela faz parte da sintaxe e define os blocos (if, for, def); misturar recuos dá IndentationError."
+  - term: exception
+    definition: "Exceção: objeto que representa um erro durante a execução (TypeError, KeyError, TimeoutError...). Interrompe o fluxo até ser tratada por um try/except."
+  - term: traceback
+    definition: "Relatório que o Python imprime quando uma exceção não é tratada: a pilha de chamadas, do ponto de entrada até a linha que falhou, e o tipo e a mensagem do erro."
+  - term: context manager
+    definition: "Objeto usado com with, que garante uma ação de saída (fechar um arquivo, um socket, uma conexão) mesmo que ocorra uma exceção no meio."
+  - term: standard library
+    definition: "Biblioteca padrão: os módulos que já vêm com o Python (socket, json, urllib, argparse, hashlib, subprocess...), sem instalar nada."
+  - term: Python module
+    definition: "Arquivo .py (ou pacote) cujo conteúdo pode ser usado em outro programa com import. Importar um módulo executa o código dele."
+  - term: import
+    definition: "Instrução que carrega um módulo e o torna disponível pelo nome. O Python procura o módulo numa lista de pastas, começando pela pasta do script."
+  - term: argparse
+    definition: "Módulo da biblioteca padrão que lê argumentos e opções de linha de comando, gera o --help e recusa entradas inválidas com código de saída 2."
+  - term: bytes
+    definition: "Tipo do Python para sequências de bytes (números de 0 a 255), escrito b\"...\". É o que sockets, arquivos binários e a rede usam; vira texto com decode()."
+  - term: JSON
+    definition: "JavaScript Object Notation: formato de texto para dados estruturados (objetos, listas, números, textos, true, false, null). É a língua da maioria das APIs web."
+  - term: XML
+    definition: "Extensible Markup Language: formato de texto com elementos aninhados e atributos, como <port portid=\"22\">. O nmap o usa na saída -oX."
+  - term: XML parser
+    definition: "Programa que lê XML e monta a árvore de elementos, permitindo navegar por estrutura em vez de casar texto. Em Python, xml.etree.ElementTree."
+  - term: socket timeout
+    definition: "Prazo máximo que uma operação de socket (connect, recv) pode esperar, definido com settimeout(). Esgotado o prazo, o Python lança TimeoutError."
+  - term: message framing
+    definition: "Como um protocolo marca onde termina cada mensagem num fluxo de bytes: por um delimitador (quebra de linha) ou por um tamanho no começo. Sem isso, o TCP não separa mensagens."
+  - term: urllib
+    definition: "Pacote da biblioteca padrão para URLs e HTTP (urllib.request, urllib.parse, urllib.error). Lança HTTPError para respostas 4xx e 5xx."
+  - term: requests
+    definition: "Biblioteca HTTP de terceiros, muito popular, instalada com pip. Mais cômoda que o urllib (sessões, json=, timeouts), mas é uma dependência externa."
+  - term: pagination
+    definition: "Paginação: a API entrega uma lista grande em pedaços (páginas), e o cliente pede uma de cada vez, seguindo um número de página ou um link para a próxima."
+  - term: Retry-After
+    definition: "Cabeçalho HTTP com que o servidor diz quanto tempo o cliente deve esperar antes de tentar de novo, usado junto com 429 Too Many Requests ou 503."
+  - term: exponential backoff
+    definition: "Estratégia de nova tentativa em que a espera cresce a cada falha (por exemplo, 0,5 s, 1 s, 2 s), com um limite de tentativas, para não martelar um serviço instável."
+  - term: subprocess
+    definition: "Módulo da biblioteca padrão para executar outros programas. Com uma lista de argumentos, não usa shell; com shell=True, entrega o texto a /bin/sh."
+  - term: pickle
+    definition: "Formato nativo de serialização do Python. Carregar um pickle (pickle.load) pode executar código arbitrário, por isso nunca se carrega pickle de fonte não confiável."
+  - term: thread pool
+    definition: "Grupo fixo de threads que executam tarefas em paralelo (concurrent.futures.ThreadPoolExecutor). Num scanner, permite esperar várias conexões ao mesmo tempo."
+  - term: struct
+    definition: "Módulo da biblioteca padrão que converte números em bytes e vice-versa num formato fixo, com a ordem dos bytes escolhida (! para a ordem de rede, big-endian)."
+  - term: PyPI
+    definition: "Python Package Index: o repositório público de pacotes Python, de onde o pip baixa por padrão. Qualquer pessoa pode publicar um pacote lá."
+  - term: pip
+    definition: "O instalador de pacotes do Python. Baixa pacotes (do PyPI, por padrão) e os instala; instalar um pacote pode executar código dele."
+  - term: virtual environment
+    definition: "Ambiente virtual (venv): pasta com um Python e pacotes só daquele projeto, criada com python3 -m venv. Isola as dependências do Python do sistema."
+  - term: PEP
+    definition: "Python Enhancement Proposal: documento que propõe e registra mudanças na linguagem e no ecossistema Python, como a PEP 668 e a PEP 706."
+  - term: PEP 668
+    definition: "Proposta que permite a uma distribuição marcar o Python do sistema como gerenciado externamente (arquivo EXTERNALLY-MANAGED), fazendo o pip recusar instalações fora de um venv."
+  - term: dependency confusion
+    definition: "Ataque em que alguém publica num índice público um pacote com o mesmo nome de uma dependência interna ou de outro índice, e o instalador escolhe a versão do atacante."
+  - term: hash pinning
+    definition: "Fixar cada dependência por versão e pelo hash do arquivo (pip install --require-hashes), para que um pacote trocado no índice seja recusado na instalação."
+  - term: tarfile
+    definition: "Módulo da biblioteca padrão para ler e criar arquivos .tar. Extrair um tar não confiável sem filtro pode gravar fora do destino (CVE-2007-4559)."
+  - term: extraction filter
+    definition: "Filtro passado a tarfile.extractall(filter=...) que decide o que pode ser extraído: 'data' recusa caminhos absolutos, saídas do destino, links perigosos e arquivos de dispositivo."
+  - term: Bandit
+    definition: "Ferramenta livre do PyCQA que analisa código Python sem executá-lo e aponta padrões inseguros (shell=True, eval, pickle, verify=False), cada um com um código como B602."
+  - term: static analysis
+    definition: "Análise estática: examinar o código sem executá-lo, procurando padrões de erro ou de insegurança. Linters e o Bandit fazem análise estática."
+  - term: Impacket
+    definition: "Coleção de classes e scripts em Python para construir e manipular protocolos de rede (SMB, MSRPC, Kerberos). Usada em pentests e também por atacantes reais."
+---
+
+import bytecode from "./img/do-script-ao-bytecode.svg";
+import strBytes from "./img/str-e-bytes.svg";
+import cicloSocket from "./img/ciclo-do-socket.svg";
+import fluxoColetor from "./img/fluxo-do-coletor.svg";
+import shellOuLista from "./img/shell-ou-lista.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No 0.6 você automatizou o reconhecimento com Bash e viu onde ele brilha: colar
+ferramentas com <GlossaryTerm term="pipe">pipes</GlossaryTerm>, filtrar linhas, repetir
+comandos. Viu também onde ele aperta: tudo é texto, um espaço fora do lugar muda o
+significado de uma linha, e tarefas como "conversar com um serviço de rede", "ler um
+JSON" ou "contar por host e por serviço" viram malabarismos com `awk` e arrays.
+
+É aí que entra o <GlossaryTerm term="Python">Python</GlossaryTerm>. Ele é a linguagem de
+propósito geral mais usada em segurança: boa parte das ferramentas que você vai usar nas
+próximas trilhas é escrita nele (o sqlmap da Trilha 4, os scripts do
+<GlossaryTerm term="Impacket">Impacket</GlossaryTerm> da Trilha 7), e a maioria dos
+<GlossaryTerm term="exploit">exploits</GlossaryTerm> e
+<GlossaryTerm term="proof of concept">provas de conceito</GlossaryTerm> publicados junto
+com um <GlossaryTerm term="CVE">CVE</GlossaryTerm> vem em Python. Saber ler Python é saber
+o que um exploit faz **antes** de rodá-lo; saber escrever é poder adaptar uma ferramenta
+ao alvo em vez de depender de que alguém já tenha feito exatamente o que você precisa.
+
+E, como em todo o curso, a mesma habilidade aparece dos dois lados. O MITRE ATT&CK
+registra o uso de Python por atacantes como a técnica T1059.006, e o caso real da seção
+3.6 mostra um grupo que usou scripts do Impacket dentro de uma empresa do setor de defesa
+dos EUA. Do lado da defesa, Python é a linguagem de quem analisa logs, escreve
+detecções e audita código. E o próprio ecossistema do Python, com o `pip` e o PyPI, é
+alvo de ataques de cadeia de suprimentos, como você verá na seção 4.
+
+**Ao final, você vai saber:**
+
+- explicar como o Python executa um script (bytecode e máquina virtual) e por que ele
+  tem tipagem dinâmica e forte, ao contrário do Bash, onde tudo é texto;
+- usar as estruturas essenciais (`list`, `tuple`, `dict`, `set`), funções, exceções e
+  arquivos para escrever ferramentas de linha de comando com `argparse` e códigos de
+  saída corretos;
+- distinguir `str` de `bytes` e atravessar essa fronteira sem quebrar o script;
+- escrever um **connect scan** com banner grabbing e um cliente de protocolo de linha com
+  `socket`, tratando recusas, timeouts e mensagens partidas;
+- consumir uma API HTTP com JSON, autenticação, paginação, `429` e erros `5xx`, sem
+  deixar o script mentir;
+- extrair dados de saídas de ferramentas com regex e com parsers (XML do nmap, JSON);
+- reconhecer código Python perigoso (`shell=True`, `eval`, `pickle`, `extractall` sem
+  filtro, `verify=False`) e revisá-lo com o Bandit, usando ambientes virtuais e versões
+  fixadas para instalar dependências.
+
+**Pré-requisito:** 0.6 — Scripting: Bash (scripts, códigos de saída, stdin/stdout/stderr,
+<GlossaryTerm term="command injection">command injection</GlossaryTerm> e o hábito de
+testar o caminho de erro). Pelo 0.6, valem também o 0.4 (processos, variáveis de ambiente,
+`PATH`, `apt`), o 0.3 (terminal, arquivos, pipes, permissões), o 0.2 (TCP, portas,
+handshake, HTTP e DNS) e o 0.1 (como usar a plataforma).
+
+**Tempo estimado:** de 4 a 5 horas, incluindo as missões. Se você já programa em Python,
+leia a seção 2 rapidamente e se concentre nas seções 2.6 (bytes), 3 e 8: o que diferencia
+um script de segurança de um script qualquer é como ele trata a rede, a entrada que vem de
+fora e os erros.
+
+<Callout variant="ethics">
+Um scanner ou um coletor em Python é tão "ofensivo" quanto o nmap: só se aponta para
+sistemas com **autorização por escrito** (a Trilha 1 aprofunda escopo e a lei brasileira).
+Todas as missões deste módulo usam **dados fictícios** e um servidor de treino que você
+mesmo liga, que escuta **só em `127.0.0.1`** e não tem nenhuma vulnerabilidade. Não
+aponte os scripts das missões para nenhum outro endereço: trocar `127.0.0.1` por um IP
+da sua rede ou da internet é varrer sistemas de outras pessoas.
+</Callout>
+
+## 2. Teoria aprofundada — o Python por dentro
+
+### 2.1 Como o Python roda um script
+
+No 0.6 você viu que um script de shell é lido linha a linha por um
+<GlossaryTerm term="interpreter">interpretador</GlossaryTerm>, o Bash. O Python também é
+chamado de interpretador, mas o que acontece por dentro é um pouco diferente, e entender
+isso explica vários comportamentos que confundem quem vem do Bash.
+
+O Python que você instala no Linux é o <GlossaryTerm term="CPython">CPython</GlossaryTerm>,
+a implementação de referência, escrita em C. Quando você roda `python3 sondar.py`, ele faz
+duas coisas:
+
+1. **Compila** o arquivo inteiro para <GlossaryTerm term="bytecode">bytecode</GlossaryTerm>,
+   um conjunto de instruções simples, parecidas com as de um processador, mas pensadas
+   para uma máquina virtual. Nessa fase ele confere a **sintaxe** do arquivo todo.
+2. **Executa** o bytecode numa máquina virtual: um laço que pega uma instrução por vez e
+   a realiza.
+
+Você pode ver o bytecode com o módulo `dis` (saída real no Python 3.14 do WSL):
+
+```console
+$ python3 -c "import dis; dis.dis('total = porta + 1')"
+  0           RESUME                   0
+
+  1           LOAD_NAME                0 (porta)
+              LOAD_SMALL_INT           1
+              BINARY_OP                0 (+)
+              STORE_NAME               1 (total)
+              LOAD_CONST               1 (None)
+              RETURN_VALUE
+```
+
+Leia de cima para baixo: carregue o valor do nome `porta`, carregue o número 1, some, e
+guarde o resultado no nome `total`. Os nomes exatos das instruções mudam entre versões do
+Python (é um detalhe interno), mas a ideia não muda.
+
+Duas consequências práticas dessa divisão em duas fases:
+
+- **Erro de sintaxe para tudo antes de começar.** Se faltar um `:` na linha 300, nenhuma
+  linha roda, nem a primeira. No Bash, ao contrário, as linhas anteriores ao erro já teriam
+  executado.
+- **Erro de tipo só aparece quando a linha roda.** Uma soma de texto com número escondida
+  dentro de um `if` que quase nunca é verdadeiro passa despercebida até o dia em que o `if`
+  for verdadeiro. Por isso testar os caminhos raros (o "caminho de erro" do 0.6) é ainda
+  mais importante em Python.
+
+Para não recompilar a cada execução, o CPython guarda o bytecode dos **módulos importados**
+em arquivos `.pyc`, numa pasta `__pycache__` ao lado do código (no sistema, por exemplo,
+`/usr/lib/python3.14/__pycache__/__future__.cpython-314.pyc`). O script que você roda
+diretamente é sempre recompilado.
+
+<Figure
+  src={bytecode}
+  alt="Diagrama em duas partes. Em cima, o caminho de um script no CPython: o arquivo sondar.py, que é texto, passa pelo compilador, que confere a sintaxe e gera bytecode (LOAD_NAME porta, BINARY_OP +, STORE_NAME total); o bytecode pode ficar em cache em __pycache__ como arquivos .cpython-314.pyc; a máquina virtual executa uma instrução por vez e, para rede e arquivos, pede ao kernel por system calls. Dois avisos: SyntaxError para antes de rodar qualquer linha; TypeError só aparece quando aquela linha é executada. Embaixo, nomes como etiquetas: portas e outra apontam para o mesmo objeto list [22, 80, 443, 8080]; copia aponta para outro objeto, [22, 80, 443, 8080, 9999]."
+  caption="O CPython compila o arquivo inteiro para bytecode e só então executa. E variáveis são etiquetas coladas em objetos: duas etiquetas podem estar no mesmo objeto."
+/>
+
+**Rodar Python: três jeitos.** Você vai usar os três:
+
+- `python3 script.py arg1 arg2`: roda um arquivo, passando argumentos.
+- `python3` sozinho abre o <GlossaryTerm term="REPL">REPL</GlossaryTerm> (*Read-Eval-Print
+  Loop*), o modo interativo: você digita uma linha depois do prompt `>>>`, ele executa e
+  mostra o resultado. É o melhor lugar para testar uma ideia ("o que `split()` devolve
+  aqui?") antes de pô-la num script. Sai-se com `exit()` ou Ctrl+D.
+- `python3 -m módulo`: roda um módulo da biblioteca pelo nome, como `python3 -m venv` ou
+  `python3 -m http.server`. Você vai ver isso na seção 5.
+
+Como no Bash, um arquivo Python pode virar comando com um
+<GlossaryTerm term="shebang">shebang</GlossaryTerm> e `chmod +x`. A primeira linha
+`#!/usr/bin/env python3` faz o kernel chamar o `python3` encontrado no `PATH` (com a mesma
+ressalva de segurança do 0.6: quem controla o `PATH` escolhe o interpretador).
+
+Sobre versões: este módulo usa **Python 3**. O Python 2 foi encerrado pelos
+desenvolvedores em 1º de janeiro de 2020 (a última versão, a 2.7.18, saiu em abril de
+2020), mas você ainda vai encontrar exploits antigos escritos para ele, com `print "x"`
+sem parênteses. A seção 6.6 mostra como reconhecê-los.
+
+### 2.2 Nomes, objetos e tipos
+
+Em Python, **todo valor é um <GlossaryTerm term="object">objeto</GlossaryTerm>**: o número
+80, o texto `"ssh"`, uma lista de portas. Cada objeto tem um **tipo** (que diz o que se
+pode fazer com ele), uma **identidade** (onde ele mora na memória, vista com `id()`) e um
+**valor**. Uma variável não é uma caixa que guarda o valor; é um **nome** colado num
+objeto.
+
+Duas propriedades definem como o Python trata tipos, e as duas são diferentes do Bash:
+
+- <GlossaryTerm term="dynamic typing">Tipagem dinâmica</GlossaryTerm> (*dynamic typing*):
+  o tipo está no objeto, não no nome. Você não declara `int porta`; escreve `porta = 80`,
+  e depois pode até fazer `porta = "oitenta"`. O nome só aponta para outro objeto.
+- <GlossaryTerm term="strong typing">Tipagem forte</GlossaryTerm> (*strong typing*): o
+  Python **não converte tipos por conta própria** numa operação ambígua. Texto mais número
+  é erro, não um palpite.
+
+Saídas reais:
+
+```pycon
+>>> type(80), type("80"), type(8.0), type(True), type(None), type(b"80")
+(<class 'int'>, <class 'str'>, <class 'float'>, <class 'bool'>, <class 'NoneType'>, <class 'bytes'>)
+>>> "80" + 1
+TypeError: can only concatenate str (not "int") to str
+>>> int("80") + 1, "80" + str(1), "80" * 3
+(81, '801', '808080')
+```
+
+Compare com o Bash, onde `porta=80` guardava os caracteres `8` e `0` e só a expansão
+aritmética `$(( ))` os lia como número. Em Python, `"80"` (um `str`) e `80` (um `int`) são
+coisas diferentes, e você converte explicitamente com `int()` e `str()`. Isso é exatamente
+o que você quer num script de segurança: um número de porta que chegou como texto de uma
+ferramenta vai falhar alto na conversão, em vez de virar silenciosamente outra coisa.
+
+Alguns detalhes que pegam quem vem do Bash ou do C:
+
+```pycon
+>>> 7 / 2, 7 // 2, 7 % 2, 2 ** 64
+(3.5, 3, 1, 18446744073709551616)
+>>> bool(""), bool("0"), bool([]), bool(0)
+(False, True, False, False)
+```
+
+A divisão `/` sempre dá `float`; `//` é a divisão inteira (a do Bash). Os inteiros não
+estouram: `2 ** 64` dá o número exato, o que é ótimo para criptografia e cálculo de
+endereços. E, num `if`, valores "vazios" (`""`, `0`, `[]`, `{}`, `None`) contam como
+falso, mas o texto `"0"` não é vazio: é verdadeiro.
+
+**Nomes são etiquetas.** Como variáveis são nomes colados em objetos, `outra = portas`
+**não copia** a lista; cola uma segunda etiqueta no mesmo objeto (diagrama acima). Saída
+real:
+
+```pycon
+>>> portas = [22, 80, 443]
+>>> outra = portas
+>>> outra.append(8080)
+>>> portas, outra is portas
+([22, 80, 443, 8080], True)
+>>> copia = list(portas); copia.append(9999)
+>>> portas, copia
+([22, 80, 443, 8080], [22, 80, 443, 8080, 9999])
+```
+
+O operador `is` pergunta "é o **mesmo** objeto?", enquanto `==` pergunta "tem o mesmo
+valor?". Isso só importa para objetos que podem mudar, e aí entra a
+<GlossaryTerm term="mutability">mutabilidade</GlossaryTerm> (*mutability*): listas,
+dicionários e conjuntos são **mutáveis** (podem ser alterados depois de criados); números,
+textos, tuplas e `bytes` são **imutáveis** (toda "alteração" cria um objeto novo). Um bug
+clássico de ferramenta: uma função que recebe a lista de alvos e a altera "só para ela"
+está alterando a lista de quem chamou.
+
+### 2.3 As quatro estruturas que você vai usar o tempo todo
+
+Quase todo script de segurança é: ler dados, organizar numa estrutura, cruzar, emitir. As
+estruturas embutidas do Python fazem o trabalho que no Bash exigia `sort | uniq -c`,
+arrays associativos e muita atenção a espaços.
+
+| Estrutura | Escrita | Propriedades | Uso típico em segurança |
+|---|---|---|---|
+| <GlossaryTerm term="list">list</GlossaryTerm> | `[22, 80, 443]` | ordenada, mutável, aceita repetidos | alvos, portas, linhas de um log |
+| <GlossaryTerm term="tuple">tuple</GlossaryTerm> | `("192.168.0.10", 80)` | ordenada, **imutável** | um par IP/porta, um registro fixo |
+| <GlossaryTerm term="dictionary">dict</GlossaryTerm> | `{22: "ssh", 80: "http"}` | chave → valor, chaves únicas | porta → serviço, IP → dados do host |
+| <GlossaryTerm term="set">set</GlossaryTerm> | `{22, 80, 443}` | sem ordem, **sem repetição** | portas vistas, IPs únicos, diferenças entre varreduras |
+
+Saídas reais, com os detalhes que importam:
+
+```pycon
+>>> servico = {22: "ssh", 80: "http"}
+>>> servico[22], servico.get(3306, "desconhecido")
+('ssh', 'desconhecido')
+>>> servico[3306]
+KeyError: 3306
+>>> t = ("192.168.0.10", 80)
+>>> t[1] = 81
+TypeError: 'tuple' object does not support item assignment
+>>> a = {22, 80, 443}; b = {80, 8080}
+>>> a & b, a | b, a - b
+({80}, {80, 8080, 22, 443}, {443, 22})
+```
+
+- `d[chave]` lança `KeyError` se a chave não existe; `d.get(chave, padrão)` devolve um
+  valor padrão. Use o primeiro quando a ausência é um erro, o segundo quando é normal.
+- A tupla recusa alteração: é uma garantia, não uma limitação.
+- Com conjuntos, "o que mudou entre a varredura de ontem e a de hoje" é uma linha:
+  `hoje - ontem` (portas novas) e `ontem - hoje` (portas que sumiram).
+
+**Duas ferramentas que vão aparecer nas missões.** A primeira é a
+<GlossaryTerm term="list comprehension">list comprehension</GlossaryTerm>, um jeito
+compacto de criar uma lista a partir de outra, com filtro:
+
+```pycon
+>>> [p for p in portas if p > 100]
+[443, 8080]
+>>> {p: p in (80, 8080) for p in portas}
+{22: False, 80: True, 443: False, 8080: True}
+```
+
+Leia como em português: "p, para cada p em portas, se p maior que 100". A segunda linha é
+a mesma ideia criando um dicionário.
+
+A segunda é o `collections.Counter`, um dicionário especializado em contar. É o
+`sort | uniq -c | sort -rn` do 0.6 em uma linha:
+
+```python
+from collections import Counter
+contagem = Counter(["http", "ssh", "http", "ftp", "http"])
+print(contagem.most_common(2))     # [('http', 3), ('ssh', 1)]
+```
+
+**Desempacotar e formatar.** Uma tupla ou lista pode ser "aberta" em vários nomes de uma
+vez (`ip, porta = t`), e a <GlossaryTerm term="f-string">f-string</GlossaryTerm> (texto com
+prefixo `f`) avalia o que está entre chaves e formata:
+
+```pycon
+>>> ip, porta = t
+>>> f"{ip}:{porta}", f"{porta:>6}|", f"{0.4567:.1%}"
+('192.168.0.10:80', '    80|', '45.7%')
+```
+
+O que vem depois do `:` dentro das chaves é a especificação de formato: `>6` alinha à
+direita em 6 colunas, `.1%` mostra como porcentagem com uma casa. É o `printf` do 0.6,
+mais legível. Guarde uma regra que a seção 3.5 vai justificar: **f-string serve para montar
+texto para pessoas, nunca para montar um comando de shell**.
+
+### 2.4 Blocos, decisões, laços e funções
+
+Em Python, os blocos não são marcados por `then ... fi` ou `do ... done`, mas pela
+<GlossaryTerm term="indentation">indentação</GlossaryTerm>: as linhas de um bloco têm o
+mesmo recuo (por convenção, 4 espaços), e a linha que abre o bloco termina com `:`.
+
+```python
+for porta in portas:
+    if porta in (80, 8080):
+        print(f"{porta}: web")
+    elif porta == 22:
+        print(f"{porta}: ssh")
+    else:
+        print(f"{porta}: outro")
+print("fim")          # fora do for: recuo zero
+```
+
+O recuo é **sintaxe**, não estética. Um recuo que não casa com nenhum bloco é erro antes de
+qualquer linha rodar (saída real; o arquivo tem um `print("fim")` com 2 espaços depois de
+um bloco de 4):
+
+```console
+$ python3 ind.py
+  File "ind.py", line 4
+    print("fim")
+                ^
+IndentationError: unindent does not match any outer indentation level
+```
+
+As diferenças em relação ao Bash que mais importam:
+
+- O `if` testa uma **expressão** (verdadeira ou falsa), não o código de saída de um
+  comando. `and`, `or` e `not` são palavras, e comparações se encadeiam:
+  `1 <= porta <= 65535`.
+- O `for` percorre os **itens** de qualquer coleção (lista, linhas de um arquivo, chaves de
+  um dicionário). Não há word splitting: um item com espaço continua sendo um item. O
+  problema número um do 0.6 simplesmente não existe aqui.
+- `range(8070, 8080)` gera os números de 8070 a **8079**: o fim não entra. É a fonte do
+  erro "faltou a última porta".
+- `while condição:` repete enquanto a condição for verdadeira; `break` e `continue`
+  funcionam como no Bash.
+
+**Funções** são definidas com `def`, recebem parâmetros com nome e **devolvem valores** com
+`return` (qualquer objeto, não só um código de 0 a 255 como no Bash):
+
+```python
+def probe(port, timeout=1.0):
+    """Tenta conectar e devolve ("aberta", banner), ("fechada", None)..."""
+    ...
+    return "aberta", banner
+
+estado, banner = probe(8071)            # timeout usa o padrão
+estado, banner = probe(8071, timeout=3) # argumento por nome
+```
+
+O texto entre três aspas logo abaixo do `def` é a *docstring*: a documentação da função,
+que o `help()` mostra. As variáveis criadas dentro da função são **locais** por padrão (o
+contrário do Bash, onde tudo era global e era preciso `local`).
+
+**O ponto de entrada.** Todo script das missões termina assim:
+
+```python
+def main():
+    ...
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+Quando o arquivo é executado diretamente, o Python dá a ele o nome especial `"__main__"`, e
+o `main()` roda. Quando o mesmo arquivo é **importado** por outro (seção 2.8), o nome é o
+do módulo, e o `main()` não roda: as funções ficam disponíveis para reuso, sem efeitos
+colaterais. `sys.exit(main())` faz o código de saída do script ser o que o `main()`
+devolveu, exatamente como os códigos 2 e 3 do `resumo.sh` do 0.6.
+
+### 2.5 Exceções: o erro como objeto
+
+No Bash, um comando que falha devolve um código diferente de 0, e o script segue em frente
+a não ser que você teste (ou use `set -e`, com todos os pontos cegos que você viu). Em
+Python, um erro é uma <GlossaryTerm term="exception">exceção</GlossaryTerm>: um objeto que
+**interrompe** o fluxo na hora e sobe pela pilha de chamadas até alguém tratá-lo. Se
+ninguém trata, o script termina com código 1 e imprime um
+<GlossaryTerm term="traceback">traceback</GlossaryTerm>. Saída real:
+
+```console
+$ cat tb.py
+def f(d):
+    return d["porta"] + 1
+f({"porta": "80"})
+$ python3 tb.py; echo "rc=$?"
+Traceback (most recent call last):
+  File "tb.py", line 3, in <module>
+    f({"porta": "80"})
+    ~^^^^^^^^^^^^^^^^^
+  File "tb.py", line 2, in f
+    return d["porta"] + 1
+           ~~~~~~~~~~~^~~
+TypeError: can only concatenate str (not "int") to str
+rc=1
+```
+
+Leia o traceback **de baixo para cima**: a última linha diz o quê (tipo e mensagem); as
+linhas acima dizem onde, da chamada mais interna (linha 2, dentro de `f`) para a mais
+externa (linha 3). Os `~~~^` apontam a operação exata. Esse é o padrão "falhar alto": em
+vez de seguir com um valor errado, o script para e diz exatamente por quê.
+
+Para tratar um erro que você **espera** e sabe resolver, use `try`/`except`:
+
+```python
+try:
+    s.connect((HOST, port))
+except ConnectionRefusedError:
+    return "fechada", None          # esperado: a porta recusou
+except TimeoutError:
+    return "sem resposta", None     # esperado: nada voltou a tempo
+finally:
+    ...                             # roda sempre, com ou sem erro
+```
+
+As regras que separam um script confiável de um script que mente:
+
+- **Trate exceções específicas.** `except ConnectionRefusedError` diz o que você espera.
+  `except Exception` pega quase tudo, inclusive bugs seus (um `KeyError` de digitação, um
+  `TypeError`).
+- **Nunca engula em silêncio.** `except: pass` é o equivalente Python do `2>/dev/null` com
+  `|| true` do 0.6: o erro some e o resultado fica errado sem nenhum aviso. A Missão 3 tem
+  um exemplo real: um coletor com `except Exception: pass` contou 32 hosts, sem uma
+  mensagem de erro sequer; o certo eram 94.
+- **Trate onde você consegue fazer algo útil.** Se não há o que fazer, deixe a exceção
+  subir: o traceback é informação.
+- **`finally` e `with` limpam.** Código em `finally` roda sempre, como o `trap ... EXIT`
+  do 0.6.
+
+### 2.6 Texto e bytes: a fronteira da rede
+
+Esta é a seção mais importante para quem vai escrever ferramentas de rede, e a fonte do
+erro mais comum nas primeiras semanas.
+
+O Python tem **dois** tipos para "sequência de caracteres":
+
+- `str` é **texto**: uma sequência de caracteres <GlossaryTerm term="Unicode">Unicode</GlossaryTerm>
+  (letras de qualquer língua, símbolos, emojis). É o que você manipula com `split()`,
+  `strip()`, f-strings.
+- <GlossaryTerm term="bytes">bytes</GlossaryTerm> é uma sequência de **números de 0 a 255**,
+  escrita `b"..."`. É o que o kernel, os arquivos binários, os sockets e a rede conhecem.
+  A rede não sabe o que é "ã"; sabe o que é o byte `0xc3`.
+
+Para atravessar a fronteira, existe uma **codificação**
+(<GlossaryTerm term="encoding">encoding</GlossaryTerm>): a regra que diz como cada
+caractere vira bytes. A mais usada hoje é a <GlossaryTerm term="UTF-8">UTF-8</GlossaryTerm>,
+em que os caracteres do <GlossaryTerm term="ASCII">ASCII</GlossaryTerm> (letras sem acento,
+dígitos) ocupam 1 byte e os outros, de 2 a 4. Saídas reais:
+
+```pycon
+>>> s = "ação"
+>>> b = s.encode("utf-8")
+>>> s, len(s), b, len(b)
+('ação', 4, b'a\xc3\xa7\xc3\xa3o', 6)
+>>> b.decode("utf-8")
+'ação'
+>>> b.decode("ascii")
+UnicodeDecodeError: 'ascii' codec can't decode byte 0xc3 in position 1: ordinal not in range(128)
+>>> b.decode("ascii", errors="replace")
+'a����o'
+>>> "x" + b"y"
+TypeError: can only concatenate str (not "bytes") to str
+```
+
+- `str.encode()` vai de texto para bytes; `bytes.decode()`, de bytes para texto. Quatro
+  caracteres viraram seis bytes, porque `ç` e `ã` ocupam dois bytes cada em UTF-8 (o `\xc3`
+  é um byte mostrado em <GlossaryTerm term="hexadecimal">hexadecimal</GlossaryTerm>).
+- Decodificar com a codificação errada lança `UnicodeDecodeError`. Com
+  `errors="replace"`, o byte inválido vira `�` e o script segue: é o que você quer ao ler o
+  banner de um serviço desconhecido, que pode mandar qualquer coisa.
+- `str` e `bytes` não se misturam. O Python 3 obriga você a decidir em que lado está.
+
+Os `bytes` também se comportam como uma lista de números, o que é útil para protocolos
+binários (seção 6.3):
+
+```pycon
+>>> list(b"SSH"), bytes([83, 83, 72]), b"SSH"[0], b"SSH".hex()
+([83, 83, 72], b'SSH', 83, '535348')
+```
+
+<Figure
+  src={strBytes}
+  alt="Diagrama da fronteira entre str e bytes. À esquerda, o programa, onde texto é str: ação tem 4 caracteres; SSH-2.0-TreinoSSH_0.7 é texto com split e strip. À direita, kernel, socket e rede, onde só há bytes: b'a\xc3\xa7\xc3\xa3o' tem 6 bytes em UTF-8; sendall e recv só aceitam bytes. Uma seta .encode('utf-8') vai do texto aos bytes antes de enviar; outra, .decode('utf-8'), volta depois de receber. Embaixo, três erros reais: str mais bytes dá TypeError; decode com ascii dá UnicodeDecodeError; errors='replace' troca o byte ruim por um caractere de substituição e o script segue vivo."
+  caption="Todo script de rede tem uma fronteira: encode na saída, decode na entrada. Erros de str e bytes quase sempre são alguém atravessando essa fronteira sem perceber."
+/>
+
+### 2.7 Arquivos, argumentos e o mundo fora do script
+
+**Arquivos.** O jeito certo de abrir um arquivo é com `with`:
+
+```python
+with open("dados/versoes-criticas.txt", encoding="utf-8") as f:
+    for line in f:                       # uma linha por volta, com o \n no fim
+        line = line.strip()
+        ...
+# aqui o arquivo já foi fechado, mesmo se houve exceção no meio
+```
+
+O `with` usa um <GlossaryTerm term="context manager">context manager</GlossaryTerm>: um
+objeto que garante uma ação de saída (aqui, fechar o arquivo) aconteça sempre, com ou sem
+erro. Sockets também são context managers (`with socket.create_connection(...) as s:`),
+e você vai usar isso na Missão 2. Três detalhes:
+
+- Passe sempre `encoding="utf-8"` ao abrir texto; sem isso, o Python usa a codificação
+  padrão do sistema, que pode não ser a do arquivo.
+- `open(caminho, "rb")` abre em modo binário e devolve `bytes`; `"w"` sobrescreve, `"a"`
+  acrescenta no fim.
+- `for line in f` lê uma linha por vez, sem carregar o arquivo inteiro na memória: um log de
+  10 GB não é problema.
+
+**Entrada, saída e códigos.** O módulo `sys` dá acesso ao mundo do 0.3 e do 0.6:
+`sys.argv` (a lista de argumentos, com o nome do script em `sys.argv[0]`), `sys.stdin`,
+`sys.stdout`, `sys.stderr` e `sys.exit(código)`. A regra do 0.6 continua: resultados no
+<GlossaryTerm term="stdout">stdout</GlossaryTerm>, mensagens de erro no
+<GlossaryTerm term="stderr">stderr</GlossaryTerm> (`print(..., file=sys.stderr)`), e um
+<GlossaryTerm term="exit code">código de saída</GlossaryTerm> diferente de 0 para cada tipo
+de falha.
+
+**argparse.** Ler `sys.argv` à mão funciona para um argumento. Para uma ferramenta de
+verdade, use o <GlossaryTerm term="argparse">argparse</GlossaryTerm>, da biblioteca padrão,
+que gera o `--help`, valida os argumentos e recusa entrada errada com o código 2
+(convenção que o próprio Python segue). Saída real do `resumo_nmap.py` da Missão 1, sem
+argumentos:
+
+```console
+$ python3 resumo_nmap.py; echo "rc=$?"
+usage: resumo_nmap.py [-h] arquivo
+resumo_nmap.py: error: the following arguments are required: arquivo
+rc=2
+```
+
+Você ganhou validação e mensagem de uso sem escrever nenhum `if`. Opções como
+`--timeout 2.5` com `type=float` já chegam convertidas, e um valor inválido gera erro antes
+de o seu código rodar.
+
+### 2.8 Módulos, a biblioteca padrão e o que um import realmente faz
+
+Um <GlossaryTerm term="Python module">módulo</GlossaryTerm> é um arquivo `.py` cujo
+conteúdo pode ser usado por outro programa com <GlossaryTerm term="import">import</GlossaryTerm>.
+O Python já vem com centenas de módulos prontos, a
+<GlossaryTerm term="standard library">biblioteca padrão</GlossaryTerm> (*standard
+library*), e é ela que torna o Python tão útil em segurança sem instalar nada:
+
+| Módulo | Para quê | Onde aparece neste módulo |
+|---|---|---|
+| `socket` | conexões TCP e UDP | Missão 2 |
+| `urllib.request`, `urllib.error` | HTTP | Missão 3 |
+| `json`, `xml.etree.ElementTree` | dados estruturados | Missões 1 e 3 |
+| `re` | expressões regulares | seção 3.1 |
+| `argparse`, `sys` | linha de comando | todas |
+| `hashlib`, `base64` | hashes e codificações | Missão 2, seção 6.4 |
+| `subprocess` | chamar outros programas | seção 3.5 |
+| `concurrent.futures` | paralelismo | seção 6.1 |
+| `tarfile` | arquivos `.tar` | seções 4 e 8 |
+
+Além da biblioteca padrão existe o <GlossaryTerm term="PyPI">PyPI</GlossaryTerm> (*Python
+Package Index*), um repositório público com centenas de milhares de pacotes, instalados com
+o <GlossaryTerm term="pip">pip</GlossaryTerm>. Qualquer pessoa pode publicar no PyPI, e isso
+é ao mesmo tempo a força e o risco do ecossistema (seção 4).
+
+**O que o import faz por dentro**, e por que isso é assunto de segurança:
+
+1. O Python procura o módulo numa lista de pastas, `sys.path`, **começando pela pasta do
+   script** que você está rodando.
+2. Ao encontrar, ele **executa** o arquivo do módulo de cima a baixo, uma vez, para criar
+   as funções e variáveis dele.
+
+A consequência 1 é um erro clássico: se você salvar um exercício como `socket.py`, o
+`import socket` dos seus outros scripts naquela pasta carrega o **seu** arquivo, e não o da
+biblioteca (seção 7). A consequência 2 é o coração dos ataques de cadeia de suprimentos:
+importar, ou mesmo instalar, um pacote é **executar o código de quem o publicou**, com os
+seus privilégios. Foi assim no caso PyTorch da seção 4.
+
+## 3. Na prática da segurança
+
+Agora que você sabe como o Python funciona por dentro, veja como ele aparece no trabalho
+de quem ataca e de quem defende. Esta seção é a ponte entre a teoria e as missões.
+
+### 3.1 Parsing: transformar a saída de uma ferramenta em dados
+
+Boa parte do trabalho de um pentester é ler a saída de uma ferramenta e decidir o próximo
+passo. *Parsing* é transformar essa saída em dados que um programa entende: listas,
+dicionários, números. Há dois jeitos, e saber quando usar cada um é o que importa.
+
+**Regex, para texto sem estrutura.** O módulo `re` traz as
+<GlossaryTerm term="regular expression">expressões regulares</GlossaryTerm> que você usou
+com o `grep` no 0.3. Elas são ótimas para extrair um pedaço de uma linha solta: a versão
+num banner, um IP num log. Exemplo, com o banner real da Missão 2:
+
+```python
+import re
+banner = "SSH-2.0-TreinoSSH_0.7"
+m = re.match(r"SSH-(?P<proto>[\d.]+)-(?P<software>\S+)", banner)
+if m:
+    print(m["proto"], m["software"])      # 2.0 TreinoSSH_0.7
+```
+
+O `r"..."` é uma *raw string*: as barras invertidas ficam literais, para a regex recebê-las
+intactas. `(?P<nome>...)` dá nome a um grupo, que se lê com `m["nome"]`. E **sempre teste
+se casou** (`if m:`): uma regex que não casa devolve `None`, e `None["proto"]` é um
+`TypeError` no meio da varredura.
+
+**Parser, para dados estruturados.** Quando a saída tem estrutura (elementos dentro de
+elementos, campos com nome), use o parser do formato. O próprio nmap recomenda, na
+documentação oficial, que programas usem a saída <GlossaryTerm term="XML">XML</GlossaryTerm>
+(`-oX`) em vez de tentar interpretar a saída normal ou a *grepable*. Este é um trecho da
+saída XML de exemplo da documentação do nmap:
+
+```xml
+<host starttime="1315618421" endtime="1315618434">
+ <status state="up" reason="echo-reply"/>
+ <address addr="74.207.244.221" addrtype="ipv4"/>
+ <ports>
+  <extraports state="closed" count="997">
+   <extrareasons reason="resets" count="997"/>
+  </extraports>
+  <port protocol="tcp" portid="22">
+   <state state="open" reason="syn-ack" reason_ttl="53"/>
+   <service name="ssh" product="OpenSSH" version="5.3p1 Debian 3ubuntu7" .../>
+  </port>
+ </ports>
+</host>
+```
+
+Cada host é um elemento `<host>`; dentro dele, `<status>` diz se está ativo, `<address>`
+traz o IP, e cada porta interessante é um `<port>` com o protocolo e o número, um
+`<state>` com o estado e um `<service>` com o serviço. As portas no estado mais comum são
+resumidas num `<extraports>` com a contagem (aqui, 997 fechadas), em vez de listadas uma a
+uma.
+
+Um <GlossaryTerm term="XML parser">parser de XML</GlossaryTerm> lê isso e monta uma
+árvore que você percorre por estrutura. Com o `xml.etree.ElementTree` da biblioteca padrão:
+
+```python
+import xml.etree.ElementTree as ET
+root = ET.parse("varredura.xml").getroot()
+for host in root.iter("host"):
+    ip = host.find("address").get("addr")
+    for port in host.iter("port"):
+        state = port.find("state").get("state")
+        print(ip, port.get("protocol"), port.get("portid"), state)
+```
+
+`iter("host")` percorre todos os elementos `host`; `find("address")` pega o primeiro filho
+com esse nome; `get("addr")` lê um atributo. A diferença para o `grep` é que o parser sabe
+**a que host e a que protocolo** cada `state="open"` pertence. Na Missão 1 você vai ver o
+custo de não saber: o `grep` conta 170 ou 236 portas abertas; o certo são 163.
+
+Para JSON, o formato das APIs, o módulo `json` faz a conversão nos dois sentidos, e cada
+tipo do <GlossaryTerm term="JSON">JSON</GlossaryTerm> vira um tipo do Python (objeto vira
+`dict`, lista vira `list`, `true` vira `True`, `null` vira `None`):
+
+```pycon
+>>> json.loads('{"porta": 80, "aberta": true, "banner": null}')
+{'porta': 80, 'aberta': True, 'banner': None}
+>>> json.dumps({'porta': 80, 'aberta': True, 'banner': None})
+'{"porta": 80, "aberta": true, "banner": null}'
+```
+
+### 3.2 Sockets: conversar com um serviço
+
+No 0.2 você viu que um <GlossaryTerm term="socket">socket</GlossaryTerm> é a ponta de uma
+conexão, identificada por IP e porta, e que uma conexão
+<GlossaryTerm term="TCP">TCP</GlossaryTerm> começa com o
+<GlossaryTerm term="three-way handshake">three-way handshake</GlossaryTerm> (SYN, SYN-ACK,
+ACK). O módulo `socket` do Python é uma camada fina sobre as
+<GlossaryTerm term="system call">system calls</GlossaryTerm> do kernel: cada método
+corresponde quase diretamente a uma chamada do sistema operacional.
+
+O lado do cliente, que é o que um scanner faz:
+
+```python
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4, TCP
+s.settimeout(1.0)                 # nenhuma operação espera mais de 1 s
+s.connect(("127.0.0.1", 8071))    # dispara o handshake; volta quando ele termina
+dados = s.recv(1024)              # até 1024 bytes (bytes, não str!)
+s.sendall(b"QUIT\r\n")            # envia TODOS os bytes
+s.close()
+```
+
+E o do servidor, que escuta: `bind((ip, porta))` reserva o endereço, `listen()` passa a
+aceitar conexões e `accept()` devolve um socket novo para cada cliente. O servidor de treino
+das missões faz exatamente isso, com `bind` em `127.0.0.1`, e por isso só é alcançável de
+dentro da sua máquina (o <GlossaryTerm term="loopback">loopback</GlossaryTerm> do 0.1).
+
+**O connect scan.** Se o `connect` termina, o handshake completou: a porta está aberta. É o
+<GlossaryTerm term="connect scan">connect scan</GlossaryTerm> (o `-sT` do nmap, que você
+verá na Trilha 2), o tipo de varredura que qualquer programa sem privilégios consegue fazer,
+porque usa a chamada normal de conexão do sistema. Saídas reais contra o servidor de treino:
+
+```pycon
+>>> s = socket.socket(); s.settimeout(1); s.connect(("127.0.0.1", 8070))
+ConnectionRefusedError: [Errno 111] Connection refused
+>>> s = socket.socket(); s.settimeout(1); s.connect(("127.0.0.1", 8071)); s.recv(1024)
+b'SSH-2.0-TreinoSSH_0.7\r\n'
+>>> s = socket.socket(); s.settimeout(1); s.connect(("127.0.0.1", 8077)); s.recv(1024)
+TimeoutError: timed out
+```
+
+Três portas, três comportamentos, e cada um é informação:
+
+- **8070, recusa.** Nada escuta ali; o kernel respondeu com
+  <GlossaryTerm term="RST">RST</GlossaryTerm>, e o Python transformou isso em
+  `ConnectionRefusedError` (o `Errno 111` é o `ECONNREFUSED` do Linux). Porta **fechada**.
+- **8071, banner.** O serviço fala primeiro: assim que a conexão abre, ele manda uma linha
+  de identificação. Ler essa linha é o
+  <GlossaryTerm term="banner grabbing">banner grabbing</GlossaryTerm>, a forma mais simples
+  de descobrir o que roda numa porta.
+- **8077, silêncio depois de conectar.** A conexão abriu (porta aberta), mas o `recv`
+  esgotou o prazo: o serviço espera o **cliente** falar primeiro. É o caso do HTTP: o
+  servidor não diz nada até receber um pedido.
+
+Existe um quarto caso, que o loopback não reproduz: o `connect` não recebe **nada**, nem
+SYN-ACK, nem RST, e o prazo esgota (`TimeoutError` no `connect`). Foi o que aconteceu num
+teste contra `192.0.2.1`, um endereço reservado para documentação (RFC 5737) que ninguém
+usa: `TimeoutError: timed out`. Na prática, isso costuma ser um firewall descartando os
+pacotes, o estado que o nmap chama de *filtered* (a
+<GlossaryTerm term="filtered port">porta filtrada</GlossaryTerm> do 0.2). Sem um
+<GlossaryTerm term="socket timeout">socket timeout</GlossaryTerm> (o prazo definido com
+`settimeout`), o `connect` usaria o prazo do sistema, que pode passar de um minuto por
+porta: o motivo pelo qual um scanner sem timeout "trava".
+
+**Fluxo de bytes, não mensagens.** O TCP entrega os bytes em ordem e sem perdas, mas **não
+preserva as fronteiras** de cada envio. Se o servidor faz dois `sendall` de uma linha cada,
+o cliente pode receber as duas num único `recv`; se o servidor manda uma linha em duas
+partes, o cliente pode receber meia linha. Por isso todo protocolo define o seu
+<GlossaryTerm term="message framing">message framing</GlossaryTerm>, a regra que diz onde
+termina cada mensagem: um delimitador (como a quebra de linha nos protocolos de texto: SMTP,
+FTP, o próprio cabeçalho HTTP) ou um tamanho no começo (comum em protocolos binários). O
+banner da porta 8074 já mostra isso: um único `recv` trouxe **duas** linhas.
+
+A solução mais simples para protocolos de linha é deixar o Python acumular os bytes e
+entregar uma linha por vez, com `socket.makefile()`:
+
+```python
+f = s.makefile("rw", encoding="utf-8", newline="\n")
+linha = f.readline()           # espera até chegar um \n completo
+f.write("HELLO aluno\n"); f.flush()
+```
+
+O `makefile` embrulha o socket num objeto parecido com um arquivo de texto: `readline()`
+acumula internamente até chegar o delimitador. A Missão 2 depende disso, e a Dica 2 dela
+mostra a saída real de um cliente que tentou com um `recv` por mensagem.
+
+<Figure
+  src={cicloSocket}
+  alt="Diagrama do ciclo de vida de um socket TCP. À esquerda, o cliente: socket, settimeout(1.0), connect, sendall, recv e close. À direita, o servidor: socket, bind em ip e porta 8071, listen, accept, recv, sendall e close. No meio, o connect dispara SYN, SYN-ACK e ACK e só volta depois do ACK; os dados fluem como um fluxo de bytes sem fronteiras, e um recv pode trazer meia linha ou duas linhas; FIN encerra. Embaixo, uma tabela: RST vira ConnectionRefusedError Errno 111, porta fechada; nada volta vira TimeoutError no connect, sem resposta, filtered; aceita e fala primeiro, o recv devolve o banner, aberta com banner; aceita e espera você, TimeoutError no recv, aberta sem banner como o HTTP; fecha depois de aceitar, recv devolve b'' vazio, o outro lado encerrou."
+  caption="Cada chamada do socket corresponde a um momento da conexão TCP do 0.2. A tabela de baixo é o que o seu scanner deve saber distinguir."
+/>
+
+### 3.3 HTTP e APIs a partir de um script
+
+Muito do que se testa hoje não é uma porta com um banner, mas uma
+<GlossaryTerm term="API">API</GlossaryTerm> HTTP que fala
+<GlossaryTerm term="JSON">JSON</GlossaryTerm>: um painel, um aplicativo de celular, um
+serviço interno. Nos módulos 0.1 e 0.2 você viu as peças do
+<GlossaryTerm term="HTTP">HTTP</GlossaryTerm>: o <GlossaryTerm term="HTTP method">método</GlossaryTerm>,
+o caminho com a <GlossaryTerm term="query string">query string</GlossaryTerm>, os
+<GlossaryTerm term="HTTP header">cabeçalhos</GlossaryTerm> e o
+<GlossaryTerm term="status code">status code</GlossaryTerm>. Um script faz o mesmo que o
+navegador ou o `curl`, só que com controle total.
+
+A biblioteca padrão traz o <GlossaryTerm term="urllib">urllib</GlossaryTerm>. Um pedido
+`POST` com corpo JSON, como o login da Missão 3:
+
+```python
+import json
+import urllib.request
+
+body = json.dumps({"usuario": "aluno", "senha": "treino-0.7"}).encode()   # str -> bytes
+req = urllib.request.Request(
+    "http://127.0.0.1:8077/api/login", data=body, method="POST",
+    headers={"Content-Type": "application/json", "User-Agent": "coletor-0.7/1.0"})
+with urllib.request.urlopen(req, timeout=5) as resp:
+    token = json.load(resp)["token"]
+```
+
+Repare de novo na fronteira `str`/`bytes`: o corpo vai como bytes (`.encode()`), e o
+`json.load` lê a resposta direto do objeto devolvido. O cabeçalho
+<GlossaryTerm term="Content-Type">Content-Type</GlossaryTerm> diz ao servidor que o corpo é
+JSON, e o <GlossaryTerm term="user agent">User-Agent</GlossaryTerm> identifica o cliente
+(seção 8.6 explica por que um pentester honesto se identifica).
+
+Daí em diante, a API pede o <GlossaryTerm term="token">token</GlossaryTerm> em cada pedido,
+no cabeçalho `Authorization: Bearer <token>`, o esquema de
+<GlossaryTerm term="bearer token">bearer token</GlossaryTerm>: quem apresenta o token é
+tratado como o dono dele. Duas coisas do mundo real que um script precisa tratar, e que o
+navegador esconde de você:
+
+- **Paginação.** Uma API raramente devolve mil hosts de uma vez. Ela usa
+  <GlossaryTerm term="pagination">paginação</GlossaryTerm>: uma página por pedido, com o
+  número da página ou um link para a próxima (o campo `proxima` da Missão 3). Um script que
+  esquece de seguir as páginas coleta só o começo. E paginação instável (o mesmo item
+  aparecendo no fim de uma página e no começo da seguinte) é comum: daí a importância de
+  deduplicar por uma chave, como o IP, num `dict` ou `set`.
+- **Limites e falhas.** O servidor pode responder `429 Too Many Requests` quando o cliente
+  vai rápido demais: é o <GlossaryTerm term="rate limiting">rate limiting</GlossaryTerm> que
+  a Trilha 4 aprofunda. Junto, costuma vir o cabeçalho
+  <GlossaryTerm term="Retry-After">Retry-After</GlossaryTerm>, que diz quantos segundos
+  esperar. E respostas `5xx` indicam falha do servidor, muitas vezes temporária: vale
+  tentar de novo, esperando um pouco mais a cada vez (o
+  <GlossaryTerm term="exponential backoff">exponential backoff</GlossaryTerm>), com um
+  limite de tentativas.
+
+Um detalhe do `urllib` que é a armadilha central da Missão 3: para respostas `4xx` e
+`5xx`, ele **lança** `urllib.error.HTTPError`, em vez de devolver a resposta. A saída real
+de um coletor que não trata isso:
+
+```console
+$ python3 coletor_sem_try.py
+Traceback (most recent call last):
+  ...
+  File "/usr/lib/python3.14/urllib/request.py", line 611, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 429: Too Many Requests
+```
+
+Esse script, pelo menos, falhou alto. O pior é o que "resolve" o traceback com
+`except Exception: pass`, como o do diagrama da Missão 3.
+
+### 3.4 Pequenas ferramentas de apoio ao pentest
+
+O uso mais comum de Python num pentest não é escrever um framework, e sim **pequenas
+ferramentas de 30 a 100 linhas** que fazem uma coisa que as ferramentas prontas não fazem
+exatamente do jeito necessário:
+
+- transformar a saída de uma ferramenta na entrada de outra (a Missão 1: XML do nmap vira
+  um resumo; poderia virar a lista de URLs do 0.6, agora com o parser certo);
+- falar um protocolo simples que nenhuma ferramenta conhece (a Missão 2: um serviço
+  próprio do cliente, um protocolo de linha);
+- automatizar uma API que exige login, paginação e cuidado com limites (a Missão 3);
+- calcular coisas: hashes, codificações, conversões (seção 6.4).
+
+A receita de uma boa ferramenta é a mesma do 0.6, agora com as peças do Python: **validar a
+entrada** (argparse, e recusar o que não faz sentido), **falhar alto** (exceções
+específicas, códigos de saída diferentes por tipo de falha), **emitir resultados limpos no
+stdout** (uma linha por resultado, para combinar com `sort`, `grep` e `tee`) e **ser
+educada com o alvo** (timeouts, limites de paralelismo, respeito ao 429).
+
+### 3.5 Quando o script é a falha: subprocess e companhia
+
+Uma ferramenta Python muitas vezes chama outros programas: um `ping`, um `nmap`, um
+`openssl`. O módulo para isso é o <GlossaryTerm term="subprocess">subprocess</GlossaryTerm>,
+e ele tem um modo que reabre exatamente a falha que você estudou no 0.6. Saída real:
+
+```pycon
+>>> alvo = "127.0.0.1; echo INJETADO: $(id -un)"
+>>> subprocess.run(f"echo testando {alvo}", shell=True, capture_output=True, text=True).stdout
+'testando 127.0.0.1\nINJETADO: aluno\n'
+>>> subprocess.run(["echo", "testando", alvo], capture_output=True, text=True).stdout
+'testando 127.0.0.1; echo INJETADO: $(id -un)\n'
+```
+
+- Com `shell=True`, o texto montado pela f-string vai para `/bin/sh -c`. O shell lê aquilo
+  como **código**: o `;` separa comandos e o `$( )` executa `id -un`. É a
+  <GlossaryTerm term="command injection">command injection</GlossaryTerm> do `eval` no 0.6,
+  agora em Python.
+- Com uma **lista**, o Python chama o programa diretamente (pela system call `execve`), sem
+  shell nenhum. Cada item da lista é um argumento, e o alvo inteiro, com `;` e `$( )`, é um
+  único argumento literal. Nada é interpretado.
+
+A documentação oficial do `subprocess` diz isso com todas as letras, na seção *Security
+Considerations*: a biblioteca não chama um shell implicitamente, e se o shell for chamado
+explicitamente com `shell=True`, "é responsabilidade da aplicação" garantir que espaços e
+metacaracteres estejam corretamente escapados para evitar *shell injection*.
+
+<Figure
+  src={shellOuLista}
+  alt="Diagrama em duas partes. O alvo vale 127.0.0.1; echo INJETADO: $(id -un) e veio de fora do script. Em cima, inseguro: uma f-string monta o texto echo testando seguido do alvo, com shell=True; /bin/sh -c lê o texto, o ponto e vírgula separa comandos e o $( ) executa id -un; a saída real tem duas linhas, testando 127.0.0.1 e INJETADO: aluno. Embaixo, seguro: uma lista echo, testando, alvo; execve chama o echo sem shell, e o alvo é um único argumento; a saída real é uma linha com o texto literal, testando 127.0.0.1; echo INJETADO: $(id -un). Rodapé: a mesma lição do eval no 0.6, e no mesmo grupo ficam eval, exec, os.system e pickle.loads."
+  caption="Com uma lista de argumentos não existe shell para enganar. É a mesma regra do 0.6: dados de fora nunca são lidos de novo como código."
+/>
+
+O mesmo princípio vale para outras funções do Python que transformam dado em código:
+
+- <GlossaryTerm term="eval">eval</GlossaryTerm>`()` e `exec()` executam texto como código
+  Python. Para ler um literal (uma lista, um número) que veio como texto, use
+  `ast.literal_eval()`, que só aceita literais e recusa chamadas de função (saída real:
+  `ast.literal_eval('[22, 80]')` devolve `[22, 80]`; com
+  `'__import__("os").system("id")'`, lança `ValueError: malformed node or string`).
+- `os.system()` sempre usa o shell. Prefira `subprocess.run([...])`.
+- <GlossaryTerm term="pickle">pickle</GlossaryTerm>, o formato nativo de serialização do
+  Python, executa código ao carregar: carregar um pickle é a
+  <GlossaryTerm term="deserialization">desserialização</GlossaryTerm> insegura que a Trilha
+  4 aprofunda. Para trocar dados, use JSON.
+
+### 3.6 Python nas mãos de um atacante
+
+Tudo o que você vai fazer nas missões (varrer portas, conversar com serviços, automatizar
+uma API) é o que atacantes reais fazem, só que sem autorização. O MITRE ATT&CK registra o
+uso de Python como a técnica **T1059.006 (Command and Scripting Interpreter: Python)**, que
+descreve adversários abusando de comandos e scripts Python para execução.
+
+Um exemplo público e oficial: o alerta **AA22-277A** da CISA, a agência de segurança
+cibernética dos EUA, publicado em **5 de outubro de 2022**. Ele descreve atividade
+maliciosa, de **novembro de 2021 a janeiro de 2022**, numa organização da base industrial
+de defesa (*Defense Industrial Base*) dos EUA. Entre as ferramentas usadas estava o
+**Impacket**, que o alerta descreve como "um kit de ferramentas em Python para construir e
+manipular protocolos de rede de forma programática"; os atores usaram os scripts
+`wmiexec.py` e `smbexec.py` para obter shells semi-interativos nas máquinas, por WMI e SMB.
+
+O Impacket é uma ferramenta legítima de pentest, que você vai usar na Trilha 7: o mesmo
+script serve ao auditor autorizado e ao invasor. Por isso o próprio alerta recomenda
+defesas que não dependem de "bloquear o Python": monitorar contas e logins suspeitos,
+segmentar a rede para limitar o movimento lateral, exigir autenticação multifator e
+auditar o uso de contas privilegiadas.
+
+Para quem escreve e roda ferramentas, a lição é dupla: **leia o código antes de rodar**
+(um "exploit" baixado de um repositório desconhecido pode ser um ataque contra você, e é
+por isso que a seção 5.5 revisa uma ferramenta suspeita com o Bandit) e **saiba o rastro
+que o seu script deixa** (seção 8.6).
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Os dois casos abaixo têm a ver com o que você vai fazer neste módulo: instalar pacotes com
+`pip` e escrever código que manipula arquivos vindos de fora. Ambos foram verificados nas
+fontes primárias citadas.
+
+### PyTorch-nightly e o `torchtriton` (25 a 30 de dezembro de 2022): dependency confusion no PyPI
+
+O PyTorch é uma das bibliotecas de aprendizado de máquina mais usadas do mundo. Além das
+versões estáveis, o projeto publica versões *nightly* (compiladas toda noite) num **índice
+de pacotes próprio**, em `download.pytorch.org`, e essas versões dependiam de um pacote
+chamado `torchtriton`, também hospedado nesse índice próprio.
+
+Segundo o comunicado oficial do projeto, no blog do PyTorch:
+
+- Alguém publicou no **PyPI** um pacote com o **mesmo nome**, `torchtriton`. Como, nas
+  palavras do comunicado, "o índice do PyPI tem precedência", quem instalava o PyTorch
+  nightly pelo `pip` recebia o pacote malicioso do PyPI no lugar do oficial. O comunicado
+  descreve isso como um ataque à cadeia de suprimentos que afeta dependências de pacotes
+  hospedados em índices públicos. Esse tipo de ataque, em que um nome que existe num índice
+  privado ou de terceiros é registrado num índice público, se chama
+  <GlossaryTerm term="dependency confusion">dependency confusion</GlossaryTerm>.
+- **Quem foi afetado:** quem instalou o PyTorch nightly **no Linux, via pip, entre 25 e 30
+  de dezembro de 2022**. Os usuários das versões estáveis não foram afetados.
+- **O que o pacote fazia:** instalava um binário chamado `triton`, executado quando o pacote
+  `triton` era importado. Ele coletava informações do sistema (servidores DNS de
+  `/etc/resolv.conf`, nome da máquina, usuário, diretório atual e **variáveis de
+  ambiente**) e lia `/etc/hosts`, `/etc/passwd`, `$HOME/.gitconfig`, os arquivos de
+  `$HOME/.ssh/` e os primeiros 1.000 arquivos da home. Tudo era enviado por **consultas DNS
+  criptografadas** para um domínio do atacante (a
+  <GlossaryTerm term="exfiltration">exfiltração</GlossaryTerm> por DNS, que passa por muitos
+  firewalls).
+- **Linha do tempo:** o projeto informa que soube do pacote malicioso por volta das 16h40
+  (GMT) de **30 de dezembro de 2022**, uma sexta-feira.
+- **Resposta:** o `torchtriton` foi removido como dependência e substituído pelo
+  `pytorch-triton`; um pacote vazio foi registrado no PyPI com o nome antigo para impedir
+  a repetição; as versões nightly afetadas foram retiradas; e o projeto pediu à equipe de
+  segurança do PyPI a posse do nome e a remoção da versão maliciosa. O comunicado mandava
+  desinstalar com `pip3 uninstall -y torch torchvision torchaudio torchtriton` e limpar o
+  cache com `pip3 cache purge`.
+
+- **Impacto:** em quem instalou no período, as chaves SSH, as variáveis de ambiente (onde
+  costumam morar tokens e senhas de serviços) e outros arquivos pessoais podem ter sido
+  enviados ao atacante. Quem foi afetado precisava tratar esses segredos como vazados e
+  trocá-los.
+- **Lição:** `pip install` executa código de terceiros com os seus privilégios, e o
+  instalador escolhe **de onde** baixar segundo regras que poucas pessoas conhecem. As
+  defesas que você vai ver na seção 8 atacam isso: ambientes virtuais isolados, versões e
+  hashes fixados (`--require-hashes`), um único índice confiável por pacote, e desconfiar de
+  qualquer dependência que você não sabe de onde vem. Para um pentester, há ainda uma
+  lição de rotina: o ambiente onde ficam as ferramentas e as evidências de um cliente não é
+  lugar para instalar pacotes às cegas.
+- **Fonte:** [comunicado oficial do PyTorch, "Compromised PyTorch-nightly dependency chain
+  between December 25th and December 30th, 2022"](https://pytorch.org/blog/compromised-nightly-dependency/).
+
+### CVE-2007-4559 (2007, reestudado em 2022): o `tarfile` que extrai para fora do destino
+
+O <GlossaryTerm term="tarfile">tarfile</GlossaryTerm> é o módulo da biblioteca padrão para
+ler e criar arquivos `.tar`, o formato de pacote mais comum no Linux (ferramentas, backups,
+releases). Scripts de automação extraem `.tar` o tempo todo, inclusive os que você vai
+escrever.
+
+- **2007:** o registro **CVE-2007-4559**, publicado em **28 de agosto de 2007**, descreve uma
+  vulnerabilidade de *directory traversal* nas funções `extract` e `extractall` do módulo
+  `tarfile`, que permite sobrescrever arquivos arbitrários por meio de uma sequência `..`
+  (ponto ponto) nos nomes dos arquivos dentro do tar. É a
+  <GlossaryTerm term="path traversal">path traversal</GlossaryTerm>: um membro chamado
+  `../../home/aluno/.bashrc` é gravado **fora** da pasta de destino. Por muitos anos, a
+  resposta foi documentar o risco em vez de mudar o comportamento.
+- **Setembro de 2022:** a Trellix, empresa de segurança, divulgou que estimava a falha
+  presente em **mais de 350 mil projetos de código aberto**, porque tutoriais e exemplos
+  ensinavam a usar `extractall` sem validação (nas palavras do pesquisador Christiaan Beek,
+  citado pela Help Net Security, a falha era "propagada por tutoriais e materiais online"
+  com o uso incorreto). A empresa publicou também a ferramenta **Creosote**, que procura
+  esse padrão em código Python. Trate o número como o que ele é: uma **estimativa** da
+  própria Trellix.
+- **2023:** a **PEP 706**, criada em 9 de fevereiro de 2023 para o Python 3.12, adicionou
+  os <GlossaryTerm term="extraction filter">filtros de extração</GlossaryTerm>:
+  `extractall(destino, filter="data")` recusa caminhos absolutos, caminhos que saem do
+  destino, links perigosos e arquivos de dispositivo. No 3.12 e no 3.13, extrair sem filtro
+  emite um `DeprecationWarning`.
+- **Python 3.14:** segundo a documentação oficial, o filtro padrão **passou a ser
+  `'data'`**. Antes, o comportamento equivalia a `'fully_trusted'`, que confia em tudo o
+  que está no arquivo.
+
+Você pode ver as duas épocas no Python 3.14 do WSL. Um tar com um membro normal e um
+membro `../fora-do-destino.txt` (saída real; o script está na seção 8.3):
+
+```console
+membro: relatorio/achados.txt
+membro: ../fora-do-destino.txt
+OutsideDestinationError: '../fora-do-destino.txt' would be extracted to '/tmp/teste/fora-do-destino.txt', which is outside the destination
+criou fora-do-destino.txt? False
+com filter='fully_trusted': True
+```
+
+Com o padrão novo, a extração parou no membro perigoso (mas o membro normal, que vinha
+antes, **já tinha sido extraído**: a extração é parcial). Com `filter="fully_trusted"`, o
+comportamento antigo, o arquivo foi criado fora do destino.
+
+- **Impacto:** onde um programa extrai um tar enviado por um usuário (um upload, um plugin,
+  um modelo, um backup), um atacante pode sobrescrever arquivos com os privilégios do
+  programa: um `.bashrc` que executa comandos no próximo login, um arquivo de configuração,
+  uma chave SSH autorizada.
+- **Lição:** o caso mostra como um padrão inseguro sobrevive por 15 anos quando os exemplos
+  ensinam o atalho. A correção no seu código é simples, explícita e funciona em qualquer
+  versão que tenha os filtros: `extractall(destino, filter="data")`. E a lição maior vale
+  para todo o módulo: **entrada que vem de fora não decide onde o seu programa escreve**.
+- **Fontes:** [registro do CVE-2007-4559](https://www.cve.org/CVERecord?id=CVE-2007-4559);
+  [PEP 706](https://peps.python.org/pep-0706/);
+  [documentação do tarfile (Python 3.14)](https://docs.python.org/3.14/library/tarfile.html);
+  [ferramenta Creosote, da Trellix](https://github.com/advanced-threat-research/Creosote);
+  [Help Net Security, 22 de setembro de 2022](https://www.helpnetsecurity.com/2022/09/22/cve-2007-4559/).
+
+## 5. Mãos à obra — exercícios no seu WSL
+
+Este módulo não tem laboratório próprio, e o `linux-sandbox` do 0.3 não tem Python. Você
+vai trabalhar **no seu WSL**, que já tem o Python 3, com um **servidor de treino** que o
+bloco de preparação cria e que você liga num terminal à parte.
+
+Sobre o servidor de treino, para você saber exatamente o que está rodando:
+
+- escuta **só em `127.0.0.1`**, nas portas 8071, 8074, 8077 e 8079: nenhum outro aparelho
+  da sua rede o alcança;
+- **não tem vulnerabilidade** e nunca executa o que recebe: só responde às missões, com
+  dados **fictícios** e fixos (todo mundo recebe os mesmos dados e as mesmas flags);
+- é feito só com a biblioteca padrão do Python, e o código está no arquivo para você ler.
+  Ler o servidor é permitido e também ensina, mas as flags só saem rodando os seus scripts;
+- desliga com Ctrl+C no terminal dele.
+
+**Objetivo:** ao terminar, você terá escrito um parser da saída XML do nmap com argparse e
+códigos de saída (Missão 1), um scanner com banner grabbing e um cliente de protocolo de
+linha que aguenta mensagens partidas (Missão 2), e um coletor HTTP que faz login, pagina,
+respeita o 429, sobrevive a um 500 e não mente na contagem (Missão 3). Cada missão termina
+numa flag. No fim, um walkthrough instala `requests` e Bandit num ambiente virtual e revisa
+uma ferramenta suspeita.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra um terminal do Ubuntu no WSL e confira o Python (saída real; a sua versão pode ser
+   outra, desde que seja 3.10 ou mais nova):
+
+   ```console
+   $ python3 --version
+   Python 3.14.4
+   ```
+
+2. Confira que as portas do servidor estão livres. O comando abaixo não deve imprimir nada
+   (se imprimir, algum programa seu está usando a porta; feche-o antes):
+
+   ```console
+   $ ss -ltn | grep -E ':80(71|74|77|79) '
+   ```
+
+3. Crie o kit de treino. O bloco abaixo cria a pasta `~/treino-0-7` com o servidor, os
+   dados fictícios das missões e o arquivo do walkthrough. Copie o bloco **inteiro**,
+   cole no terminal e aperte Enter. Não precisa entender o código agora; ele só fabrica o
+   ambiente (no fim do módulo, você vai conseguir ler tudo).
+
+```bash
+mkdir -p ~/treino-0-7/dados && cd ~/treino-0-7 && cat > servidor.py <<'PYEOF'
+#!/usr/bin/env python3
+"""Training server for module 0.7 (Scripting: Python para seguranca).
+
+Listens ONLY on 127.0.0.1 (ports 8071, 8074, 8077 and 8079). It has no
+vulnerability and never executes anything it receives: it only answers the
+module's exercises with fictitious data. Stop it with Ctrl+C.
+"""
+import hashlib
+import json
+import secrets
+import socketserver
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlsplit
+
+HOST = "127.0.0.1"
+CHAIN_LENGTH = 200
+PAGES = 12
+PER_PAGE = 8
+RATE_WINDOW = 1.0  # seconds
+RATE_MAX = 4       # requests per window and token
+USER, PASSWORD = "aluno", "treino-0.7"
+
+
+def sha16(text):
+    return hashlib.sha256(text.encode()).hexdigest()[:16]
+
+
+def log(msg):
+    print(time.strftime("%H:%M:%S"), msg, flush=True)
+
+
+class Quiet(socketserver.ThreadingTCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+
+# ---------- 8071 and 8079: services that speak first (banner) ----------
+
+class SshLike(socketserver.BaseRequestHandler):
+    def handle(self):
+        log(f"[8071] conexão de {self.client_address[0]}:{self.client_address[1]}")
+        self.request.sendall(b"SSH-2.0-TreinoSSH_0.7\r\n")
+        self.request.settimeout(5)
+        try:
+            self.request.recv(256)
+        except OSError:
+            pass
+
+
+class FtpLike(socketserver.BaseRequestHandler):
+    def handle(self):
+        log(f"[8079] conexão de {self.client_address[0]}:{self.client_address[1]}")
+        self.request.sendall(b"220 TreinoFTP 1.0 pronto\r\n")
+        self.request.settimeout(5)
+        try:
+            data = self.request.recv(256)
+            if data.strip().upper().startswith(b"QUIT"):
+                self.request.sendall(b"221 Tchau\r\n")
+        except OSError:
+            pass
+
+
+# ---------- 8074: line protocol with a challenge chain ----------
+
+class Challenge(socketserver.StreamRequestHandler):
+    timeout = 10
+
+    def say(self, text):
+        self.wfile.write(text.encode())
+        self.wfile.flush()
+
+    def handle(self):
+        peer = f"{self.client_address[0]}:{self.client_address[1]}"
+        log(f"[8074] conexão de {peer}")
+        self.say("TREINO-0.7 desafio v1\nEnvie: HELLO <seu-nome>\n")
+        try:
+            first = self.rfile.readline(200).decode(errors="replace").strip()
+        except OSError:
+            return
+        if not first.startswith("HELLO ") or len(first) < 7:
+            self.say("ERRO esperado: HELLO <seu-nome>\n")
+            log(f"[8074] {peer} não mandou HELLO: {first[:40]!r}")
+            return
+        self.connection.settimeout(2)
+        nonce = sha16("treino-0.7|1")
+        for i in range(1, CHAIN_LENGTH + 1):
+            line = f"DESAFIO {i}/{CHAIN_LENGTH} {nonce}\n"
+            if i % 10 == 0:
+                line = f"INFO progresso {i - 1}/{CHAIN_LENGTH}\n" + line
+            if i % 7 == 0:
+                cut = len(line) // 2
+                self.say(line[:cut])
+                time.sleep(0.05)
+                self.say(line[cut:])
+            else:
+                self.say(line)
+            try:
+                answer = self.rfile.readline(200).decode(errors="replace").strip()
+            except OSError:
+                self.say("ERRO tempo esgotado (2 s)\n")
+                log(f"[8074] {peer} estourou o tempo no desafio {i}")
+                return
+            expected = hashlib.sha256(nonce.encode()).hexdigest()[:16]
+            if answer != expected:
+                self.say(f"ERRO resposta errada no desafio {i}\n")
+                log(f"[8074] {peer} errou o desafio {i}: {answer[:40]!r}")
+                return
+            nonce = sha16(f"{expected}|{i + 1}")
+        token = sha16(f"token|{nonce}")[:12]
+        self.say(f"OK token {token}\nBYE\n")
+        log(f"[8074] {peer} completou os {CHAIN_LENGTH} desafios")
+
+
+# ---------- 8077: fictitious inventory API (HTTP + JSON) ----------
+
+CATALOG = [
+    ("ssh", 22, "OpenSSH 9.6p1"), ("ssh", 22, "OpenSSH 7.2p2"),
+    ("http", 80, "Apache httpd 2.4.62"), ("http", 80, "Apache httpd 2.4.49"),
+    ("http", 80, "nginx 1.24.0"), ("https", 443, "nginx 1.24.0"),
+    ("ftp", 21, "vsftpd 3.0.5"), ("ftp", 21, "vsftpd 2.3.4"),
+    ("mysql", 3306, "MySQL 8.0.36"), ("mysql", 3306, "MySQL 5.5.62"),
+    ("smb", 445, "Samba 4.19.5"), ("http-proxy", 8080, "Apache Tomcat 9.0.30"),
+]
+
+
+def build_inventory():
+    seed = 7072026
+
+    def rnd():
+        nonlocal seed
+        seed = (seed * 16807) % 2147483647
+        return seed / 2147483647
+
+    pages, seen = [], set()
+    for p in range(PAGES):
+        hosts = []
+        for _ in range(PER_PAGE):
+            ip = None
+            while ip is None or ip in seen:
+                ip = f"10.10.{1 + int(rnd() * 8)}.{1 + int(rnd() * 250)}"
+            seen.add(ip)
+            services, used = [], set()
+            for _ in range(1 + int(rnd() * 4)):
+                name, port, version = CATALOG[int(rnd() * len(CATALOG))]
+                if port in used:
+                    continue
+                used.add(port)
+                r = rnd()  # the API does not normalise what agents report
+                if r < 0.12:
+                    version = version.lower()
+                elif r < 0.22:
+                    version = f" {version}  "
+                services.append({"porta": port, "nome": name, "versao": version})
+            hosts.append({"ip": ip, "servicos": services})
+        pages.append(hosts)
+    # Unstable pagination: the last host of pages 4 and 9 repeats as the
+    # first host of the next page.
+    for p in (3, 8):
+        pages[p + 1][0] = json.loads(json.dumps(pages[p][-1]))
+    return pages
+
+
+INVENTORY = build_inventory()
+TOKENS = {}  # token -> {"hits": [timestamps], "failed_once": set()}
+LOCK = threading.Lock()
+
+
+class Api(BaseHTTPRequestHandler):
+    server_version = "TreinoAPI/0.7"
+    sys_version = ""
+
+    def log_message(self, fmt, *args):
+        pass
+
+    def reply(self, status, body, extra=None):
+        data = (json.dumps(body, ensure_ascii=False, indent=2) + "\n").encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        for k, v in (extra or {}).items():
+            self.send_header(k, v)
+        self.end_headers()
+        self.wfile.write(data)
+        log(f"[8077] {self.command} {self.path} -> {status}")
+
+    def do_GET(self):
+        url = urlsplit(self.path)
+        if url.path == "/":
+            return self.reply(200, {
+                "servico": "Inventário de treino 0.7 (fictício)",
+                "endpoints": {
+                    "POST /api/login": 'JSON {"usuario": ..., "senha": ...} -> token',
+                    "GET /api/hosts?pagina=N": "Authorization: Bearer <token>",
+                },
+            })
+        if url.path != "/api/hosts":
+            return self.reply(404, {"erro": "caminho inexistente"})
+        auth = self.headers.get("Authorization", "")
+        token = auth[7:] if auth.startswith("Bearer ") else ""
+        with LOCK:
+            state = TOKENS.get(token)
+            if state is None:
+                return self.reply(401, {"erro": "token ausente ou inválido"})
+            now = time.monotonic()
+            state["hits"] = [t for t in state["hits"] if now - t < RATE_WINDOW]
+            if len(state["hits"]) >= RATE_MAX:
+                return self.reply(429, {"erro": "devagar: limite de requisições"},
+                                  {"Retry-After": "1"})
+            state["hits"].append(now)
+            try:
+                page = int(parse_qs(url.query).get("pagina", ["1"])[0])
+            except ValueError:
+                return self.reply(400, {"erro": "pagina deve ser um número"})
+            if not 1 <= page <= PAGES:
+                return self.reply(404, {"erro": f"pagina vai de 1 a {PAGES}"})
+            if page == 7 and 7 not in state["failed_once"]:
+                state["failed_once"].add(7)
+                return self.reply(500, {"erro": "falha temporária, tente de novo"})
+        nxt = f"/api/hosts?pagina={page + 1}" if page < PAGES else None
+        return self.reply(200, {"pagina": page, "total_paginas": PAGES,
+                                "proxima": nxt, "hosts": INVENTORY[page - 1]})
+
+    def do_POST(self):
+        if urlsplit(self.path).path != "/api/login":
+            return self.reply(404, {"erro": "caminho inexistente"})
+        try:
+            size = int(self.headers.get("Content-Length", "0"))
+            body = json.loads(self.rfile.read(min(size, 4096)) or b"{}")
+        except (ValueError, json.JSONDecodeError):
+            return self.reply(400, {"erro": "corpo deve ser JSON"})
+        if not isinstance(body, dict) or body.get("usuario") != USER or body.get("senha") != PASSWORD:
+            return self.reply(401, {"erro": "usuário ou senha incorretos"})
+        token = secrets.token_hex(16)
+        with LOCK:
+            TOKENS[token] = {"hits": [], "failed_once": set()}
+        return self.reply(200, {"token": token, "tipo": "Bearer"})
+
+
+def main():
+    servers = [
+        Quiet((HOST, 8071), SshLike),
+        Quiet((HOST, 8074), Challenge),
+        Quiet((HOST, 8079), FtpLike),
+        ThreadingHTTPServer((HOST, 8077), Api),
+    ]
+    for s in servers:
+        s.daemon_threads = True
+        threading.Thread(target=s.serve_forever, daemon=True).start()
+    print("Servidor de treino 0.7 no ar, só em 127.0.0.1. Ctrl+C para parar.", flush=True)
+    try:
+        while True:
+            time.sleep(3600)
+    except KeyboardInterrupt:
+        print("\nencerrado.")
+
+
+if __name__ == "__main__":
+    main()
+PYEOF
+cat > gerar.py <<'PYEOF'
+"""Writes the fictitious nmap XML scan of module 0.7 (fixed seed: same file for everyone)."""
+seed = 7012026
+
+
+def rnd():
+    global seed
+    seed = (seed * 16807) % 2147483647
+    return seed / 2147483647
+
+
+TCP = [(21, "ftp"), (22, "ssh"), (23, "telnet"), (25, "smtp"), (53, "domain"),
+       (80, "http"), (110, "pop3"), (139, "netbios-ssn"), (443, "https"),
+       (445, "microsoft-ds"), (3306, "mysql"), (3389, "ms-wbt-server"),
+       (5432, "postgresql"), (8080, "http-proxy"), (8443, "https-alt")]
+UDP = [(53, "domain"), (161, "snmp")]
+ARGS = ("nmap -sS -sU -p T:21-23,25,53,80,110,139,443,445,3306,3389,5432,8080,8443,"
+        "U:53,161 -oX varredura.xml 192.168.0.0/24")
+
+out = ['<?xml version="1.0" encoding="UTF-8"?>',
+       '<!-- Varredura FICTICIA do modulo 0.7, no formato XML (-oX) do nmap -->',
+       f'<nmaprun scanner="nmap" args="{ARGS}" start="1759917600" '
+       'startstr="Wed Oct  8 10:00:00 2025" version="7.95" xmloutputversion="1.05">',
+       '<scaninfo type="syn" protocol="tcp" numservices="15" '
+       'services="21-23,25,53,80,110,139,443,445,3306,3389,5432,8080,8443"/>',
+       '<scaninfo type="udp" protocol="udp" numservices="2" services="53,161"/>']
+up = 0
+t = 1759917600
+for h in range(1, 255):
+    if rnd() > 0.2:
+        continue
+    up += 1
+    listed, closed = [], 0
+    for port, svc in TCP:
+        r = rnd()
+        state = "open" if r < 0.22 else ("closed" if r < 0.9 else "filtered")
+        if state == "closed":
+            closed += 1
+            continue
+        reason = "syn-ack" if state == "open" else "no-response"
+        listed.append(f'<port protocol="tcp" portid="{port}"><state state="{state}" '
+                      f'reason="{reason}" reason_ttl="64"/><service name="{svc}" method="table" conf="3"/></port>')
+    for port, svc in UDP:
+        r = rnd()
+        if r < 0.15:
+            state, reason = "open", "udp-response"
+        elif r < 0.75:
+            state, reason = "open|filtered", "no-response"
+        else:
+            continue
+        listed.append(f'<port protocol="udp" portid="{port}"><state state="{state}" '
+                      f'reason="{reason}" reason_ttl="0"/><service name="{svc}" method="table" conf="3"/></port>')
+    t += 1 + int(rnd() * 20)
+    out.append(f'<host starttime="{t}" endtime="{t + 3}"><status state="up" reason="arp-response" reason_ttl="0"/>')
+    out.append(f'<address addr="192.168.0.{h}" addrtype="ipv4"/>')
+    out.append('<hostnames></hostnames>')
+    out.append('<ports>')
+    if closed:
+        out.append(f'<extraports state="closed" count="{closed}">'
+                   f'<extrareasons reason="reset" count="{closed}"/></extraports>')
+    out.extend(listed)
+    out.append('</ports>')
+    out.append('</host>')
+out.append(f'<runstats><finished time="{t + 30}" elapsed="{t + 30 - 1759917600}" exit="success"/>'
+           f'<hosts up="{up}" down="{254 - up}" total="254"/></runstats>')
+out.append('</nmaprun>')
+
+with open("dados/varredura.xml", "w", encoding="utf-8") as f:
+    f.write("\n".join(out) + "\n")
+print(f"dados/varredura.xml: {up} hosts")
+PYEOF
+python3 gerar.py && cat > dados/versoes-criticas.txt <<'EOF'
+# Versões que o cliente (fictício) pediu para marcar como críticas.
+# Uma por linha; compare sem diferenciar maiúsculas e sem espaços sobrando.
+Apache httpd 2.4.49
+vsftpd 2.3.4
+OpenSSH 7.2p2
+EOF
+cat > ferramenta_suspeita.py <<'PYEOF'
+#!/usr/bin/env python3
+"""ferramenta_suspeita.py — a "handy" recon helper found on a forum.
+DO NOT USE: it exists only to be reviewed (module 0.7 walkthrough)."""
+import pickle
+import subprocess
+import sys
+import tarfile
+
+import requests
+
+API_PASSWORD = "Sup3rS3cret!"
+
+
+def ping(target):
+    return subprocess.run(f"ping -c 1 {target}", shell=True, capture_output=True, text=True)
+
+
+def fetch(url):
+    return requests.get(url, verify=False).text
+
+
+def load_profile(path):
+    with open(path, "rb") as f:
+        return pickle.load(f)
+
+
+def unpack(path, dest):
+    with tarfile.open(path) as tar:
+        tar.extractall(dest)
+
+
+def calc(expression):
+    return eval(expression)
+
+
+if __name__ == "__main__":
+    print(ping(sys.argv[1]).stdout)
+PYEOF
+ls -l ~/treino-0-7 ~/treino-0-7/dados
+```
+
+4. Confira o resultado (saída real; datas e o tamanho da pasta `dados` variam de máquina para máquina, mas `varredura.xml` tem sempre 58321 bytes e 47 hosts):
+
+```console
+dados/varredura.xml: 47 hosts
+/home/aluno/treino-0-7:
+total 20
+drwxr-xr-x 2 aluno aluno   80 Oct 19 16:12 dados
+-rw-r--r-- 1 aluno aluno  746 Oct 19 16:12 ferramenta_suspeita.py
+-rw-r--r-- 1 aluno aluno 3073 Oct 19 16:12 gerar.py
+-rw-r--r-- 1 aluno aluno 9648 Oct 19 16:12 servidor.py
+
+/home/aluno/treino-0-7/dados:
+total 64
+-rw-r--r-- 1 aluno aluno 58321 Oct 19 16:12 varredura.xml
+-rw-r--r-- 1 aluno aluno   196 Oct 19 16:12 versoes-criticas.txt
+```
+
+5. Abra um **segundo terminal** do WSL, só para o servidor, e ligue-o:
+
+```console
+$ cd ~/treino-0-7 && python3 servidor.py
+Servidor de treino 0.7 no ar, só em 127.0.0.1. Ctrl+C para parar.
+```
+
+Deixe esse terminal aberto: cada conexão que os seus scripts fizerem vai aparecer nele, com
+a hora. É o "lado do servidor" que o atacante normalmente não vê e que o defensor vê.
+Confirme, no primeiro terminal, que ele escuta só no loopback:
+
+```console
+$ ss -ltn | grep -E ':80(71|74|77|79) '
+LISTEN 0      5           127.0.0.1:8071      0.0.0.0:*
+LISTEN 0      5           127.0.0.1:8074      0.0.0.0:*
+LISTEN 0      5           127.0.0.1:8077      0.0.0.0:*
+LISTEN 0      5           127.0.0.1:8079      0.0.0.0:*
+```
+
+O endereço local `127.0.0.1` (e não `0.0.0.0`) é a prova de que só a sua própria máquina
+alcança essas portas.
+
+<Callout variant="tip" title="Como escrever os scripts">
+Crie cada script com o editor que preferir: o `nano` do 0.4 (`nano resumo_nmap.py`), o
+`vim`, ou o VS Code no Windows abrindo a pasta pelo WSL. Rode sempre a partir de
+`~/treino-0-7`, porque os scripts usam caminhos relativos como `dados/varredura.xml`. Para
+testar uma linha antes de pô-la no script, abra o REPL com `python3` num terceiro terminal.
+</Callout>
+
+### 5.2 Missão 1 — Do XML ao resumo (guiada)
+
+**Objetivo:** escrever o `resumo_nmap.py`, que recebe uma varredura no formato XML do nmap
+e informa quantos hosts estão ativos, quantas portas **TCP abertas** existem e quais são os
+serviços abertos mais comuns, recusando entradas inválidas com códigos de saída diferentes.
+
+**Etapa 1: olhe os dados antes de programar.** É a regra do 0.6: conheça o formato real. A
+varredura fictícia segue o formato da documentação do nmap (saída real, um host):
+
+```console
+$ grep -m1 -A12 '<host ' dados/varredura.xml
+<host starttime="1759917611" endtime="1759917614"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.0.3" addrtype="ipv4"/>
+<hostnames></hostnames>
+<ports>
+<extraports state="closed" count="10"><extrareasons reason="reset" count="10"/></extraports>
+<port protocol="tcp" portid="25"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="smtp" method="table" conf="3"/></port>
+<port protocol="tcp" portid="53"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="domain" method="table" conf="3"/></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" method="table" conf="3"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="https" method="table" conf="3"/></port>
+<port protocol="tcp" portid="8080"><state state="filtered" reason="no-response" reason_ttl="64"/><service name="http-proxy" method="table" conf="3"/></port>
+<port protocol="udp" portid="53"><state state="open|filtered" reason="no-response" reason_ttl="0"/><service name="domain" method="table" conf="3"/></port>
+<port protocol="udp" portid="161"><state state="open|filtered" reason="no-response" reason_ttl="0"/><service name="snmp" method="table" conf="3"/></port>
+</ports>
+```
+
+Repare em três detalhes que vão importar: as portas fechadas foram resumidas no
+`<extraports>`; há portas **filtradas**; e há portas **UDP**, com o estado `open|filtered`
+(no UDP, a falta de resposta não diferencia uma porta aberta de uma filtrada, como a Trilha 2
+vai explicar). A missão pede só **TCP** com estado exatamente `open`.
+
+**Etapa 2: por que não `grep`?** Tente (saída real):
+
+```console
+$ grep -c 'state="open' dados/varredura.xml
+236
+$ grep -o 'state="open"' dados/varredura.xml | wc -l
+170
+```
+
+O primeiro conta também o `open|filtered`, porque `state="open` é o começo de
+`state="open|filtered"`. O segundo acerta o estado, mas conta portas UDP abertas. Nenhum
+dos dois é o número certo, e nenhum avisa que está errado: é o
+<GlossaryTerm term="false positive">falso positivo</GlossaryTerm> por parsing do 0.6. O
+parser resolve isso pela estrutura.
+
+**Etapa 3: o esqueleto, com argparse e códigos de saída.** Crie `resumo_nmap.py`:
+
+```python
+#!/usr/bin/env python3
+"""resumo_nmap.py — summary of an nmap XML scan (-oX): live hosts,
+open TCP ports and the most common open service."""
+import argparse
+import sys
+import xml.etree.ElementTree as ET
+from collections import Counter
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Resume uma varredura XML do nmap.")
+    parser.add_argument("arquivo", help="saída do nmap com -oX")
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    try:
+        root = ET.parse(args.arquivo).getroot()
+    except FileNotFoundError:
+        print(f"erro: arquivo não encontrado: {args.arquivo}", file=sys.stderr)
+        return 3
+    except ET.ParseError as e:
+        print(f"erro: XML inválido em {args.arquivo}: {e}", file=sys.stderr)
+        return 4
+    if root.tag != "nmaprun":
+        print("erro: isto não é uma saída XML do nmap", file=sys.stderr)
+        return 4
+
+    # Etapa 4 entra aqui
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+A convenção de códigos (2 para uso errado, que o argparse já faz; 3 para arquivo
+inexistente; 4 para conteúdo inválido) é escolha do script. O que importa é que cada falha
+tenha o seu código e a sua mensagem no stderr. Repare também na checagem `root.tag !=
+"nmaprun"`: um XML válido que não é do nmap não deve produzir um resumo "zerado" como se
+estivesse tudo bem.
+
+**Etapa 4: contar com a estrutura.** No lugar do comentário da etapa 4, você precisa:
+percorrer cada `<host>` com `status` igual a `up`; dentro dele, cada `<port>` com
+`protocol="tcp"` e cujo filho `<state>` tenha `state` exatamente igual a `open`; e contar
+o `name` do `<service>` num `Counter`. Depois, imprimir os totais e os três serviços mais
+comuns:
+
+```python
+    hosts_up = 0
+    services = Counter()
+    for host in root.iter("host"):
+        if host.find("status").get("state") != "up":
+            continue
+        hosts_up += 1
+        for port in host.iter("port"):
+            if port.get("protocol") == "tcp" and port.find("state").get("state") == "open":
+                services[port.find("service").get("name")] += 1
+
+    open_ports = sum(services.values())
+    print(f"hosts ativos: {hosts_up}")
+    print(f"portas TCP abertas: {open_ports}")
+    for name, count in services.most_common(3):
+        print(f"  {name:<14} {count}")
+```
+
+O total de portas é a soma das contagens do `Counter`: cada porta aberta contou uma vez no
+serviço dela.
+
+**Etapa 5: teste o caminho de erro primeiro** (saídas reais):
+
+```console
+$ python3 resumo_nmap.py; echo "rc=$?"
+usage: resumo_nmap.py [-h] arquivo
+resumo_nmap.py: error: the following arguments are required: arquivo
+rc=2
+$ python3 resumo_nmap.py nada.xml; echo "rc=$?"
+erro: arquivo não encontrado: nada.xml
+rc=3
+$ echo '<a>' > quebrado.xml; python3 resumo_nmap.py quebrado.xml; echo "rc=$?"
+erro: XML inválido em quebrado.xml: no element found: line 2, column 0
+rc=4
+```
+
+**Etapa 6: a flag.** Agora rode na varredura de verdade, confira o código 0 e anote os
+números. Para conferir o total de hosts, a própria varredura traz um resumo no fim, o
+elemento `<runstats>`, com `<hosts up="..." ...>`: o seu número de hosts ativos tem que
+bater com ele.
+
+A flag é `FLAG{hosts-portas-servico}`, com o serviço aberto mais comum escrito como aparece
+no XML. Por exemplo, se o script dissesse 10 hosts, 25 portas e `ssh` no topo, a flag seria
+`FLAG{10-25-ssh}`.
+
+<Hint title="Dica 1">
+Se o total de portas deu 170, você está contando também as portas UDP abertas: confira o
+atributo `protocol` do `<port>`. Se deu 236, você está comparando o começo do texto do
+estado (como o grep), e `open|filtered` entrou junto: compare com `==`, não com
+`startswith` ou `in`.
+</Hint>
+
+<Hint title="Dica 2">
+Se apareceu `AttributeError: 'NoneType' object has no attribute 'get'`, um `find()` não
+achou o filho que você pediu e devolveu `None`. Confira o nome do elemento (é `state`
+dentro de `port`, e `status` dentro de `host`) e use o REPL para explorar:
+`host = next(root.iter("host"))`, depois `[c.tag for c in host]`.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+O script completo é a junção das etapas 3 e 4. Ao rodá-lo na varredura, ele imprime os
+hosts ativos (que batem com o `<hosts up=...>` do `<runstats>`), o total de portas TCP
+abertas e, no topo da lista, o serviço aberto mais comum, com código 0. Para conferir sem o
+script, no REPL:
+
+```python
+import xml.etree.ElementTree as ET
+from collections import Counter
+root = ET.parse("dados/varredura.xml").getroot()
+print(root.find("runstats/hosts").get("up"))
+c = Counter(p.find("service").get("name") for p in root.iter("port")
+            if p.get("protocol") == "tcp" and p.find("state").get("state") == "open")
+print(sum(c.values()), c.most_common(1))
+```
+
+Os três valores, nessa ordem, vão no formato `FLAG{hosts-portas-servico}`.
+</Solution>
+
+<FlagInput task="missao-1-resumo-xml" />
+
+### 5.3 Missão 2 — Quem está escutando? (desafio)
+
+**Objetivo:** duas partes. Primeiro, escrever o `sondar.py`, um connect scan com banner
+grabbing que varre as portas de **8070 a 8079** em `127.0.0.1` e diz quais estão abertas e
+o que cada uma anuncia. Depois, escrever o `desafio.py`, um cliente para o serviço de
+desafios que você vai descobrir na varredura, e completar o protocolo dele até receber um
+**token**.
+
+**Parte A: o scanner.** O caminho:
+
+1. Escreva uma função `probe(port, timeout=1.0)` que cria um socket TCP, define o timeout,
+   tenta conectar em `("127.0.0.1", port)` e devolve um estado e o banner.
+2. Trate cada caso da tabela do diagrama da seção 3.2: recusa, silêncio no `connect`,
+   banner, silêncio no `recv`. Pense em qual exceção corresponde a cada um.
+3. Feche o socket em **todos** os caminhos (um `finally` ou um `with`).
+4. No `main`, percorra as portas de 8070 a 8079 (atenção ao fim do `range`), imprima uma
+   linha por porta aberta e, no fim, quantas estavam abertas.
+
+Ao rodar, olhe também o **terminal do servidor**: cada conexão do seu scanner aparece lá. E
+repare na linha que o serviço da 8074 registra quando o scanner conecta e vai embora sem
+dizer nada. É exatamente o tipo de rastro que um defensor procura.
+
+<Hint title="Dica 1 (scanner)">
+`ConnectionRefusedError` vem do `connect` numa porta fechada. `TimeoutError` pode vir do
+`connect` (nada respondeu) ou do `recv` (conectou, mas o serviço espera você falar). Use
+dois blocos `try` separados, um para cada chamada, para saber de qual dos dois veio o
+timeout.
+</Hint>
+
+<Solution title="Solução da parte A (scanner)">
+```python
+#!/usr/bin/env python3
+"""sondar.py — TCP connect scan with banner grabbing on 127.0.0.1."""
+import socket
+import sys
+
+HOST = "127.0.0.1"
+
+
+def probe(port, timeout=1.0):
+    """Returns ("aberta", banner), ("fechada", None) or ("sem resposta", None)."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(timeout)
+    try:
+        s.connect((HOST, port))
+    except ConnectionRefusedError:
+        return "fechada", None
+    except TimeoutError:
+        return "sem resposta", None
+    try:
+        data = s.recv(1024)
+        return "aberta", data.decode(errors="replace").strip()
+    except TimeoutError:
+        return "aberta", ""          # open, but the service waits for us to speak
+    finally:
+        s.close()
+
+
+def main():
+    first, last = int(sys.argv[1]), int(sys.argv[2])
+    open_ports = []
+    for port in range(first, last + 1):
+        state, banner = probe(port)
+        if state == "aberta":
+            open_ports.append(port)
+            print(f"{port}/tcp aberta   {banner or '(sem banner)'}")
+    print(f"{len(open_ports)} portas abertas")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Rode com `python3 sondar.py 8070 8079`. O `range(first, last + 1)` inclui a última porta.
+Repare que o banner de uma das portas ocupa **duas linhas**: um único `recv` trouxe duas
+mensagens do protocolo. Guarde isso para a parte B. (Um detalhe: se o `connect` lançar
+uma exceção, o `finally` do segundo `try` não roda; numa ferramenta maior, use
+`with socket.socket(...) as s:` para fechar em todos os caminhos.)
+</Solution>
+
+**Parte B: o protocolo de desafios.** Conecte-se ao serviço que se apresentou como
+`TREINO-0.7 desafio v1` (com `nc 127.0.0.1 <porta>` você pode conversar com ele à mão
+primeiro). As regras do protocolo, todas em linhas terminadas por `\n`:
+
+- O servidor manda duas linhas de boas-vindas. Você responde `HELLO <seu-nome>`.
+- Ele manda `DESAFIO i/200 <nonce>`, onde o nonce tem 16 caracteres hexadecimais. Você
+  responde, em até **2 segundos**, com os **16 primeiros caracteres** do SHA-256 (em
+  hexadecimal) do texto do nonce. No Python: `hashlib.sha256(nonce.encode()).hexdigest()[:16]`.
+- Às vezes, antes de um desafio, ele manda uma linha `INFO ...`, que não pede resposta.
+- Uma resposta errada ou atrasada encerra a conexão com uma linha `ERRO ...`.
+- Depois do desafio 200, ele manda `OK token <token>` e `BYE`.
+
+São 200 idas e voltas em menos de 2 segundos cada: impossível à mão, trivial para um
+script **que leia linha a linha**. E o servidor foi escrito para quebrar quem não lê: ele
+manda alguns desafios partidos em dois pedaços e junta outros com a linha `INFO`, como uma
+rede real pode fazer.
+
+A flag é `FLAG{portas-token}`: o número de portas abertas que o seu scanner encontrou entre
+8070 e 8079 e o token do serviço de desafios.
+
+<Hint title="Dica 2 (protocolo)">
+Um cliente que faz um `recv(1024)` e trata o resultado como "uma mensagem" quebra no
+desafio 7. Saída real de um cliente assim:
+
+```console
+$ python3 desafio_ingenuo.py
+TREINO-0.7 desafio v1
+Envie: HELLO <seu-nome>
+recebi: d994c97f2c7276a
+```
+
+O desafio 7 chegou em dois `recv`: o primeiro trouxe `DESAFIO 7/200` e o começo do nonce;
+o cliente respondeu ao nonce cortado, e o pedaço que sobrou chegou depois, solto. Use
+`f = s.makefile("rw", encoding="utf-8", newline="\n")` e leia com `f.readline()`; para
+escrever, `f.write(...)` seguido de `f.flush()`.
+</Hint>
+
+<Hint title="Dica 3 (protocolo)">
+Para cada linha lida, olhe a primeira palavra (`linha.split()[0]`): `DESAFIO` pede
+resposta; `INFO` não; `OK` traz o token; `ERRO` diz o que deu errado (leia a mensagem: ela
+diz em qual desafio você errou); e uma linha vazia (`""`) significa que o servidor fechou a
+conexão.
+</Hint>
+
+<Solution title="Solução da parte B (protocolo)">
+```python
+#!/usr/bin/env python3
+"""desafio.py — client for the challenge protocol on port 8074."""
+import hashlib
+import socket
+
+with socket.create_connection(("127.0.0.1", 8074), timeout=5) as s:
+    f = s.makefile("rw", encoding="utf-8", newline="\n")
+    print(f.readline().strip())          # TREINO-0.7 desafio v1
+    print(f.readline().strip())          # Envie: HELLO <seu-nome>
+    f.write("HELLO aluno\n")
+    f.flush()
+    while True:
+        line = f.readline()
+        if not line:
+            print("o servidor fechou a conexão")
+            break
+        parts = line.split()
+        if parts[0] == "DESAFIO":
+            nonce = parts[2]
+            f.write(hashlib.sha256(nonce.encode()).hexdigest()[:16] + "\n")
+            f.flush()
+        elif parts[0] in ("OK", "ERRO"):
+            print(line.strip())
+            if parts[0] == "ERRO":
+                break
+        elif parts[0] == "BYE":
+            break
+```
+
+O `create_connection` cria o socket e conecta numa linha só, e o `with` o fecha no fim. O
+`makefile` resolve as mensagens partidas e juntas: cada `readline()` devolve exatamente uma
+linha. Ao terminar, o script imprime a linha `OK token ...`, e o terminal do servidor
+registra que você completou os 200 desafios. Junte esse token ao número de portas abertas
+da parte A no formato `FLAG{portas-token}`.
+</Solution>
+
+<FlagInput task="missao-2-sockets" />
+
+### 5.4 Missão 3 — O coletor educado (desafio)
+
+**Objetivo:** escrever o `coletor.py`, que consome a API de inventário fictícia na porta
+8077 e responde a duas perguntas do cliente (fictício) do teste: **quantos hosts únicos**
+existem no inventário e **quantos deles têm pelo menos um serviço numa versão crítica**,
+segundo a lista `dados/versoes-criticas.txt`.
+
+Comece explorando a API à mão, com o `curl` do 0.2 (saídas reais):
+
+```console
+$ curl -s http://127.0.0.1:8077/
+{
+  "servico": "Inventário de treino 0.7 (fictício)",
+  "endpoints": {
+    "POST /api/login": "JSON {\"usuario\": ..., \"senha\": ...} -> token",
+    "GET /api/hosts?pagina=N": "Authorization: Bearer <token>"
+  }
+}
+$ curl -s -i 'http://127.0.0.1:8077/api/hosts?pagina=1' | head -1
+HTTP/1.0 401 Unauthorized
+```
+
+As credenciais da API de treino são usuário `aluno` e senha `treino-0.7`. Com o token, a
+página 1 começa assim (saída real, cortada):
+
+```json
+{
+  "pagina": 1,
+  "total_paginas": 12,
+  "proxima": "/api/hosts?pagina=2",
+  "hosts": [
+    {
+      "ip": "10.10.3.165",
+      "servicos": [
+        { "porta": 21, "nome": "ftp", "versao": "vsftpd 2.3.4" },
+        { "porta": 22, "nome": "ssh", "versao": "OpenSSH 9.6p1" }
+      ]
+    },
+```
+
+E a lista de versões críticas, que o cliente pediu para marcar:
+
+```console
+$ cat dados/versoes-criticas.txt
+# Versões que o cliente (fictício) pediu para marcar como críticas.
+# Uma por linha; compare sem diferenciar maiúsculas e sem espaços sobrando.
+Apache httpd 2.4.49
+vsftpd 2.3.4
+OpenSSH 7.2p2
+```
+
+(A `Apache httpd 2.4.49`, aliás, é a versão do lab `vulhub` da Trilha 5. Aqui ela é só um
+texto num inventário fictício.)
+
+A API de treino se comporta como muitas APIs reais, e cada comportamento é uma armadilha
+para um coletor descuidado:
+
+- exige o **token** em toda página, no cabeçalho `Authorization: Bearer <token>`;
+- tem **12 páginas**, e o campo `proxima` diz qual pedir depois (`null` na última);
+- tem **limite de requisições**: rápido demais, ela responde `429` com `Retry-After`;
+- tem uma **falha temporária**: uma das páginas responde `500` na primeira tentativa;
+- a paginação é **instável**: o último host de algumas páginas reaparece no começo da
+  seguinte;
+- os agentes que alimentam o inventário **não padronizam o texto**: algumas versões vêm em
+  minúsculas, outras com espaços sobrando.
+
+<Figure
+  src={fluxoColetor}
+  alt="Fluxo do coletor da Missão 3. Passo 1, POST /api/login com usuario e senha em JSON, devolve um token. Passo 2, GET /api/hosts?pagina=N com Authorization: Bearer e User-Agent coletor-0.7/1.0. Passo 3, decisão pelo status code: 200 guarda cada host num dicionário indexado pelo IP, sem duplicados, e segue o campo proxima até null; 429 Too Many Requests dorme o Retry-After e repete o pedido; 5xx espera mais a cada vez, no máximo 5 tentativas, depois erro; 401 ou 404 são erro do script, que para e mostra a causa. 200, 429 e 5xx voltam ao passo 2. Passo 4, no fim, conta os hosts únicos e os críticos, normalizando versao com strip e lower e a lista também. Um aviso: try com except Exception: pass engole o 429 e o 500 e segue sem erro na tela; o coletor ingênuo contou só 32 hosts."
+  caption="O coletor decide pelo status code de cada resposta. Engolir as exceções faz o script terminar sem erro e com o número errado."
+/>
+
+O caminho, sem o código pronto:
+
+1. Escreva uma função `call(method, path, token=None, body=None)` que monta o pedido com o
+   `urllib.request` (corpo JSON quando houver, os cabeçalhos certos, um `timeout`) e
+   devolve o JSON decodificado.
+2. Dentro dela, um laço de **tentativas**: capture `urllib.error.HTTPError`; num `429`, leia
+   `e.headers["Retry-After"]`, espere com `time.sleep()` e repita; num `5xx`, espere um pouco
+   mais a cada tentativa e repita; em qualquer outro erro, deixe a exceção subir. Limite as
+   tentativas (5 é razoável) e, se esgotar, **falhe alto**.
+3. No `main`: carregue a lista de versões críticas (ignorando comentários e linhas vazias,
+   normalizada), faça o login, siga as páginas pelo campo `proxima` guardando cada host num
+   `dict` indexado pelo IP, e conte.
+4. Para a comparação, normalize os dois lados: `.strip().lower()`.
+
+Enquanto o coletor roda, olhe o terminal do servidor: você vai ver os `429` e o `500`
+acontecendo, e o seu script reagindo a eles.
+
+A flag é `FLAG{unicos-criticos}`.
+
+<Hint title="Dica 1">
+Um coletor que conta 32 hosts está engolindo o 429 (saída real de um coletor com
+`except Exception: pass`: `hosts: 32`). Um que conta 96 não está removendo os repetidos. Um
+que conta 86 ou 87 está pulando uma página que falhou. O número certo de hosts únicos não
+muda entre execuções: se você rodar duas vezes e tiver dois resultados, o script tem um bug.
+</Hint>
+
+<Hint title="Dica 2">
+Se o número de hosts está certo mas o de críticos parece baixo, confira a normalização. No
+REPL: `" Apache httpd 2.4.49  ".strip().lower() == "Apache httpd 2.4.49".lower()` dá
+`True`. A lista do arquivo também precisa passar pelo mesmo tratamento, e as linhas de
+comentário (que começam com `#`) não entram.
+</Hint>
+
+<Solution title="Solução da Missão 3">
+```python
+#!/usr/bin/env python3
+"""coletor.py — polite client for the inventory API on 127.0.0.1:8077."""
+import json
+import sys
+import time
+import urllib.error
+import urllib.request
+
+BASE = "http://127.0.0.1:8077"
+MAX_TRIES = 5
+
+
+def call(method, path, token=None, body=None):
+    """Makes one request with retry; returns the decoded JSON."""
+    data = json.dumps(body).encode() if body is not None else None
+    headers = {"User-Agent": "coletor-0.7/1.0"}
+    if data is not None:
+        headers["Content-Type"] = "application/json"
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    for attempt in range(1, MAX_TRIES + 1):
+        req = urllib.request.Request(BASE + path, data=data, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                return json.load(resp)
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                wait = float(e.headers.get("Retry-After", "1"))
+                print(f"  429 em {path}: esperando {wait:g} s", file=sys.stderr)
+                time.sleep(wait)
+            elif e.code >= 500:
+                print(f"  {e.code} em {path}: tentativa {attempt}", file=sys.stderr)
+                time.sleep(0.5 * attempt)
+            else:
+                raise
+    raise RuntimeError(f"desisti de {path} depois de {MAX_TRIES} tentativas")
+
+
+def load_critical(path):
+    with open(path, encoding="utf-8") as f:
+        return {line.strip().lower() for line in f if line.strip() and not line.startswith("#")}
+
+
+def main():
+    critical = load_critical("dados/versoes-criticas.txt")
+    token = call("POST", "/api/login", body={"usuario": "aluno", "senha": "treino-0.7"})["token"]
+    hosts = {}
+    path = "/api/hosts?pagina=1"
+    while path:
+        page = call("GET", path, token=token)
+        for host in page["hosts"]:
+            hosts[host["ip"]] = host
+        path = page["proxima"]
+    bad = sorted(ip for ip, h in hosts.items()
+                 if any(s["versao"].strip().lower() in critical for s in h["servicos"]))
+    print(f"hosts únicos: {len(hosts)}")
+    print(f"hosts com versão crítica: {len(bad)}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+Saída real do stderr (os números de página dos 429 variam com a velocidade da máquina):
+
+```console
+$ python3 coletor.py
+  429 em /api/hosts?pagina=5: esperando 1 s
+  500 em /api/hosts?pagina=7: tentativa 1
+  429 em /api/hosts?pagina=8: esperando 1 s
+  429 em /api/hosts?pagina=12: esperando 1 s
+```
+
+Em seguida vêm as duas linhas do resultado, que vão no formato `FLAG{unicos-criticos}`.
+O conjunto `critical` é um `set`: verificar se uma versão está nele é instantâneo, mesmo
+com milhares de versões. O `dict` `hosts` elimina os repetidos porque a mesma chave (o IP)
+só existe uma vez.
+</Solution>
+
+<FlagInput task="missao-3-coletor-http" />
+
+Quando terminar as três missões, pare o servidor com Ctrl+C no terminal dele.
+
+### 5.5 Walkthrough: venv, requests e Bandit numa ferramenta suspeita (sem flag)
+
+Este walkthrough precisa de internet (para baixar pacotes do PyPI) e de `sudo` uma vez.
+Ele mostra três coisas que você vai usar em todas as trilhas seguintes: instalar pacotes do
+jeito certo, a biblioteca `requests` e a revisão de código com o Bandit.
+
+**Passo 1: o erro que protege o seu sistema.** No Ubuntu, tentar instalar um pacote com
+`pip` no Python do sistema dá este erro (saída real, Ubuntu 26.04 com Python 3.14):
+
+```console
+error: externally-managed-environment
+
+× This environment is externally managed
+╰─> To install Python packages system-wide, try apt install
+    python3-xyz, where xyz is the package you are trying to
+    install.
+
+    If you wish to install a non-Debian-packaged Python package,
+    create a virtual environment using python3 -m venv path/to/venv.
+    Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make
+    sure you have python3-full installed.
+    ...
+note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
+hint: See PEP 668 for the detailed specification.
+```
+
+Isso é a <GlossaryTerm term="PEP 668">PEP 668</GlossaryTerm> em ação (uma
+<GlossaryTerm term="PEP">PEP</GlossaryTerm>, *Python Enhancement Proposal*, é o documento
+que propõe e registra mudanças no Python). A distribuição coloca um arquivo
+`EXTERNALLY-MANAGED` na pasta da biblioteca padrão (aqui, `/usr/lib/python3.14/`), e o pip
+passa a recusar instalações fora de um ambiente virtual, porque misturar pacotes do pip com
+os do `apt` pode quebrar ferramentas do próprio sistema que dependem do Python. **Não**
+use `--break-system-packages` nem `sudo pip`: use um ambiente virtual.
+
+**Passo 2: o ambiente virtual.** Um <GlossaryTerm term="virtual environment">ambiente
+virtual</GlossaryTerm> (*virtual environment*, ou *venv*) é uma pasta com um Python e
+pacotes só daquele projeto. No Ubuntu, o módulo `venv` precisa de um pacote do sistema
+(sem ele, o próprio Python avisa: `The virtual environment was not created successfully
+because ensurepip is not available ... apt install python3.14-venv`):
+
+```console
+$ sudo apt install python3-venv
+$ cd ~/treino-0-7
+$ python3 -m venv .venv
+$ source .venv/bin/activate
+(.venv) $ python -m pip install requests bandit
+...
+Successfully installed PyYAML-6.0.3 bandit-1.9.4 certifi-2026.10.18 charset_normalizer-3.5.2 idna-3.20 markdown-it-py-4.2.0 mdurl-0.1.2 pygments-2.21.0 requests-2.34.2 rich-15.0.0 stevedore-5.9.1 urllib3-2.8.0
+```
+
+O `source .venv/bin/activate` muda o `PATH` do shell atual (o `source` do 0.6) para que
+`python` e `pip` sejam os do venv; o prompt ganha o prefixo `(.venv)`. Para sair, `deactivate`.
+Repare na última linha: você pediu **dois** pacotes e ganhou **doze**. Os outros dez são as
+dependências deles, as <GlossaryTerm term="transitive dependency">dependências
+transitivas</GlossaryTerm>: código de autores que você nem escolheu, rodando com os seus
+privilégios. As versões que você vai ver serão outras, mais novas.
+
+**Passo 3: o mesmo coletor, com requests.** A biblioteca
+<GlossaryTerm term="requests">requests</GlossaryTerm> é a forma mais popular de fazer HTTP
+em Python. Com o servidor de treino ligado de novo, compare este coletor com a solução da
+Missão 3:
+
+```python
+#!/usr/bin/env python3
+"""coletor_requests.py — the Mission 3 collector rewritten with requests."""
+import time
+
+import requests
+
+BASE = "http://127.0.0.1:8077"
+
+session = requests.Session()
+session.headers["User-Agent"] = "coletor-0.7/2.0"
+r = session.post(f"{BASE}/api/login", json={"usuario": "aluno", "senha": "treino-0.7"}, timeout=5)
+r.raise_for_status()
+session.headers["Authorization"] = f"Bearer {r.json()['token']}"
+
+hosts, path = {}, "/api/hosts?pagina=1"
+while path:
+    for attempt in range(5):
+        r = session.get(BASE + path, timeout=5)
+        if r.status_code == 429:
+            time.sleep(float(r.headers.get("Retry-After", "1")))
+        elif r.status_code >= 500:
+            time.sleep(0.5 * (attempt + 1))
+        else:
+            break
+    r.raise_for_status()
+    page = r.json()
+    hosts.update({h["ip"]: h for h in page["hosts"]})
+    path = page["proxima"]
+print(f"hosts únicos: {len(hosts)}")
+```
+
+O `Session` guarda os cabeçalhos para todos os pedidos; `json=` monta o corpo e o
+`Content-Type` sozinho; e, ao contrário do `urllib`, o `requests` **não** lança exceção
+para 4xx e 5xx: você olha o `status_code` e chama `raise_for_status()` quando quer que um
+erro vire exceção. Rodando, ele imprime a mesma contagem de hosts únicos da Missão 3. A
+escolha entre os dois: o `urllib` não precisa de instalação (bom para um script que vai
+rodar numa máquina sem internet, como dentro de um lab); o `requests` é mais cômodo, mas é
+uma dependência a mais.
+
+**Passo 4: revisar uma ferramenta suspeita com o Bandit.** Imagine que um colega achou num
+fórum uma "ferramenta útil de recon", o `ferramenta_suspeita.py` que o kit criou. Antes de
+rodar qualquer coisa assim, leia o código. E use uma ferramenta de
+<GlossaryTerm term="static analysis">análise estática</GlossaryTerm> (que examina o código
+sem executá-lo): o <GlossaryTerm term="Bandit">Bandit</GlossaryTerm>, do PyCQA, que é para
+Python o que o ShellCheck foi para o Bash no 0.6. Saída real, resumida:
+
+```console
+(.venv) $ bandit ferramenta_suspeita.py
+...
+>> Issue: [B403:blacklist] Consider possible security implications associated with pickle module.
+   Severity: Low   Confidence: High
+   Location: ./ferramenta_suspeita.py:4:0
+>> Issue: [B404:blacklist] Consider possible security implications associated with the subprocess module.
+   Severity: Low   Confidence: High
+   Location: ./ferramenta_suspeita.py:5:0
+>> Issue: [B105:hardcoded_password_string] Possible hardcoded password: 'Sup3rS3cret!'
+   Severity: Low   Confidence: Medium
+   Location: ./ferramenta_suspeita.py:11:15
+>> Issue: [B602:subprocess_popen_with_shell_equals_true] subprocess call with shell=True identified, security issue.
+   Severity: High   Confidence: High
+   Location: ./ferramenta_suspeita.py:15:11
+>> Issue: [B501:request_with_no_cert_validation] Call to requests with verify=False disabling SSL certificate checks, security issue.
+   Severity: High   Confidence: High
+   Location: ./ferramenta_suspeita.py:19:11
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   Location: ./ferramenta_suspeita.py:19:11
+>> Issue: [B301:blacklist] Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.
+   Severity: Medium   Confidence: High
+   Location: ./ferramenta_suspeita.py:24:15
+>> Issue: [B202:tarfile_unsafe_members] tarfile.extractall used without any validation. Please check and discard dangerous members.
+   Severity: High   Confidence: High
+   Location: ./ferramenta_suspeita.py:29:8
+>> Issue: [B307:blacklist] Use of possibly insecure function - consider using safer ast.literal_eval.
+   Severity: Medium   Confidence: High
+   Location: ./ferramenta_suspeita.py:33:11
+...
+	Total issues (by severity):
+		Undefined: 0
+		Low: 3
+		Medium: 3
+		High: 3
+```
+
+Cada achado tem um código (como o `SC2086` do ShellCheck), uma severidade, uma confiança e
+um link para a explicação; a saída completa também mostra o
+<GlossaryTerm term="CWE">CWE</GlossaryTerm> de cada um (por exemplo, CWE-78 para injeção de
+comandos e CWE-22 para path traversal). Repare em três coisas:
+
+- **Tudo o que a seção 3.5 e o caso do tarfile ensinaram apareceu**: `shell=True` (B602),
+  `eval` (B307), `pickle` (B301), `extractall` sem validação (B202), mais `verify=False`
+  (desliga a verificação do certificado <GlossaryTerm term="TLS">TLS</GlossaryTerm>, B501),
+  pedido sem timeout (B113) e senha no código (B105).
+- **O B202 apareceu mesmo no Python 3.14**, onde o filtro padrão já é `'data'`. O Bandit
+  não sabe em que versão o código vai rodar; passar `filter="data"` explicitamente deixa o
+  código seguro em qualquer versão e a intenção clara para quem revisa.
+- **Severidade baixa não é "ignore"**: os B403 e B404 só avisam que um módulo sensível foi
+  importado. Eles servem de mapa: "olhe com cuidado onde `pickle` e `subprocess` são usados".
+
+**Seu desafio (sem flag):** reescreva o `ferramenta_suspeita.py` de forma segura e rode o
+Bandit de novo até sobrar só o aviso de importação do `subprocess` (que é legítimo, se ele
+for usado com uma lista). Dicas: lista de argumentos com validação do alvo; `verify` padrão
+e `timeout`; JSON em vez de pickle; `filter="data"`; `ast.literal_eval` ou nada no lugar
+do `eval`; senha numa variável de ambiente (`os.environ`). Quando terminar, saia do venv
+com `deactivate`.
+
+## 6. Variações e aprofundamento
+
+### 6.1 Paralelismo: muitos alvos ao mesmo tempo
+
+O `sondar.py` testa uma porta por vez. Contra uma porta que não responde, ele espera o
+timeout inteiro antes de passar à próxima: com 1 segundo de timeout, mil portas silenciosas
+levam mais de 16 minutos. Como quase todo esse tempo é **espera** (pela rede, não pelo
+processador), dá para esperar várias ao mesmo tempo com um
+<GlossaryTerm term="thread pool">thread pool</GlossaryTerm>:
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+from sondar import probe            # reusa a função da Missão 2
+
+with ThreadPoolExecutor(max_workers=20) as pool:
+    results = list(pool.map(probe, range(8070, 8080)))
+```
+
+O `ThreadPoolExecutor` mantém até 20 *threads* (linhas de execução dentro do mesmo
+processo) e o `map` distribui as portas entre elas, devolvendo os resultados na ordem das
+portas. Repare no `from sondar import probe`: foi o `if __name__ == "__main__"` que permitiu
+reusar a função sem rodar o scanner (seção 2.4).
+
+Paralelismo tem custo, e decidir o número de workers é uma decisão de **escopo**, não só de
+desempenho: mais conexões simultâneas significam mais carga no alvo, mais chance de
+derrubar um serviço frágil (e de disparar o rate limiting ou um
+<GlossaryTerm term="IDS">IDS</GlossaryTerm>) e mais ruído nos logs. As regras de
+engajamento da Trilha 1 costumam definir limites de taxa; o seu script deve respeitá-los.
+
+### 6.2 O lado do servidor: socketserver e http.server
+
+O servidor de treino das missões usa dois módulos da biblioteca padrão que valem conhecer:
+`socketserver` (um servidor TCP em poucas linhas, com uma classe que trata cada conexão) e
+`http.server` (um servidor HTTP simples). O caso mais famoso do segundo é:
+
+```console
+$ python3 -m http.server 8000 --bind 127.0.0.1
+```
+
+que serve a pasta atual por HTTP. Pentesters usam isso o tempo todo para transferir
+arquivos para uma máquina de lab (você vai ver na Trilha 6). Duas regras: **sempre** passe
+`--bind 127.0.0.1` (ou o IP da rede do lab), porque o padrão é escutar em todas as
+interfaces, expondo a pasta a qualquer um na sua rede; e a própria documentação do
+`http.server` avisa que ele não é recomendado para produção, porque implementa só
+verificações básicas de segurança.
+
+### 6.3 Protocolos binários: struct e a ordem dos bytes
+
+Muitos protocolos não são de texto: o tamanho de um campo vem em 2 ou 4 bytes no começo da
+mensagem, e números são gravados em binário. O módulo <GlossaryTerm term="struct">struct</GlossaryTerm>
+converte números em bytes e vice-versa, num formato fixo (saída real):
+
+```pycon
+>>> struct.pack("!H", 8080), struct.unpack("!H", b"\x1f\x90"), struct.pack("<H", 8080)
+(b'\x1f\x90', (8080,), b'\x90\x1f')
+```
+
+`H` é um inteiro sem sinal de 2 bytes. O `!` escolhe a **ordem de rede** (*big-endian*, o
+byte mais significativo primeiro), que é a ordem dos cabeçalhos TCP/IP que você decodificou
+no 0.2; o `<` escolhe *little-endian*, a ordem dos processadores x86. O mesmo número 8080
+vira `1f 90` ou `90 1f`. Ler um protocolo binário com a ordem errada dá números absurdos, e
+é o primeiro suspeito quando "a porta veio 36895".
+
+### 6.4 Hashes, codificações e o que vem na Trilha 3
+
+A biblioteca padrão já tem o necessário para a Trilha 3 começar: `hashlib` (SHA-256 e
+outros <GlossaryTerm term="hash">hashes</GlossaryTerm>), `hmac`, `base64` e `secrets` (números
+aleatórios próprios para segurança, que o servidor de treino usa para gerar o token).
+Saídas reais:
+
+```pycon
+>>> base64.b64encode(b"aluno:treino"), hashlib.sha256(b"abc").hexdigest()[:16]
+(b'YWx1bm86dHJlaW5v', 'ba7816bf8f01cfea')
+```
+
+O primeiro é <GlossaryTerm term="Base64">Base64</GlossaryTerm>, uma codificação reversível
+(a do cabeçalho de autenticação HTTP Basic da Trilha 3, não uma proteção); o segundo, o
+começo do SHA-256 de `abc`, que você usou como resposta na Missão 2. Para números
+aleatórios em segurança (tokens, senhas, nonces), use sempre `secrets`, nunca `random`,
+cujo gerador é previsível.
+
+### 6.5 Bibliotecas de segurança que você vai encontrar
+
+Sem instalar nada agora, saiba que existem, porque elas aparecem em ferramentas e exploits:
+
+- **Scapy:** monta e envia pacotes de qualquer protocolo, campo a campo. Usada para testar
+  como um sistema reage a pacotes fora do padrão; precisa de privilégios para enviar
+  pacotes "crus".
+- **pwntools:** biblioteca de CTF e exploração, com utilitários para conversar com
+  serviços, empacotar endereços de memória e montar payloads.
+- **Impacket:** visto na seção 3.6; implementações em Python de SMB, MSRPC, Kerberos e
+  outros protocolos do Windows, usadas na Trilha 7.
+
+A regra da seção 4 vale para todas: venv por projeto, versões fixadas, e ler o que se roda.
+
+### 6.6 Python 2 em exploits antigos
+
+Um exploit de 2012 provavelmente foi escrito para o Python 2, encerrado em janeiro de 2020.
+Sinais: `print "texto"` sem parênteses, `raw_input()`, `except Exception, e:`, e a mistura
+de texto e bytes que o Python 2 permitia. Rodá-lo com `python3` dá `SyntaxError` logo na
+primeira dessas linhas (lembre: a compilação para antes de qualquer execução). Converter é
+quase sempre mecânico: parênteses no `print`, `input()` no lugar de `raw_input()`, e decidir
+explicitamente o que é `str` e o que é `bytes` (seção 2.6), que é onde mora o trabalho de
+verdade, porque é nos sockets que o exploit manda os seus bytes. Ao converter, aproveite
+para **ler** o exploit inteiro: o que ele envia, para onde, e o que faz com a resposta.
+
+## 7. Erros comuns
+
+**`IndentationError` ou `TabError`.** Recuo misturado (tabs e espaços, ou 2 e 4 espaços).
+Configure o editor para inserir 4 espaços ao apertar Tab e não misture estilos num arquivo.
+
+**`TypeError: can only concatenate str (not "int") to str`.** Você somou texto com número,
+quase sempre um valor que veio de `sys.argv`, de um arquivo ou da rede (que chegam como
+texto). Converta na entrada: `porta = int(sys.argv[1])`.
+
+**`TypeError` com `bytes` e `str`, ou um banner que aparece como `b'SSH-2.0...\r\n'`.**
+Você esqueceu de atravessar a fronteira: `.encode()` antes de `sendall`, `.decode()` depois
+de `recv`. Se imprimiu `b'...'`, é porque mostrou os bytes direto.
+
+**O scanner "trava".** Faltou `settimeout()`. Sem ele, um `connect` sem resposta ou um
+`recv` num serviço que espera você falar ficam esperando o prazo do sistema, que pode ser de
+minutos.
+
+**O protocolo funciona "às vezes".** Você está tratando cada `recv` como uma mensagem. O TCP
+não preserva fronteiras: leia por linha (`makefile` e `readline`) ou acumule num buffer até
+o delimitador (seção 3.2). Testar em loopback, onde tudo é rápido, esconde esse bug; numa
+rede lenta ele aparece.
+
+**`range(8070, 8079)` não testou a 8079.** O fim do `range` não entra.
+
+**O script termina sem erro e com o número errado.** Procure `except: pass`, `except
+Exception: pass` ou um `try` que envolve código demais. Deixe a exceção aparecer, ou trate
+só a específica e **registre** o que aconteceu no stderr.
+
+**`AttributeError: 'NoneType' object has no attribute ...`.** Um `find()`, um `re.match()`
+ou um `dict.get()` devolveu `None`, e você usou o resultado sem conferir. Teste antes:
+`if m:` ou `if elem is not None:`.
+
+**`ModuleNotFoundError: No module named 'requests'`.** O pacote não está instalado no
+Python que rodou o script. Confira se o venv está ativado (o prompt tem `(.venv)`?) e qual
+Python está rodando: `python -c "import sys; print(sys.executable)"`.
+
+**`error: externally-managed-environment`.** É a PEP 668 protegendo o sistema. Crie um venv
+(seção 5.5); não use `--break-system-packages`.
+
+**`AttributeError: module 'socket' has no attribute 'socket'`.** Você salvou um arquivo
+como `socket.py` (ou `json.py`, `requests.py`...) na mesma pasta, e o `import` carregou o
+seu arquivo no lugar do módulo de verdade (a pasta do script vem primeiro no `sys.path`).
+Renomeie o arquivo e apague a pasta `__pycache__` dele.
+
+**`python` não existe, só `python3`.** No Ubuntu, o comando do Python 3 é `python3`; o
+`python` sem número só existe dentro de um venv ativado ou se você instalar o pacote
+`python-is-python3`. Nos shebangs, use `#!/usr/bin/env python3`.
+
+**`ConnectionRefusedError` em todas as portas das missões.** O servidor de treino não está
+ligado (ou você o desligou). Confira o segundo terminal e o `ss -ltn` da seção 5.1.
+
+## 8. Boas práticas e segurança
+
+### 8.1 Dados de fora nunca viram código
+
+A regra mais importante do 0.6 vale inteira aqui, com os nomes do Python:
+
+- **subprocess com lista, sem `shell=True`.** Se precisar mesmo de um shell (um pipe, um
+  redirecionamento), monte o comando com valores fixos e escape cada dado externo com
+  `shlex.quote()`, como a documentação oficial indica; mas a lista é quase sempre possível.
+- **Valide a entrada por allowlist** antes de usá-la. Para um IP, o módulo `ipaddress` faz
+  a validação certa, que a regex do 0.6 não fazia (octetos até 255):
+
+  ```python
+  import ipaddress
+  try:
+      alvo = str(ipaddress.ip_address(sys.argv[1]))   # recusa "192.168.0.300" e "127.0.0.1; id"
+  except ValueError:
+      sys.exit("erro: IP inválido")
+  ```
+
+- **Nunca `eval`, `exec` ou `pickle` com dados de fora.** Para literais, `ast.literal_eval`;
+  para troca de dados, JSON.
+- **Use `--` antes de argumentos vindos de fora** quando chamar programas que aceitam
+  opções, como no 0.6: `["grep", "--", padrao, arquivo]`. Uma lista impede a injeção de
+  comandos, mas não a <GlossaryTerm term="argument injection">argument injection</GlossaryTerm>
+  (um "alvo" chamado `-oN/tmp/x` ainda seria lido como opção pelo programa).
+
+### 8.2 Rede: timeouts, TLS e educação
+
+- **Todo pedido de rede tem timeout**: `settimeout()` no socket, `timeout=` no `urlopen` e
+  no `requests`. O Bandit aponta pedidos sem timeout (B113) por um motivo: um script que
+  espera para sempre não termina nem avisa.
+- **Nunca `verify=False` por padrão.** Desligar a verificação do certificado TLS transforma
+  o <GlossaryTerm term="HTTPS">HTTPS</GlossaryTerm> em um canal que qualquer um no caminho
+  pode interceptar (a Trilha 3 explica por quê). Num lab com certificado autoassinado, a
+  forma certa é apontar o certificado do lab (`verify="caminho/do/certificado.pem"`); se
+  desligar, que seja num script de lab, com um comentário dizendo por quê.
+- **Respeite o alvo.** Trate `429` e `Retry-After`, limite o paralelismo, tenha um número
+  máximo de tentativas. Em escopo de cliente, a taxa permitida está nas regras de
+  engajamento (Trilha 1).
+
+### 8.3 Arquivos que vêm de fora
+
+- **Extraia `.tar` com `filter="data"`**, explicitamente, mesmo no 3.14:
+
+  ```python
+  with tarfile.open(caminho) as tar:
+      tar.extractall(destino, filter="data")
+  ```
+
+  Para quem roda versões antigas sem os filtros, a documentação sugere testar
+  `hasattr(tarfile, "data_filter")` e avisar o usuário se não existir. E lembre que a
+  extração pode parar no meio: extraia numa pasta temporária vazia (o `tempfile.mkdtemp()`
+  é o `mktemp -d` do Python) e só mova o resultado depois de dar certo.
+- **XML de fonte não confiável** pode explorar recursos do formato para consumir memória e
+  processador (a documentação do Python descreve ataques como o *billion laughs*, uma
+  expansão exponencial de entidades). A saída do nmap que você mesmo gerou é confiável;
+  um XML enviado por terceiros, não: consulte a seção *XML security* da documentação antes
+  de processá-lo.
+- O script que gerou a demonstração do tarfile da seção 4, para você reproduzir numa pasta
+  vazia em `/tmp` (ele cria um arquivo fora da pasta de destino de propósito, na segunda
+  extração):
+
+  ```python
+  import io, os, tarfile
+
+  data = b"conteudo plantado pelo arquivo\n"
+  with tarfile.open("relatorio.tar", "w") as tar:
+      ok = tarfile.TarInfo("relatorio/achados.txt"); ok.size = 4
+      tar.addfile(ok, io.BytesIO(b"ok!\n"))
+      evil = tarfile.TarInfo("../fora-do-destino.txt"); evil.size = len(data)
+      tar.addfile(evil, io.BytesIO(data))
+  with tarfile.open("relatorio.tar") as tar:
+      for m in tar.getmembers():
+          print("membro:", m.name)
+  os.makedirs("destino", exist_ok=True)
+  with tarfile.open("relatorio.tar") as tar:
+      try:
+          tar.extractall("destino")
+      except tarfile.FilterError as e:
+          print(type(e).__name__ + ":", e)
+  print("criou fora-do-destino.txt?", os.path.exists("fora-do-destino.txt"))
+  with tarfile.open("relatorio.tar") as tar:
+      tar.extractall("destino", filter="fully_trusted")
+  print("com filter='fully_trusted':", os.path.exists("fora-do-destino.txt"))
+  ```
+
+### 8.4 Segredos fora do código
+
+Senhas, tokens e chaves de API não vão no código-fonte (o B105 do Bandit). Leia de uma
+variável de ambiente (`os.environ["API_TOKEN"]`, que falha alto se não existir) ou de um
+arquivo com permissão `600` (0.3) fora do repositório. Lembre do caso PyTorch: o pacote
+malicioso coletava as **variáveis de ambiente** justamente porque é lá que muitos segredos
+ficam. Num computador com ferramentas de terceiros instaladas, nenhum lugar é cofre: o
+melhor é não guardar segredos de cliente onde roda código que você não revisou. E nunca
+faça commit de segredos no Git (0.8): o histórico guarda tudo.
+
+### 8.5 Dependências: venv, versões e hashes
+
+- **Um venv por projeto**, nunca `sudo pip`. Para instalar uma *ferramenta* de linha de
+  comando escrita em Python, o `pipx` cria um venv para ela automaticamente, como a própria
+  mensagem da PEP 668 sugere.
+- **Confira o nome antes de instalar.** `reqeusts` não é `requests`: o
+  <GlossaryTerm term="typosquatting">typosquatting</GlossaryTerm> do 0.4 existe no PyPI.
+  Abra a página do pacote no PyPI e confira o projeto e o repositório.
+- **Fixe versões e hashes** num arquivo de requisitos, e instale exigindo os hashes. O
+  <GlossaryTerm term="hash pinning">hash pinning</GlossaryTerm> faz o pip recusar um pacote
+  cujo arquivo não bate com o hash registrado, mesmo que alguém publique outra coisa com o
+  mesmo nome e versão:
+
+  ```text
+  # requirements.txt
+  requests==2.34.2 \
+      --hash=sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0
+  ```
+
+  O hash acima é o SHA-256 real do arquivo `requests-2.34.2-py3-none-any.whl`. Mas, com
+  `--require-hashes`, **todas** as dependências, inclusive as transitivas, precisam estar
+  fixadas com versão e hash. Com só a linha acima, o pip recusa (saída real, cortada):
+
+  ```console
+  (.venv) $ python -m pip install --require-hashes -r requirements.txt
+  Collecting requests==2.34.2 (from -r requirements.txt (line 1))
+  Collecting charset_normalizer<4,>=2 (from requests==2.34.2->-r requirements.txt (line 1))
+  ERROR: In --require-hashes mode, all requirements must have their versions pinned with ==. These do not:
+      charset_normalizer<4,>=2 from https://files.pythonhosted.org/.../charset_normalizer-3.5.2-...whl (from requests==2.34.2->-r requirements.txt (line 1))
+  ```
+
+  A recusa é a proteção funcionando: nada entra sem estar fixado. Manter esse arquivo à mão
+  é trabalhoso; ferramentas como o `pip-tools` o geram com todas as dependências e hashes,
+  mas a ideia é esta.
+- **Um índice por pacote.** O caso PyTorch aconteceu porque o pip consultava dois índices e
+  preferia o público. Se você usa um índice privado, configure o instalador para buscar os
+  pacotes internos **só** nele.
+
+### 8.6 Revisar, testar e o olhar de quem defende
+
+- **Leia e passe o Bandit** antes de rodar código de terceiros, e nos seus próprios
+  scripts antes de usá-los num cliente. O Bandit pega padrões, não lógica (como o
+  ShellCheck no 0.6); teste com dados reais, começando pelo caminho de erro.
+- **Identifique-se.** Um `User-Agent` próprio (como o `coletor-0.7/1.0` das missões) deixa
+  claro, nos logs do cliente, o que veio do teste autorizado e o que veio de outra fonte.
+  O contrário (copiar o user agent de um navegador para "passar despercebido") só faz
+  sentido num teste que tenha esse objetivo combinado.
+- **Pense no rastro.** O terminal do servidor de treino mostrou o que um defensor vê: o
+  horário de cada conexão, o scanner que conectou na 8074 e foi embora sem dizer nada, a
+  rajada de pedidos que gerou os `429`. Um IDS ou um analista vê o mesmo padrão: muitas
+  portas de um mesmo IP em poucos segundos (o connect scan completa o handshake, então fica
+  registrado pelo próprio serviço), e muitos pedidos a uma API em sequência. Do lado da
+  defesa, o mesmo Python que você usou nas missões é a ferramenta para contar esses padrões
+  nos logs, como o 0.6 fez com o Bash.
+
+## 9. Exercícios
+
+As três missões da seção 5 geram as flags do módulo. Abaixo, cenários para pensar, alguns
+exercícios extras sem flag e o quiz final, que conta para concluir o módulo.
+
+### Cenários para pensar
+
+<Callout variant="hypothetical" title="o exploit do repositório">
+Um colega encontra num repositório público um "exploit" em Python para um CVE recente. O
+README diz para rodar `pip install -r requirements.txt` e depois `sudo python3 exploit.py
+ALVO`. O `requirements.txt` tem um pacote com nome parecido com o de uma biblioteca
+conhecida, e o `exploit.py` tem uma linha longa com `base64.b64decode(...)` passada a
+`exec()`.
+
+1. Quais sinais de alerta você vê, e em que ordem você os investigaria?
+2. Como você examinaria o que a linha com `exec` faz **sem executá-la**?
+3. Onde você rodaria esse código, se decidisse rodar, e com quais privilégios?
+</Callout>
+
+<Callout variant="hypothetical" title="o relatório que encolheu">
+Um script de coleta de uma equipe roda todo mês contra a API de inventário de um cliente.
+Em março, ele relatou 1.200 hosts; em abril, 310, sem nenhum erro no log. O cliente diz que
+não desligou nenhum servidor. O script tem um `try`/`except Exception: pass` em volta de cada
+página e não registra os status codes.
+
+1. Que hipóteses explicam a queda, à luz da Missão 3?
+2. Que mudanças no script teriam mostrado o problema na hora?
+3. Como você provaria qual das hipóteses é a verdadeira?
+</Callout>
+
+<Callout variant="hypothetical" title="o ping pela web">
+Uma ferramenta interna de diagnóstico tem uma página onde o usuário digita um host, e o
+servidor executa `subprocess.run(f"ping -c 1 {host}", shell=True)`. Um analista sugere
+"bloquear o ponto e vírgula" para corrigir.
+
+1. Por que bloquear só o `;` não resolve? Cite outros caracteres que o shell interpreta.
+2. Qual é a correção de verdade, em duas partes?
+3. O que o Bandit diria do código original?
+</Callout>
+
+### Exercícios práticos extras (sem flag)
+
+1. **Diferença de varreduras.** Copie a `varredura.xml`, apague à mão duas portas abertas
+   de um host e acrescente uma porta aberta em outro. Escreva um script que compare as duas
+   varreduras e imprima, por host, as portas que surgiram e as que sumiram. (Dica: um
+   `dict` de IP para um `set` de portas abertas, e a diferença de conjuntos.)
+2. **URLs a partir do XML.** Refaça a Missão 2 do 0.6 em Python: a partir da
+   `varredura.xml`, gere as URLs dos serviços web abertos (80 e 8080 com `http`, 443 e 8443
+   com `https`, sem a porta quando ela for a padrão do esquema). Compare o tamanho do script
+   com a versão em Bash.
+3. **Opções no scanner.** Dê ao `sondar.py` um `argparse` com `--timeout` (float),
+   `--portas 8070-8079` (que você precisa interpretar) e `--paralelo N`, usando o
+   `ThreadPoolExecutor` da seção 6.1. Recuse faixas invertidas e portas fora de 1 a 65535,
+   com código 2.
+4. **Banner com regex.** Estenda o scanner para, quando o banner casar com
+   `SSH-(versão)-(software)`, imprimir o software separado; e, quando casar com o padrão de
+   um FTP (`220 ...`), mandar `QUIT\r\n` antes de fechar, como um cliente educado. Confira
+   no terminal do servidor que a 8079 respondeu `221 Tchau`.
+5. **Log de quem defende.** Rode o `sondar.py` três vezes e o `coletor.py` uma vez, guardando
+   a saída do servidor de treino num arquivo (`python3 servidor.py | tee servidor.log`).
+   Escreva um script que leia esse log e conte conexões por porta e respostas por status
+   code. Que padrão denuncia o scanner?
+
+<Quiz task="quiz-final" />
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O CPython **compila** o arquivo inteiro para bytecode e depois o **executa** numa máquina
+  virtual: erro de sintaxe para tudo antes de rodar; erro de tipo só aparece quando a linha
+  executa, por isso os caminhos raros precisam de teste.
+- Python tem **tipagem dinâmica e forte**: o tipo está no objeto, e o Python não mistura
+  tipos sozinho. Variáveis são **etiquetas**: `outra = portas` não copia.
+- `list`, `tuple`, `dict` e `set` resolvem quase todo o trabalho de organizar dados de
+  recon; `Counter` conta, e conjuntos comparam varreduras.
+- Erros são **exceções**: trate as específicas, onde dá para fazer algo útil, e nunca
+  engula em silêncio. Um script que trava avisa; um que engole o erro **mente**.
+- **`str` é texto, `bytes` é o que a rede conhece**: `encode` na saída, `decode` (com
+  `errors="replace"` para dados desconhecidos) na entrada.
+- Um **connect scan** distingue recusa (RST, `ConnectionRefusedError`), silêncio
+  (`TimeoutError` no connect), banner e serviço que espera o cliente (`TimeoutError` no
+  recv). O TCP é um **fluxo de bytes**: leia protocolos de linha com `makefile` e
+  `readline`.
+- Um coletor HTTP confiável faz login, segue a **paginação**, respeita **429 e
+  Retry-After**, tenta de novo em **5xx** com limite, deduplica e normaliza.
+- Dado de fora nunca vira código: `subprocess` com **lista**, sem `eval`, `exec` ou
+  `pickle`, `tarfile` com `filter="data"`, entrada validada por allowlist.
+- `pip install` executa código de terceiros: **venv** por projeto, nomes conferidos,
+  versões e **hashes** fixados, um índice por pacote. O caso PyTorch (2022) e o tarfile
+  (CVE-2007-4559) mostram o custo de esquecer isso.
+
+### Cola rápida
+
+| Tarefa | Como |
+|---|---|
+| Cabeçalho e entrada | `#!/usr/bin/env python3` · `if __name__ == "__main__": sys.exit(main())` |
+| Argumentos | `argparse.ArgumentParser()` · `add_argument("arquivo")` · `type=float` |
+| Erros e saída | `print(..., file=sys.stderr)` · `return 3` · `try: ... except TimeoutError:` |
+| Estruturas | `[ ]` lista · `( )` tupla · `{k: v}` dict · `{a, b}` set · `Counter(...)` |
+| Texto | `f"{ip}:{porta:>5}"` · `s.strip().lower()` · `s.split()` · `re.match(r"...", s)` |
+| Arquivos | `with open(p, encoding="utf-8") as f: for line in f:` |
+| str ↔ bytes | `s.encode("utf-8")` · `b.decode("utf-8", errors="replace")` |
+| Socket TCP | `socket.create_connection((ip, porta), timeout=1)` · `s.recv(1024)` · `s.sendall(b"...")` |
+| Linhas no socket | `f = s.makefile("rw", encoding="utf-8", newline="\n")` · `f.readline()` · `f.flush()` |
+| HTTP (stdlib) | `urllib.request.Request(url, data=..., headers=..., method=...)` · `urlopen(req, timeout=5)` |
+| JSON e XML | `json.loads` · `json.dumps` · `ET.parse(p).getroot()` · `root.iter("host")` |
+| Outros programas | `subprocess.run(["cmd", "arg"], capture_output=True, text=True, check=True)` |
+| Paralelismo | `ThreadPoolExecutor(max_workers=20).map(func, itens)` |
+| Dependências | `python3 -m venv .venv` · `source .venv/bin/activate` · `pip install --require-hashes -r requirements.txt` |
+| Revisão | `bandit arquivo.py` · `python3 -c "import dis; dis.dis('...')"` |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [O tutorial oficial do Python](https://docs.python.org/3/tutorial/) e a
+  [referência da biblioteca padrão](https://docs.python.org/3/library/) — a fonte
+  primária para tudo o que este módulo usou; as páginas de `socket`, `subprocess` (seção
+  *Security Considerations*), `tarfile` (seção *Extraction filters*) e `xml` (seção *XML
+  security*) são as mais importantes para segurança (em inglês).
+- [Socket Programming HOWTO](https://docs.python.org/3/howto/sockets.html) — guia oficial
+  sobre sockets, incluindo o porquê das mensagens partidas (em inglês).
+- [Documentação do nmap sobre a saída XML](https://nmap.org/book/output-formats-xml-output.html)
+  — o formato da Missão 1 (em inglês).
+- [Documentação do Bandit](https://bandit.readthedocs.io/) — a lista de verificações, com a
+  explicação de cada código B (em inglês).
+- [PEP 668](https://peps.python.org/pep-0668/) e [PEP 706](https://peps.python.org/pep-0706/)
+  — as propostas por trás do erro do pip e dos filtros do tarfile (em inglês).
+- [MITRE ATT&CK T1059.006](https://attack.mitre.org/techniques/T1059/006/) e o
+  [alerta AA22-277A da CISA](https://www.cisa.gov/news-events/cybersecurity-advisories/aa22-277a)
+  — Python e Impacket nas mãos de atacantes reais (em inglês).
+
+**O que vem a seguir:** o módulo 0.8, "Git e versionamento básico", ensina a guardar com
+segurança os scripts que você acabou de escrever e as evidências de um pentest. Na Trilha 2,
+o nmap vai fazer em escala o que o `sondar.py` fez em dez portas, e você vai entender cada
+opção dele por já ter escrito um scanner.

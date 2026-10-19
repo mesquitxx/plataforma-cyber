@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" role="img" aria-labelledby="t d">
+  <title id="t">Fluxo do coletor educado da Missão 3</title>
+  <desc id="d">O coletor começa com POST /api/login, enviando usuário e senha em JSON, e recebe um token. Depois pede GET /api/hosts?pagina=1 com o cabeçalho Authorization: Bearer e o token. Cada resposta passa por uma decisão pelo status code. 200: os hosts da página entram num dicionário indexado pelo IP, o que elimina duplicados, e o coletor segue o campo proxima até ele ser null. 429 Too Many Requests: o coletor dorme o número de segundos do cabeçalho Retry-After e repete o mesmo pedido. 500 ou outro 5xx: espera um pouco mais a cada tentativa e repete, até cinco tentativas, e então desiste com erro. 401 ou 404: é erro do próprio script, que para e mostra a causa. No fim, o coletor conta os hosts únicos e os que têm uma versão crítica, normalizando o texto com strip e lower. Um aviso lembra que um except que engole o erro e segue em frente produz um número errado sem nenhuma mensagem: o coletor ingênuo do módulo contou 32 hosts.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 13.5px; font-weight: 700; }
+    .s { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c46a"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+  </defs>
+  <rect width="900" height="480" fill="#121815"/>
+
+  <rect class="box" x="30" y="30" width="250" height="70" rx="10"/>
+  <text class="m" x="44" y="54">1 POST /api/login</text>
+  <text class="s" x="44" y="76">{"usuario":..., "senha":...}</text>
+  <text class="s" x="44" y="92">← {"token": "9f3c…"}</text>
+
+  <rect class="box" x="320" y="30" width="270" height="70" rx="10"/>
+  <text class="m" x="334" y="54">2 GET /api/hosts?pagina=N</text>
+  <text class="s" x="334" y="76">Authorization: Bearer 9f3c…</text>
+  <text class="s" x="334" y="92">User-Agent: coletor-0.7/1.0</text>
+
+  <rect class="box" x="630" y="30" width="240" height="70" rx="10" style="stroke:#e8c46a"/>
+  <text class="m" x="644" y="54" style="fill:#e8c46a">3 status code?</text>
+  <text class="s" x="644" y="76">a decisão que separa um</text>
+  <text class="s" x="644" y="92">coletor certo de um que mente</text>
+
+  <g stroke-width="1.5">
+    <line x1="280" y1="65" x2="316" y2="65" stroke="#5ee08a" marker-end="url(#g)"/>
+    <line x1="590" y1="65" x2="626" y2="65" stroke="#5ee08a" marker-end="url(#g)"/>
+  </g>
+
+  <rect class="box" x="30" y="150" width="200" height="104" rx="10" style="stroke:#5ee08a"/>
+  <text class="m" x="44" y="174" style="fill:#5ee08a">200</text>
+  <text class="s" x="44" y="196">hosts[ip] = host</text>
+  <text class="s" x="44" y="212">(dict: sem duplicados)</text>
+  <text class="s" x="44" y="234">segue "proxima"</text>
+  <text class="s" x="44" y="248">até ser null</text>
+
+  <rect class="box" x="250" y="150" width="200" height="104" rx="10" style="stroke:#e8c46a"/>
+  <text class="m" x="264" y="174" style="fill:#e8c46a">429</text>
+  <text class="s" x="264" y="196">Too Many Requests</text>
+  <text class="s" x="264" y="218">sleep(Retry-After)</text>
+  <text class="s" x="264" y="240">e repete o pedido</text>
+
+  <rect class="box" x="470" y="150" width="200" height="104" rx="10" style="stroke:#e8c46a"/>
+  <text class="m" x="484" y="174" style="fill:#e8c46a">5xx</text>
+  <text class="s" x="484" y="196">falha do servidor</text>
+  <text class="s" x="484" y="218">espera mais a cada</text>
+  <text class="s" x="484" y="234">vez; no máximo 5</text>
+  <text class="s" x="484" y="248">tentativas, depois erro</text>
+
+  <rect class="box" x="690" y="150" width="180" height="104" rx="10" style="stroke:#f08c7a"/>
+  <text class="m" x="704" y="174" style="fill:#f08c7a">401 / 404</text>
+  <text class="s" x="704" y="196">erro do script</text>
+  <text class="s" x="704" y="218">(token, caminho):</text>
+  <text class="s" x="704" y="234">para e mostra</text>
+  <text class="s" x="704" y="248">a causa</text>
+
+  <g stroke-width="1.5" fill="none">
+    <path d="M750 100 L750 120 L130 120 L130 146" stroke="#5ee08a" marker-end="url(#g)"/>
+    <path d="M350 120 L350 146" stroke="#e8c46a" marker-end="url(#y)"/>
+    <path d="M570 120 L570 146" stroke="#e8c46a" marker-end="url(#y)"/>
+    <path d="M780 120 L780 146" stroke="#f08c7a" marker-end="url(#r)"/>
+  </g>
+
+  <text class="s" x="30" y="290" style="fill:#e6ede8">200, 429 e 5xx voltam ao passo 2: a 200 com a próxima página, a 429 e a 5xx com o MESMO pedido.</text>
+  <text class="s" x="30" y="312" style="fill:#e6ede8">401 e 404 encerram o script com a causa na tela.</text>
+  <rect class="box" x="30" y="340" width="400" height="110" rx="10"/>
+  <text class="m" x="44" y="364">4 fim: contar</text>
+  <text class="s" x="44" y="388">únicos = len(hosts)</text>
+  <text class="s" x="44" y="406">críticos: versao.strip().lower()</text>
+  <text class="s" x="44" y="422">está na lista de versões críticas</text>
+  <text class="s" x="44" y="438">(lista também normalizada)</text>
+
+  <rect class="box" x="470" y="340" width="400" height="110" rx="10" style="stroke:#f08c7a"/>
+  <text class="m" x="484" y="364" style="fill:#f08c7a">o coletor que mente</text>
+  <text class="s" x="484" y="388">try: ... except Exception: pass</text>
+  <text class="s" x="484" y="406">engole o 429 e o 500 e segue:</text>
+  <text class="s" x="484" y="422">nenhum erro na tela, e o coletor</text>
+  <text class="s" x="484" y="438">ingênuo contou só 32 hosts.</text>
+</svg>
