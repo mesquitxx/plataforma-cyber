@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" role="img" aria-labelledby="t d">
+  <title id="t">As duas pontas de um ataque a senhas: online e offline</title>
+  <desc id="d">Fluxo da esquerda para a direita, a partir de um serviço com login (a área /admin protegida por HTTP Basic Auth). Dele saem dois caminhos. O caminho de cima é o ataque online: a ferramenta Hydra envia tentativas de senha pela rede contra o serviço, em duas modalidades — dictionary attack (muitas senhas contra um usuário) e password spraying (uma senha comum contra muitos usuários). Uma nota diz que o online é lento, barulhento e sofre rate limiting e lockout. O caminho de baixo é o ataque offline: usando o foothold do módulo 5.2 (execução de comandos no servidor), o atacante lê o arquivo .htpasswd, obtém os hashes no formato APR1 e os quebra localmente com John the Ripper ou hashcat usando a wordlist rockyou. Uma nota diz que o offline é rápido e silencioso, mas exige primeiro obter os hashes. Os dois caminhos convergem numa caixa destacada em ciano: a credencial recuperada. Dela sai o acesso ao /admin e, por fim, a flag do módulo. Uma chave verde abraça os dois caminhos com a legenda "o que você faz neste módulo".</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .step { font-size: 12.5px; font-weight: 700; }
+    .sub { font-size: 10.5px; fill: #9fb0a6; }
+    .tag { font-size: 10.5px; fill: #9fb0a6; }
+    .cur { fill: #5cc8d8; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .boxcur { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
+    .flow { stroke: #4a5a52; stroke-width: 2; fill: none; marker-end: url(#a); }
+    .flowcur { stroke: #5cc8d8; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
+    .brace { stroke: #5ee08a; stroke-width: 2; fill: none; }
+    .bl { font-size: 12px; font-weight: 700; fill: #5ee08a; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#4a5a52"/></marker>
+    <marker id="ac" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="900" height="480" fill="#121815"/>
+  <text class="t" x="30" y="34">As duas pontas de um ataque a senhas</text>
+
+  <!-- service with login -->
+  <rect class="box" x="24" y="202" width="140" height="84" rx="8"/>
+  <text class="step" x="94" y="234" text-anchor="middle">Serviço com</text>
+  <text class="step" x="94" y="252" text-anchor="middle">login</text>
+  <text class="sub" x="94" y="272" text-anchor="middle">/admin · Basic Auth</text>
+
+  <!-- ONLINE path -->
+  <rect class="box" x="214" y="92" width="232" height="86" rx="8"/>
+  <text class="step" x="330" y="120" text-anchor="middle">Ataque online — Hydra</text>
+  <text class="sub" x="330" y="140" text-anchor="middle">dictionary attack (1 user · N senhas)</text>
+  <text class="sub" x="330" y="156" text-anchor="middle">password spraying (1 senha · N users)</text>
+  <text class="tag" x="330" y="174" text-anchor="middle">lento · barulhento · rate limit / lockout</text>
+
+  <!-- OFFLINE path -->
+  <rect class="box" x="214" y="302" width="232" height="100" rx="8"/>
+  <text class="step" x="330" y="330" text-anchor="middle">Ataque offline</text>
+  <text class="sub" x="330" y="350" text-anchor="middle">foothold (5.2) le o .htpasswd</text>
+  <text class="sub" x="330" y="366" text-anchor="middle">hashes APR1 ($apr1$...)</text>
+  <text class="sub" x="330" y="382" text-anchor="middle">John / hashcat + rockyou</text>
+  <text class="tag" x="330" y="398" text-anchor="middle">rapido · silencioso · precisa do hash antes</text>
+
+  <!-- credential recovered (focus) -->
+  <rect class="boxcur" x="498" y="196" width="180" height="96" rx="8"/>
+  <text class="step cur" x="588" y="230" text-anchor="middle">Credencial</text>
+  <text class="step cur" x="588" y="248" text-anchor="middle">recuperada</text>
+  <text class="sub" x="588" y="268" text-anchor="middle">usuario + senha</text>
+  <text class="sub" x="588" y="282" text-anchor="middle">validos</text>
+
+  <!-- access -->
+  <rect class="box" x="710" y="150" width="166" height="70" rx="8"/>
+  <text class="step" x="793" y="180" text-anchor="middle">Acesso ao /admin</text>
+  <text class="sub" x="793" y="200" text-anchor="middle">login aceito (200)</text>
+
+  <!-- flag -->
+  <rect class="box" x="710" y="268" width="166" height="70" rx="8"/>
+  <text class="step" x="793" y="298" text-anchor="middle">Flag do modulo</text>
+  <text class="sub" x="793" y="318" text-anchor="middle">senha + sha256</text>
+
+  <!-- flows: service -> two paths -->
+  <path class="flow" d="M164,232 C186,210 186,150 212,135"/>
+  <path class="flow" d="M164,256 C186,290 186,330 212,350"/>
+  <!-- paths -> credential -->
+  <path class="flowcur" d="M446,135 C470,160 474,185 496,214"/>
+  <path class="flowcur" d="M446,352 C470,320 474,295 496,274"/>
+  <!-- credential -> access -> flag -->
+  <path class="flowcur" d="M678,224 C692,210 696,200 708,190"/>
+  <path class="flowcur" d="M678,266 C692,282 696,292 708,300"/>
+
+  <!-- brace over the two attack paths -->
+  <path class="brace" d="M214,76 q0,-12 12,-12 L324,64 q12,0 12,12"/>
+  <path class="brace" d="M446,76 q0,-12 -12,-12 L348,64"/>
+  <text class="bl" x="330" y="52" text-anchor="middle">o que voce faz neste modulo</text>
+</svg>

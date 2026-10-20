@@ -23,7 +23,26 @@ compila com o candidato **mais leve e didático**:
 - **Onde acessar:** só de dentro do Kali, em `http://vulhub/`.
 - **Construção:** imagem local, como o Kali. Baixe/construa no terminal com
   `scripts/lab.sh pull vulhub` (único momento com internet).
-- **Módulos:** 5.1, 5.4 (e, com o módulo do Metasploit, 5.3).
+- **Módulos:** 5.1 (enumeração), 5.2 (ataque a serviços), 5.3 (Metasploit),
+  5.4 (reproduzir a CVE) e 5.5 (ataques a senhas).
+
+## Superfícies de laboratório adicionadas (benignas, não fazem parte da CVE)
+
+Além das duas configurações erradas que a CVE-2021-41773 exige, o `Dockerfile`
+acrescenta, por módulo, superfícies **benignas** — más configurações clássicas,
+nunca exploit sob medida:
+
+- **5.1 — divulgação de informação:** `ServerTokens Full` (banner de versão
+  completo), um cabeçalho que vaza um caminho interno e um *directory listing*
+  de `/internal` com um inventário de serviço.
+- **5.5 — autenticação fraca:** uma área `/admin` protegida por **HTTP Basic
+  Auth**, com um `.htpasswd` de **senhas deliberadamente fracas** (hashes APR1
+  de *salt* fixo, reproduzíveis byte a byte). Três contas, duas reusando a mesma
+  senha, para treinar *password spraying* e reúso de credenciais. A senha em
+  claro **não** está na imagem — só os hashes —, então a flag do módulo (montada
+  a partir da senha quebrada e do `sha256` do `.htpasswd`) não é lível do
+  repositório sem fazer a quebra. Continua tudo só na `lab_net` interna, **sem
+  porta publicada**.
 
 Quando a CVE final for escolhida, troque esta pasta pelo ambiente decidido e
 atualize o catálogo (`lib/labs/catalog.ts`) e o registro (`scripts/lab-common.sh`).

