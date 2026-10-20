@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="t d">
+  <title id="t">Caminho do ataque na DVGA: da introspection aos dados privados e ao batching</title>
+  <desc id="d">Fluxo do ataque contra a API GraphQL da DVGA, em quatro passos. Passo um: o atacante envia uma introspection query ao endpoint barra graphql, e o servidor devolve o schema inteiro — todos os tipos, campos e argumentos —, inclusive a query pastes com o argumento public e o campo owner. Passo dois: conhecendo o schema, o atacante descobre que pode pedir pastes com public igual a falso, ou paste por id, operações que a interface web nunca oferece porque só mostra pastes públicos. Passo três: o servidor responde com os pastes privados, incluindo campos sensíveis como content, ipAddr e o dono, que a interface esconde; isso é exposição excessiva de dados e autorização de objeto quebrada, porque nenhum resolver conferiu se o chamador pode ver aquele objeto. À direita, em paralelo, o passo do batching: num único pedido POST barra graphql o atacante usa aliases a, b e c para tentar várias senhas de login de uma vez; como são muitas tentativas numa requisição só, limites de taxa que contam requisições não enxergam o ataque, e o alias que acerta a senha devolve um token JWT. A faixa final resume a raiz: um endpoint só, muitas operações, e a autorização que precisa estar em cada resolver, não só no login.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; }
+    .b { font-size: 11.5px; }
+    .c { font-size: 11.5px; fill: #e8c46a; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .r { fill: #f08a7e; }
+  </style>
+  <rect width="900" height="560" fill="#121815"/>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <marker id="agr" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5ee08a"/></marker>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f08a7e"/></marker>
+  </defs>
+  <text class="t" x="30" y="34">Um endpoint, todo o mapa: introspection → dados privados → batching</text>
+
+  <!-- left column: 3 steps -->
+  <rect x="30" y="58" width="520" height="70" rx="8" fill="#16201b" stroke="#5cc8d8"/>
+  <text class="c" x="44" y="80">1) introspection: pedir o schema</text>
+  <text class="b" x="44" y="100">POST /graphql  query{ __schema{ types{ name fields{ name } } } }</text>
+  <text class="s" x="44" y="118">→ volta o mapa inteiro: tipos, campos e argumentos (ligada por padrão)</text>
+
+  <line x1="290" y1="128" x2="290" y2="150" stroke="#5cc8d8" stroke-width="1.4" marker-end="url(#ar)"/>
+
+  <rect x="30" y="150" width="520" height="70" rx="8" fill="#16201b" stroke="#5cc8d8"/>
+  <text class="c" x="44" y="172">2) usar o que a UI não oferece</text>
+  <text class="b" x="44" y="192">query{ pastes(public:false){ title content ipAddr owner{name} } }</text>
+  <text class="s" x="44" y="210">a interface só lista pastes PÚBLICOS; o schema revela o argumento public</text>
+
+  <line x1="290" y1="220" x2="290" y2="242" stroke="#f08a7e" stroke-width="1.4" marker-end="url(#arr)"/>
+
+  <rect x="30" y="242" width="520" height="82" rx="8" fill="#16201b" stroke="#f08a7e"/>
+  <text class="c" x="44" y="264">3) o servidor entrega os pastes PRIVADOS</text>
+  <text class="b r" x="44" y="284">{ title:"555-555-1337", content:"...", ipAddr:"...", owner:"DVGAUser" }</text>
+  <text class="s" x="44" y="302">nenhum resolver conferiu a posse do objeto → exposição excessiva de dados</text>
+  <text class="s" x="44" y="318">e Broken Object Level Authorization (BOLA), o IDOR das APIs</text>
+
+  <!-- right column: batching -->
+  <line x1="560" y1="90" x2="560" y2="470" stroke="#2a3a31" stroke-width="1"/>
+  <text class="h" x="580" y="80" fill="#e8c46a">em paralelo: batching</text>
+  <rect x="580" y="96" width="300" height="150" rx="8" fill="#16201b" stroke="#e8c46a"/>
+  <text class="s" x="594" y="118">uma requisição, muitas tentativas:</text>
+  <text class="b" x="594" y="140">mutation{</text>
+  <text class="b" x="606" y="158">a:login(user,"123456"){accessToken}</text>
+  <text class="b" x="606" y="176">b:login(user,"password"){accessToken}</text>
+  <text class="b g" x="606" y="194">c:login(user,"changeme"){accessToken}</text>
+  <text class="b" x="594" y="212">}</text>
+  <text class="s" x="594" y="234">aliases a/b/c = 3 logins num POST só</text>
+
+  <line x1="730" y1="246" x2="730" y2="268" stroke="#5ee08a" stroke-width="1.4" marker-end="url(#agr)"/>
+  <rect x="580" y="268" width="300" height="56" rx="8" fill="#16201b" stroke="#5ee08a"/>
+  <text class="b g" x="594" y="290">c → accessToken (JWT, identity:admin)</text>
+  <text class="s" x="594" y="310">limite por nº de requisições não vê o ataque</text>
+
+  <rect x="30" y="352" width="850" height="92" rx="8" fill="#16201b" stroke="#5ee08a"/>
+  <text class="b g" x="46" y="378">A raiz é a mesma nos dois: um endpoint só, muitas operações escondidas atrás dele.</text>
+  <text class="b" x="46" y="400">Desligar a introspection atrapalha, mas o schema ainda vaza por "Did you mean...?" (field suggestion).</text>
+  <text class="b" x="46" y="420">A cura real: autorização em CADA resolver (posse e papel) e limite por CUSTO, não por nº de requisições.</text>
+  <text class="s" x="46" y="438">Tudo isto só contra o laboratório local dvga — a mesma query num alvo real sem autorização é crime.</text>
+
+  <text class="s" x="30" y="470">DVGA = Damn Vulnerable GraphQL Application, alvo didático em http://dvga:5013/graphql.</text>
+</svg>

