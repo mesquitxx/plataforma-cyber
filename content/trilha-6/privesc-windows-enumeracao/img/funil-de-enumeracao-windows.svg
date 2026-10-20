@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 600" role="img" aria-labelledby="t d">
+  <title id="t">O funil da enumeração de escalação de privilégio no Windows</title>
+  <desc id="d">Um funil vertical de quatro estágios que vai do acesso inicial a uma lista curta de vetores. No topo, uma caixa larga representa o foothold: você está dentro, como uma conta de serviço de baixo privilégio, por exemplo a conta do pool do IIS ou NETWORK SERVICE, e executa comando mas sem poder. Dela desce o funil. Estágio 1, o mais largo, COLETAR tudo: contexto e nível de patch (whoami, systeminfo, lista de hotfixes), privilégios do token (whoami barra priv), serviços (sc, accesschk), permissões de arquivo e registro (icacls, reg query), tarefas agendadas e credenciais (cmdkey, unattend.xml) — à mão com binários nativos e com as ferramentas WinPEAS, Seatbelt, PowerUp e WES-NG. Estágio 2, LER E REDUZIR O RUÍDO: ler a legenda de cores do WinPEAS (vermelho e amarelo primeiro), lembrar que o Defender e o AMSI pegam as ferramentas, e que sc, reg e icacls são silenciosos. Estágio 3, TRIAR pelas quatro classes do módulo 6.1: má configuração, software vulnerável, credenciais e abuso de recurso legítimo. Estágio 4, o mais estreito, CANDIDATOS PRIORIZADOS por confiabilidade, ruído e estabilidade. Uma seta sai do fundo do funil para uma caixa final destacada em ciano: módulo 6.5, explorar o vetor escolhido.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .stage { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .item { font-size: 10.5px; fill: #cfe0d6; }
+    .sub { font-size: 10px; fill: #9fb0a6; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .boxcur { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
+    .foot { font-size: 12.5px; font-weight: 700; }
+    .flow { stroke: #5cc8d8; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
+    .method { font-size: 11px; font-weight: 700; fill: #5ee08a; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="920" height="600" fill="#121815"/>
+  <text class="t" x="30" y="32">O funil da enumeração no Windows — de "estou dentro" a "este é o vetor"</text>
+
+  <!-- foothold -->
+  <rect class="box" x="210" y="50" width="500" height="48" rx="8"/>
+  <text class="foot" x="460" y="71" text-anchor="middle">FOOTHOLD — conta de serviço de baixo privilégio</text>
+  <text class="sub" x="460" y="89" text-anchor="middle">ex.: iis apppool\site, NETWORK SERVICE · executa comando, mas sem poder</text>
+  <path class="flow" d="M460,98 L460,118"/>
+
+  <!-- stage 1: COLETAR (widest) -->
+  <rect class="box" x="55" y="122" width="810" height="108" rx="8"/>
+  <text class="stage" x="75" y="146">1 · COLETAR tudo</text>
+  <text class="item" x="75" y="168">contexto + patch (whoami, systeminfo, hotfixes) · token (whoami /priv, /groups) · serviços (sc, accesschk)</text>
+  <text class="item" x="75" y="186">permissões arquivo/registro (icacls, reg query) · tarefas agendadas · credenciais (cmdkey, unattend.xml)</text>
+  <text class="sub" x="75" y="208">à mão (binários nativos)  +  ferramentas: WinPEAS · Seatbelt · PowerUp · WES-NG (cruza o patch level)</text>
+  <path class="flow" d="M460,230 L460,250"/>
+
+  <!-- stage 2: LER -->
+  <rect class="box" x="150" y="254" width="620" height="60" rx="8"/>
+  <text class="stage" x="170" y="278">2 · LER e reduzir o ruído</text>
+  <text class="item" x="170" y="298">legenda do WinPEAS: RED/YELLOW primeiro · Defender/AMSI pegam as ferramentas · sc/reg/icacls são silenciosos</text>
+  <path class="flow" d="M460,314 L460,334"/>
+
+  <!-- stage 3: TRIAR (4 classes) -->
+  <rect class="box" x="230" y="338" width="460" height="76" rx="8"/>
+  <text class="stage" x="250" y="362">3 · TRIAR pelas 4 classes (6.1)</text>
+  <text class="item" x="250" y="384">má configuração · software vulnerável</text>
+  <text class="item" x="250" y="402">credenciais · abuso de recurso legítimo</text>
+  <path class="flow" d="M460,414 L460,434"/>
+
+  <!-- stage 4: CANDIDATOS (narrowest) -->
+  <rect class="box" x="300" y="438" width="320" height="58" rx="8"/>
+  <text class="stage" x="320" y="462">4 · CANDIDATOS priorizados</text>
+  <text class="sub" x="320" y="483">confiabilidade · ruído · estabilidade</text>
+  <path class="flow" d="M460,496 L460,522"/>
+
+  <!-- exit to 6.5 -->
+  <rect class="boxcur" x="300" y="526" width="320" height="48" rx="8"/>
+  <text class="method" x="460" y="555" text-anchor="middle">→ módulo 6.5: explorar o vetor escolhido</text>
+</svg>

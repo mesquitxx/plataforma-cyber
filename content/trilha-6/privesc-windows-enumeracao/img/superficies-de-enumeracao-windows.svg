@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" role="img" aria-labelledby="t d">
+  <title id="t">As três superfícies de enumeração local no Windows e o cruzamento que vira candidato a vetor</title>
+  <desc id="d">À esquerda, uma caixa representa você: uma conta de serviço de baixo privilégio com integridade média. Dela partem três trilhas horizontais, cada uma uma superfície que a enumeração cobre. Trilha 1, serviços: você lê a configuração com sc e os seus direitos com accesschk; o que procurar é um serviço que roda como LocalSystem e que você pode reconfigurar, cujo binário é gravável por você, ou cujo caminho tem espaço e está sem aspas com um diretório gravável. Trilha 2, privilégios do token: você lê whoami barra priv; o que procurar são privilégios como SeImpersonatePrivilege, SeBackupPrivilege ou SeDebugPrivilege, comuns em contas de serviço, que são quase-SYSTEM. Trilha 3, permissões de arquivo e registro: você lê icacls e reg query; o que procurar é AlwaysInstallElevated ligado, uma chave Run gravável, uma tarefa agendada com script gravável, ou a base SAM legível. As três trilhas convergem para uma caixa destacada em ciano ao centro-direita: CANDIDATO A VETOR, o cruzamento entre o que você controla e o que tem poder, a regra do módulo 6.1. Dessa caixa sai uma seta para a direita rotulada módulo 6.5, explorar. Uma faixa embaixo lembra que enumerar é só ler o que já é legível; explorar é o passo seguinte.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 15.5px; font-weight: 700; }
+    .lane { font-size: 12.5px; font-weight: 700; fill: #5cc8d8; }
+    .item { font-size: 10.5px; fill: #cfe0d6; }
+    .sub { font-size: 10px; fill: #9fb0a6; }
+    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
+    .you { fill: #16201b; stroke: #5ee08a; stroke-width: 2; }
+    .cross { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
+    .you-t { font-size: 11.5px; font-weight: 700; fill: #5ee08a; }
+    .cross-t { font-size: 12.5px; font-weight: 700; fill: #5cc8d8; }
+    .flow { stroke: #5cc8d8; stroke-width: 2; fill: none; marker-end: url(#ac); }
+    .exit { font-size: 11px; font-weight: 700; fill: #5ee08a; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="960" height="520" fill="#121815"/>
+  <text class="t" x="30" y="32">As três superfícies de enumeração — e o cruzamento que vira vetor</text>
+
+  <!-- you -->
+  <rect class="you" x="24" y="190" width="150" height="110" rx="8"/>
+  <text class="you-t" x="99" y="236" text-anchor="middle">VOCÊ</text>
+  <text class="sub" x="99" y="256" text-anchor="middle">conta de serviço</text>
+  <text class="sub" x="99" y="270" text-anchor="middle">baixo privilégio</text>
+  <text class="sub" x="99" y="284" text-anchor="middle">integridade média</text>
+
+  <!-- lane 1: services -->
+  <rect class="box" x="210" y="70" width="470" height="100" rx="8"/>
+  <text class="lane" x="230" y="94">1 · SERVIÇOS  (sc qc, accesschk -uwcqv)</text>
+  <text class="item" x="230" y="116">procure: serviço LocalSystem que você pode reconfigurar</text>
+  <text class="item" x="230" y="134">binário gravável por você · ou caminho sem aspas + dir gravável</text>
+  <text class="sub" x="230" y="154">o que você controla: a config ou o .exe · o poder: a conta do serviço</text>
+  <path class="flow" d="M174,228 C 480,210 540,190 616,172"/>
+
+  <!-- lane 2: token privileges -->
+  <rect class="box" x="210" y="195" width="470" height="100" rx="8"/>
+  <text class="lane" x="230" y="219">2 · PRIVILÉGIOS DO TOKEN  (whoami /priv)</text>
+  <text class="item" x="230" y="241">procure: SeImpersonate / SeBackup / SeDebug ligados</text>
+  <text class="item" x="230" y="259">comuns em contas de serviço — são quase-SYSTEM</text>
+  <text class="sub" x="230" y="279">o que você controla: um pipe/processo · o poder: o privilégio</text>
+  <path class="flow" d="M174,245 L616,245"/>
+
+  <!-- lane 3: permissions -->
+  <rect class="box" x="210" y="320" width="470" height="100" rx="8"/>
+  <text class="lane" x="230" y="344">3 · PERMISSÕES ARQUIVO/REGISTRO  (icacls, reg query)</text>
+  <text class="item" x="230" y="366">procure: AlwaysInstallElevated · chave Run gravável</text>
+  <text class="item" x="230" y="384">tarefa agendada gravável · base SAM legível</text>
+  <text class="sub" x="230" y="404">o que você controla: um arquivo/chave · o poder: o que o SYSTEM lê</text>
+  <path class="flow" d="M174,262 C 480,300 540,320 616,318"/>
+
+  <!-- crossing -->
+  <rect class="cross" x="700" y="200" width="150" height="90" rx="8"/>
+  <text class="cross-t" x="775" y="238" text-anchor="middle">CANDIDATO</text>
+  <text class="cross-t" x="775" y="256" text-anchor="middle">A VETOR</text>
+  <text class="sub" x="775" y="276" text-anchor="middle">controle × poder</text>
+  <path class="flow" d="M850,245 L906,245"/>
+  <text class="exit" x="904" y="235" text-anchor="end">→ 6.5</text>
+  <text class="exit" x="904" y="262" text-anchor="end">explorar</text>
+
+  <text class="sub" x="30" y="470">Enumerar é só LER o que já é legível (sc, whoami, icacls, reg). Explorar — trocar o binário, vestir o token, rodar o MSI — é o módulo 6.5.</text>
+  <text class="sub" x="30" y="490">A regra do 6.1: o vetor mora no cruzamento entre o que VOCÊ controla e o que tem PODER (a conta LocalSystem, o privilégio, o que o SYSTEM confia).</text>
+</svg>
