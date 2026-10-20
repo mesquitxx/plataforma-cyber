@@ -10,6 +10,17 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # Crypto track (Track 3): openssl, xxd and python3-cryptography for symmetric
 # crypto (3.3); hashcat and john for offline hash cracking (3.2).
+# Networks & services track (Track 5): metasploit-framework for module 5.3
+# (search/use/set/run against the vulhub target). It runs fully inside the
+# internal lab network: `search` uses the local module cache, the exploit
+# reaches the target, and the reverse payload connects back to this box's
+# lab_net IP. No PostgreSQL here on purpose (msfconsole works dbless; keeps
+# RAM down) — module 5.3 teaches that nuance.
+# Password attacks (module 5.5): hydra for online brute force / password
+# spraying against an authenticated service; wordlists (ships rockyou.txt.gz)
+# for OFFLINE cracking of a hash pulled from the target. The module teaches the
+# split on purpose — online runs use a short, targeted list (slow, noisy, rate
+# limited), offline uses the full rockyou (fast, local).
 # Wireshark: keep dumpcap non-setuid; capture with `sudo wireshark`.
 RUN echo "wireshark-common wireshark-common/install-setuid boolean false" \
         | debconf-set-selections \
@@ -25,6 +36,8 @@ RUN echo "wireshark-common wireshark-common/install-setuid boolean false" \
         firefox-esr burpsuite \
         nmap netcat-traditional curl sqlmap wireshark \
         openssl xxd python3-cryptography hashcat john \
+        metasploit-framework \
+        hydra wordlists \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
@@ -48,6 +61,14 @@ RUN useradd --create-home --shell /bin/bash --groups sudo kali \
 COPY --chown=kali:kali config/xfwm4.xml /home/kali/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod 0755 /usr/local/bin/entrypoint.sh
+
+# Module 3.2 (Track 3): read-only offline hash-cracking exercise. Only the
+# hashes live here — never the plaintext passwords. The flag is a plaintext the
+# reader recovers by cracking, so nothing secret ships in the image. The module
+# copies this to ~/lab-3.2 to work on it.
+COPY lab-3.2/ /opt/lab-3.2/
+RUN chmod 0755 /opt/lab-3.2/conferir.sh \
+ && chmod 0644 /opt/lab-3.2/webapp.hashes /opt/lab-3.2/shadow.leak /opt/lab-3.2/README.txt
 
 USER kali
 WORKDIR /home/kali

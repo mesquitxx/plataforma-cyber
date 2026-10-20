@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">Árvore de decisão da quebra offline de um hash</title>
+  <desc id="d">Fluxo que começa em "tenho um hash" e passa por identificar o tipo do hash (pelo tamanho e pelo prefixo, com hashid ou pela detecção do John) para escolher o modo da ferramenta. A partir daí, dois ramos. No ramo do hash rápido e sem salt (MD5, SHA-1, NTLM), as técnicas em ordem de esforço: dicionário com wordlist, dicionário mais regras de transformação, ataque híbrido de wordlist mais máscara, e por fim máscara ou força bruta pura. No ramo do hash lento e com salt (bcrypt, sha512crypt, Argon2), o salt torna rainbow tables inúteis e o custo alto reduz drasticamente as tentativas por segundo, então a estratégia é usar uma wordlist pequena e inteligente com regras dirigidas; muitas vezes a quebra é inviável, e é exatamente aí que a defesa funciona.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 12px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .g { fill: #5ee08a; }
+    .y { fill: #e8c46a; }
+    .r { fill: #f08a7e; }
+    .fw { stroke: #5cc8d8; stroke-width: 2.2; marker-end: url(#ar); fill: none; }
+    .fy { stroke: #e8c46a; stroke-width: 2.2; marker-end: url(#ay); fill: none; }
+    .fr { stroke: #f08a7e; stroke-width: 2.2; marker-end: url(#arr); fill: none; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <marker id="ay" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8c46a"/></marker>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f08a7e"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="30">Como quebrar um hash: identificar, depois escolher o ataque</text>
+
+  <rect x="330" y="48" width="240" height="56" rx="10" fill="#16201b" stroke="#5cc8d8"/>
+  <text class="h" x="350" y="70">1. Identificar o tipo</text>
+  <text class="s" x="350" y="88">tamanho + prefixo · hashid · John</text>
+  <text class="s" x="350" y="100">→ escolher o modo (-m) / --format</text>
+
+  <path class="fy" d="M400,104 L250,150"/>
+  <path class="fr" d="M500,104 L650,150"/>
+
+  <!-- Fast branch -->
+  <rect x="40" y="150" width="380" height="40" rx="8" fill="#201d16" stroke="#e8c46a"/>
+  <text class="b y" x="58" y="168">RÁPIDO e SEM salt — MD5, SHA-1, NTLM</text>
+  <text class="s" x="58" y="183">bilhões de tentativas/s na GPU — o atacante adora</text>
+
+  <path class="fy" d="M230,190 L230,210"/>
+  <rect x="40" y="210" width="380" height="36" rx="8" fill="#16201b" stroke="#e8c46a"/>
+  <text class="b" x="58" y="233">① dicionário: wordlist (rockyou)  -a 0</text>
+  <path class="fy" d="M230,246 L230,262"/>
+  <rect x="40" y="262" width="380" height="36" rx="8" fill="#16201b" stroke="#e8c46a"/>
+  <text class="b" x="58" y="285">② + regras: mutações  -r best64.rule</text>
+  <path class="fy" d="M230,298 L230,314"/>
+  <rect x="40" y="314" width="380" height="36" rx="8" fill="#16201b" stroke="#e8c46a"/>
+  <text class="b" x="58" y="337">③ híbrido: wordlist + máscara  -a 6 ?d?d?d?d</text>
+  <path class="fy" d="M230,350 L230,366"/>
+  <rect x="40" y="366" width="380" height="36" rx="8" fill="#16201b" stroke="#e8c46a"/>
+  <text class="b" x="58" y="389">④ máscara / brute force  -a 3 ?a?a?a?a...</text>
+
+  <!-- Slow branch -->
+  <rect x="480" y="150" width="380" height="40" rx="8" fill="#201616" stroke="#f08a7e"/>
+  <text class="b r" x="498" y="168">LENTO e COM salt — bcrypt, sha512crypt, Argon2</text>
+  <text class="s" x="498" y="183">poucas tentativas/s — o salt é por senha</text>
+
+  <path class="fr" d="M670,190 L670,210"/>
+  <rect x="480" y="210" width="380" height="50" rx="8" fill="#16201b" stroke="#f08a7e"/>
+  <text class="b" x="498" y="230">salt diferente por senha →</text>
+  <text class="s r" x="498" y="248">rainbow table e pré-cálculo são inúteis</text>
+  <path class="fr" d="M670,260 L670,280"/>
+  <rect x="480" y="280" width="380" height="50" rx="8" fill="#16201b" stroke="#f08a7e"/>
+  <text class="b" x="498" y="300">custo alto → poucas tentativas/s →</text>
+  <text class="s r" x="498" y="318">wordlist PEQUENA e inteligente, regras dirigidas</text>
+  <path class="fr" d="M670,330 L670,350"/>
+  <rect x="480" y="350" width="380" height="52" rx="8" fill="#101a22" stroke="#5ee08a"/>
+  <text class="b g" x="498" y="372">muitas vezes: inviável</text>
+  <text class="s" x="498" y="390">é aqui que a defesa (seção 8) funciona de verdade</text>
+</svg>

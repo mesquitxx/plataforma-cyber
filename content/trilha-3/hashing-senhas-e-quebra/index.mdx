@@ -1,0 +1,780 @@
+---
+slug: hashing-senhas-e-quebra
+track: trilha-3
+title: "Hashing, senhas e quebra de hashes"
+prerequisites: [fundamentos-de-criptografia]
+lab: kali
+tasks:
+  - slug: missao-1-vazamento-webapp
+    title: "Missão 1 — O vazamento da aplicação web"
+    type: flag
+    prompt: "A senha em claro da conta admin do webapp.hashes, dentro de FLAG{ }."
+    hint: "Cinco contas caem com a rockyou direto. A do admin não está na wordlist pura: a senha é uma palavra comum seguida de quatro dígitos. Pense em qual ataque combina wordlist com uma máscara."
+    flag:
+      hash: "scrypt$16384$8$1$b37321271af7d7dd21f3c7aa9a1a0c2512d66a29c16dc7a668819b5057c3c41e"
+      salt: "9290ed573822be0b65826a9c0f056a1d"
+  - slug: missao-2-shadow-salgado
+    title: "Missão 2 — O /etc/shadow salgado"
+    type: flag
+    prompt: "A flag que o conferir.sh imprime depois que você quebra os quatro hashes do shadow.leak."
+    hint: "São hashes sha512crypt ($6$), lentos e com salt. Duas contas têm a mesma senha e hashes diferentes — o salt. Quebre com o John e passe as senhas recuperadas para o /opt/lab-3.2/conferir.sh."
+    flag:
+      hash: "scrypt$16384$8$1$b8f79d9f8bb526396264cee2e6a34e1342081c8e36768de1145ad0528ecb8825"
+      salt: "072763146becffd2f415b6c2ab863b05"
+  - slug: quiz-final
+    title: "Quiz — Hashing, senhas e quebra de hashes"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Por que um site guarda o hash da senha, e não a senha cifrada (encrypted)?"
+        options:
+          - "Porque hash é mais rápido de calcular que cifrar"
+          - "Porque para conferir o login basta recalcular o hash e comparar; não é preciso recuperar a senha, e cifra tem volta (uma chave vazada abre tudo)"
+          - "Porque o hash ocupa menos espaço no banco"
+          - "Porque a lei proíbe cifrar senhas"
+        answer: 1
+        explanation: "O servidor nunca precisa da senha de volta: só precisa decidir se a digitada confere. O hash, de mão única, basta para isso. Cifrar guarda a senha recuperável — quem rouba a chave abre todas, como no caso Adobe (visto em 3.1)."
+      - question: "Qual é o papel do salt no armazenamento de senhas?"
+        options:
+          - "Deixar o hash mais lento de calcular"
+          - "Cifrar o hash para que só o servidor leia"
+          - "Um valor único por senha que entra no hash, tornando o resultado diferente mesmo para senhas iguais e inutilizando rainbow tables"
+          - "Uma chave secreta guardada separada do banco"
+        answer: 2
+        explanation: "O salt é único por senha e é guardado junto do hash (não é segredo). Ele faz duas senhas iguais terem hashes diferentes e impede o pré-cálculo (rainbow tables), porque cada senha teria a própria tabela. Quem confunde salt com segredo guardado à parte está pensando em pepper."
+      - question: "Por que MD5 e SHA-1 são péssimas escolhas para guardar senhas, mesmo com salt?"
+        options:
+          - "Porque são reversíveis"
+          - "Porque foram feitos para ser rápidos: uma GPU calcula bilhões por segundo, então o atacante testa a wordlist inteira em instantes"
+          - "Porque não aceitam salt"
+          - "Porque geram hashes curtos demais"
+        answer: 1
+        explanation: "Velocidade é virtude num checksum e defeito num hash de senha. MD5/SHA-1 são rápidos de propósito; na GPU, o atacante testa a rockyou inteira (14 milhões) em segundos. O salt atrapalha o pré-cálculo, mas não torna cada tentativa lenta — para isso existem os hashes lentos (bcrypt, scrypt, Argon2)."
+      - question: "O que torna bcrypt, scrypt e Argon2 adequados para senhas, ao contrário do SHA-256?"
+        options:
+          - "São reversíveis com a chave certa"
+          - "Têm um custo ajustável (work factor): são propositalmente lentos e, no caso de scrypt e Argon2, consomem muita memória, derrubando a vantagem da GPU"
+          - "Não precisam de salt"
+          - "Produzem hashes maiores"
+        answer: 1
+        explanation: "Eles têm um parâmetro de custo que você aumenta com o tempo. bcrypt repete o escalonamento 2^custo vezes; scrypt e Argon2 ainda exigem bastante RAM por tentativa, o que neutraliza o paralelismo barato da GPU. SHA-256 não tem esse botão: é sempre veloz."
+      - question: "Você tem um hash `$6$AaBbCcDd$q1iHd...`. O que o `$6$` indica?"
+        options:
+          - "Que é um hash MD5 com salt"
+          - "Que é sha512crypt (o formato de /etc/shadow), com o salt entre o segundo e o terceiro cifrão"
+          - "Que o custo é 6"
+          - "Que é um hash bcrypt"
+        answer: 1
+        explanation: "No modular crypt format, o `$id$` diz o algoritmo: `$1$` md5crypt, `$5$` sha256crypt, `$6$` sha512crypt, `$2b$` bcrypt, `$argon2id$` Argon2. Em `$6$salt$hash`, o campo do meio é o salt. Reconhecer o prefixo é o primeiro passo para escolher o modo (-m) da ferramenta."
+      - question: "No lab, por que a conta admin não caiu com a rockyou pura e precisou de um ataque híbrido?"
+        options:
+          - "Porque o hash dela usava outro algoritmo"
+          - "Porque a senha era uma palavra da wordlist seguida de dígitos que não estão na lista; o híbrido anexa uma máscara (?d?d?d?d) a cada palavra"
+          - "Porque a senha tinha mais de 72 bytes"
+          - "Porque faltava o salt"
+        answer: 1
+        explanation: "`monkey` está na rockyou, mas `monkey1337` não. O ataque híbrido (-a 6) combina cada palavra da wordlist com uma máscara — aqui, quatro dígitos — cobrindo `monkey0000`…`monkey9999` sem precisar de uma wordlist gigante. É o meio-termo entre dicionário e força bruta."
+      - question: "Uma rainbow table é uma forma de pré-cálculo. Contra qual cenário ela ainda é útil?"
+        options:
+          - "Contra hashes lentos como bcrypt"
+          - "Contra hashes rápidos e SEM salt (ex.: um dump de MD5 puro), onde a mesma tabela serve para todos"
+          - "Contra qualquer hash, desde que você tenha a chave"
+          - "Contra hashes com salt único por senha"
+        answer: 1
+        explanation: "Rainbow table troca tempo por espaço: pré-calcula cadeias de hash→texto para não refazer tudo a cada ataque. Só compensa quando o hash é rápido e sem salt, porque aí uma tabela serve para o dump inteiro. Um salt único por senha obrigaria uma tabela por senha — o que mata a técnica."
+      - question: "O que é um pepper, e em que difere do salt?"
+        options:
+          - "É outro nome para salt"
+          - "É um segredo único por senha, guardado no banco"
+          - "É um segredo ÚNICO do sistema, igual para todas as senhas, guardado FORA do banco (ex.: num cofre/HSM); some do alcance de quem rouba só o banco"
+          - "É o custo do hash"
+        answer: 2
+        explanation: "O salt é público e por senha; o pepper é secreto e compartilhado por todas, guardado separado do banco (cofre de segredos, HSM). Se o atacante leva só o dump do banco, sem o pepper ele não consegue nem começar a quebrar. É uma camada a mais, não um substituto do hash lento."
+      - question: "Por que a quebra de hashes é um ataque OFFLINE, e o que isso muda?"
+        options:
+          - "Porque exige internet o tempo todo"
+          - "Porque acontece na máquina do atacante, sobre um dump roubado: não há servidor para limitar tentativas, travar a conta ou registrar o ataque — ele testa à vontade"
+          - "Porque só funciona com a máquina alvo desligada"
+          - "Porque não precisa da senha"
+        answer: 1
+        explanation: "Uma vez que o atacante tem o dump de hashes, ele quebra no próprio hardware. Não há rate limit, bloqueio de conta nem log do lado da vítima — ao contrário do ataque online (hydra contra um login), assunto do módulo 5.5. Por isso a defesa é tornar cada tentativa cara (hash lento)."
+      - question: "A Ashley Madison usava bcrypt com custo 12, considerado forte. Por que 11 milhões de senhas caíram mesmo assim?"
+        options:
+          - "Porque bcrypt foi quebrado matematicamente"
+          - "Porque um erro de implementação guardava, em paralelo, tokens derivados da senha em MD5 rápido; o grupo quebrou os MD5 e conferiu contra os bcrypt"
+          - "Porque o custo 12 é fraco"
+          - "Porque não havia salt"
+        answer: 1
+        explanation: "O algoritmo estava correto; a implementação, não. Um campo `$loginkey` guardava um MD5 derivado da senha (em parte dos casos, da senha em claro em minúsculas). O CynoSure Prime atacou o MD5 rápido e usou o resultado para validar contra o bcrypt. O elo mais fraco define a segurança do conjunto."
+glossary:
+  - term: password hashing
+    definition: "Hashing de senha: guardar a senha como um hash (de mão única) em vez de em claro ou cifrada, para que o sistema confira o login sem nunca precisar recuperar a senha original."
+  - term: preimage resistance
+    definition: "Resistência à pré-imagem: dado um hash, é impraticável achar uma entrada que o produza. É o que impede inverter o hash de volta à senha."
+  - term: second-preimage resistance
+    definition: "Resistência à segunda pré-imagem: dada uma entrada, é impraticável achar uma segunda entrada diferente com o mesmo hash."
+  - term: collision resistance
+    definition: "Resistência à colisão: é impraticável achar duas entradas quaisquer com o mesmo hash. É a propriedade mais difícil de manter (foi a que caiu em MD5 e SHA-1)."
+  - term: key derivation function
+    definition: "Função de derivação de chave (KDF): função que transforma uma senha (e um salt) em uma saída de tamanho fixo, de propósito lenta e cara, usada para guardar senhas e derivar chaves. Ex.: bcrypt, scrypt, Argon2, PBKDF2."
+  - term: work factor
+    definition: "Fator de custo: parâmetro de uma KDF que controla o quão cara é cada tentativa (iterações e/ou memória). Aumenta-se com o tempo, conforme o hardware melhora."
+  - term: scrypt
+    definition: "KDF lenta e memory-hard (exige muita memória por tentativa), o que encarece ataques com GPU e hardware dedicado. Parâmetros N (custo de CPU/memória), r e p."
+  - term: Argon2
+    definition: "KDF vencedora da Password Hashing Competition (2015) e recomendada atual para senhas novas. A variante Argon2id resiste a ataques por GPU (memory-hard) e por canal lateral."
+  - term: PBKDF2
+    definition: "KDF baseada em repetir um HMAC muitos milhares de vezes. Antiga e padronizada, aceita em sistemas legados, mas não é memory-hard — menos resistente a GPU que Argon2/scrypt."
+  - term: pepper
+    definition: "Segredo único do sistema (igual para todas as senhas), guardado FORA do banco (cofre de segredos ou HSM). Some do alcance de quem rouba só o banco. Complementa o salt, não o substitui."
+  - term: rainbow table
+    definition: "Tabela de pré-cálculo que troca tempo por espaço para inverter hashes rápidos e sem salt. Um salt único por senha a inutiliza, pois exigiria uma tabela por senha."
+  - term: dictionary attack
+    definition: "Ataque de dicionário: testar as senhas de uma wordlist (como a rockyou), calculando o hash de cada uma e comparando. A primeira linha de ataque, porque cobre as senhas comuns."
+  - term: rule-based attack
+    definition: "Ataque com regras: aplicar transformações a cada palavra da wordlist (trocar a por @, pôr maiúscula, anexar números) para cobrir variações sem inflar a lista. Ex.: regra best64."
+  - term: mask attack
+    definition: "Ataque de máscara: força bruta dirigida por um padrão de posições (ex.: ?u?l?l?l?d?d = maiúscula, três minúsculas, dois dígitos), reduzindo o espaço só ao formato provável."
+  - term: hybrid attack
+    definition: "Ataque híbrido: combina wordlist com máscara (ex.: cada palavra + ?d?d?d?d), cobrindo senhas do tipo palavra+sufixo sem precisar de uma wordlist enorme."
+  - term: hashcat
+    definition: "Ferramenta de quebra de hash acelerada por GPU, a mais usada no mercado. Cada tipo de hash tem um número de modo (-m): 0 = MD5, 100 = SHA-1, 1800 = sha512crypt, 3200 = bcrypt."
+  - term: John the Ripper
+    definition: "Ferramenta clássica de quebra de hash (a edição Jumbo do Kali cobre centenas de formatos). Detecta o tipo sozinho, lê arquivos no formato user:hash e é forte em CPU."
+  - term: sha512crypt
+    definition: "Esquema de hash de senha do Linux moderno, identificado por $6$ no /etc/shadow. Tem salt e muitas iterações de SHA-512 — lento de propósito, bem melhor que SHA-512 puro para senhas."
+  - term: potfile
+    definition: "Arquivo onde hashcat (hashcat.potfile) e John (john.pot) guardam os pares hash:senha já quebrados, para não refazer o trabalho. Se um hash não \"aparece\", confira se já está no potfile."
+---
+
+import verificacao from "./img/verificacao-de-senha.svg";
+import arvore from "./img/arvore-do-cracking.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Quase todo vazamento de dados que vira notícia tem um momento em comum: alguém
+copiou a tabela de usuários de um banco de dados e, nela, uma coluna de senhas.
+Se essas senhas estiverem em claro, o estrago é imediato. Se estiverem guardadas
+do jeito certo — como <GlossaryTerm term="hash">hashes</GlossaryTerm> lentos e com
+<GlossaryTerm term="salt">salt</GlossaryTerm> —, o atacante leva semanas e, com
+sorte, recupera pouca coisa. A diferença entre os dois cenários é o assunto deste
+módulo.
+
+Você já viu, em 3.1, que **hash não é cifra**: é uma
+<GlossaryTerm term="one-way function">função de mão única</GlossaryTerm>, fácil de
+calcular num sentido e impraticável de inverter. Agora vamos usar isso de verdade,
+dos dois lados: entender como um sistema guarda senhas sem nunca guardar a senha, e
+como um atacante (ou você, num pentest autorizado) **quebra** esses hashes offline
+com as duas ferramentas de mercado — o <GlossaryTerm term="hashcat">hashcat</GlossaryTerm>
+e o <GlossaryTerm term="John the Ripper">John the Ripper</GlossaryTerm>.
+
+**Ao final, você vai saber:**
+
+- explicar por que senhas são guardadas como hash, e por que hash não é a mesma
+  coisa que cifra;
+- descrever as propriedades de uma função de hash criptográfica e por que algumas
+  (MD5, SHA-1) são péssimas para senhas;
+- entender salt, pepper e o papel do custo (work factor) em bcrypt, scrypt e Argon2;
+- identificar o tipo de um hash pelo tamanho e pelo prefixo;
+- quebrar hashes offline com hashcat e John usando wordlists, regras, máscaras e
+  ataques híbridos;
+- escolher, como quem defende, o esquema certo de armazenamento de senha e
+  configurá-lo com parâmetros concretos.
+
+**Pré-requisito:** 3.1 — Fundamentos de criptografia (encoding × hashing ×
+encryption, as propriedades de um hash, o princípio de Kerckhoffs e por que não se
+inventa criptografia própria).
+
+**Tempo estimado:** de 2 a 3 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+A quebra de hashes que você vai praticar é **offline**, sobre um arquivo de
+exercício, dentro da sua attack box Kali, isolada e sem internet. Fora daí, quebrar
+senhas de terceiros — ou mesmo "só testar" um dump que não é seu — é acesso indevido
+e crime no Brasil (Trilha 1). A regra da plataforma vale: **só em ambiente seu ou
+com autorização por escrito.**
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 Por que senha vira hash (e não cifra)
+
+Um site precisa responder a uma única pergunta quando você entra: *a senha que
+você digitou agora é a mesma de quando você se cadastrou?* Repare que ele **não
+precisa saber qual é a sua senha** — só precisa comparar. Essa diferença é tudo.
+
+Se o site guardasse a senha em claro, qualquer vazamento do banco entregaria todas
+as senhas de graça. Se guardasse a senha **cifrada** (encrypted), seria quase tão
+ruim: cifra tem volta, então existe uma chave que decifra tudo — e quem rouba o
+banco geralmente rouba a chave junto (ela costuma estar no mesmo servidor). Foi
+exatamente o erro da Adobe em 2013, que você viu em 3.1.
+
+A resposta certa é o <GlossaryTerm term="password hashing">hashing de senha</GlossaryTerm>:
+guardar um hash da senha. Como o hash é de mão única, o servidor confere o login
+recalculando o hash da senha digitada e comparando com o guardado; e, se o banco
+vazar, o atacante leva só os hashes, que **não voltam** para a senha a não ser por
+tentativa e erro. O diagrama abaixo mostra o fluxo dos dois lados.
+
+<Figure
+  src={verificacao}
+  alt="Diagrama de duas colunas. No cadastro, a senha monkey1337 recebe um salt aleatório e passa por uma KDF lenta (Argon2, bcrypt ou scrypt); o banco guarda apenas salt e hash, nunca a senha. No login, a senha digitada recebe o mesmo salt, passa pela mesma KDF e o hash é comparado com o guardado: iguais, acesso liberado. No rodapé, o aviso de que um vazamento do banco entrega só salt e hash, e cada hash precisa ser quebrado offline."
+  caption="O sistema confere a senha sem nunca guardá-la: compara hashes. Se o banco vaza, o atacante leva só salt + hash e precisa quebrar cada um offline."
+/>
+
+### 2.2 As propriedades que um hash precisa ter
+
+Uma função de hash criptográfica pega uma entrada de qualquer tamanho e devolve uma
+saída de tamanho fixo (o *digest*). Para servir à segurança, ela precisa de três
+propriedades, da mais fácil para a mais difícil de manter:
+
+- <GlossaryTerm term="preimage resistance">**preimage resistance**</GlossaryTerm>
+  (resistência à pré-imagem): dado um hash, não dá para achar uma entrada que o
+  gere. É o que impede simplesmente "desfazer" o hash.
+- <GlossaryTerm term="second-preimage resistance">**second-preimage resistance**</GlossaryTerm>:
+  dada uma entrada, não dá para achar uma **segunda** diferente com o mesmo hash.
+- <GlossaryTerm term="collision resistance">**collision resistance**</GlossaryTerm>
+  (resistência à colisão): não dá para achar **duas** entradas quaisquer com o mesmo
+  hash. É a mais difícil, por causa do paradoxo do aniversário, e foi a que ruiu no
+  <GlossaryTerm term="MD5">MD5</GlossaryTerm> e no <GlossaryTerm term="SHA-1">SHA-1</GlossaryTerm>
+  (você viu a colisão de SHA-1 do Git em 0.8).
+
+Some a isso o <GlossaryTerm term="avalanche effect">efeito avalanche</GlossaryTerm>
+(mudar um bit da entrada muda metade da saída): é por isso que não dá para "chegar
+perto" de uma senha testando parecidas. Ou o hash bate exato, ou não diz nada.
+
+Um detalhe crucial: **nada disso impede o ataque por tentativa**. As propriedades
+garantem que você não consegue *inverter* nem *forjar* o hash — mas nada impede
+você de pegar um palpite de senha, calcular o hash dele e ver se bate. É nessa
+brecha que vive toda a quebra de senhas.
+
+### 2.3 O inimigo da senha: velocidade
+
+Aqui está o ponto que inverte a intuição de quem vem da área: **para senhas, um
+hash rápido é um defeito.** MD5, SHA-1, SHA-256 foram desenhados para ser velozes —
+ótimo para verificar a integridade de um arquivo de 4 GB (foi o
+<GlossaryTerm term="SHA-256">SHA-256</GlossaryTerm> que você usou em 1.5), péssimo
+para guardar senha.
+
+Por quê? Porque o atacante usa a mesma velocidade. Uma GPU (*graphics processing
+unit*, a placa de vídeo, feita para milhares de cálculos em paralelo) comum calcula **bilhões**
+de MD5 por segundo. A wordlist rockyou tem 14 milhões de senhas; contra MD5, ela
+inteira é testada em uma fração de segundo. Guardar senha em MD5, mesmo com salt,
+é quase o mesmo que não guardar.
+
+### 2.4 Salt: contra o pré-cálculo e a repetição
+
+O <GlossaryTerm term="salt">salt</GlossaryTerm> é um valor aleatório, único por
+senha, que entra no hash junto com a senha. Ele **não é segredo** — fica guardado ao
+lado do hash. Resolve dois problemas:
+
+1. **Senhas iguais deixam de se denunciar.** Sem salt, dois usuários com a senha
+   `123456` teriam o mesmo hash, e isso vaza informação. Com um salt diferente para
+   cada um, os hashes ficam diferentes. Você vai ver isso de perto na Missão 2: duas
+   contas com a mesma senha e hashes totalmente distintos.
+2. **Mata a <GlossaryTerm term="rainbow table">rainbow table</GlossaryTerm>.** Uma
+   rainbow table é um pré-cálculo gigante de hash→senha, feito uma vez e reusado
+   contra qualquer dump — mas só funciona para hash rápido **e sem salt**. Com salt
+   único por senha, o atacante precisaria de uma tabela inteira **por senha**, o que
+   destrói a vantagem. O salt transforma o problema de "pré-calcular uma vez" em
+   "atacar cada senha do zero".
+
+O que o salt **não** faz: deixar cada tentativa mais lenta. Ele atrapalha o
+pré-cálculo e a repetição, mas, se o hash por baixo é rápido, o atacante ainda testa
+a wordlist num piscar de olhos — só que uma vez por salt. Para encarecer **cada
+tentativa**, é preciso outra coisa.
+
+### 2.5 Hashes lentos: bcrypt, scrypt, Argon2
+
+A ideia é simples e poderosa: usar uma função feita para ser **lenta e cara**, com
+um custo que você aumenta conforme o hardware melhora. Chamam-se
+<GlossaryTerm term="key derivation function">funções de derivação de chave</GlossaryTerm>
+(KDF) e têm um <GlossaryTerm term="work factor">work factor</GlossaryTerm>, um botão
+de custo:
+
+- <GlossaryTerm term="bcrypt">**bcrypt**</GlossaryTerm> (1999): baseado no algoritmo
+  Blowfish, repete um escalonamento de chave `2^custo` vezes. Custo 12 = 4096
+  iterações por tentativa. Limite prático de 72 bytes de senha.
+- <GlossaryTerm term="scrypt">**scrypt**</GlossaryTerm> (2009): além de lento, é
+  *memory-hard* — exige bastante memória por tentativa. Isso ataca o ponto fraco da
+  GPU, que tem muitos núcleos mas pouca memória por núcleo. (É o que a própria
+  plataforma usa para as flags, com os parâmetros que você vê no front-matter.)
+- <GlossaryTerm term="Argon2">**Argon2**</GlossaryTerm> (2015): venceu a *Password
+  Hashing Competition* e é a recomendação atual para senhas novas. A variante
+  **Argon2id** resiste tanto a GPU (memory-hard) quanto a ataques por canal lateral.
+
+Há ainda o <GlossaryTerm term="PBKDF2">PBKDF2</GlossaryTerm>, mais antigo, que só
+repete um HMAC muitas vezes — aceitável em sistemas legados, mas não é memory-hard,
+então resiste menos à GPU. A seção 8 traz os parâmetros concretos recomendados para
+cada um.
+
+Contra um bcrypt bem configurado, a mesma rockyou que caía em instantes no MD5 pode
+levar **dias**. O custo não impede a quebra; ele a torna cara o bastante para que
+não valha a pena. É assim que a defesa compra tempo.
+
+## 3. Como o ataque funciona — a mecânica
+
+### 3.1 Offline × online
+
+Existem dois mundos na quebra de senha. No ataque **online**, você tenta senhas
+contra um serviço que está no ar (um login): há rate limit, bloqueio de conta,
+CAPTCHA e logs — tudo atrapalha, e é lento (isso é a Trilha 5, módulo 5.5, com o
+hydra). No ataque **offline**, você já tem um dump de hashes roubado e trabalha na
+**sua** máquina: nenhum servidor para te limitar, nenhum log do lado da vítima, só o
+seu hardware contra a matemática. É o offline que importa aqui, e é por isso que a
+defesa precisa estar **no próprio hash** — não há firewall que ajude depois que o
+dump vazou.
+
+### 3.2 O fluxo: identificar, depois atacar
+
+Quebrar um hash tem sempre dois passos: descobrir **o que** ele é e então escolher
+**como** atacar. A árvore abaixo resume as decisões.
+
+<Figure
+  src={arvore}
+  alt="Árvore de decisão. Começa em identificar o tipo do hash (tamanho e prefixo, com hashid ou o John) para escolher o modo da ferramenta. Ramo do hash rápido e sem salt (MD5, SHA-1, NTLM): dicionário, depois dicionário com regras, depois híbrido (wordlist mais máscara), depois máscara ou força bruta. Ramo do hash lento e com salt (bcrypt, sha512crypt, Argon2): o salt torna rainbow tables inúteis, o custo alto reduz as tentativas por segundo, então usa-se wordlist pequena e inteligente com regras dirigidas, e muitas vezes a quebra é inviável — é onde a defesa funciona."
+  caption="Identificar o tipo vem primeiro: ele decide o modo da ferramenta e quais ataques fazem sentido. Hash rápido abre o leque; hash lento e salgado fecha quase tudo."
+/>
+
+**Identificar.** O tamanho e o prefixo entregam muito: 32 caracteres hex costumam ser
+MD5; 40, SHA-1; um valor que começa com `$6$` é
+<GlossaryTerm term="sha512crypt">sha512crypt</GlossaryTerm>; `$2b$`, bcrypt; `$argon2id$`,
+Argon2. Esses prefixos seguem o *modular crypt format*, o padrão do `/etc/shadow`.
+Ferramentas como `hashid` ajudam, e o John detecta o formato sozinho.
+
+**Atacar.** Da forma mais barata para a mais cara:
+
+- <GlossaryTerm term="dictionary attack">**dictionary attack**</GlossaryTerm>: testar
+  uma <GlossaryTerm term="wordlist">wordlist</GlossaryTerm> (a rockyou é a padrão). Cobre
+  as senhas comuns, que são a maioria.
+- <GlossaryTerm term="rule-based attack">**rule-based attack**</GlossaryTerm>: aplicar
+  regras de transformação a cada palavra (`senha` → `Senha`, `s3nha`, `senha123`). A
+  regra `best64` é o ponto de partida.
+- <GlossaryTerm term="hybrid attack">**hybrid attack**</GlossaryTerm>: wordlist mais
+  uma <GlossaryTerm term="mask attack">máscara</GlossaryTerm>. É o que resolve a conta
+  `admin` do lab: `monkey` está na lista, `monkey1337` não, mas `monkey` + `?d?d?d?d`
+  (quatro dígitos) cobre.
+- <GlossaryTerm term="mask attack">**mask attack**</GlossaryTerm> / brute force: testar
+  todas as combinações de um padrão (`?u?l?l?l?d?d`). Só viável para senhas curtas.
+
+### 3.3 As duas ferramentas
+
+O **John the Ripper** (na edição *Jumbo* do Kali) é forte em CPU, detecta o formato
+sozinho e lê arquivos no formato `user:hash` direto. O **hashcat** é o padrão em GPU
+e identifica cada tipo por um número de **modo** (`-m`): `0` = MD5, `100` = SHA-1,
+`1000` = NTLM, `1800` = sha512crypt, `3200` = bcrypt. E por um modo de **ataque**
+(`-a`): `0` = wordlist, `3` = máscara, `6` = wordlist + máscara (híbrido).
+
+Na sua attack box, dentro do WSL, não há GPU dedicada: as duas rodam em CPU. Para os
+hashes rápidos do lab isso é mais que suficiente; para os lentos, vamos usar
+wordlists pequenas de propósito — que é, aliás, exatamente o que um atacante faz
+quando o hash é caro.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### RockYou (dezembro de 2009): 32 milhões de senhas em claro
+
+Em dezembro de 2009, a RockYou, que fazia widgets para redes sociais, foi invadida
+por uma <GlossaryTerm term="SQL injection">SQL injection</GlossaryTerm> e teve
+**32 milhões** de contas expostas. O agravante: a empresa guardava nome, e-mail e
+**senha em texto claro**, sem hash nenhum. A lista inteira foi publicada. A análise
+da Imperva mostrou que as dez senhas mais comuns eram `123456`, `12345`,
+`123456789`, `Password`, `iloveyou`, `princess`, `rockyou`, `1234567`, `12345678` e
+`abc123`, e que cerca de 30% tinham 6 caracteres ou menos.
+
+- **Impacto:** 32 milhões de senhas em claro; e, por serem reusadas, acesso a contas
+  dos mesmos usuários em outros serviços.
+- **Lição:** o arquivo `rockyou.txt` que você vai usar no lab **é** esse vazamento.
+  Ele é tão eficaz justamente porque são senhas que pessoas reais escolheram.
+- **Fonte:** [Imperva — Consumer Password Worst Practices (análise do dump RockYou)](https://www.imperva.com/docs/gated/WP_Consumer_Password_Worst_Practices.pdf)
+  e [The Register, 2009](https://www.theregister.com/2009/12/16/rockyou_password_snafu/).
+
+### LinkedIn (2012): SHA-1 sem salt
+
+Em junho de 2012, um dump de **6,5 milhões** de hashes de senha do LinkedIn apareceu
+num fórum russo. As senhas estavam em <GlossaryTerm term="SHA-1">SHA-1</GlossaryTerm>
+**sem salt** — rápido e sem proteção contra pré-cálculo. Em 2016, revelou-se que o
+vazamento original era muito maior: **167 milhões** de contas, **117 milhões** delas
+com senha, postas à venda. Relatos da época indicam que cerca de 90% das senhas foram
+quebradas em 72 horas.
+
+- **Impacto:** mais de cem milhões de credenciais; onda de invasões por reúso de
+  senha (inclusive, à época, contas de figuras públicas).
+- **Lição:** SHA-1 sem salt é indefensável para senhas. Salt teria atrapalhado o
+  pré-cálculo; um hash lento teria tornado a quebra em massa inviável.
+- **Fonte:** [TechCrunch, 2016](https://techcrunch.com/2016/05/18/117-million-linkedin-emails-and-passwords-from-a-2012-hack-just-got-posted-online/).
+
+### Ashley Madison (2015): o bcrypt forte e o erro ao lado
+
+O caso mais instrutivo. Em 2015, o site Ashley Madison foi invadido e os dados de
+~36 milhões de contas vazaram. As senhas estavam em
+<GlossaryTerm term="bcrypt">bcrypt</GlossaryTerm> com custo **12** — forte; os
+pesquisadores a princípio acharam que a quebra em massa era inviável. Mas o grupo
+CynoSure Prime notou um erro de implementação: além do bcrypt, o sistema guardava um
+campo `$loginkey`, um token derivado da senha usando **MD5** (e, para contas antigas,
+da senha em claro em minúsculas, reduzindo o espaço a 26 letras). Eles atacaram os
+MD5 rápidos e usaram o resultado para validar contra os bcrypt. Resultado:
+**2,6 milhões** de senhas em poucas horas e **11,2 milhões** em poucos dias.
+
+- **Impacto:** 11,2 milhões de senhas recuperadas apesar do bcrypt — num site cujo
+  vazamento teve consequências graves para as vítimas.
+- **Lição:** a segurança do conjunto é a do elo mais fraco. Não adianta um hash forte
+  se um caminho paralelo guarda a mesma senha de um jeito fraco. O algoritmo estava
+  certo; a implementação, não.
+- **Fonte:** [Ars Technica / CSO — "Ashley Madison coding blunder made over 11 million passwords easy to crack" (Lucian Constantin, 2015)](https://www.csoonline.com/article/552739/ashley-madison-coding-blunder-made-over-11-million-passwords-easy-to-crack.html)
+  e o [anúncio do CynoSure Prime na lista de criptografia metzdowd](https://www.metzdowd.com/pipermail/cryptography/2015-September/026440.html).
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá quebrado offline, com hashcat e John, dois
+arquivos de hashes: um lote rápido de MD5 (recuperando até a senha "difícil" do
+admin com um ataque híbrido) e um lote lento e salgado no formato do `/etc/shadow`
+(vendo o salt em ação). Cada missão termina em uma flag.
+
+### 5.1 Subir o lab e preparar o material (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. O desktop
+   do Kali abre ali mesmo, já logado. (Alternativa pelo terminal do WSL:
+   `scripts/lab.sh up kali`.) Se a plataforma avisar que falta a imagem, rode uma vez
+   `scripts/lab.sh pull kali` — é o único momento com internet.
+2. Abra um terminal no Kali (o ícone na barra, ou o menu). Copie o material do
+   exercício para a sua home, para poder refazer à vontade:
+
+```console
+$ cp -r /opt/lab-3.2 ~/lab-3.2 && cd ~/lab-3.2
+$ ls
+README.txt  conferir.sh  shadow.leak  webapp.hashes
+```
+
+3. A wordlist rockyou vem compactada no Kali. Descompacte uma cópia na sua pasta:
+
+```console
+$ cp /usr/share/wordlists/rockyou.txt.gz .
+$ gunzip rockyou.txt.gz
+$ wc -l rockyou.txt
+14344392 rockyou.txt
+```
+
+### 5.2 Missão 1 — O vazamento da aplicação web (guiada → desafio)
+
+Abra o `webapp.hashes`. São seis linhas no formato `usuário:hash`:
+
+```console
+$ cat webapp.hashes
+alice:f25a2fc72690b780b2a14e140ef6a9e0
+bob:0571749e2ac330a7455809c6b0e7af90
+carol:8afa847f50a716e64932d995c8e7435a
+dave:0d107d09f5bbe40cade3de5c71e9e9b7
+frank:84d961568a65073a3bcf0eb216b2a576
+admin:50e68883b255cd1453c4adcfa747e14d
+```
+
+**Passo 1 — identificar.** São 32 caracteres hex: cheira a MD5. Deixe o John
+confirmar e quebrar de uma vez; ele lê o formato `user:hash` nativamente e usa a
+rockyou como wordlist:
+
+```console
+$ john --format=raw-md5 --wordlist=rockyou.txt webapp.hashes
+Using default input encoding: UTF-8
+Loaded 6 password hashes with no different salts (Raw-MD5 [MD5 256/256 AVX2 8x3])
+Warning: no OpenMP support for this hash type, consider --fork=4
+Press Ctrl-C to abort, or send SIGUSR1 to john process for status
+iloveyou         (alice)
+princess         (carol)
+sunshine         (bob)
+superman         (frank)
+letmein          (dave)
+5g 0:00:00:00 DONE (2026-10-20 07:34) 9.259g/s 26561Kp/s 26561Kc/s 26565KC/s
+Use the "--show --format=Raw-MD5" options to display all of the cracked passwords reliably
+Session completed.
+```
+
+Cinco das seis caíram na hora. Veja o placar:
+
+```console
+$ john --show --format=raw-md5 webapp.hashes
+alice:iloveyou
+bob:sunshine
+carol:princess
+dave:letmein
+frank:superman
+
+5 password hashes cracked, 1 left
+```
+
+**Passo 2 — o desafio: a conta `admin`.** Falta uma, e ela não está na rockyou pura.
+Seu objetivo é recuperar a senha em claro do `admin`. A flag é essa senha, no formato
+`FLAG{...}`.
+
+Pense: a senha do admin **não** é uma palavra da lista, mas pode ser uma palavra da
+lista com algo colado no fim. Qual ataque combina uma wordlist com um padrão de
+caracteres extra, sem você precisar de uma wordlist gigante?
+
+<Hint title="Dica 1">
+Isole só o hash do admin num arquivo (`admin.hash`) e ataque com o hashcat, que é
+ótimo para ataques híbridos. O hash é MD5, então o modo é `-m 0`. O modo de ataque
+híbrido "wordlist + máscara" é o `-a 6`.
+</Hint>
+
+<Hint title="Dica 2">
+A máscara para "quatro dígitos no fim" é `?d?d?d?d`. A ordem no hashcat é:
+`hashcat -m 0 -a 6 <arquivo-do-hash> <wordlist> <máscara>`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ echo 50e68883b255cd1453c4adcfa747e14d > admin.hash
+$ hashcat -m 0 -a 6 admin.hash rockyou.txt ?d?d?d?d
+...
+50e68883b255cd1453c4adcfa747e14d:monkey1337
+
+Session..........: hashcat
+Status...........: Cracked
+Hash.Mode........: 0 (MD5)
+Hash.Target......: 50e68883b255cd1453c4adcfa747e14d
+Guess.Base.......: File (rockyou.txt), Left Side
+Guess.Mod........: Mask (?d?d?d?d) [4], Right Side
+Speed.#01........: 18605.5 kH/s
+Recovered........: 1/1 (100.00%) Digests (total), 1/1 (100.00%) Digests (new)
+```
+
+O híbrido anexou cada combinação de quatro dígitos a cada palavra da rockyou e
+encontrou `monkey` + `1337`. A senha do admin é `monkey1337`, então a flag é
+`FLAG{monkey1337}`. (Confira os resultados salvos a qualquer momento com
+`hashcat -m 0 admin.hash --show`, lido do <GlossaryTerm term="potfile">potfile</GlossaryTerm>.)
+</Solution>
+
+<FlagInput task="missao-1-vazamento-webapp" />
+
+### 5.3 Missão 2 — O /etc/shadow salgado (desafio)
+
+Agora o `shadow.leak`, um trecho de `/etc/shadow` roubado de um servidor fictício:
+
+```console
+$ cat shadow.leak
+webadmin:$6$AaBbCcDd$q1iHdMXPab/s.56vtqCK9GqTQfH4nJ7QvAYNAl6VrznNzToEouBJjpay/jPPghiUQHuxbj0V97ZuIBeLQpsaA/
+deploy:$6$11223344$6UQ1zbhUVS/zzH2Mg4QzmfDyTjVTk14sQzA5OdiYdfrt/mb3zqA02CtRAnFbO/EIhYN7SfrPxHpob89UXS9uO0
+backup:$6$ZzYyXxWw$XkFh75fK4xYslqh3RoGrKRjMupKquknOj7BIFHdaEJws0U8RqAaCKJh/Ar84rqWCaFTaBSYKi6E4nJ8fLiKag/
+root:$6$Qw9Rt2Uv$XznpwyBI8f8Q.DbzoIPSEcOjo1fwqW.FUIsI46ORup1DhO/LN/5vAw2/C78zGepWpJhyMfS/bl/8lR6.Pwlp9.
+```
+
+**Repare antes de atacar.** O prefixo `$6$` diz que é sha512crypt — hash **lento e
+com salt**. Em `$6$salt$hash`, o campo do meio é o salt, diferente em cada linha.
+Olhe `webadmin` e `backup`: você vai descobrir, ao quebrar, que têm a **mesma senha**
+— e mesmo assim os hashes são completamente diferentes. É o salt fazendo o trabalho
+dele.
+
+**Seu objetivo:** quebrar as quatro senhas e gerar a flag com o `conferir.sh`.
+
+Como o hash é lento, a rockyou inteira seria demorada em CPU. Mas essas senhas são
+comuns (estão no topo da lista), então o John as encontra rápido. Deixe ele detectar
+o formato sozinho:
+
+<Hint title="Dica 1">
+Não precisa dizer o formato: `john --wordlist=rockyou.txt shadow.leak`. O John lê o
+`$6$`, entende que é sha512crypt e aplica o salt de cada linha automaticamente.
+</Hint>
+
+<Hint title="Dica 2">
+Depois de quebrar, veja as senhas com `john --show shadow.leak`. Pegue só a coluna da
+senha e mande para o `conferir.sh`:
+`john --show shadow.leak | awk -F: 'NF>1 {print $2}' | /opt/lab-3.2/conferir.sh`.
+</Hint>
+
+<Solution title="Solução">
+```console
+$ john --wordlist=rockyou.txt shadow.leak
+Using default input encoding: UTF-8
+Loaded 4 password hashes with 4 different salts (sha512crypt, crypt(3) $6$ [SHA512 256/256 AVX2 4x])
+Cost 1 (iteration count) is 5000 for all loaded hashes
+Will run 4 OpenMP threads
+Press Ctrl-C to abort, or send SIGUSR1 to john process for status
+princess         (deploy)
+iloveyou         (webadmin)
+michael          (root)
+iloveyou         (backup)
+4g 0:00:00:00 DONE (2026-10-20 07:34) 10.81g/s 1383p/s 5535c/s 5535C/s 123456..letmein
+Session completed.
+$ john --show shadow.leak
+webadmin:iloveyou
+deploy:princess
+backup:iloveyou
+root:michael
+
+4 password hashes cracked, 0 left
+$ john --show shadow.leak | awk -F: 'NF>1 {print $2}' | /opt/lab-3.2/conferir.sh
+FLAG{sha512crypt_094af51a43d4}
+```
+
+Note o `with 4 different salts`: é o salt por senha. E `webadmin` e `backup`, ambos
+`iloveyou`, provam no olho por que rainbow tables não servem aqui. O `conferir.sh`
+junta as senhas distintas que você recuperou e deriva a flag — que você só obtém se
+tiver quebrado os hashes de verdade.
+</Solution>
+
+<FlagInput task="missao-2-shadow-salgado" />
+
+### 5.4 Desligar o laboratório
+
+No painel do lab, **Parar** libera a vaga (regra de um lab por vez); **Resetar**
+recria o Kali do zero se você quiser refazer. Como o material fica em `/opt/lab-3.2`
+(na imagem) e você trabalhou numa cópia em `~/lab-3.2`, nada se perde.
+
+## 6. Variações e aprofundamento
+
+**Outros tipos de hash que você vai encontrar.** O **NTLM** é o hash de senha do
+Windows (modo `-m 1000` no hashcat): rápido e sem salt, o que o torna um alvo fácil e
+central no mundo Active Directory (Trilha 7) — de um dump de NTLM nasce o
+*pass-the-hash*. Senhas de aplicações web modernas costumam vir em bcrypt (Laravel,
+Django com o algoritmo certo), que você reconhece pelo `$2b$`. Bancos de dados têm os
+seus: MySQL, PostgreSQL, Oracle, cada um com um modo próprio no hashcat.
+
+**Regras de verdade.** O `best64.rule` é só o começo. Regras maiores (`rockyou-30000.rule`,
+`OneRuleToRuleThemAll`) aplicam dezenas de milhares de transformações por palavra e
+quebram uma fatia enorme das senhas "complicadas" que as pessoas inventam —
+justamente porque as pessoas inventam de formas previsíveis (`P@ssw0rd!`, `Verao2024`).
+Vale testar `john --wordlist=rockyou.txt --rules=best64 shadow.leak` e comparar.
+
+**Máscaras e o espaço de busca.** Força bruta pura (`-a 3 ?a?a?a?a?a?a?a?a`) só é
+viável para senhas curtas: cada posição `?a` são 95 caracteres, então o custo cresce
+95^n. Por isso a máscara dirigida (`?u?l?l?l?l?d?d?d`, que casa com o padrão
+"maiúscula + minúsculas + dígitos" que tanta política de senha obriga) é muito mais
+esperta: cobre o formato provável sem explodir o espaço.
+
+**GPU de verdade.** No seu WSL você roda em CPU. Numa placa de vídeo dedicada, os
+mesmos comandos do hashcat ficam ordens de grandeza mais rápidos para hashes rápidos
+— e é por isso que MD5/SHA-1 são indefensáveis e que o custo de bcrypt/Argon2 (que
+atrapalha a GPU) importa tanto.
+
+**Reúso de senha.** O maior perigo depois de uma quebra não é a conta vazada: é que a
+mesma senha abre o e-mail, o banco e a VPN da pessoa. Testar credenciais vazadas de um
+serviço em outro é o *credential stuffing*, e é o motivo de uma única senha fraca
+quebrada virar um incidente inteiro.
+
+## 7. Erros comuns
+
+- **`No hashes loaded` (John) ou `No hashes loaded. Did you mean...`:** o formato não
+  bate. Confira o `--format` (ex.: `raw-md5`) ou deixe o John detectar sozinho sem o
+  `--format`. Para hashcat, o erro `Token length exception` quase sempre é o `-m`
+  errado para aquele hash.
+- **"Quebrei, mas o comando não mostra nada":** hashcat e John **não requebram** o que
+  já está no <GlossaryTerm term="potfile">potfile</GlossaryTerm>. Use `--show` para ver
+  o que já caiu. Para refazer do zero, apague `~/.john/john.pot` ou
+  `~/.local/share/hashcat/hashcat.potfile`.
+- **rockyou não encontrado:** no Kali ela vem como `/usr/share/wordlists/rockyou.txt.gz`.
+  É preciso `gunzip` antes de usar. Se nem o `.gz` existir, instale com
+  `sudo apt-get install wordlists` (precisa de internet, fora do lab).
+- **hashcat reclama de dispositivo/OpenCL no WSL:** sem GPU, force a CPU com
+  `--opencl-device-types=1` ou use `-D 1`. Para os hashes deste lab, a CPU basta.
+- **O `user:` atrapalhando o hashcat:** o hashcat não entende `user:hash` como o John.
+  Tire o usuário antes (`awk -F: '{print $2}' webapp.hashes > md5.txt`) ou use
+  `--username`.
+- **Máscara sem resultado:** confira o tamanho. `?d?d?d?d` cobre só 4 dígitos; se a
+  senha tiver 3 ou 5, não casa. O híbrido testa a máscara **exata**, não "até N".
+
+## 8. Defesa e mitigação
+
+A regra de ouro cabe em uma frase: **use uma KDF lenta, com salt único por senha, e
+nunca um hash rápido.** O detalhe está nos parâmetros. As recomendações abaixo são as
+do [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+(verificadas na fonte):
+
+- **Argon2id** (primeira escolha para sistemas novos): mínimo de **m=19456 (19 MiB)
+  de memória, t=2 iterações, p=1** de paralelismo. Ajuste a memória para mais quando
+  o servidor permitir.
+- **scrypt** (alternativa): **N=2^17 (128 MiB), r=8, p=1**.
+- **bcrypt** (legado ou quando Argon2 não está disponível): **work factor ≥ 10**
+  (muitos recomendam 12 hoje), lembrando do limite de 72 bytes da senha.
+- **PBKDF2** (quando exigido por conformidade, ex.: FIPS): **600.000 iterações** com
+  HMAC-SHA-256; 210.000 com HMAC-SHA-512.
+
+Um exemplo concreto do erro e da correção, em Python:
+
+```python
+# ERRADO: hash rápido, sem salt. Quebrável em massa (CWE-759, CWE-916).
+import hashlib
+def guardar_senha(senha):
+    return hashlib.sha256(senha.encode()).hexdigest()
+
+# CERTO: Argon2id, com salt por senha embutido e custo ajustável.
+# pip install argon2-cffi
+from argon2 import PasswordHasher
+ph = PasswordHasher(memory_cost=19456, time_cost=2, parallelism=1)
+
+def guardar_senha(senha):
+    return ph.hash(senha)          # gera o salt sozinho; já vai embutido no resultado
+
+def conferir(hash_guardado, senha):
+    try:
+        ph.verify(hash_guardado, senha)
+        return True
+    except Exception:
+        return False
+```
+
+Repare que a biblioteca cuida do salt e o embute no próprio hash (o formato
+`$argon2id$...`), então você não administra salt à mão — e nunca deve reaproveitar um
+salt fixo.
+
+**Camadas além do hash:**
+
+- **Pepper.** Um <GlossaryTerm term="pepper">pepper</GlossaryTerm> — segredo único do
+  sistema, igual para todas as senhas — guardado **fora** do banco (num cofre de
+  segredos ou HSM) some do alcance de quem rouba só o banco. É o que teria contido o
+  Ashley Madison: mesmo achando um caminho fraco, sem o pepper o atacante não começa.
+- **Limitar o dano:** exija senhas longas (frases), bloqueie as senhas mais vazadas
+  (compare contra listas tipo *Have I Been Pwned*) e exija **MFA** (segundo fator), que
+  torna a senha quebrada insuficiente sozinha.
+- **Detecção e resposta:** rate limit e bloqueio contêm o ataque **online**; contra o
+  offline, a única defesa real é o hash caro + o pepper, porque o atacante já está fora
+  do seu alcance.
+- **Migração:** ao trocar um esquema fraco por um forte, não dá para "re-hashear" senha
+  que você não tem. Faça o re-hash no próximo login de cada usuário (quando a senha em
+  claro passa por você uma vez) e force a troca das contas que não logam.
+
+## 9. Exercícios
+
+A tarefa que gera as flags é o laboratório da seção 5: a **Missão 1** (senha do admin,
+via ataque híbrido) e a **Missão 2** (o `/etc/shadow` salgado, via John + `conferir.sh`).
+Faça as duas antes do quiz.
+
+Para fixar a teoria, responda ao quiz. Ele corrige no servidor e conta para concluir o
+módulo.
+
+<Quiz task="quiz-final" />
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Senha vira **hash**, não cifra: o sistema só precisa comparar, e hash não volta.
+- Para senha, **hash rápido é defeito**: MD5/SHA-1/SHA-256 caem em massa na GPU.
+- **Salt** (único por senha, público) mata rainbow tables e faz senhas iguais terem
+  hashes diferentes — mas não deixa cada tentativa mais lenta.
+- **Hashes lentos** (bcrypt, scrypt, Argon2) têm um **work factor** que encarece cada
+  tentativa; é isso que compra tempo contra o ataque offline.
+- Quebrar é **identificar** (tamanho/prefixo) e então **atacar** (dicionário → regras →
+  híbrido → máscara), com hashcat e John.
+- A segurança do conjunto é a do **elo mais fraco** (Ashley Madison).
+
+**Cola rápida (hashcat):**
+
+| Hash | Prefixo/tamanho | Modo `-m` |
+|---|---|---|
+| MD5 | 32 hex | `0` |
+| SHA-1 | 40 hex | `100` |
+| NTLM | 32 hex | `1000` |
+| sha512crypt | `$6$` | `1800` |
+| bcrypt | `$2b$` | `3200` |
+
+Modos de ataque: `-a 0` wordlist · `-a 3` máscara · `-a 6` híbrido (wordlist + máscara).
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) — a referência de parâmetros para Argon2, scrypt, bcrypt e PBKDF2.
+- [hashcat — exemplos de modos de hash](https://hashcat.net/wiki/doku.php?id=example_hashes) — o número `-m` de cada tipo de hash.
+- [John the Ripper — documentação](https://www.openwall.com/john/doc/) — formatos, regras e modos.
+- [RFC 9106 — Argon2](https://www.rfc-editor.org/rfc/rfc9106.html) — a especificação oficial, com os parâmetros recomendados.
