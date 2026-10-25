@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="t d">
+  <title id="t">Por que o Active Directory é o alvo: do primeiro acesso ao controle da empresa, e onde a defesa corta</title>
+  <desc id="d">Da esquerda para a direita, cinco caixas ligadas por setas mostram o raciocínio de um atacante numa rede corporativa Windows. Caixa 1, uma estação comprometida: o atacante tem uma conta de domínio comum. Caixa 2, ler o diretório: como todo usuário autenticado lê quase todo o AD, a conta comum já revela usuários, grupos, computadores e GPOs; isso é o módulo 7.2. Caixa 3, credenciais mais fortes: abusos do Kerberos e reutilização de senhas e hashes, módulos 7.3 e 7.4. Caixa 4, um grupo privilegiado como Domain Admins, que é administrador local de todo computador do domínio. Caixa 5, o controlador de domínio e o NTDS.dit, com a senha de todas as contas: a empresa inteira. Embaixo de cada seta há uma tesoura amarela marcando onde a defesa corta o caminho: higiene de credenciais e LAPS na estação; menos caminhos e contas-isca na leitura do diretório; senhas longas, gMSA e Protected Users contra o abuso de credenciais; grupos privilegiados vazios e o modelo de camadas; e o DC tratado como Tier 0, com backup offline. Uma faixa no rodapé resume: o AD concentra a confiança de toda a empresa num só lugar; por isso ele é o alvo, e por isso cada corte na cadeia vale tanto.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .s { font-size: 11px; fill: #9fb0a6; }
+    .n { font-size: 20px; font-weight: 700; fill: #5ee08a; }
+    .w { font-size: 11px; font-weight: 700; fill: #f0c05a; }
+    .r { font-size: 12px; font-weight: 700; fill: #f07a6a; }
+    .box { fill: #16201b; stroke: #9fb0a6; stroke-width: 1.8; }
+    .dc { fill: #16201b; stroke: #f07a6a; stroke-width: 2.5; }
+    .cut { fill: #1b2721; stroke: #f0c05a; stroke-width: 1.4; stroke-dasharray: 5 3; }
+    .flow { stroke: #5cc8d8; stroke-width: 2; fill: none; marker-end: url(#a); }
+    .tick { stroke: #f0c05a; stroke-width: 1.4; fill: none; stroke-dasharray: 3 3; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+  </defs>
+  <rect width="960" height="560" fill="#121815"/>
+  <text class="t" x="30" y="34">Por que o AD é o alvo: a cadeia do atacante e onde a defesa corta</text>
+
+  <rect class="box" x="20" y="70" width="168" height="150" rx="10"/>
+  <text class="n" x="34" y="100">1</text>
+  <text class="h" x="34" y="126">Estação</text>
+  <text class="s" x="34" y="146">um phishing, uma</text>
+  <text class="s" x="34" y="162">senha vazada:</text>
+  <text class="s" x="34" y="178">conta de domínio</text>
+  <text class="s" x="34" y="194">COMUM (alima)</text>
+
+  <path class="flow" d="M190,145 L208,145"/>
+  <rect class="box" x="210" y="70" width="168" height="150" rx="10"/>
+  <text class="n" x="224" y="100">2</text>
+  <text class="h" x="224" y="126">Ler o diretório</text>
+  <text class="s" x="224" y="146">todo usuário lê</text>
+  <text class="s" x="224" y="162">quase todo o AD:</text>
+  <text class="s" x="224" y="178">grupos, GPOs, SPNs</text>
+  <text class="s" x="224" y="194">(módulo 7.2)</text>
+
+  <path class="flow" d="M380,145 L398,145"/>
+  <rect class="box" x="400" y="70" width="168" height="150" rx="10"/>
+  <text class="n" x="414" y="100">3</text>
+  <text class="h" x="414" y="126">Credencial forte</text>
+  <text class="s" x="414" y="146">abuso do Kerberos,</text>
+  <text class="s" x="414" y="162">hash reutilizado,</text>
+  <text class="s" x="414" y="178">salto entre máquinas</text>
+  <text class="s" x="414" y="194">(7.3 e 7.4)</text>
+
+  <path class="flow" d="M570,145 L588,145"/>
+  <rect class="box" x="590" y="70" width="168" height="150" rx="10"/>
+  <text class="n" x="604" y="100">4</text>
+  <text class="h" x="604" y="126">Domain Admins</text>
+  <text class="s" x="604" y="146">admin local de</text>
+  <text class="s" x="604" y="162">TODO computador</text>
+  <text class="s" x="604" y="178">do domínio</text>
+  <text class="s" x="604" y="194">(RID 512)</text>
+
+  <path class="flow" d="M760,145 L778,145"/>
+  <rect class="dc" x="780" y="70" width="162" height="150" rx="10"/>
+  <text class="n" x="794" y="100">5</text>
+  <text class="r" x="794" y="126">DC + NTDS.dit</text>
+  <text class="s" x="794" y="146">a senha de todas</text>
+  <text class="s" x="794" y="162">as contas; GPO para</text>
+  <text class="s" x="794" y="178">todas as máquinas:</text>
+  <text class="r" x="794" y="196">a empresa inteira</text>
+
+  <path class="tick" d="M104,222 L104,262"/>
+  <path class="tick" d="M294,222 L294,262"/>
+  <path class="tick" d="M484,222 L484,262"/>
+  <path class="tick" d="M674,222 L674,262"/>
+  <path class="tick" d="M861,222 L861,262"/>
+
+  <text class="w" x="20" y="252">✂ onde a defesa corta</text>
+
+  <rect class="cut" x="20" y="264" width="168" height="120" rx="8"/>
+  <text class="s" x="32" y="288">admin nunca loga</text>
+  <text class="s" x="32" y="304">em estação comum;</text>
+  <text class="s" x="32" y="320">LAPS: senha local</text>
+  <text class="s" x="32" y="336">diferente por</text>
+  <text class="s" x="32" y="352">máquina; MFA</text>
+
+  <rect class="cut" x="210" y="264" width="168" height="120" rx="8"/>
+  <text class="s" x="222" y="288">menos caminhos</text>
+  <text class="s" x="222" y="304">(rode o BloodHound</text>
+  <text class="s" x="222" y="320">você mesmo);</text>
+  <text class="s" x="222" y="336">contas-isca que</text>
+  <text class="s" x="222" y="352">disparam alerta</text>
+
+  <rect class="cut" x="400" y="264" width="168" height="120" rx="8"/>
+  <text class="s" x="412" y="288">senhas longas,</text>
+  <text class="s" x="412" y="304">gMSA, sem RC4;</text>
+  <text class="s" x="412" y="320">Protected Users;</text>
+  <text class="s" x="412" y="336">sem GPP com</text>
+  <text class="s" x="412" y="352">senha (MS14-025)</text>
+
+  <rect class="cut" x="590" y="264" width="168" height="120" rx="8"/>
+  <text class="s" x="602" y="288">grupos privilegiados</text>
+  <text class="s" x="602" y="304">VAZIOS no dia a dia;</text>
+  <text class="s" x="602" y="320">camadas (tiering)</text>
+  <text class="s" x="602" y="336">e PAW; alerta em</text>
+  <text class="s" x="602" y="352">mudança de membros</text>
+
+  <rect class="cut" x="780" y="264" width="162" height="120" rx="8"/>
+  <text class="s" x="792" y="288">DC é Tier 0:</text>
+  <text class="s" x="792" y="304">nada além de AD</text>
+  <text class="s" x="792" y="320">nele; backup</text>
+  <text class="s" x="792" y="336">OFFLINE testado;</text>
+  <text class="s" x="792" y="352">plano de recuperação</text>
+
+  <text class="s" x="30" y="430">Um único diretório guarda quem é quem, quem pode o quê e a configuração de todas as máquinas.</text>
+  <text class="s" x="30" y="450">Ele não precisa de uma "falha" para ser perigoso: o poder concentrado já é o prêmio.</text>
+  <text class="w" x="30" y="486">O AD concentra a confiança da empresa num só lugar: por isso ele é o alvo,</text>
+  <text class="w" x="30" y="506">e por isso cada corte nesta cadeia (de qualquer elo) vale tanto.</text>
+</svg>

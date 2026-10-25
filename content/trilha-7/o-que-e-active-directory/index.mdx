@@ -1,0 +1,937 @@
+---
+slug: o-que-e-active-directory
+track: trilha-7
+title: "O que é AD e por que importa"
+prerequisites: [trilha-6]
+lab: null
+tasks:
+  - slug: missao-1-escopo-da-gpo
+    title: "Missão 1 — até onde a GPO chega"
+    type: flag
+    prompt: "Quais computadores recebem a GPO Bloqueio-USB, ligada à OU=Estacoes,OU=Financeiro,OU=Sao Paulo? Monte a flag com o CN de cada um, em minúsculas, em ordem alfabética, separados por +, no formato FLAG{...}."
+    hint: "Uma GPO ligada a uma OU vale para os objetos que estão DENTRO dela, em qualquer nível abaixo. Leia o DN da direita para a esquerda: o computador recebe a GPO se o DN dele TERMINAR com ,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local. Cuidado com OUs de mesmo nome em outro lugar e com o contêiner CN=Computers."
+    flag:
+      hash: "scrypt$16384$8$1$85cfb2d1a79862d760d9ec972582586f87148544acafa7eb8b50df2b8e9120d8"
+      salt: "8f643ea080039e76314566f99df9b139"
+  - slug: missao-2-qual-gpo-vence
+    title: "Missão 2 — qual GPO vence"
+    type: flag
+    prompt: "Na WS-FIN-07, qual GPO define o valor final de 'limite de inatividade da máquina', e que valor fica? Responda no formato FLAG{NomeDaGPO-valor}, com o nome exatamente como no relatório."
+    hint: "Aplique as regras na ordem: links desabilitados (linkOptions 1) não contam; Bloquear herança na OU=Financeiro barra tudo o que vem de cima, EXCETO os links Enforced (linkOptions 2); um Enforced vence os não enforced; e uma GPO com o valor nao-configurado não sobrescreve nada."
+    flag:
+      hash: "scrypt$16384$8$1$a9a694f58d052c636bc9ef7cbd07d4a44a5d36edd690ef0d4580a6569fc221c6"
+      salt: "504aede5c43bcc104b5758d7478dec1e"
+  - slug: missao-3-quem-e-admin
+    title: "Missão 3 — quem é Domain Admin de verdade"
+    type: flag
+    prompt: "Quais contas HABILITADAS são membros efetivos (diretos ou por aninhamento) do grupo Domain Admins? Monte a flag com os sAMAccountName, em ordem alfabética, separados por +, no formato FLAG{...}."
+    hint: "Ache o grupo pelo RID 512, não pelo nome (existe um impostor). Desça pelos grupos aninhados até chegar às contas. Depois descarte as contas desabilitadas: no userAccountControl, o bit 0x2 (ACCOUNTDISABLE) ligado significa conta desligada. E a descrição de uma conta não dá privilégio nenhum."
+    flag:
+      hash: "scrypt$16384$8$1$d0d92e3b6d32ea619f67a88e9a49e992888deaeab4db964e1fcbd5bc4d9a4810"
+      salt: "20047987e4bee0ec57dad9b7643f5e44"
+  - slug: quiz-final
+    title: "Quiz — O que é AD e por que importa"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Uma empresa criou o domínio filho `filial.corp.local` dentro da floresta `corp.local` para que os administradores da filial 'não enxerguem nada da matriz'. Por que essa decisão não entrega o isolamento esperado?"
+        options:
+          - "Porque domínios filhos não podem ter administradores próprios"
+          - "Porque o domínio é uma fronteira de administração, não de segurança: os domínios da mesma floresta compartilham schema, configuração e trusts automáticos, e um administrador de serviço de qualquer domínio consegue, alterando um controlador de domínio, alcançar os outros. Só uma floresta separada isola"
+          - "Porque o domínio filho herda a senha do Administrator da matriz"
+          - "Porque o isolamento depende de criar uma OU com o nome da filial"
+        answer: 1
+        explanation: "A Microsoft é explícita: todos os administradores de serviço de uma floresta têm controle total sobre os dados e serviços de todos os computadores da floresta, e conseguem acessar outros domínios modificando o software de um controlador de domínio. Os domínios de uma floresta se ligam por trusts bidirecionais e transitivos criados automaticamente e dividem o mesmo schema. Por isso a fronteira de segurança é a floresta; o domínio separa a administração e a replicação, não o poder. Domínios filhos têm, sim, administradores próprios; não existe herança de senha; e OU não isola nada."
+      - question: "O que é, de fato, uma unidade organizacional (OU)?"
+        options:
+          - "Um tipo especial de grupo de segurança que concede permissões aos seus membros"
+          - "Um domínio menor, com controlador próprio"
+          - "Um contêiner do diretório que organiza objetos, pode receber o link de GPOs e serve de ponto de delegação; ela não é um principal de segurança, então não dá permissão a ninguém só por um objeto estar dentro dela"
+          - "O mesmo que o contêiner CN=Users"
+        answer: 2
+        explanation: "A OU é uma pasta do diretório: organiza, recebe links de GPO e permite delegar a administração de uma parte da árvore. Ela não tem SID, não entra no token de ninguém e, portanto, não concede acesso. Quem concede acesso é o grupo de segurança. Também não é um domínio (não tem controlador próprio) e não é o CN=Users: esse é um contêiner padrão, de outra classe, que nem aceita link de GPO."
+      - question: "Um computador está na OU=Estacoes, filha da OU=Financeiro. A OU=Financeiro tem 'Bloquear herança' ligado. Uma GPO ligada ao domínio, com o link marcado como Enforced, configura o bloqueio de tela. O que acontece?"
+        options:
+          - "A GPO do domínio se aplica e prevalece: Enforced é uma propriedade do link que atravessa o Block Inheritance e não pode ser sobrescrita por GPOs não enforced de níveis mais baixos"
+          - "A GPO do domínio é ignorada, porque o bloqueio de herança barra tudo o que vem de cima"
+          - "Vence a GPO da OU=Estacoes, porque a mais próxima sempre vence"
+          - "As duas se anulam e o Windows usa o valor padrão"
+        answer: 0
+        explanation: "O Block Inheritance (propriedade do contêiner) barra os links normais que vêm de cima: local, site, domínio e OUs superiores. Mas o Enforced (propriedade do link) tem precedência sobre ele, segundo a própria documentação da Microsoft: o link Enforced atravessa o bloqueio e não pode ser sobrescrito pelas GPOs mais próximas. A regra 'a mais próxima vence' só vale entre links normais. E não existe anulação: a última que escreve, na ordem de precedência, define o valor."
+      - question: "Por que o arquivo NTDS.dit de um controlador de domínio é considerado o bem mais valioso da rede?"
+        options:
+          - "Porque guarda os logs de acesso à internet da empresa"
+          - "Porque contém o instalador do Windows Server"
+          - "Porque é o único lugar onde ficam os arquivos das GPOs"
+          - "Porque é o banco do diretório, com todos os objetos e os segredos de autenticação de TODAS as contas do domínio, inclusive a krbtgt; quem obtém uma cópia dele pode se passar por qualquer um"
+        answer: 3
+        explanation: "O NTDS.dit é o banco de dados do AD DS no controlador (por padrão em %SystemRoot%\\NTDS). Ele guarda todos os objetos e os segredos derivados das senhas de todas as contas, inclusive a krbtgt, cuja chave assina os tickets Kerberos do domínio. Quem tem uma cópia dele tem, na prática, a identidade de todo mundo; por isso a Microsoft trata a exposição de um DC ou de um backup dele como um incidente da floresta inteira. Os arquivos das GPOs ficam no SYSVOL, não no NTDS.dit."
+      - question: "No incidente que levou ao boletim MS14-025, onde estava o problema e quem podia explorá-lo?"
+        options:
+          - "Num bug de memória do serviço LDAP, explorável sem autenticação pela internet"
+          - "No Kerberos, que aceitava qualquer senha para a conta Administrator"
+          - "Nas Group Policy Preferences: senhas definidas por GPO ficavam no SYSVOL cifradas com uma chave AES de 32 bytes que a própria Microsoft publicou na especificação; qualquer usuário autenticado do domínio, que lê o SYSVOL, podia recuperá-las"
+          - "No DNS, que expunha os registros SRV para a internet"
+        answer: 2
+        explanation: "O boletim MS14-025 (13 de maio de 2014, CVE-2014-1812) trata das Group Policy Preferences. Senhas configuradas por elas (de admin local, mapeamento de unidade, tarefa agendada, serviço) eram gravadas no SYSVOL, que todo usuário autenticado lê, cifradas com uma chave AES fixa publicada na especificação MS-GPPREF. Quem tivesse qualquer conta de domínio decifrava a senha. A Microsoft relatou ataques direcionados explorando a falha. A correção removeu a opção de gravar senhas, mas não apagou as GPOs antigas: o administrador precisava removê-las."
+      - question: "Um usuário está no grupo GG-Plantao, que é membro do GG-Infra-N3, que é membro do Domain Admins. Esse usuário é administrador do domínio?"
+        options:
+          - "Sim: a associação é transitiva; o token dele recebe o SID de cada grupo da cadeia, inclusive o do Domain Admins (RID 512), e por padrão o Domain Admins é administrador local de todo computador do domínio"
+          - "Não, porque só membros diretos de um grupo recebem os privilégios dele"
+          - "Só se o nome dele contiver a palavra admin"
+          - "Só se ele estiver na mesma OU que o grupo Domain Admins"
+        answer: 0
+        explanation: "Grupos de segurança aninhados funcionam por transitividade: no logon, o controlador expande toda a cadeia, e o token do usuário recebe o SID de cada grupo de segurança alcançado. Por isso o defensor precisa olhar a associação efetiva, não só a lista direta, e é por isso que ferramentas de grafo como o BloodHound existem. Nome e OU não dão privilégio nenhum: o que vale é o SID no token."
+      - question: "Qual destas medidas reduz de verdade o risco de o AD inteiro cair a partir de uma estação comprometida?"
+        options:
+          - "Renomear o grupo Domain Admins para algo difícil de adivinhar"
+          - "Mover todas as contas para o contêiner CN=Users"
+          - "Desligar a replicação entre controladores de domínio"
+          - "Manter os grupos privilegiados vazios no dia a dia, proibir por GPO que contas de Domain Admins façam logon em estações e servidores comuns, auditar mudanças de associação e ter um backup offline do AD testado"
+        answer: 3
+        explanation: "É o que a própria Microsoft recomenda nos guias de segurança do AD: esvaziar o Domain Admins (exceto, eventualmente, o Administrator protegido), negar o logon dele em servidores e estações via GPO, para que a credencial nunca fique numa máquina comum onde seria roubada, alertar mudanças de associação (eventos 4728, 4732 e 4756) e ter recuperação planejada. Renomear o grupo não adianta (o RID 512 é fixo e o atacante procura pelo SID); o CN=Users nem aceita GPO; e desligar a replicação quebra o domínio sem proteger nada."
+glossary:
+  - term: directory service
+    definition: "Serviço de diretório: um banco de dados central, otimizado para leitura, que guarda quem são os usuários, computadores e recursos de uma organização e responde quem pode o quê. O Active Directory é o serviço de diretório da Microsoft."
+  - term: AD domain
+    definition: "Domínio do AD: a unidade de administração e de replicação do Active Directory, com nome DNS próprio (corp.local), suas contas, sua política de senha e seus controladores. Não é uma fronteira de segurança dentro da floresta."
+  - term: domain tree
+    definition: "Árvore de domínios: um ou mais domínios de uma floresta ligados por nome DNS contíguo (corp.local e filial.corp.local). Um nome DNS diferente na mesma floresta forma outra árvore."
+  - term: forest
+    definition: "Floresta: o conjunto de um ou mais domínios que compartilham o mesmo schema, a mesma configuração e o mesmo Global Catalog, ligados por trusts automáticos. É a verdadeira fronteira de segurança do AD."
+  - term: forest root domain
+    definition: "Domínio raiz da floresta: o primeiro domínio criado na floresta, que continua raiz por toda a vida dela e é o único que contém os grupos Enterprise Admins e Schema Admins."
+  - term: organizational unit (OU)
+    definition: "Unidade organizacional: um contêiner do diretório que organiza objetos, recebe o link de GPOs e serve de ponto de delegação. Não é principal de segurança: estar numa OU não dá permissão a ninguém."
+  - term: LDIF
+    definition: "LDAP Data Interchange Format: formato de texto para exportar e importar objetos de um diretório, um bloco por objeto, começando pelo dn: e seguido de atributo: valor. É a saída do ldifde e do ldapsearch."
+  - term: security principal
+    definition: "Principal de segurança: um objeto que pode se autenticar ou receber permissões e, por isso, tem SID: conta de usuário, conta de computador e grupo de segurança. OU, GPO e contêiner não são principais."
+  - term: security group
+    definition: "Grupo de segurança: grupo com SID, que entra no token dos membros e pode aparecer em ACLs. É por meio dele que o AD concede acesso e privilégio."
+  - term: distribution group
+    definition: "Grupo de distribuição: grupo usado só como lista de e-mail (Exchange). Não é habilitado para segurança, então não pode receber permissões em ACLs."
+  - term: group scope
+    definition: "Escopo do grupo: define quem pode ser membro e onde o grupo pode receber permissões. São três: domain local (permissões só no próprio domínio), global (membros só do próprio domínio) e universal (membros de toda a floresta)."
+  - term: group nesting
+    definition: "Aninhamento de grupos: colocar um grupo como membro de outro. A associação é transitiva, então quem está no grupo de dentro recebe os privilégios de todos os grupos acima dele na cadeia."
+  - term: Domain Admins
+    definition: "Grupo global (RID 512) com poder total sobre o seu domínio. Por padrão, é membro do grupo Administrators do domínio e do grupo Administradores local de todo computador ingressado no domínio."
+  - term: Enterprise Admins
+    definition: "Grupo (RID 519) que só existe no domínio raiz da floresta e tem poder sobre a floresta inteira (criar domínios, trusts de floresta). Por padrão, é membro do grupo Administrators de todos os domínios."
+  - term: Schema Admins
+    definition: "Grupo (RID 518) que só existe no domínio raiz da floresta e pode alterar o schema. Deve ficar vazio e só ser preenchido, temporariamente, quando uma mudança de schema for necessária."
+  - term: service administrator
+    definition: "Administrador de serviço: quem administra a infraestrutura do AD (Domain Admins, Enterprise Admins, Administrators). A Microsoft lembra que eles têm controle total sobre todos os dados e computadores da floresta, e que isso não pode ser impedido."
+  - term: member server
+    definition: "Servidor membro: um servidor Windows ingressado no domínio que não é controlador de domínio (servidor de arquivos, de banco, web). Usa o AD para autenticar, mas não guarda o diretório."
+  - term: domain join
+    definition: "Ingresso no domínio: o processo que cria uma conta de computador no AD e faz a máquina passar a confiar nos controladores para autenticar usuários e a receber GPOs."
+  - term: AD schema
+    definition: "Schema do AD: as definições de todas as classes de objeto (user, computer, group) e de todos os atributos que o diretório aceita. É um só para a floresta inteira, e mudá-lo é irreversível na prática."
+  - term: NTDS.dit
+    definition: "O arquivo do banco de dados do AD DS em cada controlador de domínio (por padrão em %SystemRoot%\\NTDS). Guarda todos os objetos e os segredos de autenticação de todas as contas do domínio."
+  - term: SYSVOL
+    definition: "Pasta compartilhada que existe em todo controlador de domínio e é replicada entre eles. Guarda a parte em arquivos das GPOs (o Group Policy template) e os scripts de logon, e é lida por todos os computadores e usuários do domínio."
+  - term: Global Catalog
+    definition: "Catálogo global: um controlador que guarda, além do seu domínio completo, uma cópia parcial e somente leitura de todos os objetos da floresta, para buscas que cruzam domínios (portas 3268 e 3269)."
+  - term: multimaster replication
+    definition: "Replicação multimestre: no AD, qualquer controlador de domínio aceita alterações e as replica para os outros. Não existe um servidor principal; uma mudança feita em um, boa ou maliciosa, chega a todos."
+  - term: FSMO
+    definition: "Flexible Single Master Operations: cinco funções que, para evitar conflito, só um controlador executa por vez. Duas por floresta (Schema Master, Domain Naming Master) e três por domínio (PDC Emulator, RID Master, Infrastructure Master)."
+  - term: RODC
+    definition: "Read-only domain controller: controlador de domínio com cópia somente leitura do diretório e, por padrão, sem as senhas da maioria das contas. Feito para filiais com pouca segurança física."
+  - term: SRV record
+    definition: "Registro DNS do tipo SRV, que anuncia onde um serviço está (servidor e porta). Os clientes acham os controladores de domínio consultando registros como _ldap._tcp.dc._msdcs.corp.local."
+  - term: Group Policy Object (GPO)
+    definition: "Objeto de Política de Grupo: um pacote de configurações ligado a um site, domínio ou OU. Tem duas partes: o Group Policy container, no diretório, e o Group Policy template, em arquivos no SYSVOL."
+  - term: LSDOU
+    definition: "A ordem de aplicação das GPOs: Local, Site, Domínio, OU (da OU pai para a filha). Cada nível pode sobrescrever o anterior, então, por padrão, vence a GPO mais próxima do objeto."
+  - term: Block Inheritance
+    definition: "Bloquear herança: propriedade de um domínio ou OU que impede que as GPOs ligadas acima dele (local, site, domínio, OUs superiores) se apliquem lá dentro, exceto as de link Enforced."
+  - term: Enforced
+    definition: "Propriedade de um link de GPO que faz as configurações dele valerem mesmo contra Block Inheritance e impede que GPOs não enforced dos níveis de baixo as sobrescrevam."
+  - term: Group Policy Preferences (GPP)
+    definition: "Extensões da Política de Grupo (mapear unidades, criar usuários locais, tarefas agendadas). Até o MS14-025, permitiam gravar senhas no SYSVOL cifradas com uma chave AES publicada, legíveis por qualquer usuário do domínio."
+  - term: Microsoft Entra ID
+    definition: "O serviço de identidade em nuvem da Microsoft (antes chamado Azure AD), usado pelo Microsoft 365 e por milhares de aplicações SaaS. Não é o AD na nuvem: fala outros protocolos e não tem OUs nem GPOs."
+  - term: hybrid identity
+    definition: "Identidade híbrida: a mesma identidade do usuário valendo no AD local e no Microsoft Entra ID, mantida em sincronia. Liga o destino da nuvem ao do AD local."
+  - term: Microsoft Entra Connect
+    definition: "Ferramenta que sincroniza usuários, grupos e, opcionalmente, hashes de senha do AD local para o Microsoft Entra ID. A conta dela recebe permissões de replicação de diretório, o que faz do servidor um alvo de valor máximo."
+---
+
+import florestaArvoresDominios from "./img/floresta-arvores-dominios.svg";
+import controladorDeDominio from "./img/controlador-de-dominio.svg";
+import ordemLsdou from "./img/ordem-lsdou.svg";
+import porQueOAdEOAlvo from "./img/por-que-o-ad-e-o-alvo.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Até aqui, cada máquina que você atacou era uma ilha. A senha que você quebrava valia naquele servidor, o root que você conquistava mandava naquela caixa, e para ir para a próxima era preciso recomeçar. Numa empresa de verdade, com 500 ou 50 mil computadores Windows, as coisas não funcionam assim. Ninguém cria a conta da Ana em cada uma das 500 máquinas, nem configura o bloqueio de tela uma a uma. Existe um sistema central que diz quem é a Ana, qual é a senha dela, em que computadores ela pode entrar e como cada máquina deve se comportar. Esse sistema, em quase toda rede corporativa Windows do mundo, é o **Active Directory**.
+
+O Active Directory (AD) é o serviço de diretório da Microsoft: o lugar onde uma organização guarda, de forma centralizada, seus usuários, computadores, grupos e políticas. Uma frase resume por que ele domina a segurança ofensiva corporativa: quem controla o AD controla a empresa inteira. Não é força de expressão. Em setembro de 2024, as agências de cibersegurança da Austrália, dos Estados Unidos (CISA e NSA), do Canadá, do Reino Unido e da Nova Zelândia publicaram juntas um guia só sobre como atacantes comprometem o AD. No anúncio, a CISA escreveu que o AD é "a solução de autenticação e autorização mais usada em redes de TI corporativas no mundo" e que atores maliciosos "o atacam rotineiramente" para escalar privilégios.
+
+Este módulo é a fundação da Trilha 7. Ele **não ensina um ataque**: ensina como o AD é por dentro, para que os ataques dos módulos 7.2 a 7.5 façam sentido em vez de parecerem receitas mágicas. Você vai entender o que é um domínio e uma floresta, por que uma é fronteira de segurança e o outro não, como usuários e grupos viram privilégio, o que é uma GPO e em que ordem ela se aplica, e por que um único servidor, o controlador de domínio, vale a empresa inteira.
+
+**Ao final, você vai saber:**
+
+- explicar o que é um serviço de diretório e por que o AD existe, a partir do problema que ele resolve;
+- descrever a estrutura lógica do AD (floresta, árvore, domínio, OU) e dizer por que **a floresta é a fronteira de segurança e o domínio não é**;
+- ler um *distinguished name* e dizer onde um objeto está e quais GPOs podem alcançá-lo;
+- diferenciar usuário, computador e grupo; grupo de segurança e de distribuição; e os três escopos de grupo, e calcular a **associação efetiva** de um grupo aninhado;
+- explicar o que vive dentro de um controlador de domínio (NTDS.dit, SYSVOL, KDC, LDAP, DNS) e por que ele é o alvo final;
+- resolver qualquer cenário de precedência de GPO (LSDOU, *link order*, Block Inheritance, Enforced);
+- apontar as medidas que de fato protegem um AD: grupos privilegiados vazios, camadas, auditoria e recuperação.
+
+**Pré-requisitos:** Trilha 6 inteira. Dela você vai reusar a lógica de escalação de privilégio (o que eu controlo × quem tem poder) e a base de Windows: contas, SID, tokens, grupos locais e serviços, que vieram do 0.5 e foram aprofundados no 6.4 e no 6.5. Da Trilha 0, você vai usar DNS e portas (0.1), `grep`, `sed` e pipes (0.3) e Python (0.7). Tudo isso é relembrado em uma linha quando aparece.
+
+**Tempo estimado:** 3 a 4 horas, incluindo as três missões.
+
+<Callout variant="ethics">
+Tudo o que você aprender aqui sobre a estrutura do AD vale para atacar e para defender. Atacar um domínio de verdade só é legítimo com autorização por escrito que inclua o domínio no escopo, como você viu na Trilha 1. No Brasil, invadir dispositivo informático alheio é crime (art. 154-A do Código Penal). Este módulo **não tem laboratório**: as missões usam exports **fictícios** de um domínio `corp.local`, que você mesmo gera em `/tmp` no seu WSL. Nenhum domínio real é tocado e nada é enviado pela rede.
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 O problema que o AD resolve: 500 máquinas e nenhuma memória comum
+
+Imagine a empresa sem AD. Cada computador Windows tem a sua própria base de contas, o SAM que você estudou no 0.5, guardada no registro local. A Ana, do financeiro, precisa entrar em três estações, num servidor de arquivos e num sistema interno. Alguém cria **cinco** contas "ana" separadas, com cinco senhas que o usuário tenta manter iguais. Quando a Ana troca de senha, troca numa máquina só. Quando ela sai da empresa, alguém precisa lembrar de apagar as cinco. Multiplique por 500 funcionários e 500 máquinas: o resultado é um caos de contas órfãs, senhas repetidas e nenhuma forma de responder à pergunta mais básica da segurança, "quem pode entrar onde?".
+
+A resposta da Microsoft, lançada com o Windows 2000 Server, foi um <GlossaryTerm term="directory service">serviço de diretório</GlossaryTerm>: um banco de dados **central** que guarda a identidade de cada pessoa e de cada máquina, e que todos os computadores consultam. A Ana passa a ter **uma** conta, com **uma** senha, guardada num lugar só. Qualquer computador da empresa pergunta a esse lugar central "a senha está certa? de que grupos ela faz parte?" e decide a partir da resposta. O nome técnico do produto é Active Directory Domain Services (AD DS); no dia a dia, todo mundo diz só "AD".
+
+A palavra "diretório" ajuda a entender o desenho. Pense na lista telefônica de uma empresa: ela é consultada o tempo todo e alterada pouco. Um serviço de diretório é otimizado exatamente para isso, leitura rápida e frequente. E, para que qualquer programa encontre o que precisa, o diretório é **feito para ser lido**: por padrão, qualquer usuário autenticado consegue ler a maior parte dele. Guarde esse detalhe. Ele é a razão pela qual a enumeração do 7.2 é tão poderosa, e não é um bug: é o desenho.
+
+O AD fala protocolos padrão que você já conhece de nome. O <GlossaryTerm term="LDAP">LDAP</GlossaryTerm> (porta 389) é a linguagem para consultar e alterar o diretório. O <GlossaryTerm term="Kerberos">Kerberos</GlossaryTerm> (porta 88) é o protocolo de autenticação por tickets. O <GlossaryTerm term="DNS">DNS</GlossaryTerm> (porta 53) é como as máquinas acham os servidores do AD. E o <GlossaryTerm term="SMB">SMB</GlossaryTerm> (porta 445) é por onde elas baixam as políticas. O 7.2 aprofunda o LDAP e o 7.3 abre o Kerberos por dentro; aqui você só precisa saber que cada um tem um papel.
+
+### 2.2 A estrutura lógica: floresta, árvore, domínio e OU
+
+O AD organiza tudo numa hierarquia de contêineres. A própria documentação da Microsoft a descreve de fora para dentro: o contêiner de mais alto nível é a floresta; dentro das florestas ficam os domínios; dentro dos domínios, as unidades organizacionais.
+
+<Figure
+  src={florestaArvoresDominios}
+  alt="Diagrama da estrutura lógica do AD. Uma moldura tracejada em ciano é a floresta corp.local, rotulada como fronteira de segurança. Dentro dela, à esquerda, a árvore corp.local: no topo o domínio raiz da floresta, corp.local, único lugar onde existem Enterprise Admins e Schema Admins; abaixo, o domínio filho filial.corp.local. À direita, outra árvore, parceiro.local, com outro nome DNS na mesma floresta. Setas de duas pontas representam os trusts bidirecionais e transitivos criados automaticamente, e um aviso em amarelo diz que um administrador de qualquer domínio da floresta pode alcançar os outros. Embaixo, uma ampliação do domínio corp.local mostra a OU São Paulo contendo a OU Financeiro, que contém a OU Estações, um computador, a usuária Ana Lima e um grupo; ao lado, o contêiner CN=Users, que não é OU e não recebe link de GPO."
+  caption="A hierarquia do AD: a floresta é a fronteira de segurança; o domínio separa a administração; a OU organiza e recebe GPOs, mas não dá permissão a ninguém."
+/>
+
+**O domínio.** O <GlossaryTerm term="AD domain">domínio do AD</GlossaryTerm> é a unidade básica. Ele tem um nome DNS (`corp.local`), as suas contas, a sua política de senha padrão e os seus servidores de diretório. Pela documentação da Microsoft, o domínio é uma **partição** da floresta: os dados de um domínio são replicados só entre os servidores daquele domínio, o que deixa o AD escalar para empresas espalhadas pelo mundo. Para o defensor, o domínio é uma **fronteira de administração**: é natural ter "os administradores do domínio da filial".
+
+**A árvore e a floresta.** Domínios podem ter filhos, e o nome do filho continua o do pai: `filial.corp.local` é filho de `corp.local`. Um conjunto de domínios com nomes contíguos forma uma <GlossaryTerm term="domain tree">árvore de domínios</GlossaryTerm>. Uma ou mais árvores formam uma <GlossaryTerm term="forest">floresta</GlossaryTerm>: o conjunto de domínios que compartilham **o mesmo schema** (as definições de classes e atributos), a mesma configuração e o mesmo catálogo global. O primeiro domínio criado é o <GlossaryTerm term="forest root domain">domínio raiz da floresta</GlossaryTerm>, e ele continua raiz pela vida inteira dela. Um detalhe que vai importar: só ele contém os grupos Enterprise Admins e Schema Admins.
+
+**A fronteira que engana.** Dentro de uma floresta, a Microsoft documenta que os domínios ficam **automaticamente ligados por trusts bidirecionais e transitivos**. Um <GlossaryTerm term="domain trust">trust</GlossaryTerm> é a relação de confiança que deixa um domínio aceitar a autenticação feita por outro. Isso é cômodo: a Ana, de `corp.local`, acessa um servidor de `filial.corp.local` sem conta nova. Mas tem um custo de segurança que pega muita empresa desprevenida. A Microsoft escreve, na página sobre o alcance dos administradores de serviço, que todos eles têm **controle total sobre todos os dados e serviços de todos os computadores da floresta**, e que conseguem até **acessar outros domínios da floresta modificando o software de um controlador de domínio**. Por isso a regra é:
+
+- o **domínio** é fronteira de **administração** e de replicação;
+- a **floresta** é a fronteira de **segurança**. Segundo a Microsoft, o único jeito de um grupo isolar completamente os seus dados dos administradores de serviço é ter **uma floresta separada**.
+
+Se você comprometer o domínio `filial.corp.local` de uma floresta, não "ganhou só a filial": está a um passo da floresta inteira. Você verá esse salto na prática no 7.4.
+
+**A OU.** Dentro do domínio, os objetos são organizados em <GlossaryTerm term="organizational unit (OU)">unidades organizacionais (OUs)</GlossaryTerm>: pastas do diretório, que podem ser aninhadas (`OU=Estacoes` dentro de `OU=Financeiro` dentro de `OU=Sao Paulo`). A OU serve para três coisas: **organizar**, **receber o link de GPOs** e **delegar** a administração ("o suporte de São Paulo pode resetar senhas só nesta OU"). E ela **não** serve para uma quarta coisa, que é a confusão mais comum do iniciante: OU **não dá permissão a ninguém**. Estar dentro da OU Financeiro não dá à Ana acesso a nada do financeiro. Quem dá acesso é o **grupo**, que você verá em 2.3.
+
+Existem também contêineres que **não são OUs**. Os mais famosos são `CN=Users` e `CN=Computers`, onde o AD coloca, por padrão, novos usuários e computadores. Eles pertencem à classe `container`, não `organizationalUnit`. A consequência prática é que **não aceitam link de GPO**: um computador esquecido no `CN=Computers` só recebe as GPOs do domínio e do site, nunca as das OUs.
+
+**O nome de cada objeto.** Todo objeto tem um <GlossaryTerm term="distinguished name (DN)">distinguished name (DN)</GlossaryTerm>, o caminho completo dele no diretório, escrito **da folha para a raiz**:
+
+```text
+CN=WS-FIN-07,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+   └─ objeto  └─ OU onde está └─ OU pai  └─ OU avó     └─ domínio corp.local
+```
+
+`CN` (*common name*) é o nome do objeto, `OU` é uma unidade organizacional e cada `DC` (*domain component*) é um pedaço do nome DNS. A Microsoft usa exatamente essa leitura para explicar o escopo das GPOs: tirando um componente de cada vez da esquerda, você obtém a lista de contêineres que podem aplicar política àquele objeto. Exports de diretório costumam vir em <GlossaryTerm term="LDIF">LDIF</GlossaryTerm>, um formato de texto com um bloco por objeto, que começa pela linha `dn:` e segue com `atributo: valor`. Você vai lê-lo na seção 5.
+
+### 2.3 Usuários, computadores e grupos: como o privilégio nasce
+
+O diretório guarda muitos tipos de objeto, mas três importam mais para a segurança: **contas de usuário**, **contas de computador** e **grupos**. Os três são <GlossaryTerm term="security principal">principais de segurança</GlossaryTerm>: objetos que podem se autenticar ou receber permissões e que, por isso, têm um SID. Relembrando o 0.5: o SID é o número único de uma identidade (`S-1-5-21-...-1104`), e o Windows dá permissão ao SID, não ao nome. A última parte do SID é o RID, que diferencia as contas de um mesmo domínio.
+
+**Computadores também são contas.** Quando um PC passa pelo <GlossaryTerm term="domain join">ingresso no domínio</GlossaryTerm>, o AD cria para ele uma conta de computador (o `sAMAccountName` termina em `$`, como `WS-FIN-07$`), com uma senha longa e aleatória que a própria máquina troca sozinha. A partir daí, o computador confia nos controladores para autenticar quem faz logon nele e passa a receber as GPOs. Um servidor ingressado que não é controlador se chama <GlossaryTerm term="member server">servidor membro</GlossaryTerm>.
+
+**Grupos: de segurança ou de distribuição.** O AD tem dois tipos de grupo. O <GlossaryTerm term="security group">grupo de segurança</GlossaryTerm> tem SID, entra no token dos membros e pode receber permissões em ACLs. O <GlossaryTerm term="distribution group">grupo de distribuição</GlossaryTerm> serve só como lista de e-mail: a Microsoft documenta que ele não é habilitado para segurança e não pode entrar em DACLs. Para o atacante e para o defensor, só o grupo de segurança importa.
+
+**Escopo de grupo.** Cada grupo tem um <GlossaryTerm term="group scope">escopo</GlossaryTerm>, que define quem pode ser membro e onde o grupo pode receber permissão. A tabela resume a documentação da Microsoft:
+
+| Escopo | Quem pode ser membro | Onde pode receber permissão |
+| --- | --- | --- |
+| **Global** | contas e outros grupos globais **do mesmo domínio** | em qualquer domínio da floresta ou de domínios que confiam |
+| **Domain local** | contas, grupos globais e universais de qualquer domínio (e de domínios confiáveis); outros domain local do mesmo domínio | **só no próprio domínio** |
+| **Universal** | contas, grupos globais e universais de **qualquer domínio da floresta** | em qualquer domínio da floresta ou de florestas que confiam |
+
+A convenção clássica de administração junta os três: as **contas** entram em **grupos globais** que representam pessoas ("GG-Financeiro"), os grupos globais entram em **grupos domain local** que representam um acesso ("DL-Pasta-Balanco-Leitura") e é o grupo domain local que recebe a **permissão** no recurso. O desenho é limpo, mas cria cadeias longas, e cadeias longas escondem privilégio.
+
+**Aninhamento: o privilégio é transitivo.** Colocar um grupo dentro de outro é o <GlossaryTerm term="group nesting">aninhamento de grupos</GlossaryTerm>. Quando a Ana faz logon, o controlador de domínio expande **toda a cadeia** de grupos de segurança dela, e o token recebe o SID de cada grupo alcançado. Se ela está no `GG-Plantao`, que está no `GG-Infra-N3`, que está no `Domain Admins`, o token dela carrega o SID do `Domain Admins`, e ela **é** administradora do domínio, mesmo que nenhuma tela mostre o nome dela na lista direta do grupo. Essa diferença entre membro **direto** e membro **efetivo** é a mina de ouro do 7.2 e do BloodHound.
+
+**Os grupos que valem o domínio.** Alguns grupos já vêm prontos e são os alvos principais:
+
+- <GlossaryTerm term="Domain Admins">Domain Admins</GlossaryTerm> (RID **512**): poder total sobre o domínio. Pela documentação da Microsoft, ele é membro do grupo Administrators do domínio **e do grupo Administradores local de todo computador ingressado no domínio**. Uma conta nele é administradora de cada estação e de cada servidor.
+- <GlossaryTerm term="Enterprise Admins">Enterprise Admins</GlossaryTerm> (RID **519**): existe só no domínio raiz da floresta, tem poder sobre a floresta inteira (criar domínios, trusts de floresta) e é membro do grupo Administrators de todos os domínios.
+- <GlossaryTerm term="Schema Admins">Schema Admins</GlossaryTerm> (RID **518**): também só no domínio raiz, pode alterar o schema da floresta.
+- **Administrators** (o grupo *built-in* do domínio, SID `S-1-5-32-544`): é nele que estão muitos dos direitos diretos sobre os controladores.
+
+A Microsoft faz uma observação que todo pentester repete: embora as configurações padrão sejam diferentes, um membro de qualquer um dos três grupos mais poderosos (Enterprise Admins, Domain Admins, Administrators) consegue manipular o diretório para entrar nos outros, então os três devem ser tratados como **efetivamente equivalentes**. Todos eles são <GlossaryTerm term="service administrator">administradores de serviço</GlossaryTerm>, os donos da infraestrutura. Nomes enganam: o RID não. Um grupo chamado "Domain Admins Legacy" criado por alguém tem RID 1107 e não vale nada além do que lhe foi dado.
+
+### 2.4 O controlador de domínio por dentro
+
+O servidor que roda o AD DS é o **controlador de domínio** (*domain controller*, DC). Ele é o coração do domínio, e entender o que vive dentro dele explica por que ele é o alvo final de quase todo ataque corporativo.
+
+<Figure
+  src={controladorDeDominio}
+  alt="Diagrama de um controlador de domínio. No centro, a caixa dc01.corp.local contém cinco blocos: NTDS.dit, o banco do diretório com todos os objetos e os hashes de senha de todas as contas; SYSVOL, o compartilhamento com os arquivos das GPOs e os scripts de logon; KDC na porta 88, que emite os tickets Kerberos com a conta krbtgt; LDAP nas portas 389 e 636, com o Global Catalog em 3268 e 3269; e DNS na porta 53, com os registros SRV. À esquerda, uma usuária, uma estação e um servidor membro conversam com o DC: acham o DC pelo DNS, autenticam pelo Kerberos, leem o diretório pelo LDAP e baixam GPO pelo SMB 445. À direita, um segundo controlador, dc02, ligado por replicação multimestre: cada DC tem cópia gravável e completa do domínio. No rodapé: quem controla um DC controla o NTDS.dit, isto é, a senha de todo mundo."
+  caption="O que vive dentro de um controlador de domínio e quem conversa com ele. Quem controla um DC controla a senha de todo mundo."
+/>
+
+**O banco: NTDS.dit.** O diretório inteiro mora num arquivo, o <GlossaryTerm term="NTDS.dit">NTDS.dit</GlossaryTerm>, que fica por padrão em `%SystemRoot%\NTDS` (o caminho padrão do parâmetro `DatabasePath` da promoção a DC). Ele guarda todos os objetos do domínio e os segredos de autenticação, derivados das senhas, de **todas** as contas: da Ana, do administrador e também da <GlossaryTerm term="krbtgt">krbtgt</GlossaryTerm>, a conta cuja chave assina os tickets do Kerberos do domínio. Quem obtém uma cópia do NTDS.dit (ou de um backup dele) tem, na prática, a identidade de todo mundo. Tanto que o guia de recuperação de floresta da Microsoft lista, entre as falhas que afetam a floresta inteira, o caso de o conteúdo de um DC ou de um backup dele ter sido exposto a terceiros, e diz que, nesse caso, pode ser preciso resetar as senhas de todos os usuários, computadores, trusts e contas de serviço.
+
+**O schema.** O <GlossaryTerm term="AD schema">schema do AD</GlossaryTerm> define que classes de objeto existem (`user`, `computer`, `group`, `organizationalUnit`) e que atributos cada uma pode ter. É um só para a floresta inteira. Aplicações como o Exchange estendem o schema na instalação, e uma extensão maliciosa ou errada é um dos cenários de "falha da floresta inteira" que a Microsoft documenta.
+
+**O compartilhamento: SYSVOL.** Todo controlador tem a pasta <GlossaryTerm term="SYSVOL">SYSVOL</GlossaryTerm>, compartilhada na rede e replicada entre os DCs. Ela guarda os arquivos das políticas de grupo e os scripts de logon. Como toda máquina e todo usuário do domínio precisa ler as políticas, **todo usuário autenticado lê o SYSVOL**. Lembre-se disso no caso real da seção 4.
+
+**Os serviços.** Além do banco, o DC roda os serviços que o resto da rede usa:
+
+| Serviço | Porta | Para quê |
+| --- | --- | --- |
+| DNS | 53 TCP/UDP | os clientes acham o DC e os serviços do domínio |
+| Kerberos (<GlossaryTerm term="KDC">KDC</GlossaryTerm>) | 88 TCP/UDP | autenticação por tickets (7.3) |
+| LDAP / LDAPS | 389 / 636 | ler e alterar o diretório (7.2) |
+| Global Catalog / sobre TLS | 3268 / 3269 | buscas que cruzam a floresta inteira |
+| SMB | 445 | baixar GPOs do SYSVOL, RPC de gerenciamento |
+
+O <GlossaryTerm term="Global Catalog">Global Catalog</GlossaryTerm> é um papel que alguns DCs acumulam: além do próprio domínio completo, guardam uma cópia parcial e somente leitura de todos os objetos da floresta, para que uma busca "em toda a empresa" não precise visitar cada domínio.
+
+**Como uma máquina acha o DC.** Uma estação recém-ligada não sabe o IP do controlador. Ela pergunta ao DNS. Os controladores publicam um <GlossaryTerm term="SRV record">registro SRV</GlossaryTerm>, o tipo de registro DNS que anuncia "o serviço tal está no servidor tal, porta tal". A Microsoft documenta como conferir esses registros com o `nslookup`, consultando `_ldap._tcp.dc._msdcs.<nome-do-domínio>`. No formato que a própria documentação mostra, a resposta lista uma entrada `SRV service location` com prioridade, peso, a porta 389 e o nome do controlador. Para um atacante dentro da rede, é a pergunta mais barata do mundo: "DNS, onde estão os controladores?".
+
+**Muitos DCs, uma verdade só.** Uma empresa raramente tem um controlador só. O AD usa <GlossaryTerm term="multimaster replication">replicação multimestre</GlossaryTerm>: **qualquer** DC aceita alterações e as replica para os outros; não existe um servidor "principal". Isso dá resiliência (um DC cai, os outros continuam), mas tem o lado sombrio desenhado no diagrama: uma alteração maliciosa feita em um DC chega a **todos**, em minutos. Algumas operações, porém, não podem ser feitas em dois lugares ao mesmo tempo. Para elas existem as cinco funções <GlossaryTerm term="FSMO">FSMO</GlossaryTerm>, que só um DC executa por vez:
+
+| Função | Escopo | O que faz |
+| --- | --- | --- |
+| Schema Master | uma por floresta | único que altera o schema |
+| Domain Naming Master | uma por floresta | adiciona e remove domínios |
+| PDC Emulator | uma por domínio | recebe primeiro as trocas de senha, processa bloqueios de conta; o do domínio raiz é a fonte de hora da floresta |
+| RID Master | uma por domínio | distribui blocos de RIDs para os DCs criarem SIDs únicos |
+| Infrastructure Master | uma por domínio | mantém referências a objetos de outros domínios |
+
+Para filiais sem segurança física, existe o <GlossaryTerm term="RODC">RODC</GlossaryTerm> (*read-only domain controller*), um DC com cópia somente leitura que não pode exercer funções FSMO.
+
+### 2.5 Política de Grupo: configurar mil máquinas de uma vez
+
+A outra metade do poder do AD é a configuração centralizada. A Política de Grupo (*Group Policy*) é o mecanismo que aplica configurações a muitas máquinas e usuários de uma vez: política de senha, firewall, quem é administrador local, scripts de logon, programas instalados. Cada pacote de configurações é um <GlossaryTerm term="Group Policy Object (GPO)">Group Policy Object (GPO)</GlossaryTerm>.
+
+**Onde a GPO mora.** A Microsoft explica que uma GPO tem **duas partes**. O *Group Policy container* é um objeto no diretório, sob `CN=Policies,CN=System,DC=...`, com a versão e o estado da política. O *Group Policy template* é uma pasta no SYSVOL de cada controlador, `\\<dc>\SYSVOL\<domínio>\Policies\{GUID}`, com os arquivos das configurações (entre eles o `gpt.ini`). As duas partes replicam por caminhos diferentes: a primeira pela replicação do AD, a segunda pela replicação do SYSVOL (DFSR). Quem consegue **escrever** numa GPO consegue executar código em todas as máquinas onde ela se aplica.
+
+**Onde a GPO vale.** Uma GPO não faz nada até ser **ligada** (*linked*) a um site, a um domínio ou a uma OU. Cada um desses objetos tem o atributo `gPLink`, que lista as GPOs ligadas a ele. Junto de cada link vai um número, o `linkOptions`, que é um campo de bits (uma *bitmask*, como o `userAccountControl` que você verá no 7.2): `0` é link habilitado, `1` é link desabilitado e `2` é link *Enforced*. Não dá para ligar GPO a um usuário diretamente, nem a um contêiner como o `CN=Users`.
+
+**Em que ordem.** Quando um computador liga ou um usuário faz logon, o Windows monta a lista de GPOs aplicáveis e as aplica numa ordem fixa, que a área chama de <GlossaryTerm term="LSDOU">LSDOU</GlossaryTerm>:
+
+1. a política **L**ocal da própria máquina;
+2. as GPOs ligadas ao **S**ite (o local físico da rede);
+3. as GPOs ligadas ao **D**omínio;
+4. as GPOs ligadas às **OU**s, da OU pai para a OU filha onde o objeto está.
+
+Cada passo pode sobrescrever o anterior. A Microsoft chama isso de "o último que escreve vence" (*last-writer-wins*), e a consequência é que, por padrão, **vence a GPO mais próxima do objeto**. Dentro de um mesmo contêiner, quem desempata é a ordem de link (*link order*): o link de ordem 1 tem a maior precedência.
+
+<Figure
+  src={ordemLsdou}
+  alt="Diagrama da ordem de aplicação das GPOs. Cinco caixas em sequência: 1, Local; 2, Site; 3, Domínio; 4, OU pai (OU=Financeiro, que bloqueia herança); 5, OU filha (OU=Estacoes, onde está o PC). Uma parede vermelha rotulada Block Inheritance fica antes da OU pai e barra as GPOs normais que vêm de cima. Uma seta amarela sai de uma GPO do domínio marcada como Enforced, passa por baixo da parede e chega ao fim da sequência: o link Enforced fura o Block Inheritance e não pode ser sobrescrito pelas GPOs de baixo. No rodapé, cinco regras: a ordem L, S, D, OU pai, OU filha, e a mais próxima vence; na mesma OU, o link order 1 tem precedência; Block Inheritance barra o que vem de cima, exceto Enforced; Enforced vence tudo, e entre dois Enforced vence o mais alto; Não configurado não sobrescreve nada e link desabilitado não é aplicado."
+  caption="A ordem LSDOU e as duas exceções que mudam o resultado: Block Inheritance (na OU) e Enforced (no link)."
+/>
+
+**As duas exceções.** Duas propriedades mudam o jogo, e a seção 5 vai cobrar as duas:
+
+- <GlossaryTerm term="Block Inheritance">Block Inheritance</GlossaryTerm> (bloquear herança) é uma propriedade **do domínio ou da OU**. Ela impede que as GPOs ligadas acima (local, site, domínio, OUs superiores) se apliquem lá dentro.
+- <GlossaryTerm term="Enforced">Enforced</GlossaryTerm> é uma propriedade **do link**. Ela faz as configurações daquela GPO valerem mesmo contra o Block Inheritance e impede que as GPOs não enforced dos níveis de baixo as sobrescrevam. Se houver vários links Enforced, a Microsoft documenta que vence o **mais alto** na hierarquia.
+
+Três detalhes completam a regra. Uma configuração **"Não configurado"** não sobrescreve nada: é como se a GPO não falasse daquele assunto. Um link **desabilitado** é ignorado. E as políticas não se aplicam na hora: por padrão, clientes e servidores conferem mudanças **a cada 90 minutos, com um atraso aleatório de até 30 minutos**, e os controladores, a cada 5 minutos. Para forçar, existe o `gpupdate`.
+
+## 3. Na prática da segurança
+
+Agora que você sabe o que é o AD, dá para entender por que ele é o centro de quase todo ataque a uma rede corporativa, e o que um pentester e um defensor fazem com esse conhecimento todo dia.
+
+### 3.1 O raciocínio do atacante: o poder está concentrado
+
+Pense no AD do ponto de vista de quem ataca. Ele concentra num só lugar **quem é quem** (as contas), **quem pode o quê** (os grupos) e **como cada máquina se comporta** (as GPOs). Ele não precisa de uma falha de software para ser perigoso: o poder concentrado já é o prêmio. A cadeia típica, que os próximos módulos detalham, é esta:
+
+<Figure
+  src={porQueOAdEOAlvo}
+  alt="Diagrama em cinco caixas, da esquerda para a direita: 1, uma estação comprometida, com uma conta de domínio comum; 2, ler o diretório, porque todo usuário lê quase todo o AD (módulo 7.2); 3, conseguir uma credencial mais forte, por abuso do Kerberos, hash reutilizado e salto entre máquinas (7.3 e 7.4); 4, Domain Admins, que é administrador local de todo computador do domínio (RID 512); 5, o controlador de domínio e o NTDS.dit, com a senha de todas as contas e GPO para todas as máquinas: a empresa inteira. Embaixo de cada caixa, um quadro tracejado amarelo mostra onde a defesa corta: admin nunca loga em estação comum e LAPS; menos caminhos e contas-isca; senhas longas, gMSA, Protected Users e sem GPP com senha; grupos privilegiados vazios, camadas e PAW; DC como Tier 0 e backup offline testado."
+  caption="Da conta comum ao domínio: o AD concentra a confiança da empresa num só lugar, por isso ele é o alvo, e por isso cortar qualquer elo da cadeia vale tanto."
+/>
+
+1. **Uma conta comum basta para começar.** Um phishing ou uma senha vazada dão ao atacante uma conta de domínio sem privilégio nenhum. Ela parece inútil, mas, como o diretório é feito para ser lido, essa conta já enxerga usuários, grupos, computadores, GPOs e trusts. É o 7.2.
+2. **O mapa mostra o caminho.** Com o mapa, o atacante procura o **caminho** até o poder: uma conta de serviço com senha fraca, um grupo aninhado esquecido, um administrador que faz logon em estações comuns e deixa a credencial na memória (o LSASS do 0.5). Os ataques de credencial são o 7.3; o salto entre máquinas, o 7.4.
+3. **O grupo certo vale todas as máquinas.** Uma conta efetivamente em Domain Admins é administradora local de **todo** computador do domínio. A partir daí, o movimento é trivial.
+4. **O DC é o fim do jogo.** No controlador, o atacante pode copiar os segredos de todas as contas (o <GlossaryTerm term="DCSync">DCSync</GlossaryTerm> do 7.4 faz isso pela própria replicação, sem nem tocar no arquivo) e usar uma GPO para executar código em todas as máquinas de uma vez. É por isso que tantas operações de ransomware miram o domínio: com ele, uma GPO ou uma credencial de administrador alcança todas as máquinas de uma vez.
+
+### 3.2 O pentester: o AD como mapa do engajamento
+
+Num teste de intrusão interno (o cenário do *assume breach*, partir de "o atacante já está dentro"), o AD é o mapa do engajamento. As perguntas que o pentester faz primeiro são perguntas deste módulo:
+
+- **Qual é a floresta e quais são os domínios?** O nome do domínio aparece na própria estação: no Windows, a variável `%USERDNSDOMAIN%` mostra o domínio DNS do usuário logado. Os trusts dizem até onde o escopo pode, e se pode, chegar. Domínio fora do escopo escrito é fora do escopo, mesmo que o trust deixe passar.
+- **Onde estão os controladores?** Uma consulta DNS pelo registro SRV `_ldap._tcp.dc._msdcs.corp.local` responde. O comando `nltest /dsgetdc:corp.local`, das ferramentas de administração do Windows, também pede ao serviço Netlogon que localize um DC.
+- **Quem eu sou e de que grupos faço parte?** O `whoami /groups` lista os grupos do token atual, com os SIDs. É a associação **efetiva** que o controlador expandiu no logon.
+- **Que políticas esta máquina recebe?** O `gpresult /r` mostra as GPOs aplicadas ao computador e ao usuário, e as que foram filtradas. O resultado diz muito sobre a maturidade da defesa: existe GPO restringindo o administrador local? O LAPS está ativo?
+
+Esses comandos são de administração comum, vêm com o Windows e rodam com qualquer usuário. É exatamente por isso que atacantes reais os usam: não levantam suspeita. A técnica de abusar de ferramentas que já vêm no sistema tem nome, *living off the land*, como você viu na Trilha 6.
+
+### 3.3 O defensor: o AD como o ativo mais crítico
+
+Do outro lado, o time de defesa trata o AD como o ativo mais crítico da empresa, porque ele é o ponto de que todo o resto depende. A Microsoft organiza essa proteção num **modelo de camadas**, o <GlossaryTerm term="tiering">tiering</GlossaryTerm>: os controladores e as contas que os administram são a camada mais sensível (Tier 0), e uma conta de camada alta nunca faz logon numa máquina de camada baixa, onde sua credencial poderia ser roubada. A seção 8 detalha o que isso significa na prática.
+
+Um último ponto conecta tudo à realidade atual: o AD não ficou para trás com a nuvem. Muitas empresas usam <GlossaryTerm term="hybrid identity">identidade híbrida</GlossaryTerm>: o mesmo usuário vale no AD local e no <GlossaryTerm term="Microsoft Entra ID">Microsoft Entra ID</GlossaryTerm>, o serviço de identidade em nuvem da Microsoft (o antigo Azure AD), que dá acesso ao Microsoft 365. Quem faz a ponte é o <GlossaryTerm term="Microsoft Entra Connect">Microsoft Entra Connect</GlossaryTerm>, que sincroniza contas e, opcionalmente, hashes de senha do AD para a nuvem. A documentação da Microsoft mostra o preço disso: a conta do Entra Connect precisa das permissões **Replicate Directory Changes** e **Replicate Directory Changes All** para buscar os hashes de senha nos DCs, as mesmas que o DCSync abusa. Comprometer o AD local, portanto, costuma ser o caminho para a nuvem também, e o servidor do Entra Connect deve ser protegido como um controlador de domínio.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Senhas no SYSVOL: as Group Policy Preferences e o MS14-025 (2014)
+
+As <GlossaryTerm term="Group Policy Preferences (GPP)">Group Policy Preferences (GPP)</GlossaryTerm> são extensões da Política de Grupo que facilitam tarefas do dia a dia: mapear unidades de rede, criar usuários locais, configurar serviços e tarefas agendadas. Várias delas aceitavam uma **senha**, por exemplo para definir a senha do administrador local de todas as estações de uma vez. Um recurso muito útil, com um problema estrutural.
+
+A senha era gravada no **SYSVOL**, dentro dos arquivos da GPO, que, como você viu em 2.4, todo usuário autenticado do domínio lê. Ela ia cifrada, mas com uma chave AES de 32 bytes **fixa e pública**: a própria Microsoft a publicou na especificação do protocolo, a [MS-GPPREF, seção 2.2.1.1.4](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-gppref/2c15cbf0-f086-4c74-8b70-1f2fa45dd4be). Resultado: qualquer funcionário com uma conta comum podia ler a GPO, pegar o texto cifrado e decifrá-lo. Como o recurso servia justamente para definir a senha do administrador local de muitas máquinas de uma vez, uma única GPO podia entregar o administrador local de **todas** elas.
+
+Em **13 de maio de 2014**, a Microsoft publicou o boletim **MS14-025** (*Vulnerability in Group Policy Preferences Could Allow Elevation of Privilege*), para a falha **CVE-2014-1812**. Nas palavras do boletim, um atacante autenticado poderia recuperar e decifrar a senha armazenada com as Group Policy Preferences e usá-la para elevar privilégios no domínio. O boletim responde "sim" às duas perguntas que importam: a falha já tinha sido **divulgada publicamente** e a Microsoft **tinha conhecimento de ataques direcionados** tentando explorá-la.
+
+- **Impacto:** a correção removeu das ferramentas de gerenciamento a **opção** de gravar senhas em cinco tipos de preferência (unidades mapeadas, usuários e grupos locais, tarefas agendadas, serviços e fontes de dados). Mas ela **não apagou** as GPOs que já existiam. O boletim exige uma "ação adicional": o administrador precisava achar e remover as preferências antigas. A Microsoft chegou a publicar um script para isso, o `Get-SettingsWithCPassword.ps1`, no artigo [KB2962486](https://support.microsoft.com/kb/2962486). Um domínio que nunca fez a limpeza continua vulnerável enquanto a GPO antiga existir.
+- **Lição:** no AD, **ler é poder**. O SYSVOL e o diretório são legíveis por todos por desenho, então qualquer segredo guardado ali está, na prática, publicado para toda a empresa. E um patch que muda a ferramenta não corrige o dado antigo: a configuração perigosa sobrevive à correção até alguém removê-la.
+- **Fonte:** [Microsoft Security Bulletin MS14-025](https://learn.microsoft.com/en-us/security-updates/securitybulletins/2014/ms14-025) (13 maio 2014) e [CVE-2014-1812](https://www.cve.org/CVERecord?id=CVE-2014-1812).
+
+### NotPetya: credencial roubada, domínio inteiro (2017)
+
+Em **27 de junho de 2017**, uma onda de infecções se espalhou pela Europa. No relatório publicado no mesmo dia, a equipe de pesquisa do Windows Defender, da Microsoft, contou as primeiras infecções na Ucrânia, onde **mais de 12.500 máquinas** encontraram a ameaça, e infecções em **outros 64 países**, entre eles Bélgica, Brasil, Alemanha, Rússia e Estados Unidos. O malware, que ficou conhecido como NotPetya e que a Microsoft analisou como uma nova variante do Petya, se apresentava como ransomware, mas o que interessa aqui é **como ele se espalhava dentro de uma rede corporativa**.
+
+A análise da Microsoft descreve um <GlossaryTerm term="worm">worm</GlossaryTerm> que se movia lateralmente usando a própria estrutura do domínio:
+
+1. **Roubava credenciais** na máquina infectada, com uma ferramenta de código parecido com o do <GlossaryTerm term="Mimikatz">Mimikatz</GlossaryTerm>, e lia as credenciais guardadas no Windows.
+2. **Achava os alvos**: procurava portas 139 e 445 abertas e, quando estava num **controlador de domínio**, consultava o servidor DHCP para listar as sub-redes e os clientes de cada uma.
+3. **Executava a si mesmo nas outras máquinas** com as credenciais roubadas, usando o <GlossaryTerm term="PsExec">PsExec</GlossaryTerm> ou o WMIC, e copiava-se pelo compartilhamento `admin$`.
+4. Em paralelo, explorava as falhas de SMB EternalBlue (CVE-2017-0144) e EternalRomance (CVE-2017-0145) nas máquinas sem atualização.
+
+- **Impacto:** a parte "por credencial" do ataque não depende de nenhuma falha. Se a máquina infectada tinha na memória a credencial de um administrador do domínio, e o Domain Admins é administrador local de todo computador do domínio, o worm passava a ser administrador de **todas** as máquinas e se copiava para elas, inclusive as que estavam com todas as atualizações. É esse mecanismo que deixava o malware tomar uma rede corporativa inteira a partir de uma única máquina infectada.
+- **Lição:** o AD **multiplica** o efeito de uma credencial. Uma credencial privilegiada exposta numa estação comum vira o domínio inteiro, e é por isso que as defesas da seção 8 insistem em manter administradores fora das estações comuns. Patch resolve o EternalBlue; não resolve o administrador logado onde não devia.
+- **Fonte:** [Microsoft Security Blog — "New ransomware, old techniques: Petya adds worm capabilities"](https://www.microsoft.com/en-us/security/blog/2017/06/27/new-ransomware-old-techniques-petya-adds-worm-capabilities/) (27 jun. 2017).
+
+### O recado das agências: o AD como alvo número um (2024)
+
+O caso de 2014 e o de 2017 não são exceções. Em **setembro de 2024**, o ASD/ACSC australiano publicou, junto com a CISA e a NSA americanas, o CCCS canadense, o NCSC britânico e o NCSC neozelandês, o guia **Detecting and Mitigating Active Directory Compromises**, sobre as **17 técnicas mais comuns** que adversários usam para comprometer o AD. Ao anunciar o guia, em 26 de setembro de 2024, a CISA escreveu que o AD é a solução de autenticação e autorização mais usada em redes de TI corporativas no mundo, que atores maliciosos o atacam rotineiramente e que responder a um comprometimento do AD e se recuperar dele consome muitos recursos e causa muita interrupção. A CISA lista o documento com revisão em 15 de setembro de 2026. Ele é a leitura de referência para toda a Trilha 7.
+
+- **Fonte:** [CISA — anúncio do guia conjunto](https://www.cisa.gov/news-events/alerts/2024/09/25/asds-acsc-cisa-and-us-and-international-partners-release-guidance-detecting-and-mitigating-active) (26 set. 2024) e [página do guia na CISA](https://www.cisa.gov/resources-tools/resources/detecting-and-mitigating-active-directory-compromises).
+
+## 5. Mãos à obra — ler o domínio como quem ataca e como quem defende
+
+Este módulo **não tem laboratório próprio**. Subir um domínio Windows de verdade exige máquinas virtuais com Windows Server que não cabem na regra de "um lab por vez" nos seus 16 GB, e a Trilha 7 foi desenhada como teoria mais *walkthrough*. Mas a habilidade deste módulo não depende de um DC ligado: é **ler o AD e tirar conclusões corretas** sobre escopo, precedência e privilégio. É isso que um pentester faz com a saída das ferramentas do 7.2, e um defensor com um relatório de auditoria.
+
+Você vai trabalhar com três exports **fictícios** de um domínio `corp.local`, gerados por você mesmo no Ubuntu (WSL), em `/tmp`:
+
+- um export LDIF de OUs, contêineres e computadores;
+- um relatório das GPOs no caminho de uma estação;
+- um export dos grupos e contas do domínio.
+
+**Objetivo:** ao terminar, você terá (1) descoberto exatamente quais computadores uma GPO alcança, (2) resolvido qual GPO vence num cenário com Block Inheritance e Enforced e (3) calculado quem é, de fato, Domain Admin, passando por grupos aninhados, um grupo impostor e uma conta desligada. Três flags, uma por missão. Aqui a flag **não está escondida** em nenhum arquivo: você a **monta** a partir da resposta certa.
+
+### 5.1 Preparar o terreno (passo a passo)
+
+Abra o terminal do Ubuntu e cole o bloco inteiro de uma vez. Ele cria a pasta `/tmp/ad-intro` com os três arquivos, iguais para todo mundo:
+
+```bash
+ROOT=/tmp/ad-intro
+rm -rf "$ROOT"; mkdir -p "$ROOT"
+cd "$ROOT"
+
+# --- Missao 1: export LDIF de objetos do dominio corp.local ---
+cat > m1-diretorio.ldif <<'EOF'
+# ldifde -f m1-diretorio.ldif -d "DC=corp,DC=local" -l objectClass,sAMAccountName,gPLink
+# (export ficticio e reduzido do dominio corp.local)
+
+dn: DC=corp,DC=local
+objectClass: domainDNS
+
+dn: CN=Users,DC=corp,DC=local
+objectClass: container
+
+dn: CN=Computers,DC=corp,DC=local
+objectClass: container
+
+dn: OU=Sao Paulo,DC=corp,DC=local
+objectClass: organizationalUnit
+
+dn: OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+objectClass: organizationalUnit
+
+dn: OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+objectClass: organizationalUnit
+gPLink: [LDAP://cn={3F2A9C10-7B4D-4E8A-9C21-5D6E7F8A9B0C},cn=policies,cn=system,DC=corp,DC=local;0]
+# ^ GPO "Bloqueio-USB" ligada AQUI
+
+dn: OU=Notebooks,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+objectClass: organizationalUnit
+
+dn: OU=Servidores,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+objectClass: organizationalUnit
+
+dn: OU=RH,OU=Sao Paulo,DC=corp,DC=local
+objectClass: organizationalUnit
+
+dn: OU=Estacoes,OU=RH,OU=Sao Paulo,DC=corp,DC=local
+objectClass: organizationalUnit
+
+dn: OU=Rio,DC=corp,DC=local
+objectClass: organizationalUnit
+
+dn: OU=Financeiro,OU=Rio,DC=corp,DC=local
+objectClass: organizationalUnit
+
+dn: OU=Estacoes,OU=Financeiro,OU=Rio,DC=corp,DC=local
+objectClass: organizationalUnit
+
+dn: CN=WS-FIN-07,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+objectClass: computer
+sAMAccountName: WS-FIN-07$
+
+dn: CN=WS-FIN-09,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+objectClass: computer
+sAMAccountName: WS-FIN-09$
+
+dn: CN=NB-FIN-02,OU=Notebooks,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+objectClass: computer
+sAMAccountName: NB-FIN-02$
+
+dn: CN=WS-FIN-11,CN=Computers,DC=corp,DC=local
+objectClass: computer
+sAMAccountName: WS-FIN-11$
+
+dn: CN=SRV-FIN-01,OU=Servidores,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+objectClass: computer
+sAMAccountName: SRV-FIN-01$
+
+dn: CN=WS-RH-03,OU=Estacoes,OU=RH,OU=Sao Paulo,DC=corp,DC=local
+objectClass: computer
+sAMAccountName: WS-RH-03$
+
+dn: CN=WS-FIN-14,OU=Estacoes,OU=Financeiro,OU=Rio,DC=corp,DC=local
+objectClass: computer
+sAMAccountName: WS-FIN-14$
+
+dn: CN=Ana Lima,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+objectClass: user
+sAMAccountName: alima
+EOF
+
+# --- Missao 2: relatorio de GPOs no caminho da WS-FIN-07 ---
+cat > m2-gpos.txt <<'EOF'
+# Configuracao avaliada: "Logon interativo: limite de inatividade da maquina"
+# (Interactive logon: Machine inactivity limit), valor em SEGUNDOS.
+# linkOptions (bitmask do gPLink): 0 = habilitado, 1 = desabilitado, 2 = Enforced
+# "link order": 1 = maior precedencia dentro do mesmo container.
+# Computador: CN=WS-FIN-07,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+
+[LOCAL]  politica local da WS-FIN-07
+  valor=3600
+
+[SITE] SP-Matriz
+  link=1  gpo=Site-Padrao          linkOptions=0  valor=1200
+
+[DOMINIO] DC=corp,DC=local
+  link=1  gpo=Seguranca-Base       linkOptions=2  valor=nao-configurado
+  link=2  gpo=Default-Domain-Policy linkOptions=0 valor=600
+
+[OU] OU=Sao Paulo
+  link=1  gpo=SP-Conformidade      linkOptions=2  valor=900
+  link=2  gpo=SP-Estacoes          linkOptions=0  valor=300
+
+[OU] OU=Financeiro   (Bloquear heranca = SIM)
+  link=1  gpo=FIN-Rigida           linkOptions=1  valor=120
+  link=2  gpo=FIN-Padrao           linkOptions=0  valor=600
+
+[OU] OU=Estacoes     (onde a WS-FIN-07 esta)
+  link=1  gpo=EST-Conforto         linkOptions=0  valor=1800
+  link=2  gpo=EST-Kiosk            linkOptions=0  valor=nao-configurado
+EOF
+
+# --- Missao 3: grupos e contas do dominio (export simplificado) ---
+cat > m3-grupos.json <<'EOF'
+{
+  "domainSid": "S-1-5-21-1111111111-2222222222-3333333333",
+  "groups": [
+    { "name": "Domain Admins",        "rid": 512,  "type": "security", "scope": "global",
+      "members": ["administrator", "GG-Infra-N3", "cpereira"] },
+    { "name": "GG-Infra-N3",          "rid": 1104, "type": "security", "scope": "global",
+      "members": ["GG-Plantao", "asouza"] },
+    { "name": "GG-Plantao",           "rid": 1105, "type": "security", "scope": "global",
+      "members": ["mrocha"] },
+    { "name": "Domain Admins Legacy", "rid": 1107, "type": "security", "scope": "global",
+      "members": ["jsilva", "ralves"] },
+    { "name": "GG-Financeiro",        "rid": 1110, "type": "security", "scope": "global",
+      "members": ["alima", "tlima"] }
+  ],
+  "users": [
+    { "sAMAccountName": "administrator", "rid": 500,  "userAccountControl": 66048, "description": "Built-in account for administering the domain" },
+    { "sAMAccountName": "asouza",        "rid": 1201, "userAccountControl": 512,   "description": "Infra N3" },
+    { "sAMAccountName": "mrocha",        "rid": 1202, "userAccountControl": 512,   "description": "Analista de plantao" },
+    { "sAMAccountName": "cpereira",      "rid": 1203, "userAccountControl": 514,   "description": "Ex-admin (desligado em 2025)" },
+    { "sAMAccountName": "jsilva",        "rid": 1204, "userAccountControl": 512,   "description": "Suporte" },
+    { "sAMAccountName": "ralves",        "rid": 1205, "userAccountControl": 512,   "description": "Suporte" },
+    { "sAMAccountName": "alima",         "rid": 1206, "userAccountControl": 512,   "description": "Financeiro" },
+    { "sAMAccountName": "tlima",         "rid": 1207, "userAccountControl": 512,   "description": "Domain Admin - plantao 24h" }
+  ]
+}
+EOF
+
+echo "Cenario pronto em $ROOT"; ls -1 "$ROOT"
+```
+
+A saída esperada:
+
+```console
+$ echo "Cenario pronto em $ROOT"; ls -1 "$ROOT"
+Cenario pronto em /tmp/ad-intro
+m1-diretorio.ldif
+m2-gpos.txt
+m3-grupos.json
+```
+
+Antes das missões, faça o reconhecimento do primeiro arquivo, como faria com a saída de um `ldapsearch` de verdade. Conte quantos objetos o export tem: cada objeto começa com uma linha `dn:`.
+
+```console
+$ cd /tmp/ad-intro
+$ grep -c '^dn:' m1-diretorio.ldif
+21
+```
+
+Agora separe as **OUs** dos **contêineres**. Num LDIF, a linha `objectClass` vem logo depois do `dn:`, então `grep -B1` (mostrar também a linha anterior) traz o DN de cada objeto daquela classe:
+
+```console
+$ grep -B1 'objectClass: organizationalUnit' m1-diretorio.ldif | grep '^dn:'
+dn: OU=Sao Paulo,DC=corp,DC=local
+dn: OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: OU=Notebooks,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: OU=Servidores,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: OU=RH,OU=Sao Paulo,DC=corp,DC=local
+dn: OU=Estacoes,OU=RH,OU=Sao Paulo,DC=corp,DC=local
+dn: OU=Rio,DC=corp,DC=local
+dn: OU=Financeiro,OU=Rio,DC=corp,DC=local
+dn: OU=Estacoes,OU=Financeiro,OU=Rio,DC=corp,DC=local
+```
+
+Repare em duas coisas que vão importar. Existem **três** OUs chamadas `Estacoes` e **duas** chamadas `Financeiro`, em lugares diferentes. O nome não identifica a OU; o **DN completo** sim. E o `CN=Users` e o `CN=Computers` **não** aparecem: eles são da classe `container`, não `organizationalUnit`.
+
+### 5.2 Missão 1 — até onde a GPO chega (guiada)
+
+A GPO `Bloqueio-USB` está ligada à `OU=Estacoes,OU=Financeiro,OU=Sao Paulo` (veja o `gPLink` no arquivo, com `linkOptions` igual a `0`, link habilitado). Uma GPO ligada a uma OU vale para todos os objetos **dentro** dela, em qualquer nível abaixo. Seu objetivo: descobrir **quais computadores** a recebem.
+
+Comece listando todos os computadores:
+
+```console
+$ grep -B1 'objectClass: computer' m1-diretorio.ldif | grep '^dn:'
+dn: CN=WS-FIN-07,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: CN=WS-FIN-09,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: CN=NB-FIN-02,OU=Notebooks,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: CN=WS-FIN-11,CN=Computers,DC=corp,DC=local
+dn: CN=SRV-FIN-01,OU=Servidores,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: CN=WS-RH-03,OU=Estacoes,OU=RH,OU=Sao Paulo,DC=corp,DC=local
+dn: CN=WS-FIN-14,OU=Estacoes,OU=Financeiro,OU=Rio,DC=corp,DC=local
+```
+
+O primeiro impulso é filtrar por "Estacoes" e "Financeiro". Veja o que acontece:
+
+```console
+$ grep -B1 'objectClass: computer' m1-diretorio.ldif | grep '^dn:' | grep 'OU=Estacoes,OU=Financeiro'
+dn: CN=WS-FIN-07,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: CN=WS-FIN-09,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: CN=NB-FIN-02,OU=Notebooks,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: CN=WS-FIN-14,OU=Estacoes,OU=Financeiro,OU=Rio,DC=corp,DC=local
+```
+
+Errado: a `WS-FIN-14` está na `OU=Estacoes` do **Rio**, outra OU com o mesmo nome. Um DN se lê da direita para a esquerda (da raiz para a folha), e "estar dentro da OU X" significa que o DN **termina** com o DN completo de X. Pense em como dizer isso ao `grep`, e em como lidar com o `CN=Computers`, que tem um nome que "parece" financeiro.
+
+<Hint title="Dica 1">
+No `grep`, o `$` no fim do padrão significa "fim da linha". Filtre os DNs que terminam com `,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local`. A vírgula no começo do padrão garante que você pegue a OU inteira, e não um pedaço de nome. Uma sub-OU (como a `Notebooks`) continua "dentro": o DN dela também termina assim.
+</Hint>
+
+<Hint title="Dica 2">
+Para montar a flag, extraia só o CN de cada linha com `sed 's/^dn: CN=\([^,]*\),.*/\1/'`, converta para minúsculas com `tr 'A-Z' 'a-z'`, ordene com `sort` e junte com `paste -sd+`.
+</Hint>
+
+<Solution title="Solução">
+O filtro certo amarra o fim do DN:
+
+```console
+$ grep -B1 'objectClass: computer' m1-diretorio.ldif | grep '^dn:' \
+    | grep ',OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local$'
+dn: CN=WS-FIN-07,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: CN=WS-FIN-09,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+dn: CN=NB-FIN-02,OU=Notebooks,OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local
+```
+
+Três computadores: as duas estações diretamente na OU e o notebook na sub-OU `Notebooks`, que herda a GPO da OU pai. Ficam de fora:
+
+- a `WS-FIN-11`, esquecida no **contêiner** `CN=Computers`, que não recebe GPO de OU nenhuma;
+- o `SRV-FIN-01`, numa OU irmã (`Servidores`);
+- a `WS-RH-03`, na `Estacoes` do RH;
+- a `WS-FIN-14`, na `Estacoes` do Rio.
+
+Para montar a flag:
+
+```console
+$ grep -B1 'objectClass: computer' m1-diretorio.ldif | grep '^dn:' \
+    | grep ',OU=Estacoes,OU=Financeiro,OU=Sao Paulo,DC=corp,DC=local$' \
+    | sed 's/^dn: CN=\([^,]*\),.*/\1/' | tr 'A-Z' 'a-z' | sort | paste -sd+ | sed 's/.*/FLAG{&}/'
+```
+
+A saída é a flag. **Lição:** o escopo de uma GPO é decidido pelo **DN completo**, nunca pelo nome da OU, e um computador no `CN=Computers` é um ponto cego clássico: ele escapa de toda política de OU, inclusive das de segurança.
+</Solution>
+
+<FlagInput task="missao-1-escopo-da-gpo" />
+
+### 5.3 Missão 2 — qual GPO vence (desafio)
+
+Agora você é o auditor. A `WS-FIN-07` está com um bloqueio de tela diferente do esperado, e o `m2-gpos.txt` traz todas as GPOs no caminho dela, da política local até a OU onde ela está, com a configuração "limite de inatividade da máquina", em segundos. Seu objetivo: descobrir **qual GPO define o valor final** e **qual é esse valor**.
+
+Abra o relatório:
+
+```console
+$ cat m2-gpos.txt
+```
+
+Não existe comando pronto aqui: você precisa aplicar as regras da seção 2.5. Há três armadilhas no arquivo. A GPO mais próxima não é a resposta, a mais rígida também não, e a primeira Enforced que aparece também não.
+
+<Hint title="Dica 1">
+Vá eliminando. (1) Descarte os links desabilitados: `linkOptions=1`. (2) A `OU=Financeiro` bloqueia herança: tudo o que vem **acima** dela (local, site, domínio, `OU=Sao Paulo`) e **não** é Enforced deixa de valer. (3) Sobram os links normais da `Financeiro` e da `Estacoes`, mais os Enforced (`linkOptions=2`) de cima, que atravessam o bloqueio.
+</Hint>
+
+<Hint title="Dica 2">
+Um link Enforced vence os não enforced, por mais próximos que eles estejam. Entre dois Enforced, vence o mais alto na hierarquia, **mas só se ele configurar aquele item**: uma GPO com `nao-configurado` não escreve nada, então não vence nada.
+</Hint>
+
+<Solution title="Solução">
+Aplicando as regras, linha por linha:
+
+| Container | GPO | linkOptions | Valor | O que acontece |
+| --- | --- | --- | --- | --- |
+| Local | política local | — | 3600 | barrada pelo Block Inheritance da `Financeiro` |
+| Site SP-Matriz | Site-Padrao | 0 | 1200 | barrada pelo Block Inheritance |
+| Domínio | Seguranca-Base | **2** (Enforced) | nao-configurado | atravessa o bloqueio, mas **não configura** o item |
+| Domínio | Default-Domain-Policy | 0 | 600 | barrada pelo Block Inheritance |
+| OU Sao Paulo | **SP-Conformidade** | **2** (Enforced) | **900** | atravessa o bloqueio **e** configura: vence |
+| OU Sao Paulo | SP-Estacoes | 0 | 300 | barrada pelo Block Inheritance |
+| OU Financeiro | FIN-Rigida | **1** (desabilitado) | 120 | ignorada: link desabilitado |
+| OU Financeiro | FIN-Padrao | 0 | 600 | aplicada, mas perde para o Enforced |
+| OU Estacoes | EST-Conforto | 0 | 1800 | a mais próxima, mas perde para o Enforced |
+| OU Estacoes | EST-Kiosk | 0 | nao-configurado | não escreve nada |
+
+As três armadilhas: a `EST-Conforto` (1800) é a **mais próxima**, mas um Enforced vence os não enforced; a `FIN-Rigida` (120) é a **mais rígida**, mas o link está desabilitado; e a `Seguranca-Base` é o Enforced **mais alto**, mas não configura esse item. O valor final é o da `SP-Conformidade`: 900 segundos. A flag é `FLAG{` + nome da GPO + `-` + valor + `}`.
+
+Se quiser conferir com código (Python, como no 0.7), salve este script como `/tmp/ad-intro/resolve_gpo.py`. Ele aplica as mesmas regras ao arquivo:
+
+```python
+import re
+
+# Le o relatorio e monta a lista de containers na ordem L -> S -> D -> OU pai -> OU filha.
+containers = []
+for line in open('/tmp/ad-intro/m2-gpos.txt'):
+    if line.startswith('['):
+        containers.append({'name': line.strip(), 'block': 'heranca = SIM' in line, 'links': []})
+    elif line.strip().startswith('valor=') and containers:
+        containers[-1]['links'].append({'gpo': 'politica-local', 'opt': 0, 'order': 1,
+                                        'valor': line.split('=')[1].strip()})
+    elif line.strip().startswith('link=') and containers:
+        f = dict(re.findall(r'(\w+)=(\S+)', line))
+        containers[-1]['links'].append({'gpo': f['gpo'], 'opt': int(f['linkOptions']),
+                                        'order': int(f['link']), 'valor': f['valor']})
+
+# Block Inheritance numa OU barra os links NAO enforced de tudo que vem acima dela
+# (inclusive a politica local, site e dominio).
+last_block = max((i for i, c in enumerate(containers) if c['block']), default=-1)
+
+normal, enforced = [], []
+for i, c in enumerate(containers):
+    # dentro do container, aplica do maior link order para o menor (o 1 escreve por ultimo)
+    for l in sorted(c['links'], key=lambda l: -l['order']):
+        if l['opt'] & 1:                      # link desabilitado: ignorado
+            continue
+        if l['opt'] & 2:                      # Enforced
+            enforced.append((i, l))
+        elif i >= last_block:                 # nao bloqueado pela heranca
+            normal.append((i, l))
+
+# Os normais aplicam em ordem (o ultimo vence); os enforced aplicam DEPOIS,
+# do mais baixo para o mais alto, entao o enforced mais alto escreve por ultimo.
+final = None
+for i, l in normal + sorted(enforced, key=lambda x: -x[0]):
+    if l['valor'] != 'nao-configurado':
+        final = (l['gpo'], l['valor'])
+print('vencedora:', final)
+```
+
+```console
+$ python3 resolve_gpo.py
+vencedora: ('SP-Conformidade', '900')
+```
+
+**Lição:** "por que esta máquina tem esta configuração?" é uma pergunta de precedência, e é a mesma que o atacante faz ao planejar uma GPO maliciosa: um link Enforced alto na árvore passa por cima de quase tudo.
+</Solution>
+
+<FlagInput task="missao-2-qual-gpo-vence" />
+
+### 5.4 Missão 3 — quem é Domain Admin de verdade (desafio)
+
+Última missão, e a mais próxima do que o 7.2 vai fazer em escala. O `m3-grupos.json` traz os grupos e as contas do domínio. Seu objetivo: listar as contas **habilitadas** que são membros **efetivos** do Domain Admins, isto é, membros diretos ou por meio de grupos aninhados.
+
+Comece pelo óbvio e veja o primeiro problema:
+
+```console
+$ grep -n 'Domain Admins' m3-grupos.json
+4:    { "name": "Domain Admins",        "rid": 512,  "type": "security", "scope": "global",
+10:    { "name": "Domain Admins Legacy", "rid": 1107, "type": "security", "scope": "global",
+```
+
+Dois grupos com "Domain Admins" no nome. E há mais armadilhas no arquivo, uma delas no campo `description` de uma conta.
+
+<Hint title="Dica 1">
+O grupo verdadeiro se identifica pelo **RID 512**, que é fixo; o nome qualquer um inventa. A partir dele, siga os `members`: alguns são contas (estão em `users`) e outros são **grupos** (estão em `groups`), e esses você precisa expandir de novo, até chegar só a contas.
+</Hint>
+
+<Hint title="Dica 2">
+Depois da expansão, confira o `userAccountControl` de cada conta: o bit `0x2` (`ACCOUNTDISABLE`) ligado significa conta desligada. No shell, `$(( 514 & 0x2 ))` devolve `2` (ligado) e `$(( 512 & 0x2 ))` devolve `0`. A descrição de uma conta é texto livre e não dá privilégio nenhum. Em Python, uma função recursiva resolve a expansão em poucas linhas.
+</Hint>
+
+<Solution title="Solução">
+Salve este script como `/tmp/ad-intro/membros_efetivos.py`. Ele expande o grupo de RID 512 recursivamente e descarta as contas desligadas:
+
+```python
+import json
+
+d = json.load(open('/tmp/ad-intro/m3-grupos.json'))
+groups = {g['name']: g for g in d['groups']}
+users = {u['sAMAccountName']: u for u in d['users']}
+
+# O grupo certo se acha pelo RID (512), nao pelo nome.
+alvo = next(g for g in d['groups'] if g['rid'] == 512)
+
+def expandir(grupo, vistos):
+    """Membros efetivos: desce recursivamente pelos grupos aninhados."""
+    contas = set()
+    for m in grupo['members']:
+        if m in groups and m not in vistos:
+            vistos.add(m)
+            contas |= expandir(groups[m], vistos)
+        elif m in users:
+            contas.add(m)
+    return contas
+
+membros = expandir(alvo, {alvo['name']})
+print('membros efetivos:', sorted(membros))
+habilitados = sorted(u for u in membros if not users[u]['userAccountControl'] & 0x2)
+print('habilitados:', habilitados)
+print('FLAG{' + '+'.join(habilitados) + '}')
+```
+
+```console
+$ python3 membros_efetivos.py
+membros efetivos: ['administrator', 'asouza', 'cpereira', 'mrocha']
+habilitados: ['administrator', 'asouza', 'mrocha']
+```
+
+(A terceira linha da saída é a flag.) Repare em cada armadilha:
+
+- o `mrocha` não aparece em lugar nenhum perto do Domain Admins, mas está no `GG-Plantao`, dentro do `GG-Infra-N3`, dentro do Domain Admins: é administrador por **aninhamento**;
+- o `cpereira` é membro direto, mas o `userAccountControl` dele é 514 (`0x202`), com o bit `0x2` ligado: a conta está desligada;
+- o `jsilva` e o `ralves` estão no "Domain Admins Legacy", de RID 1107: um grupo comum com um nome assustador;
+- o `tlima` tem "Domain Admin" na **descrição**, o que não dá privilégio algum.
+
+O `administrator` é o membro padrão do grupo, como a documentação da Microsoft diz. **Lição:** privilégio no AD é o SID no token, calculado pela cadeia de grupos de segurança. Quem audita pela lista direta, pelo nome do grupo ou pela descrição erra para os dois lados.
+</Solution>
+
+<FlagInput task="missao-3-quem-e-admin" />
+
+Quando terminar, as três flags entram nos cartões acima e o quiz da seção 9 fecha o módulo. Não há laboratório para desligar: você só gerou arquivos de texto em `/tmp`. Para apagá-los, use `rm -rf /tmp/ad-intro`.
+
+## 6. Variações e aprofundamento
+
+**Florestas com várias árvores e trusts externos.** Uma empresa que comprou outra costuma herdar uma segunda floresta. Para que os usuários de uma acessem os recursos da outra, cria-se um *forest trust*, entre os domínios raiz das duas, que pode ser de uma via ou de duas. A Microsoft documenta que esses trusts **não se estendem implicitamente** a uma terceira floresta: se A confia em B e B confia em C, A não confia em C. Para o pentester, enumerar os trusts é desenhar até onde um comprometimento pode se espalhar, e para o defensor é decidir onde aceitar risco. Existem ainda filtros de SID e autenticação seletiva para limitar o que um trust deixa passar, e você verá no 7.5 por que eles importam.
+
+**Sites e a parte física.** Tudo o que você viu é a estrutura **lógica**. O AD também tem uma estrutura **física**: os *sites*, que representam locais de rede (a matriz, a filial) e controlam por onde a replicação passa e qual DC cada cliente usa. Os sites também recebem GPOs (o "S" do LSDOU). Num pentest, o nome dos sites costuma revelar a geografia da empresa.
+
+**Filtragem de GPO.** Além do link, uma GPO pode ser restringida por **filtragem de segurança** (só se aplica a quem tem as permissões *Read* e *Apply Group Policy* sobre ela) e por **filtros WMI** (uma consulta sobre o computador, como "só Windows 11"). Isso explica casos em que a GPO "está ligada mas não aplica". Do lado ofensivo, quem tem permissão de **editar** uma GPO, ou de alterar o `gPLink` de uma OU, consegue fazer política maliciosa chegar a todas as máquinas no escopo. Por isso as permissões sobre GPOs e OUs são arestas importantes no grafo do BloodHound (7.2).
+
+**Delegação na OU.** A OU é o ponto onde se **delega** administração: dá-se a um grupo do suporte o direito de resetar senhas só numa OU. A delegação é feita por ACLs nos objetos do diretório, o mesmo conceito de ACL do Windows que você viu no 0.5, agora aplicado a usuários e grupos do AD. Uma delegação larga demais, como "controle total" na OU onde estão contas de administradores, é um caminho clássico de escalação, e um dos tipos de aresta que o 7.2 ensina a enxergar.
+
+**AD na nuvem e identidade híbrida.** O Microsoft Entra ID **não é** "o AD na nuvem". Ele fala outros protocolos (OAuth, OpenID Connect, SAML), não tem OUs nem GPOs, e o controle de dispositivos é feito por ferramentas como o Intune. O que liga os dois mundos é a sincronização. O Entra Connect oferece três formas de logon: **sincronização de hash de senha** (um hash do hash da senha vai para a nuvem), **autenticação de passagem** (a nuvem pergunta a um agente no local, que consulta o DC) e **federação** (por exemplo com o AD FS). Nas três, um atacante que domina o AD local tem uma rota para a identidade em nuvem. O ataque à sincronização e à federação é assunto avançado, que vai além desta trilha.
+
+**Outros serviços que moram no AD.** Muitas empresas também rodam o **AD CS** (Active Directory Certificate Services), a autoridade de certificados interna integrada ao AD, que emite certificados usados até para autenticação. Configurações frágeis do AD CS também são um caminho conhecido de escalação até o domínio. É um tema próprio, fora do escopo enxuto desta trilha, mas vale saber que existe: o mapa do AD inclui mais do que contas e grupos.
+
+## 7. Erros comuns
+
+- **Achar que a OU dá permissão.** "Coloquei o João na OU Financeiro e ele ainda não acessa a pasta": a OU organiza e recebe GPO, mas não entra no token. Para dar acesso, coloque o usuário num **grupo de segurança** que tenha a permissão.
+- **Achar que o domínio isola.** "A filial é outro domínio, então está separada": na mesma floresta, não está. Se o objetivo é isolamento de segurança, a resposta da própria Microsoft é **outra floresta**.
+- **Ligar GPO ao `CN=Users` ou esquecer máquinas no `CN=Computers`.** Esses contêineres não aceitam link de GPO. Computador novo que "não recebe a política" quase sempre ficou no contêiner padrão: mova-o para a OU certa (ou mude o destino padrão de novos computadores com o `redircmp`).
+- **"Mudei a GPO e nada aconteceu."** A política se aplica no boot, no logon e no ciclo de 90 minutos (mais até 30 de atraso aleatório). A mudança também precisa replicar até o DC que o cliente usa, e o SYSVOL replica separado do diretório. Use `gpupdate` no cliente e `gpresult /r` para ver o que de fato foi aplicado.
+- **Ler "Não configurado" como "desligado".** "Não configurado" significa "esta GPO não fala disso"; quem decide é outra GPO na precedência. Para desligar algo, a configuração precisa estar como **Desabilitado**.
+- **Auditar privilégio pela lista direta ou pelo nome.** Um grupo aninhado esconde administradores, e um grupo com nome "admin" pode não ter poder nenhum. Confira sempre pelo **RID** (512 para Domain Admins) e pela associação **efetiva**.
+- **Confundir o nome DNS com o nome NetBIOS do domínio.** Todo domínio tem dois nomes: o DNS (`corp.local`) e o NetBIOS, curto (`CORP`, o que aparece em `CORP\alima`). A Microsoft lembra que eles **não precisam ser iguais**: um domínio `contoso.com` pode ter o NetBIOS `fabrikam`. Ferramentas que pedem "o domínio" às vezes querem um e às vezes o outro.
+
+## 8. Boas práticas e segurança
+
+A defesa do AD não é um produto: é um conjunto de decisões de arquitetura e de higiene. A lista abaixo segue os guias de segurança da Microsoft para o AD e o guia conjunto de 2024.
+
+**1. Grupos privilegiados vazios no dia a dia.** A Microsoft recomenda remover todos os membros do Domain Admins, com a possível exceção da conta Administrator do domínio, bem protegida, e manter o Enterprise Admins e o Schema Admins vazios, preenchendo-os só temporariamente quando necessário. A administração do dia a dia é feita por **delegação** nas OUs, com grupos de direitos específicos. Quanto menos contas no topo, menos credenciais valem o domínio.
+
+**2. Credencial privilegiada nunca em máquina comum.** É a lição do NotPetya. A Microsoft orienta adicionar o Domain Admins, por GPO ligada às OUs de servidores e estações, a estes direitos de usuário:
+
+```text
+Computer Configuration\Policies\Windows Settings\Security Settings\
+  Local Policies\User Rights Assignment
+    Deny access to this computer from the network
+    Deny log on as a batch job
+    Deny log on as a service
+    Deny log on locally
+    Deny log on through Remote Desktop Services
+```
+
+Assim, uma conta de Domain Admin não consegue nem fazer logon numa estação, e a credencial dela nunca fica na memória de uma máquina que um phishing alcança. Na mesma linha estão o modelo de **camadas** (Tier 0 para DCs e contas de domínio, Tier 1 para servidores, Tier 2 para estações) e as <GlossaryTerm term="PAW">PAWs</GlossaryTerm>, estações dedicadas e endurecidas, as únicas de onde se administra a camada 0.
+
+**3. Senha de administrador local diferente em cada máquina.** O GPP com senha era a tentativa errada de resolver um problema real. A forma certa é o LAPS (*Local Administrator Password Solution*), visto no 0.5: cada computador tem uma senha de administrador local **própria e trocada automaticamente**, guardada no diretório e legível só por quem foi autorizado. Uma senha local roubada deixa de abrir todas as outras máquinas.
+
+**4. Nada de segredo no SYSVOL ou em atributos legíveis.** Rode, como defensor, a mesma busca do atacante: procure senhas em GPOs antigas (o script `Get-SettingsWithCPassword.ps1` do KB2962486 faz isso) e em scripts de logon. Lembre que todo usuário autenticado lê o SYSVOL e a maior parte do diretório: qualquer senha guardada ali já vazou.
+
+**5. Endurecer as contas sensíveis.** Coloque as contas privilegiadas no grupo <GlossaryTerm term="Protected Users">Protected Users</GlossaryTerm>, que tira delas formas de autenticação mais frágeis. Use contas de serviço gerenciadas (<GlossaryTerm term="gMSA">gMSA</GlossaryTerm>), com senha longa e trocada pelo próprio AD, em vez de contas de serviço com senha humana. O 7.3 mostra por que isso derruba ataques inteiros.
+
+**6. Auditar o que importa.** Ligue a auditoria de **gerenciamento de grupos de segurança** nos controladores e gere alertas para mudanças nos grupos privilegiados. A Microsoft lista os eventos: **4728** (membro adicionado a grupo global de segurança), **4732** (a grupo local de segurança) e **4756** (a grupo universal de segurança). Uma conta entrando no Domain Admins fora de uma janela de mudança é um alarme de alta confiança. Mudanças em objetos do diretório, como GPOs e OUs, geram o evento **5136** quando a auditoria de alterações do serviço de diretório está ligada.
+
+**7. Tratar o DC como o que ele é.** Controlador de domínio é **Tier 0**: só roda AD (e, no máximo, DNS), não navega na internet, não é usado como servidor de arquivos e só é administrado a partir de PAWs. Os mesmos cuidados valem para tudo que tem poder equivalente: o servidor do Entra Connect, os backups dos DCs e o AD CS.
+
+**8. Planejar a recuperação antes do incidente.** Com replicação multimestre, um estrago feito em um DC chega a todos. Mantenha **backups do estado do sistema dos DCs, offline e testados**, e um plano de recuperação de floresta, como o guia oficial da Microsoft descreve. A pergunta "se todos os DCs forem cifrados hoje, de onde reconstruímos?" precisa ter resposta antes, não durante o incidente.
+
+**9. Enxergar o próprio grafo.** Rode periodicamente, como defensor, a mesma enumeração que o atacante faria (7.2): BloodHound para os caminhos de ataque, revisão das delegações nas OUs, dos computadores no `CN=Computers` e dos membros efetivos dos grupos privilegiados. Cortar um caminho antes que alguém o use é a defesa mais barata que existe.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (ele conta para concluir o módulo) e complete as três missões da seção 5, cada uma com sua flag.
+
+<Quiz task="quiz-final" />
+
+**Desafios extras (sem flag, para fixar):**
+
+- No cenário da Missão 2, o que mudaria no resultado se o administrador **desligasse** o Block Inheritance da `OU=Financeiro`? E se, em vez disso, ele tirasse o Enforced da `SP-Conformidade`? Responda para os dois casos, com a GPO e o valor finais.
+- A empresa quer que o suporte de São Paulo resete senhas só dos usuários de São Paulo. Descreva, com os conceitos do módulo, onde essa permissão deve ser dada (em que objeto) e a quem (que tipo de objeto).
+- Explique, em duas frases, por que um domínio filho comprometido coloca em risco o domínio raiz da mesma floresta, e o que uma empresa precisaria fazer para ter isolamento de verdade.
+- Na Missão 3, escreva o filtro de uma linha em Python que listaria as contas **desligadas** de todo o export, e diga por que contas desligadas em grupos privilegiados ainda são um risco, mesmo sem conseguir fazer logon.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O AD é o **serviço de diretório** da Microsoft: centraliza contas, grupos e configurações, e é feito para ser **lido** por qualquer usuário autenticado. Esse desenho é o que torna a enumeração tão poderosa.
+- Hierarquia: **floresta** → árvores → **domínios** → **OUs**. O domínio é fronteira de administração e replicação; a **floresta** é a fronteira de **segurança**.
+- A **OU** organiza, recebe GPO e delega, mas não dá permissão. Quem dá é o **grupo de segurança**, e a associação é **transitiva** pelos grupos aninhados.
+- **Domain Admins** (RID 512) é administrador local de todo computador do domínio; **Enterprise Admins** (519) e **Schema Admins** (518) vivem só no domínio raiz. O RID, não o nome, identifica o grupo.
+- O **controlador de domínio** guarda o **NTDS.dit** (os segredos de todas as contas) e o **SYSVOL** (as GPOs) e roda DNS, Kerberos e LDAP. Com replicação multimestre, quem controla um DC controla todos.
+- GPOs se aplicam em **LSDOU**: a mais próxima vence, o *link order* 1 desempata, **Block Inheritance** barra o que vem de cima e **Enforced** passa por cima de tudo. "Não configurado" não escreve nada.
+- A defesa: grupos privilegiados vazios, administradores fora das estações comuns, LAPS, nada de segredo no SYSVOL, auditoria dos grupos (4728, 4732, 4756), DC como Tier 0 e backup offline testado.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Microsoft Learn — Understanding the Active Directory Logical Model](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/understanding-the-active-directory-logical-model) — floresta, domínio e OU pela documentação oficial.
+- [Microsoft Learn — Service Administrator Scope of Authority](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/service-administrator-scope-of-authority) — por que a floresta é a fronteira de segurança, nas palavras da Microsoft.
+- [Microsoft Learn — Group Policy processing](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/group-policy/group-policy-processing) e [Group Policy scope](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/group-policy/group-policy-scope) — ordem, Enforced, Block Inheritance e o atributo `gPLink`.
+- [Microsoft Learn — Appendix B: Privileged Accounts and Groups in Active Directory](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/security-best-practices/appendix-b--privileged-accounts-and-groups-in-active-directory) — o que cada grupo privilegiado pode fazer.
+- [Microsoft Learn — Implementing Least-Privilege Administrative Models](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/security-best-practices/implementing-least-privilege-administrative-models) — como esvaziar e proteger o Domain Admins.
+- [CISA — Detecting and Mitigating Active Directory Compromises](https://www.cisa.gov/resources-tools/resources/detecting-and-mitigating-active-directory-compromises) — o guia conjunto das agências, referência para toda a Trilha 7.
