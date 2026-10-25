@@ -1,0 +1,2108 @@
+---
+slug: osint-e-reconhecimento-passivo
+track: trilha-2
+title: "OSINT e reconhecimento passivo"
+prerequisites: [kali-linux, lei-e-etica]
+lab: null
+tasks:
+  - slug: missao-1-o-que-os-certificados-contam
+    title: "Missão 1 — O que os certificados contam"
+    type: flag
+    prompt: "A flag candidata que o conferir.py 1 imprime para a sua lista de nomes (nomes.txt)."
+    hint: "Cada linha do export pode ter vários nomes separados por quebra de linha. Normalize para minúsculas, tire repetidos e fique só com subdomínios de valeverde.example."
+    flag:
+      hash: "scrypt$16384$8$1$cf2965ca46f525dcd168b7501d87b35cc4dbb826d4e784c98e8029b77821671c"
+      salt: "49cea3ebea36bf4f88bc71847f99e36b"
+  - slug: missao-2-dono-nome-e-endereco
+    title: "Missão 2 — Dono, nome e endereço"
+    type: flag
+    prompt: "A flag candidata que o conferir.py 2 imprime para a classificação dos 16 nomes (respostas-2.txt)."
+    hint: "Siga cada CNAME até o fim, pegue o IP e procure a faixa no RDAP. Um /26 que começa em .0 termina em .63."
+    flag:
+      hash: "scrypt$16384$8$1$f036857bcba0ea7794c2f1ab65518cb4df181e34afda2131ef2a4cf073530360"
+      salt: "01b84c6cf31b9f74f42d23a20bc773a0"
+  - slug: missao-3-o-que-o-arquivo-entrega
+    title: "Missão 3 — O que o arquivo publicado entrega"
+    type: flag
+    prompt: "A flag candidata que o conferir.py 3 imprime para o login, o servidor de arquivos e o host interno (respostas-3.txt)."
+    hint: "O DOCX é um ZIP: leia as partes em docProps/. No PDF, procure TODAS as ocorrências de /Producer, não só a última."
+    flag:
+      hash: "scrypt$16384$8$1$9d7d040542bba5c54624e41aa5243abd1af1a3573e18a162db6a2893efea08fb"
+      salt: "65cc78f07642538304f8170aee736f1c"
+  - slug: quiz-final
+    title: "Quiz — OSINT e reconhecimento passivo"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Pela classificação do PTES, resolver `intranet.cliente.example` num resolvedor DNS público é coleta de que tipo?"
+        options:
+          - "Passiva: quem responde é o resolvedor, não o cliente"
+          - "Semipassiva: parece tráfego normal e pode chegar aos servidores de nomes publicados do alvo"
+          - "Ativa: todo pacote de DNS é uma varredura"
+          - "Nenhuma: DNS não é fonte de OSINT"
+        answer: 1
+        explanation: "O PTES põe na coleta semipassiva consultar \"só os servidores de nomes publicados\", sem força bruta de nomes. A consulta pode chegar ao servidor autoritativo do alvo (que pode registrá-la), mas é indistinguível do tráfego de qualquer visitante. Força bruta de subdomínios e transferência de zona já são ativas."
+      - question: "Por que os logs de Certificate Transparency revelam nomes que a empresa nunca divulgou?"
+        options:
+          - "Porque alguém invadiu a autoridade certificadora"
+          - "Porque o navegador envia o histórico de sites aos logs"
+          - "Porque, para o Chrome confiar num certificado público, a CA precisa registrá-lo em logs públicos e append-only, com todos os nomes que ele protege"
+          - "Porque o DNS copia os registros para os logs"
+        answer: 2
+        explanation: "CT existe para que qualquer um possa auditar o que as CAs emitem. O preço é que todo nome num certificado público vai para um log que qualquer pessoa lê, inclusive antes de o site entrar no ar (o precertificado), e fica lá depois que o servidor some."
+      - question: "Uma empresa troca os certificados individuais por um único `*.empresa.example`. O que isso esconde dos logs de CT?"
+        options:
+          - "Os nomes individuais dos subdomínios novos, mas não o domínio; e eles continuam vazando por DNS, links e documentos"
+          - "O domínio inteiro deixa de aparecer"
+          - "Nada: o wildcard é expandido no log"
+          - "Os IPs dos servidores"
+        answer: 0
+        explanation: "O log guarda o que está no certificado: `*.empresa.example`. Os nomes reais não aparecem ali, mas o domínio sim, e o wildcard tem um custo (a mesma chave vale para todos os nomes). Os nomes continuam vazando por outros caminhos: DNS, histórico de certificados antigos, links e metadados."
+      - question: "No OSINT, você acha `suporte.cliente.example` como CNAME para um nome de provedor que não existe mais (NXDOMAIN). O que fazer?"
+        options:
+          - "Registrar o nome no provedor para provar o subdomain takeover"
+          - "Ignorar: se não existe, não é problema"
+          - "Anotar com fonte e data e relatar ao cliente como achado; tomar o nome exigiria autorização do cliente e do provedor"
+          - "Varrer o provedor para ver se o nome volta"
+        answer: 2
+        explanation: "Um CNAME pendurado é a pré-condição de um subdomain takeover (1.3), um achado de verdade. Mas registrar o recurso no provedor é agir sobre a infraestrutura de um terceiro e publicar conteúdo sob o nome do cliente: está fora de uma fase passiva e de qualquer carta que não diga isso por escrito."
+      - question: "Um dado pessoal está num site público. Pela LGPD, você pode guardá-lo no dossiê do pentest?"
+        options:
+          - "Sim, dado público não é dado pessoal"
+          - "Só se for necessário para a finalidade do teste: dado público continua sendo dado pessoal, e valem a finalidade e a necessidade"
+          - "Nunca: OSINT é proibido pela LGPD"
+          - "Sim, desde que você não publique"
+        answer: 1
+        explanation: "O art. 7º, § 3º, manda considerar a finalidade, a boa-fé e o interesse público que justificaram a disponibilização, e o art. 6º, III, limita o tratamento ao mínimo necessário. Se o dado não serve à finalidade do teste, ele não entra no dossiê."
+      - question: "Pelas escalas do manual ATP 2-22.9 do Exército dos EUA, que nota recebe uma fonte que você usa pela primeira vez?"
+        options:
+          - "A, porque é uma fonte primária"
+          - "E, porque ainda não provou nada"
+          - "1, porque a informação é nova"
+          - "F (sem base para julgar), o que não quer dizer que ela seja ruim"
+        answer: 3
+        explanation: "O manual dá F (\"cannot be judged\") a toda fonte nova e explica que F não significa \"não confiável\": significa que não há histórico para avaliar. A confiabilidade da fonte (A–F) e a credibilidade da informação (1–8) são notas separadas."
+      - question: "Um PDF teve o autor trocado por uma ferramenta que grava por incremental update. O que um leitor atento acha no arquivo?"
+        options:
+          - "Só o autor novo"
+          - "Nada: o PDF fica criptografado"
+          - "O autor novo e, mais acima no arquivo, o objeto antigo com o autor original"
+          - "Um erro de leitura"
+        answer: 2
+        explanation: "No incremental update, o PDF ganha objetos novos e uma nova tabela xref no fim, mas os antigos continuam no arquivo. A documentação do ExifTool avisa que, por isso, edições de metadados em PDF são reversíveis e que a informação antiga \"nunca é realmente apagada\"."
+      - question: "O `robots.txt` de 2018 do cliente tinha `Disallow: /backup-antigo/`. O que isso significa para o reconhecimento passivo?"
+        options:
+          - "Que o arquivo público aponta para um caminho que alguém não queria indexado; é um achado para anotar, e acessar o caminho já seria procurar conteúdo não publicado (ativo)"
+          - "Que a pasta está protegida por senha"
+          - "Que você pode baixar a pasta, já que o arquivo é público"
+          - "Nada, robots.txt só serve para SEO"
+        answer: 0
+        explanation: "O `robots.txt` é um pedido aos robôs de busca, não um controle de acesso, e é público: ele aponta exatamente o que alguém quis esconder. Na fase passiva você anota o caminho; acessá-lo é procurar conteúdo não publicado, que o PTES põe na coleta ativa e que depende do escopo."
+      - question: "Por que o crt.sh costuma mostrar cada certificado em pares, com o mesmo número de série?"
+        options:
+          - "Porque a CA emitiu o certificado duas vezes por erro"
+          - "Porque o log registra o precertificado e, depois, o certificado final"
+          - "Porque há um certificado para IPv4 e outro para IPv6"
+          - "Porque o crt.sh duplica as linhas para conferência"
+        answer: 1
+        explanation: "A CA manda o precertificado (com a extensão \"veneno\") aos logs para obter os SCTs e depois emite o certificado final, que também pode ser registrado. Para a lista de nomes, é por isso que você precisa tirar os repetidos."
+glossary:
+  - term: Certificate Transparency
+    definition: "Sistema de logs públicos e append-only em que as autoridades certificadoras registram os certificados que emitem, para que qualquer um possa auditar. Para o OSINT, é uma lista pública de nomes de servidores (RFC 6962)."
+  - term: precertificate
+    definition: "Precertificado: cópia do certificado com uma extensão crítica \"veneno\" que nenhum navegador aceita, enviada aos logs de CT antes da emissão final. É por ele que um nome aparece no log antes de o site entrar no ar."
+  - term: Signed Certificate Timestamp
+    definition: "SCT: a promessa assinada de um log de CT de incluir um certificado na sua árvore dentro do prazo máximo. O navegador exige SCTs suficientes para confiar num certificado público."
+  - term: Merkle tree
+    definition: "Árvore de Merkle: estrutura de hashes em que cada nó resume os de baixo. Permite provar que um certificado está no log e que o log não foi reescrito."
+  - term: append-only
+    definition: "Só se acrescenta: um registro append-only aceita entradas novas, mas não permite apagar nem alterar as antigas. Por isso um nome que entrou num log de CT fica lá para sempre."
+  - term: CT log monitor
+    definition: "Serviço que lê os logs de CT e avisa o dono de um domínio quando aparece um certificado novo com os seus nomes. É a defesa contra certificados emitidos sem pedido."
+  - term: Subject Alternative Name
+    definition: "SAN: a extensão do certificado X.509 que lista todos os nomes que ele protege. Um só certificado pode cobrir vários nomes, até de domínios diferentes, e todos vão para o log de CT."
+  - term: wildcard certificate
+    definition: "Certificado curinga, como *.empresa.example: vale para qualquer nome de um nível sob o domínio. Esconde os nomes individuais do log de CT, mas a mesma chave passa a valer para todos eles."
+  - term: CAA record
+    definition: "Registro DNS (RFC 8659) em que o dono do domínio diz quais autoridades certificadoras podem emitir certificados para ele."
+  - term: TXT record
+    definition: "Registro DNS de texto livre. Na prática, carrega políticas e provas de posse: SPF, verificação de domínio de serviços na nuvem, chaves DKIM."
+  - term: SPF
+    definition: "Sender Policy Framework (RFC 7208): registro TXT que lista quem pode enviar e-mail em nome de um domínio. Para o OSINT, revela os fornecedores de e-mail da organização."
+  - term: MX record
+    definition: "Registro DNS que diz quais servidores recebem o e-mail de um domínio, com uma prioridade (menor número, maior preferência)."
+  - term: null MX
+    definition: "MX nulo (RFC 7505), escrito como `0 .`: o jeito de um domínio declarar que não recebe e-mail nenhum."
+  - term: NXDOMAIN
+    definition: "Resposta do DNS que significa \"este nome não existe\". Num CNAME, um NXDOMAIN no destino indica um apontamento pendurado."
+  - term: zone transfer
+    definition: "Transferência de zona (AXFR, RFC 5936): o pedido que copia todos os registros de uma zona DNS. Serve para sincronizar servidores; pedido por um estranho, é coleta ativa."
+  - term: passive DNS
+    definition: "Base histórica de respostas de DNS, montada por sensores que observam o tráfego perto de resolvedores (técnica apresentada por Florian Weimer em 2005). Mostra para onde um nome apontava no passado."
+  - term: semi-passive reconnaissance
+    definition: "Reconhecimento semipassivo: coleta que chega ao alvo, mas parece tráfego normal de visitante (resolver nomes publicados, abrir o site, baixar um documento publicado), sem procurar o que não foi publicado."
+  - term: search operator
+    definition: "Operador de busca: palavra especial que refina uma pesquisa, como site:, filetype:, aspas e o sinal de menos."
+  - term: Google dorking
+    definition: "Usar operadores de busca para achar informação sensível que um buscador indexou sem querer (documentos internos, páginas de erro, painéis). O nome vem de \"Googledork\", de Johnny Long."
+  - term: Google Hacking Database
+    definition: "GHDB: catálogo público de buscas que revelam informação sensível, criado por Johnny Long e mantido pela OffSec no Exploit Database desde 2010."
+  - term: Wayback Machine
+    definition: "O arquivo da web do Internet Archive: guarda cópias de páginas ao longo dos anos, inclusive de arquivos que o site já apagou."
+  - term: CDX
+    definition: "O índice da Wayback Machine: uma linha por captura, com a URL, o momento, o tipo, o status HTTP e um hash do conteúdo. Pode ser consultado por uma API."
+  - term: intelligence cycle
+    definition: "Ciclo de inteligência: requisito, coleta, processamento, análise e difusão. Começa por uma pergunta, não por uma ferramenta."
+  - term: publicly available information
+    definition: "Informação publicamente disponível: o que foi publicado para o público em geral, pode ser obtido a pedido por qualquer pessoa ou visto por qualquer observador. É a matéria-prima do OSINT."
+  - term: source reliability
+    definition: "Confiabilidade da fonte: nota de A (confiável) a F (sem base para julgar) que mede o histórico da fonte, não a informação em si."
+  - term: information credibility
+    definition: "Credibilidade da informação: nota de 1 (confirmada por fontes independentes) a 8 (sem base para julgar), dada à informação separadamente da fonte."
+  - term: OSINT pivot
+    definition: "Pivô: usar uma entidade descoberta (um nome, um IP, um e-mail, um login) como ponto de partida de novas buscas. Não confundir com o pivoting de rede da pós-exploração."
+  - term: seed
+    definition: "Semente: o ponto de partida do reconhecimento, normalmente o domínio ou a faixa que a carta de autorização entrega."
+  - term: Office Open XML
+    definition: "O formato dos .docx, .xlsx e .pptx (ECMA-376): um ZIP de partes XML. Os metadados ficam em docProps/core.xml e docProps/app.xml."
+  - term: XMP
+    definition: "Extensible Metadata Platform: padrão de metadados em XML embutido em PDFs e imagens, ao lado do dicionário Info do PDF."
+  - term: incremental update
+    definition: "Atualização incremental: forma de editar um PDF acrescentando objetos e uma nova tabela no fim do arquivo. Os objetos antigos continuam lá, inclusive metadados \"apagados\"."
+  - term: exiftool
+    definition: "Ferramenta de linha de comando de Phil Harvey que lê e escreve metadados de centenas de formatos de arquivo."
+  - term: mat2
+    definition: "Metadata Anonymisation Toolkit 2: ferramenta que remove metadados de documentos, imagens e áudio, gerando uma cópia limpa."
+  - term: Document Inspector
+    definition: "Inspetor de Documento do Microsoft Office (Arquivo > Informações > Verificar Problemas > Inspecionar Documento): encontra e remove propriedades, comentários, revisões e outros dados ocultos."
+  - term: attack surface management
+    definition: "Gestão da superfície de ataque: a organização fazendo continuamente o OSINT de si mesma, para achar e fechar o que está exposto antes de um atacante."
+  - term: theHarvester
+    definition: "Ferramenta de OSINT que coleta e-mails, subdomínios e nomes de fontes públicas a partir de um domínio."
+  - term: Amass
+    definition: "Ferramenta do OWASP de mapeamento da superfície de ataque e descoberta de ativos, com modos passivos e ativos."
+  - term: SpiderFoot
+    definition: "Ferramenta que automatiza o OSINT, consultando dezenas de fontes e montando o grafo de entidades a partir de uma semente."
+  - term: Recon-ng
+    definition: "Framework de reconhecimento em módulos, no estilo do Metasploit, para coletar e organizar dados de fontes abertas."
+  - term: IANA
+    definition: "Internet Assigned Numbers Authority: quem coordena a raiz do DNS, os blocos de IP e os números de protocolo. Também guarda os domínios reservados para exemplos, como example.com."
+  - term: Berkeley Protocol
+    definition: "Protocolo de Berkeley sobre investigações digitais de fontes abertas (UC Berkeley e Alto Comissariado da ONU para Direitos Humanos, 2020): padrões de coleta, preservação, verificação e ética."
+---
+
+import espectro from "./img/espectro-do-reconhecimento.svg";
+import caminhoCertificado from "./img/caminho-do-certificado.svg";
+import grafoPivos from "./img/grafo-de-pivos.svg";
+import cicloFicha from "./img/ciclo-e-ficha.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em janeiro de 2018, um analista olhou um mapa de calor publicado por um aplicativo de corrida
+e viu, em lugares como o Afeganistão, o Djibouti e a Síria, linhas brilhantes desenhando o
+perímetro e as rotas internas de bases militares. Ninguém invadiu nada. O mapa era
+público, os dados tinham sido enviados pelos próprios soldados, e bastou alguém fazer a
+pergunta certa a uma fonte aberta (a seção 4 conta o caso com as fontes).
+
+Esse é o assunto deste módulo. Antes de mandar o primeiro pacote para um alvo, um atacante
+(e um pentester) já sabe muita coisa sobre ele: que nomes de servidor existem, quais
+fornecedores ele usa, quem envia o e-mail dele, que programas geram os documentos que ele
+publica, que caminhos o site tentou esconder dos buscadores. Tudo isso sai de
+<GlossaryTerm term="OSINT">OSINT</GlossaryTerm> (*open source intelligence*, inteligência de
+fontes abertas, que você conheceu no 1.2): informação que qualquer pessoa pode obter,
+organizada para responder a uma pergunta. E quase tudo sai sem tocar no alvo, o que se chama
+<GlossaryTerm term="passive reconnaissance">reconhecimento passivo</GlossaryTerm>.
+
+O 2.4, que vem depois deste, é o <GlossaryTerm term="active reconnaissance">reconhecimento
+ativo</GlossaryTerm> com o nmap: bater em cada porta. Aqui você aprende a fase anterior, a que
+diz **onde** bater e, tão importante quanto, onde **não** bater, porque o OSINT é o que
+descobre que metade dos nomes do cliente aponta para servidores de outras empresas.
+
+**Ao final, você vai saber:**
+
+- explicar o que é OSINT, o ciclo que o organiza e onde termina o passivo, separando coleta
+  passiva, semipassiva e ativa pelo critério do PTES;
+- explicar **por que** a informação vaza: DNS, certificados, registros de domínio e
+  documentos foram feitos para ser públicos, e o OSINT só lê o que o sistema já publica;
+- tirar de um export de Certificate Transparency a lista limpa dos nomes de um domínio;
+- cruzar DNS e RDAP para dizer, nome a nome, o que está no escopo, o que é de um terceiro,
+  o que está pendurado e o que nem existe mais;
+- extrair metadados de um DOCX e de um PDF, inclusive o que alguém achou que tinha apagado;
+- registrar cada achado com fonte, data, forma de coleta e nota de confiança;
+- dizer o que a LGPD e o escopo proíbem coletar, e o que uma organização faz para expor menos.
+
+**Pré-requisitos:**
+
+- **2.1 — Kali Linux e organização do ambiente** — a bancada do engajamento e o hábito de
+  anotar tudo; aqui o trabalho é no WSL, mas a disciplina é a mesma.
+- **1.4 — Lei brasileira e ética** — a LGPD (dado público continua sendo dado pessoal), o
+  doxxing e os crimes que o OSINT sem limite encosta.
+
+Você também vai usar o que já viu sobre DNS e CIDR no 0.2, o RDAP e o *dangling DNS* do 1.3,
+e Python e `sort`/`grep` dos módulos de terminal e scripting. Quando algo for preciso, ele é
+relembrado em uma linha.
+
+**Tempo estimado:** 4 a 5 horas, incluindo as três missões e o walkthrough.
+
+<Callout variant="ethics">
+"É público" não quer dizer "é liberado". O OSINT de um pentest é feito sobre o alvo da carta
+de autorização, para a finalidade do teste, e só coleta o necessário (1.4). Neste módulo, o
+alvo é uma organização fictícia, com nomes e endereços reservados para documentação; a única
+consulta real é ao domínio `example.com`, que a IANA mantém justamente para exemplos.
+Nunca aponte estas técnicas para pessoas, nem para empresas que não contrataram você.
+</Callout>
+
+## 2. Teoria aprofundada — o reconhecimento passivo por dentro
+
+### 2.1 O que é OSINT, de verdade
+
+A palavra vem do mundo da inteligência militar, e a definição de lá é útil porque é
+exigente. O manual ATP 2-22.9 do Exército dos EUA, de 10 de julho de 2012, define OSINT como
+a inteligência "produzida a partir de
+<GlossaryTerm term="publicly available information">informação publicamente
+disponível</GlossaryTerm>, coletada, explorada e difundida em tempo hábil para o público
+adequado, **com o propósito de atender a um requisito específico**"
+([ATP 2-22.9, §1-1](https://irp.fas.org/doddir/army/atp2-22-9.pdf)). E define informação
+publicamente disponível como a que foi publicada para o público em geral, pode ser obtida a
+pedido por qualquer pessoa ou vista por qualquer observador.
+
+Duas ideias saem daí:
+
+1. **OSINT não é uma pilha de dados; é uma resposta.** Juntar tudo o que existe sobre um
+   alvo é desperdício (e, com pessoas, é ilegal, como você viu no 1.4). O trabalho começa
+   por uma pergunta: "quais servidores deste cliente estão expostos na internet?", "quem
+   envia e-mail em nome dele?".
+2. **Público não é o mesmo que verdadeiro.** Uma fonte aberta pode estar velha, errada ou
+   ser falsa de propósito. Por isso o mesmo manual manda avaliar cada fonte e cada
+   informação separadamente (seção 2.7).
+
+Essa disciplina tem nome: o <GlossaryTerm term="intelligence cycle">ciclo de
+inteligência</GlossaryTerm>. Você parte de um **requisito** (a pergunta, dentro do escopo),
+faz a **coleta** nas fontes, o **processamento** (limpar, tirar repetidos, normalizar), a
+**análise** (cruzar fontes, classificar) e a **difusão** (o dossiê, o relatório). Cada volta
+gera perguntas novas. É exatamente o que você vai fazer na seção 5.
+
+<Figure
+  src={cicloFicha}
+  alt="À esquerda, um ciclo de cinco etapas: requisito, coleta, processamento, análise e difusão, que volta ao requisito. À direita, a ficha de um achado com sete campos — achado, fonte, data da coleta em UTC, como foi coletado, confiabilidade da fonte de A a F, credibilidade da informação de 1 a 8 e status de escopo — preenchida com o nome intranet.valeverde.example."
+  caption="O ciclo organiza o trabalho, e a ficha é o que fica de cada volta: sem fonte, data e nota de confiança, um achado de OSINT não vale como evidência."
+/>
+
+### 2.2 Onde termina o passivo: quem enxerga a sua consulta?
+
+<GlossaryTerm term="reconnaissance">Reconhecimento</GlossaryTerm> é a fase em que se levanta
+o que existe antes de atacar. O critério para separar os tipos não é a ferramenta: é **quem
+recebe o seu tráfego**. O PTES (*Penetration Testing Execution Standard*, a metodologia que
+você viu no 1.2) define três níveis
+([PTES, Intelligence Gathering](http://www.pentest-standard.org/index.php/Intelligence_Gathering)):
+
+- **Passivo:** você "nunca envia tráfego para a organização-alvo", nem dos seus computadores
+  nem de serviços anônimos. Só usa informação "arquivada ou armazenada" por terceiros. O
+  próprio PTES avisa o preço: essa informação "pode estar desatualizada ou incorreta", porque
+  você depende do que um terceiro guardou.
+- **Semipassivo:** o objetivo é estudar o alvo com métodos que "pareçam tráfego normal da
+  internet". Você consulta "só os servidores de nomes publicados", sem força bruta de DNS,
+  sem procurar servidores ou diretórios "não publicados", sem varredura, e lê "só os
+  metadados de documentos publicados". A
+  <GlossaryTerm term="semi-passive reconnaissance">coleta semipassiva</GlossaryTerm> chega ao
+  alvo, mas como chegaria qualquer visitante.
+- **Ativo:** é a coleta que o alvo "deveria detectar" como suspeita: varredura de todas as
+  portas, enumeração de serviços, procura ativa por diretórios, arquivos e servidores não
+  publicados.
+
+<Figure
+  src={espectro}
+  alt="Três colunas: passiva (só um terceiro vê; crt.sh, RDAP, buscadores, Wayback, passive DNS, Shodan), semipassiva (o alvo vê como visitante; resolver nomes, abrir o site, baixar um PDF, ler o robots.txt) e ativa (o alvo vê e estranha; transferência de zona, força bruta de subdomínios, varredura de portas, openssl s_client, fuzzing). Uma seta indica mais rastro e mais exigência de autorização da esquerda para a direita; uma linha tracejada marca que a partir da coluna ativa a carta é obrigatória."
+  caption="O que separa os três tipos é quem enxerga a sua consulta. Escopo, finalidade e LGPD valem nas três colunas; a autorização para tocar o alvo, a partir da terceira."
+/>
+
+Um caso que confunde muita gente: **resolver um nome no DNS**. Parece passivo, porque você
+pergunta a um <GlossaryTerm term="DNS resolver">resolvedor</GlossaryTerm> (o servidor que
+busca a resposta para você, como o do seu provedor), não ao alvo. Mas, se a resposta não
+estiver em cache, o resolvedor vai perguntar ao
+<GlossaryTerm term="authoritative name server">servidor autoritativo</GlossaryTerm> do
+domínio, que pode ser do próprio alvo e registrar a consulta. É exatamente por isso que o
+PTES põe a consulta aos servidores de nomes publicados no semipassivo. Já pedir ao servidor
+do alvo uma <GlossaryTerm term="zone transfer">transferência de zona</GlossaryTerm> (AXFR, o
+pedido de "me manda todos os registros", feito para sincronizar servidores, RFC 5936) ou
+chutar milhares de subdomínios é ativo.
+
+A distinção tem consequência prática: numa fase em que o cliente pediu discrição, ou antes
+de a carta estar assinada, você fica na primeira coluna. E mesmo nela há um rastro, só que
+em outro lugar: o serviço que você consulta sabe o que você pesquisou. Proteger isso é
+<GlossaryTerm term="OPSEC">OPSEC</GlossaryTerm> (2.1).
+
+### 2.3 Por que a informação vaza: sistemas feitos para ser públicos
+
+A pergunta que separa quem decorou ferramentas de quem entende OSINT é: **por que** essa
+informação está aberta? Na maioria dos casos, não há falha nenhuma. O sistema só funciona se
+for público, e o OSINT lê o que ele já publica.
+
+**O DNS precisa responder a qualquer um.** O <GlossaryTerm term="DNS">DNS</GlossaryTerm>
+traduz nomes em endereços para o mundo inteiro, então seus
+<GlossaryTerm term="DNS record">registros</GlossaryTerm> são públicos por definição. Alguns
+contam mais do que parece:
+
+- o <GlossaryTerm term="MX record">registro MX</GlossaryTerm> diz quem recebe o e-mail do
+  domínio;
+- o <GlossaryTerm term="TXT record">registro TXT</GlossaryTerm> carrega texto livre, e na
+  prática é onde moram as políticas. A mais reveladora é o
+  <GlossaryTerm term="SPF">SPF</GlossaryTerm> (*Sender Policy Framework*, RFC 7208), que
+  lista quem pode enviar e-mail em nome do domínio. Um `include:_spf.fornecedor.example`
+  conta, de graça, qual empresa manda os e-mails do seu cliente;
+- o <GlossaryTerm term="CNAME">CNAME</GlossaryTerm> (o apelido de um nome para outro) revela
+  hospedagens e serviços: `loja.cliente.example CNAME cliente.plataforma.example` diz onde a
+  loja realmente roda;
+- o <GlossaryTerm term="CAA record">registro CAA</GlossaryTerm> (RFC 8659) diz quais
+  autoridades certificadoras podem emitir certificados para o domínio.
+
+**O registro de domínio é público por desenho.** Para a internet funcionar, alguém precisa
+saber quem responde por cada domínio e por cada faixa de IP. Você viu no 1.3 o
+<GlossaryTerm term="WHOIS">WHOIS</GlossaryTerm> e o seu sucessor, o
+<GlossaryTerm term="RDAP">RDAP</GlossaryTerm> (*Registration Data Access Protocol*, RFC 7480
+a 7484, de março de 2015, hoje RFC 9082 e 9083), que devolve as mesmas informações em JSON.
+Desde **28 de janeiro de 2025**, o RDAP é a fonte definitiva de dados de registro dos domínios
+genéricos (.com, .org...), no lugar do WHOIS
+([ICANN](https://www.icann.org/en/announcements/details/icann-update-launching-rdap-sunsetting-whois-27-01-2025-en)).
+O que o RDAP mostra: datas de registro e expiração, servidores de nomes, se o domínio usa
+<GlossaryTerm term="DNSSEC">DNSSEC</GlossaryTerm> e, para IPs, **de quem é a faixa**. Os dados
+pessoais do titular de um domínio costumam vir redigidos (*redacted for privacy*); os da
+organização dona de uma faixa de IP, não.
+
+**Certificados precisam ser auditáveis, e a auditoria é pública.** Esta é a fonte mais rica
+do reconhecimento moderno, e merece a próxima seção inteira.
+
+**Documentos carregam quem os fez.** Editores de texto, planilhas e geradores de PDF gravam
+<GlossaryTerm term="metadata">metadados</GlossaryTerm> (dados sobre o dado, que você viu no
+1.5): autor, login, empresa, programa, caminhos de rede. É útil para quem edita e um presente
+para quem lê (seção 2.6).
+
+**Buscadores e arquivos guardam o que o site já apagou.** Um robô indexa tudo o que encontra,
+e um arquivo da web guarda cópias por anos (seção 2.5).
+
+### 2.4 Certificate Transparency: a lista de nomes que ninguém precisa pedir
+
+Um <GlossaryTerm term="certificate">certificado</GlossaryTerm> é o documento digital que um
+site apresenta ao navegador para provar que é quem diz ser; ele é assinado por uma
+<GlossaryTerm term="certificate authority">autoridade certificadora</GlossaryTerm> (CA), uma
+empresa em que os navegadores confiam. A Trilha 3 mostra a criptografia disso; aqui importa
+um detalhe: o certificado lista **todos os nomes** que ele protege, na extensão
+<GlossaryTerm term="Subject Alternative Name">Subject Alternative Name</GlossaryTerm> (SAN).
+Um só certificado pode cobrir `intranet.cliente.example`, `vpn.cliente.example` e até nomes
+de outro domínio.
+
+O problema que a CT resolve: se uma CA emitir, por erro ou por invasão, um certificado de
+`banco.example` para um criminoso, como o banco descobre? A resposta foi a
+<GlossaryTerm term="Certificate Transparency">Certificate Transparency</GlossaryTerm> (CT),
+publicada pelo Google como RFC 6962 em junho de 2013 (a versão 2.0 é a RFC 9162, de dezembro
+de 2021). A RFC descreve logs "publicamente auditáveis" e
+<GlossaryTerm term="append-only">append-only</GlossaryTerm> (só se acrescenta, nada se
+apaga), que permitem a "qualquer um" auditar o que as CAs emitem
+([RFC 6962](https://www.rfc-editor.org/rfc/rfc6962.html)).
+
+Como um nome chega ao log:
+
+1. O dono do domínio pede um certificado à CA.
+2. A CA monta um <GlossaryTerm term="precertificate">precertificado</GlossaryTerm>: o
+   certificado final mais uma extensão crítica "veneno" (OID `1.3.6.1.4.1.11129.2.4.3`, que
+   nenhum navegador aceita) e o envia aos logs.
+3. Cada log devolve um <GlossaryTerm term="Signed Certificate Timestamp">SCT</GlossaryTerm>
+   (*Signed Certificate Timestamp*), a promessa assinada de incluir aquilo na sua
+   <GlossaryTerm term="Merkle tree">árvore de Merkle</GlossaryTerm> (uma estrutura de hashes
+   que prova que o log não foi reescrito) dentro de um prazo máximo.
+4. A CA emite o certificado final com os SCTs embutidos.
+5. O navegador só confia se houver SCTs suficientes. O Chrome passou a exigir CT de todo
+   certificado público emitido depois de **30 de abril de 2018**
+   ([anúncio no grupo ct-policy, 6/2/2018](https://groups.google.com/a/chromium.org/g/ct-policy/c/wHILiYf31DE/m/iMFmpMEkAQAJ));
+   pela política atual, um certificado de até 180 dias precisa de SCTs de 2 logs distintos, e
+   um mais longo, de 3 ([Chrome CT Policy](https://github.com/GoogleChrome/CertificateTransparency/blob/master/ct_policy.md)).
+
+<Figure
+  src={caminhoCertificado}
+  alt="Fluxo em seis passos: o dono pede o certificado à CA, a CA monta o precertificado e o envia a pelo menos dois logs de CT, cada log devolve um SCT, a CA emite o certificado final com os SCTs, o navegador só confia com SCTs suficientes, e três leitores consultam o log: o monitor do dono, agregadores como crt.sh e Cert Spotter, e o atacante. Uma nota lembra que o nome aparece no log antes de o site entrar no ar e fica lá depois que o servidor some."
+  caption="A CT foi feita para o dono do domínio vigiar as CAs. Como o log é público, quem faz reconhecimento lê a mesma lista."
+/>
+
+Três consequências para o reconhecimento:
+
+- **O nome vaza antes do site.** Ele entra no log no passo 2, quando o servidor talvez nem
+  esteja no ar. Um `homolog-novo-sistema.cliente.example` aparece no log no dia em que alguém
+  pede o certificado.
+- **O log não esquece.** Por ser append-only, um nome continua lá depois que o certificado
+  vence e o servidor some. Isso é ótimo para achar sistemas antigos esquecidos e péssimo para
+  quem confia no resultado sem conferir: muito nome do log já não existe.
+- **O curinga esconde nomes, não o domínio.** Um
+  <GlossaryTerm term="wildcard certificate">certificado curinga</GlossaryTerm> como
+  `*.cliente.example` vale para qualquer nome de um nível e aparece no log assim, sem revelar
+  os nomes reais. É uma defesa de verdade contra a enumeração por CT, com um custo que a
+  seção 8 discute.
+
+Os logs em si não são feitos para busca humana. Agregadores como o **crt.sh** (da Sectigo) e o
+**Cert Spotter** (da SSLMate) leem todos e oferecem busca por domínio. O mesmo serviço serve
+ao defensor, como <GlossaryTerm term="CT log monitor">monitor de CT</GlossaryTerm>, que avisa
+quando aparece um certificado que ninguém pediu.
+
+### 2.5 Buscadores, arquivos da web e o DNS do passado
+
+**Operadores de busca.** Um <GlossaryTerm term="search operator">operador de busca</GlossaryTerm>
+refina a pesquisa. A ajuda oficial do Google documenta as aspas (frase exata), `site:`
+(um site ou domínio), o sinal de menos (excluir), `before:` e `after:` (datas) e `filetype:`
+(tipo de arquivo) ([Google, Refinar pesquisas](https://support.google.com/websearch/answer/2466433)).
+Combinados, viram reconhecimento: `site:cliente.example filetype:pdf` lista os PDFs que o
+buscador indexou no domínio. A própria documentação para desenvolvedores avisa que o `site:`
+"não necessariamente retorna todas as URLs indexadas"
+([Google Search Central](https://developers.google.com/search/docs/monitor-debug/search-operators/all-search-site)):
+é uma amostra, não um inventário.
+
+Usar buscas para achar o que foi indexado sem querer (documentos internos, páginas de erro,
+painéis de administração) ganhou o nome de
+<GlossaryTerm term="Google dorking">Google dorking</GlossaryTerm>. Johnny Long popularizou a
+técnica no começo dos anos 2000 e criou a
+<GlossaryTerm term="Google Hacking Database">Google Hacking Database</GlossaryTerm> (GHDB),
+um catálogo dessas buscas, que ele transferiu à OffSec em novembro de 2010 e que hoje vive no
+Exploit Database ([GHDB](https://www.exploit-db.com/google-hacking-database)). Outros
+operadores circulam nessas listas, como `intitle:` e `inurl:`, mas não estão na página
+oficial e podem mudar de comportamento sem aviso.
+
+**O arquivo da web.** A <GlossaryTerm term="Wayback Machine">Wayback Machine</GlossaryTerm>, do
+Internet Archive, guarda cópias de páginas desde os anos 1990. Para o reconhecimento, a parte
+útil é o índice <GlossaryTerm term="CDX">CDX</GlossaryTerm>, consultável por API: uma linha por
+captura, com os campos `urlkey`, `timestamp`, `original`, `mimetype`, `statuscode`, `digest` e
+`length` ([documentação do servidor CDX](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server)).
+Com `matchType=domain`, ele lista tudo o que foi capturado num domínio e nos subdomínios:
+inclusive documentos que o site já apagou e versões antigas do
+<GlossaryTerm term="robots.txt">robots.txt</GlossaryTerm>, o arquivo em que o site pede aos
+robôs de busca que não indexem certos caminhos. Um `robots.txt` antigo com
+`Disallow: /backup-antigo/` é um mapa do que alguém quis esconder.
+
+**O DNS do passado.** O DNS só responde o presente. O
+<GlossaryTerm term="passive DNS">passive DNS</GlossaryTerm> guarda o histórico: sensores
+observam as respostas que chegam a resolvedores e gravam numa base consultável. A técnica foi
+apresentada por Florian Weimer em abril de 2005, num artigo para a conferência do FIRST
+([Passive DNS Replication](https://www.enyo.de/fw/software/dnslogger/first2005-paper.pdf)), com
+a motivação explícita de responder perguntas que "o próprio DNS não permite", quase sempre em
+resposta a incidentes. Serviços comerciais oferecem essas bases; para o OSINT, elas dizem para
+onde um nome apontava antes.
+
+Na mesma família está o <GlossaryTerm term="Shodan">Shodan</GlossaryTerm>, que você viu no
+0.1: ele varre a internet o tempo todo e guarda o que cada IP respondeu. Consultá-lo é
+passivo para você, porque quem varreu foi ele, antes.
+
+### 2.6 Metadados por dentro: o que um arquivo diz de quem o fez
+
+Os formatos modernos do Office (.docx, .xlsx, .pptx) seguem o
+<GlossaryTerm term="Office Open XML">Office Open XML</GlossaryTerm> (ECMA-376,
+[Ecma International](https://ecma-international.org/publications-and-standards/standards/ecma-376/)):
+cada arquivo é um ZIP de partes XML. Duas delas importam para o OSINT:
+
+- `docProps/core.xml` — as propriedades básicas: `dc:creator` (quem criou), `cp:lastModifiedBy`
+  (quem salvou por último, muitas vezes o **login** da pessoa no domínio da empresa),
+  `cp:revision` e as datas de criação e modificação;
+- `docProps/app.xml` — as propriedades estendidas: `Application` e `AppVersion` (o programa e a
+  versão), `Company` e `Template`, que pode trazer o caminho de rede do modelo, como
+  `\\SERVIDOR\modelos\...`: o nome de um servidor interno, de graça.
+
+Os PDFs guardam metadados em dois lugares: o dicionário **Info** (`/Author`, `/Producer`,
+`/Creator`, datas) e um bloco <GlossaryTerm term="XMP">XMP</GlossaryTerm> (*Extensible Metadata
+Platform*, em XML). E têm uma armadilha que pega até quem tentou limpar: o
+<GlossaryTerm term="incremental update">incremental update</GlossaryTerm>. Um PDF pode ser
+editado **acrescentando** objetos e uma nova tabela de referências no fim do arquivo, sem
+reescrever o resto. O leitor de PDF mostra a versão nova; os objetos antigos continuam no
+arquivo. A documentação do <GlossaryTerm term="exiftool">ExifTool</GlossaryTerm>, a ferramenta
+mais usada para metadados, avisa que ela edita PDFs assim e que, por isso, "todas as edições
+de metadados são reversíveis", um "potencial problema de segurança porque a informação antiga
+nunca é realmente apagada do arquivo" ([ExifTool, PDF Tags](https://exiftool.org/TagNames/PDF.html)).
+
+Fotos carregam o <GlossaryTerm term="EXIF">EXIF</GlossaryTerm> (câmera, data, às vezes a
+posição de GPS), que você viu no 1.5. Num pentest de organização, o interesse está nos
+documentos corporativos; num trabalho que envolva pessoas, o EXIF é o tipo de dado que a
+LGPD manda tratar com o máximo cuidado.
+
+### 2.7 Organizar o que se descobre: pivôs, semente e a nota de confiança
+
+O reconhecimento começa por uma <GlossaryTerm term="seed">semente</GlossaryTerm>: o ponto de
+partida que a carta entrega, como um domínio ou uma faixa. Cada fonte transforma uma
+entidade em outras: o domínio vira nomes (CT), os nomes viram IPs (DNS), os IPs viram donos
+(RDAP), o domínio vira documentos (buscador), os documentos viram logins e servidores
+(metadados). Cada passo desses é um <GlossaryTerm term="OSINT pivot">pivô</GlossaryTerm>, e o
+resultado é um grafo.
+
+<Figure
+  src={grafoPivos}
+  alt="Grafo que parte da semente valeverde.example. Por CT, chega a 16 nomes; pelo DNS, intranet resolve para 203.0.113.20, da Vale Verde pelo RDAP; suporte é um CNAME pendurado; www vai para a CDN Exemplo, um terceiro; o certificado de cooperados cita outro domínio, que exige adendo. Pelo SPF, aparece a NuvemFacil como remetente de e-mail. Pelo buscador, um DOCX publicado revela o login c.lima e o servidor SRV-ARQ02. As cores separam escopo, terceiro ou adendo e achado de configuração."
+  caption="Pivôs: cada aresta é uma fonte, e cada nó novo precisa passar de novo pelo escopo. É o grafo que você vai montar na seção 5."
+/>
+
+Duas regras tornam o grafo útil:
+
+**Toda entidade nova volta ao escopo.** Um nome do cliente que aponta para uma
+<GlossaryTerm term="CDN">CDN</GlossaryTerm> é de um terceiro; um domínio que aparece no SAN
+de um certificado do cliente mas não está na carta pede adendo; um nome que aponta para um IP
+de uma empresa sem relação nenhuma é o <GlossaryTerm term="dangling DNS">dangling
+DNS</GlossaryTerm> do 1.3, e não se toca.
+
+**Todo achado leva fonte, data e nota.** O manual ATP 2-22.9 separa duas notas
+(tabelas 2-1 e 2-2):
+
+- a <GlossaryTerm term="source reliability">confiabilidade da fonte</GlossaryTerm>, de **A**
+  (confiável) a **F** (sem base para julgar), passando por B (normalmente confiável), C
+  (razoavelmente), D (normalmente não) e E (não confiável);
+- a <GlossaryTerm term="information credibility">credibilidade da informação</GlossaryTerm>,
+  de **1** (confirmada por outras fontes independentes) a **8** (sem base para julgar),
+  passando por 2 (provavelmente verdadeira), 3 (possivelmente), 4 (duvidosa), 5 (improvável),
+  6 (desinformação, falsa sem intenção) e 7 (engano, falsa de propósito).
+
+Um detalhe que o manual faz questão de explicar: uma fonte usada pela primeira vez recebe
+**F**, e isso "não significa que a fonte não é confiável", só que não há histórico para
+julgar. A nota é sobre o que você sabe da fonte, não um julgamento moral.
+
+### 2.8 O limite: escopo, finalidade e LGPD
+
+Tudo o que você viu até aqui vale para **ativos** de uma organização. O OSINT de pessoas é
+outro terreno, e o 1.4 já deu as regras: <GlossaryTerm term="personal data">dado
+pessoal</GlossaryTerm> público continua sendo dado pessoal; o tratamento de dado "cujo acesso é
+público deve considerar a finalidade, a boa-fé e o interesse público que justificaram sua
+disponibilização" (LGPD, art. 7º, § 3º); e o princípio da necessidade limita o tratamento "ao
+mínimo necessário para a realização de suas finalidades" (art. 6º, III,
+[Lei 13.709/2018](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)).
+Juntar a vida de alguém num dossiê é o <GlossaryTerm term="doxxing">doxxing</GlossaryTerm>, que
+pode ser crime.
+
+Na prática do pentest, isso vira três perguntas antes de guardar qualquer coisa:
+
+1. **Isto está no escopo?** (é do cliente, ou é de um terceiro, ou de ninguém do contrato?)
+2. **Isto serve à finalidade do teste?** Um login exposto num metadado, sim: é um achado. A
+   família de um funcionário, nunca.
+3. **Preciso guardar o dado inteiro?** Muitas vezes basta registrar que ele existe e onde
+   está. É a <GlossaryTerm term="data minimization">minimização</GlossaryTerm> do 1.4.
+
+Para quem quer o padrão profissional mais completo, o
+<GlossaryTerm term="Berkeley Protocol">Protocolo de Berkeley</GlossaryTerm>, publicado em
+dezembro de 2020 pelo Centro de Direitos Humanos da UC Berkeley e pelo Alto Comissariado da
+ONU para Direitos Humanos, define como coletar, preservar e verificar informação digital de
+fontes abertas em investigações, com uma parte inteira sobre ética
+([Berkeley Protocol](https://humanrights.berkeley.edu/programs/investigations/berkeley-protocol)).
+
+## 3. Como o ataque funciona — de um domínio a um mapa da superfície
+
+### 3.1 O roteiro do atacante
+
+Quem ataca uma organização pela internet raramente começa pelo nmap. Começa por uma semente
+(o domínio do site, o nome da empresa) e, sem tocar no alvo, monta a lista do que existe. O
+roteiro clássico tem cinco passos, cada um alimentando o seguinte:
+
+1. **Nomes**, pelos logs de CT (e pelo passive DNS, quando há acesso a uma base).
+2. **Endereços**, resolvendo cada nome no DNS (semipassivo) e seguindo os CNAMEs.
+3. **Donos**, consultando o RDAP de cada faixa: o que é da organização e o que é de
+   fornecedores.
+4. **Conteúdo**, nos buscadores e no arquivo da web: documentos, caminhos, páginas antigas.
+5. **Pessoas e processos**, nos metadados e nos registros: logins, padrões de nome, servidores
+   internos, fornecedores de e-mail.
+
+O produto é um mapa da <GlossaryTerm term="attack surface">superfície de ataque</GlossaryTerm>
+(tudo o que pode ser tentado), já priorizado. Abaixo, cada passo com comandos e saídas
+**reais**, feitas no Ubuntu do WSL em 25 de outubro de 2026, contra o único alvo em que isso é
+apropriado aqui: `example.com`, um domínio que a <GlossaryTerm term="IANA">IANA</GlossaryTerm>
+(quem coordena a raiz do DNS e os números da internet) reserva para exemplos (RFC 2606). As
+saídas mudam com o tempo; o raciocínio, não.
+
+<Callout variant="warning" title="Isto não é para fazer contra ninguém">
+Contra um alvo real, cada comando desta seção só se faz com a carta de autorização na mão e o
+domínio dentro dela. Na seção 5 você pratica tudo num pacote offline; a seção 5.6 repete só as
+consultas abaixo, contra `example.com`, como demonstração opcional.
+</Callout>
+
+### 3.2 Passo 1 — os nomes, pelos logs de CT
+
+O crt.sh aceita a busca por domínio e devolve JSON com `output=json`. O parâmetro
+`exclude=expired` tira os certificados vencidos, e o curinga `%` (escrito `%25` numa URL)
+busca todos os subdomínios: `q=%25.example.com`.
+
+```console
+$ curl -s 'https://crt.sh/?q=example.com&output=json&exclude=expired' -o crt.json
+$ python3 -c "import json; print(len(json.load(open('crt.json'))), 'certificados')"
+20 certificados
+```
+
+Cada linha do JSON é um certificado. O campo que importa é `name_value`, que traz **todos** os
+nomes do certificado (o SAN) separados por quebra de linha. Um script de cinco linhas, com o
+que você viu no 0.7, extrai os nomes distintos:
+
+```console
+$ python3 -c "
+import json
+nomes = set()
+for linha in json.load(open('crt.json')):
+    nomes.update(n.lower() for n in linha['name_value'].split('\n'))
+print('\n'.join(sorted(nomes)))"
+*.example.com
+as207960 test intermediate - example.com
+example.com
+user@example.com
+www.example.com
+```
+
+Vinte certificados viraram cinco entradas, e só duas são nomes de servidor de verdade
+(`example.com` e `www.example.com`). As outras três ensinam o processamento:
+
+- `*.example.com` é um **curinga**: diz que existe um certificado para qualquer subdomínio, não
+  qual subdomínio existe;
+- `user@example.com` é um **e-mail** (certificados também protegem e-mail);
+- `as207960 test intermediate - example.com` é o nome de um certificado de teste, que nem é um
+  nome de DNS.
+
+Por que vinte certificados para tão poucos nomes? Porque um mesmo site renova o certificado
+várias vezes por ano, muitas vezes em mais de uma CA, e porque o crt.sh mostra o
+**precertificado e o certificado final** como linhas separadas, com o mesmo número de série.
+Num cliente de verdade, essa lista costuma ter dezenas ou centenas de nomes, e o trabalho do
+processamento é o mesmo.
+
+### 3.3 Passo 2 — os endereços, pelo DNS
+
+O Ubuntu do WSL não traz o `dig` (o Kali traz, mas não tem internet). Um jeito que funciona em
+qualquer lugar é o <GlossaryTerm term="DoH">DoH</GlossaryTerm> (*DNS over HTTPS*), que você viu
+no 0.2: o resolvedor público responde em JSON por HTTPS. Note o detalhe de OPSEC: quem vê a
+sua pergunta é o resolvedor (aqui, o da Cloudflare) e, se não houver cache, o servidor
+autoritativo do domínio. É semipassivo.
+
+```console
+$ curl -s -H 'accept: application/dns-json' \
+    'https://cloudflare-dns.com/dns-query?name=example.com&type=TXT' |
+  python3 -c "import sys,json; [print(r['name'], r['TTL'], r['data']) for r in json.load(sys.stdin)['Answer']]"
+example.com 300 "v=spf1 -all"
+example.com 300 "_k2n1y4vw3qtb4skdx9e7dxt97qrmmq9"
+$ curl -s -H 'accept: application/dns-json' \
+    'https://cloudflare-dns.com/dns-query?name=example.com&type=MX' |
+  python3 -c "import sys,json; [print(r['name'], r['TTL'], r['data']) for r in json.load(sys.stdin)['Answer']]"
+example.com 254 0 .
+```
+
+Leia como um atacante leria:
+
+- `v=spf1 -all` é um SPF que **não autoriza ninguém** a enviar e-mail pelo domínio (`-all`
+  quer dizer "recuse todo o resto", e não há "resto" antes dele);
+- o MX `0 .` é um <GlossaryTerm term="null MX">MX nulo</GlossaryTerm> (RFC 7505): o domínio
+  declara que não recebe e-mail. Juntas, as duas linhas dizem "este domínio não tem e-mail".
+  Num cliente real, o SPF costuma listar os fornecedores (`include:_spf.algum-fornecedor`), e
+  é aí que o atacante descobre quem manda os boletos e as newsletters;
+- a segunda linha TXT é um token aleatório, do tipo que serviços na nuvem pedem para provar
+  que você controla o domínio. Num cliente real, esses tokens costumam ter o nome do serviço
+  no começo (`google-site-verification=`, `MS=`) e entregam quais serviços ele usa.
+
+### 3.4 Passo 3 — os donos, pelo RDAP
+
+O serviço `rdap.org` descobre qual servidor RDAP responde por cada domínio ou IP (o mecanismo
+de *bootstrap* da RFC 9224) e redireciona para ele: para `.com`, a Verisign; para IPs da
+América do Norte, a ARIN.
+
+```console
+$ curl -sL https://rdap.org/domain/example.com -o dominio.json
+$ python3 -c "
+import json
+d = json.load(open('dominio.json'))
+for e in d['events']: print(e['eventAction'], e['eventDate'])
+print('ns:', [n['ldhName'] for n in d['nameservers']])
+print('dnssec:', d['secureDNS']['delegationSigned'])"
+registration 1995-08-14T04:00:00Z
+expiration 2027-08-13T04:00:00Z
+last changed 2026-08-14T08:01:43Z
+last update of RDAP database 2026-10-25T15:39:13Z
+ns: ['ELLIOTT.NS.CLOUDFLARE.COM', 'HERA.NS.CLOUDFLARE.COM']
+dnssec: True
+```
+
+O domínio existe desde 1995, usa DNSSEC e tem os servidores de nomes na Cloudflare. Agora o
+endereço. O DNS respondeu dois IPs para `example.com`; o primeiro é `104.20.23.154`:
+
+```console
+$ curl -sL https://rdap.org/ip/104.20.23.154 -o ip.json
+$ python3 -c "
+import json
+d = json.load(open('ip.json'))
+print(d['handle'], d['startAddress'], '-', d['endAddress'], d['name'])
+print('dono:', [e['vcardArray'][1][1][3] for e in d['entities'] if 'registrant' in e['roles']])"
+NET-104-16-0-0-1 104.16.0.0 - 104.31.255.255 CLOUDFLARENET
+dono: ['Cloudflare, Inc.']
+```
+
+Esta é a lição mais importante do passo: **o nome é da IANA, mas o servidor é da
+Cloudflare**, uma CDN que atende milhões de sites no mesmo endereço. Num pentest, um nome
+assim é de um **terceiro**: varrer aquele IP seria testar a infraestrutura de outra empresa,
+e de quebra todos os sites que ela hospeda. O OSINT descobre isso antes do primeiro pacote.
+
+### 3.5 Passo 4 — o conteúdo, nos buscadores e no arquivo
+
+No buscador, o atacante procura documentos e páginas: `site:cliente.example filetype:pdf`,
+`site:cliente.example -site:www.cliente.example` (tudo o que não é o site principal). No
+arquivo da web, pede ao CDX o histórico de um caminho:
+
+```console
+$ curl -s 'https://web.archive.org/cdx/search/cdx?url=example.com/robots.txt&limit=3'
+com,example)/robots.txt 20020108030720 http://example.com:80/robots.txt text/html 404 U6EHAWYE22F46AVZ7FUE7NPC7GP7GIXY 379
+com,example)/robots.txt 20020108040941 http://example.com:80/robots.txt text/html 404 U6EHAWYE22F46AVZ7FUE7NPC7GP7GIXY 381
+com,example)/robots.txt 20020108063208 http://example.com:80/robots.txt text/html 404 U6EHAWYE22F46AVZ7FUE7NPC7GP7GIXY 379
+```
+
+Cada linha é uma captura: a chave da URL (`com,example)/robots.txt`, o domínio de trás para
+a frente), o momento (`20020108030720` = 8 de janeiro de 2002, 03:07:20 UTC), a URL original,
+o tipo, o status HTTP (aqui 404: o `example.com` não tinha `robots.txt`), o hash do conteúdo e
+o tamanho. Num cliente real, a pergunta é "que documentos e que versões do `robots.txt` o
+arquivo guardou?", e o hash diz quando o conteúdo mudou. Baixar a cópia **arquivada** é
+passivo (quem responde é o Internet Archive); baixar o documento do servidor do cliente, se
+ele ainda estiver lá e tiver sido publicado, é semipassivo.
+
+### 3.6 Passo 5 — pessoas e processos, nos metadados
+
+Com os documentos em mãos, o atacante abre o que o leitor de PDF não mostra. Num DOCX, que é
+um ZIP, basta listar e ler duas partes (a seção 5.4 faz isso de verdade):
+
+```console
+$ python3 -m zipfile -l edital.docx
+$ python3 -c "import zipfile; print(zipfile.ZipFile('edital.docx').read('docProps/core.xml').decode())"
+```
+
+Logins em `cp:lastModifiedBy` revelam o **padrão de nome de usuário** da empresa
+(`c.lima` sugere "inicial.sobrenome"); o caminho do modelo em `app.xml` revela um **servidor de
+arquivos interno**; o `/Producer` de um PDF revela o **programa e, às vezes, a máquina** que o
+gerou.
+
+### 3.7 O que o atacante faz com o mapa
+
+O mapa não é o ataque; é o que decide o ataque. Os usos mais comuns:
+
+- **Os esquecidos primeiro.** Nomes como `homolog`, `teste`, `ftp-antigo` e `financeiro-hml`
+  saem do log de CT e costumam ser os menos cuidados. O 2.4 varre esses primeiro (se estiverem
+  no escopo).
+- **CNAMEs pendurados** são candidatos a <GlossaryTerm term="subdomain takeover">subdomain
+  takeover</GlossaryTerm> (1.3): se o destino não existe mais no provedor, quem o registrar
+  controla o que aparece sob o nome do cliente.
+- **Fornecedores do SPF e padrão de login** alimentam a
+  <GlossaryTerm term="social engineering">engenharia social</GlossaryTerm>: um e-mail de
+  <GlossaryTerm term="phishing">phishing</GlossaryTerm> "do fornecedor de boletos", mandado para
+  endereços montados com o padrão `inicial.sobrenome`, é o assunto do 2.3.
+- **Logins** são metade de uma credencial: viram listas para tentativas de senha, como o
+  <GlossaryTerm term="credential stuffing">credential stuffing</GlossaryTerm> (testar senhas
+  vazadas de outros sites), que a Trilha 4 e o 5.5 tratam.
+- **Nomes internos** (`SRV-ARQ02`, `corp.cliente.example`) ficam guardados para quando houver
+  acesso à rede interna.
+
+Ferramentas automatizam esse roteiro, consultando dezenas de fontes de uma vez. As mais
+conhecidas são o <GlossaryTerm term="theHarvester">theHarvester</GlossaryTerm> ("e-mails,
+subdomínios e nomes"), o <GlossaryTerm term="Amass">Amass</GlossaryTerm> do OWASP
+("mapeamento da superfície de ataque e descoberta de ativos"), o
+<GlossaryTerm term="SpiderFoot">SpiderFoot</GlossaryTerm> e o
+<GlossaryTerm term="Recon-ng">Recon-ng</GlossaryTerm>, um framework de módulos no estilo do
+Metasploit (descrições dos repositórios oficiais no GitHub). Nenhuma está instalada no Kali da
+plataforma, e de propósito: elas misturam fontes passivas com módulos **ativos** (força bruta
+de DNS, por exemplo) e com APIs pagas. Quem entende os cinco passos sabe ler a saída delas e,
+principalmente, sabe qual módulo não pode ligar numa fase passiva.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Strava: o mapa de calor que desenhou bases militares (2017–2018)
+
+Em **1º de novembro de 2017**, a Strava, um aplicativo de registro de corridas e pedaladas,
+publicou a nova versão do seu Global Heatmap, um mapa mundial com dois anos de atividades
+públicas dos usuários. O post de engenharia dava a escala: 700 milhões de atividades,
+1,4 trilhão de pontos de latitude e longitude, 16 bilhões de quilômetros. E dizia que o mapa só
+continha atividades públicas e respeitava as configurações de privacidade.
+
+Em **27 de janeiro de 2018**, Nathan Ruser, analista do Institute for United Conflict Analysts,
+postou no Twitter que o mapa "é muito bonito, mas não é ótimo para a OpSec": "bases dos EUA
+são claramente identificáveis e mapeáveis". Em lugares como o Afeganistão, o Djibouti e a
+Síria, os únicos usuários eram militares estrangeiros, e as bases apareciam acesas no meio do
+mapa escuro, com rotas de corrida internas. O Guardian publicou a história em **28 de janeiro**.
+Em **29 de janeiro**, o CEO da Strava, James Quarles, reconheceu numa carta que membros
+das forças armadas e trabalhadores humanitários "podem ter compartilhado a localização em áreas
+sem outra densidade de atividade" e, com isso, "inadvertidamente aumentado a percepção de locais
+sensíveis". Em **agosto de 2018**, o Departamento de Defesa dos EUA proibiu o uso de funções de
+geolocalização em dispositivos pessoais e oficiais em áreas operacionais (notícia oficial de 7
+de agosto).
+
+- **Impacto:** a localização e a rotina de instalações militares sensíveis, exposta sem nenhuma
+  invasão, por dados que os próprios usuários enviaram.
+- **Lição:** o risco do OSINT está na **agregação**. Cada corrida, sozinha, não revelava nada;
+  milhões juntas desenharam bases. E há uma lição de método: o tweet original falava em "13
+  trilhões de pontos", e o número verificado no post da Strava é 1,4 trilhão. Até no caso mais
+  famoso de OSINT, a fonte primária corrige a secundária.
+- **Fontes:** [post de engenharia da Strava, 1/11/2017](https://medium.com/strava-engineering/the-global-heatmap-now-6x-hotter-23fc01d301de);
+  [tweet de Nathan Ruser](https://twitter.com/Nrg8000/status/957318498102865920);
+  [The Guardian, 28/1/2018](https://www.theguardian.com/world/2018/jan/28/fitness-tracking-app-gives-away-location-of-secret-us-army-bases);
+  [carta de James Quarles, 29/1/2018](https://blog.strava.com/press/a-letter-to-the-strava-community/);
+  [nova política do DoD, 7/8/2018](https://www.pacom.mil/Media/News/News-Articles/Article/1596009/new-policy-prohibits-gps-tracking-in-deployed-settings/).
+
+### O dossiê do governo britânico e o histórico de revisões do Word (2003)
+
+Em **fevereiro de 2003**, o gabinete do primeiro-ministro britânico, em Downing Street,
+publicou no site um dossiê sobre a estrutura de segurança e inteligência do Iraque, citado por
+Colin Powell na ONU no mesmo mês. O dossiê foi publicado como arquivo do **Microsoft Word**.
+O pesquisador Richard M. Smith baixou o arquivo e extraiu dele o histórico de revisões, uma
+lista oculta das últimas edições que o Word daquela época gravava dentro do documento, com o
+nome de usuário e o caminho do arquivo em cada uma. Dez revisões, com quatro logins
+(`phamill`, `JPratt`, `ablackshaw`, `MKhan`) e caminhos como
+`C:\DOCUME~1\phamill\LOCALS~1\Temp\AutoRecovery save of Iraq - security.asd` e
+`A:\Iraq - security.doc` (um disquete). Os nomes foram repassados à imprensa, que identificou
+quatro funcionários do governo. Em junho de 2003, o tema chegou às audiências do Parlamento
+britânico, onde se soube, por exemplo, que o documento tinha passado de um computador para um
+disquete, exatamente como as revisões 4 e 5 mostravam.
+
+- **Impacto:** a cadeia de quem preparou um documento de governo, exposta pelo próprio
+  arquivo publicado, num caso que já era polêmico porque boa parte do texto tinha sido copiada
+  de um artigo acadêmico.
+- **Lição:** o arquivo publicado carrega a história de quem o fez. Smith termina o texto
+  lembrando que o governo passou a publicar em PDF, e que documentos convertidos para RTF,
+  HTML ou PDF "não conterão históricos de revisão". O formato mudou desde então (o histórico de
+  revisões é do antigo .doc), mas o `lastModifiedBy` de um DOCX e o `/Producer` de um PDF são
+  os herdeiros dele, como você vai ver na seção 5.4.
+- **Fonte:** [Richard M. Smith, "Microsoft Word bytes Tony Blair in the butt", 30/6/2003](https://web.archive.org/web/2003/http://www.computerbytesman.com/privacy/blair.htm).
+
+### MH17: OSINT do lado de quem investiga (2014–2022)
+
+Em **17 de julho de 2014**, o voo MH17 da Malaysia Airlines foi derrubado sobre o leste da
+Ucrânia: 283 passageiros e 15 tripulantes morreram. Em **novembro de 2014**, o grupo de
+investigação de fontes abertas Bellingcat publicou um relatório identificando o lançador de
+mísseis Buk como "Buk 3×2", da 53ª Brigada de Mísseis Antiaéreos russa, de Kursk. Em **3 de
+maio de 2016**, um novo relatório identificou o dígito que faltava, comparando sete
+características do veículo (um amassado no painel lateral, marcas brancas, o arranjo dos cabos,
+a fonte e o espaçamento dos números) com **fotos publicadas na internet desde 2010 por membros
+da própria brigada**: era o Buk 332. Em **24 de maio de 2018**, a equipe de investigação
+internacional (JIT) concluiu que o Buk "é originário da 53ª Brigada", depois de comparar
+imagens e de achá-lo num comboio da brigada filmado entre 23 e 25 de junho de 2014. Em **17 de
+novembro de 2022**, o tribunal distrital de Haia condenou três réus à prisão perpétua; entre as
+provas citadas estavam fotografias e vídeos do Buk sendo levado e retirado.
+
+- **Impacto:** fotos postadas por militares em redes sociais ajudaram a identificar a origem
+  de uma arma usada contra um avião civil, num caso que terminou em condenação.
+- **Lição:** as mesmas técnicas de OSINT servem a quem ataca e a quem investiga, e o que separa
+  um do outro é a finalidade e o método: o trabalho do Bellingcat e da JIT é documentado,
+  verificável e passa por fontes independentes, o que o 2.7 chama de credibilidade 1.
+- **Fontes:** [Bellingcat, "The Lost Digit: Buk 3x2", 3/5/2016](https://bellingcat.com/news/uk-and-europe/2016/05/03/the_lost_digit);
+  [Ministério Público holandês, atualização da JIT, 24/5/2018](https://www.prosecutionservice.nl/latest/news/2018/05/24/update-in-criminal-investigation-mh17-disaster);
+  [Tribunal de Haia, resumo da sentença, 17/11/2022](https://courtmh17.com/en/insights/news/2022/summary-of-the-day-in-court-17-november-2022-judgment/).
+
+## 5. Mãos à obra — exercícios no seu WSL
+
+Este módulo não tem laboratório próprio, e não é por acaso: os labs da plataforma não têm
+internet, e o OSINT de verdade é feito sobre alvos de verdade, o que aqui só seria certo com uma
+carta de autorização. Por isso, a prática usa um **pacote de evidências** de uma organização
+fictícia, a Cooperativa Vale Verde, gerado no seu WSL: o export de CT, as respostas de DNS e
+RDAP, o índice do arquivo da web e dois documentos que o "site" publicou, como se você já
+tivesse coletado tudo. Nada aqui usa a rede, abre portas ou toca em outro sistema; os nomes e
+endereços são reservados para documentação (RFC 2606 e RFC 5737) e não pertencem a ninguém.
+
+**Objetivo:** ao terminar, você terá tirado de um export de Certificate Transparency a lista
+limpa dos 16 nomes da Vale Verde (Missão 1), classificado cada um deles como escopo, terceiro,
+pendurado, inexistente ou fora, cruzando DNS e RDAP (Missão 2), e achado nos metadados de dois
+documentos publicados um login, um servidor de arquivos e uma máquina interna, inclusive um
+valor que alguém tentou apagar (Missão 3). Cada missão termina numa flag que só sai se o
+trabalho estiver certo. No fim, você monta as fichas do dossiê (5.5) e, se quiser, repete as
+consultas reais contra `example.com` (5.6).
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra o terminal do Ubuntu no WSL. Você só vai precisar do Python 3 que já vem nele e de
+   `sort`, `grep` e `tr`.
+2. Gere o pacote. O bloco abaixo cria a pasta `~/osint-2.2`, grava dois scripts com *here
+   documents* (o `cat > arquivo <<'EOF'` do 0.4) e roda o gerador. Copie o bloco **inteiro**,
+   cole no terminal e aperte Enter:
+
+```bash
+mkdir -p ~/osint-2.2 && cd ~/osint-2.2 && cat > gerar.py <<'EOF'
+import json, os, zipfile
+
+# Fictitious evidence pack for module 2.2. Only reserved names and
+# documentation address blocks (RFC 2606, RFC 5737). Nothing here touches
+# the network.
+os.makedirs("ct", exist_ok=True)
+os.makedirs("dns", exist_ok=True)
+os.makedirs("rdap", exist_ok=True)
+os.makedirs("wayback", exist_ok=True)
+os.makedirs("docs", exist_ok=True)
+
+D = "valeverde.example"
+
+with open("LEIA-ME.txt", "w") as f:
+    f.write("""PACOTE DE EVIDÊNCIAS — Cooperativa Vale Verde (FICTÍCIA)
+Engajamento 2026-031, fase de reconhecimento passivo.
+Tudo aqui foi "coletado" de fontes abertas e salvo em arquivo: você
+trabalha só com estes arquivos, sem rede. Nomes e IPs são reservados
+para documentação (RFC 2606 e RFC 5737) e não pertencem a ninguém.
+
+escopo.txt     o que a carta de autorização cobre
+ct/            export do crt.sh (logs de Certificate Transparency)
+dns/           respostas de DNS pedidas a um resolvedor público
+rdap/          respostas RDAP do domínio e das faixas de IP
+wayback/       índice CDX e dois robots.txt arquivados
+docs/          dois documentos que o site publicou
+conferir.py    confere o FORMATO das respostas e mostra a flag candidata
+""")
+
+with open("escopo.txt", "w") as f:
+    f.write("""CARTA DE AUTORIZAÇÃO — RESUMO DO ESCOPO (FICTÍCIO)
+Cliente: Cooperativa Vale Verde. Assinada pelo diretor de TI.
+
+No escopo:
+  - o domínio valeverde.example e todos os seus subdomínios, DESDE QUE
+    o endereço para onde apontam pertença à faixa abaixo;
+  - a faixa 203.0.113.0/26, registrada em nome da cooperativa.
+
+Fornecedores da cooperativa (exigem autorização própria do fornecedor;
+esta carta NÃO basta):
+  - CDN Exemplo S.A. (entrega do site e da página de status);
+  - NuvemFacil Hospedagem Ltda. (hospedagem de sistemas e envio de e-mail).
+
+Qualquer outro domínio ou faixa: fora desta carta. Se aparecer, pare e
+peça adendo ao cliente.
+
+Fase atual: SÓ reconhecimento passivo e semipassivo. Nada de varredura,
+força bruta de nomes ou acesso a caminhos não publicados.
+""")
+
+# --- Certificate Transparency export (crt.sh JSON format) -----------------
+certs = [
+    # (id, issuer, common_name, names, not_before, not_after, serial)
+    (9100000101, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", D,
+     [D, "www." + D], "2024-03-02T10:11:12", "2024-05-31T10:11:11", "0a11"),
+    (9100000102, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", D,
+     [D, "www." + D], "2024-03-02T10:11:12", "2024-05-31T10:11:11", "0a11"),
+    (9100000210, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", "intranet." + D,
+     ["intranet." + D, "vpn." + D], "2026-06-10T08:00:00", "2026-09-08T07:59:59", "0b20"),
+    (9100000211, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", "intranet." + D,
+     ["intranet." + D, "vpn." + D], "2026-06-10T08:00:00", "2026-09-08T07:59:59", "0b20"),
+    (9100000330, "C=BR, O=Certifica Exemplo, CN=Certifica Exemplo OV CA", "cooperados." + D,
+     ["cooperados." + D, "COOPERADOS." + D, "valeverde-cooperativa.example"],
+     "2026-02-14T12:00:00", "2027-02-13T11:59:59", "0c30"),
+    (9100000440, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", "*." + D,
+     ["*." + D, D], "2026-07-01T00:00:00", "2026-09-29T23:59:59", "0d40"),
+    (9100000550, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", "suporte." + D,
+     ["suporte." + D, "status." + D], "2025-01-20T09:30:00", "2025-04-20T09:29:59", "0e50"),
+    (9100000660, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", "mail." + D,
+     ["mail." + D, "webmail." + D, "Mail." + D], "2026-08-01T06:00:00", "2026-10-30T05:59:59", "0f60"),
+    (9100000770, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", "api." + D,
+     ["api." + D, "portal." + D], "2026-05-05T15:00:00", "2026-08-03T14:59:59", "1070"),
+    (9100000771, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", "api." + D,
+     ["api." + D, "portal." + D], "2026-05-05T15:00:00", "2026-08-03T14:59:59", "1070"),
+    (9100000880, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", "homolog." + D,
+     ["homolog." + D, "financeiro-hml." + D], "2023-09-12T18:00:00", "2023-12-11T17:59:59", "1180"),
+    (9100000990, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", "git." + D,
+     ["git." + D, "backup." + D], "2025-11-03T07:45:00", "2026-02-01T07:44:59", "1290"),
+    (9100001010, "C=US, O=Velha CA, CN=Velha CA G2", "ftp-antigo." + D,
+     ["ftp-antigo." + D], "2019-04-01T00:00:00", "2020-03-31T23:59:59", "13a0"),
+    (9100001120, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", "eventos." + D,
+     ["eventos." + D], "2025-08-08T08:08:08", "2025-11-06T08:08:07", "14b0"),
+    (9100001230, "C=US, O=Exemplo CA, CN=Exemplo DV CA 1", D,
+     [D, "ti@" + D], "2022-10-10T10:00:00", "2023-10-10T09:59:59", "15c0"),
+]
+rows = [{
+    "issuer_ca_id": 7000 + i,
+    "issuer_name": c[1],
+    "common_name": c[2],
+    "name_value": "\n".join(c[3]),
+    "id": c[0],
+    "not_before": c[4],
+    "not_after": c[5],
+    "serial_number": c[6],
+} for i, c in enumerate(certs)]
+with open("ct/crtsh-valeverde.json", "w") as f:
+    json.dump(rows, f, ensure_ascii=False)
+
+# --- DNS snapshot (semi-passive: asked to a public resolver) ---------------
+dns = """; Respostas de DNS coletadas em 2026-10-20T14:05Z por um resolvedor
+; público (fictício), no formato do dig +noall +answer +comments.
+; "status: NXDOMAIN" quer dizer que o nome NÃO existe.
+
+;; valeverde.example  status: NOERROR
+valeverde.example.          3600 IN A     203.0.113.5
+valeverde.example.          3600 IN MX    10 mail.valeverde.example.
+valeverde.example.          3600 IN TXT   "v=spf1 ip4:203.0.113.25 include:_spf.nuvemfacil.example -all"
+valeverde.example.          3600 IN CAA   0 issue "exemplo-ca.example"
+
+;; www.valeverde.example  status: NOERROR
+www.valeverde.example.      300  IN CNAME valeverde.cdnexemplo.example.
+valeverde.cdnexemplo.example. 60 IN A     192.0.2.50
+
+;; intranet.valeverde.example  status: NOERROR
+intranet.valeverde.example. 3600 IN A     203.0.113.20
+
+;; vpn.valeverde.example  status: NOERROR
+vpn.valeverde.example.      3600 IN A     203.0.113.10
+
+;; cooperados.valeverde.example  status: NOERROR
+cooperados.valeverde.example. 3600 IN A   203.0.113.21
+
+;; suporte.valeverde.example  status: NXDOMAIN
+suporte.valeverde.example.  3600 IN CNAME valeverde.nuvemfacil.example.
+; (valeverde.nuvemfacil.example não existe mais: NXDOMAIN)
+
+;; status.valeverde.example  status: NOERROR
+status.valeverde.example.   300  IN A     192.0.2.88
+
+;; mail.valeverde.example  status: NOERROR
+mail.valeverde.example.     3600 IN A     203.0.113.25
+
+;; webmail.valeverde.example  status: NOERROR
+webmail.valeverde.example.  3600 IN CNAME mail.valeverde.example.
+mail.valeverde.example.     3600 IN A     203.0.113.25
+
+;; api.valeverde.example  status: NOERROR
+api.valeverde.example.      300  IN CNAME api-vv.nuvemfacil.example.
+api-vv.nuvemfacil.example.  60   IN A     198.51.100.77
+
+;; portal.valeverde.example  status: NOERROR
+portal.valeverde.example.   3600 IN A     198.51.100.80
+
+;; homolog.valeverde.example  status: NOERROR
+homolog.valeverde.example.  3600 IN A     203.0.113.30
+
+;; financeiro-hml.valeverde.example  status: NXDOMAIN
+
+;; git.valeverde.example  status: NOERROR
+git.valeverde.example.      3600 IN A     203.0.113.64
+
+;; backup.valeverde.example  status: NOERROR
+backup.valeverde.example.   3600 IN A     203.0.113.62
+
+;; ftp-antigo.valeverde.example  status: NXDOMAIN
+
+;; eventos.valeverde.example  status: NXDOMAIN
+eventos.valeverde.example.  3600 IN CNAME eventos-vv.cdnexemplo.example.
+; (eventos-vv.cdnexemplo.example não existe: NXDOMAIN)
+"""
+with open("dns/respostas.txt", "w") as f:
+    f.write(dns)
+
+
+# --- RDAP (JSON responses, trimmed to what matters) ------------------------
+def ipnet(handle, start, end, cidr, length, name, org):
+    return {
+        "objectClassName": "ip network",
+        "handle": handle,
+        "startAddress": start,
+        "endAddress": end,
+        "cidr0_cidrs": [{"v4prefix": cidr, "length": length}],
+        "name": name,
+        "type": "DIRECT ALLOCATION",
+        "entities": [{
+            "objectClassName": "entity",
+            "roles": ["registrant"],
+            "vcardArray": ["vcard", [["version", {}, "text", "4.0"], ["fn", {}, "text", org]]],
+        }],
+    }
+
+
+nets = [
+    ipnet("NET-203-0-113-0-1", "203.0.113.0", "203.0.113.63", "203.0.113.0", 26,
+          "VALEVERDE-NET", "Cooperativa Vale Verde"),
+    ipnet("NET-203-0-113-64-1", "203.0.113.64", "203.0.113.127", "203.0.113.64", 26,
+          "CLINICA-EXEMPLO", "Clinica Exemplo Ltda."),
+    ipnet("NET-192-0-2-0-1", "192.0.2.0", "192.0.2.255", "192.0.2.0", 24,
+          "CDNEXEMPLO", "CDN Exemplo S.A."),
+    ipnet("NET-198-51-100-0-1", "198.51.100.0", "198.51.100.255", "198.51.100.0", 24,
+          "NUVEMFACIL", "NuvemFacil Hospedagem Ltda."),
+]
+with open("rdap/redes.json", "w") as f:
+    json.dump(nets, f, ensure_ascii=False, indent=1)
+
+domain = {
+    "objectClassName": "domain",
+    "ldhName": "VALEVERDE.EXAMPLE",
+    "status": ["client transfer prohibited"],
+    "events": [
+        {"eventAction": "registration", "eventDate": "2009-05-18T13:00:00Z"},
+        {"eventAction": "expiration", "eventDate": "2027-05-18T13:00:00Z"},
+        {"eventAction": "last changed", "eventDate": "2026-04-02T09:12:00Z"},
+    ],
+    "nameservers": [{"ldhName": "NS1.VALEVERDE.EXAMPLE"}, {"ldhName": "NS2.VALEVERDE.EXAMPLE"}],
+    "secureDNS": {"delegationSigned": False},
+    "entities": [
+        {"roles": ["registrar"], "vcardArray": ["vcard", [["fn", {}, "text", "Registradora Exemplo"]]]},
+        {"roles": ["registrant"], "remarks": [{"title": "REDACTED FOR PRIVACY",
+                                              "description": ["Dados do titular omitidos."]}]},
+    ],
+}
+with open("rdap/dominio.json", "w") as f:
+    json.dump(domain, f, ensure_ascii=False, indent=1)
+
+# --- Wayback Machine (CDX lines: urlkey timestamp original mime status digest length)
+cdx = """example,valeverde)/ 20180611093012 http://valeverde.example/ text/html 200 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1 5120
+example,valeverde)/robots.txt 20180611093015 http://valeverde.example/robots.txt text/plain 200 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2 96
+example,valeverde)/docs/edital-2024.docx 20240115120000 https://valeverde.example/docs/edital-2024.docx application/vnd.openxmlformats-officedocument.wordprocessingml.document 200 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3 2048
+example,valeverde)/docs/relatorio-anual-2025.pdf 20260310080000 https://valeverde.example/docs/relatorio-anual-2025.pdf application/pdf 200 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4 1400
+example,valeverde)/robots.txt 20260901101010 https://valeverde.example/robots.txt text/plain 200 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA5 24
+"""
+with open("wayback/cdx.txt", "w") as f:
+    f.write(cdx)
+with open("wayback/robots-2018.txt", "w") as f:
+    f.write("User-agent: *\nDisallow: /homolog/\nDisallow: /backup-antigo/\n")
+with open("wayback/robots-2026.txt", "w") as f:
+    f.write("User-agent: *\nAllow: /\n")
+
+# --- A published DOCX (Office Open XML is a ZIP of XML parts) --------------
+FIXED = (2024, 1, 15, 12, 0, 0)
+
+
+def put(z, name, data):
+    info = zipfile.ZipInfo(name, FIXED)
+    info.compress_type = zipfile.ZIP_DEFLATED
+    z.writestr(info, data)
+
+
+with zipfile.ZipFile("docs/edital-2024.docx", "w") as z:
+    put(z, "[Content_Types].xml",
+        '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        '<Default Extension="xml" ContentType="application/xml"/>'
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+        '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>'
+        '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>')
+    put(z, "_rels/.rels",
+        '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>'
+        '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>')
+    put(z, "word/document.xml",
+        '<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'
+        '<w:p><w:r><w:t>Cooperativa Vale Verde - Edital de compra de equipamentos 2024 (FICTICIO)</w:t></w:r></w:p>'
+        '<w:p><w:r><w:t>Propostas pelo portal de fornecedores.</w:t></w:r></w:p></w:body></w:document>')
+    put(z, "docProps/core.xml",
+        '<?xml version="1.0" encoding="UTF-8"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" '
+        'xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" '
+        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+        '<dc:title>Edital 2024</dc:title><dc:creator>Compras</dc:creator>'
+        '<cp:lastModifiedBy>c.lima</cp:lastModifiedBy><cp:revision>7</cp:revision>'
+        '<dcterms:created xsi:type="dcterms:W3CDTF">2023-12-04T13:22:00Z</dcterms:created>'
+        '<dcterms:modified xsi:type="dcterms:W3CDTF">2024-01-12T18:40:00Z</dcterms:modified></cp:coreProperties>')
+    put(z, "docProps/app.xml",
+        '<?xml version="1.0" encoding="UTF-8"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">'
+        '<Template>\\\\SRV-ARQ02\\modelos$\\edital-padrao.dotx</Template><Application>Microsoft Office Word</Application>'
+        '<AppVersion>16.0000</AppVersion><Company>Cooperativa Vale Verde</Company><TotalTime>214</TotalTime></Properties>')
+
+
+# --- A published PDF with an incremental update --------------------------
+def build_pdf():
+    out = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
+    offs = {}
+
+    def obj(n, body):
+        offs[n] = len(out)
+        out.extend(b"%d 0 obj\n" % n + body + b"\nendobj\n")
+
+    content = b"BT /F1 14 Tf 72 720 Td (Cooperativa Vale Verde - Relatorio anual 2025 - FICTICIO) Tj ET"
+    obj(1, b"<< /Type /Catalog /Pages 2 0 R >>")
+    obj(2, b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>")
+    obj(3, b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R "
+           b"/Resources << /Font << /F1 6 0 R >> >> >>")
+    obj(4, b"<< /Length %d >>\nstream\n" % len(content) + content + b"\nendstream")
+    obj(5, b"<< /Title (Relatorio anual 2025) /Author (svc-relatorios) "
+           b"/Producer (GeraRelatorio 2.3 em srv-relat01.corp.valeverde.example) "
+           b"/CreationDate (D:20260302101500-03'00') >>")
+    obj(6, b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    xref = len(out)
+    out.extend(b"xref\n0 7\n0000000000 65535 f \n")
+    for n in range(1, 7):
+        out.extend(b"%010d 00000 n \n" % offs[n])
+    out.extend(b"trailer\n<< /Size 7 /Root 1 0 R /Info 5 0 R >>\nstartxref\n%d\n%%%%EOF\n" % xref)
+    # Incremental update: someone "cleaned" the Info dictionary, but the
+    # original object 5 is still in the file, above this point.
+    offs5 = len(out)
+    out.extend(b"5 0 obj\n<< /Title (Relatorio anual 2025) /Author (Cooperativa Vale Verde) "
+               b"/Producer (Editor PDF) /ModDate (D:20260309170000-03'00') >>\nendobj\n")
+    xref2 = len(out)
+    out.extend(b"xref\n0 1\n0000000000 65535 f \n5 1\n%010d 00000 n \n" % offs5)
+    out.extend(b"trailer\n<< /Size 7 /Root 1 0 R /Info 5 0 R /Prev %d >>\nstartxref\n%d\n%%%%EOF\n"
+               % (xref, xref2))
+    return bytes(out)
+
+
+with open("docs/relatorio-anual-2025.pdf", "wb") as f:
+    f.write(build_pdf())
+print("pacote gerado")
+EOF
+cat > conferir.py <<'EOF'
+import hashlib, re, sys
+
+# Checks only the FORMAT of an answer file and derives a candidate flag from
+# its normalized content. It does not know the right answers: the platform
+# compares the flag with a hash.
+# usage: python3 conferir.py 1|2|3
+
+
+def fail(msg):
+    sys.exit("formato inválido: " + msg)
+
+
+def lines(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = [l.strip().lower() for l in f]
+    except FileNotFoundError:
+        fail(path + " não existe")
+    return [l for l in raw if l and not l.startswith("#")]
+
+
+NAME = re.compile(r"^[a-z0-9-]+\.valeverde\.example$")
+CLASSES = {"escopo", "terceiro", "pendurado", "inexistente", "fora"}
+mission = sys.argv[1] if len(sys.argv) > 1 else ""
+
+if mission == "1":
+    items = lines("nomes.txt")
+    for l in items:
+        if not NAME.match(l):
+            fail(f"'{l}' não é um nome dentro de valeverde.example (sem *, sem e-mail)")
+    if len(set(items)) != len(items):
+        fail("há nomes repetidos")
+    canon = "\n".join(sorted(items))
+elif mission == "2":
+    items = lines("respostas-2.txt")
+    seen = set()
+    for l in items:
+        name, _, cls = l.partition(":")
+        if not NAME.match(name) or cls not in CLASSES:
+            fail(f"'{l}' (esperado nome:classe, classe em {sorted(CLASSES)})")
+        if name in seen:
+            fail(f"'{name}' aparece duas vezes")
+        seen.add(name)
+    if len(items) != 16:
+        fail(f"esperava 16 linhas, achei {len(items)}")
+    canon = "\n".join(sorted(items))
+elif mission == "3":
+    items = lines("respostas-3.txt")
+    keys = [l.partition("=")[0] for l in items]
+    if sorted(keys) != ["host", "login", "servidor"] or any(not l.partition("=")[2] for l in items):
+        fail("esperava três linhas: login=..., servidor=..., host=...")
+    canon = "\n".join(sorted(items))
+else:
+    sys.exit("uso: python3 conferir.py 1|2|3")
+
+digest = hashlib.sha256(f"osint-2.2/m{mission}\n{canon}\n".encode()).hexdigest()
+print(f"Formato OK. Flag candidata: FLAG{{{digest[:12]}}}")
+EOF
+python3 gerar.py && rm gerar.py
+```
+
+3. Confira o que foi criado (saída real):
+
+```console
+$ cd ~/osint-2.2
+$ find . -type f | sort
+./LEIA-ME.txt
+./conferir.py
+./ct/crtsh-valeverde.json
+./dns/respostas.txt
+./docs/edital-2024.docx
+./docs/relatorio-anual-2025.pdf
+./escopo.txt
+./rdap/dominio.json
+./rdap/redes.json
+./wayback/cdx.txt
+./wayback/robots-2018.txt
+./wayback/robots-2026.txt
+```
+
+4. Leia o `LEIA-ME.txt` e, com atenção, o `escopo.txt`: ele é a carta. Ele diz que estão no
+   escopo o domínio `valeverde.example` e a faixa `203.0.113.0/26`, que dois fornecedores (a CDN
+   Exemplo e a NuvemFacil) exigem autorização própria e que esta fase é **só** passiva e
+   semipassiva.
+
+```console
+$ cat LEIA-ME.txt escopo.txt
+```
+
+O `conferir.py`, como os do 1.1 e do 1.3, só confere o **formato** de cada resposta e calcula
+a flag a partir do conteúdo normalizado; ele não sabe a resposta certa. Quem diz se está certo
+é a plataforma, comparando com um hash.
+
+### 5.2 Missão 1 — O que os certificados contam (guiada)
+
+**Cenário:** a carta foi assinada ontem. O primeiro requisito do ciclo (2.1) é "quais nomes a
+Vale Verde tem?", e a primeira fonte é a CT. Alguém da equipe já baixou do crt.sh o export do
+domínio e salvou em `ct/crtsh-valeverde.json`. Seu trabalho é o **processamento**: transformar
+esse export na lista limpa dos subdomínios.
+
+**Etapa 1: quantos certificados, e como é um.**
+
+```console
+$ python3 -c "import json; print(len(json.load(open('ct/crtsh-valeverde.json'))))"
+15
+$ python3 -c "import json; print(json.dumps(json.load(open('ct/crtsh-valeverde.json'))[4], indent=1, ensure_ascii=False))"
+{
+ "issuer_ca_id": 7004,
+ "issuer_name": "C=BR, O=Certifica Exemplo, CN=Certifica Exemplo OV CA",
+ "common_name": "cooperados.valeverde.example",
+ "name_value": "cooperados.valeverde.example\nCOOPERADOS.valeverde.example\nvaleverde-cooperativa.example",
+ "id": 9100000330,
+ "not_before": "2026-02-14T12:00:00",
+ "not_after": "2027-02-13T11:59:59",
+ "serial_number": "0c30"
+}
+```
+
+Olhe o `name_value` desse certificado: três nomes separados por `\n` (quebra de linha), um
+deles em maiúsculas e outro **de outro domínio**. Guarde esse `valeverde-cooperativa.example`:
+ele não está na carta, e você vai voltar a ele na seção 5.5.
+
+**Etapa 2: um nome por linha.** O Python imprime cada `name_value`; como cada um tem quebras
+de linha dentro, a saída já sai com um nome por linha:
+
+```console
+$ python3 -c "
+import json
+for r in json.load(open('ct/crtsh-valeverde.json')):
+    print(r['name_value'])" > brutos.txt
+$ wc -l brutos.txt
+30 brutos.txt
+```
+
+Quinze certificados, trinta nomes brutos. Muitos se repetem: há certificados em pares (o
+precertificado e o final, com o mesmo `serial_number`, como você viu na seção 3.2) e nomes
+que aparecem em vários certificados.
+
+**Etapa 3: limpar (com você).** Tire os repetidos com `sort -u` (0.3) e veja quantos sobram;
+depois faça o mesmo convertendo tudo para minúsculas antes, com `tr 'A-Z' 'a-z'`:
+
+```console
+$ sort -u brutos.txt | wc -l
+22
+$ tr 'A-Z' 'a-z' < brutos.txt | sort -u | wc -l
+20
+```
+
+A diferença (22 contra 20) são os nomes repetidos com maiúsculas: no DNS,
+`COOPERADOS.valeverde.example` e `cooperados.valeverde.example` são o **mesmo** nome. Nunca
+compare nomes sem normalizar.
+
+**Etapa 4: o que não é subdomínio (desafio).** Das 20 entradas, quatro não são subdomínios de
+`valeverde.example`. Descubra quais são e por quê, e grave em `nomes.txt` só os subdomínios,
+um por linha. Depois rode o conferidor:
+
+```console
+$ python3 conferir.py 1
+```
+
+<Hint title="Dica 1: o que sobra">
+Liste as 20 entradas e procure quatro intrusos: um curinga, um endereço de e-mail, o próprio
+domínio (que não é *sub*domínio) e um nome de outro domínio. O `grep -v` mostra o que **não**
+combina com um padrão.
+</Hint>
+
+<Hint title="Dica 2: um padrão que só aceita subdomínio">
+Um subdomínio aqui é "letras, números ou hífen, depois `.valeverde.example`, e nada mais". Em
+expressão regular (0.3): `^[a-z0-9-]+\.valeverde\.example$`. Use com `grep -E`.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+Os quatro intrusos, vistos com `grep -vE` (saída real):
+
+```console
+$ tr 'A-Z' 'a-z' < brutos.txt | sort -u | grep -vE '^[a-z0-9-]+\.valeverde\.example$'
+*.valeverde.example
+ti@valeverde.example
+valeverde-cooperativa.example
+valeverde.example
+```
+
+- `*.valeverde.example` é o curinga de um certificado: não é um servidor;
+- `ti@valeverde.example` é um e-mail (vai para as anotações, não para a lista de nomes);
+- `valeverde-cooperativa.example` é outro domínio, fora da carta;
+- `valeverde.example` é o próprio domínio, a semente, não um subdomínio.
+
+A lista limpa é o mesmo comando com `grep -E` (sem o `-v`):
+
+```console
+$ tr 'A-Z' 'a-z' < brutos.txt | sort -u | grep -E '^[a-z0-9-]+\.valeverde\.example$' > nomes.txt
+$ wc -l nomes.txt
+16 nomes.txt
+$ python3 conferir.py 1
+Formato OK. Flag candidata: FLAG{…}
+```
+
+A flag é a que o seu `conferir.py` imprimir.
+</Solution>
+
+<FlagInput task="missao-1-o-que-os-certificados-contam" />
+
+### 5.3 Missão 2 — Dono, nome e endereço (desafio)
+
+**Cenário:** o próximo requisito é "destes 16 nomes, quais eu posso testar na fase ativa?". As
+respostas de DNS já foram coletadas (`dns/respostas.txt`, semipassivo, num resolvedor
+público) e as faixas de IP foram consultadas no RDAP (`rdap/redes.json`, passivo). Cruze as
+duas fontes com a carta (`escopo.txt`) e classifique cada nome em uma de cinco classes:
+
+| Classe | Quando |
+|---|---|
+| `escopo` | o nome resolve (direto ou por CNAME) para um IP dentro de `203.0.113.0/26`, da Vale Verde |
+| `terceiro` | o nome resolve para um IP de um **fornecedor** da Vale Verde listado na carta; precisa da autorização dele |
+| `pendurado` | o nome é um CNAME para um destino que **não existe** (NXDOMAIN): candidato a subdomain takeover, que se relata |
+| `inexistente` | o próprio nome não existe mais no DNS (só sobrou no histórico de CT) |
+| `fora` | o nome resolve para um IP de uma organização **sem relação** com a Vale Verde: o *dangling DNS* do 1.3 |
+
+No `dns/respostas.txt`, cada bloco começa com o status da resposta: `NOERROR` (deu certo) ou
+<GlossaryTerm term="NXDOMAIN">NXDOMAIN</GlossaryTerm>, a resposta do DNS que quer dizer "este
+nome não existe".
+
+Crie o arquivo de respostas a partir da lista da Missão 1 e troque cada `?` pela classe:
+
+```console
+$ sed 's/$/:?/' nomes.txt > respostas-2.txt
+$ head -3 respostas-2.txt
+api.valeverde.example:?
+backup.valeverde.example:?
+cooperados.valeverde.example:?
+$ python3 conferir.py 2
+formato inválido: 'api.valeverde.example:?' (esperado nome:classe, classe em ['escopo', 'fora', 'inexistente', 'pendurado', 'terceiro'])
+```
+
+Essa mensagem é normal enquanto houver `?`. Se você apagar linhas sem querer, ele avisa
+`esperava 16 linhas`.
+
+**Os dois primeiros, junto com você.** Procure cada nome no `dns/respostas.txt` com `grep -A3`
+(as três linhas depois da que combina):
+
+```console
+$ grep -A3 'intranet' dns/respostas.txt
+;; intranet.valeverde.example  status: NOERROR
+intranet.valeverde.example. 3600 IN A     203.0.113.20
+```
+
+- **`intranet`**: um registro `A` (nome direto para IP) para `203.0.113.20`. O `rdap/redes.json`
+  diz que `203.0.113.0/26` é da Cooperativa Vale Verde, e um `/26` que começa em `.0` vai até
+  `.63` (64 endereços, 0.2). Está na faixa da carta: `escopo`.
+
+```console
+$ grep -A3 'www.valeverde' dns/respostas.txt
+;; www.valeverde.example  status: NOERROR
+www.valeverde.example.      300  IN CNAME valeverde.cdnexemplo.example.
+valeverde.cdnexemplo.example. 60 IN A     192.0.2.50
+```
+
+- **`www`**: um CNAME para um nome da CDN Exemplo, que resolve para `192.0.2.50`. O RDAP diz que
+  `192.0.2.0/24` é da CDN Exemplo S.A., fornecedora listada na carta. O nome é da Vale Verde; o
+  servidor, não: `terceiro`.
+
+**Os outros 14 (desafio).** Para cada nome, faça três perguntas, nesta ordem: o nome existe?
+Se for CNAME, o destino existe? Para que IP ele termina, e de quem é a faixa?
+
+<Hint title="Dica 1: ler o status do DNS">
+Cada bloco do `dns/respostas.txt` começa com `;; nome  status: ...`. `NXDOMAIN` sem nenhum
+registro embaixo quer dizer que o nome não existe. `NXDOMAIN` **com** um CNAME embaixo quer dizer
+que o nome existe como apelido, mas o destino do apelido não: é assim que um resolvedor responde
+um CNAME pendurado.
+</Hint>
+
+<Hint title="Dica 2: os limites das faixas">
+Três nomes moram perto de uma fronteira. `203.0.113.0/26` vai de `.0` a `.63`;
+`203.0.113.64/26`, de `.64` a `.127`, é de outra empresa. Confira o último octeto de `backup`,
+`git` e `homolog` com cuidado. E não confunda "CNAME" com "terceiro": um CNAME para outro nome
+**da própria Vale Verde** termina num IP que você precisa conferir como qualquer outro.
+</Hint>
+
+<Hint title="Dica 3: deixe o Python cruzar">
+Com 16 nomes ainda dá para fazer à mão, mas num cliente de verdade são centenas. O módulo
+`ipaddress` do Python responde se um IP está numa rede:
+`ipaddress.ip_address('203.0.113.62') in ipaddress.ip_network('203.0.113.0/26')`.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+Um script que lê as duas fontes e imprime, para cada nome, o status, a cadeia de registros e o
+dono de cada IP. Salve como `classificar.py` dentro de `~/osint-2.2`:
+
+```python
+import ipaddress, json
+
+# Join the DNS snapshot with the RDAP networks and print one line per name.
+nets = []
+for n in json.load(open("rdap/redes.json")):
+    c = n["cidr0_cidrs"][0]
+    org = n["entities"][0]["vcardArray"][1][-1][3]
+    nets.append((ipaddress.ip_network(f'{c["v4prefix"]}/{c["length"]}'), org))
+
+
+def owner(ip):
+    for net, org in nets:
+        if ipaddress.ip_address(ip) in net:
+            return org
+    return "?"
+
+
+blocks, cur = {}, None
+for line in open("dns/respostas.txt"):
+    if line.startswith(";; "):
+        name, _, status = line[3:].partition("  status: ")
+        cur = blocks[name.strip()] = {"status": status.strip(), "rr": []}
+    elif cur is not None and line.strip() and not line.startswith(";"):
+        cur["rr"].append(line.split())
+
+for name in open("nomes.txt").read().split():
+    b = blocks.get(name, {"status": "?", "rr": []})
+    chain = " -> ".join(r[4] for r in b["rr"])
+    ips = [r[4] for r in b["rr"] if r[3] == "A"]
+    who = ", ".join(owner(ip) for ip in ips)
+    print(f"{name.split('.')[0]:15} {b['status']:9} {chain:52} {who}")
+```
+
+Saída real (a terceira coluna é a cadeia de registros; a quarta, o dono de cada IP pelo RDAP):
+
+```console
+$ python3 classificar.py
+api             NOERROR   api-vv.nuvemfacil.example. -> 198.51.100.77          NuvemFacil Hospedagem Ltda.
+backup          NOERROR   203.0.113.62                                         Cooperativa Vale Verde
+cooperados      NOERROR   203.0.113.21                                         Cooperativa Vale Verde
+eventos         NXDOMAIN  eventos-vv.cdnexemplo.example.                       
+financeiro-hml  NXDOMAIN                                                       
+ftp-antigo      NXDOMAIN                                                       
+git             NOERROR   203.0.113.64                                         Clinica Exemplo Ltda.
+homolog         NOERROR   203.0.113.30                                         Cooperativa Vale Verde
+intranet        NOERROR   203.0.113.20                                         Cooperativa Vale Verde
+mail            NOERROR   203.0.113.25                                         Cooperativa Vale Verde
+portal          NOERROR   198.51.100.80                                        NuvemFacil Hospedagem Ltda.
+status          NOERROR   192.0.2.88                                           CDN Exemplo S.A.
+suporte         NXDOMAIN  valeverde.nuvemfacil.example.                        
+vpn             NOERROR   203.0.113.10                                         Cooperativa Vale Verde
+webmail         NOERROR   mail.valeverde.example. -> 203.0.113.25              Cooperativa Vale Verde
+www             NOERROR   valeverde.cdnexemplo.example. -> 192.0.2.50          CDN Exemplo S.A.
+```
+
+A classificação:
+
+```text
+api.valeverde.example:terceiro
+backup.valeverde.example:escopo
+cooperados.valeverde.example:escopo
+eventos.valeverde.example:pendurado
+financeiro-hml.valeverde.example:inexistente
+ftp-antigo.valeverde.example:inexistente
+git.valeverde.example:fora
+homolog.valeverde.example:escopo
+intranet.valeverde.example:escopo
+mail.valeverde.example:escopo
+portal.valeverde.example:terceiro
+status.valeverde.example:terceiro
+suporte.valeverde.example:pendurado
+vpn.valeverde.example:escopo
+webmail.valeverde.example:escopo
+www.valeverde.example:terceiro
+```
+
+As armadilhas:
+
+- **`backup` (`.62`) está dentro; `git` (`.64`) está fora.** Dois endereços de distância, duas
+  respostas opostas. O `git` aponta para a Clínica Exemplo, que não tem nada a ver com a Vale
+  Verde: provavelmente um servidor desligado cujo IP mudou de dono. Não se toca; relata-se o
+  registro esquecido.
+- **`webmail` é CNAME e está no escopo**, porque o destino é `mail.valeverde.example`, da
+  própria Vale Verde, na faixa da carta.
+- **`api` e `portal` vão para a NuvemFacil**, um por CNAME e outro por `A` direto. A forma do
+  registro não importa; importa o dono do IP.
+- **`suporte` e `eventos` são pendurados**: o nome existe, mas o destino no provedor sumiu. São
+  achados para o relatório (1.3). Registrar o recurso no provedor para "provar" o takeover
+  estaria fora desta fase e desta carta.
+- **`financeiro-hml` e `ftp-antigo` não existem mais**: só sobraram no log de CT, que não
+  esquece. O certificado de `financeiro-hml` venceu em 2023; o de `ftp-antigo`, em 2020.
+
+Grave as 16 linhas no `respostas-2.txt` e rode `python3 conferir.py 2`: a flag é a que ele
+imprimir.
+</Solution>
+
+<FlagInput task="missao-2-dono-nome-e-endereco" />
+
+<Callout variant="tip" title="O resultado desta missão é o escopo do 2.4">
+Dos 16 nomes, só 7 podem receber pacotes na fase ativa, e eles moram em 6 endereços da faixa da
+carta (`webmail` e `mail` são o mesmo servidor). Um iniciante que pegasse a lista do crt.sh e varresse
+tudo teria testado uma CDN, uma hospedagem e uma clínica que não contrataram ninguém. Essa
+filtragem é o principal produto do reconhecimento passivo.
+</Callout>
+
+### 5.4 Missão 3 — O que o arquivo publicado entrega (desafio)
+
+**Cenário:** o índice do arquivo da web (`wayback/cdx.txt`) mostra que o site publicou dois
+documentos, que você baixou: `docs/edital-2024.docx` e `docs/relatorio-anual-2025.pdf`.
+Ler metadados de documentos **publicados** é semipassivo pelo PTES. O requisito: "o que esses
+arquivos dizem sobre a rede interna e sobre como os usuários são nomeados?".
+
+Você precisa achar três coisas e gravar em `respostas-3.txt`, uma por linha, assim:
+
+```text
+login=...
+servidor=...
+host=...
+```
+
+- `login`: o nome de usuário de quem salvou o DOCX por último;
+- `servidor`: o nome do servidor de arquivos interno que aparece no DOCX (só o nome da máquina,
+  sem barras nem pasta);
+- `host`: o nome completo (com o domínio) da máquina interna que **gerou** o PDF.
+
+**O começo, junto com você.** Um DOCX é um ZIP (2.6). O próprio Python lista o conteúdo:
+
+```console
+$ python3 -m zipfile -l docs/edital-2024.docx
+File Name                                             Modified             Size
+[Content_Types].xml                            2024-01-15 12:00:00          650
+_rels/.rels                                    2024-01-15 12:00:00          571
+word/document.xml                              2024-01-15 12:00:00          328
+docProps/core.xml                              2024-01-15 12:00:00          601
+docProps/app.xml                               2024-01-15 12:00:00          352
+```
+
+O texto que o leitor vê está em `word/document.xml`. Os metadados estão nas duas partes de
+`docProps/`. Leia as duas e ache o login e o servidor.
+
+<Hint title="Dica 1: ler uma parte do ZIP">
+`zipfile.ZipFile('docs/edital-2024.docx').read('docProps/core.xml').decode()` devolve o XML
+como texto. Procure `lastModifiedBy` num, e `Template` no outro.
+</Hint>
+
+Agora o PDF. Um leitor de PDF de verdade mostra, nas propriedades do documento, o autor
+"Cooperativa Vale Verde" e o produtor "Editor PDF" (conferido com o pdf.js, o leitor de PDF do
+Firefox). Nada de interno. Ou será que alguém só **achou** que tinha limpado?
+
+<Hint title="Dica 2: o PDF tem mais de uma versão">
+Um PDF é, em boa parte, texto. Procure dentro do arquivo **todas** as ocorrências de `/Producer`
+(o `grep -a` trata o arquivo binário como texto). Quantos `%%EOF` (fim de arquivo) existem? O
+que a seção 2.6 diz sobre o incremental update?
+</Hint>
+
+<Solution title="Solução da Missão 3">
+O DOCX, com um script que imprime cada propriedade numa linha (saída real):
+
+```console
+$ python3 -c "
+import re, zipfile
+z = zipfile.ZipFile('docs/edital-2024.docx')
+for parte in ('docProps/core.xml', 'docProps/app.xml'):
+    for tag, valor in re.findall(r'<([\w:]+)[^>]*>([^<]+)</', z.read(parte).decode()):
+        print(parte, tag, valor)"
+docProps/core.xml dc:title Edital 2024
+docProps/core.xml dc:creator Compras
+docProps/core.xml cp:lastModifiedBy c.lima
+docProps/core.xml cp:revision 7
+docProps/core.xml dcterms:created 2023-12-04T13:22:00Z
+docProps/core.xml dcterms:modified 2024-01-12T18:40:00Z
+docProps/app.xml Template \\SRV-ARQ02\modelos$\edital-padrao.dotx
+docProps/app.xml Application Microsoft Office Word
+docProps/app.xml AppVersion 16.0000
+docProps/app.xml Company Cooperativa Vale Verde
+docProps/app.xml TotalTime 214
+```
+
+- O criador é genérico (`Compras`), mas quem salvou por último foi `c.lima`: um login no padrão
+  "inicial.sobrenome".
+- O modelo veio de `\\SRV-ARQ02\modelos$\...`: um servidor de arquivos interno chamado
+  `SRV-ARQ02`, com um compartilhamento oculto (no Windows, um `$` no fim do nome do
+  compartilhamento o esconde da lista de pastas compartilhadas).
+
+O PDF, procurado por inteiro (saída real):
+
+```console
+$ python3 -c "
+import re
+pdf = open('docs/relatorio-anual-2025.pdf', 'rb').read()
+for m in re.finditer(rb'/Producer \((.*?)\)', pdf): print(m.start(), m.group(1).decode())"
+450 GeraRelatorio 2.3 em srv-relat01.corp.valeverde.example
+927 Editor PDF
+$ grep -a -c '%%EOF' docs/relatorio-anual-2025.pdf
+2
+$ grep -a -n '/Prev' docs/relatorio-anual-2025.pdf
+47:<< /Size 7 /Root 1 0 R /Info 5 0 R /Prev 638 >>
+$ tail -c 220 docs/relatorio-anual-2025.pdf
+ooperativa Vale Verde) /Producer (Editor PDF) /ModDate (D:20260309170000-03'00') >>
+endobj
+xref
+0 1
+0000000000 65535 f 
+5 1
+0000000853 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R /Info 5 0 R /Prev 638 >>
+startxref
+995
+%%EOF
+```
+
+O arquivo tem duas "versões". A primeira termina num `%%EOF` no meio do arquivo e tem o objeto
+5 original, com `/Author (svc-relatorios)` e o `/Producer` que cita a máquina. A segunda foi
+**acrescentada** no fim: uma nova versão do objeto 5 (`5 1`, "um objeto a partir do número 5",
+no novo `xref`) e um *trailer* com `/Prev 638`, que aponta para a tabela antiga. O leitor de PDF
+segue a versão mais nova e mostra "Editor PDF"; o valor antigo continua no byte 450. É
+exatamente o que a documentação do ExifTool avisa.
+
+As respostas:
+
+```text
+login=c.lima
+servidor=SRV-ARQ02
+host=srv-relat01.corp.valeverde.example
+```
+
+Grave no `respostas-3.txt` e rode `python3 conferir.py 3`: a flag é a que ele imprimir. (O
+conferidor ignora maiúsculas e minúsculas.)
+</Solution>
+
+<FlagInput task="missao-3-o-que-o-arquivo-entrega" />
+
+Repare no que as três respostas valem juntas, do ponto de vista de um atacante: um padrão de
+login, um servidor de arquivos e o domínio interno `corp.valeverde.example`. Nenhum pacote foi
+enviado à Vale Verde.
+
+### 5.5 Walkthrough: as fichas do dossiê (sem flag)
+
+O ciclo termina na **difusão**. Monte, nas suas anotações (1.5), uma ficha para cada achado
+relevante, com os campos da figura da seção 2.1. Abaixo, quatro fichas preenchidas e o que
+cada uma ensina; complete as outras com o que você achou.
+
+```text
+ACHADO   intranet.valeverde.example -> 203.0.113.20
+FONTE    crt.sh (certificado serial 0b20); DNS (resolvedor público); RDAP da faixa
+COLETA   2026-10-20T14:05Z (UTC)       COMO: passivo (CT, RDAP) + semipassivo (DNS)
+NOTA     fonte B / informação 1 (três fontes independentes concordam)
+ESCOPO   escopo — 203.0.113.0/26 é da Vale Verde
+
+ACHADO   valeverde-cooperativa.example aparece no SAN do certificado de cooperados
+FONTE    crt.sh (certificado serial 0c30)
+COLETA   2026-10-20T14:05Z (UTC)       COMO: passivo
+NOTA     fonte B / informação 2 (lógico, mas só uma fonte)
+ESCOPO   FORA DA CARTA — perguntar ao cliente se o domínio é dele e pedir adendo
+
+ACHADO   suporte.valeverde.example: CNAME para valeverde.nuvemfacil.example, que não existe
+FONTE    DNS (resolvedor público)
+COLETA   2026-10-20T14:05Z (UTC)       COMO: semipassivo
+NOTA     fonte B / informação 2
+ESCOPO   achado para o relatório (risco de subdomain takeover); não registrar o recurso
+
+ACHADO   robots.txt de 2018 pedia para não indexar /homolog/ e /backup-antigo/
+FONTE    Wayback Machine, captura 20180611093015 (wayback/robots-2018.txt)
+COLETA   2026-10-20T14:05Z (UTC)       COMO: passivo (cópia arquivada)
+NOTA     fonte A / informação 3 (o arquivo é fiel; não se sabe se os caminhos existem hoje)
+ESCOPO   anotar; acessar esses caminhos no servidor é coleta ativa, só na fase ativa
+```
+
+Dois achados do pacote ficam para você montar a ficha: o SPF (`dns/respostas.txt`, primeiro
+bloco), que revela qual fornecedor envia e-mail pela Vale Verde, e o RDAP do domínio
+(`rdap/dominio.json`), que mostra a data de registro, o titular redigido e a ausência de
+DNSSEC. Os comandos para o índice do arquivo da web:
+
+```console
+$ cut -d' ' -f2,3,5 wayback/cdx.txt
+20180611093012 http://valeverde.example/ 200
+20180611093015 http://valeverde.example/robots.txt 200
+20240115120000 https://valeverde.example/docs/edital-2024.docx 200
+20260310080000 https://valeverde.example/docs/relatorio-anual-2025.pdf 200
+20260901101010 https://valeverde.example/robots.txt 200
+$ cat wayback/robots-2018.txt wayback/robots-2026.txt
+User-agent: *
+Disallow: /homolog/
+Disallow: /backup-antigo/
+User-agent: *
+Allow: /
+```
+
+Repare que o `robots.txt` de 2026 não esconde mais nada. Quem limpou o arquivo resolveu o
+sintoma (o pedido aos buscadores), mas o arquivo da web guardou a versão antiga: o que foi
+público uma vez continua público.
+
+### 5.6 Demonstração opcional: `example.com` ao vivo (sem flag)
+
+Se quiser ver as fontes reais funcionando, repita no WSL os comandos das seções 3.2 a 3.5. Eles
+consultam o crt.sh, o resolvedor DoH da Cloudflare, o `rdap.org` e o Internet Archive sobre o
+`example.com`, o domínio que a IANA mantém para isso. Compare a sua saída com a do módulo: os
+números de certificados e as datas mudam, e isso já é uma lição (fonte de terceiro, dado com
+data). Se o crt.sh responder com erro, veja a seção 7.
+
+Não troque `example.com` por nenhum outro domínio, nem pelo do seu trabalho, sem autorização
+escrita de quem responde por ele.
+
+### 5.7 Limpeza
+
+O pacote é só seu e não tem nada sensível, mas o hábito vale: terminado o exercício, apague.
+
+```console
+$ rm -rf ~/osint-2.2
+```
+
+## 6. Variações e aprofundamento
+
+### 6.1 O DNS do passado e o que o log de CT não mostra
+
+A Missão 2 usou uma foto do DNS de hoje. Num trabalho real, o passive DNS completa a foto:
+`git.valeverde.example` apontava para onde **antes** de cair na faixa da clínica? Se apontava
+para a faixa da Vale Verde até o mês passado, o servidor talvez só tenha mudado de endereço, e a
+pergunta certa ao cliente é "para onde foi o seu Git?". O histórico também mostra nomes que
+nunca tiveram certificado (servidores internos, sistemas só em HTTP), que a CT não pega. A troca:
+as bases de passive DNS são de terceiros, quase sempre pagas, e mostram só o que os sensores
+delas viram.
+
+### 6.2 Nuvem, repositórios e o que vaza por fora do DNS
+
+Três fontes que crescem a cada ano:
+
+- **Nomes de recursos na nuvem.** Buckets de armazenamento e aplicações em plataformas de
+  hospedagem têm nomes globais, muitas vezes derivados do nome da empresa. O 1.3 mostrou por que
+  testar um recurso desses depende da política do provedor; no OSINT, o nome dele aparece em
+  CNAMEs, em código-fonte de páginas e em documentos.
+- **Repositórios de código públicos.** Um commit carrega o nome e o e-mail de quem o fez, e um
+  repositório esquecido pode carregar segredos (chaves, senhas, tokens). Você viu no 0.8 o
+  <GlossaryTerm term="gitleaks">gitleaks</GlossaryTerm>, que procura segredos no histórico. Para
+  ver o que um repositório conta sobre os autores, rode no repositório desta própria plataforma,
+  que é seu (troque o caminho se você o clonou em outro lugar):
+
+  ```console
+  $ git -C ~/projetos/plataforma-cyber log --format='%an <%ae>' | sort | uniq -c
+  ```
+
+  A saída mostra o nome e o e-mail configurados no seu Git, em cada commit. Num repositório
+  público, é exatamente o que qualquer um lê. (O GitHub, por exemplo, oferece um e-mail
+  "noreply" para quem não quer expor o endereço real.)
+- **Tokens de verificação no TXT.** Como você viu em `example.com`, serviços na nuvem pedem um
+  registro TXT para provar a posse do domínio. A lista de TXTs de uma empresa costuma ser a
+  lista dos SaaS que ela usa.
+
+### 6.3 Agregação: quando o conjunto revela o que nenhuma parte revela
+
+O caso Strava (seção 4) é o exemplo mais conhecido, mas o princípio aparece em todo trabalho:
+um certificado de `homolog`, um `robots.txt` com `/homolog/`, um documento produzido em
+`srv-relat01.corp...` e um padrão de login, sozinhos, são detalhes. Juntos, dizem que há um
+ambiente de homologação exposto, um domínio interno com nome conhecido e um jeito de adivinhar
+logins. Isso vale para o atacante e para o relatório: o achado de OSINT mais forte costuma ser
+uma **combinação**, e ele precisa ser descrito assim, com as fontes de cada parte.
+
+### 6.4 OSINT de pessoas: onde o pentest para
+
+Campanhas autorizadas de engenharia social (2.3) precisam de nomes, cargos e endereços de e-mail
+corporativos de funcionários. Até aí, o dado serve à finalidade e está na carta. Tudo o que é da
+vida pessoal da pessoa (família, endereço residencial, rotina, redes pessoais, fotos com
+localização) fica de fora, mesmo que esteja aberto: não serve ao teste, e reunir isso é o
+doxxing do 1.4. Uma regra prática que os profissionais usam: se o dado ajudaria a encontrar a
+pessoa fora do trabalho, ele não entra no dossiê.
+
+### 6.5 Automação com responsabilidade
+
+As ferramentas da seção 3.7 economizam horas, mas cada módulo delas é uma decisão de escopo.
+Antes de rodar uma, leia o que cada fonte faz: se ela consulta um terceiro (passivo), se ela
+resolve nomes (semipassivo) ou se ela chuta subdomínios no servidor do alvo (ativo). Uma boa
+prática é rodar primeiro só as fontes passivas, salvar a saída como evidência com data, e só
+ligar o resto na fase ativa. O <GlossaryTerm term="Amass">Amass</GlossaryTerm>, por exemplo,
+documenta no guia do usuário um modo "puramente passivo" (`amass enum -passive`) e
+um `-active` separado, que liga os métodos ativos.
+
+## 7. Erros comuns
+
+- **"O crt.sh devolveu `JSONDecodeError: Expecting value`."** O serviço é gratuito e vive
+  sobrecarregado. Quando falha, ele devolve uma página HTML de erro (`502 Bad Gateway`), e o
+  Python tenta ler HTML como JSON. Saída real, na escrita deste módulo:
+
+  ```console
+  $ curl -s 'https://crt.sh/?q=example.com&output=json&exclude=expired' -o crt.json
+  $ head -c 60 crt.json
+  <html>
+  <head><title>502 Bad Gateway</title></head>
+  ```
+
+  Espere alguns segundos e tente de novo; com `curl -w '%{http_code}\n'` você vê o status. Para
+  domínios grandes, use `exclude=expired` e busque por partes.
+- **Contar nomes sem normalizar.** `Mail.valeverde.example` e `mail.valeverde.example` são o
+  mesmo nome. Converta para minúsculas antes de qualquer `sort -u`.
+- **Confiar no log como inventário.** A CT mostra o que **já teve** certificado, inclusive
+  servidores que não existem mais (`ftp-antigo`). Todo nome do log precisa ser conferido no DNS
+  antes de ir para a lista de alvos.
+- **Achar que o curinga quer dizer "não há subdomínios".** `*.empresa.example` só esconde os
+  nomes; eles continuam existindo e vazando por outras fontes.
+- **Tratar o CNAME como prova de dono.** O nome é do cliente; o servidor do outro lado pode ser de
+  qualquer um. O que decide é o RDAP do IP final.
+- **Errar a fronteira de uma faixa.** `.62` está num `/26` que começa em `.0`; `.64`, não. Na
+  dúvida, pergunte ao `ipaddress` do Python.
+- **Achar que resolver nomes é sempre passivo.** Pelo PTES é semipassivo, porque pode chegar ao
+  servidor autoritativo do alvo. Numa fase de discrição total, use só fontes de terceiros.
+- **Esquecer a fonte e a data.** Um "achei o servidor X" sem dizer onde e quando não é evidência.
+  Daqui a três semanas, ninguém (nem você) vai saber se o dado ainda vale.
+- **Ler só a última versão de um PDF.** Um PDF editado por incremental update guarda as versões
+  antigas. Procure todas as ocorrências, não a primeira que o leitor mostra.
+- **"Público, então pode."** A LGPD vale para dado público, e a carta vale para ativo público.
+  As três perguntas da seção 2.8 vêm antes de guardar qualquer coisa.
+
+## 8. Defesa e mitigação
+
+A defesa contra o reconhecimento passivo não é esconder tudo, o que é impossível quando o
+sistema precisa ser público. É **saber o que está exposto antes do atacante** e reduzir o que não
+precisa estar.
+
+### 8.1 Faça o OSINT de si mesmo
+
+O nome disso no mercado é <GlossaryTerm term="attack surface management">attack surface
+management</GlossaryTerm>: rodar periodicamente, contra os próprios domínios e faixas, os mesmos
+cinco passos da seção 3, e comparar com o inventário. Todo nome que aparece no log de CT e não
+está no inventário é uma pergunta para a TI. Faça isso com autorização interna, como qualquer
+teste (1.3).
+
+### 8.2 Certificados: monitore, e pense antes de pôr um nome num certificado público
+
+- **Monitore a CT dos seus domínios.** Um <GlossaryTerm term="CT log monitor">monitor de
+  CT</GlossaryTerm> (o Cert Spotter da SSLMate e serviços de várias CAs fazem isso) avisa quando
+  surge um certificado novo com os seus nomes. É a defesa para a qual a CT foi criada: descobrir
+  um certificado que você não pediu.
+- **Nomes internos não precisam de CA pública.** Sistemas que só são usados dentro da rede podem
+  usar certificados de uma CA interna da empresa, que não vão para a CT. O nome
+  `homolog-novo-sistema` deixa de vazar no dia do pedido.
+- **Use o curinga com consciência.** Um certificado `*.empresa.example` esconde os nomes do log,
+  mas a mesma chave passa a valer para todos os servidores: se ela vazar de um, vale para todos.
+  É uma troca, não uma solução.
+- **Publique o CAA.** Um registro `CAA` diz quais CAs podem emitir para o seu domínio; pela RFC
+  8659, uma CA em conformidade "deve checar" o registro antes de emitir e não emite se ele não a
+  autorizar. O `iodef` diz para onde mandar avisos. Exemplo de zona:
+
+  ```text
+  empresa.example.  3600 IN CAA 0 issue "ca-escolhida.example"
+  empresa.example.  3600 IN CAA 0 iodef "mailto:seguranca@empresa.example"
+  ```
+
+### 8.3 DNS e registro: higiene e menos detalhe
+
+- **Apague o que morreu.** Todo servidor desligado tem de levar junto os seus registros DNS,
+  principalmente CNAMEs para provedores. É a mesma regra do 1.3 contra o *dangling DNS*; inclua
+  "apagar o DNS" no procedimento de desativar um sistema.
+- **Nomes sem informação demais.** `financeiro-hml` diz o que é e em que estado está. Não é
+  preciso dar nomes aleatórios a tudo, mas nomes públicos não precisam descrever o sistema.
+- **SPF e TXT mínimos.** Remova `include:` de fornecedores que não são mais usados e tokens de
+  verificação de serviços abandonados. Cada linha a menos é um fornecedor a menos no mapa do
+  atacante.
+- **Domínios que não mandam e-mail devem dizer isso.** O par de `example.com` é o modelo: SPF
+  `v=spf1 -all` e MX nulo (`0 .`). Isso também dificulta que alguém use o domínio para phishing.
+
+### 8.4 Documentos: limpe antes de publicar
+
+- **No Office:** Arquivo > Informações > Verificar Problemas > Inspecionar Documento. O
+  <GlossaryTerm term="Document Inspector">Inspetor de Documento</GlossaryTerm> encontra e remove
+  propriedades (autor, datas), comentários, revisões, cabeçalhos e dados ocultos. A Microsoft
+  recomenda trabalhar numa cópia, porque parte do que ele remove não volta com "Desfazer"
+  ([Microsoft Support](https://support.microsoft.com/en-us/office/remove-hidden-data-and-personal-information-by-inspecting-documents-presentations-or-workbooks-356b7b5d-77af-44fe-a07f-9aa4d085966f)).
+- **Na linha de comando:** o <GlossaryTerm term="mat2">mat2</GlossaryTerm> gera uma cópia limpa
+  (`relatorio.cleaned.pdf`) e, com `-s`, só mostra os metadados que encontrou. O próprio projeto
+  avisa que, por padrão, ele pode alterar o arquivo (num PDF, o texto pode deixar de ser
+  selecionável) e que "não mostrar metadados" não garante que não haja nenhum
+  ([mat2](https://github.com/jvoisin/mat2)).
+
+  ```console
+  $ mat2 -s relatorio.pdf
+  $ mat2 relatorio.pdf
+  ```
+
+- **Com o ExifTool:** `exiftool -all= arquivo.jpg` remove todos os metadados de uma imagem
+  ([documentação](https://exiftool.org/exiftool_pod.html)). **Atenção com PDF:** o ExifTool grava
+  PDFs por incremental update, então a edição é reversível e o valor antigo fica no arquivo, que
+  foi justamente a Missão 3. A própria documentação indica reescrever o arquivo depois, com
+  `qpdf --linearize entrada.pdf saida.pdf`, para que a informação antiga seja removida de vez.
+- **Gere o PDF de novo, não "conserte" o antigo.** Exportar de novo, a partir do original, com
+  as propriedades preenchidas de propósito, é mais confiável que editar o PDF publicado.
+- **Confira o resultado** como um atacante conferiria: procure `/Author`, `/Producer` e
+  `lastModifiedBy` no arquivo final, inclusive todas as ocorrências.
+
+### 8.5 Buscadores e arquivos: o que já foi público continua público
+
+- O <GlossaryTerm term="robots.txt">robots.txt</GlossaryTerm> não é controle de acesso: ele é
+  público e aponta para o que você queria esconder. Caminho sensível se protege com
+  autenticação, ou não se publica.
+- Se um documento sensível foi indexado, tire do ar **e** peça a remoção nas ferramentas do
+  buscador; lembre que o arquivo da web e quem baixou já podem ter uma cópia. Trate como
+  incidente: o que vazou, desde quando, para quem.
+
+### 8.6 Pessoas e processo
+
+- Ensine a equipe a reconhecer que o que ela publica (no site, em redes profissionais, em
+  apresentações) alimenta o reconhecimento: isso é o primeiro passo contra a engenharia social
+  do 2.3.
+- Defina quem aprova a publicação de documentos e inclua a limpeza de metadados no checklist.
+- Para equipes em locais sensíveis, a regra do caso Strava: desligar a geolocalização e o
+  compartilhamento público de atividades, como o Departamento de Defesa dos EUA determinou em
+  2018.
+
+## 9. Exercícios
+
+**As três flags do módulo** vêm da seção 5: a lista limpa de nomes (Missão 1), a classificação
+dos 16 nomes contra a carta (Missão 2) e os três achados dos metadados (Missão 3).
+
+**Quiz de teoria:** nove perguntas sobre o PTES, a CT, o curinga, CNAMEs pendurados, a LGPD, as
+notas de confiança, o incremental update, o `robots.txt` e os pares do crt.sh. Ele conta para
+concluir o módulo.
+
+<Quiz task="quiz-final" />
+
+**Para pensar (sem flag):**
+
+1. No pacote, o certificado de `cooperados` também cobre `valeverde-cooperativa.example`.
+   Escreva o e-mail que você mandaria ao contato do cliente sobre esse domínio: o que você
+   achou, onde, o que você **não** fez e o que precisa dele.
+2. A Vale Verde quer parar de vazar nomes na CT. Para cada um dos 16 nomes, diga se ele deveria
+   ter certificado público, certificado de uma CA interna ou nenhum, e por quê.
+3. Releia a ficha do `robots.txt` de 2018 na seção 5.5. Em que fase, e com que autorização, você
+   poderia verificar se `/backup-antigo/` ainda existe? Que risco esse teste traz para o cliente?
+
+<Solution title="Comentários sobre as perguntas para pensar">
+1. Algo como: "Encontramos no log público de Certificate Transparency (crt.sh, certificado de
+   série 0c30, emitido em 14/02/2026) o domínio valeverde-cooperativa.example no mesmo certificado
+   de cooperados.valeverde.example. Ele não está na carta. Não fizemos nenhuma consulta a esse
+   domínio além da leitura do log. Ele é de vocês? Se for e quiserem incluí-lo, precisamos de um
+   adendo assinado." O ponto é: achado com fonte e data, o que não foi feito e o pedido explícito.
+2. Sistemas usados pelo público (`www`, `portal`, `status`, `mail`, `webmail`, `api`) precisam de
+   certificado público. Os de uso interno (`intranet`, `homolog`, `backup`, `vpn` se só usada
+   por clientes gerenciados) podem usar uma CA interna. Os que não existem mais (`ftp-antigo`,
+   `financeiro-hml`) e os pendurados (`suporte`, `eventos`) não precisam de nada, e os registros
+   DNS deles devem ser apagados. O `git` precisa de uma decisão: se o serviço existe, onde está?
+3. Só na fase ativa, com a carta cobrindo o servidor do site (`valeverde.example` resolve para
+   `203.0.113.5`, dentro da faixa) e a busca por caminhos não publicados. O risco: se o caminho
+   existir e tiver backups, você vai tocar em dados que podem conter dados pessoais, e a regra do
+   1.4 vale (provar com o mínimo, não baixar tudo).
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- OSINT é inteligência produzida a partir de informação publicamente disponível **para responder
+  a um requisito**. Começa por uma pergunta dentro do escopo, segue o ciclo (requisito, coleta,
+  processamento, análise, difusão) e termina num dossiê com fonte, data e nota de cada achado.
+- O que separa passivo, semipassivo e ativo é **quem enxerga a sua consulta**. Pelo PTES,
+  resolver nomes publicados e ler documentos publicados é semipassivo; força bruta de nomes,
+  transferência de zona e procura por conteúdo não publicado são ativos.
+- A informação vaza porque os sistemas foram feitos para ser públicos: o DNS responde a qualquer
+  um, o RDAP diz de quem é cada faixa, os logs de CT são append-only e listam todos os nomes de
+  todo certificado público, e os documentos carregam quem os fez.
+- O produto principal do reconhecimento passivo é a **filtragem**: de 16 nomes, só 7 eram
+  testáveis. Todo nome volta ao escopo pelo IP final e pelo RDAP, não pelo nome.
+- Metadados sobrevivem a limpezas malfeitas: um PDF com incremental update guarda as versões
+  antigas.
+- "Público" não é "liberado": a LGPD (finalidade e necessidade) e a carta valem para tudo o que
+  é aberto.
+- A defesa é fazer o próprio OSINT antes do atacante: monitorar a CT, usar CA interna para nomes
+  internos, apagar DNS morto, enxugar SPF e TXT, limpar documentos antes de publicar e lembrar que
+  o que foi público uma vez continua no arquivo.
+
+**Cola rápida:**
+
+| Para | Fonte | Tipo |
+|---|---|---|
+| nomes de servidores | crt.sh / Cert Spotter (logs de CT) | passivo |
+| para onde um nome apontava | passive DNS | passivo |
+| registros atuais (A, CNAME, MX, TXT) | DNS, por um resolvedor | semipassivo |
+| dono de um domínio ou de uma faixa | RDAP (`rdap.org`) | passivo |
+| documentos e páginas indexadas | buscador (`site:`, `filetype:`) | passivo |
+| o que o site já apagou | Wayback Machine (API CDX) | passivo |
+| quem fez um documento publicado | metadados (`docProps/`, `/Producer`) | semipassivo |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [PTES — Intelligence Gathering](http://www.pentest-standard.org/index.php/Intelligence_Gathering)
+  — a seção do PTES sobre coleta, com os três níveis e a lista do que levantar de uma
+  organização.
+- [RFC 6962 — Certificate Transparency](https://www.rfc-editor.org/rfc/rfc6962.html) — a
+  especificação original, curta e legível.
+- [ATP 2-22.9 — Open-Source Intelligence](https://irp.fas.org/doddir/army/atp2-22-9.pdf) — o
+  manual do Exército dos EUA de onde vêm as escalas A–F e 1–8.
+- [Berkeley Protocol on Digital Open Source Investigations](https://humanrights.berkeley.edu/programs/investigations/berkeley-protocol)
+  — o padrão de método e ética para investigações com fontes abertas.
+- [Passive DNS Replication (Florian Weimer, 2005)](https://www.enyo.de/fw/software/dnslogger/first2005-paper.pdf)
+  — o artigo que apresentou o passive DNS.
+- [ExifTool — PDF Tags](https://exiftool.org/TagNames/PDF.html) — o aviso sobre o incremental
+  update, direto da fonte.

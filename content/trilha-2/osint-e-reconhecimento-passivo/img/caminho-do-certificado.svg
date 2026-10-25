@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
+  <title id="t">Como um nome interno vai parar num log público</title>
+  <desc id="d">Fluxo em seis passos. Um: o dono do domínio pede um certificado à autoridade certificadora com os nomes que quer proteger, por exemplo intranet.valeverde.example. Dois: a autoridade monta um precertificado, que tem tudo do certificado final mais uma extensão venenosa que nenhum navegador aceita, e o envia a pelo menos dois logs de Certificate Transparency. Três: cada log devolve um SCT, a promessa assinada de incluir o precertificado na sua árvore de Merkle dentro do prazo máximo. Quatro: a autoridade emite o certificado final com os SCTs embutidos e o dono o instala no servidor. Cinco: o navegador só confia no certificado se ele trouxer SCTs suficientes. Seis: como o log é público e só cresce, três tipos de leitor consultam o mesmo conteúdo: o monitor do dono, que procura certificados que ele não pediu; agregadores como o crt.sh e o Cert Spotter, que indexam tudo para busca; e o atacante, que lê a lista de nomes antes mesmo de o site entrar no ar. Uma nota lembra que o nome fica no log para sempre, mesmo depois que o certificado vence ou o servidor é desligado.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .b { font-size: 11.5px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .y { font-size: 11.5px; fill: #e8c46a; }
+    .r { font-size: 12px; font-weight: 700; fill: #e07a6a; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8c46a"/></marker>
+  </defs>
+  <rect width="900" height="500" fill="#121815"/>
+  <text class="t" x="30" y="32">Certificate Transparency: o caminho de um nome até o log público</text>
+
+  <rect x="30" y="60" width="200" height="92" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="46" y="84">Dono do domínio</text>
+  <text class="b" x="46" y="106">pede certificado para</text>
+  <text class="y" x="46" y="126">intranet.valeverde</text>
+  <text class="y" x="46" y="142">.example</text>
+
+  <rect x="350" y="60" width="200" height="92" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="366" y="84">Autoridade (CA)</text>
+  <text class="b" x="366" y="106">2. monta o</text>
+  <text class="b" x="366" y="124">precertificado</text>
+  <text class="s" x="366" y="142">(extensão "veneno")</text>
+
+  <rect x="670" y="60" width="200" height="92" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="686" y="84">Logs de CT (≥ 2)</text>
+  <text class="b" x="686" y="106">árvore de Merkle</text>
+  <text class="b" x="686" y="124">append-only</text>
+  <text class="s" x="686" y="142">qualquer um lê</text>
+
+  <line x1="230" y1="96" x2="346" y2="96" stroke="#e8c46a" stroke-width="2" marker-end="url(#ar)"/>
+  <text class="s" x="240" y="88">1. pedido</text>
+  <line x1="550" y1="88" x2="666" y2="88" stroke="#e8c46a" stroke-width="2" marker-end="url(#ar)"/>
+  <text class="s" x="560" y="80">envia precert</text>
+  <line x1="666" y1="122" x2="554" y2="122" stroke="#e8c46a" stroke-width="2" marker-end="url(#ar)"/>
+  <text class="s" x="562" y="140">3. devolve SCT</text>
+
+  <rect x="350" y="200" width="200" height="80" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="366" y="224">4. Certificado final</text>
+  <text class="b" x="366" y="246">com os SCTs embutidos,</text>
+  <text class="b" x="366" y="264">instalado no servidor</text>
+  <line x1="450" y1="152" x2="450" y2="196" stroke="#e8c46a" stroke-width="2" marker-end="url(#ar)"/>
+
+  <rect x="30" y="200" width="200" height="80" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="46" y="224">5. Navegador</text>
+  <text class="b" x="46" y="246">sem SCTs suficientes,</text>
+  <text class="b" x="46" y="264">não confia</text>
+  <line x1="346" y1="240" x2="234" y2="240" stroke="#e8c46a" stroke-width="2" marker-end="url(#ar)"/>
+
+  <text class="h" x="670" y="196">6. Quem lê o log</text>
+  <line x1="770" y1="152" x2="770" y2="178" stroke="#e8c46a" stroke-width="2" marker-end="url(#ar)"/>
+  <rect x="610" y="210" width="260" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="b" x="626" y="232">monitor do dono</text>
+  <text class="s" x="626" y="250">"emitiram algo que eu não pedi?"</text>
+  <rect x="610" y="276" width="260" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="b" x="626" y="298">crt.sh, Cert Spotter</text>
+  <text class="s" x="626" y="316">indexam tudo para busca</text>
+  <rect x="610" y="342" width="260" height="56" rx="8" fill="#2a1c1a" stroke="#8a4a3f"/>
+  <text class="r" x="626" y="364">atacante (e você, no OSINT)</text>
+  <text class="s" x="626" y="382">lista de nomes, de graça</text>
+
+  <rect x="30" y="320" width="540" height="150" rx="8" fill="#16201b" stroke="#3b6b4f" stroke-dasharray="5 4"/>
+  <text class="y" x="46" y="346">O que isso significa para o reconhecimento</text>
+  <text class="b" x="46" y="370">• o nome aparece no log no passo 2, antes de o site</text>
+  <text class="b" x="46" y="388">  entrar no ar;</text>
+  <text class="b" x="46" y="410">• o log só cresce: o nome continua lá depois que o</text>
+  <text class="b" x="46" y="428">  certificado vence e o servidor some;</text>
+  <text class="b" x="46" y="450">• um wildcard (*.dominio) esconde os nomes, não o domínio.</text>
+</svg>

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">Onde termina o reconhecimento passivo</title>
+  <desc id="d">Três colunas lado a lado mostram as formas de coleta, da esquerda para a direita, conforme quem enxerga o seu tráfego. Passiva: você consulta só terceiros que já guardaram a informação, como o crt.sh, o RDAP, buscadores, a Wayback Machine e o passive DNS; o alvo não recebe nenhum pacote seu. Semipassiva: o seu pedido chega a um servidor ligado ao alvo, mas parece tráfego normal da internet, como resolver um nome no DNS, abrir a página pública como um visitante ou baixar um PDF publicado. Ativa: você manda tráfego que o alvo não esperaria de um visitante, como tentar transferência de zona AXFR, força bruta de subdomínios, varredura de portas com nmap ou conexão TLS direta para ler o certificado. Embaixo, uma seta mostra que, da esquerda para a direita, cresce o rastro deixado no alvo, e uma linha tracejada marca que a partir da coluna ativa a carta de autorização é obrigatória, embora o escopo e a finalidade valham para as três.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 14px; font-weight: 700; fill: #5cc8d8; }
+    .w { font-size: 11.5px; fill: #e8c46a; }
+    .b { font-size: 11.5px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .r { fill: #e07a6a; }
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8c46a"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="32">Quem enxerga a sua consulta?</text>
+
+  <rect x="30" y="52" width="270" height="300" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="48" y="78">PASSIVA</text>
+  <text class="w" x="48" y="98">vê: só um terceiro</text>
+  <text class="s" x="48" y="118">o alvo não recebe nada seu</text>
+  <text class="b" x="48" y="148">• crt.sh / logs de CT</text>
+  <text class="b" x="48" y="170">• RDAP e WHOIS</text>
+  <text class="b" x="48" y="192">• buscadores (site:, filetype:)</text>
+  <text class="b" x="48" y="214">• Wayback Machine</text>
+  <text class="b" x="48" y="236">• passive DNS histórico</text>
+  <text class="b" x="48" y="258">• Shodan (varreu antes de você)</text>
+  <text class="s" x="48" y="292">risco: dado velho ou errado;</text>
+  <text class="s" x="48" y="308">o terceiro sabe o que você</text>
+  <text class="s" x="48" y="324">pesquisou (OPSEC)</text>
+
+  <rect x="315" y="52" width="270" height="300" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="333" y="78">SEMIPASSIVA</text>
+  <text class="w" x="333" y="98">vê: o alvo, como visitante</text>
+  <text class="s" x="333" y="118">parece tráfego normal</text>
+  <text class="b" x="333" y="148">• resolver um nome no DNS</text>
+  <text class="b" x="333" y="170">  (o autoritativo do alvo</text>
+  <text class="b" x="333" y="192">  pode ver a consulta)</text>
+  <text class="b" x="333" y="214">• abrir o site público</text>
+  <text class="b" x="333" y="236">• baixar um PDF publicado</text>
+  <text class="b" x="333" y="258">• ler o robots.txt</text>
+  <text class="s" x="333" y="292">deixa log como qualquer</text>
+  <text class="s" x="333" y="308">visitante; não procura o que</text>
+  <text class="s" x="333" y="324">não foi publicado</text>
+
+  <rect x="600" y="52" width="270" height="300" rx="8" fill="#2a1c1a" stroke="#8a4a3f"/>
+  <text class="h r" x="618" y="78">ATIVA</text>
+  <text class="w" x="618" y="98">vê: o alvo, e estranha</text>
+  <text class="s" x="618" y="118">tráfego que visitante não manda</text>
+  <text class="b" x="618" y="148">• transferência de zona (AXFR)</text>
+  <text class="b" x="618" y="170">• força bruta de subdomínios</text>
+  <text class="b" x="618" y="192">• varredura de portas (2.4)</text>
+  <text class="b" x="618" y="214">• openssl s_client direto</text>
+  <text class="b" x="618" y="236">  no servidor do alvo</text>
+  <text class="b" x="618" y="258">• fuzzing de diretórios (2.8)</text>
+  <text class="s" x="618" y="292">rastro claro, carga no alvo;</text>
+  <text class="s" x="618" y="308">só com carta de autorização</text>
+  <text class="s" x="618" y="324">e dentro do escopo (1.3)</text>
+
+  <line x1="40" y1="385" x2="860" y2="385" stroke="#e8c46a" stroke-width="2" marker-end="url(#ar)"/>
+  <text class="w" x="40" y="408">mais rastro no alvo, mais risco, mais exigência de autorização →</text>
+  <line x1="592" y1="45" x2="592" y2="360" stroke="#e07a6a" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text class="s r" x="560" y="440">daqui em diante: carta obrigatória</text>
+  <text class="s" x="40" y="440">escopo, finalidade e LGPD valem nas três colunas</text>
+</svg>
