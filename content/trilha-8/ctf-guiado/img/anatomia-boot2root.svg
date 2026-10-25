@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 440" role="img" aria-labelledby="t d">
+  <title id="t">Anatomia de um boot2root: de fora, para usuário comum, para root</title>
+  <desc id="d">Uma escada de três degraus que sobe da esquerda para a direita. Degrau de baixo, DE FORA: você não tem acesso nenhum, só vê os serviços expostos pela rede. A primeira subida chama-se foothold e é feita de recon mais uma credencial achada (uma senha ou uma chave vazada), nunca de um exploit sob medida; ela leva ao degrau do meio. Degrau do meio, USUÁRIO COMUM: você tem uma shell de baixo privilégio e colhe a flag user.txt, que prova o acesso inicial. A segunda subida chama-se privilege escalation e é feita de abuso de configuração, como uma regra de sudo perigosa, um binário SUID ou uma Linux capability; ela leva ao degrau de cima. Degrau de cima, ROOT: controle total do host e a flag root.txt, que prova o comprometimento completo. Uma tarja à direita lembra que, numa máquina guiada, cada subida tem uma dica escondida para abrir só se você travar.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .rung { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2; }
+    .rt { font-size: 14px; font-weight: 700; fill: #5cc8d8; }
+    .n { font-size: 10.5px; fill: #cfe0d6; }
+    .flag { fill: #16201b; stroke: #5ee08a; stroke-width: 2; }
+    .ft { font-size: 11px; font-weight: 700; fill: #5ee08a; }
+    .up { stroke: #e0a15e; stroke-width: 3; fill: none; marker-end: url(#au); }
+    .ul { font-size: 11px; font-weight: 700; fill: #e0a15e; }
+    .un { font-size: 9.5px; fill: #cdbba6; }
+    .hint { fill: #1a1726; stroke: #a98bd8; stroke-width: 1.5; stroke-dasharray: 5 4; }
+    .ht { font-size: 10px; fill: #c3aef0; }
+  </style>
+  <defs>
+    <marker id="au" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e0a15e"/></marker>
+  </defs>
+  <rect width="820" height="440" fill="#121815"/>
+  <text class="t" x="30" y="34">Anatomia de um boot2root — subir dois degraus, colher duas flags</text>
+
+  <!-- rung 1: outside (bottom) -->
+  <rect class="rung" x="40" y="330" width="250" height="70" rx="8"/>
+  <text class="rt" x="60" y="358">DE FORA</text>
+  <text class="n" x="60" y="378">sem acesso; só os</text>
+  <text class="n" x="60" y="392">serviços expostos</text>
+
+  <!-- rung 2: user (middle) -->
+  <rect class="rung" x="285" y="200" width="250" height="70" rx="8"/>
+  <text class="rt" x="305" y="228">USUÁRIO COMUM</text>
+  <text class="n" x="305" y="248">shell de baixo privilégio</text>
+  <rect class="flag" x="305" y="256" width="150" height="26" rx="6" transform="translate(0,-4)"/>
+  <text class="ft" x="312" y="270">★ user.txt</text>
+
+  <!-- rung 3: root (top) -->
+  <rect class="rung" x="530" y="80" width="250" height="70" rx="8"/>
+  <text class="rt" x="550" y="108">ROOT</text>
+  <text class="n" x="550" y="128">controle total do host</text>
+  <rect class="flag" x="550" y="134" width="150" height="26" rx="6" transform="translate(0,-2)"/>
+  <text class="ft" x="557" y="150">★ root.txt</text>
+
+  <!-- climb 1: foothold -->
+  <path class="up" d="M210,330 L330,272"/>
+  <text class="ul" x="150" y="300">↑ foothold</text>
+  <text class="un" x="150" y="316">recon + credencial achada</text>
+
+  <!-- climb 2: privesc -->
+  <path class="up" d="M455,200 L575,152"/>
+  <text class="ul" x="395" y="178">↑ privilege escalation</text>
+  <text class="un" x="395" y="194">abuso de config: sudo/SUID/cap</text>
+
+  <!-- guided hint band -->
+  <rect class="hint" x="600" y="300" width="190" height="104" rx="8"/>
+  <text class="ht" x="616" y="326">máquina GUIADA:</text>
+  <text class="ht" x="616" y="344">cada subida tem uma</text>
+  <text class="ht" x="616" y="362">dica escondida (Hint),</text>
+  <text class="ht" x="616" y="380">que você abre só</text>
+  <text class="ht" x="616" y="398">se travar de verdade</text>
+</svg>

