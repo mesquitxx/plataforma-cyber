@@ -1,0 +1,1954 @@
+---
+slug: windows-para-quem-vem-do-linux
+track: trilha-0
+title: "Windows para quem vem do Linux"
+prerequisites: [linux-processos-e-pacotes]
+lab: null
+tasks:
+  - slug: missao-1-quem-sou-eu
+    title: "Missão 1 — Quem sou eu no Windows?"
+    type: flag
+    prompt: "O RID do rótulo de integridade no terminal comum, o RID do rótulo no terminal elevado e quantos privilégios o whoami /priv lista no terminal comum, no formato FLAG{rid-comum-rid-elevado-privilégios}."
+    hint: "O rótulo é a linha do tipo Rótulo (Label) no whoami /groups; o RID é o último número do SID. Abra o segundo terminal com Executar como administrador."
+    flag:
+      hash: "scrypt$16384$8$1$b22a34ac419829130f73a1e02ed03aa0c4bd83ea885659abdb5a79ed6b84ff08"
+      salt: "45d5b549b9f93ec60429d0892d6aaf25"
+  - slug: missao-2-servico-e-registro
+    title: "Missão 2 — O serviço por dentro do registro"
+    type: flag
+    prompt: "Para o serviço EventLog: o nome da conta que o roda (sem o prefixo NT AUTHORITY\\, em minúsculas), o valor Type da chave dele no registro convertido para decimal e quantos privilégios estão em RequiredPrivileges, no formato FLAG{conta-type-privilégios}."
+    hint: "sc.exe qc EventLog mostra a conta. Os valores Type e RequiredPrivileges estão em HKLM\\SYSTEM\\CurrentControlSet\\Services\\EventLog (reg query). 0x indica hexadecimal."
+    flag:
+      hash: "scrypt$16384$8$1$bb78a70620a9f13dcbde421ba720a312812f074100963599c84aa1cd7b148d05"
+      salt: "8eeb0317cd75433ea33b999b92eed469"
+  - slug: missao-3-arquivos-e-busca
+    title: "Missão 3 — O que o dir não mostra"
+    type: flag
+    prompt: "O tamanho em bytes do stream nota.txt:oculto (segundo o dir /r), quantas ACEs o icacls mostra na pasta plataforma-0.5 e o %ERRORLEVEL% de um comando inexistente no cmd, no formato FLAG{bytes-aces-código}."
+    hint: "Crie o stream exatamente como no texto, sem espaço antes do >. Conte as linhas de ACE do icacls . (uma por usuário ou grupo). O código aparece com echo %ERRORLEVEL% logo depois do comando que falhou."
+    flag:
+      hash: "scrypt$16384$8$1$caf628edd51cc1e4d44acadfc57414382ce59d9af56281fbeb0d1b0dcdc3ac77"
+      salt: "aff0af10fd6946b07dd265be676a2876"
+  - slug: quiz-final
+    title: "Quiz — Windows para quem vem do Linux"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "No Windows, qual conta corresponde de verdade ao root do Linux, com poder total sobre a máquina?"
+        options:
+          - "A conta Administrador (RID 500)"
+          - "Qualquer usuário do grupo Administradores, sempre"
+          - "SYSTEM (LocalSystem, S-1-5-18), a conta com que o próprio sistema e muitos serviços rodam"
+          - "A conta Convidado"
+        answer: 2
+        explanation: "O SYSTEM tem controle total sobre arquivos, registro e processos, inclusive coisas que nem um administrador acessa direto, como a colmeia SAM. Um administrador consegue virar SYSTEM, mas com UAC ele trabalha com um token filtrado até aprovar a elevação. Por isso, em pentest, o objetivo final da escalação no Windows costuma ser chegar a SYSTEM."
+      - question: "O SID S-1-5-21-1111111111-2222222222-3333333333-500 identifica o quê?"
+        options:
+          - "Um grupo embutido de qualquer Windows"
+          - "A conta Administrador embutida daquela máquina (ou domínio): o RID 500 é sempre essa conta, mesmo se ela for renomeada"
+          - "O primeiro usuário criado na instalação"
+          - "Um serviço"
+        answer: 1
+        explanation: "O começo S-1-5-21 mais três números identifica a máquina ou o domínio; o último número é o RID. 500 é sempre o Administrador embutido, 501 o Convidado, e os usuários criados recebem RIDs a partir de 1000. Renomear a conta não muda o SID, e é pelo SID que o Windows decide as permissões."
+      - question: "Você é administrador da máquina, abre o PowerShell normalmente e tenta ler HKLM\\SAM\\SAM. Recebe Acesso negado. Por quê?"
+        options:
+          - "Porque o PowerShell não lê o registro"
+          - "Porque o UAC deu ao terminal o token filtrado (nível Médio, Administradores só para negar), e porque nem o administrador elevado lê essa chave: só o SYSTEM"
+          - "Porque a chave não existe"
+          - "Porque falta instalar um módulo"
+        answer: 1
+        explanation: "Com UAC, o administrador recebe dois tokens no logon e usa o filtrado por padrão. E a chave SAM\\SAM tem permissão só para o SYSTEM. Os dois motivos aparecem na seção 2: tokens e UAC, e as colmeias do registro."
+      - question: "Na saída do icacls, o que significa `BUILTIN\\Usuários:(OI)(CI)(RX)`?"
+        options:
+          - "Os usuários podem ler e executar, e essa permissão é herdada por arquivos (OI) e subpastas (CI) criados dentro"
+          - "Os usuários são donos da pasta"
+          - "Os usuários estão proibidos de acessar"
+          - "A permissão vale só para a pasta, nunca para o conteúdo"
+        answer: 0
+        explanation: "RX é ler e executar. OI (object inherit) e CI (container inherit) dizem que a ACE desce para arquivos e subpastas. Um (I) indicaria que a ACE foi herdada da pasta de cima; um (IO), que vale só para os filhos, não para a própria pasta."
+      - question: "Por que digitar `sc query eventlog` no PowerShell 5.1 não mostra o serviço?"
+        options:
+          - "Porque o serviço está parado"
+          - "Porque, no PowerShell, sc é um alias de Set-Content, e alias vence programa externo: o comando cria um arquivo chamado query com o texto eventlog"
+          - "Porque precisa de administrador"
+          - "Porque o nome do serviço tem maiúscula"
+        answer: 1
+        explanation: "Na ordem de busca do PowerShell, alias vem antes de função, cmdlet e programa externo. O jeito certo é digitar sc.exe, com a extensão, ou usar Get-Service. É o mesmo princípio do 0.4: quem resolve o nome primeiro decide o que roda."
+      - question: "Qual a diferença essencial entre o pipe do Bash e o do PowerShell?"
+        options:
+          - "Nenhuma"
+          - "No Bash passa texto, que o próximo comando precisa recortar; no PowerShell passam objetos .NET com propriedades, que o próximo comando acessa pelo nome"
+          - "O PowerShell não tem pipe"
+          - "O pipe do PowerShell só funciona com programas externos"
+        answer: 1
+        explanation: "Get-Service | Where-Object Status -eq Running filtra pela propriedade Status, sem cut nem grep. Get-Member mostra as propriedades de um objeto. Com programas externos (ping, ipconfig), o PowerShell recebe texto, como no Bash."
+      - question: "No cmd, você entra numa pasta de downloads e digita `whoami`. Existe um whoami.bat nessa pasta. O que roda?"
+        options:
+          - "O C:\\Windows\\System32\\whoami.exe, sempre"
+          - "O whoami.bat da pasta atual, porque o cmd procura na pasta atual antes das pastas do PATH"
+          - "Nada; dá erro de ambiguidade"
+          - "O PowerShell é chamado"
+        answer: 1
+        explanation: "O cmd usa a busca .;%PATH%: pasta atual primeiro. É um sequestro de caminho clássico no Windows. O PowerShell não procura na pasta atual (exige .\\nome), e o Bash também não, a menos que . esteja no PATH."
+      - question: "A execution policy do PowerShell está como Restricted. Isso impede um invasor que já roda comandos na máquina de executar um script?"
+        options:
+          - "Sim, é uma barreira de segurança"
+          - "Não. A própria Microsoft diz que ela não é uma barreira de segurança; basta, por exemplo, passar o conteúdo do script pelo pipe para powershell -Command -"
+          - "Só impede se o script for assinado"
+          - "Só vale para o administrador"
+        answer: 1
+        explanation: "Ela existe para evitar que alguém rode um script sem querer. Quem quer rodar consegue: -ExecutionPolicy Bypass, o conteúdo pelo pipe, ou colando os comandos. A defesa de verdade são o AppLocker ou o App Control (WDAC), o Constrained Language Mode e os logs de script."
+      - question: "O que é um Alternate Data Stream (ADS) no NTFS?"
+        options:
+          - "Uma cópia de segurança automática"
+          - "Um segundo fluxo de dados com nome, preso a um arquivo (nota.txt:oculto), que o dir comum não mostra e não entra no tamanho exibido do arquivo"
+          - "Um arquivo compactado"
+          - "Um atalho para outro arquivo"
+        answer: 1
+        explanation: "dir /r e Get-Item -Stream * mostram os streams. O Windows usa um deles, o Zone.Identifier, para a Mark of the Web; atacantes já os usaram para esconder dados (MITRE T1564.004)."
+      - question: "O que tornou o HiveNightmare (CVE-2021-36934) possível?"
+        options:
+          - "Uma senha padrão"
+          - "ACLs permissivas demais: o grupo Usuários conseguia ler os arquivos SAM, SYSTEM e SECURITY em System32\\config, e as cópias de sombra do volume guardavam versões legíveis deles"
+          - "Uma falha no navegador"
+          - "Um serviço de rede exposto"
+        answer: 1
+        explanation: "Com leitura nesses arquivos, um usuário comum extrai os hashes das senhas locais. A Microsoft corrigiu as ACLs em agosto de 2021, mas avisou que a atualização sozinha não bastava: era preciso apagar as cópias de sombra antigas, que guardavam os arquivos com a permissão errada."
+      - question: "Por que o PrintNightmare (CVE-2021-34527) era tão grave?"
+        options:
+          - "Porque desligava as impressoras"
+          - "Porque o serviço Spooler de Impressão roda como SYSTEM e vem ligado na maioria dos Windows, inclusive em controladores de domínio; a falha permitia executar código com privilégios de SYSTEM"
+          - "Porque só afetava o Windows XP"
+          - "Porque exigia acesso físico"
+        answer: 1
+        explanation: "Um serviço que roda como LocalSystem é um alvo valioso: qualquer falha nele vira controle total. Uma das medidas de contorno da Microsoft foi justamente parar e desativar o Spooler onde ele não fosse necessário."
+      - question: "Qual lição o WannaCry (maio de 2017) deixou sobre atualização?"
+        options:
+          - "Que antivírus basta"
+          - "Que a correção (MS17-010) existia desde março de 2017; as organizações atingidas tinham Windows sem atualização ou sem suporte, e o SMBv1 exposto deixou o worm se espalhar sozinho pela rede"
+          - "Que o ataque era impossível de evitar"
+          - "Que só afetou computadores domésticos"
+        answer: 1
+        explanation: "O relatório do NAO britânico concluiu que o ataque ao NHS poderia ter sido evitado com práticas básicas de TI. Atualizar, desligar o SMBv1 e não expor a porta 445 fecham exatamente esse caminho."
+glossary:
+  - term: Windows NT
+    definition: "A família de sistemas da Microsoft a que pertencem todos os Windows atuais (10, 11, Server). O núcleo, o kernel NT, separa o modo kernel do modo usuário, como o Linux."
+  - term: NTFS
+    definition: "New Technology File System: o sistema de arquivos padrão do Windows. Guarda permissões em ACLs, dono, atributos e fluxos alternativos de dados."
+  - term: drive letter
+    definition: "Letra de unidade (C:, D:): no Windows, cada volume tem a própria raiz, em vez de tudo pendurado numa árvore única como o / do Linux."
+  - term: UNC path
+    definition: "Universal Naming Convention: caminho de rede no formato \\\\servidor\\compartilhamento\\pasta. O \\\\wsl.localhost\\Ubuntu do WSL usa esse formato."
+  - term: System32
+    definition: "A pasta C:\\Windows\\System32, onde ficam os programas e bibliotecas de 64 bits do sistema, o registro (config) e os drivers. Equivale a /usr/bin, /usr/lib e /etc juntos."
+  - term: SysWOW64
+    definition: "A pasta com as versões de 32 bits dos programas do sistema num Windows de 64 bits. O nome é contraintuitivo: o 64 é do sistema que hospeda, não dos programas."
+  - term: AppData
+    definition: "Pasta oculta do perfil (C:\\Users\\nome\\AppData), com dados e configurações de programas por usuário, dividida em Roaming, Local e LocalLow. Equivale ao ~/.config e ~/.local do Linux."
+  - term: ProgramData
+    definition: "Pasta oculta C:\\ProgramData, com dados de programas compartilhados por todos os usuários. Equivale, grosso modo, ao /var/lib do Linux."
+  - term: SID
+    definition: "Security Identifier: o número único que identifica um usuário, grupo ou computador no Windows (S-1-5-21-...-1001). As permissões são dadas ao SID, não ao nome."
+  - term: RID
+    definition: "Relative Identifier: o último número de um SID, que distingue as contas dentro da mesma máquina ou domínio (500 = Administrador, 501 = Convidado, 1000+ = usuários criados)."
+  - term: well-known SID
+    definition: "SID fixo, igual em todo Windows, para contas e grupos padrão: S-1-5-18 (SYSTEM), S-1-5-32-544 (Administradores), S-1-1-0 (Todos)."
+  - term: SAM
+    definition: "Security Account Manager: o banco das contas locais do Windows, com os hashes das senhas. Fica numa colmeia do registro (C:\\Windows\\System32\\config\\SAM) que só o SYSTEM lê."
+  - term: Microsoft account
+    definition: "Conta Microsoft (um e-mail) usada para entrar no Windows. Por baixo, o Windows cria uma conta local ligada a ela, com SID próprio."
+  - term: LSASS
+    definition: "Local Security Authority Subsystem Service (lsass.exe): o processo que confere logons, cria os access tokens e guarda credenciais em memória. Por isso é alvo de roubo de credenciais."
+  - term: NTLM hash
+    definition: "A forma como o Windows guarda a senha local no SAM (um hash MD4 da senha). Quem o rouba pode quebrá-lo offline ou, em certos cenários, usá-lo direto para se autenticar."
+  - term: access token
+    definition: "A credencial de um processo no Windows: o SID do usuário, os SIDs dos grupos, os privilégios e o nível de integridade. É herdado pelos processos filhos, como o UID e os grupos no Linux."
+  - term: Windows privilege
+    definition: "Direito especial de fazer algo no sistema inteiro, que não depende da ACL de um objeto (depurar qualquer processo, fazer backup de qualquer arquivo, mudar a hora). Parecido com as capabilities do Linux."
+  - term: SeDebugPrivilege
+    definition: "Privilégio que deixa abrir e mexer na memória de qualquer processo, inclusive de outros usuários e do SYSTEM. Quem o tem consegue ler a memória do LSASS."
+  - term: SeImpersonatePrivilege
+    definition: "Privilégio de assumir a identidade de um cliente depois que ele se autentica. Contas de serviço o têm; abusos dele são um caminho clássico de serviço a SYSTEM (Trilha 6)."
+  - term: integrity level
+    definition: "Nível de integridade (Baixo, Médio, Alto, Sistema): um rótulo no token e nos objetos. Um processo de nível mais baixo não escreve em objetos de nível mais alto, mesmo que a ACL deixe."
+  - term: Mandatory Integrity Control
+    definition: "MIC: o mecanismo que compara os níveis de integridade antes de olhar a ACL. É o que impede um navegador em nível Baixo de alterar seus documentos."
+  - term: UAC
+    definition: "User Account Control: faz o administrador trabalhar com um token filtrado, de usuário comum, e só usar o token completo depois de aprovar um pedido de elevação. A Microsoft o classifica como defesa em profundidade, não como barreira de segurança."
+  - term: elevation
+    definition: "Elevação: rodar um programa com o token completo de administrador, depois da confirmação do UAC (Executar como administrador). O paralelo mais próximo do sudo."
+  - term: filtered token
+    definition: "Token filtrado: a versão reduzida do token de um administrador sob UAC, com nível Médio, o grupo Administradores marcado como usado apenas para negar e só privilégios básicos."
+  - term: security descriptor
+    definition: "Descritor de segurança: os metadados de segurança de um objeto do Windows (arquivo, chave, serviço, processo): dono, DACL e SACL."
+  - term: ACL
+    definition: "Access Control List: lista de entradas (ACEs) que diz quem pode fazer o quê com um objeto. Substitui, com muito mais detalhe, os três trios rwx do Linux."
+  - term: DACL
+    definition: "Discretionary ACL: a ACL que permite ou nega acesso. Sem DACL, todos podem tudo; com uma DACL vazia, ninguém pode nada."
+  - term: SACL
+    definition: "System ACL: a ACL que diz quais acessos geram registro de auditoria. Também guarda o rótulo de integridade do objeto."
+  - term: ACE
+    definition: "Access Control Entry: uma linha da ACL, ligando um SID a direitos permitidos ou negados (e a regras de herança)."
+  - term: ACL inheritance
+    definition: "Herança de permissões: ACEs marcadas com OI ou CI descem automaticamente para arquivos e subpastas criados dentro da pasta, e aparecem neles com (I)."
+  - term: icacls
+    definition: "Programa de linha de comando do Windows que mostra e altera as ACLs de arquivos e pastas. O paralelo do ls -l e do chmod para permissões NTFS."
+  - term: TrustedInstaller
+    definition: "Conta do serviço de instalação de módulos do Windows (NT SERVICE\\TrustedInstaller), dona das pastas do sistema. Nem o administrador muda esses arquivos sem antes tomar a posse."
+  - term: Windows service
+    definition: "Serviço do Windows: programa que roda em segundo plano, sem janela, iniciado pelo SCM, geralmente com uma conta própria. O paralelo dos daemons do systemd."
+  - term: SCM
+    definition: "Service Control Manager (services.exe): o processo que inicia, para e vigia os serviços, lendo a configuração deles no registro. O paralelo do systemd."
+  - term: svchost
+    definition: "svchost.exe: processo hospedeiro genérico que roda serviços escritos como DLLs. Vários serviços podem dividir um svchost, agrupados pelo parâmetro -k."
+  - term: LocalSystem
+    definition: "A conta de serviço com poder total na máquina; é o próprio SYSTEM (S-1-5-18). Na rede, apresenta-se como o computador."
+  - term: LocalService
+    definition: "Conta de serviço com privilégios mínimos na máquina (S-1-5-19), que se apresenta de forma anônima na rede."
+  - term: NetworkService
+    definition: "Conta de serviço com privilégios mínimos na máquina (S-1-5-20) que, na rede, se apresenta com a credencial do computador."
+  - term: session 0 isolation
+    definition: "Isolamento da sessão 0: os serviços rodam numa sessão separada, sem área de trabalho, e os usuários entram nas sessões 1, 2... Assim, um serviço não exibe janelas para o usuário interagir."
+  - term: scheduled task
+    definition: "Tarefa agendada: programa que o Agendador de Tarefas roda em horários ou eventos (logon, boot), com a conta configurada. O paralelo do cron."
+  - term: registry
+    definition: "Registro: o banco de dados hierárquico onde o Windows e os programas guardam configuração. Faz o papel dos arquivos de /etc, mas é binário e organizado em chaves e valores."
+  - term: registry hive
+    definition: "Colmeia: um pedaço do registro guardado num arquivo próprio (SAM, SYSTEM, SOFTWARE, NTUSER.DAT) e carregado sob uma chave-raiz."
+  - term: registry key
+    definition: "Chave do registro: o equivalente a uma pasta. Contém subchaves e valores, e tem ACL própria."
+  - term: registry value
+    definition: "Valor do registro: o equivalente a um arquivo dentro da chave, com nome, tipo (REG_SZ, REG_DWORD...) e dado."
+  - term: HKLM
+    definition: "HKEY_LOCAL_MACHINE: a chave-raiz com a configuração da máquina inteira (serviços, programas instalados, SAM). Alterar exige administrador."
+  - term: HKCU
+    definition: "HKEY_CURRENT_USER: atalho para a parte do registro do usuário atual (HKU\\SID), carregada do NTUSER.DAT. O próprio usuário escreve nela."
+  - term: cmd
+    definition: "cmd.exe, o Prompt de Comando: o interpretador de comandos clássico do Windows, herdeiro do MS-DOS. Trabalha com texto, variáveis %VAR% e arquivos .bat e .cmd."
+  - term: PowerShell
+    definition: "Shell e linguagem de script da Microsoft em que o pipe passa objetos .NET, não texto. O Windows traz o Windows PowerShell 5.1; o PowerShell 7 (pwsh) é instalado à parte."
+  - term: cmdlet
+    definition: "Comando nativo do PowerShell, com nome verbo-substantivo (Get-Process, Set-Content), que recebe e devolve objetos."
+  - term: execution policy
+    definition: "Política de execução do PowerShell (Restricted, RemoteSigned, Bypass...), que decide se scripts .ps1 podem rodar. Evita execução acidental; não é barreira de segurança."
+  - term: PATHEXT
+    definition: "Variável de ambiente do Windows com as extensões que contam como executáveis quando se digita um comando sem extensão (.COM;.EXE;.BAT;.CMD...)."
+  - term: ERRORLEVEL
+    definition: "A variável do cmd com o código de saída do último comando, o paralelo do $? do Bash. Lê-se com echo %ERRORLEVEL%."
+  - term: batch file
+    definition: "Arquivo de lote (.bat ou .cmd): script de comandos do cmd, executado linha a linha. O paralelo do script de shell."
+  - term: RDP
+    definition: "Remote Desktop Protocol: o protocolo da Área de Trabalho Remota do Windows (porta 3389), que entrega a tela inteira pela rede."
+  - term: WinRM
+    definition: "Windows Remote Management: o serviço de administração remota por linha de comando do Windows (portas 5985 HTTP e 5986 HTTPS), usado pelo PowerShell Remoting."
+  - term: Microsoft Defender Antivirus
+    definition: "O antivírus embutido no Windows. Com a proteção contra adulteração (Tamper Protection) ligada, nem um administrador o desliga por comando sem passar pela interface."
+  - term: AMSI
+    definition: "Antimalware Scan Interface: interface pela qual o PowerShell e outros interpretadores entregam ao antivírus o código que vão executar, já decodificado, para ser examinado."
+  - term: Event Viewer
+    definition: "Visualizador de Eventos: o programa e o sistema de logs do Windows, dividido em canais (System, Application, Security e os de cada componente). Lido também com Get-WinEvent."
+  - term: event ID
+    definition: "O número que identifica o tipo de um evento no log do Windows, por exemplo 4624 (logon bem-sucedido) ou 7045 (serviço instalado)."
+  - term: Sysinternals
+    definition: "Conjunto gratuito de ferramentas da Microsoft para investigar o Windows por dentro: Process Explorer, Autoruns, Process Monitor, Sysmon e outras."
+  - term: Sysmon
+    definition: "System Monitor, ferramenta da Sysinternals que registra no log eventos detalhados (criação de processos, conexões de rede, alterações no registro) para detecção de ataques."
+  - term: Alternate Data Stream
+    definition: "ADS: fluxo de dados extra, com nome, preso a um arquivo NTFS (arquivo.txt:nome). O dir comum não o mostra e o tamanho exibido ignora o seu conteúdo."
+  - term: Mark of the Web
+    definition: "Marca da Web: um ADS chamado Zone.Identifier que o Windows grava em arquivos baixados, com a zona de origem (ZoneId=3 é Internet). Faz o SmartScreen e o Office tratarem o arquivo com desconfiança."
+  - term: living off the land
+    definition: "Atacar usando só programas que já vêm no sistema (certutil, PowerShell, WMI), em vez de levar ferramentas próprias, o que dificulta a detecção."
+  - term: LOLBAS
+    definition: "Living Off The Land Binaries, Scripts and Libraries: catálogo público de programas do Windows que podem ser usados para fins de ataque. O equivalente Windows do GTFOBins."
+  - term: unquoted service path
+    definition: "Caminho de serviço sem aspas: um ImagePath com espaços e sem aspas faz o Windows tentar, em ordem, executáveis com nomes cortados nos espaços (C:\\Program.exe...). Se alguém puder gravar num desses lugares, ganha o poder da conta do serviço."
+  - term: Run key
+    definition: "Chaves Run do registro (...\\CurrentVersion\\Run, em HKCU e HKLM): os programas listados nelas iniciam a cada logon. Uso legítimo e técnica de persistência clássica (MITRE T1547.001)."
+  - term: volume shadow copy
+    definition: "Cópia de sombra do volume: foto de um disco num momento, criada pelo serviço VSS para pontos de restauração e backup. Guarda versões antigas de todos os arquivos, inclusive os do sistema."
+  - term: Print Spooler
+    definition: "Spooler de Impressão (spoolsv.exe): o serviço que gerencia filas e drivers de impressora. Roda como LocalSystem e vem ativado por padrão."
+  - term: EternalBlue
+    definition: "Nome do exploit para a falha CVE-2017-0144 do SMBv1, corrigida no boletim MS17-010, usado pelo WannaCry para se espalhar entre computadores."
+  - term: out-of-band update
+    definition: "Atualização fora de ciclo: correção que a Microsoft publica fora da terça-feira mensal de patches, por causa da urgência de uma falha."
+  - term: defense in depth
+    definition: "Defesa em profundidade: várias camadas de proteção, de modo que a falha de uma não entregue tudo. Um recurso classificado assim não tem garantia de barrar um atacante sozinho."
+  - term: LSA protection
+    definition: "Proteção adicional da LSA (RunAsPPL): faz o LSASS rodar como processo protegido, impedindo que outros processos, mesmo de administrador, leiam a memória dele ou injetem código."
+  - term: Credential Guard
+    definition: "Recurso que guarda os segredos de autenticação num processo isolado por virtualização (LSAIso), fora do alcance até do kernel comprometido."
+  - term: BitLocker
+    definition: "A criptografia de disco completo do Windows. Protege os dados se o disco ou o notebook forem roubados, mas não contra quem já está logado."
+  - term: LAPS
+    definition: "Local Administrator Password Solution: recurso que dá a cada máquina de uma empresa uma senha de administrador local diferente e trocada sozinha, guardada no diretório."
+  - term: AppLocker
+    definition: "Recurso do Windows que define, por regras, quais programas e scripts podem rodar (por caminho, editor ou hash)."
+  - term: App Control for Business
+    definition: "O nome atual do WDAC (Windows Defender Application Control): controle de aplicativos mais forte que o AppLocker, imposto também ao código do kernel."
+  - term: Constrained Language Mode
+    definition: "Modo restrito do PowerShell, ativado por políticas de controle de aplicativos, que bloqueia os recursos da linguagem mais usados em ataques (chamar APIs, criar tipos .NET arbitrários)."
+  - term: Group Policy
+    definition: "Política de Grupo: o mecanismo para aplicar configurações (senhas, firewall, scripts, permissões) a muitas máquinas e usuários de uma vez, central no Active Directory."
+  - term: Active Directory
+    definition: "O serviço de diretório da Microsoft que centraliza usuários, computadores e políticas de uma empresa num domínio. Tema da Trilha 7."
+  - term: domain controller
+    definition: "Controlador de domínio: o servidor que roda o Active Directory e autentica todos os usuários do domínio. Comprometê-lo significa comprometer a empresa."
+  - term: CIM
+    definition: "Common Information Model (e o WMI, sua implementação no Windows): interface padronizada para consultar e gerenciar o sistema (serviços, processos, hardware). No PowerShell, Get-CimInstance."
+  - term: CRLF
+    definition: "Carriage Return + Line Feed (\\r\\n): o fim de linha dos arquivos de texto do Windows. O Linux usa só LF (\\n); o \\r a mais quebra scripts levados de um para o outro."
+  - term: WSL interop
+    definition: "A ponte do WSL que deixa rodar programas do Windows a partir do Linux (cmd.exe, notepad.exe) e programas do Linux a partir do Windows (wsl ls), e acessar os arquivos de um pelo outro."
+  - term: wslpath
+    definition: "Comando do WSL que converte caminhos entre os formatos do Linux (/mnt/c/Users) e do Windows (C:\\Users)."
+  - term: winget
+    definition: "Windows Package Manager: o gerenciador de pacotes de linha de comando do Windows, o paralelo mais próximo do apt."
+  - term: Sudo for Windows
+    definition: "Comando sudo nativo do Windows 11 24H2 em diante, desativado por padrão. Eleva um comando a partir de um terminal comum, sempre passando pelo UAC."
+---
+
+import mapa from "./img/mapa-linux-windows.svg";
+import tokens from "./img/tokens-uac.svg";
+import acl from "./img/avaliacao-de-acl.svg";
+import colmeias from "./img/colmeias-do-registro.svg";
+import servicos from "./img/servicos-e-svchost.svg";
+import busca from "./img/busca-de-comandos.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Até aqui, todo terminal da plataforma foi Linux: o WSL, o sandbox, o Kali. Mas a máquina
+em que você está lendo isto roda Windows, e a maioria das máquinas que um pentester
+encontra numa empresa também. Notebooks de funcionários, servidores de arquivos, o
+<GlossaryTerm term="Active Directory">Active Directory</GlossaryTerm> que controla quem
+entra em quê: em redes corporativas, o alvo quase sempre é Windows.
+
+Quem vem do Linux costuma estranhar o Windows por dois motivos. Primeiro, as mesmas
+ideias têm outros nomes: o root vira SYSTEM, o `/etc` vira o registro, o systemd vira o
+Service Control Manager. Segundo, o modelo de segurança é diferente por dentro: em vez
+de um UID e três trios `rwx`, cada processo carrega um token com dezenas de identidades
+e privilégios, e cada objeto tem uma lista de permissões com regras de herança. Quem não
+entende esse modelo não consegue nem ler a saída de um `whoami /all`, quanto mais
+encontrar a falha de configuração que leva de usuário comum a SYSTEM.
+
+Este módulo é a ponte. Ele pega cada conceito que você aprendeu no 0.3 e no 0.4 e mostra
+o equivalente no Windows, o que é parecido, o que é diferente e onde moram os riscos. A
+prática acontece no seu próprio Windows, com comandos que só **leem** informação.
+
+**Ao final, você vai saber:**
+
+- navegar no sistema de arquivos do Windows e saber o que guarda cada pasta importante;
+- explicar o que é um SID, um access token, um privilégio e um nível de integridade, e
+  ler a saída do `whoami /user`, `/groups` e `/priv`;
+- explicar como o UAC dá dois tokens a um administrador, e por que "ser admin" no
+  Windows não é uma coisa só;
+- ler permissões NTFS com o `icacls`, incluindo a herança;
+- encontrar um serviço, sua conta, seu executável e sua configuração no registro;
+- usar o `cmd` e o PowerShell para as tarefas que você já faz no Bash, e entender a
+  diferença entre um pipe de texto e um pipe de objetos;
+- reconhecer como atacantes abusam de cada uma dessas peças (busca de comandos,
+  serviços, registro, fluxos alternativos de dados), e como se defende.
+
+**Pré-requisito:** 0.4 — Linux: processos, pacotes e edição (processos, usuários,
+grupos, `sudo`, variáveis de ambiente, o `PATH` e o sequestro dele, que você vai
+reencontrar no Windows).
+
+**Tempo estimado:** de 3 a 4 horas, incluindo as três missões.
+
+<Callout variant="ethics">
+Todos os comandos das missões são de leitura e rodam no **seu** Windows. A seção 3 mostra
+como um invasor usa essas mesmas informações; enumerar contas, serviços e permissões de um
+computador que não é seu (o do trabalho, da faculdade, de um cliente) sem autorização por
+escrito é crime no Brasil, como a Trilha 1 detalha. Também não altere configurações do seu
+Windows por causa deste módulo: as missões não precisam disso.
+</Callout>
+
+<Callout variant="info" title="O seu Windows é o laboratório">
+Este módulo não tem lab próprio. O Windows que roda o seu WSL é um alvo de estudo perfeito,
+desde que você só **olhe**. As saídas mostradas aqui vêm de um Windows 11 Pro 25H2 (build
+26200) em português, com usuário, nome da máquina, SIDs e endereços trocados por exemplos.
+No seu, os nomes podem estar em inglês e alguns números vão mudar; quando isso importar para
+uma missão, o texto avisa.
+</Callout>
+
+## 2. Teoria aprofundada — o Windows por dentro
+
+<Figure
+  src={mapa}
+  alt="Tabela com três colunas: conceito, Linux e Windows. Superusuário: root e UID 0; SYSTEM (S-1-5-18) e Administradores. Identidade: UID e GID; SID. Contas e hashes: /etc/passwd e /etc/shadow; banco SAM. Credencial do processo: UID, grupos e capabilities; access token. Permissões: rwx; ACL com ACEs. Configuração: texto em /etc; registro. Serviços: systemd; SCM e sc.exe. Agendamento: cron; Agendador de Tarefas. Agir como admin: sudo; UAC e terminal elevado. Shell: Bash; cmd e PowerShell. Logs: journal e /var/log; Visualizador de Eventos. Pacotes: apt e dpkg; winget, Store e instaladores."
+  caption="O mapa do módulo: quase tudo que você aprendeu no Linux tem um equivalente no Windows, com outro nome e, às vezes, outra lógica. As seções seguintes abrem cada linha."
+/>
+
+### 2.1 Uma família, um kernel e um disco com letras
+
+Todo Windows que você vai encontrar (10, 11, Server 2016, 2019, 2022, 2025) pertence à
+família <GlossaryTerm term="Windows NT">Windows NT</GlossaryTerm>. Como no Linux, existe um
+<GlossaryTerm term="kernel">kernel</GlossaryTerm> que roda em modo privilegiado e controla
+hardware, memória e permissões, e os programas rodam em modo usuário, pedindo coisas ao
+kernel. A diferença é que, no Windows, os programas quase nunca fazem as chamadas de
+sistema direto: eles chamam bibliotecas do sistema (as DLLs, *Dynamic-Link Libraries*,
+equivalentes às `.so` do Linux), como a `kernel32.dll`, que fazem isso por eles.
+
+Um detalhe que confunde: o Windows 11 ainda se identifica, por dentro, como versão 10. O
+que distingue os dois é o *build*. Saída real, pelo `cmd` e pelo registro:
+
+```console
+C:\> ver
+Microsoft Windows [versão 10.0.26200.9457]
+C:\> reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion" /v CurrentBuild
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion
+    CurrentBuild    REG_SZ    26200
+```
+
+Builds a partir de 22000 são Windows 11. Isso importa em pentest: muita ferramenta decide
+"qual Windows é este" pelo número, e versões e builds determinam quais falhas conhecidas
+se aplicam.
+
+#### Letras em vez de uma árvore única
+
+No Linux, tudo pendura numa única raiz, `/`, e os discos são montados em pastas. No
+Windows, cada volume tem uma <GlossaryTerm term="drive letter">letra de unidade</GlossaryTerm>
+própria (`C:`, `D:`), e cada uma é uma árvore separada. O sistema de arquivos padrão é o
+<GlossaryTerm term="NTFS">NTFS</GlossaryTerm>, que guarda, além do conteúdo, dono,
+permissões detalhadas e alguns recursos que o ext4 não tem (você vai esconder um texto
+dentro de um arquivo na Missão 3).
+
+Três diferenças que pegam quem vem do Linux:
+
+- **A barra é invertida:** `C:\Users`, não `/home`. O PowerShell aceita `/` na maioria dos
+  casos, mas o `cmd` e muitos programas não.
+- **Maiúsculas e minúsculas não importam:** `C:\WINDOWS\system32` e `c:\windows\System32`
+  são a mesma pasta. O NTFS guarda a grafia, mas não diferencia na busca. (No 0.3, você viu
+  que o Linux é <GlossaryTerm term="case-sensitive">case-sensitive</GlossaryTerm>; o Windows
+  não é.)
+- **Caminhos de rede** usam o formato <GlossaryTerm term="UNC path">UNC</GlossaryTerm>:
+  `\\servidor\compartilhamento\pasta`. Você já usa um sem perceber: o WSL aparece no
+  Windows como `\\wsl.localhost\Ubuntu`.
+
+#### O que fica onde
+
+A raiz do `C:` de um Windows 11 (saída real de `Get-ChildItem C:\ -Force`, um trecho; o `-Force`
+mostra os itens ocultos, como o `ls -a`):
+
+```console
+PS C:\> Get-ChildItem C:\ -Force | Format-Table Mode,Name
+
+Mode   Name
+----   ----
+d--hs- $Recycle.Bin
+d--hsl Documents and Settings
+d----- PerfLogs
+d-r--- Program Files
+d-r--- Program Files (x86)
+d--h-- ProgramData
+d--hs- Recovery
+d--hs- System Volume Information
+d-r--- Users
+d----- Windows
+-a-hs- hiberfil.sys
+-a-hs- pagefile.sys
+-a-hs- swapfile.sys
+```
+
+Na coluna `Mode`, `d` é pasta, `a` é "arquivo", `r` é somente leitura, `h` é oculto
+(*hidden*), `s` é de sistema e `l` é um link. Repare que "oculto" no Windows é um
+**atributo**, não um ponto no começo do nome como no Linux.
+
+| Pasta | Para que serve | Paralelo no Linux |
+|---|---|---|
+| `C:\Windows` | O sistema operacional | `/usr`, `/boot`, `/etc` juntos |
+| `C:\Windows\System32` | Programas e bibliotecas do sistema, drivers e o registro (`config\`) | `/usr/bin`, `/usr/lib`, `/etc` |
+| `C:\Windows\SysWOW64` | As versões de 32 bits dos programas do sistema | `/usr/lib32` |
+| `C:\Program Files` | Programas instalados (64 bits) | `/opt`, `/usr/local` |
+| `C:\Program Files (x86)` | Programas instalados de 32 bits | — |
+| `C:\ProgramData` (oculta) | Dados de programas compartilhados por todos os usuários | `/var/lib` |
+| `C:\Users\nome` | O perfil do usuário | `/home/nome` |
+| `C:\Users\nome\AppData` (oculta) | Configurações e dados de programas, por usuário | `~/.config`, `~/.local` |
+
+Dois nomes merecem atenção. A <GlossaryTerm term="System32">System32</GlossaryTerm> é a
+pasta mais importante do sistema: se um invasor consegue gravar nela, o jogo acabou. E a
+<GlossaryTerm term="SysWOW64">SysWOW64</GlossaryTerm> tem o nome ao contrário do que
+parece: guarda os programas de **32** bits (WOW64 significa *Windows 32-bit on Windows
+64-bit*). Um programa de 32 bits que pede `System32` é redirecionado em silêncio para a
+`SysWOW64`, o que já confundiu muita gente procurando um arquivo "que sumiu".
+
+A <GlossaryTerm term="AppData">AppData</GlossaryTerm> tem três subpastas: `Roaming` (dados
+que acompanham o usuário entre máquinas de uma empresa), `Local` (dados só desta máquina)
+e `LocalLow` (para programas que rodam com nível de integridade baixo, como partes do
+navegador; você vai entender o que é isso na seção 2.3). A
+<GlossaryTerm term="ProgramData">ProgramData</GlossaryTerm>, por ser compartilhada, é um
+lugar clássico onde programas mal configurados deixam arquivos que qualquer usuário pode
+alterar.
+
+### 2.2 Identidades: SIDs, contas e o banco SAM
+
+No Linux, o <GlossaryTerm term="kernel">kernel</GlossaryTerm> não conhece nomes: conhece o
+<GlossaryTerm term="UID">UID</GlossaryTerm>. No Windows, o papel do UID é do
+<GlossaryTerm term="SID">SID</GlossaryTerm> (*Security Identifier*). Toda conta, todo grupo
+e todo computador tem um, e as permissões são dadas ao SID, nunca ao nome. Saída real:
+
+```console
+C:\> whoami /user /fo list
+
+INFORMAÇÕES DE USUÁRIO
+-----------------------
+
+Nome de usuário: pc-estudos\usuario
+SID:             S-1-5-21-1111111111-2222222222-3333333333-1001
+```
+
+#### A anatomia de um SID
+
+Um SID se lê da esquerda para a direita:
+
+| Parte | No exemplo | Significado |
+|---|---|---|
+| `S` | `S` | "Isto é um SID" |
+| Revisão | `1` | Versão do formato (sempre 1) |
+| Autoridade | `5` | Quem emitiu: 5 é *NT Authority*, a do próprio Windows |
+| Subautoridades | `21-1111111111-2222222222-3333333333` | O `21` indica uma conta de máquina ou domínio; os três números identificam **esta** máquina (ou o domínio), sorteados na instalação |
+| <GlossaryTerm term="RID">RID</GlossaryTerm> | `1001` | O *Relative Identifier*: qual conta, dentro desta máquina |
+
+Os RIDs seguem uma regra: **500** é sempre a conta Administrador embutida, **501** o
+Convidado, e as contas criadas por pessoas começam em **1000** (a primeira costuma ser
+1001). A regra vale mesmo se alguém renomear a conta. Por isso renomear o Administrador
+para "suporte" não engana ninguém que olhe o SID. Saída real de `Get-LocalUser`:
+
+```console
+PS C:\> Get-LocalUser | Format-Table Name,Enabled,SID
+
+Name               Enabled SID
+----               ------- ---
+Administrador        False S-1-5-21-1111111111-2222222222-3333333333-500
+Convidado            False S-1-5-21-1111111111-2222222222-3333333333-501
+DefaultAccount       False S-1-5-21-1111111111-2222222222-3333333333-503
+usuario               True S-1-5-21-1111111111-2222222222-3333333333-1001
+WDAGUtilityAccount   False S-1-5-21-1111111111-2222222222-3333333333-504
+```
+
+O Administrador embutido vem **desativado** (`False`) nas instalações atuais: quem
+administra é o usuário criado na instalação, que entra no grupo Administradores.
+
+#### SIDs bem conhecidos
+
+Alguns SIDs são iguais em qualquer Windows, os <GlossaryTerm term="well-known SID">well-known SIDs</GlossaryTerm>.
+Vale reconhecer de cara ([lista oficial](https://learn.microsoft.com/windows-server/identity/ad-ds/manage/understand-security-identifiers#well-known-sids)):
+
+| SID | Quem é |
+|---|---|
+| `S-1-5-18` | **SYSTEM** (LocalSystem): o próprio sistema operacional |
+| `S-1-5-19` | LocalService (conta de serviço, seção 2.5) |
+| `S-1-5-20` | NetworkService (conta de serviço, seção 2.5) |
+| `S-1-5-32-544` | O grupo **Administradores** (BUILTIN\Administrators) |
+| `S-1-5-32-545` | O grupo Usuários |
+| `S-1-1-0` | Todos (*Everyone*) |
+| `S-1-5-11` | Usuários autenticados |
+
+#### Quem é o "root" do Windows?
+
+A resposta curta é: **SYSTEM**. É a conta com que o kernel, o gerenciador de serviços e
+boa parte dos serviços rodam, e ela tem controle total sobre arquivos, registro e
+processos. O grupo Administradores é poderoso, mas um administrador ainda esbarra em
+coisas que só o SYSTEM acessa, e com UAC (seção 2.3) ele nem usa o poder de admin o tempo
+todo. Na prática, um administrador consegue se tornar SYSTEM (criando um serviço, por
+exemplo), e por isso a fronteira entre os dois não é considerada uma barreira de
+segurança. Mas o objetivo final de uma escalação de privilégios no Windows costuma ser
+**SYSTEM**, não "admin".
+
+Saída real de quem está no grupo Administradores (o nome do grupo vem traduzido no Windows
+em português, mas o SID `S-1-5-32-544` é o mesmo em qualquer idioma):
+
+```console
+C:\> net localgroup Administradores
+Nome de alias      Administradores
+Comentário         Os administradores têm acesso completo e irrestrito ao computador/domínio
+
+Membros
+
+-------------------------------------------------------------------------------
+Administrador
+usuario
+Comando concluído com êxito.
+```
+
+#### Onde ficam as contas e as senhas: o SAM
+
+No Linux, as contas estão em `/etc/passwd` e os hashes em `/etc/shadow`. No Windows, as
+contas locais e os hashes das senhas ficam no <GlossaryTerm term="SAM">SAM</GlossaryTerm>
+(*Security Account Manager*), um pedaço do registro guardado no arquivo
+`C:\Windows\System32\config\SAM`. A senha não fica em claro: fica como um
+<GlossaryTerm term="NTLM hash">hash NTLM</GlossaryTerm>, um <GlossaryTerm term="hash">hash</GlossaryTerm>
+da senha. Os segredos usados para proteger esses hashes ficam em outra colmeia, a
+`SYSTEM`. Tente ler a chave do SAM como usuário comum (saída real):
+
+```console
+C:\> reg query HKLM\SAM\SAM
+ERRO: Acesso negado.
+C:\> icacls C:\Windows\System32\config\SAM
+C:\Windows\System32\config\SAM: Processados com sucesso 0 arquivos; falha no processamento de 1 arquivos
+Acesso negado.
+```
+
+Nem as permissões do arquivo você consegue ver. Isso é bom: quem lê `SAM` e `SYSTEM` juntos
+tem os hashes de todas as contas locais. Guarde esse fato, porque ele é exatamente o
+centro do caso HiveNightmare, na seção 4.
+
+Quem confere as senhas no logon e guarda as credenciais em memória enquanto você usa a
+máquina é o processo <GlossaryTerm term="LSASS">LSASS</GlossaryTerm> (`lsass.exe`). Ele
+é o alvo número um de quem quer roubar credenciais, e o Windows 11 o protege de várias
+formas (seção 8).
+
+<Callout variant="info" title="Conta local, conta Microsoft e conta de domínio">
+Uma conta **local** existe só nesta máquina, no SAM. Uma <GlossaryTerm term="Microsoft account">conta Microsoft</GlossaryTerm>
+(um e-mail) é ligada a uma conta local criada por baixo, com SID próprio; no `whoami /groups`
+ela aparece como um grupo `MicrosoftAccount\e-mail`. Uma conta de **domínio** vive no
+Active Directory, num servidor chamado
+<GlossaryTerm term="domain controller">controlador de domínio</GlossaryTerm>, e vale em todas
+as máquinas da empresa; o SID dela tem o identificador do domínio, não da máquina. É o
+assunto da Trilha 7.
+</Callout>
+
+### 2.3 O access token: privilégios, integridade e UAC
+
+No 0.4, você viu no `/proc/PID/status` que cada processo Linux carrega uma identidade: UID,
+grupos e capacidades. No Windows, essa identidade é o
+<GlossaryTerm term="access token">access token</GlossaryTerm>. Quando você faz logon, o
+LSASS monta um token, e todo <GlossaryTerm term="process">processo</GlossaryTerm> que você
+abre herda uma cópia dele, do mesmo jeito que o `fork` copia o UID no Linux. O token
+contém:
+
+- o SID do usuário;
+- os SIDs de **todos** os grupos a que ele pertence, cada um com atributos (ativo,
+  obrigatório, "usado apenas para negar");
+- uma lista de **privilégios**;
+- um **nível de integridade**.
+
+O `whoami /groups` mostra os grupos do token. Saída real, um trecho, no formato de lista:
+
+```console
+C:\> whoami /groups /fo list
+
+INFORMAÇÕES DE GRUPO
+---------------------
+
+Nome do grupo: Todos
+Tipo:          Grupo bastante conhecido
+SID:           S-1-1-0
+Atributos:     Grupo obrigatório, Ativado por padrão, Grupo ativado
+
+Nome do grupo: BUILTIN\Administradores
+Tipo:          Alias
+SID:           S-1-5-32-544
+Atributos:     Grupo usado apenas para negar
+
+Nome do grupo: BUILTIN\Usuários
+Tipo:          Alias
+SID:           S-1-5-32-545
+Atributos:     Grupo obrigatório, Ativado por padrão, Grupo ativado
+```
+
+Repare no atributo estranho do grupo Administradores: **"Grupo usado apenas para negar"**.
+O usuário **é** administrador, mas neste token o grupo só serve para negar acesso (se
+alguma permissão disser "Administradores: negado"), nunca para conceder. Isso é o UAC
+trabalhando, e entender por que é o centro desta seção.
+
+#### Privilégios: poderes que não dependem de permissão
+
+Um <GlossaryTerm term="Windows privilege">privilégio</GlossaryTerm> é um direito que vale
+para o sistema inteiro, independentemente das permissões de um arquivo ou chave. É a ideia
+das *capabilities* do Linux: em vez de "é root ou não é", poderes separados. Alguns que
+você vai ver em todo pentest de Windows:
+
+| Privilégio | O que permite | Por que importa |
+|---|---|---|
+| <GlossaryTerm term="SeDebugPrivilege">SeDebugPrivilege</GlossaryTerm> | Abrir e mexer em qualquer processo | Ler a memória do LSASS e roubar credenciais |
+| `SeBackupPrivilege` | Ler qualquer arquivo "para backup", ignorando a ACL | Copiar o SAM e o SYSTEM |
+| `SeRestorePrivilege` | Gravar qualquer arquivo "para restaurar" | Substituir arquivos do sistema |
+| `SeTakeOwnershipPrivilege` | Tomar posse de qualquer objeto | Virar dono e então mudar a ACL |
+| <GlossaryTerm term="SeImpersonatePrivilege">SeImpersonatePrivilege</GlossaryTerm> | Agir com a identidade de um cliente que se autenticou | Contas de serviço o têm; abusos dele levam a SYSTEM (Trilha 6) |
+| `SeChangeNotifyPrivilege` | Atravessar pastas sem permissão de listá-las | Inofensivo; todo mundo tem |
+
+O `whoami /priv` lista os privilégios do token. Um detalhe: um privilégio pode estar no
+token mas **desativado** (o programa precisa ativá-lo antes de usar). Para um atacante, o
+que importa é estar na lista: ativar é um detalhe técnico.
+
+#### Níveis de integridade
+
+Por cima das permissões comuns, o Windows tem uma segunda régua: o
+<GlossaryTerm term="integrity level">nível de integridade</GlossaryTerm>. São quatro, do
+menor para o maior: **Baixo**, **Médio**, **Alto** e **Sistema**. Cada processo tem um no
+token, e cada objeto pode ter um rótulo. A regra do
+<GlossaryTerm term="Mandatory Integrity Control">Mandatory Integrity Control</GlossaryTerm>
+é simples: um processo de nível mais baixo **não escreve** num objeto de nível mais alto,
+mesmo que a lista de permissões deixe. Ela é conferida **antes** das permissões comuns
+([documentação](https://learn.microsoft.com/windows/win32/secauthz/mandatory-integrity-control)).
+
+Usuários comuns rodam em nível Médio, programas elevados em Alto, serviços do sistema em
+Sistema. O nível Baixo existe para isolar programas que lidam com conteúdo da internet:
+mesmo se um invasor tomar uma aba do navegador nesse nível, ele não altera seus documentos.
+No token, o nível aparece como um "grupo" especial do tipo **Rótulo**, com um SID que
+começa com `S-1-16-`. Você vai encontrá-lo na Missão 1.
+
+#### UAC: o administrador que não é administrador (até pedir)
+
+Antes do Windows Vista, quem era administrador rodava **tudo** como administrador, inclusive
+o navegador e os anexos de e-mail. O <GlossaryTerm term="UAC">UAC</GlossaryTerm>
+(*User Account Control*) mudou isso. A [documentação oficial](https://learn.microsoft.com/windows/security/application-security/application-control/user-account-control/how-it-works)
+descreve o mecanismo: quando um administrador faz logon, o Windows cria **dois** tokens.
+
+<Figure
+  src={tokens}
+  alt="Diagrama: um logon de administrador gera dois tokens ligados. O token filtrado, padrão, tem integridade Média, o grupo Administradores marcado como usado só para negar e só privilégios inofensivos; é dado ao explorer.exe e herdado por tudo que ele abre, como o terminal comum, onde whoami /groups mostra o nível Médio e ler HKLM\SAM dá Acesso negado. O token completo, elevado, tem integridade Alta, Administradores ativo e a lista completa de privilégios, como SeDebug, SeBackup, SeRestore, SeTakeOwnership e SeImpersonate; só é usado depois do Sim no pedido do UAC, ao escolher Executar como administrador."
+  caption="O UAC divide o administrador em dois: o token filtrado, usado no dia a dia, e o token completo, usado só quando você aprova a elevação. Na Missão 1, você vai comparar os dois no seu Windows."
+/>
+
+1. O <GlossaryTerm term="filtered token">token filtrado</GlossaryTerm> tem o nível Médio,
+   o grupo Administradores marcado como "usado apenas para negar" e só os privilégios
+   inofensivos. É dele que nasce o `explorer.exe` (a área de trabalho), e portanto **tudo**
+   que você abre clicando: o navegador, o terminal, o editor.
+2. O **token completo** tem o nível Alto, o grupo Administradores ativo e todos os
+   privilégios de administrador. Ele só é usado quando um programa pede
+   <GlossaryTerm term="elevation">elevação</GlossaryTerm> e você aprova: é a tela escurecida
+   perguntando "Deseja permitir que este aplicativo faça alterações?", ou o
+   **Executar como administrador** do menu.
+
+O paralelo com o Linux é o <GlossaryTerm term="sudo">sudo</GlossaryTerm>: você trabalha como
+usuário e pede o poder para um comando específico. A diferença é que o UAC, por padrão, só
+pede um clique de confirmação (para administradores) em vez da senha. E há uma diferença
+mais importante: a Microsoft deixa claro que o UAC **não é uma barreira de segurança**,
+mas um recurso de <GlossaryTerm term="defense in depth">defesa em profundidade</GlossaryTerm>.
+Na tabela dos [critérios de correção de segurança do Windows](https://www.microsoft.com/en-us/msrc/windows-security-servicing-criteria),
+o UAC aparece como recurso que não é fronteira de segurança. Na prática: um jeito de
+contornar o UAC sem o clique (os famosos *UAC bypasses*) nem sempre é tratado como falha a
+ser corrigida. Para quem defende, a conclusão é que um usuário do dia a dia **não deveria
+ser administrador** (seção 8).
+
+O Windows 11 24H2 trouxe um comando `sudo` de verdade, o
+<GlossaryTerm term="Sudo for Windows">Sudo for Windows</GlossaryTerm>. Ele vem desativado,
+e mesmo ligado passa pelo UAC: é só um atalho para elevar a partir do terminal
+([documentação](https://learn.microsoft.com/windows/advanced-settings/sudo/)).
+
+### 2.4 Permissões: ACLs, ACEs e herança
+
+No Linux, cada arquivo tem um dono, um grupo e três trios `rwx`. Simples e limitado: não dá
+para dizer "a Maria pode ler, o João pode escrever, o grupo Estagiários está proibido".
+No Windows, dá. Cada objeto (arquivo, pasta, chave do registro, serviço, processo) tem um
+<GlossaryTerm term="security descriptor">security descriptor</GlossaryTerm> com:
+
+- o **dono** (um SID), que sempre pode ver e mudar as permissões;
+- a <GlossaryTerm term="DACL">DACL</GlossaryTerm>, uma <GlossaryTerm term="ACL">ACL</GlossaryTerm>
+  (*Access Control List*) que diz quem pode o quê;
+- a <GlossaryTerm term="SACL">SACL</GlossaryTerm>, que diz quais acessos geram registro de
+  auditoria e guarda o rótulo de integridade.
+
+Cada linha da ACL é uma <GlossaryTerm term="ACE">ACE</GlossaryTerm> (*Access Control
+Entry*): um SID, um tipo (**permitir** ou **negar**) e os direitos. A ferramenta para ler
+ACLs na linha de comando é o <GlossaryTerm term="icacls">icacls</GlossaryTerm>. Saída real
+da raiz do disco:
+
+```console
+C:\> icacls C:\
+C:\ BUILTIN\Administradores:(OI)(CI)(F)
+    AUTORIDADE NT\SISTEMA:(OI)(CI)(F)
+    BUILTIN\Usuários:(OI)(CI)(RX)
+    AUTORIDADE NT\Usuários autenticados:(OI)(CI)(IO)(M)
+    AUTORIDADE NT\Usuários autenticados:(AD)
+    S-1-15-3-65536-1888954469-739942743-1668119174-2468466756-4239452838-1296943325-355587736-700089176:(S,RD,X,RA)
+    Rótulo Obrigatório\Nível Obrigatório Alto:(OI)(NP)(IO)(NW)
+
+Processados com sucesso 1 arquivos; falha no processamento de 0 arquivos
+```
+
+Cada linha é uma ACE: `quem:(herança)(direitos)`. Os direitos mais comuns:
+
+| Sigla | Direito | Paralelo |
+|---|---|---|
+| `F` | *Full*: controle total, inclusive mudar a ACL e tomar posse | dono + `rwx` + `chmod` |
+| `M` | *Modify*: ler, gravar, executar e apagar | `rwx` |
+| `RX` | Ler e executar | `r-x` |
+| `R` | Só ler | `r--` |
+| `W` | Gravar | `-w-` |
+| `AD` | *Append Data*: numa pasta, **criar subpastas** | — |
+| `D` | Apagar | — |
+
+E as marcas de <GlossaryTerm term="ACL inheritance">herança</GlossaryTerm>, que não
+existem no Linux:
+
+| Marca | Significado |
+|---|---|
+| `(OI)` | *Object Inherit*: a ACE desce para os **arquivos** criados dentro |
+| `(CI)` | *Container Inherit*: a ACE desce para as **subpastas** |
+| `(IO)` | *Inherit Only*: a ACE não vale para esta pasta, só para o que for criado dentro |
+| `(NP)` | *No Propagate*: desce só um nível |
+| `(I)` | Esta ACE foi **herdada** da pasta de cima (não foi definida aqui) |
+
+Agora leia o `C:\` de novo com essa tabela. Administradores e SISTEMA têm controle total
+(`F`) em tudo. Usuários leem e executam (`RX`). E os Usuários autenticados têm duas ACEs
+curiosas: `(AD)` na própria raiz, ou seja, podem **criar pastas** em `C:\` (é por isso que
+instaladores de jogos e outros programas conseguem criar pastas como `C:\Jogos` sem pedir
+administrador), e `(OI)(CI)(IO)(M)`, que
+dá a eles controle de modificação **dentro** das pastas que criarem. O que eles não têm em
+`C:\` é `W` (gravar arquivos). Guarde isso para a seção 3.3.
+
+<Figure
+  src={acl}
+  alt="Fluxograma de um pedido de escrita num arquivo. À esquerda, o token do processo com o SID do usuário, os grupos e o nível Médio. Primeiro a checagem de integridade: se o nível do processo for menor que o rótulo do objeto, a escrita é negada. Depois a DACL é percorrida de cima para baixo na ordem canônica: ACEs explícitas de negação, explícitas de permissão, herdadas de negação e herdadas de permissão. Negado se uma ACE de negação casar com o token e cobrir o direito pedido, ou se a lista acabar sem conceder tudo. Liberado quando as ACEs de permissão que casam já somaram todos os direitos pedidos. Casos-limite: DACL vazia nega tudo; sem DACL, libera tudo; o dono sempre lê e muda a DACL."
+  caption="Como o Windows decide um acesso: primeiro a integridade, depois a DACL em ordem, com as negações antes das permissões e as ACEs explícitas antes das herdadas. O que não foi permitido está proibido."
+/>
+
+A regra de decisão ([documentação](https://learn.microsoft.com/windows/win32/secauthz/how-dacls-control-access-to-an-object))
+tem três pontos que o Linux não tem:
+
+1. **Tudo que não está permitido está negado.** Se nenhuma ACE casar com os SIDs do seu
+   token, o acesso é negado.
+2. **Negações vêm primeiro.** Na ordem padrão, as ACEs de negação ficam antes das de
+   permissão; uma negação que casa encerra a busca. É por isso que o grupo Administradores
+   "usado apenas para negar" do token filtrado faz sentido: ele ainda casa com ACEs de
+   negação, mas nunca com as de permissão.
+3. **ACEs explícitas vencem as herdadas.** Uma permissão definida no próprio arquivo vem
+   antes das que ele herdou da pasta.
+
+Dois casos-limite caem em prova e em pentest: um objeto **sem** DACL (DACL nula) libera
+tudo para todos; um objeto com DACL **vazia** nega tudo para todos.
+
+Por fim, as pastas do sistema têm um dono especial. Saída real (trecho):
+
+```console
+C:\> icacls "C:\Program Files"
+C:\Program Files NT SERVICE\TrustedInstaller:(F)
+                 NT SERVICE\TrustedInstaller:(CI)(IO)(F)
+                 AUTORIDADE NT\SISTEMA:(M)
+                 AUTORIDADE NT\SISTEMA:(OI)(CI)(IO)(F)
+                 BUILTIN\Administradores:(M)
+                 BUILTIN\Administradores:(OI)(CI)(IO)(F)
+                 BUILTIN\Usuários:(RX)
+                 BUILTIN\Usuários:(OI)(CI)(IO)(GR,GE)
+                 PROPRIETÁRIO CRIADOR:(OI)(CI)(IO)(F)
+```
+
+O controle total da própria pasta é do <GlossaryTerm term="TrustedInstaller">TrustedInstaller</GlossaryTerm>,
+a conta do serviço que instala atualizações. Administradores e SISTEMA têm só `M` na pasta
+(mas `F` no que for criado dentro, pela ACE `(OI)(CI)(IO)(F)`). Usuários só leem: um
+usuário comum não grava em `Program Files`. `GR,GE` são as formas genéricas de "ler" e
+"executar". E `PROPRIETÁRIO CRIADOR` (*CREATOR OWNER*) é um marcador: quem criar algo ali
+dentro recebe controle total sobre o que criou.
+
+### 2.5 Processos e serviços
+
+#### Processos sem fork
+
+No 0.4, você viu que o Linux cria processos em dois passos: `fork` (copiar) e `exec`
+(trocar o programa). O Windows não tem `fork`: um processo cria outro com uma só chamada,
+`CreateProcess`, que já recebe o programa a executar. O resultado é parecido: o filho tem
+um <GlossaryTerm term="PID">PID</GlossaryTerm> próprio, um pai (o
+<GlossaryTerm term="PPID">PPID</GlossaryTerm>) e herda uma cópia do token. Mas há
+diferenças que importam:
+
+- **O PPID não é confiável.** O Windows guarda o PID do pai no momento da criação, mas o
+  pai pode já ter morrido e o número ter sido reutilizado por outro processo. Pior: a API
+  permite que um programa crie um processo declarando **outro** como pai (*parent PID
+  spoofing*), um truque de atacante para disfarçar um `cmd.exe` como filho de um processo
+  inocente. A árvore de processos ajuda, mas não é prova.
+- **Não há sinais.** Não existe SIGTERM nem SIGKILL. O `taskkill /PID 1234` pede a um
+  programa com janela que feche (como clicar no X); o `taskkill /F /PID 1234` encerra à
+  força, como um `kill -9`. Programas de console recebem eventos parecidos com o `Ctrl+C`.
+- **Os PIDs 0 e 4 são especiais.** O 0 é o "Processo Ocioso do Sistema" e o 4 é o
+  `System`, onde roda o código do kernel. Saída real: `Get-Process -Id 0,4` mostra `Idle` e
+  `System`.
+
+As ferramentas: `tasklist` (o `ps` do `cmd`), `Get-Process` (o do PowerShell), o
+Gerenciador de Tarefas e, para investigação de verdade, o Process Explorer da
+<GlossaryTerm term="Sysinternals">Sysinternals</GlossaryTerm> (seção 6).
+
+#### Serviços: o systemd do Windows
+
+Um <GlossaryTerm term="Windows service">serviço</GlossaryTerm> é um programa que roda em
+segundo plano, sem janela, iniciado no boot ou sob demanda. Quem os controla é o
+<GlossaryTerm term="SCM">Service Control Manager</GlossaryTerm>, o processo
+`services.exe`, o paralelo do <GlossaryTerm term="systemd">systemd</GlossaryTerm>. A
+configuração de cada serviço fica no registro, em
+`HKLM\SYSTEM\CurrentControlSet\Services\<nome>`.
+
+<Figure
+  src={servicos}
+  alt="Diagrama: no topo, a chave do registro HKLM\SYSTEM\CurrentControlSet\Services\nome com os valores ImagePath (o que executar, com ou sem aspas), ObjectName (a conta), Start (2 automático, 3 manual, 4 desativado) e Type (0x10 processo próprio, 0x20 compartilhado). Uma seta leva ao Service Control Manager, services.exe, que lê as chaves e inicia os serviços. Dele saem três exemplos: spoolsv.exe, o Spooler, processo próprio como LocalSystem; svchost.exe -k netsvcs -p com Schedule e BITS, como LocalSystem; svchost.exe -k NetworkService -p com o Dnscache, como NetworkService. À direita, as contas de serviço: LocalSystem, o SYSTEM, poder total; NetworkService, pouco poder local, aparece na rede como o computador; LocalService, pouco poder local, anônimo na rede. Embaixo: os que rodam como LocalSystem entregam o SYSTEM inteiro se tiverem uma falha, como no PrintNightmare."
+  caption="Cada serviço é uma chave no registro; o SCM lê essas chaves e inicia os processos, cada um com a conta configurada. Serviços como LocalSystem são os alvos mais valiosos."
+/>
+
+Para consultar um serviço, há três caminhos. O clássico é o `sc.exe` (*service control*).
+Saída real do <GlossaryTerm term="Print Spooler">Spooler de Impressão</GlossaryTerm>
+(*Print Spooler*, o `spoolsv.exe`, serviço que gerencia filas e drivers de impressora; o
+Windows em português traduz até os rótulos do `sc`):
+
+```console
+C:\> sc qc Spooler
+[SC] QueryServiceConfig ÊXITO
+
+NOME_DO_SERVIÇO: Spooler
+    TIPO                       : 110  WIN32_OWN_PROCESS (interactive)
+    TIPO_DE_INÍCIO             : 2   AUTO_START
+    CONTROLE_DE_ERRO           : 1   NORMAL
+    NOME_DO_CAMINHO_BINÁRIO    : C:\WINDOWS\System32\spoolsv.exe
+    GRUPO_DE_ORDEM_DE_CARREG.  : SpoolerGroup
+    MARCA                      : 0
+    NOME_PARA_EXIBIÇÃO         : Spooler de Impressão
+    DEPENDÊNCIAS               : RPCSS
+                                  : http
+       NOME_DO_INÍCIO_DO_SERVIÇO  : LocalSystem
+```
+
+Linha a linha, com os nomes que você vai ver num Windows em inglês:
+
+- `TIPO` (*TYPE*): `10` é processo próprio; `20` é compartilhado (o serviço roda dentro de
+  um processo hospedeiro, junto com outros); o `100` a mais indica que o serviço pode
+  interagir com a área de trabalho (um resquício antigo). **Atenção:** o `sc` mostra esses
+  números em hexadecimal **sem** o prefixo `0x`. O `20` é `0x20`, que em decimal é 32.
+- `TIPO_DE_INÍCIO` (*START_TYPE*): `2` automático, `3` manual, `4` desativado.
+- `NOME_DO_CAMINHO_BINÁRIO` (*BINARY_PATH_NAME*): o programa que o SCM executa.
+- `NOME_DO_INÍCIO_DO_SERVIÇO` (*SERVICE_START_NAME*): a **conta** com que ele roda.
+
+Os outros dois caminhos são o PowerShell (`Get-Service` para o estado; `Get-CimInstance
+Win32_Service` para conta e caminho, que o `Get-Service` do 5.1 não mostra) e o próprio
+registro (seção 2.6). O `Get-CimInstance` consulta o <GlossaryTerm term="CIM">CIM</GlossaryTerm>
+(*Common Information Model*), uma interface padronizada que descreve o sistema em "classes"
+(`Win32_Service`, `Win32_Process`, `Win32_OperatingSystem`); no Windows, ela é implementada
+pelo WMI. É um dos jeitos mais completos de perguntar coisas ao Windows sem instalar nada.
+
+#### svchost: muitos serviços num processo só
+
+Muitos serviços do Windows não são programas `.exe`, mas bibliotecas (DLLs), e rodam
+dentro de um processo hospedeiro genérico, o <GlossaryTerm term="svchost">svchost.exe</GlossaryTerm>.
+O parâmetro `-k` diz a qual grupo ele pertence. Saída real (trecho):
+
+```console
+C:\> sc qc Schedule
+...
+    NOME_DO_CAMINHO_BINÁRIO    : C:\WINDOWS\system32\svchost.exe -k netsvcs -p
+...
+       NOME_DO_INÍCIO_DO_SERVIÇO  : LocalSystem
+C:\> sc qc Dnscache
+...
+    TIPO                       : 10  WIN32_OWN_PROCESS
+    NOME_DO_CAMINHO_BINÁRIO    : C:\WINDOWS\system32\svchost.exe -k NetworkService -p
+...
+       NOME_DO_INÍCIO_DO_SERVIÇO  : NT AUTHORITY\NetworkService
+```
+
+O Agendador de Tarefas (`Schedule`) roda no grupo `netsvcs`. O Cliente DNS (`Dnscache`)
+aparece como `10` (processo próprio) mesmo sendo de um grupo: em máquinas com bastante
+memória, o Windows 10 e o 11 separam os serviços em svchosts individuais, para que a queda
+de um não derrube os outros. Por isso há tantos svchost no Gerenciador de Tarefas; na
+máquina deste módulo, `(Get-Process svchost).Count` respondeu `47`. Para saber qual serviço
+está dentro de qual svchost, use `tasklist /svc` (você vai fazer isso na Missão 2).
+
+#### As contas de serviço
+
+Um serviço roda com a conta configurada, e a escolha da conta é uma decisão de segurança
+([documentação](https://learn.microsoft.com/windows/security/identity-protection/access-control/local-accounts#default-local-system-accounts)):
+
+| Conta | SID | Poder na máquina | Na rede |
+|---|---|---|---|
+| <GlossaryTerm term="LocalSystem">LocalSystem</GlossaryTerm> | `S-1-5-18` | Total (é o SYSTEM) | Apresenta-se como o computador |
+| <GlossaryTerm term="NetworkService">NetworkService</GlossaryTerm> | `S-1-5-20` | Mínimo | Apresenta-se como o computador |
+| <GlossaryTerm term="LocalService">LocalService</GlossaryTerm> | `S-1-5-19` | Mínimo | Anônimo |
+| Conta de usuário | `S-1-5-21-...` | O daquela conta | Como aquela conta |
+
+É o mesmo raciocínio das <GlossaryTerm term="service account">contas de serviço</GlossaryTerm>
+do 0.4: menos poder, menos estrago se o serviço for invadido. Mas, na máquina deste módulo,
+`Get-CimInstance Win32_Service | Group-Object StartName` contou 187 serviços como
+LocalSystem, 67 como LocalService e 22 como NetworkService. A maioria ainda roda com poder
+total.
+
+Dois detalhes completam o quadro. Os serviços rodam na **sessão 0**, separada das sessões
+dos usuários (1, 2...), sem área de trabalho, o
+<GlossaryTerm term="session 0 isolation">isolamento da sessão 0</GlossaryTerm>; assim, um
+serviço do SYSTEM não exibe janelas em que um usuário poderia mexer. E, além dos serviços,
+existem as <GlossaryTerm term="scheduled task">tarefas agendadas</GlossaryTerm>, o
+paralelo do cron: o Agendador de Tarefas roda programas em horários ou eventos (logon,
+boot) com a conta configurada. Na máquina deste módulo, `Get-ScheduledTask` listou 201
+tarefas, quase todas do próprio Windows.
+
+### 2.6 O registro: o /etc do Windows
+
+No Linux, a configuração mora em arquivos de texto em `/etc` e em pastas ocultas do usuário.
+No Windows, mora quase toda no <GlossaryTerm term="registry">registro</GlossaryTerm>, um
+banco de dados hierárquico, binário, que você consulta com `reg`, com o PowerShell ou com o
+`regedit` (o editor gráfico). A estrutura lembra um sistema de arquivos:
+
+- uma <GlossaryTerm term="registry key">chave</GlossaryTerm> é como uma pasta: tem
+  subchaves, valores e a própria ACL;
+- um <GlossaryTerm term="registry value">valor</GlossaryTerm> é como um arquivo: tem nome,
+  tipo e dado.
+
+| Tipo | Conteúdo | Exemplo |
+|---|---|---|
+| `REG_SZ` | Texto | `ObjectName = LocalSystem` |
+| `REG_EXPAND_SZ` | Texto com variáveis `%...%`, expandidas ao ler | `ImagePath = %SystemRoot%\System32\svchost.exe ...` |
+| `REG_MULTI_SZ` | Lista de textos | `DependOnService` |
+| `REG_DWORD` | Número de 32 bits, mostrado em hexadecimal | `Start = 0x2` |
+| `REG_QWORD` | Número de 64 bits | — |
+| `REG_BINARY` | Bytes crus | `FailureActions` |
+
+#### Chaves-raiz e colmeias
+
+O registro tem cinco chaves-raiz, mas só duas guardam dados de fato; as outras são
+atalhos. A parte gravada em disco é dividida em
+<GlossaryTerm term="registry hive">colmeias</GlossaryTerm> (*hives*), cada uma num arquivo.
+
+<Figure
+  src={colmeias}
+  alt="Diagrama em duas colunas. À esquerda, HKEY_LOCAL_MACHINE com as subchaves SAM, SECURITY, SOFTWARE, SYSTEM e HARDWARE; à direita, os arquivos: SAM e SECURITY em C:\Windows\System32\config, destacados em vermelho porque guardam hashes das senhas e segredos e só o SYSTEM lê; SOFTWARE e SYSTEM no mesmo diretório; HARDWARE montada na memória a cada boot. Embaixo, HKEY_USERS com uma subchave por SID, a do usuário vinda de C:\Users\usuario\NTUSER.DAT e as de LocalService e NetworkService de C:\Windows\ServiceProfiles. Por último: HKEY_CURRENT_USER não é colmeia, é atalho para HKU e o SID do usuário; HKEY_CLASSES_ROOT mistura HKLM\SOFTWARE\Classes com as classes do usuário."
+  caption="O que você vê no regedit são chaves; o que existe no disco são colmeias. As de HKLM ficam em System32\config, as de cada usuário no NTUSER.DAT do perfil."
+/>
+
+- <GlossaryTerm term="HKLM">HKLM</GlossaryTerm> (`HKEY_LOCAL_MACHINE`): a configuração da
+  máquina inteira. `HKLM\SYSTEM` tem os serviços e drivers; `HKLM\SOFTWARE`, os programas
+  instalados; `HKLM\SAM` e `HKLM\SECURITY`, as contas e os segredos. Alterar exige
+  administrador.
+- `HKU` (`HKEY_USERS`): uma subchave para cada usuário com sessão aberta, nomeada pelo SID.
+- <GlossaryTerm term="HKCU">HKCU</GlossaryTerm> (`HKEY_CURRENT_USER`): um atalho para
+  `HKU\<seu SID>`. O próprio usuário escreve aqui, sem precisar de administrador.
+- `HKCR` (`HKEY_CLASSES_ROOT`): associações de arquivos e objetos COM, misturando HKLM e
+  HKCU.
+- `HKCC` (`HKEY_CURRENT_CONFIG`): o perfil de hardware atual (raramente importa).
+
+O próprio registro diz onde cada colmeia está no disco. Saída real (trecho; o caminho
+`\Device\HarddiskVolume3` é o nome interno do `C:`):
+
+```console
+PS C:\> Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\hivelist
+\REGISTRY\MACHINE\SOFTWARE    : \Device\HarddiskVolume3\Windows\System32\config\SOFTWARE
+\REGISTRY\MACHINE\SYSTEM      : \Device\HarddiskVolume3\Windows\System32\config\SYSTEM
+\REGISTRY\MACHINE\SECURITY    : \Device\HarddiskVolume3\Windows\System32\config\SECURITY
+\REGISTRY\MACHINE\SAM         : \Device\HarddiskVolume3\Windows\System32\config\SAM
+\REGISTRY\USER\S-1-5-20       : \Device\HarddiskVolume3\Windows\ServiceProfiles\NetworkService\NTUSER.DAT
+\REGISTRY\USER\S-1-5-19       : \Device\HarddiskVolume3\Windows\ServiceProfiles\LocalService\NTUSER.DAT
+\REGISTRY\USER\S-1-5-21-1111111111-2222222222-3333333333-1001 : \Device\HarddiskVolume3\Users\usuario\NTUSER.DAT
+```
+
+#### Ler o registro
+
+Com o `reg` (no `cmd` ou no PowerShell) e com o PowerShell, que trata o registro como se
+fosse um disco (`HKLM:\`). Saída real, os valores do Spooler:
+
+```console
+C:\> reg query HKLM\SYSTEM\CurrentControlSet\Services\Spooler /v Start
+
+HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Spooler
+    Start    REG_DWORD    0x2
+PS C:\> Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\Spooler | Select-Object Start,ObjectName,ImagePath
+
+Start ObjectName  ImagePath
+----- ----------  ---------
+    2 LocalSystem C:\WINDOWS\System32\spoolsv.exe
+```
+
+O `reg query` mostra os `DWORD` em hexadecimal (`0x2`); o PowerShell, em decimal (`2`).
+Aqui são iguais, mas em números maiores não: `0x20` é 32. Os valores `Start` e `Type`
+seguem a [tabela oficial](https://learn.microsoft.com/windows-hardware/drivers/install/hklm-system-currentcontrolset-services-registry-tree):
+`Start` 0 (boot) e 1 (sistema) são para drivers, 2 automático, 3 sob demanda, 4
+desativado; `Type` 0x1 e 0x2 são drivers, 0x10 serviço com processo próprio, 0x20 serviço
+compartilhado.
+
+<Callout variant="warning" title="Ler, sim; alterar, não">
+`reg add`, `reg delete`, `Set-ItemProperty` e o `regedit` **alteram** o registro, e um valor
+errado em `HKLM\SYSTEM` pode impedir o Windows de iniciar. Neste módulo, use só `reg query`
+e `Get-ItemProperty`.
+</Callout>
+
+### 2.7 cmd e PowerShell
+
+O Windows tem dois shells, e você vai usar os dois.
+
+#### cmd: o herdeiro do MS-DOS
+
+O <GlossaryTerm term="cmd">cmd</GlossaryTerm> (`cmd.exe`, o Prompt de Comando) é antigo,
+limitado e está em todo Windows. Trabalha com texto, como o Bash, mas com outra sintaxe:
+
+| Tarefa | Bash | cmd |
+|---|---|---|
+| Listar | `ls -la` | `dir` (`dir /a` mostra ocultos) |
+| Mudar de pasta | `cd /tmp` | `cd C:\Temp` (`cd /d D:\` muda de unidade também) |
+| Ver arquivo | `cat a.txt` | `type a.txt` |
+| Copiar, mover, apagar | `cp`, `mv`, `rm` | `copy`, `move`, `del` (pastas: `rmdir /s`) |
+| Procurar texto | `grep -i senha a.txt` | `findstr /i senha a.txt` |
+| Onde está o programa | `which ls` / `type -a ls` | `where whoami` |
+| Variável | `echo $HOME` | `echo %USERPROFILE%` |
+| Definir variável | `X=1` (sessão) | `set X=1` |
+| Código de saída | `echo $?` | `echo %ERRORLEVEL%` |
+| Processos | `ps aux` | `tasklist` |
+| Matar | `kill -9 PID` | `taskkill /F /PID PID` |
+| Rede | `ip a`, `ss -tlnp` | `ipconfig /all`, `netstat -ano` |
+| Ajuda | `man ls` | `dir /?` |
+
+Pipes (`|`), redirecionamento (`>`, `>>`, `2>&1`) e encadeamento (`&&`, `||`) funcionam
+como no Bash; `&` sozinho executa um comando depois do outro, como o `;` do Bash. O código
+de saída do último comando fica na variável <GlossaryTerm term="ERRORLEVEL">ERRORLEVEL</GlossaryTerm>,
+o paralelo do `$?`. Scripts do `cmd` são os
+<GlossaryTerm term="batch file">arquivos de lote</GlossaryTerm>, `.bat` ou `.cmd`.
+
+#### PowerShell: o shell de objetos
+
+O <GlossaryTerm term="PowerShell">PowerShell</GlossaryTerm> é outra coisa. Os comandos
+nativos, os <GlossaryTerm term="cmdlet">cmdlets</GlossaryTerm>, seguem o padrão
+verbo-substantivo: `Get-Process`, `Stop-Service`, `Set-Content`. E o pipe passa **objetos**,
+não texto. No Bash, para pegar a coluna de estado de um comando, você recorta texto com
+`awk` ou `cut`, e o script quebra se a saída mudar de formato. No PowerShell, você pede a
+propriedade pelo nome:
+
+```console
+PS C:\> Get-Service EventLog,Spooler,Schedule
+
+Status  Name     DisplayName
+------  ----     -----------
+Running EventLog Log de Eventos do Windows
+Running Schedule Agendador de Tarefas
+Running Spooler  Spooler de Impressão
+
+PS C:\> (Get-Service EventLog).Status.GetType().FullName
+System.ServiceProcess.ServiceControllerStatus
+```
+
+O `Status` não é a palavra "Running": é um valor de um tipo .NET. Para descobrir o que um
+objeto tem, use `Get-Member` (saída real, trecho):
+
+```console
+PS C:\> Get-Service EventLog | Get-Member -MemberType Property | Select-Object -First 4
+
+Name                Definition
+----                ----------
+CanPauseAndContinue bool CanPauseAndContinue {get;}
+CanShutdown         bool CanShutdown {get;}
+CanStop             bool CanStop {get;}
+Container           System.ComponentModel.IContainer Container {get;}
+```
+
+As três ferramentas que você mais vai usar no pipe: `Where-Object` (filtrar: `Get-Service |
+Where-Object Status -eq Running`), `Select-Object` (escolher propriedades ou as primeiras
+linhas) e `Format-Table`/`Format-List` (só para exibir, sempre no fim). E as três para se
+achar sozinho: `Get-Help nome`, `Get-Command *palavra*` e `Get-Member`.
+
+Para facilitar a vida de quem vem do Bash e do `cmd`, o PowerShell tem
+<GlossaryTerm term="alias">aliases</GlossaryTerm>. Saída real do Windows PowerShell 5.1:
+
+```console
+PS C:\> Get-Alias ls,cat,ps,kill,rm,sc,curl,wget
+
+CommandType Name                      Version Source
+----------- ----                      ------- ------
+Alias       ls -> Get-ChildItem
+Alias       cat -> Get-Content
+Alias       ps -> Get-Process
+Alias       kill -> Stop-Process
+Alias       rm -> Remove-Item
+Alias       sc -> Set-Content
+Alias       curl -> Invoke-WebRequest
+Alias       wget -> Invoke-WebRequest
+```
+
+Parecem os comandos do Linux, mas **não são**: `ls -la` dá erro (o `Get-ChildItem` não tem
+`-la`), e `curl` não é o curl. O pior é o `sc`: no PowerShell, ele **não** é o `sc.exe`
+de serviços, mas `Set-Content`, que grava arquivos. Você vai ver o estrago na Missão 2.
+
+O Windows traz o **Windows PowerShell 5.1** (`powershell.exe`, edição *Desktop*). O
+**PowerShell 7** (`pwsh.exe`), multiplataforma e mais novo, é instalado à parte, e não define o
+alias `curl`, justamente para não esconder o `curl.exe` de verdade que o Windows também
+traz ([documentação](https://learn.microsoft.com/windows/curl/)).
+Num pentest, conte com o 5.1: é o que está em todo Windows.
+
+#### Variáveis de ambiente, PATH e PATHEXT
+
+As <GlossaryTerm term="environment variable">variáveis de ambiente</GlossaryTerm> funcionam
+como no Linux: são herdadas pelos processos filhos. Mudam a sintaxe (`%PATH%` no `cmd`,
+`$env:PATH` no PowerShell) e o separador do PATH, que é `;` em vez de `:`. Há uma variável
+que o Linux não tem, a <GlossaryTerm term="PATHEXT">PATHEXT</GlossaryTerm>: a lista de
+extensões que contam como "executável" quando você digita um nome sem extensão. Saída real:
+
+```console
+PS C:\> $env:PATHEXT
+.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL
+```
+
+Por isso `whoami` encontra `whoami.exe`. E aqui está a diferença mais importante para a
+segurança. No 0.4, você viu que o Bash procura um comando no alias, na função, no builtin e
+depois no `PATH`, e que um diretório gravável no começo do `PATH` permite o
+<GlossaryTerm term="PATH hijacking">sequestro de PATH</GlossaryTerm>. O `cmd` faz pior: ele
+procura **primeiro na pasta atual**, e só depois no `PATH`. A documentação da função
+`NeedCurrentDirectoryForExePath` descreve isso: o `cmd.exe` usa a busca `.;%PATH%`, a menos
+que exista a variável `NoDefaultCurrentDirectoryInExePath`
+([documentação](https://learn.microsoft.com/windows/win32/api/processenv/nf-processenv-needcurrentdirectoryforexepathw)).
+O PowerShell, ao contrário, **não** procura na pasta atual: para rodar algo dali, é preciso
+digitar `.\nome`, e a [documentação](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_command_precedence)
+chama isso de recurso de segurança.
+
+<Figure
+  src={busca}
+  alt="Comparação da busca de comandos. À esquerda, o cmd.exe: 1, comando interno como dir, echo, set e cd; 2, a pasta atual, destacada em vermelho; 3, cada pasta do PATH em ordem; em cada pasta, o nome com as extensões do PATHEXT. Um whoami.bat na pasta atual vence o C:\Windows\System32\whoami.exe. À direita, o PowerShell: 1, alias como ls, cat, sc e curl; 2, função; 3, cmdlet; 4, programa externo só no PATH. A pasta atual não entra; para rodar algo dali, digite .\nome. whoami acha o whoami.exe do System32; ferramenta dá não é reconhecido. Embaixo, o Bash: alias, função, builtin, tabela hash e PATH, com a pasta atual só se estiver no PATH."
+  caption="O cmd procura na pasta atual antes do PATH; o PowerShell e o Bash, não. Na Missão 3, você vai ver um whoami falso vencer o verdadeiro no cmd e ser ignorado no PowerShell."
+/>
+
+E o PowerShell tem a própria ordem: alias, depois função, depois cmdlet, e só então
+programa externo. Por isso o alias `sc` esconde o `sc.exe`: para chamar o programa, digite
+a extensão (`sc.exe`). Um erro real enquanto este módulo era escrito: um script de coleta
+definiu uma função chamada `H` para imprimir títulos, e o PowerShell rodou o `Get-History`
+em vez dela, porque `h` já é um alias embutido de `Get-History`, e alias vence função.
+
+#### A execution policy
+
+O PowerShell tem uma <GlossaryTerm term="execution policy">execution policy</GlossaryTerm>
+que decide se arquivos de script `.ps1` podem rodar. No Windows 10 e 11, o padrão efetivo
+é `Restricted`: comandos digitados funcionam, scripts não. Saída real:
+
+```console
+PS C:\> Get-ExecutionPolicy -List
+
+        Scope ExecutionPolicy
+        ----- ---------------
+MachinePolicy       Undefined
+   UserPolicy       Undefined
+      Process       Undefined
+  CurrentUser       Undefined
+ LocalMachine       Undefined
+
+PS C:\> Get-ExecutionPolicy
+Restricted
+PS C:\> & C:\...\ola.ps1
+& : O arquivo C:\...\ola.ps1 não pode ser carregado porque a execução de scripts foi
+desabilitada neste sistema. Para obter mais informações, consulte about_Execution_Policies em
+https://go.microsoft.com/fwlink/?LinkID=135170.
+```
+
+Parece uma proteção, mas a [documentação da Microsoft](https://learn.microsoft.com/powershell/scripting/learn/ps101/01-getting-started#execution-policy)
+é direta: ela "não é uma barreira de segurança", porque não impede um usuário determinado
+de rodar scripts. A prova, no mesmo Windows, a partir do `cmd`, sem mudar nenhuma
+configuração (o `ola.ps1` só contém `Get-Date`):
+
+```console
+C:\> type ola.ps1 | powershell -NoProfile -Command -
+sábado, 3 de outubro de 2026 05:54:33
+```
+
+O conteúdo do script, passado pelo pipe, roda como se fosse digitado. A execution policy
+existe para evitar que você rode um script **por engano** (um anexo, um duplo clique), não
+para barrar um atacante. A defesa de verdade está na seção 8.
+
+### 2.8 Rede e as defesas que já vêm instaladas
+
+O que você aprendeu no 0.2 vale igual: IPs, portas, TCP e UDP são os mesmos. Mudam os
+comandos (`ipconfig /all`, `netstat -ano`, `Get-NetTCPConnection`, `Test-NetConnection`) e
+as portas típicas de um Windows:
+
+| Porta | Serviço | Para que serve |
+|---|---|---|
+| 135/TCP | <GlossaryTerm term="RPC">RPC</GlossaryTerm> (*endpoint mapper*) | Diz em que porta cada serviço RPC está |
+| 139/TCP | NetBIOS | Compartilhamento de arquivos à moda antiga |
+| 445/TCP | <GlossaryTerm term="SMB">SMB</GlossaryTerm> | Compartilhamento de arquivos e impressoras; muita administração remota passa por aqui |
+| 3389/TCP | <GlossaryTerm term="RDP">RDP</GlossaryTerm> | Área de Trabalho Remota (a tela inteira pela rede) |
+| 5985, 5986/TCP | <GlossaryTerm term="WinRM">WinRM</GlossaryTerm> | Administração remota por PowerShell (HTTP e HTTPS) |
+
+Saída real das portas em escuta (`Get-NetTCPConnection -State Listen`, trecho, com os
+endereços da rede local trocados por exemplos):
+
+```console
+PS C:\> Get-NetTCPConnection -State Listen | Sort-Object LocalPort | Format-Table LocalAddress,LocalPort,OwningProcess
+
+LocalAddress  LocalPort OwningProcess
+------------  --------- -------------
+0.0.0.0             135          1884
+192.168.0.10        139             4
+::                  445             4
+127.0.0.1          6463         13704
+0.0.0.0           49664          1920
+0.0.0.0           49667          2284
+```
+
+Repare no dono (`OwningProcess`) das portas 139 e 445: o PID 4, o `System`. O SMB é
+implementado dentro do kernel do Windows, o que explica por que falhas nele são tão graves
+(seção 4). E o `0.0.0.0` significa "em todas as interfaces", como no Linux. As portas altas
+(49664 em diante) são de serviços RPC; o `OwningProcess` diz qual, e um `tasklist /svc /fi
+"pid eq 2284"` mostra quais serviços moram naquele processo.
+
+O Windows traz de fábrica algumas defesas que o pentester sempre confere, todas
+consultáveis sem administrador. Saída real:
+
+```console
+PS C:\> Get-MpComputerStatus | Select-Object AMServiceEnabled,AntivirusEnabled,RealTimeProtectionEnabled,IsTamperProtected
+
+AMServiceEnabled          : True
+AntivirusEnabled          : True
+RealTimeProtectionEnabled : True
+IsTamperProtected         : True
+
+PS C:\> Get-NetFirewallProfile | Format-Table Name,Enabled
+
+Name    Enabled
+----    -------
+Domain     True
+Private    True
+Public     True
+```
+
+O <GlossaryTerm term="Microsoft Defender Antivirus">Microsoft Defender Antivirus</GlossaryTerm>
+está ligado, com proteção em tempo real e contra adulteração (*Tamper Protection*: nem um
+administrador o desliga por comando). O <GlossaryTerm term="firewall">firewall</GlossaryTerm>
+está ligado nos três perfis de rede (domínio, privada e pública).
+
+### 2.9 WSL: a ponte entre os dois mundos
+
+Você usa o WSL desde o 0.1. Agora dá para entender o que ele faz com a segurança do seu
+Windows. O <GlossaryTerm term="WSL interop">interop</GlossaryTerm> do WSL liga os dois
+sistemas nos dois sentidos ([documentação](https://learn.microsoft.com/windows/dev-environment/wsl-interop)):
+
+- **Do Linux para o Windows:** o `C:` aparece em `/mnt/c`, e você roda programas do Windows
+  pelo nome com a extensão (`cmd.exe`, `ipconfig.exe`, `powershell.exe`). O
+  <GlossaryTerm term="wslpath">wslpath</GlossaryTerm> converte caminhos:
+  `wslpath -w /tmp` responde `\\wsl.localhost\Ubuntu\tmp`.
+- **Do Windows para o Linux:** os arquivos do Ubuntu aparecem em `\\wsl.localhost\Ubuntu`,
+  e `wsl ls` roda um comando do Linux a partir do PowerShell.
+
+A consequência de segurança: um programa do Windows chamado de dentro do WSL roda **como
+o seu usuário do Windows**, com o seu token filtrado. E o Linux enxerga e altera o seu
+perfil do Windows inteiro por `/mnt/c/Users/...`. A fronteira entre os dois sistemas é a
+sua conta, não uma barreira. Um malware que rode no seu Ubuntu alcança seus documentos do
+Windows, e vice-versa. É uma das razões de as regras deste projeto manterem os alvos
+vulneráveis dentro de contêineres isolados, e nunca no WSL nem no Windows.
+
+## 3. Na prática da segurança — como atacante e defensor usam isto
+
+Tudo da seção 2 é configuração legítima do Windows. O que muda, em segurança, é o olhar:
+o atacante lê essas mesmas informações para achar o caminho de usuário comum a SYSTEM, e o
+defensor lê os mesmos lugares para perceber que alguém está fazendo isso. Esta seção mostra
+os dois lados, e é o que você vai praticar nas missões. Tudo aqui é **leitura**.
+
+### 3.1 Enumerar com o que já vem na máquina
+
+O primeiro passo de quem invade um Windows (depois de conseguir rodar comandos nele) é
+**se reconhecer**: quem sou eu, em que grupos estou, que privilégios tenho, que máquina é
+esta. É exatamente o `whoami /all`, que junta `whoami /user`, `/groups` e `/priv` numa só
+saída. Um usuário comum em nível Médio e sem privilégios perigosos vê um caminho difícil;
+um token com `SeImpersonatePrivilege` (típico de conta de serviço) ou no grupo
+Administradores vê um caminho curto.
+
+O atacante prefere fazer isso **sem levar ferramenta nenhuma**, usando só o que já existe no
+Windows — `whoami`, `net`, `sc.exe`, `reg`, `tasklist`, `wmic`, o PowerShell. Essa tática
+tem nome: <GlossaryTerm term="living off the land">living off the land</GlossaryTerm>
+("viver do que a terra dá"), atacar com os próprios binários do sistema em vez de trazer
+programas próprios. A vantagem para quem ataca é não tocar o disco com nada novo: um
+antivírus que procura arquivos estranhos não vê nada estranho, porque `certutil.exe` e
+`powershell.exe` são partes legítimas do Windows.
+
+O catálogo público desses binários é o <GlossaryTerm term="LOLBAS">LOLBAS</GlossaryTerm>
+(*Living Off the Land Binaries, Scripts and Libraries*), o equivalente Windows do GTFOBins
+que você viu no 0.4. Ele lista, por exemplo, que o `certutil.exe` — feito para lidar com
+certificados — também baixa arquivos da internet, grava em
+<GlossaryTerm term="Alternate Data Stream">fluxos alternativos</GlossaryTerm> e decodifica
+base64 ([LOLBAS: Certutil.exe](https://lolbas-project.github.io/lolbas/Binaries/Certutil/)).
+
+```console
+C:\> whoami /all
+...
+INFORMAÇÕES DE PRIVILÉGIOS
+---------------------------
+Nome de privilégio            Descrição                       Estado
+============================= =============================== ==========
+SeChangeNotifyPrivilege       Ignorar a verificação completa  Ativada
+SeShutdownPrivilege           Desligar o sistema              Desativado
+```
+
+Para o defensor, a lição é incômoda: não dá para "bloquear o `certutil.exe`", porque o
+sistema precisa dele. A defesa real é registrar **quem** o executou, com qual linha de
+comando, e estranhar um `certutil` baixando um `.exe` de um endereço desconhecido (seção
+3.4 e seção 8).
+
+### 3.2 Serviços e registro vistos por quem ataca
+
+A seção 2.5 mostrou que um serviço roda com uma conta, muitas vezes LocalSystem. O atacante
+olha a lista de serviços procurando um que (a) rode com uma conta poderosa e (b) tenha algo
+que um usuário comum consiga **alterar**. Se ele puder trocar o programa que um serviço
+LocalSystem executa, ele roda código como SYSTEM na próxima vez que o serviço iniciar.
+
+Um clássico é o <GlossaryTerm term="unquoted service path">caminho de serviço sem aspas</GlossaryTerm>
+(*unquoted service path*). Lembre que o `ImagePath` é o programa que o SCM executa. Se ele
+tiver espaços e **não** estiver entre aspas, o Windows tenta interpretar o caminho em
+pedaços, parando em cada espaço. Um `ImagePath` como `C:\Program Files\App Legal\svc.exe`
+sem aspas faz o Windows tentar, em ordem: `C:\Program.exe`, depois `C:\Program Files\App.exe`,
+e só então o certo. Se um usuário puder gravar em `C:\` (lembre da seção 2.4: Usuários
+autenticados podem criar pastas em `C:\`) ou numa pasta intermediária, ele põe ali um
+`Program.exe` e passa a rodar com a conta do serviço. Procurar esses caminhos é uma linha só:
+
+```console
+C:\> wmic service get Name,PathName,StartName | findstr /i /v """
+```
+
+(lista os serviços cujo `PathName` não tem aspas). A técnica é a
+[T1574.009 do MITRE ATT&CK](https://attack.mitre.org/techniques/T1574/009/), e você já
+sabe de onde ela vem: é o mesmo princípio do sequestro de busca de comando do 0.4 e da
+seção 2.7, só que aplicado ao caminho de um serviço.
+
+Outro lugar que o atacante lê e, quando consegue, escreve é a
+<GlossaryTerm term="Run key">chave Run</GlossaryTerm>: os valores em
+`...\CurrentVersion\Run` (em `HKCU` e `HKLM`) listam programas que iniciam a cada logon. É
+uso legítimo (muitos programas de bandeja ficam ali), mas também a forma mais antiga de
+**persistência**: um invasor que escreve na chave Run do próprio usuário (`HKCU`, que não
+pede administrador) garante que o seu programa volte a cada logon. É a
+[T1547.001 do MITRE ATT&CK](https://attack.mitre.org/techniques/T1547/001/). Ler as chaves
+Run é leitura pura:
+
+```console
+C:\> reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+C:\> reg query HKLM\Software\Microsoft\Windows\CurrentVersion\Run
+```
+
+### 3.3 O que o `dir` não mostra
+
+A seção 2.1 prometeu um segredo do NTFS. Aqui está: além do conteúdo "normal", um arquivo
+NTFS pode ter vários fluxos de dados com nome — os
+<GlossaryTerm term="Alternate Data Stream">Alternate Data Streams</GlossaryTerm> (ADS).
+O conteúdo que você vê ao abrir `nota.txt` é o fluxo sem nome (`:$DATA`). Mas é possível
+anexar `nota.txt:oculto`, um segundo fluxo, que o `dir` comum **não mostra** e cujo tamanho
+**não** entra no tamanho exibido do arquivo. Só `dir /r` e `Get-Item -Stream *` revelam:
+
+```console
+C:\> echo isto fica oculto.>nota.txt:oculto
+C:\> dir
+26/10/2026  14:37                 5 nota.txt
+C:\> dir /r
+26/10/2026  14:37                 5 nota.txt
+                                 19 nota.txt:oculto:$DATA
+```
+
+O `nota.txt` continua mostrando 5 bytes, mas há 19 bytes escondidos num fluxo paralelo.
+Atacantes já usaram ADS para esconder executáveis e configuração; é a
+[T1564.004 do MITRE ATT&CK](https://attack.mitre.org/techniques/T1564/004/) (*NTFS File
+Attributes*). Você vai fazer e desfazer isso na Missão 3.
+
+O próprio Windows usa um ADS o tempo todo, para o seu bem: a
+<GlossaryTerm term="Mark of the Web">Mark of the Web</GlossaryTerm> (marca da web). Quando
+você baixa um arquivo pelo navegador, o Windows grava nele um fluxo `Zone.Identifier` com a
+zona de origem (`ZoneId=3` é "internet"). É por isso que o Office abre documentos baixados
+em Modo de Exibição Protegido e o SmartScreen avisa sobre executáveis baixados. Dá para ver:
+
+```console
+PS C:\> Get-Content arquivo-baixado.pdf -Stream Zone.Identifier
+[ZoneTransfer]
+ZoneId=3
+```
+
+Por fim, um fato que liga ADS, backup e a seção 4: o Windows tira fotos periódicas do disco,
+as <GlossaryTerm term="volume shadow copy">volume shadow copies</GlossaryTerm> (cópias de
+sombra do volume), criadas pelo serviço VSS para pontos de restauração e backup. Elas
+guardam versões antigas de **todos** os arquivos, inclusive os do sistema — e, como você vai
+ver, inclusive arquivos que deveriam ser secretos. Quem administra lista as cópias com
+`vssadmin list shadows` (precisa de administrador).
+
+### 3.4 O que o defensor enxerga
+
+Cada ação da máquina pode virar um registro. O sistema de logs do Windows é o
+<GlossaryTerm term="Event Viewer">Visualizador de Eventos</GlossaryTerm> (*Event Viewer*),
+dividido em canais — `System`, `Application`, `Security` e um canal próprio para cada
+componente. No PowerShell, lê-se com `Get-WinEvent`. Saída real:
+
+```console
+PS C:\> Get-WinEvent -ListLog System,Application,Security | Format-Table LogName,RecordCount
+
+LogName     RecordCount
+-------     -----------
+System            37716
+Application       19504
+Security          (Acesso negado a usuário comum)
+```
+
+Repare: o canal `Security` **não** se lê como usuário comum — precisa de administrador. Isso
+é proposital, porque é lá que ficam os eventos de logon e de uso de privilégio.
+
+Cada tipo de evento tem um número, o <GlossaryTerm term="event ID">event ID</GlossaryTerm>.
+Alguns que todo analista reconhece: **4624** (logon bem-sucedido) e **4625** (logon que
+falhou) no `Security`; **7045** (um serviço novo foi instalado) no `System` — exatamente o
+rastro que o truque de serviço da seção 3.2 deixa; **4104** (bloco de script do PowerShell
+executado) no canal do PowerShell. Procurar serviços recém-instalados é uma linha:
+
+```console
+PS C:\> Get-WinEvent -FilterHashtable @{LogName='System'; Id=7045} -MaxEvents 3 |
+>>   Format-Table TimeCreated,Id,ProviderName
+
+TimeCreated           Id ProviderName
+-----------           -- ------------
+26/10/2026 04:25:55 7045 Service Control Manager
+```
+
+O log padrão, porém, não registra tudo. Duas peças fecham a lacuna. A primeira é o
+<GlossaryTerm term="Sysmon">Sysmon</GlossaryTerm> (*System Monitor*), ferramenta gratuita da
+Sysinternals que, instalada, grava eventos detalhados que o Windows não grava sozinho:
+criação de processo **com a linha de comando inteira e o hash** (event ID 1 do Sysmon),
+conexões de rede (ID 3), escrita no registro (ID 13), criação de ADS (ID 15). É o Sysmon que
+pega um `certutil` baixando um `.exe`, porque registra a linha de comando completa. A
+segunda é a <GlossaryTerm term="AMSI">AMSI</GlossaryTerm> (*Antimalware Scan Interface*): a
+interface pela qual o PowerShell e outros interpretadores entregam ao antivírus o código que
+vão executar **já decodificado**, mesmo que tenha chegado ofuscado ou em base64. É o que
+estraga a vida de quem tenta esconder um script passando-o codificado.
+
+A conclusão da seção 3, para os dois lados: quase todo abuso usa peças legítimas do Windows,
+então a defesa não é "proibir a peça", e sim **registrar e estranhar o uso**. Guarde isso
+para a seção 8.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+Três incidentes mostram por que cada conceito deste módulo importa. Todos têm CVE, boletim e
+relatório públicos.
+
+### HiveNightmare / SeriousSAM — CVE-2021-36934 (julho de 2021)
+
+Lembra da seção 2.2, em que nem como usuário comum você conseguiu ler `HKLM\SAM`? Em 2021,
+descobriu-se que, em versões recentes do Windows 10 e 11, as permissões NTFS dos arquivos
+`SAM`, `SYSTEM` e `SECURITY` em `C:\Windows\System32\config` tinham ficado permissivas demais:
+o grupo Usuários conseguia **lê-los**. Pior: mesmo quem corrigisse as permissões continuava
+exposto, porque as <GlossaryTerm term="volume shadow copy">volume shadow copies</GlossaryTerm>
+antigas guardavam cópias legíveis desses arquivos. Com `SAM` e `SYSTEM` em mãos, um usuário
+comum extrai os hashes das senhas locais e escala para administrador.
+
+- **Impacto:** elevação de privilégio local de usuário comum a SYSTEM. CVSS 7.8 (alto). A
+  Microsoft confirmou que apenas instalar a atualização **não bastava**: era preciso apagar
+  manualmente as cópias de sombra antigas ("you must manually delete all shadow copies of
+  system files... Simply installing this security update will not fully mitigate this
+  vulnerability").
+- **Lição:** uma ACL errada em arquivos que deveriam ser só do SYSTEM derruba toda a
+  proteção do SAM — e o backup pode manter o erro vivo depois do conserto. É a seção 2.2 e a
+  seção 2.4 juntas, na prática.
+- **Fonte:** [MSRC — CVE-2021-36934](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-36934)
+  e [KB5005357 — Delete Volume Shadow Copies](https://support.microsoft.com/help/5005357).
+
+### PrintNightmare — CVE-2021-34527 (julho de 2021)
+
+O serviço <GlossaryTerm term="Print Spooler">Spooler de Impressão</GlossaryTerm> roda como
+LocalSystem e vem **ligado por padrão** na maioria dos Windows, inclusive em controladores de
+domínio. Em 2021, uma falha permitia que um usuário autenticado fizesse o Spooler carregar um
+driver de impressora malicioso — e, como ele é SYSTEM, o código rodava como SYSTEM. Em um
+controlador de domínio, isso é o domínio inteiro.
+
+- **Impacto:** execução remota de código como SYSTEM. CVSS 8.8 (alto), explorada
+  ativamente. A Microsoft publicou uma correção **fora do ciclo mensal** — uma
+  <GlossaryTerm term="out-of-band update">out-of-band update</GlossaryTerm>, lançada em 6 e 7
+  de julho de 2021, antes da terça-feira de patches — de tão urgente. Entrou no catálogo de
+  vulnerabilidades exploradas da CISA em 3 de novembro de 2021.
+- **Lição:** um serviço que roda como LocalSystem é um alvo valioso — qualquer falha nele
+  vira controle total. A medida de contorno oficial foi exatamente **parar e desativar o
+  Spooler** onde ele não fosse necessário (`Stop-Service -Name Spooler -Force` e
+  `Set-Service -Name Spooler -StartupType Disabled`). Menos serviço como SYSTEM, menos
+  superfície.
+- **Fonte:** [MSRC — CVE-2021-34527](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-34527).
+
+### WannaCry — EternalBlue e MS17-010 (maio de 2017)
+
+Em 12 de maio de 2017, o ransomware WannaCry se espalhou sozinho por redes do mundo inteiro.
+Ele usava o <GlossaryTerm term="EternalBlue">EternalBlue</GlossaryTerm>, um exploit para uma
+falha do SMBv1 (`CVE-2017-0144`) — o mesmo SMB que a seção 2.8 mostrou escutando na porta
+445, implementado dentro do kernel. Por ser no kernel, a falha dava execução remota com o
+máximo de privilégio, e o worm pulava de máquina em máquina sem ninguém clicar em nada.
+
+- **Impacto:** no Reino Unido, o relatório oficial do *National Audit Office* contou pelo
+  menos **81 das 236** organizações (*trusts*) do NHS afetadas, **595** clínicas de família
+  infectadas e **6.912** consultas canceladas (com estimativa de mais de 19.000 no total).
+- **Lição:** a correção (**MS17-010**) existia desde **14 de março de 2017**, dois meses
+  antes. As organizações atingidas rodavam Windows sem atualização ou já sem suporte, com o
+  SMBv1 exposto. O NAO concluiu que o ataque "poderia ter sido evitado seguindo práticas
+  básicas de segurança de TI". Atualizar, desligar o SMBv1 e não expor a porta 445 fecham
+  exatamente esse caminho.
+- **Fonte:** [NAO — Investigation: WannaCry cyber attack and the NHS](https://www.nao.org.uk/reports/investigation-wannacry-cyber-attack-and-the-nhs/)
+  (27 de outubro de 2017) e [MS17-010](https://learn.microsoft.com/security-updates/securitybulletins/2017/ms17-010).
+
+## 5. Mãos à obra — três missões no seu Windows
+
+**Objetivo:** ao terminar, você terá lido a sua própria identidade (token, grupos,
+privilégios, integridade), destrinchado um serviço de verdade pela ótica do `sc.exe` e do
+registro, e feito o NTFS esconder dados de você — as três coisas que um pentester faz nos
+primeiros minutos num Windows. Cada missão termina com uma flag montada a partir de valores
+que só aparecem se você rodar os comandos.
+
+Tudo aqui é **leitura** (a Missão 3 cria uma pasta de brinquedo e a apaga no fim). Nenhum
+comando altera a configuração do Windows.
+
+### 5.1 Preparação: dois terminais
+
+Você vai precisar de dois terminais, e a diferença entre eles é o coração da Missão 1:
+
+1. **Terminal comum.** Abra o Menu Iniciar, digite `cmd` e clique em **Prompt de Comando**
+   (ou `powershell` para o PowerShell). Ele nasce do `explorer.exe`, então herda o seu
+   <GlossaryTerm term="filtered token">token filtrado</GlossaryTerm>: nível Médio.
+2. **Terminal elevado.** Repita, mas clique em **Executar como administrador** e aprove o
+   UAC. Ele recebe o **token completo**: nível Alto.
+
+<Callout variant="tip" title="Rodar do WSL">
+Se preferir, dá para chamar os programas do Windows de dentro do Ubuntu
+(`cmd.exe /c "whoami /groups"`), como você viu na seção 2.9. Mas o **Executar como
+administrador** do terminal elevado não tem equivalente simples pelo WSL, então a parte
+elevada da Missão 1 é mais fácil nos dois terminais abertos à mão.
+</Callout>
+
+### 5.2 Missão 1 — Quem sou eu no Windows?
+
+**Parte guiada.** No **terminal comum**, descubra o seu nível de integridade. Ele aparece no
+`whoami /groups` como um grupo do tipo **Rótulo**, com um SID que começa em `S-1-16-`:
+
+```console
+C:\> whoami /groups | findstr /i "16-"
+Rótulo Obrigatório\Nível Obrigatório Médio   Rótulo   S-1-16-8192
+```
+
+O RID (último número do SID) do rótulo é a primeira parte da flag. Em nível Médio ele é
+`8192`. Agora conte quantos privilégios o seu token tem neste terminal:
+
+```console
+C:\> whoami /priv
+...
+Nome de privilégio            Descrição                       Estado
+============================= =============================== ==========
+SeShutdownPrivilege           Desligar o sistema              Desativado
+SeChangeNotifyPrivilege       Ignorar a verificação completa  Ativada
+...
+```
+
+Conte as **linhas de privilégio** (as que começam com `Se...`). Num usuário comum em nível
+Médio, costumam ser poucas. Esse número é a terceira parte da flag.
+
+**Desafio.** Abra agora o **terminal elevado** (Executar como administrador) e rode o mesmo
+`whoami /groups | findstr /i "16-"`. O RID do rótulo vai mudar: é a segunda parte da flag.
+Pense: por que o mesmo usuário tem dois níveis de integridade diferentes, dependendo de como
+o terminal foi aberto?
+
+<Hint title="Dica 1">
+Releia a seção 2.3. Níveis de integridade: Baixo, Médio, Alto, Sistema. Cada um tem um RID
+fixo no SID `S-1-16-`. O token filtrado é Médio; o completo, Alto.
+</Hint>
+
+<Hint title="Dica 2">
+Os RIDs de integridade são múltiplos: Baixo = `4096`, Médio = `8192`, Alto = `12288`,
+Sistema = `16384`. O terminal elevado é Alto.
+</Hint>
+
+<Solution title="Solução da Missão 1">
+No terminal comum, o rótulo é `S-1-16-8192` (Médio) e o `whoami /priv` lista 5 privilégios
+(`SeShutdownPrivilege`, `SeChangeNotifyPrivilege`, `SeUndockPrivilege`,
+`SeIncreaseWorkingSetPrivilege`, `SeTimeZonePrivilege`). No terminal elevado, o rótulo vira
+`S-1-16-12288` (Alto) e a lista de privilégios fica bem maior.
+
+O mesmo usuário tem dois tokens por causa do UAC (seção 2.3): o filtrado (Médio, usado no
+dia a dia) e o completo (Alto, usado só depois de aprovar a elevação). Monte a flag no
+formato `FLAG{RID-comum-RID-elevado-privilégios}`: o RID do rótulo no terminal comum (Médio),
+o RID no terminal elevado (Alto) e o número de privilégios que o `whoami /priv` comum lista.
+</Solution>
+
+<FlagInput task="missao-1-quem-sou-eu" />
+
+### 5.3 Missão 2 — O serviço por dentro do registro
+
+**Parte guiada.** O serviço `EventLog` (Log de Eventos do Windows) é um bom alvo de estudo:
+é um serviço compartilhado, rodando dentro de um `svchost`. Primeiro, a armadilha do
+PowerShell. Abra o **PowerShell** e tente:
+
+```console
+PS C:\> sc query eventlog
+```
+
+Nada de serviço — e aparece um arquivo `query` novo na pasta. Lembra da seção 2.7? No
+PowerShell, `sc` é **alias de `Set-Content`**, não o `sc.exe`. O comando acabou de **gravar**
+um arquivo chamado `query` com o texto `eventlog` dentro. Apague-o (`del query`) e use o nome
+certo, com a extensão:
+
+```console
+PS C:\> sc.exe qc EventLog
+[SC] QueryServiceConfig ÊXITO
+
+NOME_DO_SERVIÇO: EventLog
+    TIPO                       : 20  WIN32_SHARE_PROCESS
+    ...
+    NOME_DO_CAMINHO_BINÁRIO    : C:\WINDOWS\System32\svchost.exe -k LocalServiceNetworkRestricted -p
+       NOME_DO_INÍCIO_DO_SERVIÇO  : NT AUTHORITY\LocalService
+```
+
+A **conta** que roda o serviço (`NOME_DO_INÍCIO_DO_SERVIÇO`), sem o prefixo `NT AUTHORITY\`
+e em minúsculas, é a primeira parte da flag.
+
+**Desafio.** Agora vá ao registro, onde essa configuração mora de verdade, em
+`HKLM\SYSTEM\CurrentControlSet\Services\EventLog`. Você precisa de dois valores:
+
+- o valor `Type` da chave, convertido de hexadecimal para **decimal** (lembre da seção 2.6:
+  o `reg query` mostra `DWORD` em hex);
+- quantas entradas estão em `RequiredPrivileges` (a lista de privilégios que o serviço
+  declara precisar).
+
+<Hint title="Dica 1">
+`reg query HKLM\SYSTEM\CurrentControlSet\Services\EventLog` despeja todos os valores da
+chave de uma vez. Procure as linhas `Type` e `RequiredPrivileges`.
+</Hint>
+
+<Hint title="Dica 2">
+`Type` aparece como `0x20`. O `0x` quer dizer hexadecimal; `0x20` = 2×16 = 32 em decimal.
+O `RequiredPrivileges` é um `REG_MULTI_SZ` (lista de textos); conte quantos `Se...Privilege`
+ele traz.
+</Hint>
+
+<Solution title="Solução da Missão 2">
+```console
+C:\> reg query HKLM\SYSTEM\CurrentControlSet\Services\EventLog
+    ...
+    ObjectName          REG_SZ          NT AUTHORITY\LocalService
+    RequiredPrivileges  REG_MULTI_SZ    SeChangeNotifyPrivilege\0SeImpersonatePrivilege\0SeAuditPrivilege
+    Type                REG_DWORD        0x20
+```
+
+A conta é `localservice` (de `NT AUTHORITY\LocalService`). O `Type` é `0x20` = **32** em
+decimal (um serviço compartilhado, *WIN32_SHARE_PROCESS*). O `RequiredPrivileges` tem **3**
+entradas: `SeChangeNotifyPrivilege`, `SeImpersonatePrivilege` e `SeAuditPrivilege`. Monte a
+flag no formato `FLAG{conta-type-privilégios}` com esses três valores.
+
+Repare que o EventLog roda como LocalService (pouco poder), não LocalSystem: é a defesa da
+seção 2.5 bem aplicada — um serviço de log não precisa ser SYSTEM.
+</Solution>
+
+<FlagInput task="missao-2-servico-e-registro" />
+
+### 5.4 Missão 3 — O que o `dir` não mostra
+
+**Parte guiada.** Esta missão cria uma pasta de brinquedo no seu perfil, mexe só nela e a
+apaga no fim. Abra o **Prompt de Comando** (cmd) e monte o cenário:
+
+```console
+C:\> cd /d %USERPROFILE%
+C:\Users\voce> mkdir plataforma-0.5 & cd plataforma-0.5
+C:\Users\voce\plataforma-0.5> echo ola>nota.txt
+C:\Users\voce\plataforma-0.5> echo isto fica oculto.>nota.txt:oculto
+```
+
+A terceira linha gravou um <GlossaryTerm term="Alternate Data Stream">ADS</GlossaryTerm>
+chamado `oculto` dentro de `nota.txt`. Veja que o `dir` comum esconde isso e só o `dir /r`
+revela, com o **tamanho em bytes** do fluxo:
+
+```console
+C:\Users\voce\plataforma-0.5> dir /r
+26/10/2026  14:37                 5 nota.txt
+                                 19 nota.txt:oculto:$DATA
+```
+
+O número de bytes do `nota.txt:oculto` é a primeira parte da flag.
+
+**Desafio.** Faltam duas partes:
+
+1. Quantas **ACEs** o `icacls .` mostra nesta pasta (conte uma por usuário ou grupo listado).
+2. O `%ERRORLEVEL%` (o código de saída, o `$?` do Windows — seção 2.7) de um comando que
+   **não existe**, rodado no cmd.
+
+<Hint title="Dica 1">
+`icacls .` lista uma linha por ACE: cada linha é um SID (ou nome) com os direitos entre
+parênteses. Conte as linhas de permissão.
+</Hint>
+
+<Hint title="Dica 2">
+Rode qualquer nome que não seja um comando (`comandoquenaoexiste`) e, **na linha seguinte**,
+`echo %ERRORLEVEL%`. O cmd usa um código próprio para "comando não encontrado".
+</Hint>
+
+<Solution title="Solução da Missão 3">
+```console
+C:\Users\voce\plataforma-0.5> icacls .
+. AUTORIDADE NT\SISTEMA:(I)(OI)(CI)(F)
+  BUILTIN\Administradores:(I)(OI)(CI)(F)
+  LENOVO\voce:(I)(OI)(CI)(F)
+Processados com sucesso 1 arquivos; falha no processamento de 0 arquivos
+C:\Users\voce\plataforma-0.5> comandoquenaoexiste
+'comandoquenaoexiste' não é reconhecido como um comando interno
+ou externo, um programa operável ou um arquivo em lotes.
+C:\Users\voce\plataforma-0.5> echo %ERRORLEVEL%
+9009
+```
+
+O ADS tem **19** bytes, o `icacls` mostra **3** ACEs (SISTEMA, Administradores e o seu
+usuário — todas herdadas, pelo `(I)`), e o código de "comando não encontrado" do cmd é
+**9009**. Monte a flag no formato `FLAG{bytes-aces-código}` com esses três valores. Os três
+`(I)` confirmam a seção 2.4: a pasta herdou as ACEs do seu perfil, sem nenhuma definida à mão.
+</Solution>
+
+<FlagInput task="missao-3-arquivos-e-busca" />
+
+### 5.5 Limpar
+
+A Missão 3 deixou uma pasta de brinquedo. Apague-a (ela some com o ADS junto):
+
+```console
+C:\Users\voce\plataforma-0.5> cd .. & rmdir /s /q plataforma-0.5
+```
+
+As Missões 1 e 2 só leram informação; não há nada para desfazer.
+
+## 6. Variações e aprofundamento
+
+**Sysinternals: enxergar o que o Gerenciador de Tarefas esconde.** A seção 2.5 citou o
+Process Explorer. A suíte <GlossaryTerm term="Sysinternals">Sysinternals</GlossaryTerm> vai
+muito além dele: o **Autoruns** lista **todos** os pontos de início automático do Windows
+(as chaves <GlossaryTerm term="Run key">Run</GlossaryTerm>, tarefas agendadas, serviços,
+extensões), e é a primeira parada de quem caça persistência; o **Process Monitor** grava em
+tempo real cada acesso a arquivo, registro e rede, e mostra, por exemplo, um programa
+procurando um `.exe` numa pasta gravável (o unquoted path da seção 3.2 ao vivo); o **Sysmon**
+você já conhece da seção 3.4. Todos são gratuitos e assinados pela Microsoft.
+
+**winget: o `apt` do Windows.** O 0.4 girou em torno do `apt`. O Windows moderno tem um
+gerenciador de pacotes de linha de comando parecido, o
+<GlossaryTerm term="winget">winget</GlossaryTerm> (*Windows Package Manager*):
+`winget search`, `winget install`, `winget upgrade --all`. Como no `apt`, ele resolve
+dependências e baixa de fontes conhecidas — mas instalar programas costuma passar pelo UAC.
+Para o defensor, `winget list` é um inventário rápido do que está instalado.
+
+**Windows em domínio e a Group Policy.** Tudo que você viu vale para uma máquina solta. Numa
+empresa, as máquinas entram num domínio (Active Directory) e passam a receber configuração
+central pela <GlossaryTerm term="Group Policy">Group Policy</GlossaryTerm> (Política de
+Grupo): senhas, firewall, permissões, scripts de logon e as próprias defesas da seção 8,
+tudo empurrado para centenas de máquinas de uma vez. O `gpresult /r` mostra quais políticas
+se aplicam à máquina atual. É o mecanismo que a Trilha 7 explora a fundo — e é por isso que
+comprometer um controlador de domínio vale tanto: quem controla a Group Policy controla as
+máquinas.
+
+**PowerShell 7 e o futuro.** O 5.1 é o que está em todo Windows, mas o PowerShell 7
+(`pwsh`), multiplataforma, ganha espaço. Ele não define o alias `curl`, roda em Linux e
+macOS, e é o que você vai reencontrar em scripts modernos. Num pentest, porém, conte sempre
+com o 5.1: é o denominador comum.
+
+## 7. Erros comuns
+
+- **`sc query ...` no PowerShell "não acha" o serviço (e cria um arquivo).** `sc` é alias de
+  `Set-Content` no PowerShell (seção 2.7). Use `sc.exe` ou `Get-Service`. O mesmo vale para
+  `curl` (é `Invoke-WebRequest`, não o `curl.exe`): chame `curl.exe` quando quiser o
+  programa de verdade.
+- **O número do `Type`/`Start` parece errado.** O `reg query` e o `sc` mostram valores em
+  **hexadecimal** (`0x20`), o PowerShell em **decimal** (`32`). Não compare um com o outro
+  sem converter. `0x10` = 16, `0x20` = 32.
+- **"Acesso negado" lendo `HKLM\SAM` ou o canal `Security`.** Não é bug: essas áreas são só
+  do SYSTEM (SAM) ou exigem administrador (canal `Security`). Se precisa mesmo, abra o
+  terminal elevado — mas as missões deste módulo não precisam.
+- **Os nomes aparecem em inglês na sua máquina.** As saídas deste módulo vêm de um Windows em
+  português (`BUILTIN\Administradores`, `NT AUTHORITY\SISTEMA`). Num Windows em inglês são
+  `BUILTIN\Administrators` e `NT AUTHORITY\SYSTEM` — mas os SIDs (`S-1-5-32-544`,
+  `S-1-5-18`) são iguais em qualquer idioma. Prefira o SID quando tiver dúvida.
+- **Um script levado do WSL para o Windows (ou vice-versa) quebra com erro estranho.** Em
+  geral é o fim de linha: o Windows usa <GlossaryTerm term="CRLF">CRLF</GlossaryTerm>
+  (`\r\n`), o Linux só `LF` (`\n`). Um `.sh` salvo com CRLF faz o Bash reclamar de
+  `\r`; um `.ps1` salvo com LF costuma funcionar, mas editores e o git podem embaralhar isso.
+  O git tem `core.autocrlf` justamente para isto.
+- **"Executei como administrador mas ainda dá acesso negado."** Confirme que o terminal é
+  mesmo o elevado: no comum, `whoami /groups` mostra o nível **Médio** e o grupo
+  Administradores "usado apenas para negar". Sem a elevação, você está com o token filtrado.
+
+## 8. Boas práticas e segurança
+
+A lição que atravessa as seções 3 e 4 é uma só: quase todo ataque a Windows abusa de peças
+**legítimas** — uma conta de serviço poderosa demais, uma ACL frouxa, um binário do próprio
+sistema, um patch não aplicado. A defesa, então, é menos "instalar um produto" e mais
+**reduzir poder, aplicar correção e registrar o uso**. Em ordem de impacto:
+
+1. **Não seja administrador no dia a dia.** É a medida que mais rende. Com UAC e uma conta
+   padrão, um clique errado roda em nível Médio, não como administrador. A própria Microsoft
+   trata o UAC como <GlossaryTerm term="defense in depth">defesa em profundidade</GlossaryTerm>,
+   não como barreira — então a conta comum é a barreira.
+2. **Atualize, e remova o que não usa.** WannaCry e PrintNightmare exploraram falhas **com
+   correção disponível**. Mantenha o Windows atualizado (incluindo as
+   <GlossaryTerm term="out-of-band update">out-of-band updates</GlossaryTerm> urgentes) e
+   desligue serviços e protocolos legados — SMBv1, e o Spooler onde não se imprime.
+3. **Dê a cada serviço o mínimo de poder.** Prefira LocalService/NetworkService a
+   LocalSystem; ponha aspas nos `ImagePath`; e confira que usuários comuns não gravam nas
+   pastas de onde serviços carregam programas (o remédio do unquoted path da seção 3.2).
+4. **Proteja as credenciais em memória.** A <GlossaryTerm term="LSA protection">LSA protection</GlossaryTerm>
+   (RunAsPPL) faz o LSASS rodar como processo protegido, de modo que nem um administrador leia
+   a memória dele; o <GlossaryTerm term="Credential Guard">Credential Guard</GlossaryTerm>
+   vai além e isola os segredos num ambiente separado por virtualização (VBS), fora do alcance
+   até de um kernel comprometido. No Windows 11 novo, as duas vêm ligadas em muitos casos — no
+   PowerShell elevado, `(Get-CimInstance Win32_DeviceGuard -Namespace root\Microsoft\Windows\DeviceGuard).SecurityServicesRunning`
+   com `1` indica Credential Guard rodando.
+5. **Controle o que pode executar.** O <GlossaryTerm term="AppLocker">AppLocker</GlossaryTerm>
+   define por regras (caminho, editor ou hash) quais programas e scripts rodam; o
+   <GlossaryTerm term="App Control for Business">App Control for Business</GlossaryTerm>
+   (o novo nome do WDAC) é mais forte e vale até para o código do kernel. Com eles ativos, o
+   PowerShell cai no <GlossaryTerm term="Constrained Language Mode">Constrained Language Mode</GlossaryTerm>,
+   que bloqueia os recursos da linguagem mais usados em ataques (chamar APIs, criar tipos
+   .NET arbitrários) — é a **defesa de verdade** que falta à execution policy (seção 2.7).
+6. **Troque as senhas de administrador local.** O <GlossaryTerm term="LAPS">LAPS</GlossaryTerm>
+   (*Local Administrator Password Solution*, embutido no Windows desde a atualização de 11 de
+   abril de 2023) dá a cada máquina da empresa uma senha de administrador local diferente,
+   trocada sozinha e guardada no diretório — fecha o caminho de reusar uma mesma senha de
+   admin em toda a rede.
+7. **Cuide do disco e do backup.** O <GlossaryTerm term="BitLocker">BitLocker</GlossaryTerm>
+   cifra o disco inteiro e protege os dados se o notebook for roubado (não contra quem já está
+   logado). E lembre do HiveNightmare: as <GlossaryTerm term="volume shadow copy">volume shadow
+   copies</GlossaryTerm> podem guardar versões antigas de arquivos sensíveis — depois de
+   corrigir uma permissão, confira o que o backup ainda carrega.
+8. **Registre e estranhe.** Ative os logs que importam (criação de processo com linha de
+   comando, PowerShell Script Block Logging), e considere o Sysmon. A
+   <GlossaryTerm term="AMSI">AMSI</GlossaryTerm> entrega ao antivírus o script já
+   decodificado. Sem registro, um ataque *living off the land* é invisível; com ele, um
+   `certutil` baixando um `.exe` salta aos olhos.
+
+## 9. Exercícios
+
+O quiz abaixo testa o entendimento dos conceitos (tokens, SID, ACL, serviços, registro,
+busca de comandos, os casos reais). Ele é corrigido no servidor e conta para concluir o
+módulo. As três flags vêm das missões da seção 5.
+
+<Quiz task="quiz-final" />
+
+### Para pensar (sem flag)
+
+<Callout variant="hypothetical" title="o serviço com caminho sem aspas">
+Você encontra um serviço que roda como LocalSystem com `ImagePath` igual a
+`C:\Program Files\Fornecedor X\agente.exe`, **sem aspas**. A pasta `C:\` deixa Usuários
+autenticados criarem pastas. Que arquivo um atacante tentaria criar, e por que isso lhe daria
+SYSTEM? Qual é a correção de uma linha?
+</Callout>
+
+<Solution title="Discussão">
+O Windows, sem aspas, tentaria `C:\Program.exe` antes do caminho certo. Um atacante que crie
+`C:\Program.exe` faria o SCM executá-lo como LocalSystem no próximo início do serviço — logo,
+código como SYSTEM. A correção é pôr o `ImagePath` entre aspas
+(`"C:\Program Files\Fornecedor X\agente.exe"`) e garantir que usuários comuns não gravem nas
+pastas do caminho. É a seção 3.2 com a seção 2.4.
+</Solution>
+
+<Callout variant="hypothetical" title="o script que não devia rodar">
+Um colega diz que a máquina está segura porque a execution policy do PowerShell está em
+`Restricted`. Você discorda. Como mostra, sem mudar nenhuma configuração, que isso não barra
+quem quer rodar um script?
+</Callout>
+
+<Solution title="Discussão">
+A própria Microsoft diz que a execution policy "não é uma barreira de segurança" (seção 2.7).
+Basta passar o conteúdo do script pelo pipe: `type script.ps1 | powershell -NoProfile -Command -`,
+ou usar `-ExecutionPolicy Bypass`, ou colar os comandos. A defesa de verdade é AppLocker / App
+Control e o Constrained Language Mode (seção 8).
+</Solution>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- O Windows tem os mesmos conceitos do Linux com outros nomes: root → **SYSTEM**, UID →
+  **SID**, `/etc` → **registro**, systemd → **SCM**, cron → Agendador de Tarefas, sudo → UAC.
+- A identidade de um processo é o **access token**: SID, grupos, privilégios e nível de
+  integridade. O **UAC** dá ao administrador dois tokens — o filtrado (Médio, do dia a dia) e
+  o completo (Alto, só após elevar).
+- As permissões são **ACLs** de **ACEs**, com herança (`OI`/`CI`/`I`); o que não está
+  permitido está negado, e a integridade é conferida antes da ACL. Lê-se com `icacls`.
+- Serviços rodam com uma conta (idealmente a de menor poder) e são configurados no registro;
+  um serviço LocalSystem mal protegido é caminho para SYSTEM.
+- Na busca de comando, o **cmd** olha a pasta atual **antes** do PATH; o PowerShell e o Bash,
+  não. O PowerShell resolve alias antes de função, cmdlet e programa externo.
+- Quase todo ataque abusa de peça legítima (serviço, ACL, binário, patch ausente). A defesa é
+  reduzir poder, atualizar e **registrar o uso**.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [Microsoft Learn — Access control (SIDs, tokens, ACLs)](https://learn.microsoft.com/windows/win32/secauthz/access-control) — a referência oficial dos conceitos da seção 2.
+- [LOLBAS Project](https://lolbas-project.github.io/) — o catálogo de binários do Windows abusáveis, o GTFOBins do Windows.
+- [Sysinternals](https://learn.microsoft.com/sysinternals/) — Process Explorer, Autoruns, Process Monitor e Sysmon, para enxergar o Windows por dentro.
+

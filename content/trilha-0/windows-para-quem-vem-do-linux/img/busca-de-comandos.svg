@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
+  <title id="t">Onde o cmd e o PowerShell procuram um comando digitado sem caminho</title>
+  <desc id="d">À esquerda, o cmd: primeiro os comandos internos, como dir e echo; depois a pasta atual; depois cada pasta do PATH, da esquerda para a direita. Em cada pasta, tenta o nome com as extensões listadas na variável PATHEXT (.COM, .EXE, .BAT, .CMD e outras, no Windows 11). Por isso um whoami.bat na pasta atual vence o C:\Windows\System32\whoami.exe. À direita, o PowerShell: primeiro alias, depois função, depois cmdlet, e por último os programas externos, procurados só nas pastas do PATH. A pasta atual não entra: para rodar algo dali é preciso digitar .\nome. Embaixo, o Bash, para comparar: alias, função, builtin, tabela hash e PATH, sem a pasta atual a menos que ela esteja no PATH.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #c9d6ce; }
+    .k { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+    .hot { fill: #2a1d1b; stroke: #f08c7a; stroke-width: 1.8; }
+    .ln { stroke: #9fb0a6; stroke-width: 1.6; fill: none; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="900" height="430" fill="#121815"/>
+  <text class="t" x="30" y="36">Você digitou: whoami</text>
+
+  <text class="m" x="30" y="70">cmd.exe</text>
+  <rect class="box" x="30" y="82" width="400" height="40" rx="6"/>
+  <text class="s" x="46" y="107">1. comando interno? (dir, echo, set, cd)</text>
+  <path class="ln" d="M230 122 L230 136" marker-end="url(#a)"/>
+  <rect class="hot" x="30" y="138" width="400" height="40" rx="6"/>
+  <text class="s" x="46" y="163" style="fill:#f08c7a">2. a PASTA ATUAL (.)</text>
+  <path class="ln" d="M230 178 L230 192" marker-end="url(#a)"/>
+  <rect class="box" x="30" y="194" width="400" height="40" rx="6"/>
+  <text class="s" x="46" y="219">3. cada pasta do %PATH%, em ordem</text>
+  <text class="k" x="30" y="256">em cada pasta: nome + extensões do %PATHEXT%</text>
+  <text class="k" x="30" y="274">(.COM;.EXE;.BAT;.CMD;.VBS;... no Windows 11)</text>
+  <text class="s" x="30" y="300">whoami.bat na pasta atual VENCE</text>
+  <text class="s" x="30" y="318">C:\Windows\System32\whoami.exe</text>
+
+  <text class="m" x="470" y="70">PowerShell</text>
+  <rect class="box" x="470" y="82" width="400" height="40" rx="6"/>
+  <text class="s" x="486" y="107">1. alias   (ls, cat, sc, curl...)</text>
+  <path class="ln" d="M670 122 L670 136" marker-end="url(#a)"/>
+  <rect class="box" x="470" y="138" width="400" height="40" rx="6"/>
+  <text class="s" x="486" y="163">2. função   3. cmdlet</text>
+  <path class="ln" d="M670 178 L670 192" marker-end="url(#a)"/>
+  <rect class="box" x="470" y="194" width="400" height="40" rx="6"/>
+  <text class="s" x="486" y="219">4. programa externo, só no $env:PATH</text>
+  <text class="k" x="470" y="256">a pasta atual NÃO entra na busca:</text>
+  <text class="k" x="470" y="274">para rodar algo dali, digite .\nome</text>
+  <text class="s" x="470" y="300">whoami → C:\Windows\system32\whoami.exe</text>
+  <text class="s" x="470" y="318">ferramenta → "não é reconhecido"</text>
+
+  <rect class="box" x="30" y="346" width="840" height="60" rx="8"/>
+  <text class="m" x="46" y="370">Bash, para comparar (módulo 0.4)</text>
+  <text class="s" x="46" y="392">alias → função → builtin → tabela hash → $PATH   (a pasta atual só se estiver no PATH)</text>
+</svg>

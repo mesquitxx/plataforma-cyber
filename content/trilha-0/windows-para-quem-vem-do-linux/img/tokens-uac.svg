@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">Logon de um administrador com UAC: dois tokens</title>
+  <desc id="d">Um usuário do grupo Administradores faz logon. O LSASS cria dois access tokens ligados entre si. O token filtrado, usado por padrão, tem nível de integridade Médio, o grupo Administradores marcado como usado apenas para negar e só privilégios inofensivos, como desligar e mudar o fuso horário; ele é dado ao explorer.exe e herdado por todo programa aberto normalmente, como o terminal comum. O token completo, de nível Alto, tem Administradores ativo e a lista completa de privilégios de administrador, entre eles SeDebugPrivilege, SeBackupPrivilege e SeImpersonatePrivilege; ele só é usado quando o usuário aprova o pedido de elevação do UAC, por exemplo ao abrir o terminal com Executar como administrador.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #c9d6ce; }
+    .k { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+    .med { fill: #1c2521; stroke: #5ee08a; stroke-width: 1.8; }
+    .hi { fill: #1c2521; stroke: #f08c7a; stroke-width: 1.8; }
+    .ln { stroke: #9fb0a6; stroke-width: 1.6; fill: none; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="36">Admin com UAC: um logon, dois tokens</text>
+
+  <rect class="box" x="300" y="56" width="300" height="56" rx="10"/>
+  <text class="m" x="318" y="80">Logon de usuário (admin)</text>
+  <text class="s" x="318" y="100">LSASS cria 2 tokens ligados</text>
+
+  <path class="ln" d="M380 112 L210 160" marker-end="url(#a)"/>
+  <path class="ln" d="M520 112 L690 160" marker-end="url(#a)"/>
+
+  <rect class="med" x="30" y="162" width="390" height="176" rx="10"/>
+  <text class="m" x="48" y="188" style="fill:#5ee08a">Token filtrado (o padrão)</text>
+  <text class="s" x="48" y="212">Integridade: Média</text>
+  <text class="s" x="48" y="232">Administradores: "usado só p/ negar"</text>
+  <text class="s" x="48" y="252">Privilégios: só os inofensivos</text>
+  <text class="k" x="48" y="274">(desligar, fuso horário...)</text>
+  <text class="k" x="48" y="292">conte você mesmo na Missão 1</text>
+  <text class="s" x="48" y="318">→ explorer.exe e tudo que ele abre</text>
+
+  <rect class="hi" x="480" y="162" width="390" height="176" rx="10"/>
+  <text class="m" x="498" y="188" style="fill:#f08c7a">Token completo (elevado)</text>
+  <text class="s" x="498" y="212">Integridade: Alta</text>
+  <text class="s" x="498" y="232">Administradores: ativo e dono</text>
+  <text class="s" x="498" y="252">Privilégios: a lista completa</text>
+  <text class="k" x="498" y="274">inclui SeDebug, SeBackup, SeRestore,</text>
+  <text class="k" x="498" y="292">SeTakeOwnership, SeImpersonate...</text>
+  <text class="s" x="498" y="318">→ só depois do "Sim" no UAC</text>
+
+  <rect class="box" x="30" y="362" width="390" height="80" rx="10"/>
+  <text class="m" x="48" y="388">Terminal comum</text>
+  <text class="s" x="48" y="410">whoami /groups → Nível Médio</text>
+  <text class="s" x="48" y="430">reg query HKLM\SAM → Acesso negado</text>
+
+  <rect class="box" x="480" y="362" width="390" height="80" rx="10"/>
+  <text class="m" x="498" y="388">"Executar como administrador"</text>
+  <text class="s" x="498" y="410">whoami /groups → Nível Alto</text>
+  <text class="s" x="498" y="430">pode mudar serviços, registro HKLM</text>
+
+  <path class="ln" d="M225 338 L225 360" marker-end="url(#a)"/>
+  <path class="ln" d="M675 338 L675 360" marker-end="url(#a)"/>
+</svg>

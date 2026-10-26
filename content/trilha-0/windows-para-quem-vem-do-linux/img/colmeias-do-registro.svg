@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">As chaves-raiz do registro e os arquivos de colmeia no disco</title>
+  <desc id="d">À esquerda, as chaves-raiz que você vê no regedit e no reg query. HKEY_LOCAL_MACHINE, a configuração da máquina, se divide em SAM, SECURITY, SOFTWARE e SYSTEM, cada uma carregada de um arquivo em C:\Windows\System32\config com o mesmo nome; HARDWARE é montada na memória a cada boot. HKEY_USERS tem uma subchave por SID de usuário carregado, cada uma vinda do NTUSER.DAT na pasta do perfil, e as contas de serviço LocalService (S-1-5-19) e NetworkService (S-1-5-20) têm as suas em C:\Windows\ServiceProfiles. HKEY_CURRENT_USER não é uma colmeia: é um atalho para HKEY_USERS\SID do usuário atual. HKEY_CLASSES_ROOT junta partes de HKLM\SOFTWARE\Classes e do usuário. Embaixo, um aviso: os arquivos SAM, SYSTEM e SECURITY guardam os hashes das senhas locais e os segredos para decifrá-los; por isso só o SYSTEM pode lê-los.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #c9d6ce; }
+    .k { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+    .hot { fill: #2a1d1b; stroke: #f08c7a; stroke-width: 1.6; }
+    .ln { stroke: #9fb0a6; stroke-width: 1.4; fill: none; stroke-dasharray: 4 3; }
+  </style>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="36">O que você vê no regedit  ×  onde está no disco</text>
+
+  <rect class="box" x="30" y="56" width="380" height="196" rx="10"/>
+  <text class="m" x="46" y="80">HKEY_LOCAL_MACHINE (HKLM)</text>
+  <text class="s" x="62" y="106">\SAM</text>
+  <text class="s" x="62" y="130">\SECURITY</text>
+  <text class="s" x="62" y="154">\SOFTWARE</text>
+  <text class="s" x="62" y="178">\SYSTEM</text>
+  <text class="s" x="62" y="202">\HARDWARE</text>
+  <text class="k" x="62" y="230">configuração da máquina inteira</text>
+
+  <rect class="hot" x="490" y="88" width="380" height="74" rx="10"/>
+  <text class="s" x="506" y="112">C:\Windows\System32\config\SAM</text>
+  <text class="s" x="506" y="132">  ...\config\SECURITY</text>
+  <text class="k" x="506" y="152">hashes das senhas e segredos (só SYSTEM lê)</text>
+  <rect class="box" x="490" y="168" width="380" height="44" rx="10"/>
+  <text class="s" x="506" y="195">...\config\SOFTWARE e ...\config\SYSTEM</text>
+  <rect class="box" x="490" y="218" width="380" height="34" rx="10"/>
+  <text class="k" x="506" y="240">HARDWARE: montada na memória a cada boot</text>
+
+  <path class="ln" d="M150 102 L488 112"/>
+  <path class="ln" d="M180 126 L488 130"/>
+  <path class="ln" d="M180 150 L488 190"/>
+  <path class="ln" d="M160 174 L488 194"/>
+  <path class="ln" d="M180 198 L488 236"/>
+
+  <rect class="box" x="30" y="270" width="380" height="104" rx="10"/>
+  <text class="m" x="46" y="294">HKEY_USERS (HKU)</text>
+  <text class="s" x="62" y="318">\S-1-5-21-...-1001  (você)</text>
+  <text class="s" x="62" y="340">\S-1-5-19  \S-1-5-20  (serviços)</text>
+  <text class="k" x="62" y="362">uma subchave por perfil carregado</text>
+
+  <rect class="box" x="490" y="270" width="380" height="104" rx="10"/>
+  <text class="s" x="506" y="300">C:\Users\usuario\NTUSER.DAT</text>
+  <text class="s" x="506" y="324">C:\Windows\ServiceProfiles\</text>
+  <text class="s" x="506" y="344">  LocalService\NTUSER.DAT ...</text>
+  <path class="ln" d="M270 314 L488 296"/>
+  <path class="ln" d="M330 336 L488 330"/>
+
+  <rect class="box" x="30" y="392" width="840" height="60" rx="10"/>
+  <text class="m" x="46" y="416">HKEY_CURRENT_USER (HKCU) não é colmeia: é atalho para HKU\&lt;seu SID&gt;.</text>
+  <text class="s" x="46" y="438">HKEY_CLASSES_ROOT (HKCR) mistura HKLM\SOFTWARE\Classes com as classes do usuário.</text>
+</svg>

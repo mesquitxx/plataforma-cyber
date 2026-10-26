@@ -83,36 +83,10 @@ tasks:
         answer: 1
         explanation: "É a mesma priorização do 6.1 e do 6.2, agora no Windows: confiabilidade, ruído e estabilidade. SeImpersonatePrivilege via PrintSpoofer e a troca de um binário gravável são quase garantidos, discretos e não arriscam derrubar o host. O kernel exploit funciona, mas pode travar a máquina (Blue Screen) e acende alarmes — é o último recurso. Nem (a) nem (b) dependem de reinício manual: você mesmo reinicia o serviço que controla."
 glossary:
-  - term: access token
-    definition: "No Windows, o objeto que todo processo carrega descrevendo quem ele é: o SID do usuário, os SIDs dos grupos, a lista de privilégios e o integrity level. O kernel confere esse token contra o descritor de segurança de cada objeto para decidir o que o processo pode. Roubar ou forjar um access token de SYSTEM é virar SYSTEM."
-  - term: SID
-    definition: "Security Identifier: o identificador único e imutável de um principal (usuário, grupo ou conta de serviço) no Windows. É pelo SID, não pelo nome, que o sistema concede ou nega acesso. O SID do SYSTEM é S-1-5-18."
-  - term: integrity level
-    definition: "O rótulo de confiança que o Windows anexa a cada processo e objeto (Low, Medium, High, System). Um processo de integridade mais baixa não pode escrever num objeto de integridade mais alta, mesmo que o DACL permitisse — é uma barreira acima das permissões normais, usada por exemplo para isolar o navegador."
   - term: Service Control Manager (SCM)
     definition: "O componente do Windows que registra, inicia, para e configura os serviços. Ele lê, de cada serviço, qual binário executar e sob qual conta — e obedece a quem tiver direito sobre o serviço. Quem pode reconfigurar um serviço LocalSystem manda no que o LocalSystem executa."
-  - term: LocalSystem
-    definition: "A conta de serviço mais poderosa do Windows (SID S-1-5-18, exibida como NT AUTHORITY\\SYSTEM), com controle praticamente total do host local. Muitos serviços rodam como LocalSystem por conveniência — por isso subverter um serviço costuma dar SYSTEM direto."
-  - term: DACL
-    definition: "Discretionary Access Control List: a parte do descritor de segurança de um objeto (arquivo, chave de registro, serviço, processo) que concede acesso. É uma lista de ACEs (Access Control Entries), cada uma dizendo que um SID pode ou não pode certas ações. Um DACL com uma ACE de escrita para o seu grupo em algo que o SYSTEM executa é um vetor de escalação."
-  - term: SeImpersonatePrivilege
-    definition: "O privilégio que permite a uma thread personificar (impersonate) um cliente que se conectou a ela, assumindo o token desse cliente. Existe para serviços legítimos agirem em nome de quem os chamou (o IIS, o SQL Server). Nas mãos erradas, é o que deixa PrintSpoofer e os potato roubarem o token do SYSTEM."
   - term: SeBackupPrivilege
     definition: "O privilégio que concede leitura a qualquer arquivo do sistema, ignorando o DACL, para que ferramentas de backup copiem tudo. Com ele, um atacante lê arquivos que não deveria — inclusive os hives SAM e SYSTEM — e extrai os hashes das contas locais."
-  - term: SeDebugPrivilege
-    definition: "O privilégio de depurar qualquer processo, inclusive os do SYSTEM. Permite abrir a memória de um processo privilegiado, injetar código nele ou roubar o seu token — é a chave que o Mimikatz usa para ler credenciais do LSASS."
-  - term: unquoted service path
-    definition: "Um serviço cujo caminho do binário (ImagePath) tem espaços e não está entre aspas. O Windows então tenta executar cada prefixo cortado no espaço mais .exe; se um diretório anterior ao binário real for gravável por você, o seu executável roda no lugar — com a conta do serviço."
-  - term: Print Spooler
-    definition: "O serviço de impressão do Windows, que roda como SYSTEM e expõe uma interface RPC. Por anos foi uma fonte fértil de falhas (PrintNightmare) e de coerção de autenticação: o PrintSpoofer o usa para fazer o SYSTEM se conectar a um named pipe do atacante."
-  - term: volume shadow copy
-    definition: "Uma cópia de sombra (snapshot) de um volume feita pelo Volume Shadow Copy Service, usada para backups e pontos de restauração. Como ela congela o estado do disco, dá acesso de leitura a arquivos que estão travados no sistema vivo — foi o que o HiveNightmare usou para ler a base SAM."
-  - term: SAM
-    definition: "Security Account Manager: o banco onde o Windows guarda os usuários e os hashes de senha das contas locais. Vive como um hive de registro travado em %windir%\\System32\\config\\SAM; lê-lo (por backup, shadow copy ou SeBackupPrivilege) e cruzá-lo com o hive SYSTEM entrega os hashes locais."
-  - term: UAC
-    definition: "User Account Control: o mecanismo que, para contas administrativas, entrega por padrão um token filtrado de integridade média e só eleva ao token completo de integridade alta mediante consentimento. É por isso que 'ser admin' não é o mesmo que estar rodando como admin — e por que uma parte da escalação no Windows é apenas contornar o UAC."
-  - term: living off the land
-    definition: "A tática de usar apenas o que já existe no alvo — binários e recursos legítimos do próprio sistema — em vez de trazer ferramentas. É mais silencioso e evita artefatos; no Windows, esses binários subvertíveis são catalogados no LOLBAS, e muito da escalação por serviços e registro é feito só com `sc`, `reg` e `icacls`, que já vêm na máquina."
 ---
 
 import caminhosAteSystem from "./img/caminhos-ate-system.svg";

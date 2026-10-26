@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" role="img" aria-labelledby="t d">
+  <title id="t">Como o Windows decide um acesso a um arquivo</title>
+  <desc id="d">Um processo pede acesso de escrita a um arquivo. Primeiro vem a checagem de integridade: um processo de nível mais baixo que o rótulo do objeto não escreve nele. Depois o Windows percorre a DACL, a lista de ACEs, em ordem, comparando cada ACE com os SIDs do token do processo. A ordem canônica põe as ACEs explícitas antes das herdadas e, em cada grupo, as de negação antes das de permissão. Uma ACE de negação que case com o token e cubra um direito pedido encerra com Acesso negado. As ACEs de permissão vão somando direitos; quando todos os direitos pedidos foram concedidos, o acesso é liberado. Se a lista acaba sem conceder tudo, o acesso é negado: o que não foi permitido está proibido. Uma DACL vazia nega tudo; um objeto sem DACL libera tudo para todos.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .m { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12.5px; fill: #c9d6ce; }
+    .k { font-size: 12px; fill: #9fb0a6; }
+    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
+    .deny { fill: #2a1d1b; stroke: #f08c7a; stroke-width: 1.5; }
+    .allow { fill: #1b2a21; stroke: #5ee08a; stroke-width: 1.5; }
+    .ln { stroke: #9fb0a6; stroke-width: 1.6; fill: none; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="900" height="480" fill="#121815"/>
+  <text class="t" x="30" y="36">Pedido: "quero ESCREVER em nota.txt"</text>
+
+  <rect class="box" x="30" y="56" width="250" height="110" rx="10"/>
+  <text class="m" x="46" y="80">Token do processo</text>
+  <text class="s" x="46" y="102">usuário: S-1-5-21-...-1001</text>
+  <text class="s" x="46" y="120">grupos: Usuários, Todos...</text>
+  <text class="s" x="46" y="138">integridade: Média</text>
+  <text class="k" x="46" y="156">(seção 2.3)</text>
+
+  <path class="ln" d="M280 110 L320 110" marker-end="url(#a)"/>
+
+  <rect class="box" x="322" y="56" width="548" height="56" rx="10"/>
+  <text class="m" x="338" y="80">1. Integridade (MIC)</text>
+  <text class="s" x="338" y="100">nível do processo &lt; rótulo do objeto? escrita negada</text>
+
+  <text class="m" x="338" y="142">2. DACL, de cima para baixo (ordem canônica)</text>
+
+  <rect class="deny" x="322" y="154" width="548" height="40" rx="6"/>
+  <text class="s" x="338" y="179">ACE explícita DENY   Convidados: (W)</text>
+  <rect class="allow" x="322" y="200" width="548" height="40" rx="6"/>
+  <text class="s" x="338" y="225">ACE explícita ALLOW  Usuários: (RX)</text>
+  <rect class="deny" x="322" y="246" width="548" height="40" rx="6"/>
+  <text class="s" x="338" y="271">ACE herdada  DENY    (I) ...</text>
+  <rect class="allow" x="322" y="292" width="548" height="40" rx="6"/>
+  <text class="s" x="338" y="317">ACE herdada  ALLOW   (I) usuario: (F)</text>
+
+  <rect class="box" x="30" y="350" width="270" height="110" rx="10"/>
+  <text class="m" x="46" y="374" style="fill:#f08c7a">Negado se...</text>
+  <text class="s" x="46" y="396">um DENY casa com o token</text>
+  <text class="s" x="46" y="414">e cobre o direito pedido;</text>
+  <text class="s" x="46" y="432">ou a lista acabou sem</text>
+  <text class="s" x="46" y="450">conceder tudo</text>
+
+  <rect class="box" x="316" y="350" width="270" height="110" rx="10"/>
+  <text class="m" x="332" y="374" style="fill:#5ee08a">Liberado quando...</text>
+  <text class="s" x="332" y="396">os ALLOW que casam já</text>
+  <text class="s" x="332" y="414">somaram todos os direitos</text>
+  <text class="s" x="332" y="432">pedidos (a busca para)</text>
+
+  <rect class="box" x="602" y="350" width="268" height="110" rx="10"/>
+  <text class="m" x="618" y="374">Casos-limite</text>
+  <text class="s" x="618" y="396">DACL vazia: nega tudo</text>
+  <text class="s" x="618" y="414">sem DACL (NULL):</text>
+  <text class="s" x="618" y="432">libera tudo a todos</text>
+  <text class="k" x="618" y="450">o dono sempre lê/muda a DACL</text>
+</svg>
