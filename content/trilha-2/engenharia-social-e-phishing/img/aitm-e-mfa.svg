@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="t d">
+  <title id="t">Como o phishing adversary-in-the-middle rouba uma sessão mesmo com MFA</title>
+  <desc id="d">Três colunas: a vítima à esquerda, o site-proxy do atacante no meio e o serviço real à direita. O ataque acontece em cinco passos de cima para baixo. Primeiro, a vítima digita a senha no site-proxy, achando que é o serviço real. Segundo, o proxy repassa a senha ao serviço real em tempo real. Terceiro, o serviço real pede o segundo fator e a vítima digita o código do MFA, que o proxy também repassa. Quarto, o serviço real aceita o login e devolve um cookie de sessão, que prova a sessão autenticada; o proxy guarda esse cookie e repassa à vítima, que vê a tela normal e não desconfia. Quinto, o atacante usa o cookie roubado direto no serviço real e entra sem senha e sem código, porque a sessão já está autenticada. A caixa embaixo explica por que o MFA resistente a phishing, como FIDO2 e WebAuthn, derrota isso: a prova é assinada amarrada à ORIGEM, o endereço real do site; como a vítima está no domínio do proxy, a assinatura não serve para o serviço real e o navegador se recusa a entregá-la. Não é uma falha do MFA: o problema é que o código digitável pode ser repassado, e o cookie, roubado.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 15px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .n { font-size: 12px; font-weight: 700; fill: #e8c46a; }
+    .b { font-size: 11px; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .r { fill: #e07a6a; }
+    .g { fill: #74c48a; }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#9fb0a6"/>
+    </marker>
+    <marker id="ared" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#e07a6a"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="900" height="560" fill="#0f1613"/>
+  <text class="t" x="24" y="30">O MFA por código não impede o phishing que fica no meio</text>
+
+  <!-- columns -->
+  <rect x="24" y="48" width="200" height="40" rx="6" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="124" y="73" text-anchor="middle">VÍTIMA</text>
+  <rect x="350" y="48" width="200" height="40" rx="6" fill="#2a1c1a" stroke="#8a4a3f"/>
+  <text class="h r" x="450" y="66" text-anchor="middle">SITE-PROXY</text>
+  <text class="s" x="450" y="82" text-anchor="middle">valeverde-ti.example</text>
+  <rect x="676" y="48" width="200" height="40" rx="6" fill="#1a2a22" stroke="#3b6b4f"/>
+  <text class="h" x="776" y="66" text-anchor="middle">SERVIÇO REAL</text>
+  <text class="s" x="776" y="82" text-anchor="middle">login.valeverde.example</text>
+
+  <!-- vertical guide lines -->
+  <line x1="124" y1="92" x2="124" y2="470" stroke="#26332c" stroke-width="1"/>
+  <line x1="450" y1="92" x2="450" y2="470" stroke="#26332c" stroke-width="1"/>
+  <line x1="776" y1="92" x2="776" y2="470" stroke="#26332c" stroke-width="1"/>
+
+  <!-- step 1 -->
+  <text class="n" x="24" y="124">1</text>
+  <line x1="128" y1="134" x2="446" y2="134" stroke="#9fb0a6" marker-end="url(#a)"/>
+  <text class="b" x="150" y="128">senha →</text>
+  <text class="s" x="150" y="150">a vítima digita no proxy, achando que é o real</text>
+
+  <!-- step 2 -->
+  <text class="n" x="24" y="184">2</text>
+  <line x1="454" y1="194" x2="772" y2="194" stroke="#9fb0a6" marker-end="url(#a)"/>
+  <text class="b" x="476" y="188">senha repassada →</text>
+  <text class="s" x="476" y="210">o proxy encaminha em tempo real</text>
+
+  <!-- step 3 -->
+  <text class="n" x="24" y="244">3</text>
+  <line x1="772" y1="254" x2="128" y2="254" stroke="#9fb0a6" marker-end="url(#a)"/>
+  <text class="b" x="150" y="248">← pede o 2º fator; a vítima digita o código, o proxy repassa</text>
+
+  <!-- step 4 -->
+  <text class="n" x="24" y="304">4</text>
+  <line x1="772" y1="314" x2="128" y2="314" stroke="#e07a6a" marker-end="url(#ared)"/>
+  <text class="r" x="150" y="308">← cookie de sessão (sessão já autenticada)</text>
+  <text class="s" x="150" y="330">o proxy GUARDA o cookie e repassa; a vítima vê a tela normal</text>
+
+  <!-- step 5 -->
+  <text class="n" x="24" y="384">5</text>
+  <line x1="454" y1="394" x2="772" y2="394" stroke="#e07a6a" marker-end="url(#ared)"/>
+  <text class="r" x="476" y="388">atacante usa o cookie roubado →</text>
+  <text class="s" x="476" y="410">entra sem senha e sem código: a sessão já vale</text>
+  <text class="s" x="150" y="400">o atacante nem precisa</text>
+  <text class="s" x="150" y="416">mais da vítima</text>
+
+  <!-- defense -->
+  <rect x="24" y="452" width="852" height="92" rx="8" fill="#14211a" stroke="#3b6b4f"/>
+  <text class="h g" x="42" y="478">Por que o FIDO2 / WebAuthn (passkey) derrota isto</text>
+  <text class="b" x="42" y="502">A prova é assinada e <tspan class="g">amarrada à ORIGEM</tspan> (o endereço real do site). No proxy, a origem é</text>
+  <text class="b" x="42" y="522">valeverde-ti.example ≠ login.valeverde.example, então a assinatura não serve e o navegador recusa.</text>
+  <text class="s" x="42" y="538">Não é falha do MFA: o problema é o fator DIGITÁVEL ser repassável e o cookie, roubável.</text>
+</svg>

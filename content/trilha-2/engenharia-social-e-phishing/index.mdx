@@ -1,0 +1,919 @@
+---
+slug: engenharia-social-e-phishing
+track: trilha-2
+title: "Engenharia social e phishing"
+prerequisites: [osint-e-reconhecimento-passivo, lei-e-etica]
+lab: null
+tasks:
+  - slug: missao-1-veredito-dos-emails
+    title: "Missão 1 — O veredito dos cinco e-mails"
+    type: flag
+    prompt: "A flag candidata que o conferir.py 1 imprime para a sua classificação dos cinco .eml (veredito-1.txt)."
+    hint: "Leia a Authentication-Results de cada um e lembre: passar no SPF/DKIM/DMARC só diz DE QUAL domínio a mensagem veio. Dois dos cinco passam em tudo e ainda são golpe."
+    flag:
+      hash: "scrypt$16384$8$1$18a15e81421ee3430166a580960a7b9cf50db855d0979184ac78c1d1d8751b8f"
+      salt: "c76798f22f1ed18fd013f95c1e569b1d"
+  - slug: missao-2-dominios-que-enganam
+    title: "Missão 2 — Os domínios que enganam"
+    type: flag
+    prompt: "A flag candidata que o conferir.py 2 imprime para a classificação das seis URLs (respostas-2.txt)."
+    hint: "Para cada URL, ache o domínio registrável de destino (o rótulo logo antes de .example). Decodifique o xn-- com idna e siga o parâmetro de redirecionamento até o host final."
+    flag:
+      hash: "scrypt$16384$8$1$753cc742dc444a005daba0fc7d8f434438f7e34df009ffcde3e507b7f2b95150"
+      salt: "6680784b56d9c748bb3b7fddca4d89c8"
+  - slug: missao-3-do-dossie-ao-controle
+    title: "Missão 3 — Do dossiê ao controle"
+    type: flag
+    prompt: "A flag candidata que o conferir.py 3 imprime para o vetor e o controle que você apontou (respostas-3.txt)."
+    hint: "O e-mail 2 teve um resultado marcado como fail na Authentication-Results, mas a política publicada deixou a mensagem chegar. Que palavra descreve esse e-mail, e que mudança de uma linha no DNS o barraria na porta?"
+    flag:
+      hash: "scrypt$16384$8$1$19d5bc20563f617aac4199f5ff464a587100aa7ec877369351e9bc678477579e"
+      salt: "eadeefe53b098dbb7cceadd9cd4a4305"
+  - slug: quiz-final
+    title: "Quiz — Engenharia social e phishing"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Um e-mail chega com `spf=pass` na Authentication-Results, mas com `dmarc=fail`. Por que isso é possível, e o que você conclui?"
+        options:
+          - "É um erro do servidor: se o SPF passou, o DMARC tem de passar"
+          - "O SPF validou o domínio do envelope (Return-Path), que é diferente do domínio do From que a pessoa lê; sem alinhamento, o DMARC falha — e o From visível pode ser forjado"
+          - "Significa que o e-mail é legítimo, porque um dos três passou"
+          - "Quer dizer que o DKIM está desligado no seu servidor"
+        answer: 1
+        explanation: "SPF confere o envelope (MAIL FROM/Return-Path), não o cabeçalho From. O DMARC exige que o domínio do From visível esteja alinhado com o que passou no SPF ou no DKIM. `spf=pass` com `dmarc=fail` é o retrato de um envelope legítimo de outro domínio carregando um From forjado: a mensagem não é confiável."
+      - question: "O e-mail de \"Suporte TI\" passa em SPF, DKIM e DMARC, todos `pass`. O que isso prova?"
+        options:
+          - "Que a mensagem é confiável e veio da sua empresa"
+          - "Que a mensagem não foi lida por ninguém no caminho"
+          - "Só que a mensagem veio mesmo do domínio do From — e o domínio é `valeverde-ti.example`, um lookalike que o atacante controla e autenticou corretamente"
+          - "Que o anexo é seguro"
+        answer: 2
+        explanation: "As três checagens provam a ORIGEM (de qual domínio veio), nunca a INTENÇÃO. Um atacante registra o próprio domínio parecido e publica SPF/DKIM/DMARC certinhos; tudo passa. O alerta não está na autenticação, e sim no domínio ser um lookalike, não o verdadeiro."
+      - question: "A política DMARC publicada é `p=none`. O que o destinatário faz com um e-mail que dá `dmarc=fail`?"
+        options:
+          - "Rejeita a mensagem na conexão"
+          - "Move para a quarentena (spam)"
+          - "Entrega normalmente na caixa de entrada e só manda um relatório para o dono do domínio"
+          - "Apaga a mensagem"
+        answer: 2
+        explanation: "`p=none` é modo de observação: o destinatário avalia, relata (via `rua=`) e entrega assim mesmo. É por isso que, com `p=none`, uma falsificação de domínio exato ainda chega. `quarantine` manda para o spam; `reject` barra na porta."
+      - question: "Por que uma passkey (FIDO2/WebAuthn) resiste ao phishing adversary-in-the-middle (AiTM), enquanto um código TOTP de 6 dígitos não?"
+        options:
+          - "Porque a passkey é mais longa e difícil de adivinhar"
+          - "Porque a assinatura da passkey é amarrada à origem (o domínio real); no site-proxy do atacante a origem é outra, e o navegador se recusa a assinar"
+          - "Porque o código TOTP expira e a passkey não"
+          - "Porque a passkey é enviada por SMS, que é mais seguro"
+        answer: 1
+        explanation: "O AiTM funciona porque o código digitável e o cookie de sessão podem ser repassados pelo proxy. A passkey não envia um segredo repassável: ela assina um desafio amarrado à origem (o domínio que o navegador está acessando). Como o proxy vive em outro domínio, a assinatura não serve para o serviço real."
+      - question: "Qual é a diferença entre o envelope SMTP e o cabeçalho de um e-mail?"
+        options:
+          - "Nenhuma: são dois nomes para a mesma coisa"
+          - "O envelope (MAIL FROM/RCPT TO) é o que os servidores usam para entregar e devolver; o cabeçalho (From, To, Subject) é o que o programa de e-mail mostra para a pessoa. A pessoa só vê o cabeçalho"
+          - "O cabeçalho é criptografado e o envelope não"
+          - "O envelope só existe em e-mails com anexo"
+        answer: 1
+        explanation: "São duas camadas. O envelope é a conversa SMTP (como o endereço escrito por fora de uma carta, que o carteiro usa); o cabeçalho é o papel-timbrado dentro do envelope, que o leitor vê. Elas não precisam bater, e o atacante explora justamente isso."
+      - question: "Você vê no link um host `xn--valevrde-f1a.example`. O que fazer e o que ele costuma ser?"
+        options:
+          - "Confiar: `xn--` é um selo de segurança"
+          - "Decodificar o rótulo com IDNA/Punycode; ele revela um nome Unicode parecido com o verdadeiro (aqui, `valevérde`), usado para enganar o olho"
+          - "É só um erro de digitação do servidor"
+          - "Ignorar: navegadores não abrem endereços `xn--`"
+        answer: 1
+        explanation: "`xn--` é o prefixo do Punycode, a forma ASCII de um nome de domínio internacionalizado (IDN). Decodificado, `xn--valevrde-f1a` vira `valevérde` — parecidíssimo com `valeverde`, mas outro domínio. É o ataque homógrafo: letras que o olho confunde."
+      - question: "A Ubiquiti perdeu US$ 46,7 milhões em 2015 sem que seus sistemas fossem invadidos. Que tipo de ataque foi esse?"
+        options:
+          - "Um ransomware que criptografou os servidores"
+          - "Uma SQL injection no sistema financeiro"
+          - "Um business email compromise (BEC): e-mails se passando por executivos e por uma entidade externa instruíram o financeiro a transferir fundos"
+          - "Um vazamento de banco de dados"
+        answer: 2
+        explanation: "O próprio 8-K da Ubiquiti classifica o caso como BEC por impersonação de funcionário e pedidos fraudulentos de uma entidade externa, mirando o financeiro. Não houve invasão técnica: o alvo foi a pessoa e o processo de pagamento."
+      - question: "Numa campanha de phishing autorizada, como o resultado deve ser medido e tratado, segundo a ética que você viu no 1.4?"
+        options:
+          - "Publicando a lista de quem clicou, para constranger e corrigir"
+          - "Guardando as senhas digitadas em claro, como prova do sucesso"
+          - "Medindo o processo (taxa de clique, de denúncia, tempo até reportar) sem expor indivíduos, e sem guardar senhas em claro"
+          - "Não medindo nada: o importante é só ter feito o teste"
+        answer: 2
+        explanation: "O 1.3 e o 1.4 já apontavam: o relatório de engenharia social mede processos, não pessoas. Expor quem clicou pune a vítima do teste e fere a LGPD; senhas digitadas num phishing simulado não são guardadas em claro. O objetivo é melhorar a defesa, não envergonhar."
+glossary:
+  - term: pretexting
+    definition: "Pretexto: a história falsa que o atacante monta para parecer legítimo (ser do suporte de TI, do banco, de um fornecedor). É a base de quase toda engenharia social; o resto do golpe se apoia nela."
+  - term: vishing
+    definition: "Voice phishing: engenharia social por telefone ou voz. O atacante liga fingindo ser do suporte, do banco ou de um executivo para extrair informação ou fazer a vítima agir."
+  - term: smishing
+    definition: "SMS phishing: phishing por mensagem de texto (SMS), que costuma levar a um link ou pedir uma resposta com dados. O canal muda; a mecânica de persuasão é a mesma."
+  - term: quishing
+    definition: "QR phishing: phishing em que o link malicioso vem num QR code, para escapar de filtros que leem texto e para explorar a confiança no celular."
+  - term: whaling
+    definition: "Caça à baleia: spear phishing direcionado a alvos graúdos (CEO, CFO, diretoria), pelo acesso e pela autoridade que eles têm."
+  - term: business email compromise
+    definition: "BEC: fraude em que o atacante se passa por um executivo ou fornecedor, por e-mail, para induzir o financeiro a transferir dinheiro ou dados. Vive de pretexto e autoridade, não de malware."
+  - term: DKIM
+    definition: "DomainKeys Identified Mail (RFC 6376): assinatura criptográfica que o servidor de envio põe em cabeçalhos e no corpo do e-mail; o destinatário a confere com a chave pública publicada no DNS do domínio assinante."
+  - term: DMARC
+    definition: "Domain-based Message Authentication, Reporting and Conformance: política publicada no DNS que exige alinhamento do From visível com o SPF ou o DKIM e diz o que fazer quando falha. Saiu em 2015 (RFC 7489, informacional) e virou padrão em 2026 (RFC 9989)."
+  - term: DMARC alignment
+    definition: "Alinhamento: a exigência central do DMARC de que o domínio do From que a pessoa lê bata com o domínio que passou no SPF ou no DKIM. Sem alinhamento, passar no SPF/DKIM não impede a falsificação do From."
+  - term: SMTP envelope
+    definition: "Envelope: a camada de entrega do e-mail (os comandos MAIL FROM e RCPT TO do SMTP), usada pelos servidores para rotear e devolver. É separada do cabeçalho que a pessoa vê."
+  - term: Return-Path
+    definition: "Cabeçalho que registra o endereço do envelope (MAIL FROM) para onde vão as devoluções. É o que o SPF confere — não o From visível."
+  - term: Received header
+    definition: "Cabeçalho que cada servidor acrescenta ao encaminhar o e-mail, registrando de onde recebeu e quando. Lidos de baixo para cima, os Received contam o caminho real da mensagem."
+  - term: Authentication-Results
+    definition: "Cabeçalho que o servidor que recebe grava com o veredito de SPF, DKIM e DMARC (pass/fail). É a primeira coisa a ler para julgar a origem de um e-mail."
+  - term: display name spoofing
+    definition: "Falsificação do nome de exibição: pôr um nome confiável (\"Diretoria Financeira\") num e-mail cujo endereço real é outro. O programa de e-mail mostra o nome em destaque e esconde o endereço, e o olho cai."
+  - term: lookalike domain
+    definition: "Domínio sósia: um domínio parecido com o verdadeiro (valeverde-ti.example no lugar de valeverde.example), registrado pelo atacante. Como é dele, passa em SPF/DKIM/DMARC normalmente."
+  - term: IDN homograph attack
+    definition: "Ataque homógrafo: usar letras de outros alfabetos (ou acentuadas) que o olho confunde com as latinas para registrar um domínio visualmente idêntico ao real."
+  - term: Punycode
+    definition: "Forma ASCII de um nome de domínio internacionalizado (IDN), com o prefixo xn-- (RFC 3492). Decodificá-lo revela o nome Unicode de verdade por trás de um endereço suspeito."
+  - term: adversary-in-the-middle
+    definition: "AiTM: phishing em que um site-proxy do atacante fica entre a vítima e o serviço real, repassando senha e código em tempo real e roubando o cookie de sessão. Derrota o MFA por código."
+  - term: MFA fatigue
+    definition: "Cansaço de MFA (ou push bombing): o atacante, já de posse da senha, dispara muitas notificações push de aprovação até a vítima aprovar uma por engano ou cansaço."
+  - term: SIM swapping
+    definition: "Troca de SIM: o atacante convence (ou suborna) a operadora a portar o número da vítima para um chip dele, capturando os SMS de segundo fator e de recuperação de conta."
+  - term: FIDO2
+    definition: "Conjunto de padrões (FIDO Alliance e W3C) de autenticação por chave criptográfica em vez de senha. A prova é amarrada à origem do site, o que o torna resistente a phishing."
+  - term: WebAuthn
+    definition: "Web Authentication: a API do navegador (recomendação do W3C) que implementa o FIDO2, deixando o site pedir uma assinatura de uma chave guardada no dispositivo ou numa chave física."
+  - term: passkey
+    definition: "Nome comercial de uma credencial FIDO2/WebAuthn sincronizável, que substitui a senha. Por ser amarrada à origem, não pode ser phishada nem repassada por um proxy."
+  - term: callback phishing
+    definition: "Callback phishing (TOAD, telephone-oriented attack delivery): e-mail sem link nem anexo malicioso, só um telefone para a vítima ligar, onde o golpe continua por voz. Foge de filtros que só olham links."
+  - term: watering hole attack
+    definition: "Ataque de poço d'água: comprometer um site legítimo que o grupo-alvo costuma visitar, para infectar quem passa por ali, em vez de atacar a vítima diretamente."
+  - term: baiting
+    definition: "Isca: deixar um chamariz físico ou digital (um pen drive \"perdido\", um download gratuito) que a própria vítima pega e executa, movida por curiosidade ou ganância."
+  - term: tailgating
+    definition: "Carona (ou piggybacking): entrar numa área restrita atrás de alguém autorizado, aproveitando a cortesia de segurar a porta. É engenharia social presencial."
+  - term: credential harvesting
+    definition: "Colheita de credenciais: a fase do phishing em que uma página falsa captura o login e a senha que a vítima digita, achando que está no site real."
+  - term: security awareness training
+    definition: "Treinamento de conscientização: o programa que ensina as pessoas a reconhecer e reportar engenharia social. É a camada humana da defesa, medida por processo, não por culpa."
+  - term: principles of persuasion
+    definition: "Os princípios de persuasão de Robert Cialdini (reciprocidade, compromisso/coerência, prova social, autoridade, afinidade, escassez e, depois, unidade): atalhos de decisão que o atacante aciona para a vítima agir sem pensar."
+  - term: HTML smuggling
+    definition: "Contrabando por HTML: técnica em que o arquivo malicioso é montado pelo próprio JavaScript da página, dentro do navegador, para escapar de filtros que inspecionam anexos e downloads na rede."
+---
+
+import envelopeECabecalho from "./img/envelope-e-cabecalho.svg";
+import aitmEMfa from "./img/aitm-e-mfa.svg";
+import triagemDeEmail from "./img/triagem-de-email.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Em 15 de julho de 2020, dezenas das contas mais seguidas do Twitter — Barack Obama, Elon Musk, Jeff Bezos, Bill Gates, Apple — publicaram, quase ao mesmo tempo, a mesma mensagem: mandem bitcoin para este endereço e recebam o dobro de volta. Não houve exploit, nem zero-day, nem senha quebrada. Os atacantes **ligaram** para funcionários do Twitter fingindo ser do time de TI e, no telefone, convenceram alguns deles a entregar as credenciais das ferramentas internas (a seção 4 traz o caso com a fonte). A porta mais barata para dentro de uma empresa quase nunca é um bug no código. É uma pessoa.
+
+Esse é o assunto deste módulo: a <GlossaryTerm term="social engineering">social engineering</GlossaryTerm> (engenharia social, manipular pessoas para que entreguem informação ou acesso, que você conheceu no 1.1) e a sua forma mais comum, o <GlossaryTerm term="phishing">phishing</GlossaryTerm> (a mensagem que se passa por alguém confiável para roubar credenciais ou fazer a vítima agir). No 1.2 você viu onde isso entra na cadeia de um ataque: é o *delivery*, o momento em que o atacante entrega a isca. No 2.2 você montou o dossiê de <GlossaryTerm term="OSINT">OSINT</GlossaryTerm> de uma organização; aqui esse dossiê vira a matéria-prima do pretexto — os nomes, os cargos, os fornecedores e as políticas de e-mail que você descobriu são exatamente o que um atacante usa para soar convincente, e o que um defensor precisa fechar.
+
+Este módulo é sobre **ler e defender**, não sobre montar campanhas. Você vai dissecar mensagens já capturadas: por que o e-mail mente com tanta facilidade, como SPF, DKIM e DMARC tentam conter isso (e onde falham), por que um endereço parecido engana o olho, e por que o phishing moderno derruba até o segundo fator. É a visão completa que o padrão da plataforma exige: o truque, a mecânica e a defesa.
+
+**Ao final, você vai saber:**
+
+- explicar os <GlossaryTerm term="principles of persuasion">princípios de persuasão</GlossaryTerm> que um atacante aciona, e reconhecê-los numa mensagem;
+- distinguir <GlossaryTerm term="pretexting">pretexting</GlossaryTerm>, phishing, <GlossaryTerm term="spear phishing">spear phishing</GlossaryTerm>, <GlossaryTerm term="whaling">whaling</GlossaryTerm>, <GlossaryTerm term="business email compromise">BEC</GlossaryTerm>, <GlossaryTerm term="vishing">vishing</GlossaryTerm>, <GlossaryTerm term="smishing">smishing</GlossaryTerm> e <GlossaryTerm term="quishing">quishing</GlossaryTerm>;
+- explicar **por que** o e-mail não autentica o remetente por padrão, e o que o <GlossaryTerm term="SMTP envelope">envelope</GlossaryTerm> tem a ver com o <GlossaryTerm term="Return-Path">Return-Path</GlossaryTerm> e o From;
+- ler a <GlossaryTerm term="Authentication-Results">Authentication-Results</GlossaryTerm> de um e-mail e dizer se SPF, <GlossaryTerm term="DKIM">DKIM</GlossaryTerm> e <GlossaryTerm term="DMARC">DMARC</GlossaryTerm> passaram — e por que passar não é o mesmo que ser confiável;
+- flagrar um <GlossaryTerm term="lookalike domain">lookalike domain</GlossaryTerm>, um <GlossaryTerm term="IDN homograph attack">homógrafo</GlossaryTerm> em <GlossaryTerm term="Punycode">Punycode</GlossaryTerm> e um link enganoso por <GlossaryTerm term="open redirect">open redirect</GlossaryTerm>;
+- explicar o phishing <GlossaryTerm term="adversary-in-the-middle">adversary-in-the-middle</GlossaryTerm> e por que uma <GlossaryTerm term="passkey">passkey</GlossaryTerm> resiste a ele;
+- dizer como uma campanha autorizada é conduzida e **medida** sem ferir a lei nem as pessoas, e montar a defesa em camadas.
+
+**Pré-requisitos:**
+
+- **2.2 — OSINT e reconhecimento passivo** — o dossiê (pessoas, fornecedores, SPF, política de e-mail) que alimenta o pretexto; aqui você o reusa do outro lado.
+- **1.4 — Lei brasileira e ética** — a autorização por escrito, a LGPD e os crimes de fraude e falsa identidade que a engenharia social encosta (arts. 171 e 307 do Código Penal, Lei 12.737/2012).
+
+Você também vai usar DNS e o conceito de <GlossaryTerm term="registrable domain">domínio registrável</GlossaryTerm> do 2.2, a <GlossaryTerm term="multi-factor authentication">multi-factor authentication</GlossaryTerm> do 4.6 e Python da stdlib do 0.7. Cada um é relembrado em uma linha quando aparece.
+
+**Tempo estimado:** 4 a 5 horas, incluindo as três missões e o walkthrough.
+
+<Callout variant="ethics">
+Engenharia social é, de todos os testes, o que mais mexe com gente. O "sistema" testado são pessoas que não assinaram nada. Por isso só se faz com **autorização por escrito**, com pretextos aprovados, alvos definidos (colaboradores, nunca clientes ou familiares) e sem truques que humilhem ou assustem (1.3, 1.4). Neste módulo não há envio nem registro de domínio: você só analisa mensagens fictícias já coletadas. Montar e disparar phishing contra quem quer que seja fora de um engajamento autorizado é crime (fraude, falsa identidade, invasão de dispositivo) e não se faz.
+</Callout>
+
+## 2. Teoria aprofundada — por que a pessoa e o e-mail cedem
+
+### 2.1 Por que a persuasão funciona: atalhos de decisão
+
+Ninguém decide tudo do zero o tempo todo — seria exaustivo. O cérebro usa atalhos: se alguém com jeito de autoridade manda, a gente tende a obedecer; se todo mundo está fazendo, a gente acompanha; se o prazo é agora, a gente age antes de pensar. Esses atalhos são úteis na vida e perigosos sob ataque, porque a engenharia social é a arte de **apertar o atalho certo** para a vítima agir sem analisar.
+
+O psicólogo Robert Cialdini catalogou os principais no livro *Influence* (1984) e acrescentou um sétimo em *Pre-Suasion* (2016). São os <GlossaryTerm term="principles of persuasion">principles of persuasion</GlossaryTerm>:
+
+- **Reciprocidade:** fazemos um favor a quem nos fez um. O golpe "resolvo seu problema de TI, só preciso da sua senha" explora isso.
+- **Compromisso e coerência:** depois de dar um primeiro passo pequeno, tendemos a seguir para ser coerentes. Daí o pedido inicial inocente que escala.
+- **Prova social:** fazemos o que os outros fazem. "Todos os seus colegas já atualizaram a senha neste portal."
+- **Autoridade:** obedecemos a quem parece ter poder. Um e-mail "da diretoria" ou "do suporte de TI" pesa.
+- **Afinidade:** dizemos sim a quem gostamos ou com quem nos parecemos. O atacante puxa assunto, elogia, finge ser do mesmo time.
+- **Escassez:** o que é raro ou urgente vale mais. "Sua conta será bloqueada em 24 horas."
+- **Unidade:** o sétimo princípio — a sensação de pertencer ao mesmo grupo ("nós, da Vale Verde") derruba a guarda.
+
+Por cima de tudo isso vêm dois multiplicadores: **urgência** e **medo**. Um prazo curto e uma ameaça ("sua conta foi invadida", "há uma multa pendente") desligam a parte analítica e ligam a reativa. Quase todo phishing que você vai dissecar combina autoridade + urgência: é a dupla que mais funciona.
+
+### 2.2 A família da engenharia social
+
+"Phishing" virou guarda-chuva, mas há uma família inteira, que muda conforme o **canal** e o **alvo**. Todas partem de um <GlossaryTerm term="pretexting">pretexto</GlossaryTerm> — a história falsa que sustenta o golpe (ser do banco, do suporte, de um fornecedor). Sem pretexto crível, nada funciona.
+
+| Nome | Canal | Alvo / característica |
+| --- | --- | --- |
+| Phishing | E-mail (em massa) | Qualquer um; rede jogada larga |
+| <GlossaryTerm term="spear phishing">Spear phishing</GlossaryTerm> | E-mail (sob medida) | Uma pessoa ou time, com dados reais do OSINT |
+| <GlossaryTerm term="whaling">Whaling</GlossaryTerm> | E-mail | "Baleias": CEO, CFO, diretoria |
+| <GlossaryTerm term="business email compromise">BEC</GlossaryTerm> | E-mail | Financeiro; induz transferência/dados |
+| <GlossaryTerm term="vishing">Vishing</GlossaryTerm> | Voz / telefone | Suporte, help desk, vítima ao telefone |
+| <GlossaryTerm term="smishing">Smishing</GlossaryTerm> | SMS | Link ou resposta por mensagem |
+| <GlossaryTerm term="quishing">Quishing</GlossaryTerm> | QR code | Escapa de filtros de texto; cai no celular |
+| <GlossaryTerm term="callback phishing">Callback / TOAD</GlossaryTerm> | E-mail → voz | E-mail só com um telefone para ligar |
+| <GlossaryTerm term="baiting">Baiting</GlossaryTerm> | Físico / digital | Isca que a vítima pega (pen drive, download) |
+| <GlossaryTerm term="tailgating">Tailgating</GlossaryTerm> | Presencial | Entrar atrás de quem tem crachá |
+| <GlossaryTerm term="watering hole attack">Watering hole</GlossaryTerm> | Web | Site legítimo que o alvo costuma visitar |
+
+Cada forma tem um identificador na matriz MITRE <GlossaryTerm term="MITRE ATT&CK">ATT&CK</GlossaryTerm> (que você viu no 1.2): o phishing para acesso inicial é a técnica T1566 (com sub-técnicas para anexo, link e serviço), a coleta de informação por phishing é T1598, e o AiTM que veremos adiante é T1557. Saber o identificador ajuda a mapear o ataque no relatório.
+
+### 2.3 Por que o e-mail mente com tanta facilidade
+
+Aqui mora o "por dentro" deste módulo. O e-mail nasceu em 1982 com o protocolo SMTP (Simple Mail Transfer Protocol, RFC 821, hoje RFC 5321). Ele foi desenhado numa internet pequena e de confiança mútua entre universidades, e por isso **não autentica o remetente**. Dizer de quem é a mensagem é tão simples quanto escrever o remetente no verso de um envelope de papel: ninguém confere.
+
+Pior: há **dois** remetentes, e eles não precisam bater.
+
+- O <GlossaryTerm term="SMTP envelope">envelope</GlossaryTerm> é a camada de entrega. Quando dois servidores conversam em SMTP, um diz `MAIL FROM: <...>` e `RCPT TO: <...>`. É como o endereço escrito por fora do envelope de papel: o carteiro usa para entregar e para devolver. Esse `MAIL FROM` vira o cabeçalho <GlossaryTerm term="Return-Path">Return-Path</GlossaryTerm>.
+- O **cabeçalho** é o papel-timbrado dentro do envelope. São os campos `From:`, `To:`, `Subject:`, `Reply-To:` — o que o seu programa de e-mail mostra na tela. **Você só vê o cabeçalho.** Nunca vê o envelope.
+
+Nada obriga o `From:` do cabeçalho a ser igual ao `MAIL FROM` do envelope. Um atacante pode pôr `MAIL FROM: <bounce@mail-sender.example>` (um domínio dele, que existe de verdade) e, no cabeçalho, `From: "Diretoria Financeira" <diretoria@valeverde.example>`. Some a isso a <GlossaryTerm term="display name spoofing">display name spoofing</GlossaryTerm>: quase todo cliente de e-mail mostra em destaque o **nome de exibição** ("Diretoria Financeira") e esconde o endereço. O olho lê "Diretoria" e para ali.
+
+<Figure
+  src={envelopeECabecalho}
+  alt="Diagrama com duas caixas no topo: ENVELOPE SMTP (MAIL FROM, vira Return-Path, conferido pelo SPF) e CABEÇALHO (From e Reply-To, o que a pessoa lê), ligadas por um sinal de diferente. No meio, a faixa do DKIM (assinatura conferida pela chave pública no DNS). Embaixo, a faixa do DMARC, que exige alinhamento do From com SPF ou DKIM e aplica política none, quarantine ou reject. No rodapé, a lição: SPF e DKIM podem passar e o e-mail ainda ser falso."
+  caption="Os dois remetentes de um e-mail. SPF olha o envelope; DKIM olha a assinatura do domínio assinante; só o alinhamento do DMARC liga tudo ao From que você lê."
+/>
+
+### 2.4 Os três remendos: SPF, DKIM e DMARC
+
+Como o SMTP não autentica ninguém, três camadas foram coladas por cima, todas publicadas no DNS do domínio.
+
+**SPF** (<GlossaryTerm term="SPF">Sender Policy Framework</GlossaryTerm>, que você viu no 2.2) é uma lista, num registro TXT, dos servidores autorizados a enviar e-mail por aquele domínio. O servidor que recebe pega o IP de quem conectou e o domínio do **envelope** (`MAIL FROM`) e pergunta: esse IP está na lista desse domínio? O `-all` no fim significa "o resto deve falhar". Repare no ponto cego: o SPF confere o **envelope**, não o `From:` visível.
+
+**DKIM** (<GlossaryTerm term="DKIM">DomainKeys Identified Mail</GlossaryTerm>, RFC 6376) resolve outra parte. O servidor de envio **assina** criptograficamente alguns cabeçalhos e o corpo com uma chave privada; a chave pública correspondente fica publicada em `seletor._domainkey.dominio` no DNS. O destinatário recalcula e confere a assinatura. Se bate, prova duas coisas: a mensagem não foi alterada no caminho e veio de quem tem a chave privada daquele domínio assinante (`header.d=`). Ponto cego de novo: o domínio que assina pode não ser o domínio do `From:` visível.
+
+**DMARC** (<GlossaryTerm term="DMARC">Domain-based Message Authentication, Reporting and Conformance</GlossaryTerm>) amarra as pontas. Ele exige <GlossaryTerm term="DMARC alignment">alinhamento</GlossaryTerm>: o domínio do `From:` que a pessoa lê tem de bater com o domínio que passou no SPF **ou** no DKIM. E ele publica uma **política** do que fazer quando falha:
+
+- `p=none` — não faça nada, só me mande um relatório (`rua=`). Modo de observação.
+- `p=quarantine` — ponha no spam.
+- `p=reject` — recuse na porta.
+
+É o DMARC que, enfim, protege o `From:` visível. Mas há duas armadilhas que este módulo martela: **(1)** uma política `p=none` relata mas **entrega assim mesmo** — então a falsificação de domínio exato ainda chega à caixa de entrada; e **(2)** se o atacante usa o **próprio** domínio (um lookalike), SPF, DKIM e DMARC passam todos, porque ele é o dono legítimo daquele domínio parecido. Passar nas três checagens prova de qual domínio a mensagem veio — nunca que ela é confiável.
+
+<Callout variant="info" title="Atualização de 2026">
+O DMARC saiu em 2015 como RFC 7489, um documento apenas *informacional*. Em maio de 2026, a revisão (apelidada de DMARCbis) foi publicada como RFC 9989, agora na trilha de padrões (*Standards Track*), obsoletando a 7489. A ideia central — alinhamento + política + relatório — não mudou.
+</Callout>
+
+### 2.5 O endereço também engana o olho
+
+Mesmo com DMARC em `reject`, o atacante contorna: em vez de falsificar o seu domínio, ele registra **outro** que parece o seu.
+
+- <GlossaryTerm term="lookalike domain">Lookalike domain</GlossaryTerm>: `valeverde-ti.example`, `valeverde.example.contas-seguras.example`, `va1everde.example` (com "1" no lugar do "l"). É primo do <GlossaryTerm term="typosquatting">typosquatting</GlossaryTerm> do 0.4, mas aqui o objetivo é parecer oficial, não pegar quem errou a digitação.
+- <GlossaryTerm term="IDN homograph attack">Ataque homógrafo</GlossaryTerm>: usar letras acentuadas ou de outros alfabetos que o olho confunde. `valevérde` (com acento) ou um "а" cirílico no lugar do "a" latino produzem um nome visualmente idêntico. No DNS, esse nome internacionalizado vira a forma ASCII do <GlossaryTerm term="Punycode">Punycode</GlossaryTerm> (prefixo `xn--`, RFC 3492). Decodificar o `xn--` é a forma de ver o nome real.
+- **Link com texto mentiroso:** em HTML, o texto visível do link e o destino (`href`) são campos separados. O texto pode dizer `portal.valeverde.example` e o `href` levar a outro lugar — inclusive por um <GlossaryTerm term="open redirect">open redirect</GlossaryTerm> (o 4.1), um endereço legítimo do próprio alvo com um parâmetro `?url=` que reencaminha para fora.
+
+### 2.6 O MFA não é o fim da história
+
+"É só ativar MFA" vale muito — mas não é bala de prata. A <GlossaryTerm term="multi-factor authentication">multi-factor authentication</GlossaryTerm> por **código** (um TOTP de 6 dígitos, um SMS, um push) adiciona um fator que a vítima **digita ou aprova**. E o que a vítima digita, o atacante pode repassar.
+
+No phishing <GlossaryTerm term="adversary-in-the-middle">adversary-in-the-middle</GlossaryTerm> (AiTM, ATT&CK T1557), o atacante não serve uma cópia estática da página de login: ele põe um **proxy reverso** entre a vítima e o serviço real. Tudo que a vítima digita — login, senha, código do segundo fator — o proxy repassa ao serviço verdadeiro em tempo real. Quando o serviço aceita e devolve o <GlossaryTerm term="session cookie">cookie de sessão</GlossaryTerm> (o 4.6: a prova de que você já está logado), o proxy **guarda esse cookie**. A partir daí o atacante usa o cookie direto e pula o login inteiro: já está autenticado. Variações que nem precisam de proxy: a <GlossaryTerm term="MFA fatigue">MFA fatigue</GlossaryTerm> (disparar pushes até a vítima aprovar de cansaço) e o <GlossaryTerm term="SIM swapping">SIM swapping</GlossaryTerm> (roubar o número para interceptar o SMS).
+
+A defesa contra o AiTM é um MFA que **não envia segredo repassável**: FIDO2/WebAuthn, as passkeys.
+
+<Figure
+  src={aitmEMfa}
+  alt="Diagrama de sequência com três colunas (vítima, site-proxy do atacante, serviço real) e cinco passos: 1) a vítima manda a senha ao proxy; 2) o proxy repassa ao serviço real; 3) o serviço pede o segundo fator e a vítima digita o código, repassado pelo proxy; 4) o serviço devolve o cookie de sessão, que o proxy guarda e repassa; 5) o atacante usa o cookie roubado direto no serviço real, sem senha nem código. Embaixo, a defesa: FIDO2/WebAuthn amarra a assinatura à origem, que no proxy é outra, então o navegador recusa."
+  caption="O AiTM repassa senha e código e rouba o cookie de sessão. A passkey resiste porque a assinatura é amarrada à origem — e o proxy vive em outro domínio."
+/>
+
+## 3. Como o ataque funciona — dissecando uma mensagem
+
+Esta seção **não** monta campanha: ela abre uma mensagem já capturada e mostra como lê-la, do jeito que um analista de SOC (o centro de operações de segurança, do 1.1) ou um pentester faz na triagem. O método tem quatro frentes: o gancho, os cabeçalhos, o link e o anexo.
+
+### 3.1 O gancho: ler o corpo
+
+Antes de qualquer cabeçalho, leia o texto com os princípios da seção 2.1 na cabeça. Procure a tríade clássica do golpe: **autoridade** (quem a mensagem diz ser), **urgência** (o prazo, a ameaça) e o **pedido** (o que ela quer que você faça — clicar, pagar, responder, ligar). Veja o corpo de um e-mail suspeito:
+
+```text
+Estou em reuniao e preciso que voce faca uma transferencia confidencial
+agora, antes do fim do expediente. Responda so a mim por este e-mail.
+Nao comente com ninguem. Aguardo os dados da conta de destino.
+```
+
+Autoridade ("diretoria"), urgência ("agora, antes do fim do expediente"), segredo ("não comente com ninguém", para a vítima não verificar por outro canal) e o pedido (transferência). É o roteiro do <GlossaryTerm term="business email compromise">BEC</GlossaryTerm>. Nenhum link, nenhum anexo: o ataque é 100% psicológico.
+
+### 3.2 Os cabeçalhos: a verdade técnica
+
+O corpo convence; os cabeçalhos denunciam. Todo e-mail carrega cabeçalhos que o seu programa esconde por padrão (no Gmail, "Mostrar original"; no Outlook, "Propriedades"). O primeiro a ler é a <GlossaryTerm term="Authentication-Results">Authentication-Results</GlossaryTerm>, que o servidor que recebeu gravou com o veredito:
+
+```text
+Authentication-Results: mail.valeverde.example;
+	spf=fail smtp.mailfrom=bounce@mail-sender.example;
+	dkim=none;
+	dmarc=fail header.from=valeverde.example
+```
+
+Leitura: o SPF **falhou** (o IP que conectou não pode enviar por `mail-sender.example`), não havia DKIM, e o DMARC **falhou** porque o `From:` (`valeverde.example`) não se alinha com nada que passou. Esse e-mail é uma falsificação de domínio exato. Compare os dois remetentes:
+
+```text
+Return-Path: <bounce@mail-sender.example>      ← o envelope (SPF olha aqui)
+From: "Diretoria Financeira" <diretoria@valeverde.example>   ← o que você vê
+Reply-To: diretoria.vv.financeiro@contato-exec.example       ← a resposta vai para FORA
+```
+
+O `Reply-To` apontando para um domínio estranho é mais um sinal: se você responder, a conversa sai da empresa. Os cabeçalhos <GlossaryTerm term="Received header">Received</GlossaryTerm>, lidos de baixo para cima, contam por quais servidores a mensagem passou de verdade — úteis para ver que ela nasceu num IP que nada tem a ver com o alvo.
+
+### 3.3 O link: texto × destino
+
+Num e-mail HTML, passe o mouse (sem clicar) ou leia o fonte. O texto e o `href` são campos distintos:
+
+```html
+<a href="https://portal.valeverde.example/go?u=https%3A%2F%2Fportal-premios.example%2Flogin">
+https://portal.valeverde.example/premio</a>
+```
+
+O texto diz `portal.valeverde.example/premio` — parece interno. O `href` começa em `portal.valeverde.example`, de verdade, mas tem um parâmetro `?u=` cujo valor, decodificado do <GlossaryTerm term="percent-encoding">percent-encoding</GlossaryTerm> (o `%3A%2F%2F` é `://`), é `https://portal-premios.example/login`. É um <GlossaryTerm term="open redirect">open redirect</GlossaryTerm>: o endereço legítimo do alvo serve de trampolim para o site do atacante. O olho (e às vezes o filtro) vê o domínio certo no começo e relaxa.
+
+### 3.4 O anexo: o tipo é o alerta
+
+Quando o golpe entrega um arquivo, o alerta está no **tipo**, não na autenticação (que pode passar, se o atacante usa o próprio domínio). Os formatos preferidos são os que executam algo: documentos com <GlossaryTerm term="macro">macro</GlossaryTerm> (`.docm`, `.xlsm` — o 1.2 já citou macro como vetor), atalhos `.lnk`, imagens de disco `.iso`/`.img` (que montam e escondem o executável) e páginas que remontam o arquivo no navegador via <GlossaryTerm term="HTML smuggling">HTML smuggling</GlossaryTerm>. No cabeçalho MIME, o anexo aparece assim:
+
+```text
+Content-Type: application/vnd.ms-word.document.macroEnabled.12; name="NF-09876.docm"
+Content-Disposition: attachment; filename="NF-09876.docm"
+```
+
+O `.docm` (Word com macro habilitada) combinado com o "habilite a edição para visualizar" do corpo é o padrão para fazer a vítima rodar a macro. A regra de triagem: **nunca** "habilite edição/conteúdo" num documento que chegou por e-mail e pede isso.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+### Invasão do Twitter por telefone (15 de julho de 2020)
+
+Um grupo liderado por um jovem de 17 anos ligou para funcionários do Twitter fingindo ser do suporte de TI — um ataque de <GlossaryTerm term="vishing">vishing</GlossaryTerm> (*phone spear phishing*, nas palavras do relatório). Convenceram funcionários a entregar credenciais que davam acesso às ferramentas internas de administração de contas. Com elas, assumiram **130** contas, **tuitaram de 45** (o golpe do bitcoin), acessaram a caixa de mensagens diretas de **36** e baixaram o arquivo de dados de um punhado delas.
+
+- **Impacto:** ~US$ 118 mil em bitcoin arrecadados no golpe; contas de chefes de Estado e das maiores empresas do mundo sob controle de terceiros por horas. O relatório nota que, à época, o Twitter **não tinha um CISO** (o executivo responsável pela segurança) e lhe faltavam controles de acesso adequados.
+- **Lição:** nenhuma falha de software. A defesa teria sido humana (treino, verificação) e de processo (MFA resistente a phishing, menor privilégio nas ferramentas internas).
+- **Fonte:** [NYDFS — Twitter Investigation Report (out/2020)](https://www.dfs.ny.gov/Twitter_Report).
+
+### Ubiquiti Networks: US$ 46,7 milhões por e-mail (2015)
+
+Em 5 de junho de 2015, a fabricante de redes Ubiquiti descobriu ter sido vítima de uma fraude. Por e-mail, criminosos se passaram por executivos e por uma entidade externa e instruíram o departamento financeiro de uma subsidiária em Hong Kong a transferir fundos para contas no exterior. É o <GlossaryTerm term="business email compromise">BEC</GlossaryTerm> em estado puro.
+
+- **Impacto:** **US$ 46,7 milhões** transferidos. A empresa recuperou US$ 8,1 milhões, tinha US$ 6,8 milhões sob bloqueio judicial e perseguia os US$ 31,8 milhões restantes. Nenhum sistema foi invadido — o alvo foi o processo de pagamento.
+- **Lição:** transferências exigem verificação **fora de banda** (confirmar por um canal diferente, com um número conhecido). Nenhum SPF/DKIM/DMARC pega um e-mail de um domínio sósia bem configurado.
+- **Fonte:** [Ubiquiti Networks — Form 8-K, SEC (6 de agosto de 2015)](https://www.sec.gov/Archives/edgar/data/1511737/000157104915006288/t1501817_8k.htm).
+
+### AiTM contra 10 mil organizações (Microsoft, 2022)
+
+Em 12 de julho de 2022, a Microsoft detalhou uma campanha de phishing <GlossaryTerm term="adversary-in-the-middle">AiTM</GlossaryTerm> que, desde setembro de 2021, mirou **mais de 10 mil** organizações. Os atacantes puseram um site-proxy entre a vítima e a página real, roubaram a senha **e o cookie de sessão**, e assim **pularam o MFA**. Com a caixa de entrada nas mãos, emendavam fraudes de BEC contra outros alvos.
+
+- **Impacto:** milhares de contas comprometidas apesar do MFA por código estar ativo.
+- **Lição:** a própria Microsoft frisa que **não é uma falha do MFA** — o AiTM rouba a sessão já autenticada. O que resiste é o MFA resistente a phishing (FIDO2/WebAuthn) e a detecção de sessões anômalas.
+- **Fonte:** [Microsoft Security Blog — "From cookie theft to BEC" (jul/2022)](https://www.microsoft.com/en-us/security/blog/2022/07/12/from-cookie-theft-to-bec-attackers-use-aitm-phishing-sites-as-entry-point-to-further-financial-fraud/).
+
+## 5. Mãos à obra — analisando mensagens no seu WSL
+
+Este módulo não tem lab com alvo: phishing se pratica contra pessoas reais, e isso exige autorização que um exercício de estudo não tem. Em vez disso, você vai **analisar** um pacote de mensagens fictícias, no espírito do 2.2. Todo o material é gerado por um script na sua máquina, não toca a internet e usa só domínios `.example`.
+
+**Objetivo:** ao terminar, você terá emitido o veredito de cinco e-mails, desmascarado seis endereços enganosos e transformado o dossiê de OSINT da Vale Verde num apontamento de defesa — encontrando três flags, uma por missão.
+
+### 5.1 Preparação (passo a passo)
+
+1. Abra o terminal do **WSL** (não precisa de lab nem de Kali; é tudo Python da stdlib).
+2. O bloco abaixo cria `~/eng-social-2.3`, grava um gerador e o `conferir.py` com *here documents* (o `cat > arquivo <<'EOF'` do 0.4) e roda o gerador. Copie o bloco **inteiro** e cole de uma vez.
+
+```bash
+mkdir -p ~/eng-social-2.3 && cd ~/eng-social-2.3 && cat > gerar.py <<'EOF'
+#!/usr/bin/env python3
+# Generates the offline practice pack for module 2.3. Pure stdlib.
+import os, textwrap
+
+os.makedirs("dns", exist_ok=True)
+os.makedirs("emails", exist_ok=True)
+
+
+def w(path, text):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(textwrap.dedent(text).lstrip("\n"))
+
+
+w("LEIA-ME.txt", """
+    Pacote de pratica do modulo 2.3 — Engenharia social e phishing.
+    Tudo e FICTICIO. A Vale Verde e a mesma organizacao de exemplo do 2.2,
+    e todos os dominios usam .example (reservado para documentacao, RFC 2606).
+    Nenhum e-mail foi enviado; nenhum dominio foi registrado; nada toca a
+    internet. O trabalho e LER e JULGAR mensagens ja capturadas.
+""")
+
+w("escopo.txt", """
+    CARTA DE AUTORIZACAO — resumo operacional (ficticia)
+    Cliente: Vale Verde Cooperativa (valeverde.example)
+    Servico: avaliacao de engenharia social (phishing e vishing) autorizada.
+    Alvos: colaboradores da Vale Verde (nunca clientes nem familiares).
+    Pretextos: so os aprovados por escrito; proibido humilhar ou assustar.
+    Limite deste exercicio: voce so ANALISA mensagens ja coletadas. Nao ha
+      montagem de campanha, nem envio, nem registro de dominio.
+""")
+
+w("dns/valeverde-dns.txt", """
+    ; Registros de e-mail publicados por valeverde.example (coletados no OSINT).
+    ; O provedor de envio autorizado e _spf.provedor-email.example.
+
+    valeverde.example.        TXT  "v=spf1 include:_spf.provedor-email.example -all"
+    _dmarc.valeverde.example. TXT  "v=DMARC1; p=none; rua=mailto:dmarc@valeverde.example; adkim=s; aspf=s"
+    sel1._domainkey.valeverde.example. TXT "v=DKIM1; k=rsa; p=MIGfMA0GCSqG...AQAB"
+
+    ; SPF -all = so o provedor pode enviar; o resto deve FALHAR.
+    ; DMARC p=none = o destinatario so RELATA as falhas; nao rejeita nem move.
+    ; adkim=s aspf=s = alinhamento ESTRITO (o dominio tem de bater exatamente).
+""")
+
+emails = {
+"rh-beneficios.eml": """\
+Return-Path: <rh@valeverde.example>
+Received: from mx1.provedor-email.example (mx1.provedor-email.example [198.51.100.25])
+\tby mail.valeverde.example with ESMTPS; Mon, 10 Aug 2026 09:14:02 -0300
+Authentication-Results: mail.valeverde.example;
+\tspf=pass smtp.mailfrom=rh@valeverde.example;
+\tdkim=pass header.d=valeverde.example header.s=sel1;
+\tdmarc=pass header.from=valeverde.example
+From: "RH Vale Verde" <rh@valeverde.example>
+To: colaborador@valeverde.example
+Subject: Atualizacao do plano de beneficios 2026
+Date: Mon, 10 Aug 2026 09:14:00 -0300
+Content-Type: text/plain; charset=utf-8
+
+Ola, o plano de beneficios foi atualizado. Veja o resumo em
+https://rh.valeverde.example/beneficios e procure o RH em caso de duvida.
+""",
+"diretoria-urgente.eml": """\
+Return-Path: <bounce@mail-sender.example>
+Received: from host-200.mail-sender.example (host-200.mail-sender.example [203.0.113.200])
+\tby mail.valeverde.example with ESMTP; Tue, 11 Aug 2026 18:52:40 -0300
+Authentication-Results: mail.valeverde.example;
+\tspf=fail smtp.mailfrom=bounce@mail-sender.example;
+\tdkim=none;
+\tdmarc=fail header.from=valeverde.example
+From: "Diretoria Financeira" <diretoria@valeverde.example>
+Reply-To: diretoria.vv.financeiro@contato-exec.example
+To: tesouraria@valeverde.example
+Subject: URGENTE: transferencia confidencial ainda hoje
+Date: Tue, 11 Aug 2026 18:52:38 -0300
+Content-Type: text/plain; charset=utf-8
+
+Estou em reuniao e preciso que voce faca uma transferencia confidencial
+agora, antes do fim do expediente. Responda so a mim por este e-mail.
+Nao comente com ninguem. Aguardo os dados da conta de destino.
+""",
+"suporte-ti.eml": """\
+Return-Path: <suporte@valeverde-ti.example>
+Received: from mx.valeverde-ti.example (mx.valeverde-ti.example [203.0.113.77])
+\tby mail.valeverde.example with ESMTPS; Wed, 12 Aug 2026 08:03:11 -0300
+Authentication-Results: mail.valeverde.example;
+\tspf=pass smtp.mailfrom=suporte@valeverde-ti.example;
+\tdkim=pass header.d=valeverde-ti.example header.s=k1;
+\tdmarc=pass header.from=valeverde-ti.example
+From: "Suporte TI Vale Verde" <suporte@valeverde-ti.example>
+To: colaborador@valeverde.example
+Subject: Sua senha expira em 24h - revalide o acesso VPN
+Date: Wed, 12 Aug 2026 08:03:09 -0300
+Content-Type: text/plain; charset=utf-8
+
+Detectamos que sua senha de rede expira em 24 horas. Para nao perder o
+acesso VPN, confirme suas credenciais em https://vpn.valeverde-ti.example/
+ate o fim do dia. Equipe de Suporte de TI.
+""",
+"nota-fiscal.eml": """\
+Return-Path: <faturamento@nf-eletronica.example>
+Received: from envio.nf-eletronica.example (envio.nf-eletronica.example [198.51.100.90])
+\tby mail.valeverde.example with ESMTPS; Wed, 12 Aug 2026 14:40:55 -0300
+Authentication-Results: mail.valeverde.example;
+\tspf=pass smtp.mailfrom=faturamento@nf-eletronica.example;
+\tdkim=pass header.d=nf-eletronica.example header.s=nfe;
+\tdmarc=pass header.from=nf-eletronica.example
+From: "Faturamento Eletronico" <faturamento@nf-eletronica.example>
+To: financeiro@valeverde.example
+Subject: Nota fiscal eletronica - pagamento pendente
+Date: Wed, 12 Aug 2026 14:40:50 -0300
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="b=_sep_2026"
+
+--b=_sep_2026
+Content-Type: text/plain; charset=utf-8
+
+Segue em anexo a nota fiscal pendente. Habilite a edicao para visualizar.
+
+--b=_sep_2026
+Content-Type: application/vnd.ms-word.document.macroEnabled.12; name="NF-09876.docm"
+Content-Disposition: attachment; filename="NF-09876.docm"
+Content-Transfer-Encoding: base64
+
+UEsDBBQABgAIAAAAIQ== (conteudo removido; arquivo inerte de exemplo)
+--b=_sep_2026--
+""",
+"premio-rh.eml": """\
+Return-Path: <noreply@beneficios-vivabem.example>
+Received: from mkt.beneficios-vivabem.example (mkt.beneficios-vivabem.example [198.51.100.140])
+\tby mail.valeverde.example with ESMTPS; Thu, 13 Aug 2026 10:22:30 -0300
+Authentication-Results: mail.valeverde.example;
+\tspf=pass smtp.mailfrom=noreply@beneficios-vivabem.example;
+\tdkim=pass header.d=beneficios-vivabem.example header.s=mkt;
+\tdmarc=pass header.from=beneficios-vivabem.example
+From: "Programa Viva Bem" <noreply@beneficios-vivabem.example>
+To: colaborador@valeverde.example
+Subject: Voce foi premiado - confirme seus dados
+Date: Thu, 13 Aug 2026 10:22:28 -0300
+Content-Type: text/html; charset=utf-8
+
+<html><body>
+<p>Parabens! Clique para resgatar:</p>
+<a href="https://portal.valeverde.example/go?u=https%3A%2F%2Fportal-premios.example%2Flogin">
+https://portal.valeverde.example/premio</a>
+</body></html>
+""",
+}
+for name, body in emails.items():
+    w(os.path.join("emails", name), body)
+
+puny = "valevérde.example".encode("idna").decode("ascii")
+w("urls.txt", f"""
+    # Seis enderecos coletados numa campanha. Para cada um, descubra o
+    # dominio REGISTRAVEL de destino (o rotulo logo antes de .example) e
+    # classifique: legitimo | lookalike | punycode | redirect
+    1 https://rh.valeverde.example/beneficios
+    2 https://login.valeverde-ti.example/
+    3 https://{puny}/entrar
+    4 https://portal.valeverde.example/go?u=https%3A%2F%2Fportal-premios.example%2Flogin
+    5 https://valeverde.example.contas-seguras.example/sso
+    6 https://suporte.valeverde.example/abrir-chamado
+""")
+
+w("dossie.txt", """
+    RESUMO DO OSINT (do modulo 2.2) — Vale Verde
+    - Dominio de e-mail: valeverde.example. Politica DMARC publicada: p=none
+      (so relatorio; o destinatario NAO rejeita nem move o que falha).
+    - SPF: -all (so o provedor autorizado envia). DKIM: 1 seletor ativo.
+    - Pessoas expostas em documentos publicos: diretoria@valeverde.example,
+      tesouraria@valeverde.example (aparecem em edital e relatorio anual).
+    - MFA corporativo: por codigo SMS/app (TOTP), sem chaves FIDO2.
+
+    Pergunta da Missao 3:
+      No e-mail 2 (diretoria-urgente.eml), a Authentication-Results marcou um
+      resultado como FALHO, mas a politica atual deixou a mensagem CHEGAR a
+      caixa de entrada. Responda:
+        vetor=<o que esse e-mail e, em uma palavra do conjunto abaixo>
+        controle=<a mudanca de UMA LINHA no DNS que o bloquearia>
+      vetor em:    {spoofing-de-dominio, bec, aitm, lookalike, macro}
+      controle em: {dmarc-reject, fido2, bloqueio-de-macro, verificacao-fora-de-banda, dkim}
+""")
+
+print("pacote gerado")
+EOF
+cat > conferir.py <<'EOF'
+import hashlib, sys
+
+# Confere so o FORMATO de cada arquivo de resposta e deriva uma flag
+# candidata do conteudo normalizado. Nao sabe a resposta certa: quem valida
+# e a plataforma, comparando com um hash. Uso: python3 conferir.py 1|2|3
+
+
+def fail(msg):
+    sys.exit("formato invalido: " + msg)
+
+
+def lines(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = [l.strip().lower() for l in f]
+    except FileNotFoundError:
+        fail(path + " nao existe")
+    return [l for l in raw if l and not l.startswith("#")]
+
+
+EML = {"rh-beneficios.eml", "diretoria-urgente.eml", "suporte-ti.eml",
+       "nota-fiscal.eml", "premio-rh.eml"}
+CLS1 = {"legitimo", "spoof", "lookalike", "anexo", "redirect"}
+CLS2 = {"legitimo", "lookalike", "punycode", "redirect"}
+VET = {"spoofing-de-dominio", "bec", "aitm", "lookalike", "macro"}
+CTRL = {"dmarc-reject", "fido2", "bloqueio-de-macro", "verificacao-fora-de-banda", "dkim"}
+m = sys.argv[1] if len(sys.argv) > 1 else ""
+
+if m == "1":
+    items = lines("veredito-1.txt")
+    seen = set()
+    for l in items:
+        name, _, cls = l.partition(":")
+        if name not in EML or cls not in CLS1:
+            fail(f"'{l}' (esperado arquivo.eml:classe, classe em {sorted(CLS1)})")
+        if name in seen:
+            fail(f"'{name}' aparece duas vezes")
+        seen.add(name)
+    if seen != EML:
+        fail(f"esperava os 5 .eml, faltou {sorted(EML - seen)}")
+    canon = "\n".join(sorted(items))
+elif m == "2":
+    items = lines("respostas-2.txt")
+    seen = set()
+    for l in items:
+        k, _, cls = l.partition("=")
+        if k not in {str(i) for i in range(1, 7)} or cls not in CLS2:
+            fail(f"'{l}' (esperado N=classe, N de 1 a 6, classe em {sorted(CLS2)})")
+        if k in seen:
+            fail(f"'{k}' aparece duas vezes")
+        seen.add(k)
+    if len(seen) != 6:
+        fail(f"esperava 6 linhas, achei {len(seen)}")
+    canon = "\n".join(sorted(items))
+elif m == "3":
+    items = lines("respostas-3.txt")
+    d = dict(l.partition("=")[::2] for l in items)
+    if set(d) != {"vetor", "controle"}:
+        fail("esperava duas linhas: vetor=... e controle=...")
+    if d["vetor"] not in VET:
+        fail(f"vetor em {sorted(VET)}")
+    if d["controle"] not in CTRL:
+        fail(f"controle em {sorted(CTRL)}")
+    canon = f"controle={d['controle']}\nvetor={d['vetor']}"
+else:
+    sys.exit("uso: python3 conferir.py 1|2|3")
+
+digest = hashlib.sha256(f"eng-social-2.3/m{m}\n{canon}\n".encode()).hexdigest()
+print(f"Formato OK. Flag candidata: FLAG{{{digest[:12]}}}")
+EOF
+python3 gerar.py && rm gerar.py
+```
+
+3. Confira o que foi criado (saída real):
+
+```console
+$ cd ~/eng-social-2.3
+$ find . -type f | sort
+./LEIA-ME.txt
+./conferir.py
+./dns/valeverde-dns.txt
+./dossie.txt
+./emails/diretoria-urgente.eml
+./emails/nota-fiscal.eml
+./emails/premio-rh.eml
+./emails/rh-beneficios.eml
+./emails/suporte-ti.eml
+./escopo.txt
+./urls.txt
+```
+
+4. Leia o `LEIA-ME.txt`, o `escopo.txt` (a carta) e o `dns/valeverde-dns.txt`. Esse DNS é a chave da Missão 1: diz quem pode enviar por `valeverde.example` e qual é a política. Como no 2.2, o `conferir.py` só confere o **formato** da sua resposta e calcula uma flag candidata do conteúdo; quem diz se está certo é a plataforma, comparando com um hash.
+
+### 5.2 Missão 1 — O veredito dos cinco e-mails (guiada)
+
+**Cenário:** cinco mensagens chegaram às caixas da Vale Verde. Sua tarefa é classificar cada uma em uma de cinco classes: `legitimo`, `spoof` (falsificação do domínio exato, pega pelo DMARC), `lookalike` (domínio sósia), `anexo` (anexo perigoso) ou `redirect` (link enganoso).
+
+Comece lendo os cabeçalhos de um e-mail. O que interessa está no topo:
+
+```console
+$ sed -n '1,10p' emails/diretoria-urgente.eml
+Return-Path: <bounce@mail-sender.example>
+Received: from host-200.mail-sender.example (host-200.mail-sender.example [203.0.113.200])
+	by mail.valeverde.example with ESMTP; Tue, 11 Aug 2026 18:52:40 -0300
+Authentication-Results: mail.valeverde.example;
+	spf=fail smtp.mailfrom=bounce@mail-sender.example;
+	dkim=none;
+	dmarc=fail header.from=valeverde.example
+From: "Diretoria Financeira" <diretoria@valeverde.example>
+Reply-To: diretoria.vv.financeiro@contato-exec.example
+To: tesouraria@valeverde.example
+```
+
+`spf=fail`, `dmarc=fail`, `From:` dizendo `valeverde.example`: é falsificação do domínio exato. Classe `spoof`. Esse é o seu exemplo resolvido.
+
+Agora o desafio: faça o mesmo com os outros quatro. Duas armadilhas de propósito — dois e-mails passam em **tudo** (`spf=pass`, `dkim=pass`, `dmarc=pass`) e **ainda assim** são golpe. Lembre da seção 2.4: passar prova de qual domínio veio, não que é confiável. Para esses, olhe **qual** é o domínio e **o que** a mensagem traz (um link? um anexo?).
+
+<Hint title="Dica 1 — o que olhar em cada um">
+Para cada `.eml`, extraia a `Authentication-Results` e o `From:`. Se algo deu `fail` com o From do próprio `valeverde.example`, é `spoof`. Se passou tudo, pergunte: o domínio do From é mesmo `valeverde.example`, ou um parecido (`lookalike`)? E o corpo tem anexo `.docm`/macro (`anexo`) ou um link cujo `href` leva para fora (`redirect`)?
+</Hint>
+
+<Hint title="Dica 2 — ver os cabeçalhos de todos de uma vez">
+```console
+$ for f in emails/*.eml; do echo "== $f =="; grep -E -i 'From:|dmarc=|spf=|Content-Disposition|href' "$f"; done
+```
+Isso põe lado a lado o From, os vereditos e as pistas de anexo e link de cada mensagem.
+</Hint>
+
+<Solution title="Solução — a classificação dos cinco">
+- `rh-beneficios.eml`: passa tudo, From é `valeverde.example`, link interno `rh.valeverde.example`. **legitimo**.
+- `diretoria-urgente.eml`: `spf=fail`/`dmarc=fail`, From forjado de `valeverde.example`. **spoof**.
+- `suporte-ti.eml`: passa tudo, **mas** o From é `valeverde-ti.example` (domínio sósia, não o real). **lookalike**.
+- `nota-fiscal.eml`: passa tudo (domínio do atacante), mas traz anexo `NF-09876.docm` (macro) e "habilite a edição". **anexo**.
+- `premio-rh.eml`: passa tudo, mas o link tem texto `portal.valeverde.example` e `href` com `?u=` que leva a `portal-premios.example`. **redirect**.
+
+Grave as cinco linhas em `veredito-1.txt`, uma por `arquivo.eml:classe`:
+
+```console
+$ cat > veredito-1.txt <<'EOF'
+rh-beneficios.eml:legitimo
+diretoria-urgente.eml:spoof
+suporte-ti.eml:lookalike
+nota-fiscal.eml:anexo
+premio-rh.eml:redirect
+EOF
+$ python3 conferir.py 1
+Formato OK. Flag candidata: FLAG{…}
+```
+</Solution>
+
+A flag é a que o **seu** `conferir.py` imprimir. Cole-a abaixo.
+
+<FlagInput task="missao-1-veredito-dos-emails" />
+
+### 5.3 Missão 2 — Os domínios que enganam (desafio)
+
+**Cenário:** o `urls.txt` tem seis endereços. Para cada um, descubra o **domínio registrável** de destino (o conceito do 2.2: o rótulo logo antes de `.example`, que é o "dono" real do endereço) e classifique em `legitimo`, `lookalike`, `punycode` ou `redirect`.
+
+```console
+$ cat urls.txt
+1 https://rh.valeverde.example/beneficios
+2 https://login.valeverde-ti.example/
+3 https://xn--valevrde-f1a.example/entrar
+4 https://portal.valeverde.example/go?u=https%3A%2F%2Fportal-premios.example%2Flogin
+5 https://valeverde.example.contas-seguras.example/sso
+6 https://suporte.valeverde.example/abrir-chamado
+```
+
+Três exigem atenção: o `xn--` precisa ser **decodificado** para revelar o nome real; o `?u=` precisa ser **seguido** até o host final; e o endereço com `valeverde.example` no meio tem o domínio registrável lá no fim. Use Python da stdlib.
+
+<Hint title="Dica 1 — decodificar o Punycode">
+```console
+$ python3 -c "print('xn--valevrde-f1a'.encode('ascii').decode('idna'))"
+```
+O que sai é o nome Unicode de verdade. Compare, letra por letra, com `valeverde`.
+</Hint>
+
+<Hint title="Dica 2 — host e redirecionamento com urllib">
+```console
+$ python3 -c "import urllib.parse as u; p=u.urlparse('https://portal.valeverde.example/go?u=https%3A%2F%2Fportal-premios.example%2Flogin'); print('host:', p.hostname); print('u=', u.parse_qs(p.query).get('u'))"
+```
+O `host` é o que você vê; o `u=` é para onde ele te manda. O domínio registrável é o rótulo logo antes de `.example` no host de **destino**.
+</Hint>
+
+<Solution title="Solução — a classificação das seis URLs">
+- 1 `rh.valeverde.example` → registrável `valeverde.example`. **legitimo**.
+- 2 `login.valeverde-ti.example` → registrável `valeverde-ti.example` (sósia). **lookalike**.
+- 3 `xn--valevrde-f1a.example` → decodifica para `valevérde.example` (com acento). **punycode**.
+- 4 host `portal.valeverde.example`, mas `?u=` leva a `portal-premios.example`. **redirect**.
+- 5 `valeverde.example.contas-seguras.example` → registrável `contas-seguras.example`. **lookalike**.
+- 6 `suporte.valeverde.example` → registrável `valeverde.example`. **legitimo**.
+
+```console
+$ cat > respostas-2.txt <<'EOF'
+1=legitimo
+2=lookalike
+3=punycode
+4=redirect
+5=lookalike
+6=legitimo
+EOF
+$ python3 conferir.py 2
+Formato OK. Flag candidata: FLAG{…}
+```
+</Solution>
+
+<FlagInput task="missao-2-dominios-que-enganam" />
+
+### 5.4 Missão 3 — Do dossiê ao controle (desafio)
+
+**Cenário:** você é o pentester fechando o relatório. O `dossie.txt` resume o que o OSINT do 2.2 achou da Vale Verde. Uma das descobertas explica por que o e-mail 2 (o `spoof` da Missão 1) chegou à caixa de entrada mesmo tendo dado `dmarc=fail`. Aponte, em uma palavra do conjunto, **o que é** esse e-mail (`vetor`) e **qual mudança de uma linha no DNS** o barraria na porta (`controle`).
+
+```console
+$ cat dossie.txt
+```
+
+<Hint title="Dica">
+Releia o registro `_dmarc` no `dns/valeverde-dns.txt`. Qual é o `p=`? O que uma política `p=none` faz com um e-mail que falha (seção 2.4)? A correção é trocar **essa** palavra. E o e-mail 2, falsificando o domínio exato, é um caso de quê?
+</Hint>
+
+<Solution title="Solução">
+A Vale Verde publica `p=none`: o DMARC avalia e **relata**, mas entrega assim mesmo. Por isso o e-mail 2, que deu `dmarc=fail`, ainda caiu na caixa. O vetor é a falsificação do domínio exato (`spoofing-de-dominio`); o controle que o barraria é mudar a política para `p=reject` (`dmarc-reject`), que recusa na porta tudo que falha o alinhamento.
+
+```console
+$ cat > respostas-3.txt <<'EOF'
+vetor=spoofing-de-dominio
+controle=dmarc-reject
+EOF
+$ python3 conferir.py 3
+Formato OK. Flag candidata: FLAG{…}
+```
+</Solution>
+
+<FlagInput task="missao-3-do-dossie-ao-controle" />
+
+### 5.5 Walkthrough: ver SPF e DMARC de um domínio real (sem flag)
+
+As missões são offline. Se quiser ver registros de verdade e tiver o `dig` instalado (no Kali tem; no WSL pode não ter), olhe um domínio grande que use DMARC:
+
+```console
+$ dig +short TXT _dmarc.google.com
+"v=DMARC1; p=reject; rua=mailto:..."
+```
+
+Sem `dig`, a própria stdlib do Python não resolve TXT com facilidade, então aqui o exercício para no conceito: um `p=reject` significa que o provedor **recusa** quem falsifica aquele domínio. Compare com o `p=none` da Vale Verde fictícia e entenda por que a diferença importa.
+
+### 5.6 Limpeza
+
+O pacote é só seu e não tem nada sensível, mas o hábito do 2.2 vale: terminado o exercício, apague.
+
+```console
+$ cd ~ && rm -rf ~/eng-social-2.3
+```
+
+## 6. Variações e aprofundamento
+
+**Callback phishing (TOAD).** O <GlossaryTerm term="callback phishing">callback phishing</GlossaryTerm> inverte o fluxo: o e-mail não traz link nem anexo — só uma "fatura" e um telefone para contestar. Como não há nada malicioso para o filtro pegar, ele passa; o golpe acontece na ligação, onde a vítima é guiada a instalar um acesso remoto ou pagar. É a fusão de phishing com <GlossaryTerm term="vishing">vishing</GlossaryTerm>.
+
+**Quishing e o celular.** O <GlossaryTerm term="quishing">quishing</GlossaryTerm> põe a URL dentro de um QR code numa imagem. Filtros que leem texto não veem a URL, e a vítima escaneia com o celular — um aparelho onde conferir o endereço de um link é mais difícil e onde o MFA e a VPN corporativa às vezes nem rodam. É o caminho preferido para tirar a vítima do computador protegido.
+
+**IA generativa.** Por anos, o português capenga foi um indicador barato de phishing. Isso acabou: modelos de linguagem escrevem e-mails de spear phishing sem erros, personalizados com o OSINT, em qualquer idioma e em escala. A lição prática é dura — **pare de ensinar a "procurar erros de português"**. O indicador confiável nunca foi a gramática; é o pedido (urgência, segredo, dinheiro, credencial) e a divergência técnica (domínio, cabeçalho, link).
+
+**Deepfake de voz e vídeo.** O vishing ganhou um reforço: vozes e rostos sintéticos. Já há casos noticiados de fraudes em que funcionários foram convencidos por uma "videochamada" com executivos recriados. É um campo em movimento; o princípio de defesa, porém, é o velho conhecido — verificação fora de banda para qualquer pedido de valor.
+
+**Pretextos presenciais.** Fora da tela, o <GlossaryTerm term="tailgating">tailgating</GlossaryTerm> (entrar atrás de quem tem crachá) e o <GlossaryTerm term="baiting">baiting</GlossaryTerm> (o pen drive "perdido" no estacionamento) exploram cortesia e curiosidade. O physical penetration test (1.3) cobre isso, sempre com a carta de autorização literalmente no bolso.
+
+## 7. Erros comuns
+
+- **"Passou no SPF, então é legítimo."** O erro número um. SPF confere o envelope, não o From visível, e um domínio sósia passa em tudo. Sempre leia o DMARC **e** confira qual é o domínio.
+- **Confundir o veredito com a política.** `dmarc=fail` diz que falhou a checagem; o que acontece com a mensagem depende do `p=` publicado. Com `p=none`, ela chega mesmo tendo falhado.
+- **Ler o nome de exibição e parar.** "Diretoria Financeira" é texto livre. Sempre abra o endereço real por trás do nome.
+- **Clicar "só para conferir".** Numa página de <GlossaryTerm term="credential harvesting">credential harvesting</GlossaryTerm> ou num AiTM, abrir já é meio caminho. Para conferir um link, leia o `href`; não o visite.
+- **Responder para verificar.** Responder a um BEC manda a mensagem para o `Reply-To` do atacante. Verifique sempre por **outro** canal, com um contato que você já tinha.
+- **`decode('idna')` reclamando.** Em Python, decodifique o rótulo a partir de **bytes**: `'xn--...'.encode('ascii').decode('idna')`. Passar a string direto dá `TypeError`.
+
+## 8. Defesa e mitigação
+
+A defesa contra engenharia social é em **camadas**: técnica (fechar o que a máquina resolve), humana (preparar as pessoas) e de processo (tirar a decisão arriscada do indivíduo). Nenhuma sozinha basta.
+
+**Camada técnica — autenticação de e-mail.** Publique os três e, principalmente, **endureça o DMARC**:
+
+```text
+; o alvo do relatório (modo observação), para ver quem envia em seu nome
+_dmarc.valeverde.example. TXT "v=DMARC1; p=none; rua=mailto:dmarc@valeverde.example"
+
+; depois de analisar os relatórios por semanas, suba a política:
+_dmarc.valeverde.example. TXT "v=DMARC1; p=reject; adkim=s; aspf=s; rua=mailto:dmarc@valeverde.example"
+```
+
+O caminho é sempre `p=none` → `p=quarantine` → `p=reject`, lendo os relatórios entre cada degrau para não barrar e-mail legítimo. O `p=reject` com alinhamento estrito mata a falsificação do **seu** domínio exato. Contra os sósias, complemente com monitoramento de domínios parecidos recém-registrados (o mesmo CT e passive DNS do 2.2, agora virados para si mesmo) e com uma marca visual de "e-mail externo" que o servidor adiciona a tudo que vem de fora.
+
+**Camada técnica — MFA resistente a phishing.** Troque o segundo fator digitável (SMS, TOTP, push) por <GlossaryTerm term="FIDO2">FIDO2</GlossaryTerm>/<GlossaryTerm term="WebAuthn">WebAuthn</GlossaryTerm> (<GlossaryTerm term="passkey">passkeys</GlossaryTerm>) onde der. Como a assinatura é amarrada à origem, o AiTM não consegue repassá-la. Onde a passkey não é possível, prefira push com *number matching* (a vítima digita um número que a tela mostra) a push simples, para cortar a <GlossaryTerm term="MFA fatigue">MFA fatigue</GlossaryTerm>.
+
+**Camada técnica — anexos e links.** Bloqueie por padrão macros de arquivos vindos da internet (a Microsoft passou a fazer isso por padrão no Office em 2022) e os formatos-contêiner (`.iso`, `.img`, `.lnk`) na borda. Reescreva e analise links em sandbox no gateway de e-mail.
+
+**Camada humana — treino que mede processo, não culpa.** O <GlossaryTerm term="security awareness training">security awareness training</GlossaryTerm> ensina a reconhecer a tríade (autoridade + urgência + pedido) e, acima de tudo, dá um **botão fácil de denunciar**. A métrica que importa não é "quem clicou" (expor isso fere a LGPD e pune a vítima, como o 1.4 frisou), e sim a **taxa de denúncia** e o **tempo até reportar**: um clique reportado em dois minutos é uma vitória da defesa.
+
+**Camada de processo — tirar o indivíduo da mira.** Para pagamentos e trocas de dados bancários, exija **verificação fora de banda** (ligar para um número já conhecido, nunca o do e-mail) e dupla aprovação acima de um valor. É o controle que teria parado o caso Ubiquiti. Aplique o <GlossaryTerm term="principle of least privilege">menor privilégio</GlossaryTerm> (o 4.5) às ferramentas internas, para que uma credencial phishada de um atendente não vire controle de 130 contas, como no Twitter.
+
+## 9. Exercícios
+
+Responda ao quiz abaixo (corrigido no servidor; o gabarito não vai ao navegador) e faça as três missões da seção 5, cada uma com sua flag.
+
+<Quiz task="quiz-final" />
+
+**Desafios extras (sem flag, para pensar):**
+
+1. No pacote, o e-mail `nota-fiscal.eml` passa em SPF, DKIM e DMARC. Explique, em duas linhas, por que isso **não** o torna seguro, e diga qual controle da seção 8 o pegaria mesmo assim.
+2. A Vale Verde sobe o DMARC para `p=reject`. Qual dos cinco e-mails da Missão 1 passaria a ser barrado na porta, e quais **continuariam** chegando? Por quê?
+3. Releia o diagrama do AiTM. Se a Vale Verde adotar passkeys, em qual dos cinco passos o ataque quebra, e o que exatamente falha para o atacante?
+
+<Figure
+  src={triagemDeEmail}
+  alt="Árvore de decisão com cinco perguntas em sequência para triar um e-mail: 1) dmarc=fail ou spf=fail com o From do domínio? então spoofing de domínio; 2) o domínio do From é o certo ou um parecido? então lookalike ou punycode; 3) o texto do link bate com o href e o host de destino? então redirect/open redirect; 4) há anexo executável, macro, lnk, iso ou html? então anexo perigoso; 5) nada acima, mas gera urgência, pede segredo ou foge do processo? então verifique por outro canal. No rodapé, a régua de ouro: SPF, DKIM e DMARC só provam de qual domínio veio, nunca que é confiável."
+  caption="A ordem de perguntas para triar um e-mail suspeito. A última linha é a que mais importa: autenticação prova origem, não confiança."
+/>
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- A engenharia social explora **atalhos de decisão** (autoridade, urgência, prova social, escassez…). O phishing é a sua forma por mensagem, numa família que muda com o canal (vishing, smishing, quishing) e o alvo (spear phishing, whaling, BEC).
+- O e-mail (SMTP, 1982) **não autentica o remetente** e tem **dois** remetentes: o envelope (que o SPF confere) e o From visível (que você lê). Eles não precisam bater.
+- **SPF, DKIM e DMARC** são remendos no DNS. Só o **alinhamento** do DMARC liga a autenticação ao From visível — e só com `p=reject` a falsificação do domínio exato é barrada. Passar nas três prova **de qual domínio** veio, nunca que é confiável.
+- Mesmo com DMARC perfeito, o atacante usa **domínios sósia, homógrafos em Punycode e links enganosos** (open redirect). E o **AiTM** derrota o MFA por código roubando o cookie de sessão; só o MFA resistente a phishing (FIDO2/passkey) resiste.
+- A defesa é em camadas: **técnica** (DMARC reject, passkeys, bloqueio de macro), **humana** (treino que mede denúncia, não culpa) e de **processo** (verificação fora de banda, menor privilégio).
+- Casos reais confirmam que o alvo é a pessoa e o processo: **Twitter** (vishing, 2020), **Ubiquiti** (BEC, US$ 46,7 mi, 2015) e a campanha **AiTM** de 2022.
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [NYDFS — Twitter Investigation Report](https://www.dfs.ny.gov/Twitter_Report) — o relatório oficial da invasão por telefone, com as falhas de processo.
+- [Microsoft — "From cookie theft to BEC" (AiTM)](https://www.microsoft.com/en-us/security/blog/2022/07/12/from-cookie-theft-to-bec-attackers-use-aitm-phishing-sites-as-entry-point-to-further-financial-fraud/) — a mecânica do AiTM, com telas reais.
+- [RFC 9989 — DMARC](https://www.rfc-editor.org/rfc/rfc9989.html) — o padrão de 2026; a seção sobre alinhamento e políticas vale a leitura.
+- [CISA — Phishing Guidance: Stopping the Attack Cycle at Phase One](https://www.cisa.gov/resources-tools/resources/phishing-guidance-stopping-attack-cycle-phase-one) — o guia de defesa, em camadas, do governo dos EUA.
