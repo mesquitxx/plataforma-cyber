@@ -70,6 +70,15 @@ COPY lab-3.2/ /opt/lab-3.2/
 RUN chmod 0755 /opt/lab-3.2/conferir.sh \
  && chmod 0644 /opt/lab-3.2/webapp.hashes /opt/lab-3.2/shadow.leak /opt/lab-3.2/README.txt
 
+# Module 3.3 (Track 3): read-only symmetric-crypto exercise. Only ciphertexts
+# and public plaintexts live here — never a key. Each flag comes out of
+# exploiting a misuse of AES (ECB patterns, a reused CTR nonce, a CBC IV flip),
+# so nothing secret ships in the image. The module copies this to ~/lab-3.3.
+COPY lab-3.3/ /opt/lab-3.3/
+RUN find /opt/lab-3.3 -type d -exec chmod 0755 {} + \
+ && find /opt/lab-3.3 -type f -exec chmod 0644 {} + \
+ && chmod 0755 /opt/lab-3.3/missao-3/conferir.sh
+
 USER kali
 WORKDIR /home/kali
 EXPOSE 5901

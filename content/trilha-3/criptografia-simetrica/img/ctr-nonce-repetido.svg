@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+  <title id="t">Por que repetir o nonce no CTR entrega o segundo texto a quem conhece o primeiro</title>
+  <desc id="d">Três faixas. Em cima, o servidor cifra dois arquivos com a mesma chave K e o mesmo nonce N: o AES gera o mesmo keystream S nas duas vezes, e cada arquivo leva um XOR com S, dando C1 igual a P1 XOR S e C2 igual a P2 XOR S. No meio, o atacante, que não tem a chave, faz C1 XOR C2: o keystream se cancela, porque S XOR S é zero, e sobra P1 XOR P2. Embaixo, com P1 conhecido (o aviso público), o atacante faz C1 XOR P1 e recupera o próprio keystream S; depois faz C2 XOR S e lê P2, o cofre, até o comprimento de P1. A legenda lembra que o AES não foi quebrado em nenhum momento e que o defeito é o nonce repetido.</desc>
+  <style>
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
+    .t { font-size: 16px; font-weight: 700; }
+    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
+    .c { font-size: 12px; text-anchor: middle; }
+    .s { font-size: 10.5px; fill: #9fb0a6; }
+    .ok { font-size: 12px; font-weight: 700; fill: #5ee08a; }
+    .no { font-size: 12px; font-weight: 700; fill: #f08a7e; }
+    .mid { font-size: 12px; font-weight: 700; fill: #e8c46a; }
+    .okc { font-size: 12px; font-weight: 700; fill: #5ee08a; text-anchor: middle; }
+    .noc { font-size: 12px; font-weight: 700; fill: #f08a7e; text-anchor: middle; }
+    .midc { font-size: 12px; font-weight: 700; fill: #e8c46a; text-anchor: middle; }
+    .ln { stroke: #9fb0a6; stroke-width: 1.4; fill: none; marker-end: url(#a); }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9fb0a6"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#121815"/>
+  <text class="t" x="30" y="32">CTR com nonce repetido: o keystream se cancela e o segredo cai sem a chave</text>
+
+  <rect x="20" y="50" width="860" height="130" rx="8" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="36" y="74">1. O servidor (com a chave) — mesmo K, mesmo nonce N, duas vezes</text>
+  <rect x="40" y="92" width="150" height="34" rx="5" fill="#1b2a24" stroke="#e8c46a"/><text class="midc" x="115" y="113">AES-CTR(K, N)</text>
+  <path class="ln" d="M190,109 L238,109"/>
+  <rect x="240" y="92" width="150" height="34" rx="5" fill="#1b2a24" stroke="#f08a7e"/><text class="noc" x="315" y="113">keystream S</text>
+  <path class="ln" d="M390,109 L438,109"/>
+  <rect x="440" y="88" width="200" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="540" y="107">C1 = P1 ⊕ S  (aviso)</text>
+  <rect x="440" y="128" width="200" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="540" y="147">C2 = P2 ⊕ S  (cofre)</text>
+  <path class="ln" d="M390,116 L420,116 L420,143 L438,143"/>
+  <text class="s" x="660" y="107">o mesmo S nas duas:</text>
+  <text class="s" x="660" y="123">o CTR só depende de K, N</text>
+  <text class="s" x="660" y="139">e do contador — nunca</text>
+  <text class="s" x="660" y="155">do texto claro</text>
+
+  <rect x="20" y="194" width="860" height="104" rx="8" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="36" y="218">2. O atacante (sem a chave) — junta os dois cifrados</text>
+  <rect x="40" y="236" width="300" height="34" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="190" y="257">C1 ⊕ C2 = P1 ⊕ S ⊕ P2 ⊕ S</text>
+  <path class="ln" d="M340,253 L398,253"/>
+  <rect x="400" y="236" width="180" height="34" rx="5" fill="#1b2a24" stroke="#e8c46a"/><text class="midc" x="490" y="257">S ⊕ S = 0</text>
+  <path class="ln" d="M580,253 L638,253"/>
+  <rect x="640" y="236" width="220" height="34" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="750" y="257">C1 ⊕ C2 = P1 ⊕ P2</text>
+  <text class="s" x="40" y="288">onde P1 e P2 coincidem (o mesmo cabeçalho "COOPERATIVA ATLAS - "), o XOR dá bytes 00</text>
+
+  <rect x="20" y="312" width="860" height="144" rx="8" fill="#16201b" stroke="#2c3a33"/>
+  <text class="h" x="36" y="336">3. Com um texto claro conhecido (o aviso público)</text>
+  <rect x="40" y="354" width="220" height="34" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="150" y="375">C1 ⊕ P1 = S</text>
+  <path class="ln" d="M260,371 L318,371"/>
+  <rect x="320" y="354" width="200" height="34" rx="5" fill="#1b2a24" stroke="#f08a7e"/><text class="noc" x="420" y="375">keystream S</text>
+  <path class="ln" d="M520,371 L578,371"/>
+  <rect x="580" y="354" width="280" height="34" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="720" y="375">C2 ⊕ S = P2  (o cofre)</text>
+  <text class="s" x="40" y="410">P2 só é lido até o comprimento de P1: o keystream recuperado tem o tamanho do texto conhecido</text>
+  <text class="mid" x="40" y="432">O AES não foi quebrado. O defeito é um só: o par (chave, nonce) foi usado duas vezes.</text>
+</svg>

@@ -1,0 +1,1635 @@
+---
+slug: criptografia-simetrica
+track: trilha-3
+title: "Criptografia simétrica"
+prerequisites: [fundamentos-de-criptografia]
+lab: kali
+tasks:
+  - slug: missao-1-cofre-ecb
+    title: "Missão 1 — O cofre de imagens (ECB)"
+    type: flag
+    prompt: "O texto desenhado na imagem cifrada em ECB, exatamente como aparece (maiúsculas, hífens e chaves), no formato FLAG{...}."
+    hint: "O cofre-ecb.bin é um BMP inteiro cifrado. Troque os primeiros 54 bytes por um cabeçalho BMP válido de 1200 x 180 pixels e 24 bits e abra no Firefox. Se uma letra ficar ambígua, pinte de branco o bloco de 16 bytes mais frequente e de preto todos os outros."
+    flag:
+      hash: "scrypt$16384$8$1$764259592c553dd194ff98be1fa1d82fc95b904bc20d0f4a9045f7c2e700f1b6"
+      salt: "ca995e00201ffdd75d84ba7a4eb4a04a"
+  - slug: missao-2-nonce-repetido
+    title: "Missão 2 — O serviço de exportação (nonce repetido no CTR)"
+    type: flag
+    prompt: "A chave de recuperação que aparece no arquivo 2026-10-cofre-exportacao.enc depois de decifrado, no formato FLAG{...}."
+    hint: "Compare os 16 primeiros bytes (o nonce) dos quatro arquivos. Dois repetem o nonce, e um deles é a versão cifrada do aviso público. Texto cifrado XOR texto claro conhecido = keystream."
+    flag:
+      hash: "scrypt$16384$8$1$f4b7f35af0a57ccea5767c226bc0154e40c987c3403d93c7c38842fb20d3cb67"
+      salt: "852b9025b0fbac9ea95fb242db2c23ea"
+  - slug: missao-3-iv-flip
+    title: "Missão 3 — O token de acesso (IV-flip no CBC)"
+    type: flag
+    prompt: "A flag que o /opt/lab-3.3/missao-3/conferir.sh imprime para o seu token forjado com role=admin, no formato FLAG{...}."
+    hint: "No CBC, P1 = D(C1) XOR IV. O texto claro começa com role=guest: os bytes 5 a 9 do IV ficam sobre 'guest'. Faça XOR desses bytes do IV com 'guest' XOR 'admin' e não toque no resto."
+    flag:
+      hash: "scrypt$16384$8$1$24f988c7f50312c38782707bef2abdf0c26f11d74de5873651fccc081f962764"
+      salt: "1d790951255bce58f8b3a4f4b600be2e"
+  - slug: quiz-final
+    title: "Quiz — Criptografia simétrica"
+    type: quiz
+    passPercent: 70
+    questions:
+      - question: "Uma imagem cifrada com AES em modo ECB ainda deixa ver o desenho original. Por quê?"
+        options:
+          - "Porque o AES-128 é fraco demais para imagens"
+          - "Porque o ECB não cifra o cabeçalho do arquivo"
+          - "Porque no ECB cada bloco de 16 bytes é cifrado sozinho e sempre do mesmo jeito: blocos de texto claro iguais viram blocos cifrados iguais, e o padrão sobrevive"
+          - "Porque a chave foi derivada de uma senha fraca"
+        answer: 2
+        explanation: "O ECB é um 'livro de códigos': com a mesma chave, o mesmo bloco de entrada dá sempre o mesmo bloco de saída. Áreas de cor lisa repetem blocos, e o cifrado repete os mesmos blocos nos mesmos lugares. O AES em si está perfeito; o defeito é o modo. No lab, 40.504 blocos cifrados tinham só 23 valores diferentes."
+      - question: "Dois arquivos foram cifrados com AES-CTR, a mesma chave e o mesmo nonce. O que um atacante sem a chave precisa para ler o segundo?"
+        options:
+          - "Os dois textos cifrados e o texto claro do primeiro (ou um trecho dele): C1 XOR P1 devolve o keystream, e o keystream XOR C2 devolve P2"
+          - "A chave, obrigatoriamente; sem ela o CTR é inquebrável"
+          - "Um computador quântico, para rodar o algoritmo de Grover"
+          - "Os dois textos cifrados bastam sempre, sem nada mais"
+        answer: 0
+        explanation: "No CTR o keystream só depende da chave, do nonce e do contador. Com o nonce repetido, os dois arquivos levam o mesmo keystream: C1 XOR C2 = P1 XOR P2, e um texto claro conhecido entrega o keystream inteiro (até o tamanho dele). Sem nenhum texto conhecido ainda dá para atacar por crib dragging, mas não é imediato — por isso a opção 'bastam sempre' está errada."
+      - question: "No modo CBC, o que acontece ao decifrar se o atacante trocar bits do IV (e só do IV)?"
+        options:
+          - "A decifração falha com erro de integridade"
+          - "Todo o texto claro vira lixo"
+          - "Só o último bloco muda"
+          - "O primeiro bloco de texto claro muda exatamente nos mesmos bits trocados, e o resto decifra normalmente"
+        answer: 3
+        explanation: "Na decifração CBC, P1 = D(C1) XOR IV. O D(C1) não muda (C1 está intacto), então cada bit trocado no IV troca o mesmo bit em P1, e nada mais. Foi assim que role=guest virou role=admin na Missão 3. O CBC não tem integridade, então ninguém reclama; mexer em C1 em vez do IV estragaria P1 e trocaria bits em P2."
+      - question: "O que um 'padding oracle' explora?"
+        options:
+          - "Uma chave curta demais"
+          - "Um servidor que responde de forma diferente quando o padding do texto decifrado é inválido; essa única informação, repetida milhares de vezes, revela o texto claro byte a byte"
+          - "O fato de o AES ter só 10 rodadas"
+          - "Um IV que se repete entre mensagens"
+        answer: 1
+        explanation: "O atacante altera o bloco anterior e pergunta ao servidor, indiretamente, 'o padding ficou válido?'. Cada 'sim' revela um byte do valor intermediário D(C), e com ele o texto claro. No exemplo do módulo, 6.449 consultas recuperaram 3 blocos. Foi o mecanismo do POODLE (CVE-2014-3566) no SSL 3.0."
+      - question: "O que o AES-GCM entrega que o AES-CTR, sozinho, não entrega?"
+        options:
+          - "Uma chave maior"
+          - "Mais velocidade"
+          - "Integridade e autenticidade: uma tag de 16 bytes, calculada sobre o texto cifrado e os dados associados (AAD), que é conferida antes de liberar qualquer byte"
+          - "Resistência a computadores quânticos"
+        answer: 2
+        explanation: "O GCM é o CTR mais um autenticador (GHASH). Se um único bit do cifrado, do nonce ou da AAD mudar, a tag não confere e a biblioteca levanta InvalidTag sem devolver nada. É isso que derrota a forja da Missão 3: no walkthrough, a mesma troca guest→admin foi recusada."
+      - question: "Por que repetir o nonce no AES-GCM é ainda pior do que no AES-CTR?"
+        options:
+          - "Porque, além de vazar o XOR dos textos claros como no CTR, permite recuperar a subchave de autenticação H e forjar tags válidas para mensagens escolhidas"
+          - "Porque o GCM passa a cifrar em ECB"
+          - "Porque a chave AES vaza diretamente"
+          - "Não é pior: o GCM tolera nonce repetido"
+        answer: 0
+        explanation: "O NIST SP 800-38D avisa: com IV repetido para a mesma chave, é provável que o adversário determine a subchave de hash e então 'construa facilmente uma forja'. Perde-se o sigilo (como no CTR) e a autenticidade. Quem precisa tolerar repetição usa AES-GCM-SIV (RFC 8452)."
+      - question: "O ataque Sweet32 (CVE-2016-2183) atingiu o 3DES no TLS. Qual era o problema de fundo?"
+        options:
+          - "A chave de 56 bits do DES"
+          - "O 3DES não ter modo CBC"
+          - "Um bug de implementação no OpenSSL"
+          - "O bloco de 64 bits: depois de cerca de 2^32 blocos (32 GB) cifrados com a mesma chave, colisões de bloco ficam prováveis (paradoxo do aniversário) e vazam texto claro"
+        answer: 3
+        explanation: "Com blocos de n bits, colisões aparecem depois de cerca de 2^(n/2) blocos. Para 64 bits isso é 32 GB, coisa que uma sessão longa de HTTPS atinge: os autores capturaram 785 GB em 30,5 horas. Com os 128 bits do AES, o limite sobe para 256 EB. É por isso que o tamanho do bloco importa, não só o da chave."
+      - question: "Na Missão 3, o servidor aceitaria o token forjado mesmo sem o atacante conhecer a chave. Qual mudança de projeto impediria isso?"
+        options:
+          - "Trocar AES-128 por AES-256 em CBC"
+          - "Cifrar com AEAD (AES-GCM ou ChaCha20-Poly1305), ou, no legado, CBC com encrypt-then-MAC conferido antes de decifrar"
+          - "Esconder o formato role=...;uid=... dos usuários"
+          - "Usar um IV fixo em vez de aleatório"
+        answer: 1
+        explanation: "O problema não é o tamanho da chave nem o sigilo do formato (Kerckhoffs: o formato pode ser público). É a falta de integridade. Uma tag de autenticação reprova qualquer bit trocado. IV fixo pioraria, não melhoraria."
+glossary:
+  - term: block cipher
+    definition: "Cifra de bloco: transforma um bloco de tamanho fixo (16 bytes no AES) em outro do mesmo tamanho, de forma reversível, controlada pela chave. Sozinha, só cifra um bloco; para mensagens maiores precisa de um modo de operação."
+  - term: stream cipher
+    definition: "Cifra de fluxo: gera, a partir da chave e de um nonce, uma sequência de bytes pseudoaleatórios (keystream) e faz XOR com o texto claro, byte a byte. Não precisa de padding, mas nunca pode reusar o par chave+nonce."
+  - term: keystream
+    definition: "Fluxo de chave: a sequência de bytes que uma cifra de fluxo (ou o modo CTR) gera e combina com o texto por XOR. Quem descobre o keystream decifra qualquer texto que o tenha usado."
+  - term: AES
+    definition: "Advanced Encryption Standard (FIPS 197, 2001): a cifra de bloco padrão do mundo, com blocos de 128 bits e chaves de 128, 192 ou 256 bits (10, 12 ou 14 rodadas). Não tem ataque prático conhecido; as falhas reais vêm de como é usada."
+  - term: Rijndael
+    definition: "O algoritmo de Joan Daemen e Vincent Rijmen que venceu o concurso do NIST e foi anunciado como AES em 2000. O AES é o Rijndael restrito a blocos de 128 bits."
+  - term: DES
+    definition: "Data Encryption Standard (1977): a cifra de bloco padrão antes do AES, com blocos de 64 bits e chave efetiva de 56 bits. Caiu por força bruta em 1998."
+  - term: Triple DES
+    definition: "3DES (TDEA): o DES aplicado três vezes para alongar a chave. Herdou o bloco de 64 bits (vulnerável ao Sweet32) e o NIST proibiu seu uso para cifrar depois de 31/12/2023."
+  - term: block size
+    definition: "Tamanho do bloco: quantos bits a cifra de bloco processa de cada vez (128 no AES, 64 no DES). Define, entre outras coisas, depois de quanto dado cifrado com a mesma chave as colisões ficam prováveis."
+  - term: round
+    definition: "Rodada: uma iteração da sequência de transformações de uma cifra de bloco. O AES repete a sua 10, 12 ou 14 vezes; cada rodada mistura mais o bloco com uma subchave."
+  - term: key schedule
+    definition: "Expansão de chave: a rotina que deriva, da chave original, uma subchave diferente para cada rodada (Nr+1 subchaves no AES)."
+  - term: AES-NI
+    definition: "Instruções de processador (x86) que executam as rodadas do AES em hardware. Tornam o AES muito rápido e também mais resistente a ataques de tempo do que implementações em software com tabelas."
+  - term: mode of operation
+    definition: "Modo de operação: a receita que usa uma cifra de bloco para cifrar mensagens de qualquer tamanho (ECB, CBC, CTR, GCM...). Decide se blocos iguais vazam, se precisa de IV, de padding, e se há integridade."
+  - term: ECB
+    definition: "Electronic Codebook: o modo mais simples, que cifra cada bloco sozinho e sempre do mesmo jeito. Blocos de texto claro iguais viram blocos cifrados iguais, então o padrão vaza. Nunca deve ser usado para dados."
+  - term: CBC
+    definition: "Cipher Block Chaining: cada bloco de texto claro leva um XOR do bloco cifrado anterior (o primeiro, do IV) antes de ser cifrado. Esconde padrões, mas exige IV imprevisível, usa padding e não tem integridade."
+  - term: CTR
+    definition: "Counter: o AES cifra nonce+contador e gera um keystream, que leva XOR com o texto. Transforma a cifra de bloco em cifra de fluxo; é paralelizável e sem padding, mas o par chave+nonce nunca pode se repetir."
+  - term: GCM
+    definition: "Galois/Counter Mode (NIST SP 800-38D): CTR para o sigilo mais o autenticador GHASH, que produz uma tag sobre o cifrado e os dados associados. É o AEAD mais usado, por exemplo no TLS 1.3."
+  - term: initialization vector
+    definition: "Vetor de inicialização (IV): um valor de um bloco que entra no começo da cifração para que a mesma mensagem com a mesma chave dê cifrados diferentes. Não é secreto; no CBC precisa ser imprevisível."
+  - term: nonce
+    definition: "Number used once: valor que nunca pode se repetir com a mesma chave. No CTR e no GCM, é o que garante um keystream novo a cada mensagem. Pode ser público e até previsível, mas jamais repetido."
+  - term: nonce reuse
+    definition: "Reuso de nonce: cifrar duas mensagens com a mesma chave e o mesmo nonce. Em CTR/GCM/fluxo, repete o keystream (C1 XOR C2 = P1 XOR P2); no GCM, ainda entrega a subchave de autenticação."
+  - term: padding
+    definition: "Preenchimento: bytes adicionados ao fim da mensagem para completar o último bloco, quando o modo exige blocos inteiros (ECB, CBC). Precisa ser removível sem ambiguidade."
+  - term: PKCS#7
+    definition: "O padding padrão das cifras de bloco (RFC 5652, seção 6.3): faltando k bytes para completar o bloco, acrescentam-se k bytes de valor k; se o bloco já está cheio, acrescenta-se um bloco inteiro de padding."
+  - term: bit-flipping attack
+    definition: "Ataque de troca de bits: alterar bits do texto cifrado (ou do IV) para mudar bits previsíveis do texto claro decifrado, sem conhecer a chave. Funciona em modos sem integridade como CBC e CTR."
+  - term: padding oracle attack
+    definition: "Ataque de oráculo de padding (Vaudenay, 2002): quando o sistema revela se o padding de um texto decifrado é válido, o atacante modifica o cifrado e usa essas respostas para descobrir o texto claro byte a byte."
+  - term: AEAD
+    definition: "Authenticated Encryption with Associated Data: cifra autenticada que garante sigilo e integridade do texto e integridade de dados extras não cifrados (AAD). Exemplos: AES-GCM, ChaCha20-Poly1305."
+  - term: authentication tag
+    definition: "Tag de autenticação: os bytes (16 no GCM) que um AEAD calcula sobre o cifrado e a AAD. Na decifração, a tag é recalculada e comparada; se não bater, nada é liberado."
+  - term: associated data
+    definition: "Dados associados (AAD): informação que viaja em claro, mas é autenticada junto com o cifrado, como um cabeçalho, uma versão ou um contexto. Trocar a AAD invalida a tag."
+  - term: ChaCha20-Poly1305
+    definition: "AEAD da RFC 8439: a cifra de fluxo ChaCha20 com o autenticador Poly1305. Alternativa ao AES-GCM, cerca de três vezes mais rápida em software quando o processador não tem aceleração de AES."
+  - term: AES-GCM-SIV
+    definition: "AEAD da RFC 8452, resistente a reuso de nonce: se um nonce se repetir, só vaza se as duas mensagens eram idênticas, em vez de cair por inteiro como o GCM."
+  - term: encrypt-then-MAC
+    definition: "Composição segura de cifra com MAC: primeiro cifrar, depois calcular o MAC sobre o cifrado, e conferir o MAC antes de decifrar. O contrário (MAC-then-encrypt, do SSL 3.0) abriu a porta para padding oracles."
+  - term: Sweet32
+    definition: "Ataque de aniversário de 2016 (CVE-2016-2183) contra cifras de bloco de 64 bits (3DES, Blowfish) em sessões longas de TLS e OpenVPN: depois de cerca de 32 GB cifrados com a mesma chave, colisões vazam texto claro."
+  - term: envelope encryption
+    definition: "Cifra em envelope: os dados são cifrados com uma chave de dados (DEK) própria, e a DEK é cifrada com uma chave mestra (KEK) guardada num KMS ou HSM. A chave mestra nunca sai do cofre."
+  - term: KMS
+    definition: "Key Management Service: serviço que gera, guarda, gira e usa chaves criptográficas sem entregá-las à aplicação (AWS KMS, Google Cloud KMS, HashiCorp Vault Transit)."
+  - term: HSM
+    definition: "Hardware Security Module: equipamento dedicado que guarda chaves e executa operações criptográficas dentro de si, sem nunca exportar a chave em claro."
+  - term: XTS
+    definition: "Modo de cifra de disco (XTS-AES, IEEE 1619), usado por BitLocker, FileVault e LUKS. Cifra cada setor no lugar, sem aumentar o tamanho; por isso não tem tag nem integridade."
+  - term: crib dragging
+    definition: "Técnica contra keystream reusado sem texto claro conhecido: arrastar um trecho provável (um 'crib', como ' the ' ou 'COOPERATIVA') por todas as posições de C1 XOR C2 e ver onde o resultado vira texto legível."
+  - term: KRACK
+    definition: "Key Reinstallation Attacks (Mathy Vanhoef, 2017): forçar a reinstalação de uma chave em uso no WPA2 reseta o nonce, causando reuso de keystream e permitindo decifrar, repetir e, em alguns casos, forjar pacotes."
+  - term: POODLE
+    definition: "Padding Oracle On Downgraded Legacy Encryption (CVE-2014-3566): ataque de oráculo de padding contra o CBC do SSL 3.0, cujo padding não é coberto pelo MAC, combinado com um rebaixamento da conexão para o SSL 3.0."
+  - term: TrustZone
+    definition: "Área isolada do processador ARM (um ambiente de execução confiável) onde roda código sensível, como o Keymaster do Android, que protege as chaves do aparelho do sistema principal."
+  - term: OpenSSL
+    definition: "Biblioteca e ferramenta de linha de comando de criptografia mais difundida do mundo. O subcomando openssl enc cifra arquivos com cifras simétricas, mas não suporta modos autenticados como GCM."
+  - term: BMP
+    definition: "Bitmap do Windows: formato de imagem sem compressão. Um BMP de 24 bits é um cabeçalho de 54 bytes seguido dos pixels crus (3 bytes por pixel, linhas de baixo para cima), o que o torna ideal para ver o vazamento do ECB."
+---
+
+import modos from "./img/modos-de-operacao.svg";
+import ecbVsCbc from "./img/ecb-vs-cbc.png";
+import ctrNonce from "./img/ctr-nonce-repetido.svg";
+import cbcFlip from "./img/cbc-iv-flip.svg";
+
+## 1. Abertura — o que você vai aprender e por quê
+
+Quando você abre um site com cadeado, desbloqueia o celular, entra no Wi-Fi de casa
+ou liga um notebook com o disco cifrado, quem está trabalhando é quase sempre a mesma
+peça: o <GlossaryTerm term="AES">AES</GlossaryTerm>, uma cifra simétrica. Ela é
+rápida, foi estudada por mais de vinte anos e não tem nenhum ataque prático conhecido.
+Mesmo assim, sistemas que "usam AES-256" caem o tempo todo. O motivo raramente é a
+matemática do AES. É **como** ele foi usado: o modo escolhido, um número que deveria
+ser único e se repetiu, um texto cifrado que ninguém conferiu se foi alterado.
+
+Este módulo mostra esses erros por dentro e do lado de quem ataca. No 3.1 você viu
+a diferença entre encoding, hash e cifra e viu um `openssl enc` aceitar sem reclamar
+um texto cifrado adulterado ("pagar R$ 100", com a conta trocada). Aqui você vai
+entender **por que** aquilo aconteceu e vai explorar três erros reais de uso do AES
+num laboratório: um arquivo cifrado que deixa ver o desenho, dois arquivos que
+compartilham o mesmo "número único" e um token cujo papel você troca de `guest` para
+`admin`. Em nenhum dos três você vai ter a chave. E vai fechar do jeito certo, com
+cifra autenticada recusando as mesmas forjas.
+
+**Ao final, você vai saber:**
+
+- explicar a diferença entre cifra de bloco e cifra de fluxo, e o que o AES faz com
+  um bloco de 16 bytes;
+- descrever os modos ECB, CBC, CTR e GCM, o que cada um exige (IV, nonce, padding)
+  e o que acontece quando a exigência é violada;
+- explorar, sem a chave, o vazamento de padrão do ECB, o reuso de nonce no CTR e a
+  troca de bits do IV no CBC;
+- explicar a mecânica de um padding oracle e do reuso de nonce no GCM;
+- usar AEAD (AES-GCM) corretamente em Python e reconhecer, num pentest, os sinais de
+  criptografia simétrica mal usada.
+
+**Pré-requisito:** 3.1 — Fundamentos de criptografia (texto claro, cifrado e chave;
+o XOR e o one-time pad; o princípio de Kerckhoffs; cifra sozinha não é cifra
+autenticada; a maleabilidade).
+
+**Tempo estimado:** de 3 a 4 horas, incluindo o laboratório.
+
+<Callout variant="ethics">
+Os ataques deste módulo são feitos **offline**, sobre arquivos de uma empresa
+fictícia (a Cooperativa Atlas), dentro da sua attack box Kali, isolada e sem
+internet. As mesmas técnicas, aplicadas a tokens, cookies ou arquivos de um sistema
+que não é seu, são acesso indevido e podem ser crime no Brasil (Trilha 1). A regra
+da plataforma vale aqui também: **só em ambiente seu ou com autorização por escrito.**
+</Callout>
+
+## 2. Teoria aprofundada — o conceito por dentro
+
+### 2.1 Simétrica: uma chave, as duas pontas
+
+Na <GlossaryTerm term="symmetric encryption">criptografia simétrica</GlossaryTerm>,
+a mesma <GlossaryTerm term="key">chave</GlossaryTerm> cifra e decifra. Quem cifra e
+quem decifra precisam ter essa chave, e ninguém mais. É o modelo mais antigo (a cifra
+de César do 3.1 já era simétrica) e continua sendo o que cifra quase todos os bytes
+do mundo, porque é **muito** rápido: um processador moderno cifra gigabytes por
+segundo com AES.
+
+O preço é um problema que este módulo não resolve: como as duas pontas combinam a
+chave sem que alguém no meio a veja? Essa é a troca de chaves, assunto do 3.4. Aqui
+vamos supor que a chave já está nas duas pontas e olhar só para o que acontece
+depois, que é onde mora a maioria das falhas que você vai encontrar num pentest.
+
+Existem duas famílias de cifra simétrica, e a diferença entre elas explica tudo o
+que vem depois.
+
+- Uma <GlossaryTerm term="block cipher">cifra de bloco</GlossaryTerm> (*block
+  cipher*) pega um bloco de tamanho fixo e devolve outro do mesmo tamanho. No AES, o
+  <GlossaryTerm term="block size">tamanho do bloco</GlossaryTerm> é de 16 bytes
+  (128 bits): entram 16 bytes de texto claro e saem 16 bytes de texto cifrado. Pense
+  num dicionário gigante e secreto: para cada chave, cada uma das 2¹²⁸ entradas
+  possíveis tem uma saída única, e só quem tem a chave consegue consultar o
+  dicionário nos dois sentidos.
+- Uma <GlossaryTerm term="stream cipher">cifra de fluxo</GlossaryTerm> (*stream
+  cipher*) não trabalha em blocos. Ela gera, a partir da chave e de um número único,
+  uma sequência longa de bytes de aparência aleatória, o
+  <GlossaryTerm term="keystream">keystream</GlossaryTerm>, e faz
+  <GlossaryTerm term="XOR">XOR</GlossaryTerm> dele com o texto, byte a byte. É a
+  ideia do <GlossaryTerm term="one-time pad">one-time pad</GlossaryTerm> do 3.1 com
+  uma diferença essencial: em vez de uma chave aleatória do tamanho da mensagem, um
+  keystream **calculado** a partir de uma chave curta.
+
+Guarde a regra de ouro do one-time pad, porque ela volta neste módulo inteiro: **o
+mesmo keystream nunca pode ser usado duas vezes.** Se C1 = P1 ⊕ S e C2 = P2 ⊕ S, então
+C1 ⊕ C2 = P1 ⊕ P2: o keystream some, e o atacante fica com a combinação dos dois textos
+claros, sem precisar de chave nenhuma. A Missão 2 do laboratório é exatamente isso.
+
+### 2.2 Do DES ao AES
+
+A primeira cifra de bloco padronizada foi o <GlossaryTerm term="DES">DES</GlossaryTerm>
+(*Data Encryption Standard*, 1977), com blocos de 64 bits e chave efetiva de 56 bits.
+Como você viu no 3.1, 56 bits caíram por força bruta em 1998. A remenda foi o
+<GlossaryTerm term="Triple DES">Triple DES</GlossaryTerm> (3DES): aplicar o DES três
+vezes para alongar a chave. A chave ficou forte, mas o bloco continuou com 64 bits, e
+isso, como a seção 6 mostra, virou um problema próprio (o Sweet32). O NIST proibiu o
+3DES para cifrar a partir de 1º de janeiro de 2024
+([anúncio do NIST](https://csrc.nist.gov/news/2023/nist-to-withdraw-sp-800-67-rev-2)).
+
+Para substituir o DES, o NIST fez algo raro em 1997: um concurso público e aberto.
+Qualquer um podia propor um algoritmo e qualquer um podia atacar os dos outros. Em
+2000, o NIST anunciou o vencedor, o <GlossaryTerm term="Rijndael">Rijndael</GlossaryTerm>,
+dos belgas Joan Daemen e Vincent Rijmen. Ele virou o padrão
+[FIPS 197](https://csrc.nist.gov/pubs/fips/197/final), publicado em 26 de novembro de
+2001 (com uma revisão só editorial em 2023). Repare como isso é o
+<GlossaryTerm term="Kerckhoffs's principle">princípio de Kerckhoffs</GlossaryTerm> do
+3.1 em ação: o algoritmo é público há mais de duas décadas, e toda a segurança está na
+chave.
+
+O FIPS 197 define três variantes, todas com bloco de 128 bits:
+
+| Variante | Chave | Rodadas |
+|---|---|---|
+| AES-128 | 128 bits (16 bytes) | 10 |
+| AES-192 | 192 bits (24 bytes) | 12 |
+| AES-256 | 256 bits (32 bytes) | 14 |
+
+### 2.3 O que o AES faz com um bloco (sem a matemática pesada)
+
+O AES trata os 16 bytes do bloco como uma grade de 4 × 4 bytes, chamada de *state*, e
+repete sobre ela uma <GlossaryTerm term="round">rodada</GlossaryTerm> de quatro
+transformações, 10 vezes no AES-128:
+
+1. **SubBytes** troca cada byte por outro, consultando uma tabela fixa (a S-box).
+   É a parte não linear: sem ela, o AES seria um sistema de equações lineares que se
+   resolve com álgebra do ensino médio. Claude Shannon, em 1949, chamou essa propriedade de
+   **confusão**: a relação entre a chave e o cifrado fica embaralhada.
+2. **ShiftRows** desloca as linhas da grade (a segunda linha 1 posição, a terceira 2,
+   a quarta 3), misturando bytes de colunas diferentes.
+3. **MixColumns** combina os 4 bytes de cada coluna, de modo que cada byte de saída
+   dependa dos 4 de entrada. Junto com o ShiftRows, garante a **difusão**: depois de
+   duas rodadas, cada byte do bloco depende de todos os bytes da entrada.
+4. **AddRoundKey** faz XOR do *state* com uma subchave daquela rodada.
+
+As subchaves saem da chave original por uma rotina chamada
+<GlossaryTerm term="key schedule">key schedule</GlossaryTerm> (expansão de chave):
+para 10 rodadas são 11 subchaves, uma a mais para o XOR inicial. Nos processadores
+atuais, as rodadas rodam em hardware, com as instruções
+<GlossaryTerm term="AES-NI">AES-NI</GlossaryTerm>. É por isso que o AES é tão rápido e
+por que bibliotecas modernas não usam mais tabelas em memória, que vazavam informação
+pelo tempo de acesso.
+
+Duas propriedades do AES importam para os ataques deste módulo, e você pode vê-las no
+Kali do laboratório com o <GlossaryTerm term="OpenSSL">OpenSSL</GlossaryTerm>, a
+ferramenta de criptografia de linha de comando que você já usou no 3.1. Cifrando um
+único bloco de 16 bytes com uma chave fixa de exemplo (saída real):
+
+```console
+$ K=000102030405060708090a0b0c0d0e0f
+$ printf "pagar R\$ 100,00." | openssl enc -aes-128-ecb -K $K -nopad | xxd -p
+7bfa76cc95a0e1fca1e60bb06a4d6642
+$ printf "pagar R\$ 100,00." | openssl enc -aes-128-ecb -K $K -nopad | xxd -p
+7bfa76cc95a0e1fca1e60bb06a4d6642
+$ printf "pagar R\$ 900,00." | openssl enc -aes-128-ecb -K $K -nopad | xxd -p
+f491014fac53b5c48f340d798c91520d
+```
+
+- **É determinístico.** A mesma chave e o mesmo bloco dão sempre o mesmo resultado
+  (linhas 1 e 2). Uma cifra de bloco é uma função, não um sorteio. Guarde isso: é a
+  raiz do problema do ECB.
+- **Tem efeito avalanche.** Trocar `1` por `9` muda **um único bit** da entrada
+  (`00110001` → `00111001`), e mesmo assim o bloco cifrado inteiro mudou. Contando os
+  bits diferentes entre as linhas 1 e 3, **67 dos 128** mudaram, perto da metade, que
+  é o que se espera de uma boa cifra (o
+  <GlossaryTerm term="avalanche effect">efeito avalanche</GlossaryTerm> do 3.1).
+
+### 2.4 Um bloco é só um bloco: os modos de operação
+
+O AES cifra 16 bytes. Uma mensagem real tem 31 bytes, um arquivo tem 600 KB. A receita
+que usa a cifra de bloco para mensagens de qualquer tamanho se chama
+<GlossaryTerm term="mode of operation">modo de operação</GlossaryTerm>, e é aqui que
+quase tudo dá errado. O NIST padronizou cinco modos de sigilo no
+[SP 800-38A](https://csrc.nist.gov/pubs/sp/800/38/a/final) (2001) e o modo autenticado
+GCM no [SP 800-38D](https://csrc.nist.gov/pubs/sp/800/38/d/final) (2007). Os quatro
+que você precisa conhecer:
+
+<Figure
+  src={modos}
+  alt="Quatro painéis. ECB: cada bloco P1, P2, P3 passa sozinho pelo AES com a chave K; P3 igual a P1 gera C3 igual a C1. CBC: o IV entra num XOR com P1 antes do AES, e cada cifrado entra num XOR com o próximo bloco; blocos iguais saem diferentes. CTR: o AES cifra nonce mais contador 1, 2, 3 e gera um keystream que leva XOR com o texto claro; nonce repetido repete o keystream. GCM: o CTR mais o autenticador GHASH, que cobre os dados associados e o cifrado e produz uma tag de 16 bytes conferida antes de decifrar."
+  caption="Os quatro modos lado a lado. O AES é o mesmo nos quatro; o modo decide se blocos iguais vazam, o que precisa ser único e se existe integridade."
+/>
+
+**<GlossaryTerm term="ECB">ECB</GlossaryTerm> (Electronic Codebook).** O ingênuo:
+corta a mensagem em blocos de 16 bytes e cifra cada um sozinho. Como o AES é
+determinístico, blocos de texto claro iguais viram blocos cifrados iguais, em
+qualquer posição, em qualquer mensagem cifrada com a mesma chave. O nome diz tudo:
+é um livro de códigos, e quem vê o cifrado vê onde os códigos se repetem.
+
+**<GlossaryTerm term="CBC">CBC</GlossaryTerm> (Cipher Block Chaining).** Antes de
+cifrar cada bloco, faz XOR dele com o bloco **cifrado** anterior. O primeiro bloco
+não tem anterior, então recebe o XOR de um
+<GlossaryTerm term="initialization vector">vetor de inicialização</GlossaryTerm>
+(*initialization vector*, IV): um bloco de 16 bytes aleatórios, novo a cada mensagem,
+que viaja junto com o cifrado (não é segredo). O resultado: dois blocos iguais
+recebem XORs diferentes e saem diferentes, e a mesma mensagem cifrada duas vezes dá
+cifrados diferentes. As fórmulas, que vão ser essenciais na Missão 3:
+
+- cifrar: C<sub>i</sub> = E(P<sub>i</sub> ⊕ C<sub>i−1</sub>), com C<sub>0</sub> = IV;
+- decifrar: P<sub>i</sub> = D(C<sub>i</sub>) ⊕ C<sub>i−1</sub>.
+
+Note o que a fórmula da decifração diz: o texto claro de um bloco é o **XOR** de algo
+que o atacante não controla, D(C<sub>i</sub>), com algo que ele controla, o bloco
+cifrado anterior (ou o IV). É daí que vem a maleabilidade do CBC.
+
+**<GlossaryTerm term="CTR">CTR</GlossaryTerm> (Counter).** Não passa o texto claro
+pelo AES. Em vez disso, cifra um contador: um <GlossaryTerm term="nonce">nonce</GlossaryTerm>
+(*number used once*, número usado uma única vez) seguido de 1, 2, 3... Cada bloco
+cifrado do contador vira 16 bytes de keystream, e o texto leva XOR com esse keystream.
+O CTR transforma uma cifra de bloco em cifra de fluxo: não precisa de padding, cifra
+e decifra em paralelo e qualquer pedaço pode ser decifrado sem os anteriores. E herda
+a regra de ouro: **o par (chave, nonce) nunca pode se repetir.**
+
+**<GlossaryTerm term="GCM">GCM</GlossaryTerm> (Galois/Counter Mode).** É o CTR para o
+sigilo mais um autenticador, o GHASH, que calcula uma
+<GlossaryTerm term="authentication tag">tag de autenticação</GlossaryTerm> de 16 bytes
+sobre o texto cifrado e sobre <GlossaryTerm term="associated data">dados
+associados</GlossaryTerm> (AAD): informação que viaja em claro mas precisa ser
+protegida contra alteração, como o cabeçalho de um pacote. Na decifração, a tag é
+recalculada **antes** de qualquer byte ser liberado; se não bater, a resposta é um erro
+e nada mais. Um modo assim é um <GlossaryTerm term="AEAD">AEAD</GlossaryTerm>
+(*Authenticated Encryption with Associated Data*), a forma concreta da
+<GlossaryTerm term="authenticated encryption">cifra autenticada</GlossaryTerm> que o
+3.1 apresentou.
+
+### 2.5 Padding: completar o último bloco
+
+ECB e CBC só trabalham com blocos inteiros. Se a mensagem tem 31 bytes, falta 1 para
+dois blocos; se tem 32, não falta nada. O <GlossaryTerm term="padding">padding</GlossaryTerm>
+(preenchimento) resolve isso, e precisa ser removível sem ambiguidade. O esquema padrão
+é o <GlossaryTerm term="PKCS#7">PKCS#7</GlossaryTerm>, definido na
+[RFC 5652, seção 6.3](https://www.rfc-editor.org/rfc/rfc5652.html#section-6.3): se
+faltam *k* bytes, acrescentam-se *k* bytes, todos de valor *k*. Se o último bloco já
+está cheio, acrescenta-se um bloco inteiro de padding (dezesseis bytes `10`, em hex),
+senão uma mensagem terminada em `01` seria confundida com padding.
+
+Veja no Kali (saídas reais). Primeiro, o tamanho do cifrado para entradas de 15, 16 e
+17 bytes:
+
+```console
+$ K=$(openssl rand -hex 16); for n in 15 16 17; do printf "%-3s bytes -> " $n; head -c $n /dev/zero | openssl enc -aes-128-ecb -K $K | wc -c; done
+15  bytes -> 16
+16  bytes -> 32
+17  bytes -> 32
+```
+
+Dezesseis bytes viraram 32: o bloco extra de padding. Agora o padding em si: ciframos
+`AAAA` e deciframos com `-nopad`, que manda o OpenSSL **não** remover o padding:
+
+```console
+$ printf "AAAA" | openssl enc -aes-128-cbc -K $K -iv 00000000000000000000000000000000 \
+    | openssl enc -d -aes-128-cbc -K $K -iv 00000000000000000000000000000000 -nopad | xxd
+00000000: 4141 4141 0c0c 0c0c 0c0c 0c0c 0c0c 0c0c  AAAA............
+```
+
+Quatro bytes de `A` (`41`) e doze bytes `0c`, que é 12 em hexadecimal. A decifração
+normal confere esse final: se o último byte é `0c`, os doze últimos têm de ser `0c`.
+Se não forem, o OpenSSL responde `bad decrypt`. Essa conferência parece inofensiva, e é
+justamente ela que alimenta o ataque da seção 3.4.
+
+### 2.6 IV e nonce: o que cada modo exige
+
+O IV do CBC e o nonce do CTR/GCM parecem a mesma coisa, mas as exigências são
+diferentes, e confundir as duas é uma fonte clássica de falhas:
+
+| Modo | Valor | Precisa ser secreto? | Precisa ser... | Se a regra for violada |
+|---|---|---|---|---|
+| ECB | nenhum | — | — | o padrão vaza sempre, por desenho |
+| CBC | IV de 16 bytes | não | **imprevisível** (aleatório) e novo a cada mensagem | IV fixo: mensagens com o mesmo começo dão o mesmo começo cifrado; IV previsível: ataques de texto escolhido (BEAST, seção 6) |
+| CTR | nonce + contador | não | **único** para a chave (pode até ser um contador) | keystream repetido: C1 ⊕ C2 = P1 ⊕ P2 |
+| GCM | nonce de 12 bytes (96 bits) | não | **único** para a chave | keystream repetido **e** a subchave de autenticação exposta: forja de tags |
+
+No GCM, o NIST é explícito. O
+[SP 800-38D](https://csrc.nist.gov/pubs/sp/800/38/d/final) exige, na seção 8, que a
+probabilidade de a mesma chave ser usada com o mesmo IV em duas mensagens diferentes
+seja "no máximo 2⁻³²", e, na seção 8.3, que, a menos que os IVs de 96 bits sejam
+gerados de forma determinística (um contador), o total de mensagens cifradas com a
+mesma chave "não exceda 2³²". Com nonces **aleatórios** de 96 bits, o paradoxo do
+aniversário faz a chance de repetição crescer rápido; depois de uns 4 bilhões de
+mensagens, troque a chave.
+
+### 2.7 Sigilo não é integridade
+
+Agora junte as peças. CBC e CTR entregam **sigilo**: sem a chave, não se lê o texto.
+Mas nenhum dos dois entrega **integridade**: nada impede que alguém altere o cifrado
+no caminho, e o destinatário decifra o resultado alterado sem saber. Pior: no CTR o
+texto claro é cifrado ⊕ keystream, então trocar um bit do cifrado troca **exatamente**
+o mesmo bit do texto claro. No CBC, trocar um bit do IV (ou de um bloco cifrado) troca
+o mesmo bit do bloco de texto claro seguinte. É a
+<GlossaryTerm term="malleability">maleabilidade</GlossaryTerm> do 3.1, agora com o
+mecanismo à vista.
+
+É por isso que a resposta moderna não é "escolha um modo de sigilo melhor", e sim
+"use AEAD". O resumo desta seção em uma frase: **o AES protege o bloco; o modo protege
+(ou não) a mensagem.**
+
+## 3. Como o ataque funciona — a mecânica
+
+Os quatro ataques a seguir têm uma coisa em comum: nenhum deles quebra o AES. Todos
+exploram a forma como ele foi usado.
+
+### 3.1 ECB: o padrão vaza, e os blocos podem ser recortados
+
+**Vazamento de padrão.** Se blocos iguais viram blocos iguais, qualquer dado com
+repetição deixa rastro no cifrado. O exemplo mais visual é uma imagem: num
+<GlossaryTerm term="BMP">BMP</GlossaryTerm> de 24 bits (o formato de imagem sem
+compressão do Windows), cada pixel são 3 bytes crus, e uma área de fundo liso é uma
+longa sequência de bytes repetidos. A figura abaixo foi gerada no Kali do laboratório:
+uma imagem com a palavra ATLAS, cifrada com AES-128 e uma chave aleatória, uma vez em
+ECB e outra em CBC (o cabeçalho de 54 bytes do BMP foi restaurado depois, para o
+visualizador conseguir abrir o arquivo).
+
+<Figure
+  src={ecbVsCbc}
+  alt="Três faixas empilhadas. Em cima, a imagem original: a palavra ATLAS em preto sobre fundo cinza-claro. No meio, a mesma imagem cifrada com AES-128-ECB: listras coloridas, mas a palavra ATLAS continua perfeitamente legível, com outra textura. Embaixo, a mesma imagem cifrada com AES-128-CBC: ruído colorido uniforme, sem nenhum traço da palavra."
+  caption="A mesma imagem, a mesma chave, dois modos. No ECB (meio), cada cor lisa vira um bloco cifrado repetido e o desenho sobrevive; no CBC (embaixo), o encadeamento com o IV transforma tudo em ruído."
+/>
+
+Repare que o ECB não "falhou em cifrar": nenhum pixel do meio tem a cor original. Ele
+só cifrou cada bloco sempre do mesmo jeito. Fora de imagens, o mesmo vazamento
+aparece em qualquer dado estruturado: dois usuários com a mesma senha num banco
+cifrado em ECB têm o mesmo cifrado (foi o caso da Adobe, que o 3.1 contou); campos
+fixos de um protocolo revelam onde começa cada registro. Num teste, o sinal é
+simples: corte o cifrado em pedaços de 16 bytes e procure repetições. Saída real do
+lab, com 48 bytes de zeros cifrados em ECB e em CBC:
+
+```console
+$ printf "%048d" 0 | openssl enc -aes-128-ecb -K $K -nopad | xxd -c 16
+00000000: c613 cccc 6955 659b af8d b5eb d177 0b19  ....iUe......w..
+00000010: c613 cccc 6955 659b af8d b5eb d177 0b19  ....iUe......w..
+00000020: c613 cccc 6955 659b af8d b5eb d177 0b19  ....iUe......w..
+$ printf "%048d" 0 | openssl enc -aes-128-cbc -K $K -iv $(openssl rand -hex 16) -nopad | xxd -c 16
+00000000: 456e 0b19 f551 2608 46da ad32 6982 a3d3  En...Q&.F..2i...
+00000010: 4f91 8724 fe15 77de c4d0 1202 55fc 1e14  O..$..w.....U...
+00000020: 408b de7b 505b 5339 d815 fa0d bfbc b9c0  @..{P[S9........
+```
+
+**Recorta e cola (cut-and-paste).** O segundo problema do ECB é que cada bloco é
+independente: dá para trocar blocos de lugar, ou colar o bloco de uma mensagem em
+outra, e o resultado ainda decifra. Imagine um cookie cifrado em ECB com o texto
+`email=...&role=user`. Se o atacante consegue escolher o próprio e-mail (ele cria a
+conta), ele pode ajustar o tamanho do e-mail para que a palavra `admin` seguida de
+padding caia sozinha num bloco, guardar o cifrado desse bloco e, depois, colá-lo no
+lugar do bloco que contém `user` de outro cookie. O servidor decifra bloco a bloco e
+lê `role=admin`. O esqueleto do recorte, em Python:
+
+```python
+BLOCK = 16
+blocks = [cookie[i:i + BLOCK] for i in range(0, len(cookie), BLOCK)]
+blocks[-1] = admin_block          # block taken from another ciphertext, same key
+forged = b"".join(blocks)         # still decrypts: ECB blocks do not depend on each other
+```
+
+### 3.2 Nonce repetido no CTR: o keystream se cancela
+
+Num sistema que cifra em CTR, cada mensagem precisa de um nonce novo. Quando um bug
+faz o nonce se repetir (um nonce fixo no código, um contador que volta a zero quando o
+serviço reinicia, um gerador aleatório com pouca entropia), duas mensagens recebem o
+mesmo keystream S. O ataque, que é o
+<GlossaryTerm term="nonce reuse">nonce reuse</GlossaryTerm> (reuso de nonce), tem três
+passos:
+
+<Figure
+  src={ctrNonce}
+  alt="Três faixas. Primeira: o servidor cifra dois arquivos com a mesma chave e o mesmo nonce, gerando o mesmo keystream S; C1 = P1 XOR S e C2 = P2 XOR S. Segunda: o atacante faz C1 XOR C2; S XOR S é zero, e sobra P1 XOR P2; onde os textos coincidem, o resultado é zero. Terceira: com P1 conhecido, C1 XOR P1 devolve o keystream S, e C2 XOR S devolve P2, até o comprimento de P1."
+  caption="O reuso de nonce no CTR em três passos. O atacante não toca na chave: o keystream se cancela no XOR, e um texto claro conhecido entrega o resto."
+/>
+
+1. **Identificar o reuso.** O nonce viaja em claro junto com o cifrado. Dois cifrados
+   com o mesmo nonce (e a mesma chave) foram cifrados com o mesmo keystream.
+2. **Cancelar o keystream.** C1 ⊕ C2 = (P1 ⊕ S) ⊕ (P2 ⊕ S) = P1 ⊕ P2. Isso já vaza
+   informação: onde os dois textos têm o mesmo byte, o resultado é zero.
+3. **Recuperar o keystream com um texto conhecido.** Se o atacante conhece P1 (ou um
+   pedaço dele), S = C1 ⊕ P1, e então P2 = C2 ⊕ S. O keystream recuperado tem o
+   tamanho do texto conhecido, então P2 é lido até esse comprimento.
+
+"Mas como o atacante conheceria P1?" Com mais frequência do que parece: cabeçalhos
+fixos de formato (todo PDF começa com `%PDF-`), mensagens padrão, um aviso que foi
+publicado em outro lugar, um campo que o próprio atacante controlou. Sem nenhum texto
+conhecido, ainda dá para tentar o
+<GlossaryTerm term="crib dragging">crib dragging</GlossaryTerm>: arrastar uma palavra
+provável por todas as posições de C1 ⊕ C2 e ver onde o resultado vira texto legível.
+
+O mesmo vale para qualquer cifra de fluxo, e foi um dos defeitos do WEP, o primeiro
+padrão de segurança do Wi-Fi, que cifrava com a cifra de fluxo RC4. No artigo
+["Intercepting Mobile Communications: The Insecurity of 802.11"](https://www.cs.uwaterloo.ca/~iang/pubs/wep-mob01.pdf)
+(MobiCom 2001), Nikita Borisov, Ian Goldberg e David Wagner mostraram que o campo de IV
+do WEP, com só 24 bits, praticamente garante a repetição: com IVs aleatórios, as
+colisões aparecem depois de uns 5.000 pacotes, "poucos minutos de transmissão". O KRACK
+(seção 4) mostrou que até o WPA2 podia ser levado a reusar nonce.
+
+### 3.3 Bit-flipping no CBC: quem controla o IV controla o primeiro bloco
+
+Volte à fórmula da decifração CBC: P1 = D(C1) ⊕ IV. O atacante não sabe quanto vale
+D(C1), mas não precisa saber. Se ele trocar o IV por IV' = IV ⊕ Δ, então:
+
+P1' = D(C1) ⊕ IV ⊕ Δ = P1 ⊕ Δ.
+
+Cada bit ligado em Δ troca exatamente o mesmo bit em P1, e nada mais muda: C1 está
+intacto, então o segundo bloco (que depende de C1) decifra normalmente. Para trocar um
+texto conhecido X por um texto desejado Y na mesma posição, basta Δ = X ⊕ Y. É o
+<GlossaryTerm term="bit-flipping attack">bit-flipping attack</GlossaryTerm>.
+
+<Figure
+  src={cbcFlip}
+  alt="Decifração CBC de um token de dois blocos. Em cima, o ataque: o IV é trocado por IV XOR P1 XOR P1-linha só nos bytes 5 a 9; C1 passa pelo AES inverso e dá D(C1), que não muda; D(C1) XOR IV-linha dá role=admin;uid=7; o segundo bloco continua decifrando ;exp=2026-12-31. Embaixo, o caso do módulo 3.1: trocar um byte de C1 faz D(C1) virar lixo e estraga P1 inteiro, mas troca o mesmo bit em P2. Nas duas versões o servidor decifra sem reclamar."
+  caption="Bit-flipping no CBC. Mexer no IV muda P1 com precisão cirúrgica; mexer num bloco cifrado estraga aquele bloco e muda o seguinte. Sem integridade, nenhuma das duas versões é detectada."
+/>
+
+A metade de baixo do diagrama explica o experimento do 3.1. Lá, o atacante trocou um
+byte do **primeiro bloco cifrado** (C1), não do IV. Por isso o primeiro bloco virou
+lixo (D de um C1 alterado é imprevisível, pelo efeito avalanche) e o **segundo** bloco
+recebeu a troca exata, de `1234-5` para `9234-5`. Mexer no IV é a versão limpa do
+mesmo ataque, porque o IV não passa pelo AES: não há bloco estragado.
+
+O passo a passo, para um token cujo texto claro começa com `role=guest`:
+
+1. Descobrir a posição do alvo no texto claro: `role=` tem 5 bytes, então `guest`
+   ocupa os bytes 5 a 9 do primeiro bloco (contando do zero).
+2. Calcular Δ = `guest` ⊕ `admin` (bytes 5 a 9).
+3. Fazer XOR de Δ com os bytes 5 a 9 do IV e manter todo o resto.
+
+O atacante precisa conhecer o formato do texto claro, mas não o segredo. Lembre do
+princípio de Kerckhoffs: o formato de um token não é um segredo, e um sistema não deve
+depender de que seja.
+
+### 3.4 Padding oracle: a mensagem de erro que decifra tudo
+
+Este é o ataque mais elegante do módulo, descrito por Serge Vaudenay em 2002
+(["Security Flaws Induced by CBC Padding"](https://doi.org/10.1007/3-540-46035-7_35),
+EUROCRYPT 2002). Ele precisa de uma única coisa: um sistema que decifra CBC e
+**revela**, de algum jeito, se o padding ficou válido. Pode ser um erro HTTP 500 em vez
+de 403, uma mensagem diferente, ou até uma resposta mais demorada. Esse sistema vira um
+**oráculo**: uma caixa-preta que responde sim ou não. Daí o nome,
+<GlossaryTerm term="padding oracle attack">padding oracle attack</GlossaryTerm>.
+
+Lembre que `bad decrypt`, na seção 2.5, era o OpenSSL dizendo exatamente isso: "o
+padding não confere".
+
+A mecânica, para descobrir o último byte de um bloco cifrado C:
+
+1. O atacante monta um par de blocos (R, C), em que R é um "bloco anterior" que ele
+   escolhe, e manda ao servidor. O servidor decifra: P = D(C) ⊕ R.
+2. Ele varia só o último byte de R, de 0 a 255. Para um único valor (quase sempre),
+   o último byte de P vira `01`, que é um padding válido, e o servidor responde "ok".
+3. Nesse momento, D(C)[15] ⊕ R[15] = `01`, ou seja, D(C)[15] = R[15] ⊕ `01`. O atacante
+   descobriu um byte do valor intermediário D(C), sem a chave.
+4. Como ele conhece o bloco anterior **verdadeiro** (é o cifrado ou o IV), o byte do
+   texto claro real é D(C)[15] ⊕ anterior[15].
+5. Agora ele ajusta R[15] para que o último byte de P vire `02` e repete o passo 2 no
+   penúltimo byte, buscando o padding `02 02`. E assim por diante, até `10` × 16.
+
+São no máximo 256 tentativas por byte. No walkthrough da seção 5.5 você vai rodar o
+ataque inteiro contra um "servidor" de brinquedo com a sua própria chave, e ele
+recupera três blocos com 6.449 consultas, em uma fração de segundo.
+
+A lição é profunda: o servidor não precisa devolver o texto decifrado para vazá-lo.
+Basta um bit de informação sobre ele, repetido o suficiente.
+
+### 3.5 Nonce repetido no GCM: perde-se também a autenticidade
+
+O GCM usa CTR por dentro, então um nonce repetido vaza P1 ⊕ P2 exatamente como na
+seção 3.2. Mas há um agravante. A tag do GCM é calculada com uma subchave secreta H,
+derivada da chave, por um polinômio sobre os blocos do cifrado. Com duas mensagens
+cifradas com o mesmo nonce, o atacante tem duas equações com a mesma incógnita H. Antoine
+Joux mostrou, num
+[comentário público ao NIST](https://csrc.nist.gov/csrc/media/projects/block-cipher-techniques/documents/bcm/comments/800-38-series-drafts/gcm/joux_comments.pdf)
+durante a padronização do GCM, que isso permite recuperar H (o chamado *forbidden
+attack*). O próprio [SP 800-38D](https://csrc.nist.gov/pubs/sp/800/38/d/final), no
+apêndice A, diz que, com IV repetido, é provável que o adversário determine a subchave
+de hash e "então poderia facilmente construir uma forja": trocar o cifrado e a AAD e
+gerar uma tag válida para eles.
+
+No Kali, você pode ver a primeira metade disso (o vazamento) com a biblioteca
+`cryptography` do Python, que já vem na imagem (saída real):
+
+```python
+import os
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+aead = AESGCM(AESGCM.generate_key(bit_length=128))
+nonce = os.urandom(12)
+p1 = b"transferir R$ 50,00 para conta 1111-1"
+p2 = b"transferir R$ 9.999,00 p/ conta 7777-7"
+c1 = aead.encrypt(nonce, p1, None)                 # BUG: same nonce twice
+c2 = aead.encrypt(nonce, p2, None)
+x = bytes(a ^ b for a, b in zip(c1, c2))           # tags are at the end; zip stops at the shorter body+tag
+print("C1 xor C2 == P1 xor P2 ?", x[:len(p1)] == bytes(a ^ b for a, b in zip(p1, p2)))
+print("quem conhece P1 le P2:", bytes(a ^ b for a, b in zip(x, p1))[:len(p1)])
+```
+
+```console
+$ python3 nonce-gcm.py
+C1 xor C2 == P1 xor P2 ? True
+quem conhece P1 le P2: b'transferir R$ 9.999,00 p/ conta 7777-'
+```
+
+O GCM com nonce repetido se comportou como um CTR qualquer, e P2 saiu até o tamanho de
+P1 (por isso o último `7` falta). A cifra autenticada só autentica enquanto o nonce é
+único.
+
+## 4. Casos reais — o que aconteceu no mundo
+
+O 3.1 contou dois casos de ECB: a Adobe (2013), que cifrava senhas com 3DES em ECB, e o
+Zoom (2020), que anunciava "AES-256" e cifrava com AES-128 em ECB. Os casos abaixo são
+dos outros erros deste módulo.
+
+### KRACK: o WPA2 forçado a repetir nonce (outubro de 2017)
+
+Em 16 de outubro de 2017, o pesquisador Mathy Vanhoef, da KU Leuven (Bélgica),
+divulgou os <GlossaryTerm term="KRACK">KRACK</GlossaryTerm> (*Key Reinstallation
+Attacks*), publicados na conferência ACM CCS 2017 com o título "Key Reinstallation
+Attacks: Forcing Nonce Reuse in WPA2". O <GlossaryTerm term="WPA2">WPA2</GlossaryTerm>
+cifra o tráfego Wi-Fi com AES em modo de contador (CCMP, ou GCMP). Durante o
+*handshake* de quatro mensagens que combina a chave, um atacante ao alcance da rede, na
+posição de <GlossaryTerm term="man-in-the-middle">man-in-the-middle</GlossaryTerm>,
+retém e reenvia uma das mensagens. O aparelho da vítima **reinstala a chave que já
+estava em uso** e, junto, reseta o nonce para o valor inicial. A partir daí, pacotes
+novos são cifrados com nonces já usados, ou seja, com keystream repetido: exatamente a
+seção 3.2, numa escala de bilhões de aparelhos.
+
+- **Impacto:** dez CVEs (CVE-2017-13077 a CVE-2017-13088, sem a 13083 e a 13085)
+  cobrindo o *handshake* de quatro mensagens, o de chave de grupo, o Fast BSS
+  Transition e outros; segundo os autores, Android e Linux podiam ser levados a
+  instalar uma chave **toda zerada**, e, contra o GCMP, o reuso de nonce permitia não
+  só decifrar mas também forjar e injetar pacotes, porque a chave de autenticação podia
+  ser recuperada (a seção 3.5). Trocar a senha do Wi-Fi não resolvia nada: a falha era
+  do protocolo, não da senha.
+- **Lição:** "o nonce é único" não é uma propriedade de uma linha de código; é uma
+  propriedade de **estado**. Qualquer caminho que reinicie um contador (uma
+  retransmissão, um *reboot*, uma restauração de backup, uma máquina virtual clonada)
+  pode quebrar a garantia.
+- **Fontes:** [site oficial dos ataques](https://www.krackattacks.com/) e
+  [CERT/CC, nota VU#228519](https://kb.cert.org/vuls/id/228519) (publicada em
+  16/10/2017), com a lista das dez CVEs.
+
+### POODLE: um oráculo de padding no SSL 3.0 (outubro de 2014)
+
+Em 14 de outubro de 2014, o Google publicou no seu blog de segurança "This POODLE
+bites: exploiting the SSL 3.0 fallback", descrevendo o
+<GlossaryTerm term="POODLE">POODLE</GlossaryTerm> (*Padding Oracle On Downgraded Legacy
+Encryption*). O SSL 3.0, antecessor do TLS, cifrava em CBC com um MAC calculado
+**antes** da cifra, e o padding não era coberto por esse MAC. Ou seja: o servidor
+conferia o padding antes de conseguir conferir a integridade, e isso é o oráculo da
+seção 3.4. Faltava só obrigar o navegador a usar o SSL 3.0. Como explica o
+[alerta TA14-290A da CISA](https://www.cisa.gov/news-events/alerts/2014/10/17/ssl-30-protocol-vulnerability-and-poodle-attack)
+(17/10/2014), quando uma conexão segura falha, os sistemas "recuam" para protocolos
+mais antigos como o SSL 3.0. O atacante, em posição de *man-in-the-middle*, provocava
+essas falhas até a conexão cair no SSL 3.0; controlando parte do que o lado do cliente
+envia e vendo o resultado cifrado, ele extraía, segundo a CISA, "senhas, cookies e
+outros tokens de autenticação".
+
+- **Impacto:** a CVE-2014-3566 descreve o SSL 3.0, "usado no OpenSSL até a 1.0.1i e
+  em outros produtos", como vulnerável a um ataque de padding oracle por um
+  *man-in-the-middle*. A correção era de protocolo: desligar o SSL 3.0 em servidores e
+  navegadores e adotar o `TLS_FALLBACK_SCSV`, uma extensão que impede o rebaixamento
+  forçado (padronizada depois na [RFC 7507](https://www.rfc-editor.org/rfc/rfc7507.html)).
+  Em junho de 2015, a [RFC 7568](https://www.rfc-editor.org/rfc/rfc7568.html)
+  determinou que o "SSLv3 MUST NOT be used", citando o padding não determinístico do
+  CBC e a construção MAC-then-encrypt.
+- **Lição:** a ordem importa. Conferir a integridade **depois** de mexer no texto
+  decifrado (tirar padding, interpretar campos) cria oráculos. A construção certa é
+  conferir a tag antes de tudo, que é o que um AEAD faz por desenho.
+- **Fontes:** [blog de segurança do Google (14/10/2014)](https://security.googleblog.com/2014/10/this-poodle-bites-exploiting-ssl-30.html),
+  [NVD, CVE-2014-3566](https://nvd.nist.gov/vuln/detail/CVE-2014-3566),
+  [CISA, alerta TA14-290A](https://www.cisa.gov/news-events/alerts/2014/10/17/ssl-30-protocol-vulnerability-and-poodle-attack)
+  e [RFC 7568](https://www.rfc-editor.org/rfc/rfc7568.html).
+
+### Samsung: IV reutilizado no AES-GCM do cofre de chaves (2021–2022)
+
+Os celulares Android guardam chaves criptográficas num cofre de hardware, o Keymaster,
+que na Samsung roda dentro da <GlossaryTerm term="TrustZone">TrustZone</GlossaryTerm>,
+uma área isolada do processador. As chaves saem desse cofre só "embrulhadas"
+(cifradas) em AES-GCM. Os pesquisadores Alon Shakevsky, Eyal Ronen e Avishai Wool, da
+Universidade de Tel Aviv, mostraram no artigo "Trust Dies in Darkness: Shedding Light
+on Samsung's TrustZone Keymaster Design" (USENIX Security 2022) que esse embrulho
+permitia reusar o IV. Nas palavras do resumo, eles apresentaram "um ataque de reuso de
+IV no AES-GCM que permite a um atacante extrair material de chave protegido por
+hardware", nos modelos Galaxy S8, S9, S10, S20 e S21.
+
+- **Impacto:** segundo o artigo, os ataques específicos se aplicam aos cerca de 100
+  milhões de aparelhos da Samsung estudados; os autores demonstraram, entre outras
+  coisas, um contorno de login FIDO2/WebAuthn. A Samsung corrigiu em duas etapas: a
+  CVE-2021-25444 ("reuso de IV no keymaster", corrigida no boletim de agosto de 2021) e
+  a CVE-2021-25490 (um ataque de rebaixamento do formato da chave que reativava o mesmo
+  reuso, corrigida no boletim de outubro de 2021).
+- **Lição:** até dentro do hardware mais protegido do aparelho, um AEAD com nonce sob
+  controle de quem chama vira um ataque de keystream repetido. E um formato antigo
+  mantido "por compatibilidade" pode reabrir uma falha corrigida.
+- **Fontes:** [artigo no IACR ePrint 2022/208](https://eprint.iacr.org/2022/208),
+  [NVD, CVE-2021-25444](https://nvd.nist.gov/vuln/detail/CVE-2021-25444) e
+  [NVD, CVE-2021-25490](https://nvd.nist.gov/vuln/detail/CVE-2021-25490).
+
+### Em escala: servidores HTTPS repetindo nonce do GCM (2016)
+
+Hanno Böck, Aaron Zauner, Sean Devlin, Juraj Somorovsky e Philipp Jovanovic varreram a
+internet atrás de servidores TLS que usavam AES-GCM com nonce repetido. No artigo
+["Nonce-Disrespecting Adversaries: Practical Forgery Attacks on GCM in TLS"](https://eprint.iacr.org/2016/475)
+(2016), eles relatam ter encontrado **184 servidores HTTPS repetindo nonces**, o que
+"quebra completamente a autenticidade" das conexões, entre eles de grandes empresas,
+instituições financeiras e uma empresa de cartão de crédito, e **mais de 70 mil** que
+usavam nonces aleatórios, sujeitos a colisão em conexões longas. Uma das falhas virou a
+CVE-2016-0270, do IBM Domino, cuja descrição cita a "reutilização de um nonce numa
+sessão e um 'forbidden attack'". É a seção 3.5 encontrada na prática.
+
+## 5. Mãos à obra — o laboratório guiado
+
+**Objetivo:** ao terminar, você terá aberto três "cofres" da Cooperativa Atlas sem
+nunca ter a chave: lido o texto desenhado numa imagem cifrada em ECB, decifrado um
+arquivo restrito aproveitando um nonce repetido no CTR e forjado um token de acesso de
+`admin` trocando bits do IV de um token CBC. Cada missão termina em uma flag. No fim,
+você vai repetir o ataque da Missão 3 contra AES-GCM e ver a forja ser recusada.
+
+### 5.1 Subir o lab e preparar o material (passo a passo)
+
+1. No painel **Laboratório**, no topo desta página, clique em **Iniciar**. O desktop
+   do Kali abre ali mesmo, já logado. (Alternativa pelo terminal do WSL:
+   `scripts/lab.sh up kali`.)
+2. Abra um terminal no Kali e leia o material do exercício. Ele fica só para leitura
+   em `/opt/lab-3.3`; copie para a sua home, para poder refazer à vontade:
+
+```console
+$ cat /opt/lab-3.3/README.txt
+$ cp -r /opt/lab-3.3 ~/lab-3.3 && cd ~/lab-3.3
+$ ls -R
+.:
+README.txt  missao-1  missao-2  missao-3
+
+./missao-1:
+cofre-cbc.bin  cofre-ecb.bin
+
+./missao-2:
+aviso-publico.txt  exportes
+
+./missao-2/exportes:
+2026-09-aviso-intranet.enc    2026-10-cofre-exportacao.enc
+2026-09-relatorio-mensal.enc  2026-10-relatorio-mensal.enc
+
+./missao-3:
+conferir.sh  token.txt
+```
+
+Se `/opt/lab-3.3` não existir, a sua imagem do Kali é anterior a este módulo. Desligue o
+lab e rode uma vez, no terminal do WSL, `scripts/lab.sh pull kali`, que reconstrói a
+imagem local com o material novo.
+
+3. Confira as ferramentas (saídas reais; as versões podem ser mais novas na sua imagem):
+
+```console
+$ openssl version
+OpenSSL 3.6.4 25 Aug 2026 (Library: OpenSSL 3.6.4 25 Aug 2026)
+$ python3 --version
+Python 3.14.8
+$ python3 -c "import cryptography; print(cryptography.__version__)"
+49.0.0
+```
+
+A chave de cifra da Cooperativa **não está** em lugar nenhum da imagem. Se você se pegar
+procurando por ela, pare: cada missão se resolve explorando um erro de uso do AES.
+
+### 5.2 Missão 1 — O cofre de imagens (guiada)
+
+O README diz que `cofre-ecb.bin` e `cofre-cbc.bin` são a **mesma** imagem BMP de
+24 bits, com 1200 × 180 pixels, cifrada inteira com AES-128 e a mesma chave, uma vez em
+ECB e outra em CBC. Comece olhando os arquivos por fora:
+
+```console
+$ cd ~/lab-3.3/missao-1
+$ ls -l
+-rw-r--r-- 1 kali kali 648064 Oct 26 01:36 cofre-cbc.bin
+-rw-r--r-- 1 kali kali 648064 Oct 26 01:36 cofre-ecb.bin
+$ xxd cofre-ecb.bin | head -4
+00000000: 8251 b7e7 198f 85ba f85f 10fe c75d 547e  .Q......._...]T~
+00000010: 6add 0415 3662 cde7 005e b492 b1a4 040e  j...6b...^......
+00000020: 7940 0d72 d8b9 fa77 04c1 07da dec5 583c  y@.r...w......X<
+00000030: 1a27 5e2e c716 c44f f970 a39d a4b2 8e62  .'^....O.p.....b
+```
+
+Confira o tamanho de cabeça: 54 bytes de cabeçalho + 1200 × 180 × 3 bytes de pixels =
+648.054 bytes, e o próximo múltiplo de 16 é **648.064**. Os 10 bytes a mais são o
+padding PKCS#7 da seção 2.5.
+
+**Passo 1: medir a repetição.** O `xxd -p -c 16` imprime um bloco de 16 bytes por linha
+em hexadecimal; `sort | uniq -c` conta quantas vezes cada bloco aparece. Compare os dois
+arquivos (saída real):
+
+```console
+$ xxd -p -c 16 cofre-ecb.bin | sort | uniq -c | sort -rn | head -4
+  33969 a309cda14bad7e2455b854ab1a421a65
+   3290 d801aa02a84cf11e77e62b28c4d7c707
+    350 bde9ef328e4bd278f5c5104f58232a35
+    340 7b0eef6405db70ad5f2e4039c1525161
+$ xxd -p -c 16 cofre-ecb.bin | sort -u | wc -l
+23
+$ xxd -p -c 16 cofre-cbc.bin | sort -u | wc -l
+40504
+```
+
+No CBC, todos os 40.504 blocos são diferentes. No ECB, há só **23** valores distintos, e
+um deles aparece 33.969 vezes: é o fundo da imagem. Sem decifrar nada, você já sabe que a
+imagem tem um fundo liso e poucos elementos.
+
+**Passo 2: devolver o cabeçalho.** Um visualizador só abre o arquivo se os primeiros 54
+bytes forem um cabeçalho BMP válido, e esses bytes estão cifrados. A boa notícia é que o
+cabeçalho de um BMP não tem nada de secreto: ele só descreve o formato (assinatura `BM`,
+tamanhos, largura, altura, bits por pixel). Gere um com o módulo
+<GlossaryTerm term="struct">struct</GlossaryTerm> do Python, que você viu no 0.7. Salve
+como `cabecalho.py`:
+
+```python
+import struct
+
+width, height = 1200, 180
+row = width * 3                       # 24 bits = 3 bytes per pixel; 3600 is a multiple of 4
+pixels = row * height
+header = b"BM" + struct.pack("<IHHI", 54 + pixels, 0, 0, 54)
+header += struct.pack("<IiiHHIIiiII", 40, width, height, 1, 24, 0, pixels, 2835, 2835, 0, 0)
+open("cabecalho.bin", "wb").write(header)
+print(len(header), "bytes")
+```
+
+```console
+$ python3 cabecalho.py
+54 bytes
+$ xxd cabecalho.bin
+00000000: 424d 76e3 0900 0000 0000 3600 0000 2800  BMv.......6...(.
+00000010: 0000 b004 0000 b400 0000 0100 1800 0000  ................
+00000020: 0000 40e3 0900 130b 0000 130b 0000 0000  ..@.............
+00000030: 0000 0000 0000                           ......
+```
+
+Leia o hexadecimal com o que você sabe de ordem de bytes: `b004 0000` é `0x04b0` = 1200
+(a largura) e `b400 0000` é `0xb4` = 180 (a altura), em *little-endian*. O `1800` é 24
+bits por pixel. Agora cole esse cabeçalho no lugar dos 54 primeiros bytes cifrados. O
+`tail -c +55` imprime o arquivo a partir do byte 55, ou seja, pula os 54 primeiros:
+
+```console
+$ { cat cabecalho.bin; tail -c +55 cofre-ecb.bin; } > ver-ecb.bmp
+$ { cat cabecalho.bin; tail -c +55 cofre-cbc.bin; } > ver-cbc.bmp
+$ firefox ver-ecb.bmp ver-cbc.bmp &
+```
+
+O Firefox abre as duas imagens em abas. A do CBC é ruído puro, de ponta a ponta. A do
+ECB mostra listras coloridas e, por cima delas, um texto. A flag é esse texto.
+
+**Desafio: deixe a flag nítida.** Dependendo do zoom, uma ou outra letra pode ficar
+ambígua (as listras atrapalham). Você sabe, pelo passo 1, que o bloco mais frequente é o
+fundo. Escreva um script que gere uma imagem nova em que todo bloco igual ao do fundo
+vire branco e todo bloco diferente vire preto. Esse é o ataque ao "livro de códigos" na
+forma mais pura: você não sabe o que cada código significa, mas sabe onde cada código se
+repete.
+
+<Hint title="Dica 1">
+Trabalhe sobre o `cofre-ecb.bin` original, não sobre o `ver-ecb.bmp`. Os blocos de AES
+começam no byte 0 do arquivo cifrado, de 16 em 16. Se você fatiar a partir do byte 54
+(depois do cabeçalho), os pedaços de 16 bytes não coincidem com os blocos reais, porque
+54 não é múltiplo de 16.
+</Hint>
+
+<Hint title="Dica 2">
+`collections.Counter` conta os blocos; `.most_common(1)` devolve o fundo. Gere 16 bytes
+`ff` (branco) ou 16 bytes `00` (preto) para cada bloco, junte tudo e, no fim, troque os
+primeiros 54 bytes pelo `cabecalho.bin`.
+</Hint>
+
+<Solution title="Solução">
+Salve como `limpar.py`:
+
+```python
+from collections import Counter
+
+data = open("cofre-ecb.bin", "rb").read()          # slice the CIPHERTEXT on its real 16-byte boundaries
+blocks = [data[i:i + 16] for i in range(0, len(data), 16)]
+count = Counter(blocks)
+background = count.most_common(1)[0][0]
+print(len(count), "blocos diferentes; o mais comum aparece", count[background], "vezes")
+
+painted = b"".join(b"\xff" * 16 if b == background else b"\x00" * 16 for b in blocks)
+header = open("cabecalho.bin", "rb").read()
+open("limpo.bmp", "wb").write(header + painted[54:])
+```
+
+```console
+$ python3 limpar.py
+23 blocos diferentes; o mais comum aparece 33969 vezes
+$ firefox limpo.bmp &
+```
+
+A imagem nova mostra o texto em preto sobre branco, sem listras. Copie exatamente como
+aparece, com maiúsculas, hífens e chaves.
+</Solution>
+
+<FlagInput task="missao-1-cofre-ecb" />
+
+### 5.3 Missão 2 — O serviço de exportação (desafio)
+
+A Cooperativa tem um serviço que exporta relatórios cifrados com AES-256-CTR, todos com
+a mesma chave. O README dá o formato: **16 bytes de contador inicial (o nonce) +
+texto cifrado**. Em `exportes/` há quatro arquivos, e em `aviso-publico.txt`, o texto
+claro de um deles, publicado na intranet e no mural da sede. O alvo é o
+`2026-10-cofre-exportacao.enc`, classificado como restrito.
+
+Seu objetivo: decifrar o cofre. A direção é a seção 3.2, e o primeiro passo você faz
+guiado (saída real):
+
+```console
+$ cd ~/lab-3.3/missao-2
+$ ls -l exportes/ aviso-publico.txt
+-rw-r--r-- 1 kali kali  798 Oct 26 01:36 aviso-publico.txt
+
+exportes/:
+-rw-r--r-- 1 kali kali 814 Oct 26 01:36 2026-09-aviso-intranet.enc
+-rw-r--r-- 1 kali kali 458 Oct 26 01:36 2026-09-relatorio-mensal.enc
+-rw-r--r-- 1 kali kali 297 Oct 26 01:36 2026-10-cofre-exportacao.enc
+-rw-r--r-- 1 kali kali 458 Oct 26 01:36 2026-10-relatorio-mensal.enc
+$ for f in exportes/*.enc; do printf "%-40s " "$f"; head -c 16 "$f" | xxd -p; done
+exportes/2026-09-aviso-intranet.enc      06695dedb5a1d4050000000000000000
+exportes/2026-09-relatorio-mensal.enc    6f0d090827951c660000000000000000
+exportes/2026-10-cofre-exportacao.enc    06695dedb5a1d4050000000000000000
+exportes/2026-10-relatorio-mensal.enc    9c6164cfed73ec060000000000000000
+```
+
+Cada nonce tem 8 bytes aleatórios seguidos de 8 bytes de contador zerado. Dois arquivos
+compartilham o mesmo nonce. Repare também na pegadinha: os dois relatórios mensais têm
+**o mesmo tamanho** e nonces diferentes. Tamanho igual não significa keystream igual.
+
+Agora é com você:
+
+1. Confirme que o `aviso-publico.txt` é o texto claro do arquivo que repete o nonce do
+   cofre (compare os tamanhos: o `.enc` tem 16 bytes a mais, o nonce).
+2. Antes de usar o texto conhecido, calcule C1 ⊕ C2 dos dois arquivos com o mesmo nonce
+   (sem os 16 primeiros bytes) e olhe os primeiros bytes do resultado. O que eles dizem
+   sobre os dois textos claros?
+3. Recupere o keystream e decifre o cofre. A flag é a chave de recuperação que aparece
+   no texto.
+
+<Hint title="Dica 1">
+Em Python, abra os arquivos em modo binário (`"rb"`) e pule o nonce com `[16:]`. O XOR
+de duas sequências de bytes não existe como operador: faça byte a byte, com
+`bytes(a ^ b for a, b in zip(x, y))`. O `zip` para no menor dos dois, o que é exatamente
+o que você quer.
+</Hint>
+
+<Hint title="Dica 2">
+Keystream = cifrado do aviso ⊕ texto do aviso. Cofre = cifrado do cofre ⊕ keystream. O
+cofre tem 281 bytes de texto e o aviso tem 798, então o keystream cobre o cofre inteiro.
+</Hint>
+
+<Solution title="Solução">
+Primeiro, a observação do passo 2 (salve como `xor-dois.py`):
+
+```python
+a = open("exportes/2026-09-aviso-intranet.enc", "rb").read()[16:]
+b = open("exportes/2026-10-cofre-exportacao.enc", "rb").read()[16:]
+p1 = open("aviso-publico.txt", "rb").read()
+x = bytes(i ^ j for i, j in zip(a, b))
+print(x[:24].hex())
+print(bytes(i ^ j for i, j in zip(x, p1))[:40])
+```
+
+```console
+$ python3 xor-dois.py
+000000000000000000000000000000000000000002190f01
+b'COOPERATIVA ATLAS - COFRE DE EXPORTACAO\n'
+```
+
+Os primeiros 20 bytes de C1 ⊕ C2 são `00`: os dois textos claros começam igual
+(`COOPERATIVA ATLAS - `), e o keystream se cancelou. Com o aviso conhecido, a primeira
+linha do cofre já aparece. O script completo (`recuperar.py`):
+
+```python
+import sys
+
+def body(path):
+    return open(path, "rb").read()[16:]            # skip the 16-byte nonce
+
+known_plain = open("aviso-publico.txt", "rb").read()
+known_ct = body("exportes/2026-09-aviso-intranet.enc")
+target_ct = body("exportes/2026-10-cofre-exportacao.enc")
+
+keystream = bytes(c ^ p for c, p in zip(known_ct, known_plain))
+print(f"keystream recuperado: {len(keystream)} bytes; alvo: {len(target_ct)} bytes", file=sys.stderr)
+sys.stdout.buffer.write(bytes(c ^ k for c, k in zip(target_ct, keystream)))
+```
+
+```console
+$ python3 recuperar.py
+keystream recuperado: 798 bytes; alvo: 281 bytes
+COOPERATIVA ATLAS - COFRE DE EXPORTACAO
+classificacao: RESTRITO (somente TI)
+
+conta de servico do backup offsite: svc-backup
+senha: rotacionada em 2026-10-01, consultar o cofre
+chave de recuperacao dos arquivos: FLAG{...}
+nao compartilhar fora da equipe de TI.
+```
+
+(A flag aparece inteira na sua tela; aqui ela foi trocada por `FLAG{...}`.) Repare: o
+AES-256 não foi tocado. Uma chave de 256 bits não protegeu nada, porque o nonce se
+repetiu.
+</Solution>
+
+<FlagInput task="missao-2-nonce-repetido" />
+
+### 5.4 Missão 3 — O token de acesso (desafio)
+
+O portal da Cooperativa entrega a cada usuário um token AES-128-CBC em Base64, no
+formato **IV (16 bytes) + texto cifrado (32 bytes)**. O formato do texto claro é público
+(está na documentação da API): `role=<papel>;uid=<n>;exp=<data>`. O seu token, em
+`token.txt`, é de `role=guest;uid=7;exp=2026-12-31`. O portal decifra o token e confia no
+`role`. Ele não confere a integridade do token.
+
+Seu objetivo: produzir um token que o portal decifre como `role=admin;uid=7;exp=2026-12-31`,
+sem a chave. Quando tiver o token, passe-o ao `conferir.sh`, que confere o formato (o
+cifrado intacto, só o IV alterado, só dentro do valor de `role`) e imprime a flag
+derivada do seu token. O script não tem a chave e não sabe se a sua forja decifra para
+`admin`: quem decide é a plataforma, que só aceita a flag do token certo.
+
+Ponto de partida (saída real):
+
+```console
+$ cd ~/lab-3.3/missao-3
+$ cat token.txt
+7iPio8TK19mTJnKUGkxEIqKhseeoTgcLyBZU68KEc6nXZ2c+xYQrogsic+Wod5FJ
+$ base64 -d token.txt | xxd
+00000000: ee23 e2a3 c4ca d7d9 9326 7294 1a4c 4422  .#.......&r..LD"
+00000010: a2a1 b1e7 a84e 070b c816 54eb c284 73a9  .....N....T...s.
+00000020: d767 673e c584 2ba2 0b22 73e5 a877 9149  .gg>..+.."s..w.I
+```
+
+A primeira linha do `xxd` é o IV; as duas seguintes, o texto cifrado. O texto claro tem
+31 bytes: `role=guest;uid=7` (16, o primeiro bloco) e `;exp=2026-12-31` (15, mais 1 byte
+de padding).
+
+Pense antes de abrir as dicas:
+
+- Qual bloco de texto claro contém `guest`, e qual parte do token entra no XOR dele na
+  decifração?
+- Em quais posições exatas está `guest`?
+- Qual valor de Δ transforma `guest` em `admin`?
+
+<Hint title="Dica 1">
+`role=` tem 5 bytes, então `guest` ocupa os bytes 5, 6, 7, 8 e 9 do primeiro bloco. Na
+decifração, P1 = D(C1) ⊕ IV: os bytes 5 a 9 do IV estão "por cima" de `guest`.
+</Hint>
+
+<Hint title="Dica 2">
+Δ = `guest` ⊕ `admin`. Em Python:
+`bytes(a ^ b for a, b in zip(b"guest", b"admin")).hex()` dá `0611081a1a`. Faça XOR desses
+5 bytes com os bytes 5 a 9 do token decodificado, mantenha o resto e codifique de volta
+em Base64.
+</Hint>
+
+<Solution title="Solução">
+Salve como `forjar.py`:
+
+```python
+import base64
+
+token = bytearray(base64.b64decode(open("token.txt").read()))
+iv, ct = token[:16], token[16:]
+print("IV antes :", iv.hex())
+old, new = b"guest", b"admin"
+for i in range(len(old)):
+    token[5 + i] ^= old[i] ^ new[i]                # bytes 5..9 of the IV sit over "guest"
+print("IV depois:", token[:16].hex())
+print(base64.b64encode(bytes(token)).decode())
+```
+
+```console
+$ python3 forjar.py
+IV antes : ee23e2a3c4cad7d9932672941a4c4422
+IV depois: ee23e2a3c4ccc6d1893c72941a4c4422
+7iPio8TMxtGJPHKUGkxEIqKhseeoTgcLyBZU68KEc6nXZ2c+xYQrogsic+Wod5FJ
+$ ./conferir.sh "$(python3 forjar.py | tail -1)"
+Formato ok: IV alterado nos bytes [5, 6, 7, 8, 9], cifrado intacto.
+FLAG{iv_flip_...}
+(Sem a chave, este script nao sabe se a forja decifra para role=admin. Quem decide e a plataforma.)
+```
+
+Só os 5 bytes do meio do IV mudaram (`cad7d99326` → `ccc6d1893c`, nas posições 5 a 9);
+o texto cifrado é byte a byte o mesmo. O portal decifraria o primeiro bloco como
+`role=admin;uid=7` e o segundo exatamente como antes. Se você mandar o token original, ou
+mexer no texto cifrado em vez do IV, o `conferir.sh` recusa:
+
+```console
+$ ./conferir.sh "$(cat token.txt)"
+ERRO: o token e identico ao original.
+$ python3 -c "import base64; t=bytearray(base64.b64decode(open('token.txt').read())); t[20]^=1; print(base64.b64encode(t).decode())" | ./conferir.sh
+ERRO: o texto cifrado (bytes 16 em diante) mudou. Nesta missao so o IV muda.
+```
+</Solution>
+
+<FlagInput task="missao-3-iv-flip" />
+
+### 5.5 Walkthrough: o mesmo ataque contra cifra autenticada (sem flag)
+
+Agora faça o papel de quem defende. Primeiro, tente usar GCM no `openssl enc` (saída
+real):
+
+```console
+$ echo segredo | openssl enc -aes-256-gcm -K $(openssl rand -hex 32) -iv $(openssl rand -hex 12)
+enc: AEAD ciphers not supported
+enc: Use -help for summary.
+```
+
+Não é um descuido: a [documentação do `openssl enc`](https://docs.openssl.org/3.5/man1/openssl-enc/)
+diz que o comando não suporta modos autenticados como CCM e GCM, "e não vai suportar no
+futuro", porque ele precisa começar a escrever a saída antes de poder conferir a tag. O
+`openssl enc` serve para treinar e para compatibilidade; para proteger dados de
+verdade, use uma biblioteca com AEAD. Crie `~/lab-3.3/defesa/gcm.py` com a classe
+`AESGCM` da biblioteca `cryptography`:
+
+```python
+import os
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+key = AESGCM.generate_key(bit_length=128)    # your own key, from the CSPRNG
+aead = AESGCM(key)
+nonce = os.urandom(12)                        # 96 bits, NEVER reused with this key
+aad = b"atlas/token/v1"                       # authenticated, not encrypted
+
+plaintext = b"role=guest;uid=7;exp=2026-12-31"
+token = aead.encrypt(nonce, plaintext, aad)
+print("texto claro:", len(plaintext), "bytes | cifrado + tag:", len(token), "bytes")
+print("ok:", aead.decrypt(nonce, token, aad))
+
+# The same attack as mission 3: flip "guest" into "admin".
+# GCM encrypts in CTR mode, so ciphertext byte i maps to plaintext byte i.
+forged = bytearray(token)
+for i, (k, w) in enumerate(zip(b"guest", b"admin"), start=5):
+    forged[i] ^= k ^ w
+try:
+    aead.decrypt(nonce, bytes(forged), aad)
+except InvalidTag:
+    print("forja no cifrado: InvalidTag (recusado antes de liberar qualquer byte)")
+
+try:
+    aead.decrypt(nonce, token, b"atlas/token/v2")
+except InvalidTag:
+    print("mesmo token, outro contexto (AAD): InvalidTag")
+```
+
+```console
+$ cd ~/lab-3.3/defesa && python3 gcm.py
+texto claro: 31 bytes | cifrado + tag: 47 bytes
+ok: b'role=guest;uid=7;exp=2026-12-31'
+forja no cifrado: InvalidTag (recusado antes de liberar qualquer byte)
+mesmo token, outro contexto (AAD): InvalidTag
+```
+
+Três detalhes para levar:
+
+- **31 bytes viraram 47**: o mesmo tamanho do texto (o GCM é CTR por dentro, sem padding)
+  mais 16 bytes de tag. Não há padding, então também não há oráculo de padding.
+- **A forja da Missão 3 caiu.** No GCM, trocar um bit do cifrado troca o bit do texto
+  claro (é CTR), mas a tag deixa de bater, e a biblioteca levanta `InvalidTag` **sem
+  devolver nada**.
+- **A AAD amarra o contexto.** O mesmo token, válido, foi recusado quando apresentado
+  com outra AAD (`v2` em vez de `v1`). Isso impede reaproveitar um token num lugar para
+  o qual ele não foi emitido.
+
+E a outra metade: o padding oracle da seção 3.4, de ponta a ponta, contra um "servidor"
+de brinquedo que guarda a **sua** chave aleatória. O servidor só responde se o padding é
+válido, e isso basta. Salve como `oraculo.py`:
+
+```python
+"""Padding oracle, end to end, against a toy server that holds YOUR own key."""
+import os
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+KEY = os.urandom(16)                 # the "server" key; the attacker never reads it
+queries = 0
+
+def server_encrypt(message: bytes) -> bytes:
+    iv = os.urandom(16)
+    padder = padding.PKCS7(128).padder()
+    enc = Cipher(algorithms.AES(KEY), modes.CBC(iv)).encryptor()
+    return iv + enc.update(padder.update(message) + padder.finalize()) + enc.finalize()
+
+def server_accepts(token: bytes) -> bool:
+    """The bug: the server says WHETHER the padding was valid (e.g. 500 vs 403)."""
+    global queries
+    queries += 1
+    dec = Cipher(algorithms.AES(KEY), modes.CBC(token[:16])).decryptor()
+    data = dec.update(token[16:]) + dec.finalize()
+    unpadder = padding.PKCS7(128).unpadder()
+    try:
+        unpadder.update(data) + unpadder.finalize()
+        return True
+    except ValueError:
+        return False
+
+def attack_block(prev: bytes, block: bytes) -> bytes:
+    """Recover D(block) byte by byte, from the last byte to the first."""
+    intermediate = bytearray(16)
+    for pad in range(1, 17):
+        pos = 16 - pad
+        for guess in range(256):
+            fake = bytearray(16)
+            for j in range(pos + 1, 16):
+                fake[j] = intermediate[j] ^ pad      # force the known tail to "pad"
+            fake[pos] = guess
+            if server_accepts(bytes(fake) + block):
+                if pad == 1:                         # rule out an accidental \x02\x02
+                    fake[pos - 1] ^= 1
+                    if not server_accepts(bytes(fake) + block):
+                        continue
+                intermediate[pos] = guess ^ pad
+                break
+    return bytes(i ^ p for i, p in zip(intermediate, prev))
+
+token = server_encrypt(b"role=guest;uid=7;senha=Atlas#2026")
+blocks = [token[i:i + 16] for i in range(0, len(token), 16)]
+recovered = b"".join(attack_block(blocks[i - 1], blocks[i]) for i in range(1, len(blocks)))
+print("recuperado:", recovered)
+print("consultas ao servidor:", queries, "| blocos:", len(blocks) - 1)
+```
+
+```console
+$ time python3 oraculo.py
+recuperado: b'role=guest;uid=7;senha=Atlas#2026\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f'
+consultas ao servidor: 6449 | blocos: 3
+
+real	0m0.140s
+```
+
+O texto inteiro voltou, inclusive o padding (15 bytes `0f`), sem que o atacante lesse a
+chave nem recebesse uma única linha decifrada. O teste extra no caso `pad == 1` existe
+porque, por azar, o penúltimo byte pode valer `02` e o "acerto" seria `02 02`, e não
+`01`. É o tipo de detalhe que separa um ataque que funciona às vezes de um que funciona
+sempre.
+
+### 5.6 Desligar o laboratório
+
+No painel do lab, **Parar** libera a vaga (regra de um lab por vez); **Resetar** recria o
+Kali do zero se você quiser refazer. O material original continua em `/opt/lab-3.3`, e o
+seu trabalho ficou em `~/lab-3.3`. Para apagar a sua cópia: `rm -rf ~/lab-3.3`.
+
+## 6. Variações e aprofundamento
+
+**IV previsível no CBC: o BEAST (2011).** O TLS 1.0 usava como IV de cada registro o
+último bloco cifrado do registro anterior, que o atacante já tinha visto. Com um IV
+conhecido antes da cifração, quem consegue injetar texto escolhido (um JavaScript na
+página) testa palpites sobre um bloco secreto, um de cada vez. A CVE-2011-3389
+(BEAST) descreve exatamente isso: o CBC "com vetores de inicialização encadeados"
+permitia a um *man-in-the-middle* obter cabeçalhos HTTP em claro. É por isso que a
+tabela da seção 2.6 diz "imprevisível", e não só "diferente".
+
+**Bloco pequeno: o Sweet32 (2016).** Com blocos de *n* bits, depois de cerca de
+2<sup>n/2</sup> blocos cifrados com a mesma chave, dois blocos cifrados iguais ficam
+prováveis (o paradoxo do aniversário), e no CBC uma colisão revela o XOR de dois blocos
+de texto claro. Para os 64 bits do 3DES e do Blowfish, isso é **32 GB**; para os 128 do
+AES, 256 EB. Karthikeyan Bhargavan e Gaëtan Leurent, do INRIA, mostraram o
+<GlossaryTerm term="Sweet32">Sweet32</GlossaryTerm>: recuperaram um cookie de uma sessão
+HTTPS com 3DES capturando **785 GB em 30,5 horas** ([sweet32.info](https://sweet32.info/);
+CVE-2016-2183 para o TLS e CVE-2016-6329 para o OpenVPN). O tamanho do bloco importa
+tanto quanto o da chave, e é o mesmo raciocínio do limite de 2³² mensagens do GCM.
+
+**ChaCha20-Poly1305, a alternativa ao AES-GCM.** O
+<GlossaryTerm term="ChaCha20-Poly1305">ChaCha20-Poly1305</GlossaryTerm>
+([RFC 8439](https://www.rfc-editor.org/rfc/rfc8439.html), 2018) combina a cifra de fluxo
+ChaCha20 com o autenticador Poly1305. Segundo a RFC, ele é cerca de três vezes mais
+rápido que o AES em plataformas sem aceleração de AES em hardware, e não depende de
+tabelas, o que facilita implementações de tempo constante. É comum em celulares e é
+uma das suítes do TLS 1.3. Tem a mesma regra de ouro: nonce único.
+
+**Quando o nonce não pode ser garantido: AES-GCM-SIV.** Em sistemas distribuídos, sem
+um contador central, garantir nonce único é difícil. O
+<GlossaryTerm term="AES-GCM-SIV">AES-GCM-SIV</GlossaryTerm>
+([RFC 8452](https://www.rfc-editor.org/rfc/rfc8452.html), 2019) é "resistente a uso
+indevido de nonce": se um nonce se repetir, ele não falha de forma catastrófica (só
+revela se duas mensagens eram idênticas). A biblioteca `cryptography` oferece
+`AESGCMSIV`.
+
+**Ordem da composição: encrypt-then-MAC.** Antes do AEAD, juntava-se uma cifra com um
+<GlossaryTerm term="HMAC">HMAC</GlossaryTerm>. Existem três ordens possíveis, e só uma é
+segura sem ressalvas: o <GlossaryTerm term="encrypt-then-MAC">encrypt-then-MAC</GlossaryTerm>,
+que cifra, calcula o MAC sobre o **cifrado** e confere o MAC antes de decifrar. O
+MAC-then-encrypt do SSL 3.0 conferia a integridade depois de mexer no texto decifrado,
+e o POODLE aconteceu nesse intervalo. Se você encontrar um sistema legado com CBC, é
+isso que você procura.
+
+**TLS 1.3: o fim do CBC na web.** A [RFC 8446](https://www.rfc-editor.org/rfc/rfc8446.html)
+(TLS 1.3, agosto de 2018) diz que a lista de algoritmos simétricos "foi podada de todos
+os algoritmos considerados legados" e que os que restam "são todos AEAD". Os ataques
+desta seção e da seção 4 são o motivo. Num pentest, um servidor que ainda aceita SSL 3.0,
+TLS 1.0 ou TLS 1.1 com suítes CBC é um achado a relatar.
+
+**Cifra de disco: o modo XTS.** Disco é um caso especial: cada setor precisa ser cifrado
+no lugar, sem crescer, então não cabe tag nem IV guardado. O
+<GlossaryTerm term="XTS">XTS</GlossaryTerm> (usado por BitLocker, FileVault e LUKS) usa o
+número do setor como "ajuste". Consequência: cifra de disco protege contra o notebook
+roubado desligado, mas **não** detecta alteração. Quem consegue escrever no disco
+cifrado pode embaralhar setores sem ser notado.
+
+**Crib dragging na prática.** Sem nenhum texto claro conhecido, ainda dá para atacar um
+keystream repetido. Calcule X = C1 ⊕ C2, escolha uma palavra provável (o "crib", como
+`COOPERATIVA` ou ` the `) e faça XOR dela com X em cada posição. Onde o crib está num dos
+textos, o resultado é um pedaço legível do outro. Cada acerto vira um crib novo. É lento
+e manual, mas com três ou mais mensagens que repetem o keystream costuma terminar com o
+texto inteiro.
+
+## 7. Erros comuns
+
+- **`iv undefined` ao cifrar com `-K`.** Com `-K` (chave em hex), o OpenSSL não deriva
+  nada de senha, então você precisa passar `-iv` também. Só o ECB dispensa o IV (o que é
+  um sintoma, não uma vantagem).
+- **`bad encrypt` e `wrong final block length` com `-nopad`.** Sem padding, a entrada
+  precisa ter tamanho múltiplo de 16. Quinze bytes com `-nopad` dão esse erro.
+- **`bad decrypt` ao decifrar.** Na prática, quase sempre é chave ou IV errado: o
+  último bloco decifra para lixo e o padding não confere. A mensagem é sobre o padding,
+  não sobre a chave, e é esse mesmo comportamento que vira oráculo na seção 3.4.
+- **`TypeError: unsupported operand type(s) for ^: 'bytes' and 'bytes'`.** O Python não
+  faz XOR de objetos `bytes` inteiros. Faça byte a byte:
+  `bytes(a ^ b for a, b in zip(x, y))`.
+- **Fatiar os blocos no lugar errado.** Os blocos do AES começam no byte 0 do arquivo
+  cifrado. No BMP da Missão 1, o cabeçalho tem 54 bytes, que não é múltiplo de 16: quem
+  conta os blocos a partir do byte 54 compara pedaços desalinhados e vê franjas
+  coloridas em volta das letras.
+- **Esquecer o nonce do começo do arquivo (Missão 2).** Se você fizer XOR sem pular os 16
+  primeiros bytes, o keystream fica deslocado e sai lixo. Confira sempre o formato
+  descrito antes de mexer nos bytes.
+- **Abrir o arquivo em modo texto.** `open(caminho)` sem `"rb"` tenta decodificar UTF-8 e
+  quebra (ou corrompe) bytes cifrados. Cifra é sempre binário.
+- **Mexer no texto cifrado em vez do IV (Missão 3).** Trocar bytes de C1 estraga o
+  primeiro bloco inteiro e troca bits no segundo. Para mudar o primeiro bloco com
+  precisão, mexa no IV.
+- **Base64 com quebra de linha.** Alguns comandos acrescentam `\n` ou quebram linhas
+  longas; o `base64.b64decode(..., validate=True)` do `conferir.sh` recusa caracteres
+  estranhos. Use o `.strip()` ou passe o token entre aspas.
+- **Achar que "AES-256" resolve.** A Missão 2 usou AES-256 e caiu inteira. O tamanho da
+  chave protege contra força bruta, não contra mau uso.
+
+## 8. Defesa e mitigação
+
+### 8.1 A regra principal: use AEAD, por uma biblioteca de alto nível
+
+Para cifrar dados novos, a escolha padrão é um AEAD: **AES-GCM** (com AES-NI no
+processador) ou **ChaCha20-Poly1305**. Use a interface pronta da sua linguagem, como a
+`AESGCM` do `cryptography` em Python, e não monte modo, padding e MAC à mão. Código
+vulnerável, como se encontra em muito sistema real:
+
+```python
+# VULNERABLE: AES-CBC with a fixed IV and no integrity check
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+KEY = b"0123456789abcdef"                       # hardcoded key in the source code
+IV = b"\x00" * 16                               # fixed IV: same message -> same ciphertext
+
+def make_token(role: str, uid: int) -> bytes:
+    padder = padding.PKCS7(128).padder()
+    data = padder.update(f"role={role};uid={uid}".encode()) + padder.finalize()
+    enc = Cipher(algorithms.AES(KEY), modes.CBC(IV)).encryptor()
+    return enc.update(data) + enc.finalize()
+
+def read_token(token: bytes) -> str:
+    dec = Cipher(algorithms.AES(KEY), modes.CBC(IV)).decryptor()
+    data = dec.update(token) + dec.finalize()
+    unpadder = padding.PKCS7(128).unpadder()
+    return (unpadder.update(data) + unpadder.finalize()).decode()   # padding errors leak
+```
+
+Cinco problemas em vinte linhas: chave no código, IV fixo, nenhuma integridade (bit
+flipping), um erro de padding que pode virar oráculo, e um token que vale em qualquer
+contexto. A versão corrigida:
+
+```python
+# FIXED: AEAD with a random 96-bit nonce, context bound through AAD
+import os
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+aead = AESGCM(load_key_from_kms())              # key comes from a KMS/secret store, never from the code
+CONTEXT = b"atlas/portal/token/v1"
+
+def make_token(role: str, uid: int) -> bytes:
+    nonce = os.urandom(12)                      # fresh for every token
+    return nonce + aead.encrypt(nonce, f"role={role};uid={uid}".encode(), CONTEXT)
+
+def read_token(token: bytes) -> str | None:
+    try:
+        return aead.decrypt(token[:12], token[12:], CONTEXT).decode()
+    except InvalidTag:
+        return None                             # one generic failure, no detail about why
+```
+
+### 8.2 Nonces e chaves: as regras operacionais
+
+- **Nonce de 96 bits, gerado por CSPRNG ou por contador.** `os.urandom(12)` (ou
+  `secrets`) a cada mensagem; nunca uma constante, nunca o `random` do Python (o 3.1
+  mostrou por quê). Se usar contador, garanta que ele não volta a zero num *restart*,
+  numa restauração de backup ou numa VM clonada (a lição do KRACK).
+- **Limite de uso por chave.** Com nonces aleatórios, troque a chave antes de 2³²
+  mensagens (NIST SP 800-38D, seção 8.3). Em sistemas de alto volume, isso é mais perto
+  do que parece.
+- **Se o nonce não pode ser garantido, AES-GCM-SIV.** Em sistemas distribuídos sem
+  coordenação, é a escolha resistente a repetição.
+- **Nunca ECB para dados.** Se uma ferramenta ou biblioteca oferece ECB como padrão
+  (algumas APIs antigas fazem isso quando você pede só "AES"), especifique o modo
+  explicitamente.
+- **Nada de 3DES nem de cifras de 64 bits.** Desabilite-as em TLS, VPN e SSH (Sweet32);
+  o NIST proíbe o 3DES para cifrar desde 2024.
+
+### 8.3 Se o legado obriga CBC
+
+Às vezes não dá para trocar o formato de uma vez. Nesse caso:
+
+1. **IV aleatório e imprevisível** por mensagem, gerado por CSPRNG, enviado junto.
+2. **Encrypt-then-MAC**: HMAC-SHA-256 com uma chave **separada** sobre IV + cifrado, e o
+   MAC conferido **antes** de decifrar, com `hmac.compare_digest()` (comparação em tempo
+   constante, como o 3.1 mostrou).
+3. **Uma única resposta de erro** para "MAC inválido", "padding inválido" e "formato
+   inválido": mesmo código HTTP, mesma mensagem, mesmo tempo aproximado. Erros
+   distinguíveis são oráculos.
+4. **Planejar a migração** para AEAD, com versão no formato (um prefixo `v1`, `v2`) para
+   aceitar os dois durante a transição e depois desligar o antigo.
+
+### 8.4 Gestão de chaves: onde a criptografia de verdade falha
+
+A Missão 2 não precisou da chave, mas a maioria dos ataques reais a sistemas com AES
+começa por **achar a chave**: no código-fonte, num `.env`, num backup, num log. A
+defesa é tirar a chave de onde a aplicação vive:
+
+- **<GlossaryTerm term="KMS">KMS</GlossaryTerm> ou
+  <GlossaryTerm term="HSM">HSM</GlossaryTerm>.** Um *Key Management Service* (como os das
+  nuvens ou o Vault) ou um *Hardware Security Module* guarda a chave e executa as
+  operações por você; a aplicação pede "cifre isto" e nunca vê a chave.
+- **<GlossaryTerm term="envelope encryption">Envelope encryption</GlossaryTerm>.** Cada
+  arquivo ou registro é cifrado com a sua própria chave de dados; a chave de dados é
+  cifrada pela chave mestra, que fica no KMS. Vazar um arquivo não vaza os outros, e
+  girar a chave mestra não exige recifrar tudo.
+- **Rotação e separação.** Chaves diferentes para finalidades diferentes (cifrar ≠
+  autenticar ≠ ambientes), com rotação periódica e registro de uso. Isso é a
+  <GlossaryTerm term="key management">gestão de chaves</GlossaryTerm> do 3.1 na prática.
+
+### 8.5 Para quem testa e para quem defende
+
+Num pentest, os sinais de criptografia simétrica mal usada aparecem mesmo sem acesso ao
+código:
+
+- **Tamanhos múltiplos de 16** que crescem de 16 em 16 quando a entrada cresce: cifra de
+  bloco com padding (ECB ou CBC). Tamanho que cresce de 1 em 1 com 16 a 28 bytes fixos a
+  mais: provavelmente CTR/GCM com nonce e tag.
+- **Blocos de 16 bytes repetidos** em tokens ou cookies (o `uniq -c` da Missão 1): ECB.
+- **O mesmo valor cifrado duas vezes dá o mesmo resultado:** IV fixo, nonce fixo ou ECB.
+  Peça dois tokens para os mesmos dados e compare.
+- **Trocar um byte do token muda o comportamento sem erro** (outro usuário, outro papel,
+  um campo corrompido): falta de integridade, bit flipping possível.
+- **Erros diferentes para tokens corrompidos de jeitos diferentes** (500 contra 403,
+  mensagens distintas, tempos distintos): candidato a padding oracle.
+
+Ao relatar, nomeie a causa raiz e a correção concreta ("tokens AES-CBC sem autenticação
+permitem trocar o papel do usuário; migrar para AES-GCM com nonce aleatório e AAD"), não
+só "cripto fraca". Do lado da defesa, a revisão de código procura as mesmas coisas:
+`ECB` em qualquer lugar, IV ou nonce constantes, `random` em vez de `secrets`, chaves em
+código ou em variáveis versionadas, e decifração sem conferência de MAC ou tag.
+
+## 9. Exercícios
+
+As tarefas que geram as flags são as três missões do laboratório (seção 5): o cofre em
+ECB, o nonce repetido no CTR e o IV-flip no CBC. Faça as três antes do quiz. O quiz
+corrige no servidor e conta para concluir o módulo.
+
+<Quiz task="quiz-final" />
+
+### Cenários para pensar (sem flag)
+
+1. Um aplicativo cifra cada mensagem de chat com AES-256-GCM e usa como nonce o número
+   da mensagem dentro da conversa (1, 2, 3...), com uma chave por usuário, igual para
+   todas as conversas dele. Onde está o problema e como você corrigiria?
+2. Você recebe dois tokens de um sistema para o mesmo usuário, pedidos com um minuto de
+   intervalo, e eles são idênticos. O que isso indica sobre o modo e o IV? Qual seria o
+   seu próximo teste?
+3. Um fornecedor afirma: "nossos backups são cifrados com AES-256 em XTS, então ninguém
+   consegue alterá-los". O que está certo e o que está errado nessa frase?
+
+<Solution title="Respostas comentadas">
+1. A mesma chave é usada em várias conversas, e todas começam no nonce 1: a mensagem 1
+   de uma conversa e a mensagem 1 de outra têm o mesmo par (chave, nonce), então o
+   keystream se repete (e, no GCM, a subchave de autenticação vaza). Correção: nonce
+   único **por chave**, não por conversa. Por exemplo, um nonce aleatório de 96 bits,
+   ou uma chave diferente por conversa, derivada com uma KDF.
+2. Determinismo: ECB, ou CBC/CTR com IV/nonce fixo. Próximo teste: pedir tokens com
+   dados que diferem só no fim e ver se os primeiros blocos coincidem (prefixo comum →
+   IV fixo), e procurar blocos repetidos (ECB). Depois, testar se alterar bytes muda o
+   conteúdo sem erro (sem integridade).
+3. Certo: AES-256 em XTS dá sigilo a um disco ou arquivo roubado. Errado: o XTS não tem
+   tag nem integridade, então alterações não são detectadas (só ficam imprevisíveis no
+   setor alterado). Para backups que precisam detectar adulteração, use AEAD ou acrescente
+   uma assinatura/HMAC sobre o arquivo.
+</Solution>
+
+### Exercício prático extra (sem flag)
+
+No Kali, cifre a sua própria imagem com `openssl enc -aes-128-ecb -K $(openssl rand -hex 16)`
+e depois com `-aes-128-cbc` (com `-iv`), restaure os 54 bytes do cabeçalho como na
+Missão 1 e compare. Depois, cifre a mesma imagem com `-aes-128-ctr` usando **o mesmo
+IV duas vezes** para duas imagens diferentes e faça o XOR dos dois cifrados: o que
+aparece?
+
+## 10. Resumo e glossário
+
+**Pontos-chave:**
+
+- A criptografia simétrica usa **uma chave nas duas pontas**. Cifra de bloco transforma
+  16 bytes em 16 bytes; cifra de fluxo gera um keystream e faz XOR.
+- O **AES** (FIPS 197, 2001) tem bloco de 128 bits, chaves de 128/192/256 bits e 10/12/14
+  rodadas. Ele é **determinístico** e tem efeito avalanche, e não tem ataque prático
+  conhecido.
+- O **modo de operação** decide quase tudo. **ECB** vaza padrão e aceita recorte. **CBC**
+  esconde padrão, mas exige IV imprevisível e não tem integridade. **CTR** vira cifra de
+  fluxo e exige nonce único. **GCM** é CTR + tag: sigilo e integridade.
+- **Nonce repetido** em CTR/GCM/fluxo: C1 ⊕ C2 = P1 ⊕ P2, e um texto conhecido entrega o
+  keystream. No GCM, ainda vaza a subchave de autenticação.
+- **Sem integridade, o cifrado é maleável**: no CBC, trocar bits do IV troca os mesmos
+  bits do primeiro bloco. E um **padding oracle** decifra tudo a partir de um único bit
+  de resposta.
+- **Defesa:** AEAD (AES-GCM, ChaCha20-Poly1305) por biblioteca, nonce de 96 bits único,
+  limite de 2³² mensagens por chave, AES-GCM-SIV se o nonce não puder ser garantido,
+  chaves em KMS/HSM. Se o legado obrigar CBC: IV aleatório, encrypt-then-MAC e um erro
+  único.
+
+**Cola rápida: modo → exige → cai se**
+
+| Modo | Exige | Integridade | Cai se... |
+|---|---|---|---|
+| ECB | nada | não | sempre (padrão vaza, blocos recortáveis) |
+| CBC | IV imprevisível + padding | não | IV fixo/previsível, bit flipping, padding oracle |
+| CTR | nonce único | não | nonce repetido, bit flipping |
+| GCM | nonce único (96 bits) | **sim** (tag) | nonce repetido (keystream e forja) |
+| GCM-SIV | nonce (tolera repetir) | **sim** | — (repetição só revela mensagens idênticas) |
+
+### Termos deste módulo
+
+<ModuleGlossary />
+
+### Para ir além
+
+- [NIST SP 800-38A](https://csrc.nist.gov/pubs/sp/800/38/a/final) e
+  [SP 800-38D](https://csrc.nist.gov/pubs/sp/800/38/d/final) — os modos de operação e o
+  GCM, direto da fonte, com as regras de IV e os limites de uso.
+- [FIPS 197](https://csrc.nist.gov/pubs/fips/197/final) — o padrão do AES, com a
+  descrição de cada transformação.
+- [Documentação de AEAD da biblioteca `cryptography`](https://cryptography.io/en/latest/hazmat/primitives/aead/) —
+  `AESGCM`, `ChaCha20Poly1305` e `AESGCMSIV`, com o aviso "NEVER REUSE A NONCE".
+- [Key Reinstallation Attacks](https://www.krackattacks.com/) — o site do KRACK, com o
+  artigo, os vídeos e a explicação do reuso de nonce no WPA2.

@@ -227,7 +227,12 @@ antiga Fase 10. Decisões D0–D5 e trocas T8–T10 em
   sobre artefatos fictícios: classificar encoding, hash e cifra num pentest e recuperar o que
   é recuperável, achar com HMAC os arquivos adulterados de uma release cujo `sha256sum -c`
   diz tudo OK, e quebrar com texto claro conhecido uma cifra XOR caseira, e walkthrough de
-  `gpg --symmetric` detectando adulteração) escrito. 3.4 "Criptografia assimétrica e TLS"
+  `gpg --symmetric` detectando adulteração) escrito. 3.3 "Criptografia simétrica" (lab `kali`;
+  três missões offline sobre arquivos de uma empresa fictícia em `/opt/lab-3.3`, sem nenhuma
+  chave na imagem: ler o texto de uma imagem BMP cifrada em AES-ECB, decifrar um arquivo
+  restrito por reuso de nonce no AES-CTR e forjar um token `role=admin` trocando bits do IV de
+  um AES-CBC, e walkthrough de AES-GCM recusando a mesma forja e de um padding oracle contra
+  um servidor de brinquedo com chave própria) escrito. 3.4 "Criptografia assimétrica e TLS"
   (lab `juice-shop`; duas missões de forja de JWT, por `alg:none` e por confusão de chaves
   RS256→HS256) escrito. 3.5 "Criptografia pós-quântica" (sem lab; três missões no WSL: fatorar
   uma chave RSA de brinquedo com a receita do Shor, o inventário quântico de uma empresa
