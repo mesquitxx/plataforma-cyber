@@ -1,61 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" role="img" aria-labelledby="t d">
-  <title id="t">A fronteira entre str e bytes: encode na saída, decode na entrada</title>
-  <desc id="d">À esquerda, o mundo do seu programa, onde texto é str, uma sequência de caracteres Unicode: a palavra ação tem 4 caracteres. À direita, o mundo do kernel, do socket e da rede, onde só existem bytes: a mesma palavra em UTF-8 vira 6 bytes, 61 c3 a7 c3 a3 6f, porque ç e ã ocupam dois bytes cada. Na saída, str.encode('utf-8') transforma texto em bytes antes do sendall. Na entrada, recv devolve bytes, e bytes.decode('utf-8') os transforma em texto. Embaixo, três erros típicos na fronteira: misturar str com bytes dá TypeError; decodificar com o codec errado, como ascii, dá UnicodeDecodeError; e bytes inválidos vindos de um serviço podem ser tratados com errors='replace', que troca o byte ruim pelo caractere de substituição em vez de derrubar o script.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 13.5px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 860" width="1300" height="860" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7ab8f0"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="420" fill="#121815"/>
-  <rect x="30" y="20" width="330" height="230" rx="12" fill="none" stroke="#5ee08a" stroke-dasharray="6 5"/>
-  <text class="t" x="46" y="48" style="fill:#5ee08a">seu programa: str</text>
-  <text class="s" x="46" y="70">caracteres Unicode</text>
-  <rect class="box" x="46" y="86" width="298" height="70" rx="10"/>
-  <text class="m" x="60" y="112">"ação"</text>
-  <text class="s" x="60" y="134">len(s) == 4 caracteres</text>
-  <rect class="box" x="46" y="168" width="298" height="66" rx="10"/>
-  <text class="s" x="60" y="192">"SSH-2.0-TreinoSSH_0.7"</text>
-  <text class="s" x="60" y="212">split(), strip(), f-strings...</text>
-
-  <rect x="540" y="20" width="330" height="230" rx="12" fill="none" stroke="#7ab8f0" stroke-dasharray="6 5"/>
-  <text class="t" x="556" y="48" style="fill:#7ab8f0">kernel, socket, rede: bytes</text>
-  <text class="s" x="556" y="70">números de 0 a 255</text>
-  <rect class="box" x="556" y="86" width="298" height="70" rx="10"/>
-  <text class="m" x="570" y="112">b'a\xc3\xa7\xc3\xa3o'</text>
-  <text class="s" x="570" y="134">len(b) == 6 bytes (UTF-8)</text>
-  <rect class="box" x="556" y="168" width="298" height="66" rx="10"/>
-  <text class="s" x="570" y="192">b'SSH-2.0-TreinoSSH_0.7\r\n'</text>
-  <text class="s" x="570" y="212">sendall() e recv() só aceitam isto</text>
-
-  <g stroke-width="1.6">
-    <line x1="360" y1="104" x2="536" y2="104" stroke="#5ee08a" marker-end="url(#g)"/>
-    <line x1="540" y1="198" x2="364" y2="198" stroke="#7ab8f0" marker-end="url(#b)"/>
+  <rect data-graph-role="background" width="1300.0" height="860.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">A fronteira entre str e bytes</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">encode na saída, decode na entrada</text>
+  <g id="c-prog" data-graph-role="container" data-container-id="c-prog" data-semantic-role="boundary" data-graph-bounds="40,110,510,440">
+  <rect data-graph-role="container" x="40.0" y="110.0" width="470.0" height="330.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="134.0" class="section">SEU PROGRAMA · CARACTERES UNICODE</text>
+    <rect id="c-prog-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="116" width="267.12" height="30" fill="none" stroke="none"/>
   </g>
-  <text class="m" x="378" y="94" style="fill:#5ee08a">.encode("utf-8")</text>
-  <text class="s" x="384" y="124">antes de enviar</text>
-  <text class="m" x="378" y="188" style="fill:#7ab8f0">.decode("utf-8")</text>
-  <text class="s" x="384" y="218">depois de receber</text>
-
-  <text class="t" x="30" y="290" style="fill:#f08c7a">Erros na fronteira (saídas reais)</text>
-  <rect class="box" x="30" y="306" width="270" height="94" rx="10"/>
-  <text class="m" x="44" y="330">"x" + b"y"</text>
-  <text class="s" x="44" y="352" style="fill:#f08c7a">TypeError: can only</text>
-  <text class="s" x="44" y="368" style="fill:#f08c7a">concatenate str (not</text>
-  <text class="s" x="44" y="384" style="fill:#f08c7a">"bytes") to str</text>
-  <rect class="box" x="315" y="306" width="270" height="94" rx="10"/>
-  <text class="m" x="329" y="330">b.decode("ascii")</text>
-  <text class="s" x="329" y="352" style="fill:#f08c7a">UnicodeDecodeError: 'ascii'</text>
-  <text class="s" x="329" y="368" style="fill:#f08c7a">codec can't decode byte</text>
-  <text class="s" x="329" y="384" style="fill:#f08c7a">0xc3 in position 1</text>
-  <rect class="box" x="600" y="306" width="270" height="94" rx="10" style="stroke:#5ee08a"/>
-  <text class="m" x="614" y="330">errors="replace"</text>
-  <text class="s" x="614" y="352">b"\xff\xfeSSH" vira "��SSH":</text>
-  <text class="s" x="614" y="368">o byte ruim vira � e o</text>
-  <text class="s" x="614" y="384">script segue vivo</text>
+  <g id="c-rede" data-graph-role="container" data-container-id="c-rede" data-semantic-role="boundary" data-graph-bounds="790,110,1260,440">
+  <rect data-graph-role="container" x="790.0" y="110.0" width="470.0" height="330.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="808.0" y="134.0" class="section">KERNEL, SOCKET E REDE · NÚMEROS DE 0 A 255</text>
+    <rect id="c-rede-header" data-graph-role="reserved" data-reserved-kind="container-header" x="798" y="116" width="320.68" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="c-erros" data-graph-role="container" data-container-id="c-erros" data-semantic-role="boundary" data-graph-bounds="40,480,1260,810">
+  <rect data-graph-role="container" x="40.0" y="480.0" width="1220.0" height="330.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="504.0" class="section">ERROS NA FRONTEIRA (SAÍDAS REAIS)</text>
+    <rect id="c-erros-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="486" width="260.62" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="enc" data-graph-role="edge" data-edge-id="enc" data-source="s1" data-target="b1" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 480,218 L 820,218" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="dec" data-graph-role="edge" data-edge-id="dec" data-source="b2" data-target="s2" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 820,358 L 480,358" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <g id="node-s1" data-graph-role="node" data-node-id="s1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,170,480,266">
+  <rect x="70.0" y="170.0" width="410.0" height="96.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="275.0" y="188.0" text-anchor="middle" class="node-type">str</text>
+  <text data-text-role="title" data-full-text="&quot;ação&quot;" data-text-max-width="386.0" x="275.0" y="224.0" text-anchor="middle" class="node-title" font-size="18">"ação"</text>
+  <text data-text-role="subtitle" data-full-text="len(s) == 4 caracteres" data-text-max-width="386.0" x="275.0" y="246.0" text-anchor="middle" class="node-sub" font-size="12">len(s) == 4 caracteres</text>
+  </g>
+  <g id="node-s2" data-graph-role="node" data-node-id="s2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,310,480,406">
+  <rect x="70.0" y="310.0" width="410.0" height="96.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="275.0" y="328.0" text-anchor="middle" class="node-type">str</text>
+  <text data-text-role="title" data-full-text="&quot;SSH-2.0-TreinoSSH_0.7&quot;" data-text-max-width="386.0" x="275.0" y="364.0" text-anchor="middle" class="node-title" font-size="18">"SSH-2.0-TreinoSSH_0.7"</text>
+  <text data-text-role="subtitle" data-full-text="split(), strip(), f-strings..." data-text-max-width="386.0" x="275.0" y="386.0" text-anchor="middle" class="node-sub" font-size="12">split(), strip(), f-strings...</text>
+  </g>
+  <g id="node-b1" data-graph-role="node" data-node-id="b1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,170,1230,266">
+  <rect x="820.0" y="170.0" width="410.0" height="96.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="1025.0" y="188.0" text-anchor="middle" class="node-type">bytes</text>
+  <text data-text-role="title" data-full-text="b'a\xc3\xa7\xc3\xa3o'" data-text-max-width="386.0" x="1025.0" y="224.0" text-anchor="middle" class="node-title" font-size="18">b'a\xc3\xa7\xc3\xa3o'</text>
+  <text data-text-role="subtitle" data-full-text="len(b) == 6 bytes (UTF-8)" data-text-max-width="386.0" x="1025.0" y="246.0" text-anchor="middle" class="node-sub" font-size="12">len(b) == 6 bytes (UTF-8)</text>
+  </g>
+  <g id="node-b2" data-graph-role="node" data-node-id="b2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,310,1230,406">
+  <rect x="820.0" y="310.0" width="410.0" height="96.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="1025.0" y="328.0" text-anchor="middle" class="node-type">bytes</text>
+  <text data-text-role="title" data-full-text="b'SSH-2.0-TreinoSSH_0.7\r\n'" data-text-max-width="386.0" x="1025.0" y="364.0" text-anchor="middle" class="node-title" font-size="18">b'SSH-2.0-TreinoSSH_0.7\r\n'</text>
+  <text data-text-role="subtitle" data-full-text="sendall() e recv() só aceitam isto" data-text-max-width="386.0" x="1025.0" y="386.0" text-anchor="middle" class="node-sub" font-size="12">sendall() e recv() só aceitam isto</text>
+  </g>
+  <g id="node-e1" data-graph-role="node" data-node-id="e1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,540,1230,610">
+  <rect x="70.0" y="540.0" width="1160.0" height="70.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="&quot;x&quot; + b&quot;y&quot;" data-text-max-width="1136.0" x="650.0" y="575.0" text-anchor="middle" class="node-title" font-size="18">"x" + b"y"</text>
+  <text data-text-role="subtitle" data-full-text="TypeError: can only concatenate str (not &quot;bytes&quot;) to str" data-text-max-width="1136.0" x="650.0" y="597.0" text-anchor="middle" class="node-sub" font-size="12">TypeError: can only concatenate str (not "bytes") to str</text>
+  </g>
+  <g id="node-e2" data-graph-role="node" data-node-id="e2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,630,1230,700">
+  <rect x="70.0" y="630.0" width="1160.0" height="70.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="b.decode(&quot;ascii&quot;)" data-text-max-width="1136.0" x="650.0" y="665.0" text-anchor="middle" class="node-title" font-size="18">b.decode("ascii")</text>
+  <text data-text-role="subtitle" data-full-text="UnicodeDecodeError: 'ascii' codec can't decode byte 0xc3 in position 1" data-text-max-width="1136.0" x="650.0" y="687.0" text-anchor="middle" class="node-sub" font-size="12">UnicodeDecodeError: 'ascii' codec can't decode byte 0xc3 in position 1</text>
+  </g>
+  <g id="node-e3" data-graph-role="node" data-node-id="e3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,720,1230,790">
+  <rect x="70.0" y="720.0" width="1160.0" height="70.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="errors=&quot;replace&quot;" data-text-max-width="1136.0" x="650.0" y="755.0" text-anchor="middle" class="node-title" font-size="18">errors="replace"</text>
+  <text data-text-role="subtitle" data-full-text="b&quot;\xff\xfeSSH&quot; vira &quot;��SSH&quot;: o byte ruim vira � e o script segue vivo" data-text-max-width="1136.0" x="650.0" y="777.0" text-anchor="middle" class="node-sub" font-size="12">b"\xff\xfeSSH" vira "��SSH": o byte ruim vira � e o script segue vivo</text>
+  </g>
+  <g id="enc-label" data-graph-role="label" data-owner="enc" data-graph-bounds="533.08,187,766.92,207">
+  <rect x="533.08" y="187.0" width="233.83999999999992" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="650.0" y="201.0" text-anchor="middle" class="arrow-label">.encode("utf-8") · antes de enviar</text>
+  </g>
+  <g id="dec-label" data-graph-role="label" data-owner="dec" data-graph-bounds="526.12,327,773.88,347">
+  <rect x="526.12" y="327.0" width="247.75999999999988" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="650.0" y="341.0" text-anchor="middle" class="arrow-label">.decode("utf-8") · depois de receber</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,828,601,844">
+  <text x="48.0" y="840.0" class="footnote">str e bytes não se misturam: o Python 3 obriga você a decidir em que lado está.</text>
+  </g>
 </svg>

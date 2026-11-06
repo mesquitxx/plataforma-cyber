@@ -1,75 +1,219 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="t d">
-  <title id="t">O ciclo de vida de um socket TCP, do lado do cliente e do servidor, e o que o script enxerga</title>
-  <desc id="d">À esquerda, as chamadas do cliente: socket, settimeout, connect, sendall, recv e close. À direita, as do servidor: socket, bind em 127.0.0.1 e uma porta, listen, accept, recv, sendall e close. No meio, o que passa pelo fio: o connect dispara o three-way handshake (SYN, SYN-ACK, ACK) e só volta quando ele termina; depois os dados fluem como um fluxo de bytes, sem fronteiras de mensagem; no fim, FIN encerra. Embaixo, a tabela do que um scanner em Python vê em cada caso: se a porta responde RST, o connect lança ConnectionRefusedError, porta fechada; se nada volta, o connect lança TimeoutError, sem resposta, que é o que o nmap chama de filtered; se o connect dá certo e o serviço fala primeiro, o recv devolve o banner; se o connect dá certo mas o recv estoura o timeout, a porta está aberta e o serviço espera o cliente falar, como o HTTP; e se o recv devolve b'' vazio, o outro lado fechou a conexão.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 13.5px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1270" width="1300" height="1270" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7ab8f0"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="540" fill="#121815"/>
-  <text class="t" x="30" y="32" style="fill:#5ee08a">cliente (seu script)</text>
-  <text class="t" x="640" y="32" style="fill:#7ab8f0">servidor (o serviço)</text>
-
-  <g class="s">
-    <rect class="box" x="30" y="46" width="230" height="250" rx="10"/>
-    <text class="s" x="44" y="72">s = socket.socket()</text>
-    <text class="s" x="44" y="96">s.settimeout(1.0)</text>
-    <text class="s" x="44" y="128" style="fill:#5ee08a">s.connect((ip, porta))</text>
-    <text class="s" x="44" y="186">s.sendall(b"HELLO\n")</text>
-    <text class="s" x="44" y="218">dados = s.recv(1024)</text>
-    <text class="s" x="44" y="276">s.close()</text>
-
-    <rect class="box" x="640" y="46" width="230" height="250" rx="10"/>
-    <text class="s" x="654" y="72">srv = socket.socket()</text>
-    <text class="s" x="654" y="96">srv.bind((ip, 8071))</text>
-    <text class="s" x="654" y="112">srv.listen()</text>
-    <text class="s" x="654" y="128" style="fill:#7ab8f0">c, end = srv.accept()</text>
-    <text class="s" x="654" y="186">c.recv(1024)</text>
-    <text class="s" x="654" y="218">c.sendall(b"banner\r\n")</text>
-    <text class="s" x="654" y="276">c.close()</text>
+  <rect data-graph-role="background" width="1300.0" height="1270.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">O ciclo de vida de um socket TCP</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">cada chamada do script corresponde a um momento da conexão</text>
+  <g id="c-seq" data-graph-role="container" data-container-id="c-seq" data-semantic-role="boundary" data-graph-bounds="40,110,1260,760">
+  <rect data-graph-role="container" x="40.0" y="110.0" width="1220.0" height="650.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="134.0" class="section">1 · CLIENTE (SEU SCRIPT) E SERVIDOR (O SERVIÇO)</text>
+    <rect id="c-seq-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="116" width="347.98" height="30" fill="none" stroke="none"/>
   </g>
-
-  <g stroke-width="1.5">
-    <line x1="270" y1="112" x2="630" y2="112" stroke="#5ee08a" marker-end="url(#g)"/>
-    <line x1="630" y1="128" x2="270" y2="128" stroke="#7ab8f0" marker-end="url(#b)"/>
-    <line x1="270" y1="144" x2="630" y2="144" stroke="#5ee08a" marker-end="url(#g)"/>
-    <line x1="270" y1="182" x2="630" y2="182" stroke="#5ee08a" marker-end="url(#g)"/>
-    <line x1="630" y1="214" x2="270" y2="214" stroke="#7ab8f0" marker-end="url(#b)"/>
-    <line x1="270" y1="272" x2="630" y2="272" stroke="#5ee08a" marker-end="url(#g)"/>
+  <g id="c-tab" data-graph-role="container" data-container-id="c-tab" data-semantic-role="boundary" data-graph-bounds="40,790,1260,1230">
+  <rect data-graph-role="container" x="40.0" y="790.0" width="1220.0" height="440.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="814.0" class="section">2 · O QUE O SCRIPT ENXERGA: RESPOSTA DA PORTA → EM PYTHON → CONCLUSÃO</text>
+    <rect id="c-tab-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="796" width="506.58" height="30" fill="none" stroke="none"/>
   </g>
-  <text class="s" x="420" y="106">SYN</text>
-  <text class="s" x="400" y="124">SYN-ACK</text>
-  <text class="s" x="420" y="160">ACK  (connect volta)</text>
-  <text class="s" x="330" y="200">fluxo de bytes, sem fronteiras</text>
-  <text class="s" x="330" y="234">um recv pode trazer meia linha</text>
-  <text class="s" x="330" y="250">ou duas linhas de uma vez</text>
-  <text class="s" x="420" y="290">FIN</text>
-
-  <text class="t" x="30" y="336" style="fill:#e8c46a">O que o script enxerga</text>
-  <rect class="box" x="30" y="350" width="840" height="170" rx="10"/>
-  <text class="m" x="44" y="374">resposta da porta</text>
-  <text class="m" x="290" y="374">em Python</text>
-  <text class="m" x="640" y="374">conclusão</text>
-  <line x1="44" y1="384" x2="856" y2="384" stroke="#34413b"/>
-  <text class="s" x="44" y="406">RST (recusa)</text>
-  <text class="s" x="290" y="406" style="fill:#f08c7a">ConnectionRefusedError [Errno 111]</text>
-  <text class="s" x="640" y="406">fechada</text>
-  <text class="s" x="44" y="430">nada volta</text>
-  <text class="s" x="290" y="430" style="fill:#e8c46a">TimeoutError no connect</text>
-  <text class="s" x="640" y="430">sem resposta ("filtered")</text>
-  <text class="s" x="44" y="454">aceita e fala primeiro</text>
-  <text class="s" x="290" y="454" style="fill:#5ee08a">recv devolve o banner</text>
-  <text class="s" x="640" y="454">aberta, com banner</text>
-  <text class="s" x="44" y="478">aceita e espera você</text>
-  <text class="s" x="290" y="478" style="fill:#e8c46a">TimeoutError no recv</text>
-  <text class="s" x="640" y="478">aberta, sem banner (HTTP)</text>
-  <text class="s" x="44" y="502">fecha depois de aceitar</text>
-  <text class="s" x="290" y="502">recv devolve b"" (vazio)</text>
-  <text class="s" x="640" y="502">o outro lado encerrou</text>
+  <path id="syn" data-graph-role="edge" data-edge-id="syn" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 410,320 L 890,320" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="synack" data-graph-role="edge" data-edge-id="synack" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 890,365 L 410,365" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="ack" data-graph-role="edge" data-edge-id="ack" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 410,410 L 890,410" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="d1" data-graph-role="edge" data-edge-id="d1" data-source="c3" data-target="s3" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 410,510 L 890,510" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="d2" data-graph-role="edge" data-edge-id="d2" data-source="s4" data-target="c4" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 890,610 L 410,610" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="fin" data-graph-role="edge" data-edge-id="fin" data-source="c5" data-target="s5" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 410,710 L 890,710" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="t1a" data-graph-role="edge" data-edge-id="t1a" data-source="r1a" data-target="r1b" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 370,878 L 440,878" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="t1b" data-graph-role="edge" data-edge-id="t1b" data-source="r1b" data-target="r1c" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 860,878 L 930,878" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="t2a" data-graph-role="edge" data-edge-id="t2a" data-source="r2a" data-target="r2b" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 370,954 L 440,954" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="t2b" data-graph-role="edge" data-edge-id="t2b" data-source="r2b" data-target="r2c" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 860,954 L 930,954" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="t3a" data-graph-role="edge" data-edge-id="t3a" data-source="r3a" data-target="r3b" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 370,1030 L 440,1030" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="t3b" data-graph-role="edge" data-edge-id="t3b" data-source="r3b" data-target="r3c" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 860,1030 L 930,1030" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="t4a" data-graph-role="edge" data-edge-id="t4a" data-source="r4a" data-target="r4b" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 370,1106 L 440,1106" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="t4b" data-graph-role="edge" data-edge-id="t4b" data-source="r4b" data-target="r4c" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 860,1106 L 930,1106" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="t5a" data-graph-role="edge" data-edge-id="t5a" data-source="r5a" data-target="r5b" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 370,1182 L 440,1182" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="t5b" data-graph-role="edge" data-edge-id="t5b" data-source="r5b" data-target="r5c" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 860,1182 L 930,1182" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <g id="node-c1" data-graph-role="node" data-node-id="c1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,170,410,246">
+  <rect x="70.0" y="170.0" width="340.0" height="76.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="240.0" y="188.0" text-anchor="middle" class="node-type">cliente</text>
+  <text data-text-role="title" data-full-text="s = socket.socket()" data-text-max-width="316.0" x="240.0" y="214.0" text-anchor="middle" class="node-title" font-size="15.0">s = socket.socket()</text>
+  <text data-text-role="subtitle" data-full-text="s.settimeout(1.0)" data-text-max-width="316.0" x="240.0" y="236.0" text-anchor="middle" class="node-sub" font-size="12">s.settimeout(1.0)</text>
+  </g>
+  <g id="node-c2" data-graph-role="node" data-node-id="c2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,290,410,440">
+  <rect x="70.0" y="290.0" width="340.0" height="150.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8" filter="url(#glowGreen)"/>
+  <text x="240.0" y="308.0" text-anchor="middle" class="node-type">cliente</text>
+  <text data-text-role="title" data-full-text="s.connect((ip, porta))" data-text-max-width="316.0" x="240.0" y="371.0" text-anchor="middle" class="node-title" font-size="15.0">s.connect((ip, porta))</text>
+  <text data-text-role="subtitle" data-full-text="só volta depois do ACK" data-text-max-width="316.0" x="240.0" y="393.0" text-anchor="middle" class="node-sub" font-size="12">só volta depois do ACK</text>
+  </g>
+  <g id="node-c3" data-graph-role="node" data-node-id="c3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,480,410,540">
+  <rect x="70.0" y="480.0" width="340.0" height="60.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="s.sendall(b&quot;HELLO\n&quot;)" data-text-max-width="316.0" x="240.0" y="515.2" text-anchor="middle" class="node-title" font-size="15.0">s.sendall(b"HELLO\n")</text>
+  </g>
+  <g id="node-c4" data-graph-role="node" data-node-id="c4" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,580,410,640">
+  <rect x="70.0" y="580.0" width="340.0" height="60.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="dados = s.recv(1024)" data-text-max-width="316.0" x="240.0" y="615.2" text-anchor="middle" class="node-title" font-size="15.0">dados = s.recv(1024)</text>
+  </g>
+  <g id="node-c5" data-graph-role="node" data-node-id="c5" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,680,410,740">
+  <rect x="70.0" y="680.0" width="340.0" height="60.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="s.close()" data-text-max-width="316.0" x="240.0" y="715.2" text-anchor="middle" class="node-title" font-size="15.0">s.close()</text>
+  </g>
+  <g id="node-s1" data-graph-role="node" data-node-id="s1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="890,170,1230,246">
+  <rect x="890.0" y="170.0" width="340.0" height="76.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="1060.0" y="188.0" text-anchor="middle" class="node-type">servidor</text>
+  <text data-text-role="title" data-full-text="srv = socket.socket()" data-text-max-width="316.0" x="1060.0" y="214.0" text-anchor="middle" class="node-title" font-size="15.0">srv = socket.socket()</text>
+  <text data-text-role="subtitle" data-full-text="srv.bind((ip, 8071)) · srv.listen()" data-text-max-width="316.0" x="1060.0" y="236.0" text-anchor="middle" class="node-sub" font-size="12">srv.bind((ip, 8071)) · srv.listen()</text>
+  </g>
+  <g id="node-s2" data-graph-role="node" data-node-id="s2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="890,290,1230,440">
+  <rect x="890.0" y="290.0" width="340.0" height="150.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8" filter="url(#glowBlue)"/>
+  <text x="1060.0" y="308.0" text-anchor="middle" class="node-type">servidor</text>
+  <text data-text-role="title" data-full-text="c, end = srv.accept()" data-text-max-width="316.0" x="1060.0" y="371.0" text-anchor="middle" class="node-title" font-size="15.0">c, end = srv.accept()</text>
+  </g>
+  <g id="node-s3" data-graph-role="node" data-node-id="s3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="890,480,1230,540">
+  <rect x="890.0" y="480.0" width="340.0" height="60.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="c.recv(1024)" data-text-max-width="316.0" x="1060.0" y="515.2" text-anchor="middle" class="node-title" font-size="15.0">c.recv(1024)</text>
+  </g>
+  <g id="node-s4" data-graph-role="node" data-node-id="s4" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="890,580,1230,640">
+  <rect x="890.0" y="580.0" width="340.0" height="60.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="c.sendall(b&quot;banner\r\n&quot;)" data-text-max-width="316.0" x="1060.0" y="615.2" text-anchor="middle" class="node-title" font-size="15.0">c.sendall(b"banner\r\n")</text>
+  </g>
+  <g id="node-s5" data-graph-role="node" data-node-id="s5" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="890,680,1230,740">
+  <rect x="890.0" y="680.0" width="340.0" height="60.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="c.close()" data-text-max-width="316.0" x="1060.0" y="715.2" text-anchor="middle" class="node-title" font-size="15.0">c.close()</text>
+  </g>
+  <g id="node-r1a" data-graph-role="node" data-node-id="r1a" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,850,370,906">
+  <rect x="70.0" y="850.0" width="300.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="RST (recusa)" data-text-max-width="276.0" x="220.0" y="883.2" text-anchor="middle" class="node-title" font-size="15.0">RST (recusa)</text>
+  </g>
+  <g id="node-r1b" data-graph-role="node" data-node-id="r1b" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="440,850,860,906">
+  <rect x="440.0" y="850.0" width="420.0" height="56.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="ConnectionRefusedError [Errno 111]" data-text-max-width="396.0" x="650.0" y="883.2" text-anchor="middle" class="node-title" font-size="15.0">ConnectionRefusedError [Errno 111]</text>
+  </g>
+  <g id="node-r1c" data-graph-role="node" data-node-id="r1c" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="930,850,1230,906">
+  <rect x="930.0" y="850.0" width="300.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="fechada" data-text-max-width="276.0" x="1080.0" y="883.2" text-anchor="middle" class="node-title" font-size="15.0">fechada</text>
+  </g>
+  <g id="node-r2a" data-graph-role="node" data-node-id="r2a" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,926,370,982">
+  <rect x="70.0" y="926.0" width="300.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="nada volta" data-text-max-width="276.0" x="220.0" y="959.2" text-anchor="middle" class="node-title" font-size="15.0">nada volta</text>
+  </g>
+  <g id="node-r2b" data-graph-role="node" data-node-id="r2b" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="440,926,860,982">
+  <rect x="440.0" y="926.0" width="420.0" height="56.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="TimeoutError no connect" data-text-max-width="396.0" x="650.0" y="959.2" text-anchor="middle" class="node-title" font-size="15.0">TimeoutError no connect</text>
+  </g>
+  <g id="node-r2c" data-graph-role="node" data-node-id="r2c" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="930,926,1230,982">
+  <rect x="930.0" y="926.0" width="300.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="sem resposta (&quot;filtered&quot;)" data-text-max-width="276.0" x="1080.0" y="959.2" text-anchor="middle" class="node-title" font-size="15.0">sem resposta ("filtered")</text>
+  </g>
+  <g id="node-r3a" data-graph-role="node" data-node-id="r3a" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,1002,370,1058">
+  <rect x="70.0" y="1002.0" width="300.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="aceita e fala primeiro" data-text-max-width="276.0" x="220.0" y="1035.2" text-anchor="middle" class="node-title" font-size="15.0">aceita e fala primeiro</text>
+  </g>
+  <g id="node-r3b" data-graph-role="node" data-node-id="r3b" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="440,1002,860,1058">
+  <rect x="440.0" y="1002.0" width="420.0" height="56.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="recv devolve o banner" data-text-max-width="396.0" x="650.0" y="1035.2" text-anchor="middle" class="node-title" font-size="15.0">recv devolve o banner</text>
+  </g>
+  <g id="node-r3c" data-graph-role="node" data-node-id="r3c" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="930,1002,1230,1058">
+  <rect x="930.0" y="1002.0" width="300.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="aberta, com banner" data-text-max-width="276.0" x="1080.0" y="1035.2" text-anchor="middle" class="node-title" font-size="15.0">aberta, com banner</text>
+  </g>
+  <g id="node-r4a" data-graph-role="node" data-node-id="r4a" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,1078,370,1134">
+  <rect x="70.0" y="1078.0" width="300.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="aceita e espera você" data-text-max-width="276.0" x="220.0" y="1111.2" text-anchor="middle" class="node-title" font-size="15.0">aceita e espera você</text>
+  </g>
+  <g id="node-r4b" data-graph-role="node" data-node-id="r4b" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="440,1078,860,1134">
+  <rect x="440.0" y="1078.0" width="420.0" height="56.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="TimeoutError no recv" data-text-max-width="396.0" x="650.0" y="1111.2" text-anchor="middle" class="node-title" font-size="15.0">TimeoutError no recv</text>
+  </g>
+  <g id="node-r4c" data-graph-role="node" data-node-id="r4c" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="930,1078,1230,1134">
+  <rect x="930.0" y="1078.0" width="300.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="aberta, sem banner (HTTP)" data-text-max-width="276.0" x="1080.0" y="1111.2" text-anchor="middle" class="node-title" font-size="15.0">aberta, sem banner (HTTP)</text>
+  </g>
+  <g id="node-r5a" data-graph-role="node" data-node-id="r5a" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,1154,370,1210">
+  <rect x="70.0" y="1154.0" width="300.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="fecha depois de aceitar" data-text-max-width="276.0" x="220.0" y="1187.2" text-anchor="middle" class="node-title" font-size="15.0">fecha depois de aceitar</text>
+  </g>
+  <g id="node-r5b" data-graph-role="node" data-node-id="r5b" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="440,1154,860,1210">
+  <rect x="440.0" y="1154.0" width="420.0" height="56.0" rx="10.0" fill="#111827" stroke="#94a3b8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="recv devolve b&quot;&quot; (vazio)" data-text-max-width="396.0" x="650.0" y="1187.2" text-anchor="middle" class="node-title" font-size="15.0">recv devolve b"" (vazio)</text>
+  </g>
+  <g id="node-r5c" data-graph-role="node" data-node-id="r5c" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="930,1154,1230,1210">
+  <rect x="930.0" y="1154.0" width="300.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="o outro lado encerrou" data-text-max-width="276.0" x="1080.0" y="1187.2" text-anchor="middle" class="node-title" font-size="15.0">o outro lado encerrou</text>
+  </g>
+  <g id="syn-label" data-graph-role="label" data-owner="syn" data-graph-bounds="621.28,289,678.72,309">
+  <rect x="621.28" y="289.0" width="57.44" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="650.0" y="303.0" text-anchor="middle" class="arrow-label">1 · SYN</text>
+  </g>
+  <g id="synack-label" data-graph-role="label" data-owner="synack" data-graph-bounds="607.36,334,692.64,354">
+  <rect x="607.36" y="334.0" width="85.28" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="650.0" y="348.0" text-anchor="middle" class="arrow-label">2 · SYN-ACK</text>
+  </g>
+  <g id="ack-label" data-graph-role="label" data-owner="ack" data-graph-bounds="569.8,379,730.2,399">
+  <rect x="569.8" y="379.0" width="160.39999999999998" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="650.0" y="393.0" text-anchor="middle" class="arrow-label">3 · ACK (connect volta)</text>
+  </g>
+  <g id="d1-label" data-graph-role="label" data-owner="d1" data-graph-bounds="537.28,479,762.72,499">
+  <rect x="537.28" y="479.0" width="225.43999999999997" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="650.0" y="493.0" text-anchor="middle" class="arrow-label">4 · fluxo de bytes, sem fronteiras</text>
+  </g>
+  <g id="d2-label" data-graph-role="label" data-owner="d2" data-graph-bounds="513.4,579,786.6,599">
+  <rect x="513.4" y="579.0" width="273.1999999999998" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="650.0" y="593.0" text-anchor="middle" class="arrow-label">5 · um recv pode trazer meia linha ou duas</text>
+  </g>
+  <g id="fin-label" data-graph-role="label" data-owner="fin" data-graph-bounds="622.84,679,677.16,699">
+  <rect x="622.84" y="679.0" width="54.32" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="650.0" y="693.0" text-anchor="middle" class="arrow-label">6 · FIN</text>
+  </g>
 </svg>

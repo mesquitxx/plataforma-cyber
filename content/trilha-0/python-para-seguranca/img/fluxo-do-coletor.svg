@@ -1,87 +1,162 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" role="img" aria-labelledby="t d">
-  <title id="t">Fluxo do coletor educado da Missão 3</title>
-  <desc id="d">O coletor começa com POST /api/login, enviando usuário e senha em JSON, e recebe um token. Depois pede GET /api/hosts?pagina=1 com o cabeçalho Authorization: Bearer e o token. Cada resposta passa por uma decisão pelo status code. 200: os hosts da página entram num dicionário indexado pelo IP, o que elimina duplicados, e o coletor segue o campo proxima até ele ser null. 429 Too Many Requests: o coletor dorme o número de segundos do cabeçalho Retry-After e repete o mesmo pedido. 500 ou outro 5xx: espera um pouco mais a cada tentativa e repete, até cinco tentativas, e então desiste com erro. 401 ou 404: é erro do próprio script, que para e mostra a causa. No fim, o coletor conta os hosts únicos e os que têm uma versão crítica, normalizando o texto com strip e lower. Um aviso lembra que um except que engole o erro e segue em frente produz um número errado sem nenhuma mensagem: o coletor ingênuo do módulo contou 32 hosts.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 13.5px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 960" width="1320" height="960" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c46a"/></marker>
-    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="480" fill="#121815"/>
-
-  <rect class="box" x="30" y="30" width="250" height="70" rx="10"/>
-  <text class="m" x="44" y="54">1 POST /api/login</text>
-  <text class="s" x="44" y="76">{"usuario":..., "senha":...}</text>
-  <text class="s" x="44" y="92">← {"token": "9f3c…"}</text>
-
-  <rect class="box" x="320" y="30" width="270" height="70" rx="10"/>
-  <text class="m" x="334" y="54">2 GET /api/hosts?pagina=N</text>
-  <text class="s" x="334" y="76">Authorization: Bearer 9f3c…</text>
-  <text class="s" x="334" y="92">User-Agent: coletor-0.7/1.0</text>
-
-  <rect class="box" x="630" y="30" width="240" height="70" rx="10" style="stroke:#e8c46a"/>
-  <text class="m" x="644" y="54" style="fill:#e8c46a">3 status code?</text>
-  <text class="s" x="644" y="76">a decisão que separa um</text>
-  <text class="s" x="644" y="92">coletor certo de um que mente</text>
-
-  <g stroke-width="1.5">
-    <line x1="280" y1="65" x2="316" y2="65" stroke="#5ee08a" marker-end="url(#g)"/>
-    <line x1="590" y1="65" x2="626" y2="65" stroke="#5ee08a" marker-end="url(#g)"/>
+  <rect data-graph-role="background" width="1320.0" height="960.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="660.0" y="56" text-anchor="middle" class="title">Fluxo do coletor educado (Missão 3)</text>
+  <text x="660.0" y="82" text-anchor="middle" class="subtitle">o coletor decide pelo status code de cada resposta</text>
+  <g id="c-coleta" data-graph-role="container" data-container-id="c-coleta" data-semantic-role="boundary" data-graph-bounds="40,110,1280,730">
+  <rect data-graph-role="container" x="40.0" y="110.0" width="1240.0" height="620.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="134.0" class="section">COLETA, PÁGINA POR PÁGINA</text>
+    <rect id="c-coleta-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="116" width="199.78" height="30" fill="none" stroke="none"/>
   </g>
-
-  <rect class="box" x="30" y="150" width="200" height="104" rx="10" style="stroke:#5ee08a"/>
-  <text class="m" x="44" y="174" style="fill:#5ee08a">200</text>
-  <text class="s" x="44" y="196">hosts[ip] = host</text>
-  <text class="s" x="44" y="212">(dict: sem duplicados)</text>
-  <text class="s" x="44" y="234">segue "proxima"</text>
-  <text class="s" x="44" y="248">até ser null</text>
-
-  <rect class="box" x="250" y="150" width="200" height="104" rx="10" style="stroke:#e8c46a"/>
-  <text class="m" x="264" y="174" style="fill:#e8c46a">429</text>
-  <text class="s" x="264" y="196">Too Many Requests</text>
-  <text class="s" x="264" y="218">sleep(Retry-After)</text>
-  <text class="s" x="264" y="240">e repete o pedido</text>
-
-  <rect class="box" x="470" y="150" width="200" height="104" rx="10" style="stroke:#e8c46a"/>
-  <text class="m" x="484" y="174" style="fill:#e8c46a">5xx</text>
-  <text class="s" x="484" y="196">falha do servidor</text>
-  <text class="s" x="484" y="218">espera mais a cada</text>
-  <text class="s" x="484" y="234">vez; no máximo 5</text>
-  <text class="s" x="484" y="248">tentativas, depois erro</text>
-
-  <rect class="box" x="690" y="150" width="180" height="104" rx="10" style="stroke:#f08c7a"/>
-  <text class="m" x="704" y="174" style="fill:#f08c7a">401 / 404</text>
-  <text class="s" x="704" y="196">erro do script</text>
-  <text class="s" x="704" y="218">(token, caminho):</text>
-  <text class="s" x="704" y="234">para e mostra</text>
-  <text class="s" x="704" y="248">a causa</text>
-
-  <g stroke-width="1.5" fill="none">
-    <path d="M750 100 L750 120 L130 120 L130 146" stroke="#5ee08a" marker-end="url(#g)"/>
-    <path d="M350 120 L350 146" stroke="#e8c46a" marker-end="url(#y)"/>
-    <path d="M570 120 L570 146" stroke="#e8c46a" marker-end="url(#y)"/>
-    <path d="M780 120 L780 146" stroke="#f08c7a" marker-end="url(#r)"/>
+  <g id="c-fim" data-graph-role="container" data-container-id="c-fim" data-semantic-role="boundary" data-graph-bounds="40,760,1280,920">
+  <rect data-graph-role="container" x="40.0" y="760.0" width="1240.0" height="160.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="784.0" class="section">NO FIM</text>
+    <rect id="c-fim-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="766" width="72.12" height="30" fill="none" stroke="none"/>
   </g>
-
-  <text class="s" x="30" y="290" style="fill:#e6ede8">200, 429 e 5xx voltam ao passo 2: a 200 com a próxima página, a 429 e a 5xx com o MESMO pedido.</text>
-  <text class="s" x="30" y="312" style="fill:#e6ede8">401 e 404 encerram o script com a causa na tela.</text>
-  <rect class="box" x="30" y="340" width="400" height="110" rx="10"/>
-  <text class="m" x="44" y="364">4 fim: contar</text>
-  <text class="s" x="44" y="388">únicos = len(hosts)</text>
-  <text class="s" x="44" y="406">críticos: versao.strip().lower()</text>
-  <text class="s" x="44" y="422">está na lista de versões críticas</text>
-  <text class="s" x="44" y="438">(lista também normalizada)</text>
-
-  <rect class="box" x="470" y="340" width="400" height="110" rx="10" style="stroke:#f08c7a"/>
-  <text class="m" x="484" y="364" style="fill:#f08c7a">o coletor que mente</text>
-  <text class="s" x="484" y="388">try: ... except Exception: pass</text>
-  <text class="s" x="484" y="406">engole o 429 e o 500 e segue:</text>
-  <text class="s" x="484" y="422">nenhum erro na tela, e o coletor</text>
-  <text class="s" x="484" y="438">ingênuo contou só 32 hosts.</text>
+  <path id="e-login-get" data-graph-role="edge" data-edge-id="e-login-get" data-source="login" data-target="get" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 570,202 L 680,202" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="e-get-status" data-graph-role="edge" data-edge-id="e-get-status" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 965,244 L 965,300" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e-200" data-graph-role="edge" data-edge-id="e-200" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 210,384 L 210,460" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e-429" data-graph-role="edge" data-edge-id="e-429" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 515,384 L 515,460" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="e-5xx" data-graph-role="edge" data-edge-id="e-5xx" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 820,384 L 820,460" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="e-4xx" data-graph-role="edge" data-edge-id="e-4xx" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1125,384 L 1125,460" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="e-a200" data-graph-role="edge" data-edge-id="e-a200" data-source="s200" data-target="a200" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 210,530 L 210,590" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e-a429" data-graph-role="edge" data-edge-id="e-a429" data-source="s429" data-target="a429" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 515,530 L 515,590" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="e-a5xx" data-graph-role="edge" data-edge-id="e-a5xx" data-source="s5xx" data-target="a5xx" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 820,530 L 820,590" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="e-a4xx" data-graph-role="edge" data-edge-id="e-a4xx" data-source="s4xx" data-target="a4xx" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1125,530 L 1125,590" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <g id="node-login" data-graph-role="node" data-node-id="login" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,160,570,244">
+  <rect x="70.0" y="160.0" width="500.0" height="84.0" rx="10.0" fill="#111827" stroke="#a855f7" stroke-width="1.8"/>
+  <text x="320.0" y="178.0" text-anchor="middle" class="node-type">passo 1</text>
+  <text data-text-role="title" data-full-text="POST /api/login" data-text-max-width="476.0" x="320.0" y="208.0" text-anchor="middle" class="node-title" font-size="18">POST /api/login</text>
+  <text data-text-role="subtitle" data-full-text="{&quot;usuario&quot;:..., &quot;senha&quot;:...} → {&quot;token&quot;: &quot;9f3c…&quot;}" data-text-max-width="476.0" x="320.0" y="230.0" text-anchor="middle" class="node-sub" font-size="12">{"usuario":..., "senha":...} → {"token": "9f3c…"}</text>
+  </g>
+  <g id="node-get" data-graph-role="node" data-node-id="get" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="680,160,1250,244">
+  <rect x="680.0" y="160.0" width="570.0" height="84.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8" filter="url(#glowBlue)"/>
+  <text x="965.0" y="178.0" text-anchor="middle" class="node-type">passo 2</text>
+  <text data-text-role="title" data-full-text="GET /api/hosts?pagina=N" data-text-max-width="546.0" x="965.0" y="208.0" text-anchor="middle" class="node-title" font-size="18">GET /api/hosts?pagina=N</text>
+  <text data-text-role="subtitle" data-full-text="Authorization: Bearer 9f3c… · User-Agent: coletor-0.7/1.0" data-text-max-width="546.0" x="965.0" y="230.0" text-anchor="middle" class="node-sub" font-size="12">Authorization: Bearer 9f3c… · User-Agent: coletor-0.7/1.0</text>
+  </g>
+  <g id="node-status" data-graph-role="node" data-node-id="status" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,300,1250,384">
+  <rect x="70.0" y="300.0" width="1180.0" height="84.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8" filter="url(#glowOrange)"/>
+  <text x="660.0" y="318.0" text-anchor="middle" class="node-type">passo 3</text>
+  <text data-text-role="title" data-full-text="status code?" data-text-max-width="1156.0" x="660.0" y="348.0" text-anchor="middle" class="node-title" font-size="18">status code?</text>
+  <text data-text-role="subtitle" data-full-text="a decisão que separa um coletor certo de um que mente" data-text-max-width="1156.0" x="660.0" y="370.0" text-anchor="middle" class="node-sub" font-size="12">a decisão que separa um coletor certo de um que mente</text>
+  </g>
+  <g id="node-s200" data-graph-role="node" data-node-id="s200" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,460,350,530">
+  <rect x="70.0" y="460.0" width="280.0" height="70.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="200" data-text-max-width="256.0" x="210.0" y="501.3" text-anchor="middle" class="node-title" font-size="18">200</text>
+  </g>
+  <g id="node-s429" data-graph-role="node" data-node-id="s429" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="375,460,655,530">
+  <rect x="375.0" y="460.0" width="280.0" height="70.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="429" data-text-max-width="256.0" x="515.0" y="495.0" text-anchor="middle" class="node-title" font-size="18">429</text>
+  <text data-text-role="subtitle" data-full-text="Too Many Requests" data-text-max-width="256.0" x="515.0" y="517.0" text-anchor="middle" class="node-sub" font-size="12">Too Many Requests</text>
+  </g>
+  <g id="node-s5xx" data-graph-role="node" data-node-id="s5xx" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="680,460,960,530">
+  <rect x="680.0" y="460.0" width="280.0" height="70.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="5xx" data-text-max-width="256.0" x="820.0" y="495.0" text-anchor="middle" class="node-title" font-size="18">5xx</text>
+  <text data-text-role="subtitle" data-full-text="falha do servidor" data-text-max-width="256.0" x="820.0" y="517.0" text-anchor="middle" class="node-sub" font-size="12">falha do servidor</text>
+  </g>
+  <g id="node-s4xx" data-graph-role="node" data-node-id="s4xx" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="985,460,1265,530">
+  <rect x="985.0" y="460.0" width="280.0" height="70.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="401 / 404" data-text-max-width="256.0" x="1125.0" y="495.0" text-anchor="middle" class="node-title" font-size="18">401 / 404</text>
+  <text data-text-role="subtitle" data-full-text="erro do script (token, caminho)" data-text-max-width="256.0" x="1125.0" y="517.0" text-anchor="middle" class="node-sub" font-size="12">erro do script (token, caminho)</text>
+  </g>
+  <g id="node-a200" data-graph-role="node" data-node-id="a200" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,590,350,694">
+  <rect x="70.0" y="590.0" width="280.0" height="104.0" rx="10.0" fill="#111827" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="210.0" y="608.0" text-anchor="middle" class="node-type">↩ passo 2 · até proxima ser null</text>
+  <text data-text-role="title" data-full-text="hosts[ip] = host" data-text-max-width="256.0" x="210.0" y="648.0" text-anchor="middle" class="node-title" font-size="18">hosts[ip] = host</text>
+  <text data-text-role="subtitle" data-full-text="dict: sem duplicados" data-text-max-width="256.0" x="210.0" y="670.0" text-anchor="middle" class="node-sub" font-size="12">dict: sem duplicados</text>
+  </g>
+  <g id="node-a429" data-graph-role="node" data-node-id="a429" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="375,590,655,694">
+  <rect x="375.0" y="590.0" width="280.0" height="104.0" rx="10.0" fill="#111827" stroke="#f59e0b" stroke-width="1.8"/>
+  <text x="515.0" y="608.0" text-anchor="middle" class="node-type">↩ passo 2 · mesmo pedido</text>
+  <text data-text-role="title" data-full-text="sleep(Retry-After)" data-text-max-width="256.0" x="515.0" y="648.0" text-anchor="middle" class="node-title" font-size="18">sleep(Retry-After)</text>
+  <text data-text-role="subtitle" data-full-text="e repete o pedido" data-text-max-width="256.0" x="515.0" y="670.0" text-anchor="middle" class="node-sub" font-size="12">e repete o pedido</text>
+  </g>
+  <g id="node-a5xx" data-graph-role="node" data-node-id="a5xx" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="680,590,960,694">
+  <rect x="680.0" y="590.0" width="280.0" height="104.0" rx="10.0" fill="#111827" stroke="#f59e0b" stroke-width="1.8"/>
+  <text x="820.0" y="608.0" text-anchor="middle" class="node-type">↩ passo 2 · mesmo pedido</text>
+  <text data-text-role="title" data-full-text="espera mais a cada vez" data-text-max-width="256.0" x="820.0" y="648.0" text-anchor="middle" class="node-title" font-size="18">espera mais a cada vez</text>
+  <text data-text-role="subtitle" data-full-text="no máximo 5 tentativas, depois erro" data-text-max-width="256.0" x="820.0" y="670.0" text-anchor="middle" class="node-sub" font-size="12">no máximo 5 tentativas, depois erro</text>
+  </g>
+  <g id="node-a4xx" data-graph-role="node" data-node-id="a4xx" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="985,590,1265,694">
+  <rect x="985.0" y="590.0" width="280.0" height="104.0" rx="10.0" fill="#111827" stroke="#fb7185" stroke-width="1.8"/>
+  <text x="1125.0" y="608.0" text-anchor="middle" class="node-type">■ encerra o script</text>
+  <text data-text-role="title" data-full-text="para e mostra a causa" data-text-max-width="256.0" x="1125.0" y="648.0" text-anchor="middle" class="node-title" font-size="18">para e mostra a causa</text>
+  </g>
+  <g id="node-fim" data-graph-role="node" data-node-id="fim" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,810,630,894">
+  <rect x="70.0" y="810.0" width="560.0" height="84.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="350.0" y="828.0" text-anchor="middle" class="node-type">passo 4 · contar</text>
+  <text data-text-role="title" data-full-text="únicos = len(hosts)" data-text-max-width="536.0" x="350.0" y="858.0" text-anchor="middle" class="node-title" font-size="18">únicos = len(hosts)</text>
+  <text data-text-role="subtitle" data-full-text="críticos: versao.strip().lower() na lista (também normalizada)" data-text-max-width="536.0" x="350.0" y="880.0" text-anchor="middle" class="node-sub" font-size="12">críticos: versao.strip().lower() na lista (também normalizada)</text>
+  </g>
+  <g id="node-mente" data-graph-role="node" data-node-id="mente" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="680,810,1250,894">
+  <rect x="680.0" y="810.0" width="570.0" height="84.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text x="965.0" y="828.0" text-anchor="middle" class="node-type">try: ... except Exception: pass</text>
+  <text data-text-role="title" data-full-text="o coletor que mente" data-text-max-width="546.0" x="965.0" y="858.0" text-anchor="middle" class="node-title" font-size="18">o coletor que mente</text>
+  <text data-text-role="subtitle" data-full-text="engole o 429 e o 500, sem erro na tela: contou só 32 hosts" data-text-max-width="546.0" x="965.0" y="880.0" text-anchor="middle" class="node-sub" font-size="12">engole o 429 e o 500, sem erro na tela: contou só 32 hosts</text>
+  </g>
+  <g id="e-login-get-label" data-graph-role="label" data-owner="e-login-get" data-graph-bounds="600.6,171,649.4,191">
+  <rect x="600.6" y="171.0" width="48.8" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="625.0" y="185.0" text-anchor="middle" class="arrow-label">token</text>
+  </g>
+  <g id="e-get-status-label" data-graph-role="label" data-owner="e-get-status" data-graph-bounds="892.32,258,962,278">
+  <rect x="892.32" y="258.0" width="69.67999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="927.16" y="272.0" text-anchor="middle" class="arrow-label">resposta</text>
+  </g>
 </svg>

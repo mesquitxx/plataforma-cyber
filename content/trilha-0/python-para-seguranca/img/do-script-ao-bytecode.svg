@@ -1,87 +1,193 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">Como o CPython roda um script, e nomes como etiquetas de objetos</title>
-  <desc id="d">Em cima, o caminho de um script: o arquivo sondar.py, que é texto, passa pelo compilador do CPython, que confere a sintaxe e gera bytecode; o bytecode pode ficar guardado em arquivos .pyc dentro de __pycache__; a máquina virtual executa uma instrução de bytecode por vez, como LOAD_NAME, BINARY_OP e STORE_NAME; quando o programa precisa de rede ou de arquivos, a máquina virtual pede ao kernel por system calls. Um erro de sintaxe para tudo antes de qualquer linha rodar; um erro de tipo só aparece quando aquela linha é executada. Embaixo, nomes e objetos: os nomes portas e outra apontam para o mesmo objeto lista [22, 80, 443, 8080]; por isso outra.append(8080) mudou também portas. O nome copia aponta para outro objeto, criado por list(portas).</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 13.5px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1340 900" width="1340" height="900" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c46a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="34" style="fill:#5ee08a">Do texto à execução (CPython)</text>
-
-  <rect class="box" x="30" y="54" width="150" height="86" rx="10"/>
-  <text class="m" x="44" y="78">sondar.py</text>
-  <text class="s" x="44" y="100">texto que você</text>
-  <text class="s" x="44" y="116">escreveu</text>
-
-  <rect class="box" x="206" y="54" width="170" height="86" rx="10"/>
-  <text class="m" x="220" y="78">compilador</text>
-  <text class="s" x="220" y="100">confere a sintaxe</text>
-  <text class="s" x="220" y="116">e gera bytecode</text>
-
-  <rect class="box" x="402" y="54" width="200" height="86" rx="10"/>
-  <text class="m" x="416" y="78">bytecode</text>
-  <text class="s" x="416" y="100">LOAD_NAME porta</text>
-  <text class="s" x="416" y="116">BINARY_OP (+)</text>
-  <text class="s" x="416" y="132">STORE_NAME total</text>
-
-  <rect class="box" x="628" y="54" width="242" height="86" rx="10" style="stroke:#5ee08a"/>
-  <text class="m" x="642" y="78" style="fill:#5ee08a">máquina virtual</text>
-  <text class="s" x="642" y="100">executa uma instrução</text>
-  <text class="s" x="642" y="116">por vez, em laço</text>
-
-  <g stroke="#5ee08a" stroke-width="1.5">
-    <line x1="180" y1="97" x2="202" y2="97" marker-end="url(#g)"/>
-    <line x1="376" y1="97" x2="398" y2="97" marker-end="url(#g)"/>
-    <line x1="602" y1="97" x2="624" y2="97" marker-end="url(#g)"/>
-    <line x1="749" y1="140" x2="749" y2="164" marker-end="url(#g)"/>
-    <line x1="502" y1="140" x2="502" y2="164" marker-end="url(#g)"/>
+  <rect data-graph-role="background" width="1340.0" height="900.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="670.0" y="56" text-anchor="middle" class="title">Como o CPython roda um script</text>
+  <text x="670.0" y="82" text-anchor="middle" class="subtitle">primeiro compila o arquivo inteiro, depois executa · e variáveis são etiquetas em objetos</text>
+  <g id="c-exec" data-graph-role="container" data-container-id="c-exec" data-semantic-role="boundary" data-graph-bounds="40,110,1300,450">
+  <rect data-graph-role="container" x="40.0" y="110.0" width="1260.0" height="340.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="134.0" class="section">1 · DO TEXTO À EXECUÇÃO</text>
+    <rect id="c-exec-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="116" width="189.12" height="30" fill="none" stroke="none"/>
   </g>
-  <rect class="box" x="402" y="168" width="200" height="50" rx="10"/>
-  <text class="s" x="416" y="190">cache: __pycache__/</text>
-  <text class="s" x="416" y="206">*.cpython-314.pyc</text>
-  <rect class="box" x="628" y="168" width="242" height="50" rx="10"/>
-  <text class="s" x="642" y="190">rede e arquivos: pede</text>
-  <text class="s" x="642" y="206">ao kernel (syscalls)</text>
-
-  <text class="s" x="30" y="174" style="fill:#e8c46a">SyntaxError: para ANTES de rodar</text>
-  <text class="s" x="30" y="192" style="fill:#e8c46a">qualquer linha.</text>
-  <text class="s" x="30" y="214" style="fill:#f08c7a">TypeError: só aparece quando</text>
-  <text class="s" x="30" y="232" style="fill:#f08c7a">AQUELA linha é executada.</text>
-
-  <line x1="30" y1="252" x2="870" y2="252" stroke="#34413b" stroke-width="1.5"/>
-  <text class="t" x="30" y="282" style="fill:#e8c46a">Nomes são etiquetas; o objeto mora em outro lugar</text>
-
-  <rect class="box" x="30" y="304" width="150" height="40" rx="8"/>
-  <text class="m" x="44" y="329">portas</text>
-  <rect class="box" x="30" y="356" width="150" height="40" rx="8"/>
-  <text class="m" x="44" y="381">outra</text>
-  <rect class="box" x="30" y="408" width="150" height="40" rx="8"/>
-  <text class="m" x="44" y="433">copia</text>
-
-  <rect class="box" x="330" y="318" width="300" height="64" rx="10" style="stroke:#e8c46a"/>
-  <text class="m" x="344" y="342">objeto list (id 0x7f…a0)</text>
-  <text class="s" x="344" y="364">[22, 80, 443, 8080]</text>
-  <rect class="box" x="330" y="398" width="300" height="56" rx="10"/>
-  <text class="m" x="344" y="420">objeto list (outro id)</text>
-  <text class="s" x="344" y="440">[22, 80, 443, 8080, 9999]</text>
-
-  <g stroke="#e8c46a" stroke-width="1.5" fill="none">
-    <path d="M180 324 L326 340" marker-end="url(#y)"/>
-    <path d="M180 376 L326 362" marker-end="url(#y)"/>
-    <path d="M180 428 L326 426" marker-end="url(#y)"/>
+  <g id="c-nomes" data-graph-role="container" data-container-id="c-nomes" data-semantic-role="boundary" data-graph-bounds="40,480,1300,840">
+  <rect data-graph-role="container" x="40.0" y="480.0" width="1260.0" height="360.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="504.0" class="section">2 · NOMES SÃO ETIQUETAS; O OBJETO MORA EM OUTRO LUGAR</text>
+    <rect id="c-nomes-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="486" width="403.62" height="30" fill="none" stroke="none"/>
   </g>
-  <text class="s" x="650" y="330">outra = portas</text>
-  <text class="s" x="650" y="348">não copia: cola outra</text>
-  <text class="s" x="650" y="366">etiqueta no MESMO objeto.</text>
-  <text class="s" x="650" y="390">outra.append(8080) muda</text>
-  <text class="s" x="650" y="408">o que portas enxerga.</text>
-  <text class="s" x="650" y="432">copia = list(portas)</text>
-  <text class="s" x="650" y="450">cria um objeto novo.</text>
+  <path id="e-outra" data-graph-role="edge" data-edge-id="e-outra" data-source="n-outra" data-target="o1" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 240,678 L 690,678 L 690,650" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="e-src-comp" data-graph-role="edge" data-edge-id="e-src-comp" data-source="src" data-target="comp" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 240,205 L 310,205" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="e-comp-bc" data-graph-role="edge" data-edge-id="e-comp-bc" data-source="comp" data-target="bc" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 490,205 L 570,205" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e-bc-vm" data-graph-role="edge" data-edge-id="e-bc-vm" data-source="bc" data-target="vm" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 860,205 L 940,205" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="e-vm-k" data-graph-role="edge" data-edge-id="e-vm-k" data-source="vm" data-target="kernel" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1120,205 L 1160,205" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e-comp-syn" data-graph-role="edge" data-edge-id="e-comp-syn" data-source="comp" data-target="syn" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 400,250 L 400,330" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)" stroke-dasharray="6,4"/>
+  <path id="e-bc-cache" data-graph-role="edge" data-edge-id="e-bc-cache" data-source="bc" data-target="cache" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 715,250 L 715,330" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path id="e-vm-typ" data-graph-role="edge" data-edge-id="e-vm-typ" data-source="vm" data-target="typ" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1030,250 L 1030,330" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)" stroke-dasharray="6,4"/>
+  <path id="e-portas" data-graph-role="edge" data-edge-id="e-portas" data-source="n-portas" data-target="o1" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 240,605 L 530,605" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="e-copia" data-graph-role="edge" data-edge-id="e-copia" data-source="n-copia" data-target="o2" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 240,778 L 530,778" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <g id="node-src" data-graph-role="node" data-node-id="src" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,160,240,250">
+  <rect x="70.0" y="160.0" width="170.0" height="90.0" rx="10.0" fill="#111827" stroke="#94a3b8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="sondar.py" data-text-max-width="146.0" x="155.0" y="205.0" text-anchor="middle" class="node-title" font-size="18">sondar.py</text>
+  <text data-text-role="subtitle" data-full-text="texto que você escreveu" data-text-max-width="146.0" x="155.0" y="227.0" text-anchor="middle" class="node-sub" font-size="10.66">texto que você escreveu</text>
+  </g>
+  <g id="node-comp" data-graph-role="node" data-node-id="comp" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="310,160,490,250">
+  <rect x="310.0" y="160.0" width="180.0" height="90.0" rx="10.0" fill="#111827" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="compilador" data-text-max-width="156.0" x="400.0" y="205.0" text-anchor="middle" class="node-title" font-size="18">compilador</text>
+  <text data-text-role="subtitle" data-full-text="confere a sintaxe" data-text-max-width="156.0" x="400.0" y="227.0" text-anchor="middle" class="node-sub" font-size="12">confere a sintaxe</text>
+  </g>
+  <g id="node-bc" data-graph-role="node" data-node-id="bc" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="570,160,860,250">
+  <rect x="570.0" y="160.0" width="290.0" height="90.0" rx="10.0" fill="#111827" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="bytecode" data-text-max-width="266.0" x="715.0" y="205.0" text-anchor="middle" class="node-title" font-size="18">bytecode</text>
+  <text data-text-role="subtitle" data-full-text="LOAD_NAME · BINARY_OP · STORE_NAME" data-text-max-width="266.0" x="715.0" y="227.0" text-anchor="middle" class="node-sub" font-size="12">LOAD_NAME · BINARY_OP · STORE_NAME</text>
+  </g>
+  <g id="node-vm" data-graph-role="node" data-node-id="vm" data-semantic-role="double_rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="940,160,1120,250">
+  <rect x="940.0" y="160.0" width="180.0" height="90.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="2.0" filter="url(#glowGreen)"/>
+  <rect x="946.0" y="166.0" width="168.0" height="78.0" rx="7.0" fill="none" stroke="#22c55e" stroke-width="1.2" opacity="0.65"/>
+  <text data-text-role="title" data-full-text="máquina virtual" data-text-max-width="148.0" x="1030.0" y="205.0" text-anchor="middle" class="node-title" font-size="17.79">máquina virtual</text>
+  <text data-text-role="subtitle" data-full-text="1 instrução por vez" data-text-max-width="148.0" x="1030.0" y="227.0" text-anchor="middle" class="node-sub" font-size="12">1 instrução por vez</text>
+  </g>
+  <g id="node-kernel" data-graph-role="node" data-node-id="kernel" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1160,160,1280,250">
+  <rect x="1160.0" y="160.0" width="120.0" height="90.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="kernel" data-text-max-width="96.0" x="1220.0" y="205.0" text-anchor="middle" class="node-title" font-size="18">kernel</text>
+  <text data-text-role="subtitle" data-full-text="syscalls" data-text-max-width="96.0" x="1220.0" y="227.0" text-anchor="middle" class="node-sub" font-size="12">syscalls</text>
+  </g>
+  <g id="node-syn" data-graph-role="node" data-node-id="syn" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="300,330,500,414">
+  <rect x="300.0" y="330.0" width="200.0" height="84.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="SyntaxError" data-text-max-width="176.0" x="400.0" y="372.0" text-anchor="middle" class="node-title" font-size="18">SyntaxError</text>
+  <text data-text-role="subtitle" data-full-text="para ANTES de rodar" data-text-max-width="176.0" x="400.0" y="394.0" text-anchor="middle" class="node-sub" font-size="12">para ANTES de rodar</text>
+  </g>
+  <g id="node-cache" data-graph-role="node" data-node-id="cache" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="600,330,830,414">
+  <rect x="600.0" y="330.0" width="230.0" height="84.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="__pycache__/" data-text-max-width="206.0" x="715.0" y="372.0" text-anchor="middle" class="node-title" font-size="18">__pycache__/</text>
+  <text data-text-role="subtitle" data-full-text="*.cpython-314.pyc" data-text-max-width="206.0" x="715.0" y="394.0" text-anchor="middle" class="node-sub" font-size="12">*.cpython-314.pyc</text>
+  </g>
+  <g id="node-typ" data-graph-role="node" data-node-id="typ" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="910,330,1150,414">
+  <rect x="910.0" y="330.0" width="240.0" height="84.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="TypeError" data-text-max-width="216.0" x="1030.0" y="372.0" text-anchor="middle" class="node-title" font-size="18">TypeError</text>
+  <text data-text-role="subtitle" data-full-text="só quando AQUELA linha roda" data-text-max-width="216.0" x="1030.0" y="394.0" text-anchor="middle" class="node-sub" font-size="12">só quando AQUELA linha roda</text>
+  </g>
+  <g id="node-n-portas" data-graph-role="node" data-node-id="n-portas" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,577,240,633">
+  <rect x="70.0" y="577.0" width="170.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="portas" data-text-max-width="146.0" x="155.0" y="605.0" text-anchor="middle" class="node-title" font-size="18">portas</text>
+  <text data-text-role="subtitle" data-full-text="nome" data-text-max-width="146.0" x="155.0" y="627.0" text-anchor="middle" class="node-sub" font-size="12">nome</text>
+  </g>
+  <g id="node-n-outra" data-graph-role="node" data-node-id="n-outra" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,650,240,706">
+  <rect x="70.0" y="650.0" width="170.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="outra" data-text-max-width="146.0" x="155.0" y="678.0" text-anchor="middle" class="node-title" font-size="18">outra</text>
+  <text data-text-role="subtitle" data-full-text="nome" data-text-max-width="146.0" x="155.0" y="700.0" text-anchor="middle" class="node-sub" font-size="12">nome</text>
+  </g>
+  <g id="node-n-copia" data-graph-role="node" data-node-id="n-copia" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,750,240,806">
+  <rect x="70.0" y="750.0" width="170.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="copia" data-text-max-width="146.0" x="155.0" y="778.0" text-anchor="middle" class="node-title" font-size="18">copia</text>
+  <text data-text-role="subtitle" data-full-text="nome" data-text-max-width="146.0" x="155.0" y="800.0" text-anchor="middle" class="node-sub" font-size="12">nome</text>
+  </g>
+  <g id="node-o1" data-graph-role="node" data-node-id="o1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="530,560,850,650">
+  <rect x="530.0" y="560.0" width="320.0" height="90.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8" filter="url(#glowOrange)"/>
+  <text data-text-role="title" data-full-text="objeto list (id 0x7f…a0)" data-text-max-width="296.0" x="690.0" y="605.0" text-anchor="middle" class="node-title" font-size="18">objeto list (id 0x7f…a0)</text>
+  <text data-text-role="subtitle" data-full-text="[22, 80, 443, 8080]" data-text-max-width="296.0" x="690.0" y="627.0" text-anchor="middle" class="node-sub" font-size="12">[22, 80, 443, 8080]</text>
+  </g>
+  <g id="node-o2" data-graph-role="node" data-node-id="o2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="530,740,850,816">
+  <rect x="530.0" y="740.0" width="320.0" height="76.0" rx="10.0" fill="#111827" stroke="#94a3b8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="objeto list (outro id)" data-text-max-width="296.0" x="690.0" y="778.0" text-anchor="middle" class="node-title" font-size="18">objeto list (outro id)</text>
+  <text data-text-role="subtitle" data-full-text="[22, 80, 443, 8080, 9999]" data-text-max-width="296.0" x="690.0" y="800.0" text-anchor="middle" class="node-sub" font-size="12">[22, 80, 443, 8080, 9999]</text>
+  </g>
+  <g id="node-note1" data-graph-role="node" data-node-id="note1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="900,560,1270,650">
+  <rect x="900.0" y="560.0" width="370.0" height="90.0" rx="10.0" fill="#0f172a" stroke="#334155" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="outra.append(8080)" data-text-max-width="346.0" x="1085.0" y="605.0" text-anchor="middle" class="node-title" font-size="18">outra.append(8080)</text>
+  <text data-text-role="subtitle" data-full-text="muda o que portas enxerga" data-text-max-width="346.0" x="1085.0" y="627.0" text-anchor="middle" class="node-sub" font-size="12">muda o que portas enxerga</text>
+  </g>
+  <g id="node-note2" data-graph-role="node" data-node-id="note2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="900,740,1270,816">
+  <rect x="900.0" y="740.0" width="370.0" height="76.0" rx="10.0" fill="#0f172a" stroke="#334155" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="copia = list(portas)" data-text-max-width="346.0" x="1085.0" y="778.0" text-anchor="middle" class="node-title" font-size="18">copia = list(portas)</text>
+  <text data-text-role="subtitle" data-full-text="cria um objeto novo" data-text-max-width="346.0" x="1085.0" y="800.0" text-anchor="middle" class="node-sub" font-size="12">cria um objeto novo</text>
+  </g>
+  <g id="e-src-comp-label" data-graph-role="label" data-owner="e-src-comp" data-graph-bounds="257,174,293,194">
+  <rect x="257.0" y="174.0" width="36.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="275.0" y="188.0" text-anchor="middle" class="arrow-label">lê</text>
+  </g>
+  <g id="e-comp-bc-label" data-graph-role="label" data-owner="e-comp-bc" data-graph-bounds="509.08,174,550.92,194">
+  <rect x="509.08" y="174.0" width="41.839999999999996" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="530.0" y="188.0" text-anchor="middle" class="arrow-label">gera</text>
+  </g>
+  <g id="e-bc-vm-label" data-graph-role="label" data-owner="e-bc-vm" data-graph-bounds="868.64,174,931.36,194">
+  <rect x="868.64" y="174.0" width="62.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="900.0" y="188.0" text-anchor="middle" class="arrow-label">executa</text>
+  </g>
+  <g id="e-comp-syn-label" data-graph-role="label" data-owner="e-comp-syn" data-graph-bounds="287,276,397,296">
+  <rect x="287.0" y="276.0" width="110.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="342.0" y="290.0" text-anchor="middle" class="arrow-label">erro de sintaxe</text>
+  </g>
+  <g id="e-bc-cache-label" data-graph-role="label" data-owner="e-bc-cache" data-graph-bounds="592.4,276,712,296">
+  <rect x="592.4" y="276.0" width="119.60000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="652.2" y="290.0" text-anchor="middle" class="arrow-label">guarda (módulos)</text>
+  </g>
+  <g id="e-vm-typ-label" data-graph-role="label" data-owner="e-vm-typ" data-graph-bounds="937.88,276,1027,296">
+  <rect x="937.88" y="276.0" width="89.12" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="982.44" y="290.0" text-anchor="middle" class="arrow-label">erro de tipo</text>
+  </g>
+  <g id="e-outra-label" data-graph-role="label" data-owner="e-outra" data-graph-bounds="411.92,647,518.08,667">
+  <rect x="411.92" y="647.0" width="106.16000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="465.0" y="661.0" text-anchor="middle" class="arrow-label">outra = portas</text>
+  </g>
+  <g id="e-copia-label" data-graph-role="label" data-owner="e-copia" data-graph-bounds="339.36,747,430.64,767">
+  <rect x="339.36" y="747.0" width="91.28" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="385.0" y="761.0" text-anchor="middle" class="arrow-label">list(portas)</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,862,706,878">
+  <text x="48.0" y="874.0" class="footnote">Duas etiquetas no MESMO objeto: mudar por uma muda o que a outra vê. list() cria outro objeto.</text>
+  </g>
 </svg>
