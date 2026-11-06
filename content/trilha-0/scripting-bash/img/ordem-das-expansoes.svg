@@ -1,75 +1,120 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="t d">
-  <title id="t">O caminho de uma linha até virar comando: a ordem das expansões do Bash</title>
-  <desc id="d">A linha é primeiro quebrada em palavras pelos espaços e operadores. Depois vêm, nesta ordem: expansão de chaves; um bloco feito da esquerda para a direita com til, parâmetros e variáveis, aritmética, substituição de comando e de processo; word splitting, que quebra de novo o resultado das expansões sem aspas usando o IFS; expansão de caminhos, que troca curingas por nomes de arquivo; e remoção das aspas. Só então o comando roda. Embaixo, um exemplo: com dir igual a logs, a linha ls $dir/*.log vira, depois da expansão de variável, ls logs/*.log, e depois da expansão de caminhos, três argumentos, um deles com espaço, acesso 2024-09.log. Já for f in $(ls logs/*.log) quebra esse nome em dois no word splitting, porque o resultado da substituição de comando não está entre aspas.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 13.5px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .c { font-size: 12.5px; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 740" width="1300" height="740" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="560" fill="#121815"/>
-  <text class="t" x="30" y="34">Do que você digita ao comando que roda: a ordem das expansões</text>
-
-  <!-- step boxes -->
-  <rect class="box" x="30" y="56" width="120" height="74" rx="10"/>
-  <text class="m" x="42" y="80">0 palavras</text>
-  <text class="s" x="42" y="100">quebra nos</text>
-  <text class="s" x="42" y="116">espaços e | ;</text>
-
-  <rect class="box" x="170" y="56" width="110" height="74" rx="10"/>
-  <text class="m" x="182" y="80">1 chaves</text>
-  <text class="s" x="182" y="100">{a,b} {1..5}</text>
-
-  <rect class="box" x="300" y="56" width="200" height="74" rx="10" style="stroke:#5cc8d8"/>
-  <text class="m" x="312" y="80" style="fill:#5cc8d8">2 esquerda→direita</text>
-  <text class="s" x="312" y="98">~  $var  ${var:-x}</text>
-  <text class="s" x="312" y="114">$(( ))  $( )  &lt;( )</text>
-
-  <rect class="box" x="520" y="56" width="120" height="74" rx="10" style="stroke:#f08c7a"/>
-  <text class="m" x="532" y="80" style="fill:#f08c7a">3 word</text>
-  <text class="m" x="532" y="96" style="fill:#f08c7a">  splitting</text>
-  <text class="s" x="532" y="116">usa o IFS</text>
-
-  <rect class="box" x="660" y="56" width="100" height="74" rx="10" style="stroke:#e8c25a"/>
-  <text class="m" x="672" y="80" style="fill:#e8c25a">4 globs</text>
-  <text class="s" x="672" y="100">* ? [ ]</text>
-  <text class="s" x="672" y="116">vira nomes</text>
-
-  <rect class="box" x="780" y="56" width="90" height="74" rx="10"/>
-  <text class="m" x="792" y="80">5 tira</text>
-  <text class="m" x="792" y="96">  aspas</text>
-  <text class="s" x="792" y="116">e executa</text>
-
-  <g stroke="#5ee08a" stroke-width="1.5">
-    <line x1="150" y1="93" x2="166" y2="93" marker-end="url(#g)"/>
-    <line x1="280" y1="93" x2="296" y2="93" marker-end="url(#g)"/>
-    <line x1="500" y1="93" x2="516" y2="93" marker-end="url(#g)"/>
-    <line x1="640" y1="93" x2="656" y2="93" marker-end="url(#g)"/>
-    <line x1="760" y1="93" x2="776" y2="93" marker-end="url(#g)"/>
+  <rect data-graph-role="background" width="1300.0" height="740.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">Fora das aspas, o Bash quebra o valor em pedaços</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">os passos 3 e 4 só agem no que NÃO está entre aspas duplas</text>
+  <g id="etapas" data-graph-role="container" data-container-id="etapas" data-semantic-role="boundary" data-graph-bounds="40,120,1260,340">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="1220.0" height="220.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">A LINHA PASSA POR ETAPAS FIXAS ANTES DE RODAR</text>
+    <rect id="etapas-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="339.66" height="30" fill="none" stroke="none"/>
   </g>
-  <text class="s" x="520" y="152" style="fill:#f08c7a">3 e 4 só agem no que NÃO está entre aspas duplas.</text>
-  <text class="s" x="520" y="168" style="fill:#f08c7a">É aqui que nascem os bugs de nome com espaço.</text>
-
-  <!-- example 1 -->
-  <text class="m" x="30" y="214">Exemplo A, com aspas onde importa:   dir=logs;  ls "$dir"/*.log</text>
-  <rect class="box" x="30" y="226" width="840" height="120" rx="10"/>
-  <text class="c" x="46" y="252">digitado        ls "$dir"/*.log</text>
-  <text class="c" x="46" y="274">passo 2         ls "logs"/*.log          <tspan class="s">a variável vira o valor (entre aspas: não será quebrado)</tspan></text>
-  <text class="c" x="46" y="296">passo 4         ls [logs/acesso 2024-09.log] [logs/acesso-2024-07.log] [logs/acesso-2024-08.log]</text>
-  <text class="c" x="46" y="318" style="fill:#5ee08a">resultado       3 argumentos; o nome com espaço continua UM argumento</text>
-  <text class="s" x="46" y="336">(o glob devolve cada nome inteiro: nomes de arquivo nunca passam pelo word splitting)</text>
-
-  <!-- example 2 -->
-  <text class="m" x="30" y="382">Exemplo B, o bug da Missão 3:   for f in $(ls logs/*.log)</text>
-  <rect class="box" x="30" y="394" width="840" height="140" rx="10" style="stroke:#f08c7a"/>
-  <text class="c" x="46" y="420">passo 2         o ls roda e devolve TEXTO, um nome por linha:</text>
-  <text class="s" x="46" y="440">                logs/acesso 2024-09.log⏎logs/acesso-2024-07.log⏎logs/acesso-2024-08.log</text>
-  <text class="c" x="46" y="464">passo 3         sem aspas, o texto é quebrado em espaços, tabs e quebras de linha (IFS):</text>
-  <text class="c" x="46" y="486" style="fill:#f08c7a">                [logs/acesso] [2024-09.log] [logs/acesso-2024-07.log] [logs/acesso-2024-08.log]</text>
-  <text class="c" x="46" y="512" style="fill:#f08c7a">resultado       4 "arquivos", dois inexistentes: grep: logs/acesso: No such file or directory</text>
+  <g id="ex" data-graph-role="container" data-container-id="ex" data-semantic-role="boundary" data-graph-bounds="40,400,1260,630">
+  <rect data-graph-role="container" x="40.0" y="400.0" width="1220.0" height="230.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="424.0" class="section">O MESMO ARQUIVO: LOGS/ACESSO 2024-09.LOG</text>
+    <rect id="ex-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="406" width="316.26" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="e1" data-graph-role="edge" data-edge-id="e1" data-source="troca" data-target="split" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 320,240 L 370,240" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e2" data-graph-role="edge" data-edge-id="e2" data-source="split" data-target="glob" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 630,240 L 680,240" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e3" data-graph-role="edge" data-edge-id="e3" data-source="glob" data-target="roda" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 940,240 L 990,240" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <g id="node-troca" data-graph-role="node" data-node-id="troca" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="etapas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,175,320,305">
+  <rect x="60.0" y="175.0" width="260.0" height="130.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="0–2 palavras e trocas" data-text-max-width="236.0" x="190.0" y="240.0" text-anchor="middle" class="node-title" font-size="18.0">0–2 palavras e trocas</text>
+  <text data-text-role="subtitle" data-full-text="{1..5}, $var, $( )" data-text-max-width="236.0" x="190.0" y="262.0" text-anchor="middle" class="node-sub" font-size="12">{1..5}, $var, $( )</text>
+  </g>
+  <g id="node-split" data-graph-role="node" data-node-id="split" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="etapas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="370,175,630,305">
+  <rect x="370.0" y="175.0" width="260.0" height="130.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.6" filter="url(#glowOrange)"/>
+  <text x="500.0" y="193.0" text-anchor="middle" class="node-type">SÓ FORA DAS ASPAS</text>
+  <text data-text-role="title" data-full-text="3 quebra nos espaços" data-text-max-width="236.0" x="500.0" y="246.0" text-anchor="middle" class="node-title" font-size="18.0">3 quebra nos espaços</text>
+  <text data-text-role="subtitle" data-full-text="word splitting, usa o IFS" data-text-max-width="236.0" x="500.0" y="268.0" text-anchor="middle" class="node-sub" font-size="12">word splitting, usa o IFS</text>
+  </g>
+  <g id="node-glob" data-graph-role="node" data-node-id="glob" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="etapas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="680,175,940,305">
+  <rect x="680.0" y="175.0" width="260.0" height="130.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
+  <text x="810.0" y="193.0" text-anchor="middle" class="node-type">SÓ FORA DAS ASPAS</text>
+  <text data-text-role="title" data-full-text="4 curingas" data-text-max-width="236.0" x="810.0" y="246.0" text-anchor="middle" class="node-title" font-size="18.0">4 curingas</text>
+  <text data-text-role="subtitle" data-full-text="*.log vira nomes de arquivo" data-text-max-width="236.0" x="810.0" y="268.0" text-anchor="middle" class="node-sub" font-size="12">*.log vira nomes de arquivo</text>
+  </g>
+  <g id="node-roda" data-graph-role="node" data-node-id="roda" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="etapas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="990,175,1240,305">
+  <rect x="990.0" y="175.0" width="250.0" height="130.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="5 tira as aspas" data-text-max-width="226.0" x="1115.0" y="240.0" text-anchor="middle" class="node-title" font-size="18.0">5 tira as aspas</text>
+  <text data-text-role="subtitle" data-full-text="e só então o comando roda" data-text-max-width="226.0" x="1115.0" y="262.0" text-anchor="middle" class="node-sub" font-size="12">e só então o comando roda</text>
+  </g>
+  <g id="node-a" data-graph-role="node" data-node-id="a" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="ex" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,460,610,600">
+  <rect x="70.0" y="460.0" width="540.0" height="140.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="340.0" y="478.0" text-anchor="middle" class="node-type">COM ASPAS</text>
+  <text data-text-role="title" data-full-text="ls &quot;$dir&quot;/*.log" data-text-max-width="516.0" x="340.0" y="536.0" text-anchor="middle" class="node-title" font-size="18.0">ls "$dir"/*.log</text>
+  <text data-text-role="subtitle" data-full-text="3 argumentos: o nome com espaço fica inteiro" data-text-max-width="516.0" x="340.0" y="558.0" text-anchor="middle" class="node-sub" font-size="12">3 argumentos: o nome com espaço fica inteiro</text>
+  </g>
+  <g id="node-b" data-graph-role="node" data-node-id="b" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="ex" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="690,460,1230,600">
+  <rect x="690.0" y="460.0" width="540.0" height="140.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.6"/>
+  <text x="960.0" y="478.0" text-anchor="middle" class="node-type">SEM ASPAS: O BUG DA MISSÃO 3</text>
+  <text data-text-role="title" data-full-text="for f in $(ls logs/*.log)" data-text-max-width="516.0" x="960.0" y="536.0" text-anchor="middle" class="node-title" font-size="18.0">for f in $(ls logs/*.log)</text>
+  <text data-text-role="subtitle" data-full-text="vira logs/acesso + 2024-09.log: 2 nomes que não existem" data-text-max-width="516.0" x="960.0" y="558.0" text-anchor="middle" class="node-sub" font-size="12">vira logs/acesso + 2024-09.log: 2 nomes que não existem</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="676" width="784.96" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="690.0" x2="70.0" y2="690.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="80.0" y="694.0" class="legend">etapa    </text>
+    <line data-graph-role="decoration" x1="160.07999999999998" y1="690.0" x2="190.07999999999998" y2="690.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="200.07999999999998" y="694.0" class="legend">só age fora das aspas    </text>
+    <line data-graph-role="decoration" x1="380.96" y1="690.0" x2="410.96" y2="690.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="420.96" y="694.0" class="legend">com aspas: nome inteiro    </text>
+    <line data-graph-role="decoration" x1="609.04" y1="690.0" x2="639.04" y2="690.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="649.04" y="694.0" class="legend">sem aspas: nome partido</text>
+  </g>
 </svg>

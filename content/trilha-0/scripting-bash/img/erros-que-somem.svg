@@ -1,69 +1,120 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t d">
-  <title id="t">Onde um erro aparece e onde ele some: código de saída, pipefail e set -e</title>
-  <desc id="d">Em cima, um pipeline de três comandos: grep, que falha com código 2; sort, que termina com 0; head, que termina com 0. Sem pipefail, o código do pipeline é o do último comando, 0, e o erro do grep some. Com pipefail, o código é o do último comando que falhou, 2. Embaixo, os lugares onde o set -e é ignorado e o script continua mesmo depois de uma falha: o teste de um if ou elif, o teste de um while ou until, qualquer comando de uma lista com &amp;&amp; ou || exceto o último, um comando precedido de exclamação, e qualquer comando de um pipeline exceto o último. Fora desses lugares, uma falha encerra o script na hora. No canto, o caso real da Missão 3: o script quebrado imprimiu dois erros do grep e mesmo assim devolveu código 0.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 13.5px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 760" width="1300" height="760" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="520" fill="#121815"/>
-  <text class="t" x="30" y="34">1. Num pipeline, de quem é o código de saída?</text>
-
-  <rect class="box" x="30" y="54" width="170" height="60" rx="10" style="stroke:#f08c7a"/>
-  <text class="m" x="44" y="78">grep ... arq</text>
-  <text class="s" x="44" y="98" style="fill:#f08c7a">falhou: código 2</text>
-  <rect class="box" x="230" y="54" width="150" height="60" rx="10"/>
-  <text class="m" x="244" y="78">sort</text>
-  <text class="s" x="244" y="98" style="fill:#5ee08a">código 0</text>
-  <rect class="box" x="410" y="54" width="150" height="60" rx="10"/>
-  <text class="m" x="424" y="78">head -n 1</text>
-  <text class="s" x="424" y="98" style="fill:#5ee08a">código 0</text>
-  <g stroke="#5ee08a" stroke-width="1.5">
-    <line x1="200" y1="84" x2="226" y2="84" marker-end="url(#g)"/>
-    <line x1="380" y1="84" x2="406" y2="84" marker-end="url(#g)"/>
+  <rect data-graph-role="background" width="1300.0" height="760.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">O comando falhou, mas o script diz "sucesso"</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">caso real da Missão 3: dois erros do grep na tela e código de saída 0</text>
+  <g id="pipe" data-graph-role="container" data-container-id="pipe" data-semantic-role="boundary" data-graph-bounds="40,120,1260,370">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="1220.0" height="250.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">1. NUM PIPELINE, DE QUEM É O CÓDIGO DE SAÍDA?</text>
+    <rect id="pipe-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="332.9" height="30" fill="none" stroke="none"/>
   </g>
-  <text class="s" x="200" y="74">|</text>
-  <text class="s" x="383" y="74">|</text>
-
-  <rect class="box" x="580" y="54" width="300" height="28" rx="6"/>
-  <text class="s" x="602" y="73">sem pipefail: $? = 0 <tspan style="fill:#f08c7a">(o erro some)</tspan></text>
-  <rect class="box" x="580" y="88" width="300" height="28" rx="6" style="stroke:#5ee08a"/>
-  <text class="s" x="602" y="107">com pipefail: $? = 2 <tspan style="fill:#5ee08a">(o erro aparece)</tspan></text>
-
-  <text class="s" x="30" y="146">Regra (man bash): sem pipefail, vale o código do ÚLTIMO comando. Com pipefail, vale o do último</text>
-  <text class="s" x="30" y="162">que falhou, ou 0 se todos deram certo. O stderr do grep ainda aparece na tela, mas quem testa $? não vê.</text>
-
-  <text class="t" x="30" y="206">2. Onde o set -e fica cego (o script segue mesmo após uma falha)</text>
-
-  <rect class="box" x="30" y="226" width="400" height="236" rx="10" style="stroke:#e8c25a"/>
-  <text class="m" x="46" y="252" style="fill:#e8c25a">set -e é ignorado em:</text>
-  <text class="s" x="46" y="278">if checar; then ...        o teste do if/elif</text>
-  <text class="s" x="46" y="302">while checar; do ...       o teste do while/until</text>
-  <text class="s" x="46" y="326">checar &amp;&amp; echo ok          tudo antes do último</text>
-  <text class="s" x="46" y="342">checar || echo falhou        &amp;&amp; ou || da lista</text>
-  <text class="s" x="46" y="366">! checar                   o que vem depois de !</text>
-  <text class="s" x="46" y="390">checar | sort              todo comando do pipeline</text>
-  <text class="s" x="46" y="406">                           menos o último</text>
-  <text class="s" x="46" y="434" style="fill:#f08c7a">e tudo o que roda DENTRO de uma função</text>
-  <text class="s" x="46" y="450" style="fill:#f08c7a">chamada num desses lugares</text>
-
-  <rect class="box" x="460" y="226" width="410" height="110" rx="10" style="stroke:#5ee08a"/>
-  <text class="m" x="476" y="252" style="fill:#5ee08a">no resto, falhou = parou</text>
-  <text class="s" x="476" y="276">checar                     sozinho na linha</text>
-  <text class="s" x="476" y="296">x=$(checar)                atribuição simples</text>
-  <text class="s" x="476" y="320">o script sai com o código da falha</text>
-
-  <rect class="box" x="460" y="352" width="410" height="110" rx="10" style="stroke:#f08c7a"/>
-  <text class="m" x="476" y="378" style="fill:#f08c7a">caso real: a Missão 3 quebrada</text>
-  <text class="s" x="476" y="400">grep: logs/acesso: No such file ...</text>
-  <text class="s" x="476" y="416">grep: 2024-09.log: No such file ...</text>
-  <text class="s" x="476" y="432">     90 198.51.100.140</text>
-  <text class="s" x="476" y="450">codigo: 0   ← dois erros e "sucesso"</text>
-
-  <text class="s" x="30" y="494">Conclusão: set -euo pipefail ajuda muito, mas não substitui testar o código de saída onde importa.</text>
+  <g id="sete" data-graph-role="container" data-container-id="sete" data-semantic-role="boundary" data-graph-bounds="40,420,1260,660">
+  <rect data-graph-role="container" x="40.0" y="420.0" width="1220.0" height="240.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="444.0" class="section">2. ONDE O SET -E AGE E ONDE ELE FICA CEGO</text>
+    <rect id="sete-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="426" width="303.78" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="e1" data-graph-role="edge" data-edge-id="e1" data-source="grep" data-target="resto" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 360,255 L 440,255" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e2" data-graph-role="edge" data-edge-id="e2" data-source="resto" data-target="sem" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 740,246 L 760.4,246 L 760.4,205 L 820,205" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="e3" data-graph-role="edge" data-edge-id="e3" data-source="resto" data-target="com" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 740,264 L 760.4,264 L 760.4,310 L 820,310" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-grep" data-graph-role="node" data-node-id="grep" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="pipe" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,180,360,330">
+  <rect x="60.0" y="180.0" width="300.0" height="150.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text x="210.0" y="198.0" text-anchor="middle" class="node-type">O ERRO ACONTECE</text>
+  <text data-text-role="title" data-full-text="grep ... arq" data-text-max-width="276.0" x="210.0" y="261.0" text-anchor="middle" class="node-title" font-size="18.0">grep ... arq</text>
+  <text data-text-role="subtitle" data-full-text="falhou: código 2" data-text-max-width="276.0" x="210.0" y="283.0" text-anchor="middle" class="node-sub" font-size="12">falhou: código 2</text>
+  </g>
+  <g id="node-resto" data-graph-role="node" data-node-id="resto" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="pipe" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="440,180,740,330">
+  <rect x="440.0" y="180.0" width="300.0" height="150.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="| sort | head" data-text-max-width="276.0" x="590.0" y="255.0" text-anchor="middle" class="node-title" font-size="18.0">| sort | head</text>
+  <text data-text-role="subtitle" data-full-text="deram certo: código 0" data-text-max-width="276.0" x="590.0" y="277.0" text-anchor="middle" class="node-sub" font-size="12">deram certo: código 0</text>
+  </g>
+  <g id="node-sem" data-graph-role="node" data-node-id="sem" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="pipe" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,160,1240,250">
+  <rect x="820.0" y="160.0" width="420.0" height="90.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.6"/>
+  <text data-text-role="title" data-full-text="sem pipefail: $? = 0" data-text-max-width="396.0" x="1030.0" y="205.0" text-anchor="middle" class="node-title" font-size="18.0">sem pipefail: $? = 0</text>
+  <text data-text-role="subtitle" data-full-text="vale o último comando: o erro some" data-text-max-width="396.0" x="1030.0" y="227.0" text-anchor="middle" class="node-sub" font-size="12">vale o último comando: o erro some</text>
+  </g>
+  <g id="node-com" data-graph-role="node" data-node-id="com" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="pipe" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,265,1240,355">
+  <rect x="820.0" y="265.0" width="420.0" height="90.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="com pipefail: $? = 2" data-text-max-width="396.0" x="1030.0" y="310.0" text-anchor="middle" class="node-title" font-size="18.0">com pipefail: $? = 2</text>
+  <text data-text-role="subtitle" data-full-text="vale o último que falhou: o erro aparece" data-text-max-width="396.0" x="1030.0" y="332.0" text-anchor="middle" class="node-sub" font-size="12">vale o último que falhou: o erro aparece</text>
+  </g>
+  <g id="node-cego" data-graph-role="node" data-node-id="cego" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="sete" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,475,760,635">
+  <rect x="60.0" y="475.0" width="700.0" height="160.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.6"/>
+  <text x="410.0" y="493.0" text-anchor="middle" class="node-type">PONTO CEGO</text>
+  <text data-text-role="title" data-full-text="set -e ignora a falha (o script segue)" data-text-max-width="676.0" x="410.0" y="561.0" text-anchor="middle" class="node-title" font-size="18.0">set -e ignora a falha (o script segue)</text>
+  <text data-text-role="subtitle" data-full-text="teste de if/while · antes do último em &amp;&amp; || · após ! · meio do pipe · funções aí" data-text-max-width="676.0" x="410.0" y="583.0" text-anchor="middle" class="node-sub" font-size="12">teste de if/while · antes do último em &amp;&amp; || · após ! · meio do pipe · funções aí</text>
+  </g>
+  <g id="node-para" data-graph-role="node" data-node-id="para" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="sete" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="810,475,1240,635">
+  <rect x="810.0" y="475.0" width="430.0" height="160.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="set -e para o script" data-text-max-width="406.0" x="1025.0" y="555.0" text-anchor="middle" class="node-title" font-size="18.0">set -e para o script</text>
+  <text data-text-role="subtitle" data-full-text="comando sozinho na linha ou x=$(cmd)" data-text-max-width="406.0" x="1025.0" y="577.0" text-anchor="middle" class="node-sub" font-size="12">comando sozinho na linha ou x=$(cmd)</text>
+  </g>
+  <g id="e1-label" data-graph-role="label" data-owner="e1" data-graph-bounds="380.64,224,419.36,244">
+  <rect x="380.64" y="224.0" width="38.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="400.0" y="238.0" text-anchor="middle" class="arrow-label">pipe</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="696" width="733.28" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="710.0" x2="70.0" y2="710.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="80.0" y="714.0" class="legend">o erro some ou é ignorado    </text>
+    <line data-graph-role="decoration" x1="282.96" y1="710.0" x2="312.96" y2="710.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="322.96" y="714.0" class="legend">o erro aparece ou para o script    </text>
+    <line data-graph-role="decoration" x1="565.04" y1="710.0" x2="595.04" y2="710.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="605.04" y="714.0" class="legend">comando que deu certo</text>
+  </g>
 </svg>
