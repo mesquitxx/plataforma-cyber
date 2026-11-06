@@ -146,3 +146,13 @@ Antes de considerar um módulo pronto, o autor confere item por item. Se algum n
 - [ ] Há pelo menos um diagrama próprio (SVG ou Mermaid) onde ele ajuda, com a frase de explicação embaixo.
 - [ ] O texto deixa claro o limite ético: só em ambiente autorizado.
 - [ ] Teste final: alguém que nunca viu o assunto entende a vulnerabilidade, explora no lab e sabe defender, só com este módulo.
+
+## Diagramas e imagens
+
+- Gerar todos os diagramas com a skill **fireworks-tech-graph**, estilo 1 (Flat Icon).
+- Rótulos em português; termos técnicos podem ficar em inglês.
+- Exportar como PNG (largura 1440) na pasta do próprio módulo e referenciar com `![descrição](arquivo.png)`.
+- **Uma ideia por diagrama**, no máximo ~8 elementos. Se passar disso, dividir em visão geral + detalhe.
+- Para fluxos de ataque, protocolos e requisições, preferir **diagrama de sequência** com passos numerados.
+- Logo abaixo de cada imagem, uma legenda curta dizendo **o que o aluno deve observar**.
+- Rodar `fireworks.py check` em cada SVG antes de exportar; não publicar diagrama com texto cortado.
