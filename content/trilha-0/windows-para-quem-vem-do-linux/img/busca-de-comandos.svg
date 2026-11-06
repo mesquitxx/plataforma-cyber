@@ -1,51 +1,133 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
-  <title id="t">Onde o cmd e o PowerShell procuram um comando digitado sem caminho</title>
-  <desc id="d">À esquerda, o cmd: primeiro os comandos internos, como dir e echo; depois a pasta atual; depois cada pasta do PATH, da esquerda para a direita. Em cada pasta, tenta o nome com as extensões listadas na variável PATHEXT (.COM, .EXE, .BAT, .CMD e outras, no Windows 11). Por isso um whoami.bat na pasta atual vence o C:\Windows\System32\whoami.exe. À direita, o PowerShell: primeiro alias, depois função, depois cmdlet, e por último os programas externos, procurados só nas pastas do PATH. A pasta atual não entra: para rodar algo dali é preciso digitar .\nome. Embaixo, o Bash, para comparar: alias, função, builtin, tabela hash e PATH, sem a pasta atual a menos que ela esteja no PATH.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12.5px; fill: #c9d6ce; }
-    .k { font-size: 12px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-    .hot { fill: #2a1d1b; stroke: #f08c7a; stroke-width: 1.8; }
-    .ln { stroke: #9fb0a6; stroke-width: 1.6; fill: none; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 770" width="1260" height="770" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9fb0a6"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #e2e8f0; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="430" fill="#121815"/>
-  <text class="t" x="30" y="36">Você digitou: whoami</text>
-
-  <text class="m" x="30" y="70">cmd.exe</text>
-  <rect class="box" x="30" y="82" width="400" height="40" rx="6"/>
-  <text class="s" x="46" y="107">1. comando interno? (dir, echo, set, cd)</text>
-  <path class="ln" d="M230 122 L230 136" marker-end="url(#a)"/>
-  <rect class="hot" x="30" y="138" width="400" height="40" rx="6"/>
-  <text class="s" x="46" y="163" style="fill:#f08c7a">2. a PASTA ATUAL (.)</text>
-  <path class="ln" d="M230 178 L230 192" marker-end="url(#a)"/>
-  <rect class="box" x="30" y="194" width="400" height="40" rx="6"/>
-  <text class="s" x="46" y="219">3. cada pasta do %PATH%, em ordem</text>
-  <text class="k" x="30" y="256">em cada pasta: nome + extensões do %PATHEXT%</text>
-  <text class="k" x="30" y="274">(.COM;.EXE;.BAT;.CMD;.VBS;... no Windows 11)</text>
-  <text class="s" x="30" y="300">whoami.bat na pasta atual VENCE</text>
-  <text class="s" x="30" y="318">C:\Windows\System32\whoami.exe</text>
-
-  <text class="m" x="470" y="70">PowerShell</text>
-  <rect class="box" x="470" y="82" width="400" height="40" rx="6"/>
-  <text class="s" x="486" y="107">1. alias   (ls, cat, sc, curl...)</text>
-  <path class="ln" d="M670 122 L670 136" marker-end="url(#a)"/>
-  <rect class="box" x="470" y="138" width="400" height="40" rx="6"/>
-  <text class="s" x="486" y="163">2. função   3. cmdlet</text>
-  <path class="ln" d="M670 178 L670 192" marker-end="url(#a)"/>
-  <rect class="box" x="470" y="194" width="400" height="40" rx="6"/>
-  <text class="s" x="486" y="219">4. programa externo, só no $env:PATH</text>
-  <text class="k" x="470" y="256">a pasta atual NÃO entra na busca:</text>
-  <text class="k" x="470" y="274">para rodar algo dali, digite .\nome</text>
-  <text class="s" x="470" y="300">whoami → C:\Windows\system32\whoami.exe</text>
-  <text class="s" x="470" y="318">ferramenta → "não é reconhecido"</text>
-
-  <rect class="box" x="30" y="346" width="840" height="60" rx="8"/>
-  <text class="m" x="46" y="370">Bash, para comparar (módulo 0.4)</text>
-  <text class="s" x="46" y="392">alias → função → builtin → tabela hash → $PATH   (a pasta atual só se estiver no PATH)</text>
+  <rect data-graph-role="background" width="1260.0" height="770.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="630.0" y="56" text-anchor="middle" class="title">No cmd, a pasta atual vem antes do PATH: o whoami falso vence</text>
+  <text x="630.0" y="82" text-anchor="middle" class="subtitle">você digitou whoami, e na pasta atual havia um whoami.bat</text>
+  <g id="atk" data-graph-role="container" data-container-id="atk" data-semantic-role="boundary" data-graph-bounds="40,120,1220,480">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="1180.0" height="360.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">CMD.EXE: A ORDEM DA BUSCA</text>
+    <rect id="atk-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="206.54" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="def" data-graph-role="container" data-container-id="def" data-semantic-role="boundary" data-graph-bounds="40,520,1220,680">
+  <rect data-graph-role="container" x="40.0" y="520.0" width="1180.0" height="160.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="544.0" class="section">À PARTE: O POWERSHELL NÃO OLHA A PASTA ATUAL</text>
+    <rect id="def-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="526" width="338.62" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="a1" data-graph-role="edge" data-edge-id="a1" data-source="s1" data-target="s2" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 360,230 L 450,230" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="a2" data-graph-role="edge" data-edge-id="a2" data-source="s2" data-target="s3" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 750,230 L 860,230" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="a3" data-graph-role="edge" data-edge-id="a3" data-source="s2" data-target="ganho" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 600,290 L 600,340" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="a4" data-graph-role="edge" data-edge-id="a4" data-source="ps" data-target="res" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 550,610 L 690,610" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-s1" data-graph-role="node" data-node-id="s1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="atk" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,170,360,290">
+  <rect x="70.0" y="170.0" width="290.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="215.0" y="188.0" text-anchor="middle" class="node-type">1º</text>
+  <text data-text-role="title" data-full-text="comando interno?" data-text-max-width="266.0" x="215.0" y="236.0" text-anchor="middle" class="node-title" font-size="17.0">comando interno?</text>
+  <text data-text-role="subtitle" data-full-text="dir, echo, cd... não é" data-text-max-width="266.0" x="215.0" y="258.0" text-anchor="middle" class="node-sub" font-size="12">dir, echo, cd... não é</text>
+  </g>
+  <g id="node-s2" data-graph-role="node" data-node-id="s2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="atk" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="450,170,750,290">
+  <rect x="450.0" y="170.0" width="300.0" height="120.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.8" filter="url(#glowOrange)"/>
+  <text x="600.0" y="188.0" text-anchor="middle" class="node-type">2º · ONDE ESTÁ A FALHA</text>
+  <text data-text-role="title" data-full-text="a PASTA ATUAL" data-text-max-width="276.0" x="600.0" y="236.0" text-anchor="middle" class="node-title" font-size="19.0">a PASTA ATUAL</text>
+  <text data-text-role="subtitle" data-full-text="acha whoami.bat (o falso)" data-text-max-width="276.0" x="600.0" y="258.0" text-anchor="middle" class="node-sub" font-size="12">acha whoami.bat (o falso)</text>
+  </g>
+  <g id="node-s3" data-graph-role="node" data-node-id="s3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="atk" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="860,170,1160,290">
+  <rect x="860.0" y="170.0" width="300.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="1010.0" y="188.0" text-anchor="middle" class="node-type">3º · SÓ SE NÃO ACHAR ANTES</text>
+  <text data-text-role="title" data-full-text="pastas do PATH" data-text-max-width="276.0" x="1010.0" y="236.0" text-anchor="middle" class="node-title" font-size="17.0">pastas do PATH</text>
+  <text data-text-role="subtitle" data-full-text="System32\whoami.exe fica de fora" data-text-max-width="276.0" x="1010.0" y="258.0" text-anchor="middle" class="node-sub" font-size="12">System32\whoami.exe fica de fora</text>
+  </g>
+  <g id="node-ganho" data-graph-role="node" data-node-id="ganho" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="atk" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="450,340,750,460">
+  <rect x="450.0" y="340.0" width="300.0" height="120.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.8"/>
+  <text x="600.0" y="358.0" text-anchor="middle" class="node-type">O ATACANTE GANHA</text>
+  <text data-text-role="title" data-full-text="o código dele roda" data-text-max-width="276.0" x="600.0" y="406.0" text-anchor="middle" class="node-title" font-size="18.0">o código dele roda</text>
+  <text data-text-role="subtitle" data-full-text="no lugar do whoami, com a sua conta" data-text-max-width="276.0" x="600.0" y="428.0" text-anchor="middle" class="node-sub" font-size="12">no lugar do whoami, com a sua conta</text>
+  </g>
+  <g id="node-ps" data-graph-role="node" data-node-id="ps" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="def" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,565,550,655">
+  <rect x="70.0" y="565.0" width="480.0" height="90.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="310.0" y="583.0" text-anchor="middle" class="node-type">ORDEM DO POWERSHELL</text>
+  <text data-text-role="title" data-full-text="alias → função → cmdlet → PATH" data-text-max-width="456.0" x="310.0" y="616.0" text-anchor="middle" class="node-title" font-size="15.0">alias → função → cmdlet → PATH</text>
+  <text data-text-role="subtitle" data-full-text="a pasta atual não entra" data-text-max-width="456.0" x="310.0" y="638.0" text-anchor="middle" class="node-sub" font-size="12">a pasta atual não entra</text>
+  </g>
+  <g id="node-res" data-graph-role="node" data-node-id="res" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="def" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="690,565,1170,655">
+  <rect x="690.0" y="565.0" width="480.0" height="90.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="930.0" y="583.0" text-anchor="middle" class="node-type">RESULTADO</text>
+  <text data-text-role="title" data-full-text="acha o whoami.exe de verdade" data-text-max-width="456.0" x="930.0" y="616.0" text-anchor="middle" class="node-title" font-size="15.0">acha o whoami.exe de verdade</text>
+  <text data-text-role="subtitle" data-full-text="para rodar o da pasta, só digitando .\nome" data-text-max-width="456.0" x="930.0" y="638.0" text-anchor="middle" class="node-sub" font-size="12">para rodar o da pasta, só digitando .\nome</text>
+  </g>
+  <g id="a1-label" data-graph-role="label" data-owner="a1" data-graph-bounds="387,199,423,219">
+  <rect x="387.0" y="199.0" width="36.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="405.0" y="213.0" text-anchor="middle" class="arrow-label">não</text>
+  </g>
+  <g id="a2-label" data-graph-role="label" data-owner="a2" data-graph-bounds="768,199,842,219">
+  <rect x="768.0" y="199.0" width="74.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="805.0" y="213.0" text-anchor="middle" class="arrow-label">não achou</text>
+  </g>
+  <g id="a3-label" data-graph-role="label" data-owner="a3" data-graph-bounds="548.2,301,597,321">
+  <rect x="548.2" y="301.0" width="48.8" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="572.6" y="315.0" text-anchor="middle" class="arrow-label">achou</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="711" width="648.32" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="725.0" x2="70.0" y2="725.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="80.0" y="729.0" class="legend">onde está a falha        </text>
+    <line data-graph-role="decoration" x1="249.83999999999997" y1="725.0" x2="279.84" y2="725.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="289.84" y="729.0" class="legend">o que o atacante ganha        </text>
+    <line data-graph-role="decoration" x1="494.9599999999999" y1="725.0" x2="524.9599999999999" y2="725.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="534.9599999999999" y="729.0" class="legend">defesa (PowerShell)</text>
+  </g>
 </svg>

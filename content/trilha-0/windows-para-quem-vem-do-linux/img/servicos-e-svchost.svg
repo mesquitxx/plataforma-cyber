@@ -1,72 +1,127 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">Como os serviços do Windows são iniciados</title>
-  <desc id="d">No topo, o registro: cada serviço é uma chave em HKLM\SYSTEM\CurrentControlSet\Services, com os valores ImagePath (o que executar), ObjectName (a conta), Start (quando iniciar: 2 automático, 3 manual, 4 desativado) e Type (processo próprio ou compartilhado). No meio, o Service Control Manager, o processo services.exe, que lê essas chaves no boot e inicia os serviços automáticos. Embaixo, três exemplos reais. O Spooler de Impressão roda num processo próprio, spoolsv.exe, como LocalSystem. O Agendador de Tarefas roda dentro de um svchost.exe -k netsvcs, como LocalSystem. O Cliente DNS roda num svchost.exe -k NetworkService, como NetworkService. À direita, as contas de serviço da mais para a menos poderosa: LocalSystem (o SYSTEM, poder total), NetworkService (pouco poder local, mas se apresenta na rede como o computador) e LocalService (pouco poder local, anônimo na rede).</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12.5px; fill: #c9d6ce; }
-    .k { font-size: 12px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-    .scm { fill: #1b2a21; stroke: #5ee08a; stroke-width: 1.8; }
-    .hot { fill: #2a1d1b; stroke: #f08c7a; stroke-width: 1.6; }
-    .ln { stroke: #9fb0a6; stroke-width: 1.6; fill: none; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 680" width="1440" height="680" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9fb0a6"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #e2e8f0; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="36">Do registro ao processo: o caminho de um serviço</text>
-
-  <rect class="box" x="30" y="54" width="580" height="96" rx="10"/>
-  <text class="m" x="46" y="78">HKLM\SYSTEM\CurrentControlSet\Services\&lt;nome&gt;</text>
-  <text class="s" x="46" y="100">ImagePath  = o que executar (com ou sem aspas!)</text>
-  <text class="s" x="46" y="118">ObjectName = a conta    Start = 2 auto, 3 manual, 4 off</text>
-  <text class="s" x="46" y="136">Type = 0x10 processo próprio, 0x20 compartilhado</text>
-
-  <path class="ln" d="M320 150 L320 176" marker-end="url(#a)"/>
-  <rect class="scm" x="130" y="178" width="380" height="56" rx="10"/>
-  <text class="m" x="146" y="202" style="fill:#5ee08a">Service Control Manager</text>
-  <text class="s" x="146" y="222">services.exe: lê as chaves e inicia</text>
-
-  <path class="ln" d="M220 234 L110 276" marker-end="url(#a)"/>
-  <path class="ln" d="M320 234 L320 276" marker-end="url(#a)"/>
-  <path class="ln" d="M420 234 L520 276" marker-end="url(#a)"/>
-
-  <rect class="hot" x="30" y="278" width="180" height="96" rx="10"/>
-  <text class="m" x="44" y="302">spoolsv.exe</text>
-  <text class="s" x="44" y="324">Spooler</text>
-  <text class="k" x="44" y="344">processo próprio</text>
-  <text class="k" x="44" y="362">LocalSystem</text>
-
-  <rect class="hot" x="226" y="278" width="190" height="96" rx="10"/>
-  <text class="m" x="240" y="302">svchost.exe</text>
-  <text class="s" x="240" y="324">-k netsvcs -p</text>
-  <text class="k" x="240" y="344">Schedule, BITS...</text>
-  <text class="k" x="240" y="362">LocalSystem</text>
-
-  <rect class="box" x="432" y="278" width="190" height="96" rx="10"/>
-  <text class="m" x="446" y="302">svchost.exe</text>
-  <text class="s" x="446" y="324">-k NetworkService -p</text>
-  <text class="k" x="446" y="344">Dnscache</text>
-  <text class="k" x="446" y="362">NetworkService</text>
-
-  <rect class="box" x="650" y="54" width="220" height="320" rx="10"/>
-  <text class="m" x="666" y="78">Contas de serviço</text>
-  <text class="s" x="666" y="106" style="fill:#f08c7a">LocalSystem</text>
-  <text class="k" x="666" y="124">= SYSTEM, S-1-5-18</text>
-  <text class="k" x="666" y="142">poder total na máquina</text>
-  <text class="s" x="666" y="176">NetworkService</text>
-  <text class="k" x="666" y="194">S-1-5-20, pouco poder</text>
-  <text class="k" x="666" y="212">local; na rede, aparece</text>
-  <text class="k" x="666" y="230">como o computador</text>
-  <text class="s" x="666" y="264">LocalService</text>
-  <text class="k" x="666" y="282">S-1-5-19, pouco poder</text>
-  <text class="k" x="666" y="300">local; anônimo na rede</text>
-  <text class="k" x="666" y="340">menos poder = menos</text>
-  <text class="k" x="666" y="358">estrago se for invadido</text>
-
-  <rect class="box" x="30" y="392" width="840" height="58" rx="10"/>
-  <text class="s" x="46" y="416">Vermelho: rodam como LocalSystem. Uma falha num serviço desses entrega o SYSTEM inteiro</text>
-  <text class="s" x="46" y="436">(é o que aconteceu com o Spooler no PrintNightmare, seção 4).</text>
+  <rect data-graph-role="background" width="1440.0" height="680.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="720.0" y="56" text-anchor="middle" class="title">O SCM lê cada serviço no registro e o inicia com a conta escolhida</text>
+  <text x="720.0" y="82" text-anchor="middle" class="subtitle">a conta decide o poder: um serviço que roda como SYSTEM pode tudo na máquina</text>
+  <g id="sys" data-graph-role="container" data-container-id="sys" data-semantic-role="boundary" data-graph-bounds="385,350,1105,565">
+  <rect data-graph-role="container" x="385.0" y="350.0" width="720.0" height="215.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#fb7185" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="403.0" y="374.0" class="section">RODAM COMO SYSTEM</text>
+    <rect id="sys-header" data-graph-role="reserved" data-reserved-kind="container-header" x="393" y="356" width="161.82" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="e3" data-graph-role="edge" data-edge-id="e3" data-source="scm" data-target="netsvcs" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 710,200 L 940,200 L 940,395" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="e2a" data-graph-role="edge" data-edge-id="e2a" data-source="scm" data-target="netsvc" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 571,270 L 571,310 L 190,310 L 190,395" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e1" data-graph-role="edge" data-edge-id="e1" data-source="reg" data-target="scm" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 330,200 L 450,200" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e5" data-graph-role="edge" data-edge-id="e5" data-source="netsvcs" data-target="alvo" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1090,470 L 1150,470" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="e2b" data-graph-role="edge" data-edge-id="e2b" data-source="scm" data-target="spool" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 589,270 L 589,395" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <g id="node-reg" data-graph-role="node" data-node-id="reg" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,130,330,270">
+  <rect x="40.0" y="130.0" width="290.0" height="140.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="185.0" y="148.0" text-anchor="middle" class="node-type">NO REGISTRO, UMA CHAVE CADA</text>
+  <text data-text-role="title" data-full-text="HKLM\...\Services\&lt;nome&gt;" data-text-max-width="266.0" x="185.0" y="206.0" text-anchor="middle" class="node-title" font-size="17.0">HKLM\...\Services\&lt;nome&gt;</text>
+  <text data-text-role="subtitle" data-full-text="o que roda, com qual conta, quando" data-text-max-width="266.0" x="185.0" y="228.0" text-anchor="middle" class="node-sub" font-size="12">o que roda, com qual conta, quando</text>
+  </g>
+  <g id="node-scm" data-graph-role="node" data-node-id="scm" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="450,130,710,270">
+  <rect x="450.0" y="130.0" width="260.0" height="140.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="580.0" y="148.0" text-anchor="middle" class="node-type">SERVICE CONTROL MANAGER</text>
+  <text data-text-role="title" data-full-text="services.exe" data-text-max-width="236.0" x="580.0" y="206.0" text-anchor="middle" class="node-title" font-size="20.0">services.exe</text>
+  <text data-text-role="subtitle" data-full-text="lê as chaves e inicia" data-text-max-width="236.0" x="580.0" y="228.0" text-anchor="middle" class="node-sub" font-size="12">lê as chaves e inicia</text>
+  </g>
+  <g id="node-netsvc" data-graph-role="node" data-node-id="netsvc" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,395,340,545">
+  <rect x="40.0" y="395.0" width="300.0" height="150.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="190.0" y="413.0" text-anchor="middle" class="node-type">VÁRIOS SERVIÇOS NUM PROCESSO</text>
+  <text data-text-role="title" data-full-text="svchost -k NetworkService" data-text-max-width="276.0" x="190.0" y="476.0" text-anchor="middle" class="node-title" font-size="16.0">svchost -k NetworkService</text>
+  <text data-text-role="subtitle" data-full-text="Cliente DNS" data-text-max-width="276.0" x="190.0" y="498.0" text-anchor="middle" class="node-sub" font-size="12">Cliente DNS</text>
+  <rect x="58.0" y="525.0" width="186" height="16" rx="3" fill="#052e16" stroke="#22c55e" stroke-width="1"/>
+  <text x="151.0" y="536.5" text-anchor="middle" font-size="11" font-weight="500" fill="#22c55e">conta: NetworkService</text>
+  </g>
+  <g id="node-spool" data-graph-role="node" data-node-id="spool" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="sys" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="439,395,739,545">
+  <rect x="439.0" y="395.0" width="300.0" height="150.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text x="589.0" y="413.0" text-anchor="middle" class="node-type">PROCESSO PRÓPRIO</text>
+  <text data-text-role="title" data-full-text="spoolsv.exe" data-text-max-width="276.0" x="589.0" y="476.0" text-anchor="middle" class="node-title" font-size="18.0">spoolsv.exe</text>
+  <text data-text-role="subtitle" data-full-text="Spooler de Impressão" data-text-max-width="276.0" x="589.0" y="498.0" text-anchor="middle" class="node-sub" font-size="12">Spooler de Impressão</text>
+  <rect x="457.0" y="525.0" width="234" height="16" rx="3" fill="#2a0f16" stroke="#fb7185" stroke-width="1"/>
+  <text x="574.0" y="536.5" text-anchor="middle" font-size="11" font-weight="500" fill="#fb7185">conta: LocalSystem = SYSTEM</text>
+  </g>
+  <g id="node-netsvcs" data-graph-role="node" data-node-id="netsvcs" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="sys" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="790,395,1090,545">
+  <rect x="790.0" y="395.0" width="300.0" height="150.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text x="940.0" y="413.0" text-anchor="middle" class="node-type">VÁRIOS SERVIÇOS NUM PROCESSO</text>
+  <text data-text-role="title" data-full-text="svchost -k netsvcs" data-text-max-width="276.0" x="940.0" y="476.0" text-anchor="middle" class="node-title" font-size="18.0">svchost -k netsvcs</text>
+  <text data-text-role="subtitle" data-full-text="Agendador de Tarefas e outros" data-text-max-width="276.0" x="940.0" y="498.0" text-anchor="middle" class="node-sub" font-size="12">Agendador de Tarefas e outros</text>
+  <rect x="808.0" y="525.0" width="234" height="16" rx="3" fill="#2a0f16" stroke="#fb7185" stroke-width="1"/>
+  <text x="925.0" y="536.5" text-anchor="middle" font-size="11" font-weight="500" fill="#fb7185">conta: LocalSystem = SYSTEM</text>
+  </g>
+  <g id="node-alvo" data-graph-role="node" data-node-id="alvo" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1150,395,1400,545">
+  <rect x="1150.0" y="395.0" width="250.0" height="150.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.8"/>
+  <text x="1275.0" y="413.0" text-anchor="middle" class="node-type">O ALVO MAIS VALIOSO</text>
+  <text data-text-role="title" data-full-text="serviço como SYSTEM" data-text-max-width="226.0" x="1275.0" y="476.0" text-anchor="middle" class="node-title" font-size="16.0">serviço como SYSTEM</text>
+  <text data-text-role="subtitle" data-full-text="uma falha nele = poder total" data-text-max-width="226.0" x="1275.0" y="498.0" text-anchor="middle" class="node-sub" font-size="12">uma falha nele = poder total</text>
+  </g>
+  <g id="e1-label" data-graph-role="label" data-owner="e1" data-graph-bounds="372,169,408,189">
+  <rect x="372.0" y="169.0" width="36.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="390.0" y="183.0" text-anchor="middle" class="arrow-label">lê</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="616" width="749.84" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="630.0" x2="70.0" y2="630.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="80.0" y="634.0" class="legend">configuração e controle        </text>
+    <line data-graph-role="decoration" x1="291.11999999999995" y1="630.0" x2="321.11999999999995" y2="630.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="331.11999999999995" y="634.0" class="legend">roda como SYSTEM: poder total        </text>
+    <line data-graph-role="decoration" x1="581.5999999999999" y1="630.0" x2="611.5999999999999" y2="630.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="621.5999999999999" y="634.0" class="legend">conta com pouco poder</text>
+  </g>
 </svg>
