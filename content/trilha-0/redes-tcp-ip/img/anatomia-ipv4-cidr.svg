@@ -1,74 +1,125 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" role="img" aria-labelledby="t d">
-  <title id="t">Anatomia de um endereço IPv4 com CIDR: 192.168.10.77/26</title>
-  <desc id="d">O endereço 192.168.10.77 escrito em binário, octeto por octeto: 11000000, 10101000, 00001010 e 01001101. O /26 diz que os primeiros 26 bits são a parte da rede (em ciano) e os 6 últimos são a parte do host (em amarelo). A máscara correspondente é 255.255.255.192, ou 26 uns seguidos de 6 zeros. Zerando os bits de host obtém-se o endereço de rede, 192.168.10.64; ligando todos eles obtém-se o broadcast, 192.168.10.127. Os hosts utilizáveis vão de .65 a .126: 2 elevado a 6, menos 2, dá 62 endereços.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .b { font-size: 17px; font-weight: 700; letter-spacing: 1px; }
-    .n { fill: #5cc8d8; }
-    .h { fill: #e8c25a; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
-  <rect width="900" height="440" fill="#121815"/>
-
-  <text class="t" x="30" y="34">192.168.10.77/26 = endereço + tamanho do prefixo</text>
-
-  <!-- Decimal octets -->
-  <text class="t" x="150" y="76">192</text>
-  <text class="t" x="330" y="76">168</text>
-  <text class="t" x="520" y="76">10</text>
-  <text class="t" x="700" y="76">77</text>
-  <text class="s" x="30" y="76">decimal</text>
-
-  <!-- Binary -->
-  <text class="s" x="30" y="112">endereço</text>
-  <text class="b n" x="120" y="112">11000000</text>
-  <text class="b" x="225" y="112">.</text>
-  <text class="b n" x="300" y="112">10101000</text>
-  <text class="b" x="405" y="112">.</text>
-  <text class="b n" x="480" y="112">00001010</text>
-  <text class="b" x="585" y="112">.</text>
-  <text class="b n" x="660" y="112">01</text><text class="b h" x="686" y="112">001101</text>
-
-  <text class="s" x="30" y="148">máscara</text>
-  <text class="b n" x="120" y="148">11111111</text>
-  <text class="b" x="225" y="148">.</text>
-  <text class="b n" x="300" y="148">11111111</text>
-  <text class="b" x="405" y="148">.</text>
-  <text class="b n" x="480" y="148">11111111</text>
-  <text class="b" x="585" y="148">.</text>
-  <text class="b n" x="660" y="148">11</text><text class="b h" x="686" y="148">000000</text>
-  <text class="s" x="772" y="140">= 255.255.</text>
-  <text class="s" x="772" y="156">  255.192</text>
-
-  <!-- Brace-like bars -->
-  <rect x="120" y="164" width="562" height="6" rx="3" fill="#5cc8d8"/>
-  <rect x="686" y="176" width="80" height="6" rx="3" fill="#e8c25a"/>
-  <text class="s n" x="120" y="194" style="fill:#5cc8d8">26 bits de rede: iguais em todas as máquinas desta sub-rede</text>
-  <text class="s" x="560" y="212" style="fill:#e8c25a">6 bits de host: 2^6 = 64 combinações</text>
-
-  <!-- Results -->
-  <rect class="box" x="30" y="236" width="840" height="170" rx="8"/>
-  <text class="t" x="50" y="264">Os bits de host decidem tudo:</text>
-
-  <text class="s" x="50" y="294">host todo em 0</text>
-  <text class="b" x="230" y="294">01<tspan class="h">000000</tspan></text>
-  <text class="t" x="420" y="294" style="fill:#5cc8d8">192.168.10.64</text>
-  <text class="s" x="600" y="294">endereço de rede (nome da sub-rede)</text>
-
-  <text class="s" x="50" y="324">primeiro host</text>
-  <text class="b" x="230" y="324">01<tspan class="h">000001</tspan></text>
-  <text class="t" x="420" y="324" style="fill:#5ee08a">192.168.10.65</text>
-  <text class="s" x="600" y="324">costuma ser o gateway</text>
-
-  <text class="s" x="50" y="354">último host</text>
-  <text class="b" x="230" y="354">01<tspan class="h">111110</tspan></text>
-  <text class="t" x="420" y="354" style="fill:#5ee08a">192.168.10.126</text>
-  <text class="s" x="600" y="354">62 hosts utilizáveis (64 − 2)</text>
-
-  <text class="s" x="50" y="384">host todo em 1</text>
-  <text class="b" x="230" y="384">01<tspan class="h">111111</tspan></text>
-  <text class="t" x="420" y="384" style="fill:#f08c7a">192.168.10.127</text>
-  <text class="s" x="600" y="384">broadcast (todos da sub-rede)</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 780" width="1300" height="780" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
+  <defs>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
+  </defs>
+  <rect data-graph-role="background" width="1300.0" height="780.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">/26: 26 bits fixos de rede, 6 bits de host que decidem tudo</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">192.168.10.77/26 em binário · a mesma divisa escrita como máscara: 255.255.255.192</text>
+  <g id="res" data-graph-role="container" data-container-id="res" data-semantic-role="boundary" data-graph-bounds="40,340,1260,560">
+  <rect data-graph-role="container" x="40.0" y="340.0" width="1220.0" height="220.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="364.0" class="section">TROCANDO SÓ OS 6 BITS DE HOST</text>
+    <rect id="res-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="346" width="228.12" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="e-var" data-graph-role="edge" data-edge-id="e-var" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1040,250 L 1040,340" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <g id="node-net" data-graph-role="node" data-node-id="net" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="130,140,910,250">
+  <rect x="130.0" y="140.0" width="780.0" height="110.0" rx="10.0" fill="#082f49" stroke="#38bdf8" stroke-width="2.2"/>
+  <text x="520.0" y="158.0" text-anchor="middle" class="node-type">REDE · OS 26 PRIMEIROS</text>
+  <text data-text-role="title" data-full-text="11000000.10101000.00001010.01" data-text-max-width="756.0" x="520.0" y="201.0" text-anchor="middle" class="node-title" font-size="22.0">11000000.10101000.00001010.01</text>
+  <text data-text-role="subtitle" data-full-text="26 bits de rede: iguais em toda a sub-rede (192.168.10.…)" data-text-max-width="756.0" x="520.0" y="223.0" text-anchor="middle" class="node-sub" font-size="12">26 bits de rede: iguais em toda a sub-rede (192.168.10.…)</text>
+  </g>
+  <g id="node-host" data-graph-role="node" data-node-id="host" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="910,140,1170,250">
+  <rect x="910.0" y="140.0" width="260.0" height="110.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.6" filter="url(#glowOrange)"/>
+  <text x="1040.0" y="158.0" text-anchor="middle" class="node-type">HOST · OS 6 ÚLTIMOS</text>
+  <text data-text-role="title" data-full-text="001101" data-text-max-width="236.0" x="1040.0" y="201.0" text-anchor="middle" class="node-title" font-size="22.0">001101</text>
+  <text data-text-role="subtitle" data-full-text="2^6 = 64 combinações" data-text-max-width="236.0" x="1040.0" y="223.0" text-anchor="middle" class="node-sub" font-size="12">2^6 = 64 combinações</text>
+  </g>
+  <g id="node-rede" data-graph-role="node" data-node-id="rede" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="res" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,395,340,525">
+  <rect x="70.0" y="395.0" width="270.0" height="130.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text x="205.0" y="413.0" text-anchor="middle" class="node-type">TUDO EM 0 · RESERVADO</text>
+  <text data-text-role="title" data-full-text="192.168.10.64" data-text-max-width="246.0" x="205.0" y="466.0" text-anchor="middle" class="node-title" font-size="20.0">192.168.10.64</text>
+  <text data-text-role="subtitle" data-full-text="host 000000 · nome da rede" data-text-max-width="246.0" x="205.0" y="488.0" text-anchor="middle" class="node-sub" font-size="12">host 000000 · nome da rede</text>
+  </g>
+  <g id="node-prim" data-graph-role="node" data-node-id="prim" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="res" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="370,395,640,525">
+  <rect x="370.0" y="395.0" width="270.0" height="130.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="505.0" y="413.0" text-anchor="middle" class="node-type">PRIMEIRA MÁQUINA</text>
+  <text data-text-role="title" data-full-text="192.168.10.65" data-text-max-width="246.0" x="505.0" y="466.0" text-anchor="middle" class="node-title" font-size="20.0">192.168.10.65</text>
+  <text data-text-role="subtitle" data-full-text="host 000001" data-text-max-width="246.0" x="505.0" y="488.0" text-anchor="middle" class="node-sub" font-size="12">host 000001</text>
+  </g>
+  <g id="node-ult" data-graph-role="node" data-node-id="ult" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="res" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="670,395,940,525">
+  <rect x="670.0" y="395.0" width="270.0" height="130.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="805.0" y="413.0" text-anchor="middle" class="node-type">ÚLTIMA MÁQUINA</text>
+  <text data-text-role="title" data-full-text="192.168.10.126" data-text-max-width="246.0" x="805.0" y="466.0" text-anchor="middle" class="node-title" font-size="20.0">192.168.10.126</text>
+  <text data-text-role="subtitle" data-full-text="host 111110" data-text-max-width="246.0" x="805.0" y="488.0" text-anchor="middle" class="node-sub" font-size="12">host 111110</text>
+  </g>
+  <g id="node-bc" data-graph-role="node" data-node-id="bc" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="res" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="970,395,1240,525">
+  <rect x="970.0" y="395.0" width="270.0" height="130.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text x="1105.0" y="413.0" text-anchor="middle" class="node-type">TUDO EM 1 · RESERVADO</text>
+  <text data-text-role="title" data-full-text="192.168.10.127" data-text-max-width="246.0" x="1105.0" y="466.0" text-anchor="middle" class="node-title" font-size="20.0">192.168.10.127</text>
+  <text data-text-role="subtitle" data-full-text="host 111111 · broadcast" data-text-max-width="246.0" x="1105.0" y="488.0" text-anchor="middle" class="node-sub" font-size="12">host 111111 · broadcast</text>
+  </g>
+  <g id="node-conta" data-graph-role="node" data-node-id="conta" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,600,1260,690">
+  <rect x="40.0" y="600.0" width="1220.0" height="90.0" rx="10.0" fill="#1e293b" stroke="#e2e8f0" stroke-width="2.4"/>
+  <text x="650.0" y="618.0" text-anchor="middle" class="node-type">A CONTA</text>
+  <text data-text-role="title" data-full-text="Entre a rede e o broadcast cabem 2^6 − 2 = 62 máquinas" data-text-max-width="1196.0" x="650.0" y="651.0" text-anchor="middle" class="node-title" font-size="20.0">Entre a rede e o broadcast cabem 2^6 − 2 = 62 máquinas</text>
+  <text data-text-role="subtitle" data-full-text="de .65 a .126 · os endereços com host tudo em 0 e tudo em 1 nunca vão para uma máquina" data-text-max-width="1196.0" x="650.0" y="673.0" text-anchor="middle" class="node-sub" font-size="12">de .65 a .126 · os endereços com host tudo em 0 e tudo em 1 nunca vão para uma máquina</text>
+  </g>
+  <g id="e-var-label" data-graph-role="label" data-owner="e-var" data-graph-bounds="839.64,281,1007,301">
+  <rect x="839.64" y="281.0" width="167.35999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="923.32" y="295.0" text-anchor="middle" class="arrow-label">varia de 000000 a 111111</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="721" width="932.8" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="735.0" x2="70.0" y2="735.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="80.0" y="739.0" class="legend">bits de rede (fixos)    </text>
+    <line data-graph-role="decoration" x1="250.31999999999996" y1="735.0" x2="280.31999999999994" y2="735.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="290.31999999999994" y="739.0" class="legend">bits de host (mudam)    </text>
+    <line data-graph-role="decoration" x1="463.75999999999993" y1="735.0" x2="493.75999999999993" y2="735.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="503.75999999999993" y="739.0" class="legend">endereços de máquinas    </text>
+    <line data-graph-role="decoration" x1="686.8" y1="735.0" x2="716.8" y2="735.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="726.8" y="739.0" class="legend">reservados (nunca de uma máquina)</text>
+  </g>
 </svg>

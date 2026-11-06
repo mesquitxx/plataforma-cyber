@@ -1,73 +1,147 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
-  <title id="t">Como o DNS resolve www.example.com</title>
-  <desc id="d">Cinco participantes. Seu computador, cujo resolvedor local olha primeiro o arquivo /etc/hosts e o próprio cache. Um resolvedor recursivo (do roteador, do provedor ou público), que faz o trabalho pesado e guarda as respostas em cache. O servidor raiz, o servidor do domínio de topo .com e o servidor autoritativo de example.com. Passo 1: o computador pergunta ao recursivo o endereço (registro A) de www.example.com, por UDP na porta 53. Passo 2: o recursivo pergunta à raiz, que não sabe a resposta mas indica os servidores do .com. Passo 3: o recursivo pergunta ao .com, que indica os servidores de example.com. Passo 4: o recursivo pergunta ao autoritativo, que responde com o registro A, 198.51.100.7, e um TTL de 300 segundos. Passo 5: o recursivo devolve a resposta ao computador e guarda tudo em cache pelo tempo do TTL; a próxima pergunta igual é respondida na hora, sem os passos 2 a 4.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .m { font-size: 12px; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-    .life { stroke: #34413b; stroke-width: 1.5; stroke-dasharray: 4 4; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1340 860" width="1340" height="860" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c25a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="500" fill="#121815"/>
-
-  <!-- centers: 85, 265, 460, 630, 800 -->
-  <rect class="box" x="15" y="16" width="140" height="58" rx="8" style="stroke:#5cc8d8"/>
-  <text class="t" x="27" y="38" style="fill:#5cc8d8">Seu PC</text>
-  <text class="s" x="27" y="54">/etc/hosts,</text>
-  <text class="s" x="27" y="68">cache local</text>
-  <rect class="box" x="185" y="16" width="160" height="58" rx="8" style="stroke:#5ee08a"/>
-  <text class="t" x="197" y="38" style="fill:#5ee08a">Recursivo</text>
-  <text class="s" x="197" y="54">roteador, provedor</text>
-  <text class="s" x="197" y="68">ou público · cache</text>
-  <rect class="box" x="395" y="16" width="130" height="58" rx="8" style="stroke:#e8c25a"/>
-  <text class="t" x="407" y="38" style="fill:#e8c25a">Raiz  .</text>
-  <text class="s" x="407" y="54">13 nomes,</text>
-  <text class="s" x="407" y="68">a.root ... m.root</text>
-  <rect class="box" x="565" y="16" width="130" height="58" rx="8" style="stroke:#e8c25a"/>
-  <text class="t" x="577" y="38" style="fill:#e8c25a">TLD .com</text>
-  <text class="s" x="577" y="54">domínio de</text>
-  <text class="s" x="577" y="68">topo</text>
-  <rect class="box" x="725" y="16" width="160" height="58" rx="8" style="stroke:#c9a6ff"/>
-  <text class="t" x="737" y="38" style="fill:#c9a6ff">Autoritativo</text>
-  <text class="s" x="737" y="54">de example.com</text>
-  <text class="s" x="737" y="68">(dono da zona)</text>
-
-  <line class="life" x1="85" y1="74" x2="85" y2="410"/>
-  <line class="life" x1="265" y1="74" x2="265" y2="410"/>
-  <line class="life" x1="460" y1="74" x2="460" y2="410"/>
-  <line class="life" x1="630" y1="74" x2="630" y2="410"/>
-  <line class="life" x1="805" y1="74" x2="805" y2="410"/>
-
-  <line x1="85" y1="110" x2="261" y2="110" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <text class="m" x="92" y="104">1 www.example.com A?</text>
-  <text class="s" x="92" y="126">UDP 53</text>
-
-  <line x1="265" y1="160" x2="456" y2="160" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="m" x="275" y="154">2 www.example.com?</text>
-  <line x1="460" y1="184" x2="269" y2="184" stroke="#e8c25a" stroke-width="2" marker-end="url(#y)"/>
-  <text class="s" x="275" y="200">"não sei; pergunte ao .com"</text>
-
-  <line x1="265" y1="232" x2="626" y2="232" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="m" x="275" y="226">3 www.example.com?</text>
-  <line x1="630" y1="256" x2="269" y2="256" stroke="#e8c25a" stroke-width="2" marker-end="url(#y)"/>
-  <text class="s" x="275" y="272">"pergunte aos NS de example.com"</text>
-
-  <line x1="265" y1="304" x2="801" y2="304" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="m" x="275" y="298">4 www.example.com A?</text>
-  <line x1="805" y1="328" x2="269" y2="328" stroke="#c9a6ff" stroke-width="2" marker-end="url(#y)"/>
-  <text class="m" x="275" y="344" style="fill:#c9a6ff">A 198.51.100.7  TTL 300</text>
-
-  <line x1="265" y1="380" x2="89" y2="380" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="m" x="92" y="374">5 resposta</text>
-  <text class="s" x="92" y="398">(guardada em cache)</text>
-
-  <rect class="box" x="15" y="426" width="870" height="60" rx="8"/>
-  <text class="s" x="30" y="450">Passos 2 a 4 só acontecem se ninguém tiver a resposta em cache. Quem responde primeiro,</text>
-  <text class="s" x="30" y="468">com o ID de transação certo, é aceito: é aí que mora o envenenamento de cache (seção 4).</text>
+  <rect data-graph-role="background" width="1340.0" height="860.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="670.0" y="56" text-anchor="middle" class="title">O recursivo desce a hierarquia; só o autoritativo sabe o IP</text>
+  <text x="670.0" y="82" text-anchor="middle" class="subtitle">como www.example.com vira 198.51.100.7 quando ninguém tem a resposta guardada</text>
+  <path id="q1" data-graph-role="edge" data-edge-id="q1" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 270,370 L 470,370" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="a5" data-graph-role="edge" data-edge-id="a5" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 470,425 L 270,425" fill="none" stroke="#22c55e" stroke-width="3.0" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="q2" data-graph-role="edge" data-edge-id="q2" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 730,180 L 960,180" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="r2" data-graph-role="edge" data-edge-id="r2" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 960,235 L 730,235" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)" stroke-dasharray="6,4"/>
+  <path id="q3" data-graph-role="edge" data-edge-id="q3" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 730,370 L 960,370" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="r3" data-graph-role="edge" data-edge-id="r3" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 960,425 L 730,425" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)" stroke-dasharray="6,4"/>
+  <path id="q4" data-graph-role="edge" data-edge-id="q4" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 730,560 L 960,560" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="r4" data-graph-role="edge" data-edge-id="r4" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 960,615 L 730,615" fill="none" stroke="#22c55e" stroke-width="3.0" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-pc" data-graph-role="node" data-node-id="pc" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,330,270,460">
+  <rect x="40.0" y="330.0" width="230.0" height="130.0" rx="10.0" fill="#082f49" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="155.0" y="348.0" text-anchor="middle" class="node-type">QUEM PERGUNTA</text>
+  <text data-text-role="title" data-full-text="Seu PC" data-text-max-width="206.0" x="155.0" y="401.0" text-anchor="middle" class="node-title" font-size="19.0">Seu PC</text>
+  <text data-text-role="subtitle" data-full-text="olha /etc/hosts e o cache" data-text-max-width="206.0" x="155.0" y="423.0" text-anchor="middle" class="node-sub" font-size="12">olha /etc/hosts e o cache</text>
+  </g>
+  <g id="node-rec" data-graph-role="node" data-node-id="rec" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="470,140,730,650">
+  <rect x="470.0" y="140.0" width="260.0" height="510.0" rx="10.0" fill="#111827" stroke="#94a3b8" stroke-width="2.0"/>
+  <text x="600.0" y="158.0" text-anchor="middle" class="node-type">FAZ O TRABALHO</text>
+  <text data-text-role="title" data-full-text="Resolvedor recursivo" data-text-max-width="236.0" x="600.0" y="401.0" text-anchor="middle" class="node-title" font-size="16.0">Resolvedor recursivo</text>
+  <text data-text-role="subtitle" data-full-text="roteador, provedor ou 1.1.1.1" data-text-max-width="236.0" x="600.0" y="423.0" text-anchor="middle" class="node-sub" font-size="12">roteador, provedor ou 1.1.1.1</text>
+  </g>
+  <g id="node-raiz" data-graph-role="node" data-node-id="raiz" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="960,140,1300,270">
+  <rect x="960.0" y="140.0" width="340.0" height="130.0" rx="10.0" fill="#1c1917" stroke="#94a3b8" stroke-width="1.8"/>
+  <text x="1130.0" y="158.0" text-anchor="middle" class="node-type">TOPO DA HIERARQUIA</text>
+  <text data-text-role="title" data-full-text="Raiz  ." data-text-max-width="316.0" x="1130.0" y="211.0" text-anchor="middle" class="node-title" font-size="19.0">Raiz .</text>
+  <text data-text-role="subtitle" data-full-text="não sabe o IP; sabe quem cuida do .com" data-text-max-width="316.0" x="1130.0" y="233.0" text-anchor="middle" class="node-sub" font-size="12">não sabe o IP; sabe quem cuida do .com</text>
+  </g>
+  <g id="node-com" data-graph-role="node" data-node-id="com" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="960,330,1300,460">
+  <rect x="960.0" y="330.0" width="340.0" height="130.0" rx="10.0" fill="#1c1917" stroke="#94a3b8" stroke-width="1.8"/>
+  <text x="1130.0" y="348.0" text-anchor="middle" class="node-type">DOMÍNIO DE TOPO</text>
+  <text data-text-role="title" data-full-text=".com" data-text-max-width="316.0" x="1130.0" y="401.0" text-anchor="middle" class="node-title" font-size="19.0">.com</text>
+  <text data-text-role="subtitle" data-full-text="sabe quem cuida de example.com" data-text-max-width="316.0" x="1130.0" y="423.0" text-anchor="middle" class="node-sub" font-size="12">sabe quem cuida de example.com</text>
+  </g>
+  <g id="node-aut" data-graph-role="node" data-node-id="aut" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="960,520,1300,650">
+  <rect x="960.0" y="520.0" width="340.0" height="130.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="2.6" filter="url(#glowGreen)"/>
+  <text x="1130.0" y="538.0" text-anchor="middle" class="node-type">DONO DO NOME</text>
+  <text data-text-role="title" data-full-text="Autoritativo" data-text-max-width="316.0" x="1130.0" y="591.0" text-anchor="middle" class="node-title" font-size="19.0">Autoritativo</text>
+  <text data-text-role="subtitle" data-full-text="de example.com: tem a palavra final" data-text-max-width="316.0" x="1130.0" y="613.0" text-anchor="middle" class="node-sub" font-size="12">de example.com: tem a palavra final</text>
+  </g>
+  <g id="node-cache" data-graph-role="node" data-node-id="cache" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,690,1300,770">
+  <rect x="40.0" y="690.0" width="1260.0" height="80.0" rx="10.0" fill="#1e293b" stroke="#e2e8f0" stroke-width="2.4"/>
+  <text x="670.0" y="708.0" text-anchor="middle" class="node-type">CACHE</text>
+  <text data-text-role="title" data-full-text="O recursivo guarda a resposta por 300 s (o TTL)" data-text-max-width="1236.0" x="670.0" y="736.0" text-anchor="middle" class="node-title" font-size="19.0">O recursivo guarda a resposta por 300 s (o TTL)</text>
+  <text data-text-role="subtitle" data-full-text="a próxima pergunta igual é respondida na hora, sem os passos 2 a 4" data-text-max-width="1236.0" x="670.0" y="758.0" text-anchor="middle" class="node-sub" font-size="12">a próxima pergunta igual é respondida na hora, sem os passos 2 a 4</text>
+  </g>
+  <g id="q1-label" data-graph-role="label" data-owner="q1" data-graph-bounds="287.52,339,452.48,359">
+  <rect x="287.52" y="339.0" width="164.96000000000004" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="370.0" y="353.0" text-anchor="middle" class="arrow-label">1  IP de www.example.com?</text>
+  </g>
+  <g id="a5-label" data-graph-role="label" data-owner="a5" data-graph-bounds="318.12,394,421.88,414">
+  <rect x="318.12" y="394.0" width="103.76" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="370.0" y="408.0" text-anchor="middle" class="arrow-label">5  198.51.100.7</text>
+  </g>
+  <g id="q2-label" data-graph-role="label" data-owner="q2" data-graph-bounds="779.2,149,910.8,169">
+  <rect x="779.2" y="149.0" width="131.60000000000002" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="845.0" y="163.0" text-anchor="middle" class="arrow-label">2  www.example.com?</text>
+  </g>
+  <g id="r2-label" data-graph-role="label" data-owner="r2" data-graph-bounds="786.52,204,903.48,224">
+  <rect x="786.52" y="204.0" width="116.96000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="845.0" y="218.0" text-anchor="middle" class="arrow-label">pergunte ao .com</text>
+  </g>
+  <g id="q3-label" data-graph-role="label" data-owner="q3" data-graph-bounds="779.2,339,910.8,359">
+  <rect x="779.2" y="339.0" width="131.60000000000002" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="845.0" y="353.0" text-anchor="middle" class="arrow-label">3  www.example.com?</text>
+  </g>
+  <g id="r3-label" data-graph-role="label" data-owner="r3" data-graph-bounds="767.2,394,922.8,414">
+  <rect x="767.2" y="394.0" width="155.60000000000002" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="845.0" y="408.0" text-anchor="middle" class="arrow-label">pergunte a example.com</text>
+  </g>
+  <g id="q4-label" data-graph-role="label" data-owner="q4" data-graph-bounds="779.2,529,910.8,549">
+  <rect x="779.2" y="529.0" width="131.60000000000002" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="845.0" y="543.0" text-anchor="middle" class="arrow-label">4  www.example.com?</text>
+  </g>
+  <g id="r4-label" data-graph-role="label" data-owner="r4" data-graph-bounds="764.44,584,925.56,604">
+  <rect x="764.44" y="584.0" width="161.12" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="845.0" y="598.0" text-anchor="middle" class="arrow-label">A 198.51.100.7 · TTL 300</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="801" width="611.12" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="815.0" x2="70.0" y2="815.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="80.0" y="819.0" class="legend">pergunta (UDP 53)    </text>
+    <line data-graph-role="decoration" x1="238.31999999999996" y1="815.0" x2="268.31999999999994" y2="815.0" stroke="#94a3b8" stroke-width="2.3" marker-end="url(#arrowH)"/>
+    <text data-graph-role="decoration" x="278.31999999999994" y="819.0" class="legend">"não sei, pergunte a…"    </text>
+    <line data-graph-role="decoration" x1="462.55999999999995" y1="815.0" x2="492.55999999999995" y2="815.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="502.55999999999995" y="819.0" class="legend">a resposta com o IP</text>
+  </g>
 </svg>

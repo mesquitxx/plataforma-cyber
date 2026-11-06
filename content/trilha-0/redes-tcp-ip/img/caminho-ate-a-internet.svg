@@ -1,73 +1,140 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">O caminho do seu WSL até um servidor na internet, com dois NATs</title>
-  <desc id="d">Quatro caixas da esquerda para a direita. O Ubuntu do WSL, com a interface eth0 no endereço privado 172.24.5.20/20 e o gateway 172.24.0.1. O Windows, que tem uma interface virtual 172.24.0.1 voltada para o WSL e a interface Wi-Fi 192.168.0.10/24 voltada para a casa, e faz o primeiro NAT. O roteador de casa, com o lado de dentro 192.168.0.1 e o lado de fora no IP público 203.0.113.45, que faz o segundo NAT. E a internet, com o provedor e o servidor 198.51.100.7 na porta 443. Embaixo, uma tabela mostra o mesmo pacote em três trechos: o destino 198.51.100.7:443 nunca muda; a origem muda de 172.24.5.20 para 192.168.0.10 e depois para 203.0.113.45, cada NAT trocando também a porta de origem. Na volta, cada NAT consulta a própria tabela para desfazer a troca. Alguns provedores acrescentam um terceiro NAT, o CGNAT, na faixa 100.64.0.0/10.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1380 730" width="1380" height="730" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-
-  <!-- WSL -->
-  <rect class="box" x="20" y="30" width="190" height="130" rx="8" style="stroke:#5ee08a"/>
-  <text class="t" x="34" y="54" style="fill:#5ee08a">Ubuntu (WSL)</text>
-  <text class="s" x="34" y="78">eth0</text>
-  <text class="s" x="34" y="94">172.24.5.20/20</text>
-  <text class="s" x="34" y="118">gateway</text>
-  <text class="s" x="34" y="134">172.24.0.1</text>
-
-  <!-- Windows -->
-  <rect class="box" x="245" y="30" width="200" height="130" rx="8" style="stroke:#5cc8d8"/>
-  <text class="t" x="259" y="54" style="fill:#5cc8d8">Windows</text>
-  <text class="s" x="259" y="78">vEthernet (WSL)</text>
-  <text class="s" x="259" y="94">172.24.0.1</text>
-  <text class="s" x="259" y="118">Wi-Fi</text>
-  <text class="s" x="259" y="134">192.168.0.10/24</text>
-  <text class="t" x="290" y="186" style="fill:#e8c25a">NAT 1</text>
-
-  <!-- Router -->
-  <rect class="box" x="480" y="30" width="200" height="130" rx="8" style="stroke:#e8c25a"/>
-  <text class="t" x="494" y="54" style="fill:#e8c25a">Roteador de casa</text>
-  <text class="s" x="494" y="78">LAN (dentro)</text>
-  <text class="s" x="494" y="94">192.168.0.1</text>
-  <text class="s" x="494" y="118">WAN (fora, público)</text>
-  <text class="s" x="494" y="134">203.0.113.45</text>
-  <text class="t" x="545" y="186" style="fill:#e8c25a">NAT 2</text>
-
-  <!-- Internet -->
-  <rect class="box" x="715" y="30" width="165" height="130" rx="8" style="stroke:#c9a6ff"/>
-  <text class="t" x="729" y="54" style="fill:#c9a6ff">Internet</text>
-  <text class="s" x="729" y="78">provedor,</text>
-  <text class="s" x="729" y="94">roteadores BGP</text>
-  <text class="s" x="729" y="118">servidor</text>
-  <text class="s" x="729" y="134">198.51.100.7:443</text>
-
-  <line x1="210" y1="95" x2="241" y2="95" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <line x1="445" y1="95" x2="476" y2="95" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <line x1="680" y1="95" x2="711" y2="95" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-
-  <!-- Table -->
-  <rect class="box" x="20" y="210" width="860" height="190" rx="8"/>
-  <text class="t" x="40" y="238">O mesmo pacote em cada trecho</text>
-  <text class="s" x="40" y="266">trecho</text>
-  <text class="s" x="300" y="266">origem (muda)</text>
-  <text class="s" x="560" y="266">destino (não muda)</text>
-  <line x1="40" y1="276" x2="860" y2="276" stroke="#34413b"/>
-  <text class="s" x="40" y="302">WSL → Windows</text>
-  <text class="t" x="300" y="302" style="fill:#5ee08a">172.24.5.20:33240</text>
-  <text class="t" x="560" y="302">198.51.100.7:443</text>
-  <text class="s" x="40" y="332">Windows → roteador</text>
-  <text class="t" x="300" y="332" style="fill:#5cc8d8">192.168.0.10:51034</text>
-  <text class="t" x="560" y="332">198.51.100.7:443</text>
-  <text class="s" x="40" y="362">roteador → internet</text>
-  <text class="t" x="300" y="362" style="fill:#e8c25a">203.0.113.45:40112</text>
-  <text class="t" x="560" y="362">198.51.100.7:443</text>
-  <text class="s" x="40" y="390">Cada NAT anota a troca numa tabela e a desfaz quando a resposta volta.</text>
-
-  <text class="s" x="20" y="430">Endereços e portas ilustrativos. Alguns provedores somam um terceiro NAT, o CGNAT</text>
-  <text class="s" x="20" y="448">(faixa 100.64.0.0/10): aí nem o "WAN" do roteador é um IP público.</text>
+  <rect data-graph-role="background" width="1380.0" height="730.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="690.0" y="56" text-anchor="middle" class="title">O destino nunca muda; cada NAT troca a origem do pacote</text>
+  <text x="690.0" y="82" text-anchor="middle" class="subtitle">do Ubuntu do WSL até um servidor na internet, passando por dois NATs</text>
+  <path id="t1" data-graph-role="edge" data-edge-id="t1" data-source="wsl" data-target="win" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 290,200 L 390,200" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="t2" data-graph-role="edge" data-edge-id="t2" data-source="win" data-target="rot" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 640,200 L 740,200" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="t3" data-graph-role="edge" data-edge-id="t3" data-source="rot" data-target="srv" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 990,200 L 1090,200" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="c1" data-graph-role="edge" data-edge-id="c1" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 340,214 L 340,330" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)" stroke-dasharray="6,4"/>
+  <path id="c2" data-graph-role="edge" data-edge-id="c2" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 690,214 L 690,330" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)" stroke-dasharray="6,4"/>
+  <path id="c3" data-graph-role="edge" data-edge-id="c3" data-source="" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1040,214 L 1040,330" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)" stroke-dasharray="6,4"/>
+  <g id="node-wsl" data-graph-role="node" data-node-id="wsl" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,140,290,260">
+  <rect x="40.0" y="140.0" width="250.0" height="120.0" rx="10.0" fill="#082f49" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="165.0" y="158.0" text-anchor="middle" class="node-type">VOCÊ</text>
+  <text data-text-role="title" data-full-text="Ubuntu (WSL)" data-text-max-width="226.0" x="165.0" y="206.0" text-anchor="middle" class="node-title" font-size="18.0">Ubuntu (WSL)</text>
+  <text data-text-role="subtitle" data-full-text="172.24.5.20 (privado)" data-text-max-width="226.0" x="165.0" y="228.0" text-anchor="middle" class="node-sub" font-size="12">172.24.5.20 (privado)</text>
+  </g>
+  <g id="node-win" data-graph-role="node" data-node-id="win" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="390,140,640,260">
+  <rect x="390.0" y="140.0" width="250.0" height="120.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.6" filter="url(#glowOrange)"/>
+  <text x="515.0" y="158.0" text-anchor="middle" class="node-type">NAT 1</text>
+  <text data-text-role="title" data-full-text="Windows" data-text-max-width="226.0" x="515.0" y="206.0" text-anchor="middle" class="node-title" font-size="18.0">Windows</text>
+  <text data-text-role="subtitle" data-full-text="172.24.0.1 | 192.168.0.10" data-text-max-width="226.0" x="515.0" y="228.0" text-anchor="middle" class="node-sub" font-size="12">172.24.0.1 | 192.168.0.10</text>
+  </g>
+  <g id="node-rot" data-graph-role="node" data-node-id="rot" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="740,140,990,260">
+  <rect x="740.0" y="140.0" width="250.0" height="120.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.6" filter="url(#glowOrange)"/>
+  <text x="865.0" y="158.0" text-anchor="middle" class="node-type">NAT 2</text>
+  <text data-text-role="title" data-full-text="Roteador de casa" data-text-max-width="226.0" x="865.0" y="206.0" text-anchor="middle" class="node-title" font-size="18.0">Roteador de casa</text>
+  <text data-text-role="subtitle" data-full-text="192.168.0.1 | 203.0.113.45" data-text-max-width="226.0" x="865.0" y="228.0" text-anchor="middle" class="node-sub" font-size="12">192.168.0.1 | 203.0.113.45</text>
+  </g>
+  <g id="node-srv" data-graph-role="node" data-node-id="srv" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1090,140,1340,260">
+  <rect x="1090.0" y="140.0" width="250.0" height="120.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text x="1215.0" y="158.0" text-anchor="middle" class="node-type">INTERNET</text>
+  <text data-text-role="title" data-full-text="Servidor" data-text-max-width="226.0" x="1215.0" y="206.0" text-anchor="middle" class="node-title" font-size="18.0">Servidor</text>
+  <text data-text-role="subtitle" data-full-text="198.51.100.7:443" data-text-max-width="226.0" x="1215.0" y="228.0" text-anchor="middle" class="node-sub" font-size="12">198.51.100.7:443</text>
+  </g>
+  <g id="node-p1" data-graph-role="node" data-node-id="p1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="175,330,505,450">
+  <rect x="175.0" y="330.0" width="330.0" height="120.0" rx="10.0" fill="#082f49" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="340.0" y="348.0" text-anchor="middle" class="node-type">TRECHO 1 · ORIGINAL</text>
+  <text data-text-role="title" data-full-text="de 172.24.5.20:33240" data-text-max-width="306.0" x="340.0" y="396.0" text-anchor="middle" class="node-title" font-size="17.0">de 172.24.5.20:33240</text>
+  <text data-text-role="subtitle" data-full-text="para 198.51.100.7:443" data-text-max-width="306.0" x="340.0" y="418.0" text-anchor="middle" class="node-sub" font-size="12">para 198.51.100.7:443</text>
+  </g>
+  <g id="node-p2" data-graph-role="node" data-node-id="p2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="525,330,855,450">
+  <rect x="525.0" y="330.0" width="330.0" height="120.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.2"/>
+  <text x="690.0" y="348.0" text-anchor="middle" class="node-type">TRECHO 2 · ORIGEM TROCADA</text>
+  <text data-text-role="title" data-full-text="de 192.168.0.10:51034" data-text-max-width="306.0" x="690.0" y="396.0" text-anchor="middle" class="node-title" font-size="17.0">de 192.168.0.10:51034</text>
+  <text data-text-role="subtitle" data-full-text="para 198.51.100.7:443" data-text-max-width="306.0" x="690.0" y="418.0" text-anchor="middle" class="node-sub" font-size="12">para 198.51.100.7:443</text>
+  </g>
+  <g id="node-p3" data-graph-role="node" data-node-id="p3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="875,330,1205,450">
+  <rect x="875.0" y="330.0" width="330.0" height="120.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.2"/>
+  <text x="1040.0" y="348.0" text-anchor="middle" class="node-type">TRECHO 3 · TROCADA DE NOVO</text>
+  <text data-text-role="title" data-full-text="de 203.0.113.45:40112" data-text-max-width="306.0" x="1040.0" y="396.0" text-anchor="middle" class="node-title" font-size="17.0">de 203.0.113.45:40112</text>
+  <text data-text-role="subtitle" data-full-text="para 198.51.100.7:443" data-text-max-width="306.0" x="1040.0" y="418.0" text-anchor="middle" class="node-sub" font-size="12">para 198.51.100.7:443</text>
+  </g>
+  <g id="node-volta" data-graph-role="node" data-node-id="volta" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,520,1340,620">
+  <rect x="40.0" y="520.0" width="1300.0" height="100.0" rx="10.0" fill="#1e293b" stroke="#e2e8f0" stroke-width="2.4"/>
+  <text x="690.0" y="538.0" text-anchor="middle" class="node-type">A IDEIA</text>
+  <text data-text-role="title" data-full-text="Cada NAT anota a troca numa tabela e a desfaz quando a resposta volta" data-text-max-width="1276.0" x="690.0" y="576.0" text-anchor="middle" class="node-title" font-size="19.0">Cada NAT anota a troca numa tabela e a desfaz quando a resposta volta</text>
+  <text data-text-role="subtitle" data-full-text="o destino 198.51.100.7:443 é o mesmo nos três trechos; só a origem (IP e porta) é reescrita" data-text-max-width="1276.0" x="690.0" y="598.0" text-anchor="middle" class="node-sub" font-size="12">o destino 198.51.100.7:443 é o mesmo nos três trechos; só a origem (IP e porta) é reescrita</text>
+  </g>
+  <g id="t1-label" data-graph-role="label" data-owner="t1" data-graph-bounds="306.48,169,373.52,189">
+  <rect x="306.48" y="169.0" width="67.03999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="340.0" y="183.0" text-anchor="middle" class="arrow-label">trecho 1</text>
+  </g>
+  <g id="t2-label" data-graph-role="label" data-owner="t2" data-graph-bounds="656.48,169,723.52,189">
+  <rect x="656.48" y="169.0" width="67.03999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="690.0" y="183.0" text-anchor="middle" class="arrow-label">trecho 2</text>
+  </g>
+  <g id="t3-label" data-graph-role="label" data-owner="t3" data-graph-bounds="1006.48,169,1073.52,189">
+  <rect x="1006.48" y="169.0" width="67.03999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="1040.0" y="183.0" text-anchor="middle" class="arrow-label">trecho 3</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="32" y="644" width="696.08" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="42.0" y1="658.0" x2="72.0" y2="658.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="82.0" y="662.0" class="legend">pacote como saiu do WSL    </text>
+    <line data-graph-role="decoration" x1="276.55999999999995" y1="658.0" x2="306.55999999999995" y2="658.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="316.55999999999995" y="662.0" class="legend">onde a origem é trocada (NAT)    </text>
+    <line data-graph-role="decoration" x1="547.3599999999999" y1="658.0" x2="577.3599999999999" y2="658.0" stroke="#a855f7" stroke-width="2.3" marker-end="url(#arrowA)"/>
+    <text data-graph-role="decoration" x="587.3599999999999" y="662.0" class="legend">destino na internet</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="42,702,434,718">
+  <text x="42.0" y="714.0" class="footnote">endereços e portas ilustrativos (faixas de documentação)</text>
+  </g>
 </svg>

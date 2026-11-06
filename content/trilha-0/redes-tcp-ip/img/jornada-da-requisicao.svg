@@ -1,51 +1,123 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">A jornada de uma requisição HTTPS, medida de verdade</title>
-  <desc id="d">Uma linha do tempo de 0 a 118 milissegundos, medida com o curl numa requisição real a https://example.com/. Etapa 0: o programa separa a URL em esquema https, nome example.com, porta 443 e caminho /. Etapa 1, DNS, de 0 a 9 milissegundos: o nome vira um endereço IP, numa pergunta UDP à porta 53. Etapa 2, enlace: para sair da rede local, o pacote vai ao MAC do gateway, que o ARP descobre e deixa em cache. Etapa 3, TCP, de 9 a 21 milissegundos: o handshake SYN, SYN ACK, ACK com o servidor na porta 443. Etapa 4, TLS, de 21 a 97 milissegundos: as duas pontas combinam a criptografia e o servidor prova a identidade com um certificado. Etapa 5, HTTP, de 97 a 118 milissegundos: o GET vai cifrado e o status 200 volta. Cada etapa depende da anterior, e cada uma é um lugar onde um atacante pode tentar interferir.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .x { font-size: 12px; font-weight: 700; fill: #121815; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
-  <rect width="900" height="470" fill="#121815"/>
-
-  <text class="t" x="30" y="34">curl https://example.com/  ·  tempos reais (ms, acumulados)</text>
-
-  <!-- scale: 0 ms at x=200, 118 ms at x=860 → 5.59 px/ms -->
-  <line x1="200" y1="66" x2="860" y2="66" stroke="#34413b" stroke-width="1.5"/>
-  <text class="s" x="196" y="58">0</text>
-  <text class="s" x="244" y="58">9</text>
-  <text class="s" x="306" y="58">21</text>
-  <text class="s" x="732" y="58">97</text>
-  <text class="s" x="842" y="58">118</text>
-
-  <text class="s" x="30" y="100">0 · URL</text>
-  <text class="s" x="200" y="100">https  ·  example.com  ·  :443  ·  /</text>
-
-  <text class="s" x="30" y="140">1 · DNS</text>
-  <rect x="200" y="124" width="52" height="26" rx="3" fill="#c9a6ff"/>
-  <text class="s" x="262" y="142">nome → IP (UDP 53)</text>
-
-  <text class="s" x="30" y="180">2 · Enlace</text>
-  <rect x="200" y="164" width="660" height="26" rx="3" fill="#e8c25a" opacity="0.25"/>
-  <text class="s" x="210" y="182">todo pacote sai rumo ao MAC do gateway (ARP, já em cache)</text>
-
-  <text class="s" x="30" y="220">3 · TCP</text>
-  <rect x="252" y="204" width="67" height="26" rx="3" fill="#5ee08a"/>
-  <text class="s" x="330" y="222">SYN → SYN,ACK → ACK (porta 443)</text>
-
-  <text class="s" x="30" y="260">4 · TLS</text>
-  <rect x="319" y="244" width="425" height="26" rx="3" fill="#5cc8d8"/>
-  <text class="x" x="330" y="262">combina chaves · certificado prova quem é o servidor</text>
-
-  <text class="s" x="30" y="300">5 · HTTP</text>
-  <rect x="744" y="284" width="116" height="26" rx="3" fill="#f08c7a"/>
-  <text class="x" x="752" y="302">GET / → 200</text>
-
-  <rect class="box" x="30" y="336" width="840" height="114" rx="8"/>
-  <text class="t" x="48" y="362">Onde cada etapa pode ser atacada (seção 3)</text>
-  <text class="s" x="48" y="386">DNS: resposta falsa (spoofing, envenenamento)  ·  Enlace: ARP spoofing</text>
-  <text class="s" x="48" y="406">TCP: varredura de portas, inundação  ·  Rotas: sequestro de BGP</text>
-  <text class="s" x="48" y="426">TLS: é ela que torna inútil, para o conteúdo, ouvir ou desviar os pacotes</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 800" width="1300" height="800" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
+  <defs>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
+  </defs>
+  <rect data-graph-role="background" width="1300.0" height="800.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">Cada etapa espera a anterior, e o TLS leva mais da metade</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">curl https://example.com/ medido de verdade · largura das caixas = tempo (0 a 118 ms)</text>
+  <path id="e0" data-graph-role="edge" data-edge-id="e0" data-source="url" data-target="dns" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 280,175 L 330,175" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="e1" data-graph-role="edge" data-edge-id="e1" data-source="dns" data-target="tcp" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 366.5,210 L 366.5,295 L 403,295" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="e2" data-graph-role="edge" data-edge-id="e2" data-source="tcp" data-target="tls" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 447,330 L 447,425 L 491,425" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="e3" data-graph-role="edge" data-edge-id="e3" data-source="tls" data-target="http" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 790,470 L 790,555 L 1089,555" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <g id="node-url" data-graph-role="node" data-node-id="url" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,140,280,210">
+  <rect x="40.0" y="140.0" width="240.0" height="70.0" rx="10.0" fill="#111827" stroke="#94a3b8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="URL" data-text-max-width="216.0" x="160.0" y="175.0" text-anchor="middle" class="node-title" font-size="18.0">URL</text>
+  <text data-text-role="subtitle" data-full-text="https · example.com · 443 · /" data-text-max-width="216.0" x="160.0" y="197.0" text-anchor="middle" class="node-sub" font-size="12">https · example.com · 443 · /</text>
+  </g>
+  <g id="node-dns" data-graph-role="node" data-node-id="dns" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="330,140,403,210">
+  <rect x="330.0" y="140.0" width="73.0" height="70.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="DNS" data-text-max-width="49.0" x="366.5" y="175.0" text-anchor="middle" class="node-title" font-size="16.0">DNS</text>
+  <text data-text-role="subtitle" data-full-text="9 ms" data-text-max-width="49.0" x="366.5" y="197.0" text-anchor="middle" class="node-sub" font-size="12">9 ms</text>
+  </g>
+  <g id="node-tcp" data-graph-role="node" data-node-id="tcp" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="403,260,491,330">
+  <rect x="403.0" y="260.0" width="88.0" height="70.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="TCP" data-text-max-width="64.0" x="447.0" y="295.0" text-anchor="middle" class="node-title" font-size="16.0">TCP</text>
+  <text data-text-role="subtitle" data-full-text="11 ms" data-text-max-width="64.0" x="447.0" y="317.0" text-anchor="middle" class="node-sub" font-size="12">11 ms</text>
+  </g>
+  <g id="node-tls" data-graph-role="node" data-node-id="tls" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="491,380,1089,470">
+  <rect x="491.0" y="380.0" width="598.0" height="90.0" rx="10.0" fill="#082f49" stroke="#38bdf8" stroke-width="2.8" filter="url(#glowBlue)"/>
+  <text x="790.0" y="398.0" text-anchor="middle" class="node-type">ONDE VAI O TEMPO</text>
+  <text data-text-role="title" data-full-text="TLS: combina chaves e confere o certificado" data-text-max-width="574.0" x="790.0" y="431.0" text-anchor="middle" class="node-title" font-size="17.0">TLS: combina chaves e confere o certificado</text>
+  <text data-text-role="subtitle" data-full-text="76 ms · mais da metade dos 118 ms" data-text-max-width="574.0" x="790.0" y="453.0" text-anchor="middle" class="node-sub" font-size="12">76 ms · mais da metade dos 118 ms</text>
+  </g>
+  <g id="node-http" data-graph-role="node" data-node-id="http" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1089,520,1249,590">
+  <rect x="1089.0" y="520.0" width="160.0" height="70.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="HTTP" data-text-max-width="136.0" x="1169.0" y="555.0" text-anchor="middle" class="node-title" font-size="16.0">HTTP</text>
+  <text data-text-role="subtitle" data-full-text="GET / → 200 · 20 ms" data-text-max-width="136.0" x="1169.0" y="577.0" text-anchor="middle" class="node-sub" font-size="12">GET / → 200 · 20 ms</text>
+  </g>
+  <g id="node-enl" data-graph-role="node" data-node-id="enl" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="330,640,1249,704">
+  <rect x="330.0" y="640.0" width="919.0" height="64.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Por baixo de tudo: cada pacote sai para o MAC do gateway" data-text-max-width="895.0" x="789.5" y="672.0" text-anchor="middle" class="node-title" font-size="16.0">Por baixo de tudo: cada pacote sai para o MAC do gateway</text>
+  <text data-text-role="subtitle" data-full-text="o ARP já tinha esse MAC em cache · cada NAT do caminho reescreve a origem" data-text-max-width="895.0" x="789.5" y="694.0" text-anchor="middle" class="node-sub" font-size="12">o ARP já tinha esse MAC em cache · cada NAT do caminho reescreve a origem</text>
+  </g>
+  <g id="e1-label" data-graph-role="label" data-owner="e1" data-graph-bounds="302.22,238.5,363.5,258.5">
+  <rect x="302.22" y="238.5" width="61.279999999999994" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="332.86" y="252.5" text-anchor="middle" class="arrow-label">com o IP</text>
+  </g>
+  <g id="e2-label" data-graph-role="label" data-owner="e2" data-graph-bounds="344.8,363.5,444,383.5">
+  <rect x="344.8" y="363.5" width="99.19999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="394.4" y="377.5" text-anchor="middle" class="arrow-label">com a conexão</text>
+  </g>
+  <g id="e3-label" data-graph-role="label" data-owner="e3" data-graph-bounds="873.46,524,1005.54,544">
+  <rect x="873.46" y="524.0" width="132.07999999999998" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="939.5" y="538.0" text-anchor="middle" class="arrow-label">com o canal cifrado</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="32" y="716" width="721.12" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="42.0" y1="730.0" x2="72.0" y2="730.0" stroke="#a855f7" stroke-width="2.3" marker-end="url(#arrowA)"/>
+    <text data-graph-role="decoration" x="82.0" y="734.0" class="legend">aplicação (DNS, HTTP)    </text>
+    <line data-graph-role="decoration" x1="258.79999999999995" y1="730.0" x2="288.79999999999995" y2="730.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="298.79999999999995" y="734.0" class="legend">transporte (TCP)    </text>
+    <line data-graph-role="decoration" x1="452.79999999999995" y1="730.0" x2="482.79999999999995" y2="730.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="492.79999999999995" y="734.0" class="legend">criptografia (TLS)    </text>
+    <line data-graph-role="decoration" x1="654.4799999999999" y1="730.0" x2="684.4799999999999" y2="730.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="694.4799999999999" y="734.0" class="legend">enlace</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="42,772,644,788">
+  <text x="42.0" y="784.0" class="footnote">cada etapa é um lugar onde um atacante pode tentar interferir: a seção 3 começa por aí</text>
+  </g>
 </svg>
