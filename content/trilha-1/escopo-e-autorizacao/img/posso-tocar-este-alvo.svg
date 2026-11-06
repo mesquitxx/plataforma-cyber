@@ -1,73 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" role="img" aria-labelledby="t d">
-  <title id="t">Árvore de decisão: posso tocar este alvo agora?</title>
-  <desc id="d">Seis perguntas em sequência, de cima para baixo. Um: o alvo está escrito no escopo, como IP, faixa ou URL exata? Se não, não toque, ou peça um adendo. Dois: ele está numa exclusão? Se sim, não toque. Três: se é um nome, você resolveu agora e todos os IPs estão dentro do escopo? Se não, não toque e avise. Quatro: a infraestrutura é do cliente, ou há autorização escrita do terceiro? Se não, não toque. Cinco: agora está dentro da janela, no fuso do contrato? Se não, espere. Seis: a técnica que você vai usar é permitida pelas regras? Se não, não use, ou peça adendo. Se todas passam, pode testar, registrando data, hora, origem e comando. Uma faixa abaixo lembra que, durante o teste, uma condição de parada (invasor anterior, serviço degradado, dados pessoais além do necessário) interrompe tudo e exige aviso imediato.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 12.5px; font-weight: 700; }
-    .s { font-size: 11.5px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke-width: 1.6; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 820" width="1420" height="820" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f06a6a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="560" fill="#121815"/>
-  <text class="t" x="30" y="34">Antes de cada ação: posso tocar este alvo agora?</text>
-
-  <!-- questions: x=30 w=500 h=48, step 66 starting y=52 -->
-  <rect class="box" x="30" y="52" width="500" height="48" rx="8" style="stroke:#5cc8d8"/>
-  <text class="m" x="44" y="81">1. Está escrito no escopo (IP, faixa, URL exata)?</text>
-  <rect class="box" x="30" y="118" width="500" height="48" rx="8" style="stroke:#5cc8d8"/>
-  <text class="m" x="44" y="147">2. Está numa exclusão?</text>
-  <rect class="box" x="30" y="184" width="500" height="48" rx="8" style="stroke:#5cc8d8"/>
-  <text class="m" x="44" y="213">3. Se é nome: resolvi AGORA e todo IP está dentro?</text>
-  <rect class="box" x="30" y="250" width="500" height="48" rx="8" style="stroke:#5cc8d8"/>
-  <text class="m" x="44" y="279">4. A infraestrutura é do cliente (ou o terceiro assinou)?</text>
-  <rect class="box" x="30" y="316" width="500" height="48" rx="8" style="stroke:#5cc8d8"/>
-  <text class="m" x="44" y="345">5. Estou dentro da janela, no fuso do contrato?</text>
-  <rect class="box" x="30" y="382" width="500" height="48" rx="8" style="stroke:#5cc8d8"/>
-  <text class="m" x="44" y="411">6. A técnica é permitida pelas regras?</text>
-
-  <!-- yes arrows down -->
-  <line x1="280" y1="100" x2="280" y2="114" stroke="#5ee08a" stroke-width="1.6" marker-end="url(#g)"/>
-  <text class="s" x="290" y="112" style="fill:#5ee08a">sim</text>
-  <line x1="280" y1="166" x2="280" y2="180" stroke="#5ee08a" stroke-width="1.6" marker-end="url(#g)"/>
-  <text class="s" x="290" y="178" style="fill:#5ee08a">não</text>
-  <line x1="280" y1="232" x2="280" y2="246" stroke="#5ee08a" stroke-width="1.6" marker-end="url(#g)"/>
-  <text class="s" x="290" y="244" style="fill:#5ee08a">sim</text>
-  <line x1="280" y1="298" x2="280" y2="312" stroke="#5ee08a" stroke-width="1.6" marker-end="url(#g)"/>
-  <text class="s" x="290" y="310" style="fill:#5ee08a">sim</text>
-  <line x1="280" y1="364" x2="280" y2="378" stroke="#5ee08a" stroke-width="1.6" marker-end="url(#g)"/>
-  <text class="s" x="290" y="376" style="fill:#5ee08a">sim</text>
-  <line x1="280" y1="430" x2="280" y2="444" stroke="#5ee08a" stroke-width="1.6" marker-end="url(#g)"/>
-  <text class="s" x="290" y="442" style="fill:#5ee08a">sim</text>
-
-  <rect class="box" x="30" y="448" width="500" height="44" rx="8" style="stroke:#5ee08a"/>
-  <text class="m" x="44" y="468" style="fill:#5ee08a">Pode testar, registrando data, hora, origem</text>
-  <text class="m" x="44" y="484" style="fill:#5ee08a">e comando no caderno.</text>
-
-  <!-- no branches -->
-  <line x1="530" y1="76" x2="596" y2="76" stroke="#f06a6a" stroke-width="1.6" marker-end="url(#r)"/>
-  <text class="s" x="540" y="70" style="fill:#f06a6a">não</text>
-  <text class="s" x="604" y="80">não toque, ou peça adendo</text>
-  <line x1="530" y1="142" x2="596" y2="142" stroke="#f06a6a" stroke-width="1.6" marker-end="url(#r)"/>
-  <text class="s" x="540" y="136" style="fill:#f06a6a">sim</text>
-  <text class="s" x="604" y="146">não toque</text>
-  <line x1="530" y1="208" x2="596" y2="208" stroke="#f06a6a" stroke-width="1.6" marker-end="url(#r)"/>
-  <text class="s" x="540" y="202" style="fill:#f06a6a">não</text>
-  <text class="s" x="604" y="212">não toque e avise o contato</text>
-  <line x1="530" y1="274" x2="596" y2="274" stroke="#f06a6a" stroke-width="1.6" marker-end="url(#r)"/>
-  <text class="s" x="540" y="268" style="fill:#f06a6a">não</text>
-  <text class="s" x="604" y="278">não toque</text>
-  <line x1="530" y1="340" x2="596" y2="340" stroke="#f06a6a" stroke-width="1.6" marker-end="url(#r)"/>
-  <text class="s" x="540" y="334" style="fill:#f06a6a">não</text>
-  <text class="s" x="604" y="344">espere a janela</text>
-  <line x1="530" y1="406" x2="596" y2="406" stroke="#f06a6a" stroke-width="1.6" marker-end="url(#r)"/>
-  <text class="s" x="540" y="400" style="fill:#f06a6a">não</text>
-  <text class="s" x="604" y="410">não use, ou peça adendo</text>
-
-  <rect x="30" y="506" width="840" height="40" rx="8" fill="#2a1a1a" stroke="#f06a6a" stroke-width="1.4"/>
-  <text class="s" x="44" y="524" style="fill:#f06a6a">Durante o teste: invasor anterior, serviço degradado ou dados pessoais além do necessário</text>
-  <text class="s" x="44" y="539" style="fill:#f06a6a">= condição de parada: interrompa a ação e avise o contato de emergência na hora.</text>
+  <rect data-graph-role="background" width="1420.0" height="820.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="710.0" y="56" text-anchor="middle" class="title">Um único NÃO e você não toca o alvo</text>
+  <text x="710.0" y="82" text-anchor="middle" class="subtitle">seis perguntas antes de cada ação; e a condição de parada vale o tempo todo</text>
+  <g id="perguntas" data-graph-role="container" data-container-id="perguntas" data-semantic-role="boundary" data-graph-bounds="30,112,870,632">
+  <rect data-graph-role="container" x="30.0" y="112.0" width="840.0" height="520.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="48.0" y="136.0" class="section"><tspan fill="#cbd5e1">ANTES DE CADA AÇÃO: TODAS PRECISAM SER SIM</tspan></text>
+    <rect id="perguntas-header" data-graph-role="reserved" data-reserved-kind="container-header" x="38" y="118" width="322.76" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="node-q1" data-graph-role="node" data-node-id="q1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="perguntas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="55,158,845,220">
+  <rect x="55.0" y="158.0" width="790.0" height="62.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="1  está escrito no escopo? (IP, faixa, URL exata)" data-text-max-width="766.0" x="450.0" y="189.0" text-anchor="middle" class="node-title" font-size="15.0">1 está escrito no escopo? (IP, faixa, URL exata)</text>
+  <text data-text-role="subtitle" data-full-text="se não: não toque, ou peça adendo" data-text-max-width="766.0" x="450.0" y="211.0" text-anchor="middle" class="node-sub" font-size="12">se não: não toque, ou peça adendo</text>
+  </g>
+  <g id="node-q2" data-graph-role="node" data-node-id="q2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="perguntas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="55,236,845,298">
+  <rect x="55.0" y="236.0" width="790.0" height="62.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="2  está fora da lista de exclusão?" data-text-max-width="766.0" x="450.0" y="267.0" text-anchor="middle" class="node-title" font-size="15.0">2 está fora da lista de exclusão?</text>
+  <text data-text-role="subtitle" data-full-text="se não: não toque" data-text-max-width="766.0" x="450.0" y="289.0" text-anchor="middle" class="node-sub" font-size="12">se não: não toque</text>
+  </g>
+  <g id="node-q3" data-graph-role="node" data-node-id="q3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="perguntas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="55,314,845,376">
+  <rect x="55.0" y="314.0" width="790.0" height="62.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="3  se é nome: resolvi agora e todo IP está dentro?" data-text-max-width="766.0" x="450.0" y="345.0" text-anchor="middle" class="node-title" font-size="15.0">3 se é nome: resolvi agora e todo IP está dentro?</text>
+  <text data-text-role="subtitle" data-full-text="se não: não toque e avise o contato" data-text-max-width="766.0" x="450.0" y="367.0" text-anchor="middle" class="node-sub" font-size="12">se não: não toque e avise o contato</text>
+  </g>
+  <g id="node-q4" data-graph-role="node" data-node-id="q4" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="perguntas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="55,392,845,454">
+  <rect x="55.0" y="392.0" width="790.0" height="62.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="4  o dono é o cliente, ou o terceiro assinou?" data-text-max-width="766.0" x="450.0" y="423.0" text-anchor="middle" class="node-title" font-size="15.0">4 o dono é o cliente, ou o terceiro assinou?</text>
+  <text data-text-role="subtitle" data-full-text="se não: não toque" data-text-max-width="766.0" x="450.0" y="445.0" text-anchor="middle" class="node-sub" font-size="12">se não: não toque</text>
+  </g>
+  <g id="node-q5" data-graph-role="node" data-node-id="q5" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="perguntas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="55,470,845,532">
+  <rect x="55.0" y="470.0" width="790.0" height="62.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="5  estou dentro da janela, no fuso do contrato?" data-text-max-width="766.0" x="450.0" y="501.0" text-anchor="middle" class="node-title" font-size="15.0">5 estou dentro da janela, no fuso do contrato?</text>
+  <text data-text-role="subtitle" data-full-text="se não: espere a janela" data-text-max-width="766.0" x="450.0" y="523.0" text-anchor="middle" class="node-sub" font-size="12">se não: espere a janela</text>
+  </g>
+  <g id="node-q6" data-graph-role="node" data-node-id="q6" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="perguntas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="55,548,845,610">
+  <rect x="55.0" y="548.0" width="790.0" height="62.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="6  a técnica é permitida pelas regras?" data-text-max-width="766.0" x="450.0" y="579.0" text-anchor="middle" class="node-title" font-size="15.0">6 a técnica é permitida pelas regras?</text>
+  <text data-text-role="subtitle" data-full-text="se não: não use, ou peça adendo" data-text-max-width="766.0" x="450.0" y="601.0" text-anchor="middle" class="node-sub" font-size="12">se não: não use, ou peça adendo</text>
+  </g>
+  <g id="node-nao" data-graph-role="node" data-node-id="nao" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1000,158,1390,328">
+  <rect x="1000.0" y="158.0" width="390.0" height="170.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.6"/>
+  <text x="1195.0" y="176.0" text-anchor="middle" class="node-type">ALGUM NÃO</text>
+  <text data-text-role="title" data-full-text="não toque o alvo" data-text-max-width="366.0" x="1195.0" y="249.0" text-anchor="middle" class="node-title" font-size="22.0">não toque o alvo</text>
+  <text data-text-role="subtitle" data-full-text="resolva antes: adendo, janela ou contato" data-text-max-width="366.0" x="1195.0" y="271.0" text-anchor="middle" class="node-sub" font-size="12">resolva antes: adendo, janela ou contato</text>
+  </g>
+  <g id="node-sim" data-graph-role="node" data-node-id="sim" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1000,440,1390,610">
+  <rect x="1000.0" y="440.0" width="390.0" height="170.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="2.6" filter="url(#glowGreen)"/>
+  <text x="1195.0" y="458.0" text-anchor="middle" class="node-type">SEIS VEZES SIM</text>
+  <text data-text-role="title" data-full-text="pode testar" data-text-max-width="366.0" x="1195.0" y="531.0" text-anchor="middle" class="node-title" font-size="22.0">pode testar</text>
+  <text data-text-role="subtitle" data-full-text="e registre data, hora, origem e comando" data-text-max-width="366.0" x="1195.0" y="553.0" text-anchor="middle" class="node-sub" font-size="12">e registre data, hora, origem e comando</text>
+  </g>
+  <g id="node-parada" data-graph-role="node" data-node-id="parada" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="30,662,1390,742">
+  <rect x="30.0" y="662.0" width="1360.0" height="80.0" rx="10.0" fill="#2a1405" stroke="#f97316" stroke-width="2.4" filter="url(#glowOrange)"/>
+  <text x="710.0" y="680.0" text-anchor="middle" class="node-type">A QUALQUER MOMENTO: CONDIÇÃO DE PARADA</text>
+  <text data-text-role="title" data-full-text="invasor anterior, serviço caindo ou dados pessoais demais: pare tudo e avise na hora" data-text-max-width="1336.0" x="710.0" y="708.0" text-anchor="middle" class="node-title" font-size="16.0">invasor anterior, serviço caindo ou dados pessoais demais: pare tudo e avise na hora</text>
+  </g>
+  <path data-graph-role="decoration" d="M 870.0,243.0 L 996.0,243.0" fill="none" stroke="#fb7185" stroke-width="2.6" stroke-linecap="round" marker-end="url(#arrowE)"/>
+  <rect data-graph-role="decoration" x="880.4" y="213.0" width="105.2" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text data-graph-role="decoration" x="933.0" y="227.0" text-anchor="middle" class="arrow-label">qualquer NÃO</text>
+  <path data-graph-role="decoration" d="M 870.0,525.0 L 996.0,525.0" fill="none" stroke="#22c55e" stroke-width="2.6" stroke-linecap="round" marker-end="url(#arrowB)"/>
+  <rect data-graph-role="decoration" x="891.8" y="495.0" width="82.4" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text data-graph-role="decoration" x="933.0" y="509.0" text-anchor="middle" class="arrow-label">todas SIM</text>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="764" width="500.96" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="778.0" x2="70.0" y2="778.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="80.0" y="782.0" class="legend">pode seguir</text>
+    <line data-graph-role="decoration" x1="178.8" y1="778.0" x2="208.8" y2="778.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="218.8" y="782.0" class="legend">não toque</text>
+    <line data-graph-role="decoration" x1="306.8" y1="778.0" x2="336.8" y2="778.0" stroke="#f97316" stroke-width="2.3" marker-end="url(#arrowG)"/>
+    <text data-graph-role="decoration" x="346.8" y="782.0" class="legend">pare tudo, a qualquer hora</text>
+  </g>
 </svg>

@@ -1,64 +1,119 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
-  <title id="t">Camadas do escopo e o deslocamento de um nome para fora dele</title>
-  <desc id="d">À esquerda, retângulos aninhados. O de fora é a internet e tudo o mais: proibido. Dentro dele, os ativos que o cliente usa, incluindo os de terceiros, que precisam de outra autorização. Dentro deste, o escopo autorizado, as faixas 10.20.0.0/24 e 198.51.100.16/28, com dois buracos: a exclusão 198.51.100.18, da folha de pagamento, e um host de outra empresa dentro da faixa. Uma seta mostra o nome portal.drogaria.example: no kickoff ele resolvia para 198.51.100.21, dentro do escopo; dias depois passou a resolver para 192.0.2.80, um IP de CDN fora do escopo. A regra: vale o IP autorizado, e o nome é conferido de novo antes de cada ação. À direita, as outras dimensões de um escopo além dos alvos: janela com fuso horário, ambiente, contas de teste, técnicas, limites de dados e origem do tráfego.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 12.5px; font-weight: 700; }
-    .s { font-size: 11.5px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke-width: 1.6; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 760" width="1420" height="760" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f0a35a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="500" fill="#121815"/>
-  <text class="t" x="30" y="34">Escopo: um território com fronteiras, buracos e nomes que mudam</text>
-
-  <rect x="30" y="56" width="540" height="420" rx="10" fill="#161d1a" stroke="#f06a6a" stroke-width="1.6"/>
-  <text class="m" x="46" y="80" style="fill:#f06a6a">Internet e todo o resto: proibido</text>
-
-  <rect x="50" y="94" width="500" height="362" rx="10" fill="#19211d" stroke="#e8c25a" stroke-width="1.6"/>
-  <text class="m" x="66" y="118" style="fill:#e8c25a">Ativos que o cliente usa</text>
-  <text class="s" x="66" y="136">inclui SaaS, CDN, hospedagem, MSSP: precisam do terceiro</text>
-
-  <rect x="70" y="150" width="460" height="230" rx="10" fill="#1c2521" stroke="#5ee08a" stroke-width="1.8"/>
-  <text class="m" x="86" y="174" style="fill:#5ee08a">Escopo autorizado (por escrito)</text>
-  <text class="s" x="86" y="194">10.20.0.0/24   198.51.100.16/28</text>
-
-  <rect x="90" y="214" width="190" height="58" rx="8" fill="#121815" stroke="#f06a6a" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text class="s" x="102" y="236" style="fill:#f06a6a">exclusão explícita</text>
-  <text class="s" x="102" y="256">198.51.100.18 (folha)</text>
-
-  <rect x="300" y="214" width="210" height="58" rx="8" fill="#121815" stroke="#e8c25a" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text class="s" x="312" y="236" style="fill:#e8c25a">outra empresa na faixa</text>
-  <text class="s" x="312" y="256">10.20.0.77 (não testar)</text>
-
-  <circle cx="140" cy="330" r="7" fill="#5ee08a"/>
-  <text class="s" x="156" y="326">198.51.100.21</text>
-  <text class="s" x="156" y="342">kickoff: portal.drogaria.example</text>
-
-  <circle cx="300" cy="420" r="7" fill="#f06a6a"/>
-  <text class="s" x="316" y="416">192.0.2.80 (CDN)</text>
-  <text class="s" x="316" y="432">três dias depois: o mesmo nome</text>
-  <path d="M146 336 C 180 400, 230 420, 290 420" fill="none" stroke="#f0a35a" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#o)"/>
-  <text class="s" x="86" y="400" style="fill:#f0a35a">o DNS mudou</text>
-
-  <rect class="box" x="600" y="56" width="270" height="420" rx="10" style="stroke:#5cc8d8"/>
-  <text class="m" x="616" y="82" style="fill:#5cc8d8">Além dos alvos, o</text>
-  <text class="m" x="616" y="100" style="fill:#5cc8d8">escopo também diz:</text>
-  <text class="s" x="616" y="132">• janela: datas, horas</text>
-  <text class="s" x="616" y="148">  e FUSO HORÁRIO</text>
-  <text class="s" x="616" y="176">• ambiente: produção ou</text>
-  <text class="s" x="616" y="192">  homologação</text>
-  <text class="s" x="616" y="220">• contas de teste entregues</text>
-  <text class="s" x="616" y="248">• técnicas permitidas e</text>
-  <text class="s" x="616" y="264">  proibidas (DoS, phishing,</text>
-  <text class="s" x="616" y="280">  físico...)</text>
-  <text class="s" x="616" y="308">• limites de dados: quantos</text>
-  <text class="s" x="616" y="324">  registros provam a falha</text>
-  <text class="s" x="616" y="352">• origem: de que IPs sai</text>
-  <text class="s" x="616" y="368">  o tráfego de teste</text>
-  <text class="s" x="616" y="404" style="fill:#5ee08a">Regra prática: vale o IP</text>
-  <text class="s" x="616" y="420" style="fill:#5ee08a">autorizado; confira o nome</text>
-  <text class="s" x="616" y="436" style="fill:#5ee08a">antes de CADA ação.</text>
+  <rect data-graph-role="background" width="1420.0" height="760.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="710.0" y="56" text-anchor="middle" class="title">Vale o IP escrito no papel, não o nome</text>
+  <text x="710.0" y="82" text-anchor="middle" class="subtitle">o escopo tem fronteiras e buracos, e um nome pode sair dele sem nada mudar no contrato</text>
+  <g id="proibido" data-graph-role="container" data-container-id="proibido" data-semantic-role="boundary" data-graph-bounds="30,112,1390,680">
+  <rect data-graph-role="container" x="30.0" y="112.0" width="1360.0" height="568.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#fb7185" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="48.0" y="136.0" class="section"><tspan fill="#fb7185">PROIBIDO: A INTERNET E TUDO O MAIS</tspan></text>
+    <rect id="proibido-header" data-graph-role="reserved" data-reserved-kind="container-header" x="38" y="118" width="255.42" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="terceiro" data-graph-role="container" data-container-id="terceiro" data-semantic-role="boundary" data-graph-bounds="70,158,1350,640">
+  <rect data-graph-role="container" x="70.0" y="158.0" width="1280.0" height="482.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="88.0" y="182.0" class="section"><tspan fill="#f59e0b">PRECISA DO TERCEIRO: NUVEM, HOSPEDAGEM, CDN, SEGURANÇA TERCEIRIZADA</tspan></text>
+    <rect id="terceiro-header" data-graph-role="reserved" data-reserved-kind="container-header" x="78" y="164" width="494.36" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="escopo" data-graph-role="container" data-container-id="escopo" data-semantic-role="boundary" data-graph-bounds="110,204,680,600">
+  <rect data-graph-role="container" x="110.0" y="204.0" width="570.0" height="396.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#22c55e" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="128.0" y="228.0" class="section"><tspan fill="#22c55e">ESCOPO ASSINADO: 10.20.0.0/24 E 198.51.100.16/28</tspan></text>
+    <rect id="escopo-header" data-graph-role="reserved" data-reserved-kind="container-header" x="118" y="210" width="353.44" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="drift" data-graph-role="edge" data-edge-id="drift" data-source="antes" data-target="depois" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 650,500 L 860,500" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <g id="node-ex1" data-graph-role="node" data-node-id="ex1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="escopo" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="140,262,385,392">
+  <rect x="140.0" y="262.0" width="245.0" height="130.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.2"/>
+  <text x="262.5" y="280.0" text-anchor="middle" class="node-type">BURACO: EXCLUÍDO</text>
+  <text data-text-role="title" data-full-text="198.51.100.18" data-text-max-width="221.0" x="262.5" y="333.0" text-anchor="middle" class="node-title" font-size="17.0">198.51.100.18</text>
+  <text data-text-role="subtitle" data-full-text="folha de pagamento" data-text-max-width="221.0" x="262.5" y="355.0" text-anchor="middle" class="node-sub" font-size="12">folha de pagamento</text>
+  </g>
+  <g id="node-ex2" data-graph-role="node" data-node-id="ex2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="escopo" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="405,262,650,392">
+  <rect x="405.0" y="262.0" width="245.0" height="130.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.2"/>
+  <text x="527.5" y="280.0" text-anchor="middle" class="node-type">BURACO: NÃO É DO CLIENTE</text>
+  <text data-text-role="title" data-full-text="10.20.0.77" data-text-max-width="221.0" x="527.5" y="333.0" text-anchor="middle" class="node-title" font-size="17.0">10.20.0.77</text>
+  <text data-text-role="subtitle" data-full-text="de outra empresa" data-text-max-width="221.0" x="527.5" y="355.0" text-anchor="middle" class="node-sub" font-size="12">de outra empresa</text>
+  </g>
+  <g id="node-antes" data-graph-role="node" data-node-id="antes" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="escopo" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="140,440,650,560">
+  <rect x="140.0" y="440.0" width="510.0" height="120.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="2.2"/>
+  <text x="395.0" y="458.0" text-anchor="middle" class="node-type">NO KICKOFF</text>
+  <text data-text-role="title" data-full-text="portal.drogaria.example" data-text-max-width="486.0" x="395.0" y="506.0" text-anchor="middle" class="node-title" font-size="18.0">portal.drogaria.example</text>
+  <text data-text-role="subtitle" data-full-text="aponta para 198.51.100.21: dentro do escopo" data-text-max-width="486.0" x="395.0" y="528.0" text-anchor="middle" class="node-sub" font-size="12">aponta para 198.51.100.21: dentro do escopo</text>
+  </g>
+  <g id="node-depois" data-graph-role="node" data-node-id="depois" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="terceiro" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="860,440,1310,560">
+  <rect x="860.0" y="440.0" width="450.0" height="120.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="2.6" filter="url(#glowPurple)"/>
+  <text x="1085.0" y="458.0" text-anchor="middle" class="node-type">TRÊS DIAS DEPOIS</text>
+  <text data-text-role="title" data-full-text="portal.drogaria.example" data-text-max-width="426.0" x="1085.0" y="506.0" text-anchor="middle" class="node-title" font-size="18.0">portal.drogaria.example</text>
+  <text data-text-role="subtitle" data-full-text="aponta para 192.0.2.80, da CDN: fora!" data-text-max-width="426.0" x="1085.0" y="528.0" text-anchor="middle" class="node-sub" font-size="12">aponta para 192.0.2.80, da CDN: fora!</text>
+  <rect x="878.0" y="540.0" width="282" height="16" rx="3" fill="#1e1b4b" stroke="#a855f7" stroke-width="1"/>
+  <text x="1019.0" y="551.5" text-anchor="middle" font-size="11" font-weight="500" fill="#e9d5ff">confira o nome antes de cada ação</text>
+  </g>
+  <g id="drift-label" data-graph-role="label" data-owner="drift" data-graph-bounds="713.92,469,796.08,489">
+  <rect x="713.92" y="469.0" width="82.16000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="755.0" y="483.0" text-anchor="middle" class="arrow-label">mudou de IP</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="698" width="622.72" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="712.0" x2="70.0" y2="712.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="80.0" y="716.0" class="legend">pode testar</text>
+    <line data-graph-role="decoration" x1="181.92000000000002" y1="712.0" x2="211.92000000000002" y2="712.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="221.92000000000002" y="716.0" class="legend">só com o terceiro</text>
+    <line data-graph-role="decoration" x1="357.20000000000005" y1="712.0" x2="387.20000000000005" y2="712.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="397.20000000000005" y="716.0" class="legend">proibido</text>
+    <line data-graph-role="decoration" x1="474.64000000000004" y1="712.0" x2="504.64000000000004" y2="712.0" stroke="#a855f7" stroke-width="2.3" marker-end="url(#arrowA)"/>
+    <text data-graph-role="decoration" x="514.6400000000001" y="716.0" class="legend">o nome (um apelido)</text>
+  </g>
 </svg>
