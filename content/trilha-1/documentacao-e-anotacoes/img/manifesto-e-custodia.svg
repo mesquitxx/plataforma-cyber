@@ -1,64 +1,120 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
-  <title id="t">A cadeia de custódia de uma evidência, por hash</title>
-  <desc id="d">Da esquerda para a direita, quatro etapas. Na coleta, a saída de uma ferramenta é salva num arquivo original, que não se edita mais. Em seguida, calcula-se o hash SHA-256 de cada arquivo e grava-se o conjunto no MANIFESTO.sha256. Depois, o manifesto e as evidências entram num commit do Git, que carimba a data e torna qualquer alteração posterior visível no histórico. Por fim, na conferência, o comando sha256sum -c MANIFESTO.sha256 recalcula os hashes e aponta três resultados possíveis: OK quando bate, FAILED quando o conteúdo mudou, e um erro de arquivo não encontrado quando a evidência sumiu. Uma caixa à parte lembra que um arquivo que nunca entrou no manifesto também é um problema: ele existe sem prova de origem.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 12.5px; font-weight: 700; }
-    .s { font-size: 11px; fill: #9fb0a6; }
-    .c { font-size: 11.5px; }
-    .box { fill: #1c2521; stroke-width: 1.6; }
-    .ok { fill: #5ee08a; } .bad { fill: #f06a6a; } .warn { fill: #f0a35a; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 640" width="1420" height="640" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="430" fill="#121815"/>
-  <text class="t" x="30" y="30">O hash prova que a evidência não mudou</text>
-
-  <rect class="box" x="30" y="56" width="180" height="92" rx="8" style="stroke:#5cc8d8"/>
-  <text class="m" x="44" y="80" style="fill:#5cc8d8">1 coleta</text>
-  <text class="c" x="44" y="102" style="font-size:11px">a saída da ferramenta</text>
-  <text class="c" x="44" y="120" style="font-size:11px">vira um arquivo</text>
-  <text class="c" x="44" y="138" style="font-size:11px">original (não se edita)</text>
-
-  <rect class="box" x="240" y="56" width="180" height="92" rx="8" style="stroke:#5ee08a"/>
-  <text class="m" x="254" y="80" style="fill:#5ee08a">2 hash</text>
-  <text class="c" x="254" y="102" style="font-size:11px">sha256sum E*.txt</text>
-  <text class="c" x="254" y="120" style="font-size:11px">&gt; MANIFESTO.sha256</text>
-  <text class="s" x="254" y="138">uma linha por arquivo</text>
-
-  <rect class="box" x="450" y="56" width="180" height="92" rx="8" style="stroke:#b48cf0"/>
-  <text class="m" x="464" y="80" style="fill:#b48cf0">3 commit</text>
-  <text class="c" x="464" y="102" style="font-size:11px">git add + commit</text>
-  <text class="c" x="464" y="120" style="font-size:11px">carimba a data;</text>
-  <text class="c" x="464" y="138" style="font-size:11px">mudança fica visível</text>
-
-  <rect class="box" x="660" y="56" width="210" height="92" rx="8" style="stroke:#e8c25a"/>
-  <text class="m" x="674" y="80" style="fill:#e8c25a">4 conferência</text>
-  <text class="c" x="674" y="102" style="font-size:11px">sha256sum -c</text>
-  <text class="c" x="674" y="120" style="font-size:11px">MANIFESTO.sha256</text>
-  <text class="s" x="674" y="138">recalcula e compara</text>
-
-  <g stroke="#5ee08a" stroke-width="2" marker-end="url(#g)">
-    <line x1="210" y1="102" x2="238" y2="102"/>
-    <line x1="420" y1="102" x2="448" y2="102"/>
-    <line x1="630" y1="102" x2="658" y2="102"/>
+  <rect data-graph-role="background" width="1420.0" height="640.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="710.0" y="56" text-anchor="middle" class="title">O hash prova que a evidência não mudou</text>
+  <text x="710.0" y="82" text-anchor="middle" class="subtitle">um byte alterado muda o hash: a conferência denuncia o arquivo mexido ou sumido</text>
+  <path id="e1" data-graph-role="edge" data-edge-id="e1" data-source="coleta" data-target="manifesto" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 340,200 L 380,200" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e2" data-graph-role="edge" data-edge-id="e2" data-source="manifesto" data-target="commit" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 680,200 L 720,200" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e3" data-graph-role="edge" data-edge-id="e3" data-source="commit" data-target="confere" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1020,200 L 1060,200" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e4" data-graph-role="edge" data-edge-id="e4" data-source="confere" data-target="falha" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1220,260 L 1220,370" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="e5" data-graph-role="edge" data-edge-id="e5" data-source="coleta" data-target="fora" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 190,260 L 190,370" fill="none" stroke="#f97316" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowG)" stroke-dasharray="6,4"/>
+  <g id="node-coleta" data-graph-role="node" data-node-id="coleta" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,140,340,260">
+  <rect x="40.0" y="140.0" width="300.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="190.0" y="158.0" text-anchor="middle" class="node-type">1 COLETA</text>
+  <text data-text-role="title" data-full-text="arquivo original" data-text-max-width="276.0" x="190.0" y="206.0" text-anchor="middle" class="node-title" font-size="18">arquivo original</text>
+  <text data-text-role="subtitle" data-full-text="nunca se edita" data-text-max-width="276.0" x="190.0" y="228.0" text-anchor="middle" class="node-sub" font-size="12">nunca se edita</text>
   </g>
-
-  <!-- results -->
-  <rect class="box" x="660" y="168" width="210" height="130" rx="8" style="stroke:#34413b"/>
-  <text class="m" x="674" y="190">três resultados:</text>
-  <text class="c ok" x="674" y="214" style="font-size:11.5px">E01 ... : OK</text>
-  <text class="s" x="690" y="230">o conteúdo bate</text>
-  <text class="c bad" x="674" y="252" style="font-size:11.5px">E07 ... : FAILED</text>
-  <text class="s" x="690" y="268">o conteúdo mudou</text>
-  <text class="c warn" x="674" y="290" style="font-size:11.5px">E09 ... : No such file</text>
-  <line x1="765" y1="148" x2="765" y2="166" stroke="#e8c25a" stroke-width="2" marker-end="url(#g)"/>
-
-  <!-- not in manifest -->
-  <rect class="box" x="30" y="330" width="840" height="76" rx="8" style="stroke:#f0a35a"/>
-  <text class="m warn" x="46" y="356">e o quarto caso, que o -c não pega sozinho:</text>
-  <text class="c" x="46" y="380" style="font-size:12px">um arquivo que existe mas NÃO está no manifesto (E11). Ele não tem prova de origem — compare a lista</text>
-  <text class="c" x="46" y="398" style="font-size:12px">dos arquivos com a do manifesto (comm) e confira o próprio manifesto no histórico do Git.</text>
+  <g id="node-manifesto" data-graph-role="node" data-node-id="manifesto" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="380,140,680,260">
+  <rect x="380.0" y="140.0" width="300.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="530.0" y="158.0" text-anchor="middle" class="node-type">2 HASH</text>
+  <text data-text-role="title" data-full-text="MANIFESTO.sha256" data-text-max-width="276.0" x="530.0" y="206.0" text-anchor="middle" class="node-title" font-size="18">MANIFESTO.sha256</text>
+  <text data-text-role="subtitle" data-full-text="um hash por arquivo" data-text-max-width="276.0" x="530.0" y="228.0" text-anchor="middle" class="node-sub" font-size="12">um hash por arquivo</text>
+  </g>
+  <g id="node-commit" data-graph-role="node" data-node-id="commit" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="720,140,1020,260">
+  <rect x="720.0" y="140.0" width="300.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="870.0" y="158.0" text-anchor="middle" class="node-type">3 COMMIT NO GIT</text>
+  <text data-text-role="title" data-full-text="carimba a data" data-text-max-width="276.0" x="870.0" y="206.0" text-anchor="middle" class="node-title" font-size="18">carimba a data</text>
+  <text data-text-role="subtitle" data-full-text="reescrever o manifesto aparece" data-text-max-width="276.0" x="870.0" y="228.0" text-anchor="middle" class="node-sub" font-size="12">reescrever o manifesto aparece</text>
+  </g>
+  <g id="node-confere" data-graph-role="node" data-node-id="confere" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1060,140,1380,260">
+  <rect x="1060.0" y="140.0" width="320.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="1220.0" y="158.0" text-anchor="middle" class="node-type">4 CONFERÊNCIA</text>
+  <text data-text-role="title" data-full-text="sha256sum -c" data-text-max-width="296.0" x="1220.0" y="206.0" text-anchor="middle" class="node-title" font-size="18">sha256sum -c</text>
+  <text data-text-role="subtitle" data-full-text="OK quando o hash bate" data-text-max-width="296.0" x="1220.0" y="228.0" text-anchor="middle" class="node-sub" font-size="12">OK quando o hash bate</text>
+  </g>
+  <g id="node-falha" data-graph-role="node" data-node-id="falha" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1040,370,1400,510">
+  <rect x="1040.0" y="370.0" width="360.0" height="140.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.8"/>
+  <text x="1220.0" y="388.0" text-anchor="middle" class="node-type">O -c DENUNCIA</text>
+  <text data-text-role="title" data-full-text="FAILED: o conteúdo mudou" data-text-max-width="336.0" x="1220.0" y="446.0" text-anchor="middle" class="node-title" font-size="18">FAILED: o conteúdo mudou</text>
+  <text data-text-role="subtitle" data-full-text="No such file: a evidência sumiu" data-text-max-width="336.0" x="1220.0" y="468.0" text-anchor="middle" class="node-sub" font-size="12">No such file: a evidência sumiu</text>
+  </g>
+  <g id="node-fora" data-graph-role="node" data-node-id="fora" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="20,370,360,510">
+  <rect x="20.0" y="370.0" width="340.0" height="140.0" rx="10.0" fill="#2a1406" stroke="#f97316" stroke-width="1.8"/>
+  <text x="190.0" y="388.0" text-anchor="middle" class="node-type">O -c NÃO PEGA SOZINHO</text>
+  <text data-text-role="title" data-full-text="arquivo fora do manifesto" data-text-max-width="316.0" x="190.0" y="446.0" text-anchor="middle" class="node-title" font-size="18">arquivo fora do manifesto</text>
+  <text data-text-role="subtitle" data-full-text="compare as listas de arquivos" data-text-max-width="316.0" x="190.0" y="468.0" text-anchor="middle" class="node-sub" font-size="12">compare as listas de arquivos</text>
+  </g>
+  <g id="e4-label" data-graph-role="label" data-owner="e4" data-graph-bounds="1082.28,301,1217,321">
+  <rect x="1082.28" y="301.0" width="134.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="1149.64" y="315.0" text-anchor="middle" class="arrow-label">recalcula e compara</text>
+  </g>
+  <g id="e5-label" data-graph-role="label" data-owner="e5" data-graph-bounds="79.64,301,187,321">
+  <rect x="79.64" y="301.0" width="107.36" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="133.32" y="315.0" text-anchor="middle" class="arrow-label">pulou o passo 2</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="586" width="739.04" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="600.0" x2="70.0" y2="600.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="80.0" y="604.0" class="legend">cadeia de custódia      </text>
+    <line data-graph-role="decoration" x1="247.67999999999995" y1="600.0" x2="277.67999999999995" y2="600.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="287.67999999999995" y="604.0" class="legend">alteração que o -c pega      </text>
+    <line data-graph-role="decoration" x1="487.9999999999999" y1="600.0" x2="517.9999999999999" y2="600.0" stroke="#f97316" stroke-width="2.3" marker-end="url(#arrowG)"/>
+    <text data-graph-role="decoration" x="527.9999999999999" y="604.0" class="legend">falha que exige conferência à parte</text>
+  </g>
 </svg>

@@ -1,65 +1,132 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">A anatomia de um achado, campo a campo</title>
-  <desc id="d">À esquerda, uma nota de achado com sete campos empilhados: título (uma frase que diz a falha), ativo (o IP ou nome do alvo), hora em UTC, evidências (os IDs dos arquivos que provam), passos para reproduzir (uma lista numerada), impacto (o que um atacante consegue) e recomendação (como corrigir). À direita, as três seções do relatório final: o resumo executivo, a lista de achados e os anexos. Setas ligam cada campo da nota ao lugar onde ele é usado no relatório: o título e o impacto alimentam o resumo executivo e a lista; os passos e as evidências viram a prova de cada achado; a recomendação vira a remediação. Embaixo, uma régua de prioridade indica que o impacto define a severidade do achado.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 12.5px; font-weight: 700; }
-    .s { font-size: 11px; fill: #9fb0a6; }
-    .c { font-size: 11.5px; }
-    .box { fill: #1c2521; stroke-width: 1.6; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 660" width="1420" height="660" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="30">A nota de hoje é o achado do relatório</text>
-
-  <!-- note with fields -->
-  <rect class="box" x="30" y="52" width="330" height="360" rx="8" style="stroke:#5cc8d8"/>
-  <text class="m" x="46" y="76" style="fill:#5cc8d8">achados/A03.md</text>
-  <g class="c" style="font-size:11.5px">
-    <text x="46" y="104"><tspan class="s">titulo:</tspan> SQL injection em /busca</text>
-    <text x="46" y="134"><tspan class="s">ativo:</tspan> 10.0.5.15</text>
-    <text x="46" y="164"><tspan class="s">hora_utc:</tspan> 2026-10-07T01:13:05Z</text>
-    <text x="46" y="194"><tspan class="s">evidencias:</tspan> E04, E05</text>
-    <text x="46" y="224"><tspan class="s">passos:</tspan></text>
-    <text x="62" y="244">1. ?q=caneta' -&gt; erro 500</text>
-    <text x="62" y="264">2. ?q=caneta'-- -&gt; 200</text>
-    <text x="46" y="294"><tspan class="s">impacto:</tspan> ler e alterar o banco</text>
-    <text x="46" y="324"><tspan class="s">recomendacao:</tspan></text>
-    <text x="62" y="344">consultas parametrizadas</text>
-    <text x="46" y="384" class="s">status: pronto</text>
+  <rect data-graph-role="background" width="1420.0" height="660.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="710.0" y="56" text-anchor="middle" class="title">A nota de hoje já é o achado do relatório</text>
+  <text x="710.0" y="82" text-anchor="middle" class="subtitle">título, ativo, hora UTC, evidências, passos, impacto, recomendação: cada campo tem destino certo</text>
+  <g id="nota" data-graph-role="container" data-container-id="nota" data-semantic-role="boundary" data-graph-bounds="40,126,560,576">
+  <rect data-graph-role="container" x="40.0" y="126.0" width="520.0" height="450.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="150.0" class="section"><tspan fill="#38bdf8">achados/A03.md · a nota</tspan></text>
+    <rect id="nota-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="132" width="191.46" height="30" fill="none" stroke="none"/>
   </g>
-
-  <!-- report sections -->
-  <rect class="box" x="560" y="60" width="310" height="80" rx="8" style="stroke:#b48cf0"/>
-  <text class="m" x="574" y="84" style="fill:#b48cf0">resumo executivo</text>
-  <text class="s" x="574" y="106">o que foi testado, o risco geral,</text>
-  <text class="s" x="574" y="124">em linguagem de negócio</text>
-
-  <rect class="box" x="560" y="160" width="310" height="120" rx="8" style="stroke:#b48cf0"/>
-  <text class="m" x="574" y="184" style="fill:#b48cf0">lista de achados</text>
-  <text class="s" x="574" y="206">título + severidade</text>
-  <text class="s" x="574" y="224">passos para reproduzir</text>
-  <text class="s" x="574" y="242">evidências (anexas)</text>
-  <text class="s" x="574" y="260">recomendação de correção</text>
-
-  <rect class="box" x="560" y="300" width="310" height="70" rx="8" style="stroke:#b48cf0"/>
-  <text class="m" x="574" y="324" style="fill:#b48cf0">anexos</text>
-  <text class="s" x="574" y="346">evidências E04, E05 e a carta</text>
-  <text class="s" x="574" y="364">de autorização</text>
-
-  <g stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)">
-    <path d="M 360 100 C 460 100, 470 100, 558 100" fill="none"/>
-    <path d="M 360 254 C 460 254, 470 220, 558 220" fill="none"/>
-    <path d="M 360 184 C 450 184, 470 240, 558 242" fill="none"/>
-    <path d="M 360 334 C 460 340, 470 335, 558 335" fill="none"/>
+  <g id="rel" data-graph-role="container" data-container-id="rel" data-semantic-role="boundary" data-graph-bounds="860,126,1380,576">
+  <rect data-graph-role="container" x="860.0" y="126.0" width="520.0" height="450.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#a855f7" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="878.0" y="150.0" class="section"><tspan fill="#a855f7">o relatório final</tspan></text>
+    <rect id="rel-header" data-graph-role="reserved" data-reserved-kind="container-header" x="868" y="132" width="138.94" height="30" fill="none" stroke="none"/>
   </g>
-  <text class="s" x="372" y="94">título + impacto</text>
-  <text class="s" x="372" y="150">passos</text>
-  <text class="s" x="372" y="360">evidências</text>
-
-  <rect class="box" x="30" y="428" width="840" height="34" rx="8" style="stroke:#e8c25a"/>
-  <text class="c" x="46" y="450" style="font-size:12px">o campo <tspan style="fill:#e8c25a">impacto</tspan> define a <tspan style="fill:#e8c25a">severidade</tspan>: quanto um atacante consegue com a falha decide a prioridade de correção</text>
+  <path id="e1" data-graph-role="edge" data-edge-id="e1" data-source="f1" data-target="r1" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 530,241 L 890,241" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e2" data-graph-role="edge" data-edge-id="e2" data-source="f2" data-target="r2" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 530,371 L 890,371" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e3" data-graph-role="edge" data-edge-id="e3" data-source="f3" data-target="r3" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 530,501 L 890,501" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-f1" data-graph-role="node" data-node-id="f1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,186,530,296">
+  <rect x="70.0" y="186.0" width="460.0" height="110.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="300.0" y="204.0" text-anchor="middle" class="node-type">TÍTULO + IMPACTO</text>
+  <text data-text-role="title" data-full-text="SQL injection em /busca" data-text-max-width="436.0" x="300.0" y="247.0" text-anchor="middle" class="node-title" font-size="18">SQL injection em /busca</text>
+  <text data-text-role="subtitle" data-full-text="impacto: ler e alterar o banco" data-text-max-width="436.0" x="300.0" y="269.0" text-anchor="middle" class="node-sub" font-size="12">impacto: ler e alterar o banco</text>
+  </g>
+  <g id="node-f2" data-graph-role="node" data-node-id="f2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,316,530,426">
+  <rect x="70.0" y="316.0" width="460.0" height="110.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="300.0" y="334.0" text-anchor="middle" class="node-type">PASSOS + EVIDÊNCIAS</text>
+  <text data-text-role="title" data-full-text="passos numerados" data-text-max-width="436.0" x="300.0" y="377.0" text-anchor="middle" class="node-title" font-size="18">passos numerados</text>
+  <text data-text-role="subtitle" data-full-text="provados por E04 e E05" data-text-max-width="436.0" x="300.0" y="399.0" text-anchor="middle" class="node-sub" font-size="12">provados por E04 e E05</text>
+  </g>
+  <g id="node-f3" data-graph-role="node" data-node-id="f3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,446,530,556">
+  <rect x="70.0" y="446.0" width="460.0" height="110.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="300.0" y="464.0" text-anchor="middle" class="node-type">RECOMENDAÇÃO</text>
+  <text data-text-role="title" data-full-text="como corrigir a falha" data-text-max-width="436.0" x="300.0" y="507.0" text-anchor="middle" class="node-title" font-size="18">como corrigir a falha</text>
+  <text data-text-role="subtitle" data-full-text="escrita com a falha fresca" data-text-max-width="436.0" x="300.0" y="529.0" text-anchor="middle" class="node-sub" font-size="12">escrita com a falha fresca</text>
+  </g>
+  <g id="node-r1" data-graph-role="node" data-node-id="r1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="890,186,1350,296">
+  <rect x="890.0" y="186.0" width="460.0" height="110.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text x="1120.0" y="204.0" text-anchor="middle" class="node-type">RESUMO EXECUTIVO</text>
+  <text data-text-role="title" data-full-text="o risco, para quem decide" data-text-max-width="436.0" x="1120.0" y="247.0" text-anchor="middle" class="node-title" font-size="18">o risco, para quem decide</text>
+  <text data-text-role="subtitle" data-full-text="em linguagem de negócio" data-text-max-width="436.0" x="1120.0" y="269.0" text-anchor="middle" class="node-sub" font-size="12">em linguagem de negócio</text>
+  </g>
+  <g id="node-r2" data-graph-role="node" data-node-id="r2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="890,316,1350,426">
+  <rect x="890.0" y="316.0" width="460.0" height="110.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text x="1120.0" y="334.0" text-anchor="middle" class="node-type">ACHADOS + ANEXOS</text>
+  <text data-text-role="title" data-full-text="a prova de cada falha" data-text-max-width="436.0" x="1120.0" y="377.0" text-anchor="middle" class="node-title" font-size="18">a prova de cada falha</text>
+  <text data-text-role="subtitle" data-full-text="o cliente consegue repetir" data-text-max-width="436.0" x="1120.0" y="399.0" text-anchor="middle" class="node-sub" font-size="12">o cliente consegue repetir</text>
+  </g>
+  <g id="node-r3" data-graph-role="node" data-node-id="r3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="890,446,1350,556">
+  <rect x="890.0" y="446.0" width="460.0" height="110.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text x="1120.0" y="464.0" text-anchor="middle" class="node-type">REMEDIAÇÃO</text>
+  <text data-text-role="title" data-full-text="o que o cliente corrige" data-text-max-width="436.0" x="1120.0" y="507.0" text-anchor="middle" class="node-title" font-size="18">o que o cliente corrige</text>
+  <text data-text-role="subtitle" data-full-text="e o que você reteste depois" data-text-max-width="436.0" x="1120.0" y="529.0" text-anchor="middle" class="node-sub" font-size="12">e o que você reteste depois</text>
+  </g>
+  <g id="e1-label" data-graph-role="label" data-owner="e1" data-graph-bounds="678.28,210,741.72,230">
+  <rect x="678.28" y="210.0" width="63.44" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="710.0" y="224.0" text-anchor="middle" class="arrow-label">alimenta</text>
+  </g>
+  <g id="e2-label" data-graph-role="label" data-owner="e2" data-graph-bounds="665.44,340,754.56,360">
+  <rect x="665.44" y="340.0" width="89.12" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="710.0" y="354.0" text-anchor="middle" class="arrow-label">vira a prova</text>
+  </g>
+  <g id="e3-label" data-graph-role="label" data-owner="e3" data-graph-bounds="649.6,470,770.4,490">
+  <rect x="649.6" y="470.0" width="120.80000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="710.0" y="484.0" text-anchor="middle" class="arrow-label">vira a remediação</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="32" y="604" width="549.68" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="42.0" y1="618.0" x2="72.0" y2="618.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="82.0" y="622.0" class="legend">campo da nota      </text>
+    <line data-graph-role="decoration" x1="221.12" y1="618.0" x2="251.12" y2="618.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="261.12" y="622.0" class="legend">vai direto para      </text>
+    <line data-graph-role="decoration" x1="407.91999999999996" y1="618.0" x2="437.91999999999996" y2="618.0" stroke="#a855f7" stroke-width="2.3" marker-end="url(#arrowA)"/>
+    <text data-graph-role="decoration" x="447.91999999999996" y="622.0" class="legend">seção do relatório</text>
+  </g>
 </svg>
