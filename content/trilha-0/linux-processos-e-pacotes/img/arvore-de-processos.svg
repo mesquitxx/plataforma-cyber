@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 660" width="1100" height="660" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="showcase" data-max-bends-per-edge="2" data-max-total-bends="8" data-max-route-stretch="1.35" data-max-bridged-crossings="0" data-min-node-gap="40.0" data-min-container-gutter="20.0" data-min-label-clearance="4.0" data-min-segment-length="16.0">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" width="1200" height="620" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
     <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
@@ -53,82 +53,79 @@
     .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
     </style>
   </defs>
-  <rect data-graph-role="background" width="1100.0" height="660.0" fill="url(#terminalGradient)"/>
+  <rect data-graph-role="background" width="1200.0" height="620.0" fill="url(#terminalGradient)"/>
   <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
   <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
   <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
-  <text x="550.0" y="56" text-anchor="middle" class="title">A árvore de processos do sandbox</text>
-  <text x="550.0" y="82" text-anchor="middle" class="subtitle">quem é filho de quem (PID / PPID), como mostra ps -ef --forest</text>
-  <g id="c-init" data-graph-role="container" data-container-id="c-init" data-semantic-role="boundary" data-graph-bounds="40,110,520,530">
-  <rect data-graph-role="container" x="40.0" y="110.0" width="480.0" height="420.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
-  <text x="58.0" y="134.0" class="section">dentro do contêiner: tudo desce do PID 1</text>
-    <rect id="c-init-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="116" width="301.44" height="30" fill="none" stroke="none"/>
+  <text x="600.0" y="56" text-anchor="middle" class="title">Todo processo tem um pai</text>
+  <text x="600.0" y="82" text-anchor="middle" class="subtitle">quando o pai termina antes, o filho (órfão) é adotado pelo PID 1</text>
+  <g id="dentro" data-graph-role="container" data-container-id="dentro" data-semantic-role="boundary" data-graph-bounds="40,120,740,520">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="700.0" height="400.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">DENTRO DO CONTÊINER: TUDO DESCENDE DO PID 1</text>
+    <rect id="dentro-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="324.06" height="30" fill="none" stroke="none"/>
   </g>
-  <g id="c-shell" data-graph-role="container" data-container-id="c-shell" data-semantic-role="boundary" data-graph-bounds="560,110,1060,530">
-  <rect data-graph-role="container" x="560.0" y="110.0" width="500.0" height="420.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
-  <text x="578.0" y="134.0" class="section">o seu shell: entrou de fora, pelo docker exec</text>
-    <rect id="c-shell-header" data-graph-role="reserved" data-reserved-kind="container-header" x="568" y="116" width="329.52" height="30" fill="none" stroke="none"/>
+  <g id="fora" data-graph-role="container" data-container-id="fora" data-semantic-role="boundary" data-graph-bounds="780,120,1160,520">
+  <rect data-graph-role="container" x="780.0" y="120.0" width="380.0" height="400.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="798.0" y="144.0" class="section">O SEU SHELL: ENTROU DE FORA</text>
+    <rect id="fora-header" data-graph-role="reserved" data-reserved-kind="container-header" x="788" y="126" width="215.9" height="30" fill="none" stroke="none"/>
   </g>
-  <path id="init-inf" data-graph-role="edge" data-edge-id="init-inf" data-source="init" data-target="inf" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 271,230 L 271,250.4 L 160,250.4 L 160,300" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
-  <path id="init-s300" data-graph-role="edge" data-edge-id="init-s300" data-source="init" data-target="s300" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 289,230 L 289,250.4 L 400,250.4 L 400,300" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
-  <path id="bashc-s300" data-graph-role="edge" data-edge-id="bashc-s300" data-source="bashc" data-target="s300" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 400,440 L 400,370" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
-  <path id="bash-a-s1000" data-graph-role="edge" data-edge-id="bash-a-s1000" data-source="bash" data-target="s1000" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 791,230 L 791,250.4 L 680,250.4 L 680,300" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
-  <path id="bash-b-ps" data-graph-role="edge" data-edge-id="bash-b-ps" data-source="bash" data-target="ps" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 809,230 L 809,250.4 L 920,250.4 L 920,300" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
-  <g id="node-init" data-graph-role="node" data-node-id="init" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="130,160,430,230">
-  <rect x="130.0" y="160.0" width="300.0" height="70.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="PID 1  docker-init" data-text-max-width="276.0" x="280.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">PID 1 docker-init</text>
-  <text data-text-role="subtitle" data-full-text="o init do contêiner (PPID 0)" data-text-max-width="276.0" x="280.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">o init do contêiner (PPID 0)</text>
+  <path id="adotou" data-graph-role="edge" data-edge-id="adotou" data-source="init" data-target="orfao" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 350,212 L 400,212 L 400,442 L 450,442" fill="none" stroke="#f59e0b" stroke-width="3.0" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="p1-7" data-graph-role="edge" data-edge-id="p1-7" data-source="init" data-target="infinity" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 210,254 L 210,400" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="criou" data-graph-role="edge" data-edge-id="criou" data-source="bashc" data-target="orfao" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 580,254 L 580,400" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)" stroke-dasharray="6,4"/>
+  <path id="p8" data-graph-role="edge" data-edge-id="p8" data-source="shell" data-target="filhos" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 970,254 L 970,400" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <g id="node-init" data-graph-role="node" data-node-id="init" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,170,350,254">
+  <rect x="70.0" y="170.0" width="280.0" height="84.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="PID 1 · docker-init" data-text-max-width="256.0" x="210.0" y="212.0" text-anchor="middle" class="node-title" font-size="17.0">PID 1 · docker-init</text>
+  <text data-text-role="subtitle" data-full-text="o primeiro; adota os órfãos" data-text-max-width="256.0" x="210.0" y="234.0" text-anchor="middle" class="node-sub" font-size="12">o primeiro; adota os órfãos</text>
   </g>
-  <g id="node-inf" data-graph-role="node" data-node-id="inf" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,300,260,370">
-  <rect x="60.0" y="300.0" width="200.0" height="70.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="PID 7  sleep infinity" data-text-max-width="176.0" x="160.0" y="335.0" text-anchor="middle" class="node-title" font-size="15.0">PID 7 sleep infinity</text>
-  <text data-text-role="subtitle" data-full-text="PPID 1: mantém o lab vivo" data-text-max-width="176.0" x="160.0" y="357.0" text-anchor="middle" class="node-sub" font-size="12">PPID 1: mantém o lab vivo</text>
+  <g id="node-bashc" data-graph-role="node" data-node-id="bashc" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="450,170,710,254">
+  <rect x="450.0" y="170.0" width="260.0" height="84.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="bash -c (já terminou)" data-text-max-width="236.0" x="580.0" y="212.0" text-anchor="middle" class="node-title" font-size="16.0">bash -c (já terminou)</text>
+  <text data-text-role="subtitle" data-full-text="era o pai do sleep 300" data-text-max-width="236.0" x="580.0" y="234.0" text-anchor="middle" class="node-sub" font-size="12">era o pai do sleep 300</text>
   </g>
-  <g id="node-s300" data-graph-role="node" data-node-id="s300" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="300,300,500,370">
-  <rect x="300.0" y="300.0" width="200.0" height="70.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="PID 19  sleep 300" data-text-max-width="176.0" x="400.0" y="335.0" text-anchor="middle" class="node-title" font-size="15.0">PID 19 sleep 300</text>
-  <text data-text-role="subtitle" data-full-text="PPID 1: órfão adotado" data-text-max-width="176.0" x="400.0" y="357.0" text-anchor="middle" class="node-sub" font-size="12">PPID 1: órfão adotado</text>
+  <g id="node-infinity" data-graph-role="node" data-node-id="infinity" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,400,350,484">
+  <rect x="70.0" y="400.0" width="280.0" height="84.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="PID 7 · sleep infinity" data-text-max-width="256.0" x="210.0" y="442.0" text-anchor="middle" class="node-title" font-size="16.0">PID 7 · sleep infinity</text>
+  <text data-text-role="subtitle" data-full-text="filho do PID 1" data-text-max-width="256.0" x="210.0" y="464.0" text-anchor="middle" class="node-sub" font-size="12">filho do PID 1</text>
   </g>
-  <g id="node-bashc" data-graph-role="node" data-node-id="bashc" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="300,440,500,510">
-  <rect x="300.0" y="440.0" width="200.0" height="70.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="bash -c &quot;sleep 300 &amp;&quot;" data-text-max-width="176.0" x="400.0" y="475.0" text-anchor="middle" class="node-title" font-size="14.0">bash -c "sleep 300 &amp;"</text>
-  <text data-text-role="subtitle" data-full-text="o pai: já terminou" data-text-max-width="176.0" x="400.0" y="497.0" text-anchor="middle" class="node-sub" font-size="12">o pai: já terminou</text>
+  <g id="node-orfao" data-graph-role="node" data-node-id="orfao" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="450,400,710,484">
+  <rect x="450.0" y="400.0" width="260.0" height="84.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.6" filter="url(#glowOrange)"/>
+  <text data-text-role="title" data-full-text="PID 19 · sleep 300" data-text-max-width="236.0" x="580.0" y="442.0" text-anchor="middle" class="node-title" font-size="17.0">PID 19 · sleep 300</text>
+  <text data-text-role="subtitle" data-full-text="órfão adotado: PPID 1" data-text-max-width="236.0" x="580.0" y="464.0" text-anchor="middle" class="node-sub" font-size="12">órfão adotado: PPID 1</text>
   </g>
-  <g id="node-bash" data-graph-role="node" data-node-id="bash" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="650,160,950,230">
-  <rect x="650.0" y="160.0" width="300.0" height="70.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="PID 8  bash -l" data-text-max-width="276.0" x="800.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">PID 8 bash -l</text>
-  <text data-text-role="subtitle" data-full-text="o seu shell (PPID 0)" data-text-max-width="276.0" x="800.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">o seu shell (PPID 0)</text>
+  <g id="node-shell" data-graph-role="node" data-node-id="shell" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="810,170,1130,254">
+  <rect x="810.0" y="170.0" width="320.0" height="84.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="PID 8 · bash -l" data-text-max-width="296.0" x="970.0" y="212.0" text-anchor="middle" class="node-title" font-size="18">PID 8 · bash -l</text>
+  <text data-text-role="subtitle" data-full-text="PPID 0: veio do docker exec" data-text-max-width="296.0" x="970.0" y="234.0" text-anchor="middle" class="node-sub" font-size="12">PPID 0: veio do docker exec</text>
   </g>
-  <g id="node-s1000" data-graph-role="node" data-node-id="s1000" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="580,300,780,370">
-  <rect x="580.0" y="300.0" width="200.0" height="70.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="PID 17  sleep 1000 &amp;" data-text-max-width="176.0" x="680.0" y="335.0" text-anchor="middle" class="node-title" font-size="15.0">PID 17 sleep 1000 &amp;</text>
-  <text data-text-role="subtitle" data-full-text="PPID 8: job em 2º plano" data-text-max-width="176.0" x="680.0" y="357.0" text-anchor="middle" class="node-sub" font-size="12">PPID 8: job em 2º plano</text>
+  <g id="node-filhos" data-graph-role="node" data-node-id="filhos" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="810,400,1130,484">
+  <rect x="810.0" y="400.0" width="320.0" height="84.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="PID 17 sleep · PID 20 ps" data-text-max-width="296.0" x="970.0" y="442.0" text-anchor="middle" class="node-title" font-size="16.0">PID 17 sleep · PID 20 ps</text>
+  <text data-text-role="subtitle" data-full-text="filhos do seu shell (PPID 8)" data-text-max-width="296.0" x="970.0" y="464.0" text-anchor="middle" class="node-sub" font-size="12">filhos do seu shell (PPID 8)</text>
   </g>
-  <g id="node-ps" data-graph-role="node" data-node-id="ps" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,300,1020,370">
-  <rect x="820.0" y="300.0" width="200.0" height="70.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
-  <text data-text-role="title" data-full-text="PID 20  ps -ef --forest" data-text-max-width="176.0" x="920.0" y="335.0" text-anchor="middle" class="node-title" font-size="14.02">PID 20 ps -ef --forest</text>
-  <text data-text-role="subtitle" data-full-text="PPID 8: o comando atual" data-text-max-width="176.0" x="920.0" y="357.0" text-anchor="middle" class="node-sub" font-size="12">PPID 8: o comando atual</text>
+  <g id="p1-7-label" data-graph-role="label" data-owner="p1-7" data-graph-bounds="157,313,207,333">
+  <rect x="157.0" y="313.0" width="50.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="182.0" y="327.0" text-anchor="middle" class="arrow-label">pai de</text>
   </g>
-  <g id="init-s300-label" data-graph-role="label" data-owner="init-s300" data-graph-bounds="316.62,237.4,372.38,257.4">
-  <rect x="316.62" y="237.4" width="55.76" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
-  <text x="344.5" y="251.4" text-anchor="middle" class="arrow-label">adotou</text>
+  <g id="criou-label" data-graph-role="label" data-owner="criou" data-graph-bounds="491,313,577,333">
+  <rect x="491.0" y="313.0" width="86.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="534.0" y="327.0" text-anchor="middle" class="arrow-label">criou e saiu</text>
   </g>
-  <g id="bashc-s300-label" data-graph-role="label" data-owner="bashc-s300" data-graph-bounds="293.96,391,397,411">
-  <rect x="293.96" y="391.0" width="103.03999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
-  <text x="345.48" y="405.0" text-anchor="middle" class="arrow-label">criou e morreu</text>
+  <g id="adotou-label" data-graph-role="label" data-owner="adotou" data-graph-bounds="341.24,313,397,333">
+  <rect x="341.24" y="313.0" width="55.76" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="369.12" y="327.0" text-anchor="middle" class="arrow-label">adotou</text>
+  </g>
+  <g id="p8-label" data-graph-role="label" data-owner="p8" data-graph-bounds="917,313,967,333">
+  <rect x="917.0" y="313.0" width="50.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="942.0" y="327.0" text-anchor="middle" class="arrow-label">pai de</text>
   </g>
   <g id="legend" data-graph-role="legend">
-    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="38" y="556" width="730" height="46" rx="10" fill="none" stroke="none"/>
-    <line data-graph-role="decoration" x1="48.0" y1="570.0" x2="78.0" y2="570.0" stroke="#94a3b8" stroke-width="2.3" marker-end="url(#arrowH)"/>
-    <text data-graph-role="decoration" x="88.0" y="574.0" class="legend">pai → filho   </text>
-    <line data-graph-role="decoration" x1="190.88" y1="570.0" x2="220.88" y2="570.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
-    <text data-graph-role="decoration" x="230.88" y="574.0" class="legend">filhos do seu shell   </text>
-    <line data-graph-role="decoration" x1="383.67999999999995" y1="570.0" x2="413.67999999999995" y2="570.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
-    <text data-graph-role="decoration" x="423.67999999999995" y="574.0" class="legend">adoção pelo PID 1   </text>
-    <line data-graph-role="decoration" x1="568.8" y1="570.0" x2="598.8" y2="570.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
-    <text data-graph-role="decoration" x="608.8" y="574.0" class="legend">pai original (terminou)</text>
-  </g>
-  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,612,741,628">
-  <text x="48.0" y="624.0" class="footnote">Numa máquina comum o PID 1 é o systemd. Um shell filho do servidor web é sinal clássico de invasão.</text>
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="50" y="556" width="501.92" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="60.0" y1="570.0" x2="90.0" y2="570.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="100.0" y="574.0" class="legend">processo vivo</text>
+    <line data-graph-role="decoration" x1="212.72" y1="570.0" x2="242.72" y2="570.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="252.72" y="574.0" class="legend">momento-chave: adoção</text>
+    <line data-graph-role="decoration" x1="421.12" y1="570.0" x2="451.12" y2="570.0" stroke="#94a3b8" stroke-width="2.3" marker-end="url(#arrowH)"/>
+    <text data-graph-role="decoration" x="461.12" y="574.0" class="legend">já terminou</text>
   </g>
 </svg>
