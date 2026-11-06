@@ -1,87 +1,167 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">O ciclo de vida de um processo</title>
-  <desc id="d">Parte 1: o shell (PID 8) faz fork e cria uma cópia de si (PID 17); a cópia faz exec e vira o programa sleep, com o mesmo PID; ao terminar, faz exit e vira um zumbi até o pai ler o código de saída com wait, quando some da tabela. Parte 2: os estados que o ps mostra: R (rodando), S (dormindo, esperando algo), T (parado por SIGSTOP ou Ctrl+Z, volta com SIGCONT) e Z (zumbi, terminou e espera o wait do pai).</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12.5px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 800" width="1100" height="800" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="showcase" data-max-bends-per-edge="2" data-max-total-bends="8" data-max-route-stretch="1.35" data-max-bridged-crossings="0" data-min-node-gap="40.0" data-min-container-gutter="20.0" data-min-label-clearance="4.0" data-min-segment-length="16.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c25a"/></marker>
-    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
-    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-
-  <!-- Part 1: fork, exec, exit, wait -->
-  <text class="t" x="30" y="36">1. Do Enter ao fim: fork, exec, exit e wait</text>
-
-  <rect class="box" x="30" y="60" width="150" height="62" rx="10"/>
-  <text class="m" x="46" y="87">bash</text>
-  <text class="s" x="46" y="108">PID 8 (o pai)</text>
-
-  <rect class="box" x="250" y="60" width="150" height="62" rx="10"/>
-  <text class="m" x="266" y="87">bash (cópia)</text>
-  <text class="s" x="266" y="108">PID 17, PPID 8</text>
-
-  <rect class="box" x="470" y="60" width="150" height="62" rx="10"/>
-  <text class="m" x="486" y="87">sleep 1000</text>
-  <text class="s" x="486" y="108">PID 17 (o mesmo)</text>
-
-  <rect class="box" x="690" y="60" width="180" height="62" rx="10" style="stroke:#f08c7a"/>
-  <text class="m" x="706" y="87" style="fill:#f08c7a">zumbi (Z)</text>
-  <text class="s" x="706" y="108">só o código de saída</text>
-
-  <line x1="180" y1="91" x2="246" y2="91" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="s" x="192" y="82" style="fill:#5ee08a">fork</text>
-  <line x1="400" y1="91" x2="466" y2="91" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="s" x="412" y="82" style="fill:#5ee08a">exec</text>
-  <line x1="620" y1="91" x2="686" y2="91" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
-  <text class="s" x="632" y="82" style="fill:#f08c7a">exit</text>
-
-  <path d="M780 122 v40 H105 v-36" fill="none" stroke="#5cc8d8" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#c)"/>
-  <text class="s" x="250" y="182" style="fill:#5cc8d8">wait: o pai lê o código de saída (0, 1, 143...) e o zumbi some da tabela</text>
-
-  <text class="s" x="30" y="214">fork copia o processo inteiro; exec troca o programa da cópia mantendo o PID, o dono,</text>
-  <text class="s" x="30" y="232">as variáveis exportadas e os canais 0, 1 e 2 (é assim que o ambiente e os pipes são herdados).</text>
-
-  <!-- Part 2: states -->
-  <text class="t" x="30" y="282">2. Os estados que o ps mostra na coluna STAT</text>
-
-  <rect class="box" x="60" y="310" width="170" height="60" rx="10" style="stroke:#5ee08a"/>
-  <text class="m" x="76" y="337" style="fill:#5ee08a">R  rodando</text>
-  <text class="s" x="76" y="357">na CPU ou na fila</text>
-
-  <rect class="box" x="360" y="310" width="190" height="60" rx="10"/>
-  <text class="m" x="376" y="337">S  dormindo</text>
-  <text class="s" x="376" y="357">esperando tempo/dados</text>
-
-  <rect class="box" x="60" y="400" width="170" height="56" rx="10" style="stroke:#e8c25a"/>
-  <text class="m" x="76" y="425" style="fill:#e8c25a">T  parado</text>
-  <text class="s" x="76" y="444">congelado</text>
-
-  <rect class="box" x="680" y="310" width="190" height="60" rx="10" style="stroke:#f08c7a"/>
-  <text class="m" x="696" y="337" style="fill:#f08c7a">Z  zumbi</text>
-  <text class="s" x="696" y="357">terminou; falta o wait</text>
-
-  <line x1="230" y1="328" x2="356" y2="328" stroke="#9fb0a6" stroke-width="1.5" marker-end="url(#y)"/>
-  <line x1="356" y1="352" x2="234" y2="352" stroke="#9fb0a6" stroke-width="1.5" marker-end="url(#y)"/>
-  <text class="s" x="244" y="321">espera algo</text>
-  <text class="s" x="244" y="368">chegou</text>
-
-  <line x1="120" y1="370" x2="120" y2="396" stroke="#e8c25a" stroke-width="2" marker-end="url(#y)"/>
-  <line x1="170" y1="400" x2="170" y2="374" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="s" x="250" y="420" style="fill:#e8c25a">↓ SIGSTOP ou Ctrl+Z</text>
-  <text class="s" x="250" y="440" style="fill:#5ee08a">↑ SIGCONT (bg, fg)</text>
-
-  <line x1="550" y1="340" x2="676" y2="340" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
-  <text class="s" x="566" y="332" style="fill:#f08c7a">exit ou</text>
-  <text class="s" x="566" y="362" style="fill:#f08c7a">sinal fatal</text>
-  <text class="s" x="520" y="410">Um zumbi não usa CPU nem memória:</text>
-  <text class="s" x="520" y="426">é só uma linha na tabela de processos.</text>
-  <text class="s" x="520" y="442">kill não o tira de lá; quem resolve é</text>
-  <text class="s" x="520" y="458">o pai (wait) ou a morte do pai.</text>
+  <rect data-graph-role="background" width="1100.0" height="800.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="550.0" y="56" text-anchor="middle" class="title">O ciclo de vida de um processo</text>
+  <text x="550.0" y="82" text-anchor="middle" class="subtitle">fork, exec, exit e wait; embaixo, os estados que o ps mostra na coluna STAT</text>
+  <g id="c-ciclo" data-graph-role="container" data-container-id="c-ciclo" data-semantic-role="boundary" data-graph-bounds="40,110,1060,400">
+  <rect data-graph-role="container" x="40.0" y="110.0" width="1020.0" height="290.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="134.0" class="section">1. Do Enter ao fim: fork, exec, exit e wait</text>
+    <rect id="c-ciclo-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="116" width="304.82" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="c-estados" data-graph-role="container" data-container-id="c-estados" data-semantic-role="boundary" data-graph-bounds="40,440,1060,760">
+  <rect data-graph-role="container" x="40.0" y="440.0" width="1020.0" height="320.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="464.0" class="section">2. Os estados que o ps mostra na coluna STAT</text>
+    <rect id="c-estados-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="446" width="329.26" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="wait" data-graph-role="edge" data-edge-id="wait" data-source="zumbi" data-target="pai" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.134" data-bridges="" d="M 945,230 L 945,282 L 170,282 L 170,230" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="fork" data-graph-role="edge" data-edge-id="fork" data-source="pai" data-target="copia" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 270,195 L 330,195" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="exec" data-graph-role="edge" data-edge-id="exec" data-source="copia" data-target="sleep" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 530,195 L 590,195" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="exit" data-graph-role="edge" data-edge-id="exit" data-source="sleep" data-target="zumbi" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 790,195 L 850,195" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="r-s" data-graph-role="edge" data-edge-id="r-s" data-source="r" data-target="s" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 290,526 L 450,526" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="s-r" data-graph-role="edge" data-edge-id="s-r" data-source="s" data-target="r" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 450,544 L 290,544" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="r-t" data-graph-role="edge" data-edge-id="r-t" data-source="r" data-target="t" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 171,570 L 171,660" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="t-r" data-graph-role="edge" data-edge-id="t-r" data-source="t" data-target="r" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 189,660 L 189,570" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="s-z" data-graph-role="edge" data-edge-id="s-z" data-source="s" data-target="z" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 690,535 L 840,535" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <g id="node-pai" data-graph-role="node" data-node-id="pai" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,160,270,230">
+  <rect x="70.0" y="160.0" width="200.0" height="70.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="bash" data-text-max-width="176.0" x="170.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">bash</text>
+  <text data-text-role="subtitle" data-full-text="PID 8 (o pai)" data-text-max-width="176.0" x="170.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">PID 8 (o pai)</text>
+  </g>
+  <g id="node-copia" data-graph-role="node" data-node-id="copia" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="330,160,530,230">
+  <rect x="330.0" y="160.0" width="200.0" height="70.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="bash (cópia)" data-text-max-width="176.0" x="430.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">bash (cópia)</text>
+  <text data-text-role="subtitle" data-full-text="PID 17, PPID 8" data-text-max-width="176.0" x="430.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">PID 17, PPID 8</text>
+  </g>
+  <g id="node-sleep" data-graph-role="node" data-node-id="sleep" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="590,160,790,230">
+  <rect x="590.0" y="160.0" width="200.0" height="70.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="sleep 1000" data-text-max-width="176.0" x="690.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">sleep 1000</text>
+  <text data-text-role="subtitle" data-full-text="PID 17 (o mesmo)" data-text-max-width="176.0" x="690.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">PID 17 (o mesmo)</text>
+  </g>
+  <g id="node-zumbi" data-graph-role="node" data-node-id="zumbi" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="850,160,1040,230">
+  <rect x="850.0" y="160.0" width="190.0" height="70.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="zumbi (Z)" data-text-max-width="166.0" x="945.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">zumbi (Z)</text>
+  <text data-text-role="subtitle" data-full-text="só o código de saída" data-text-max-width="166.0" x="945.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">só o código de saída</text>
+  </g>
+  <g id="node-heranca" data-graph-role="node" data-node-id="heranca" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,316,1040,380">
+  <rect x="70.0" y="316.0" width="970.0" height="64.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="exec troca o programa e mantém o PID" data-text-max-width="946.0" x="555.0" y="348.0" text-anchor="middle" class="node-title" font-size="15.0">exec troca o programa e mantém o PID</text>
+  <text data-text-role="subtitle" data-full-text="o dono, o diretório, os arquivos abertos (0, 1, 2) e as variáveis exportadas são herdados" data-text-max-width="946.0" x="555.0" y="370.0" text-anchor="middle" class="node-sub" font-size="12">o dono, o diretório, os arquivos abertos (0, 1, 2) e as variáveis exportadas são herdados</text>
+  </g>
+  <g id="node-r" data-graph-role="node" data-node-id="r" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,500,290,570">
+  <rect x="70.0" y="500.0" width="220.0" height="70.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="R  rodando" data-text-max-width="196.0" x="180.0" y="535.0" text-anchor="middle" class="node-title" font-size="16.0">R rodando</text>
+  <text data-text-role="subtitle" data-full-text="na CPU ou na fila" data-text-max-width="196.0" x="180.0" y="557.0" text-anchor="middle" class="node-sub" font-size="12">na CPU ou na fila</text>
+  </g>
+  <g id="node-s" data-graph-role="node" data-node-id="s" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="450,500,690,570">
+  <rect x="450.0" y="500.0" width="240.0" height="70.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="S  dormindo" data-text-max-width="216.0" x="570.0" y="535.0" text-anchor="middle" class="node-title" font-size="16.0">S dormindo</text>
+  <text data-text-role="subtitle" data-full-text="esperando tempo ou dados" data-text-max-width="216.0" x="570.0" y="557.0" text-anchor="middle" class="node-sub" font-size="12">esperando tempo ou dados</text>
+  </g>
+  <g id="node-z" data-graph-role="node" data-node-id="z" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="840,500,1040,570">
+  <rect x="840.0" y="500.0" width="200.0" height="70.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Z  zumbi" data-text-max-width="176.0" x="940.0" y="535.0" text-anchor="middle" class="node-title" font-size="16.0">Z zumbi</text>
+  <text data-text-role="subtitle" data-full-text="terminou; falta o wait" data-text-max-width="176.0" x="940.0" y="557.0" text-anchor="middle" class="node-sub" font-size="12">terminou; falta o wait</text>
+  </g>
+  <g id="node-t" data-graph-role="node" data-node-id="t" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,660,290,730">
+  <rect x="70.0" y="660.0" width="220.0" height="70.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="T  parado" data-text-max-width="196.0" x="180.0" y="695.0" text-anchor="middle" class="node-title" font-size="16.0">T parado</text>
+  <text data-text-role="subtitle" data-full-text="congelado" data-text-max-width="196.0" x="180.0" y="717.0" text-anchor="middle" class="node-sub" font-size="12">congelado</text>
+  </g>
+  <g id="node-nota-z" data-graph-role="node" data-node-id="nota-z" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="450,660,1040,730">
+  <rect x="450.0" y="660.0" width="590.0" height="70.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="zumbi: só uma linha na tabela" data-text-max-width="566.0" x="745.0" y="695.0" text-anchor="middle" class="node-title" font-size="15.0">zumbi: só uma linha na tabela</text>
+  <text data-text-role="subtitle" data-full-text="não usa CPU nem memória; kill não o remove: só o wait do pai" data-text-max-width="566.0" x="745.0" y="717.0" text-anchor="middle" class="node-sub" font-size="12">não usa CPU nem memória; kill não o remove: só o wait do pai</text>
+  </g>
+  <g id="fork-label" data-graph-role="label" data-owner="fork" data-graph-bounds="279.08,164,320.92,184">
+  <rect x="279.08" y="164.0" width="41.839999999999996" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="300.0" y="178.0" text-anchor="middle" class="arrow-label">fork</text>
+  </g>
+  <g id="exec-label" data-graph-role="label" data-owner="exec" data-graph-bounds="539.08,164,580.92,184">
+  <rect x="539.08" y="164.0" width="41.839999999999996" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="560.0" y="178.0" text-anchor="middle" class="arrow-label">exec</text>
+  </g>
+  <g id="exit-label" data-graph-role="label" data-owner="exit" data-graph-bounds="800.64,164,839.36,184">
+  <rect x="800.64" y="164.0" width="38.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="820.0" y="178.0" text-anchor="middle" class="arrow-label">exit</text>
+  </g>
+  <g id="wait-label" data-graph-role="label" data-owner="wait" data-graph-bounds="439.5,251,675.5,271">
+  <rect x="439.5" y="251.0" width="235.99999999999991" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="557.5" y="265.0" text-anchor="middle" class="arrow-label">wait: o pai lê o código e o zumbi some</text>
+  </g>
+  <g id="r-s-label" data-graph-role="label" data-owner="r-s" data-graph-bounds="327.6,485,412.4,505">
+  <rect x="327.6" y="485.0" width="84.80000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="370.0" y="499.0" text-anchor="middle" class="arrow-label">espera algo</text>
+  </g>
+  <g id="s-r-label" data-graph-role="label" data-owner="s-r" data-graph-bounds="342.12,531,397.88,551">
+  <rect x="342.12" y="531.0" width="55.76" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="370.0" y="545.0" text-anchor="middle" class="arrow-label">chegou</text>
+  </g>
+  <g id="r-t-label" data-graph-role="label" data-owner="r-t" data-graph-bounds="54.16,601,168,621">
+  <rect x="54.16" y="601.0" width="113.84" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="111.08" y="615.0" text-anchor="middle" class="arrow-label">SIGSTOP / Ctrl+Z</text>
+  </g>
+  <g id="t-r-label" data-graph-role="label" data-owner="t-r" data-graph-bounds="192,601,251.6,621">
+  <rect x="192.0" y="601.0" width="59.6" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="221.8" y="615.0" text-anchor="middle" class="arrow-label">SIGCONT</text>
+  </g>
+  <g id="s-z-label" data-graph-role="label" data-owner="s-z" data-graph-bounds="702.08,504,827.92,524">
+  <rect x="702.08" y="504.0" width="125.84" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="765.0" y="518.0" text-anchor="middle" class="arrow-label">exit ou sinal fatal</text>
+  </g>
 </svg>

@@ -1,72 +1,150 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">A cadeia de um pacote: do autor ao seu disco</title>
-  <desc id="d">O autor do programa (upstream) publica o código; o mantenedor da distribuição empacota um .deb; o repositório publica os pacotes com índices e um arquivo InRelease assinado com a chave da distribuição. No seu computador, apt update baixa os índices e confere a assinatura com a chave em /usr/share/keyrings; apt install baixa o .deb, confere o hash contra o índice assinado e entrega ao dpkg, que copia os arquivos e roda os scripts do pacote como root. Pontos de ataque marcados: código malicioso já no upstream (caso xz), erro do mantenedor (caso OpenSSL da Debian), repositório de terceiros ou chave mal configurada, e instalação manual de .deb sem verificação.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12.5px; fill: #9fb0a6; }
-    .w { font-size: 12px; fill: #f08c7a; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 760" width="1100" height="760" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="showcase" data-max-bends-per-edge="2" data-max-total-bends="8" data-max-route-stretch="1.35" data-max-bridged-crossings="0" data-min-node-gap="40.0" data-min-container-gutter="20.0" data-min-label-clearance="4.0" data-min-segment-length="16.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="36">Do autor ao seu disco: onde a confiança é conferida (e onde já falhou)</text>
-
-  <!-- top row: supply side -->
-  <rect class="box" x="30" y="66" width="200" height="74" rx="10"/>
-  <text class="m" x="46" y="92">upstream</text>
-  <text class="s" x="46" y="112">o autor publica o</text>
-  <text class="s" x="46" y="128">código (tarball)</text>
-
-  <rect class="box" x="300" y="66" width="230" height="74" rx="10"/>
-  <text class="m" x="316" y="92">mantenedor</text>
-  <text class="s" x="316" y="112">aplica patches e gera</text>
-  <text class="s" x="316" y="128">o pacote .deb</text>
-
-  <rect class="box" x="600" y="66" width="270" height="74" rx="10" style="stroke:#5cc8d8"/>
-  <text class="m" x="616" y="92" style="fill:#5cc8d8">repositório</text>
-  <text class="s" x="616" y="112">.debs + índices + InRelease</text>
-  <text class="s" x="616" y="128">assinado (GPG) pela distro</text>
-
-  <line x1="230" y1="103" x2="296" y2="103" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <line x1="530" y1="103" x2="596" y2="103" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-
-  <text class="w" x="30" y="162">⚠ código malicioso no</text>
-  <text class="w" x="30" y="178">  próprio upstream (xz, 2024)</text>
-  <text class="w" x="300" y="162">⚠ erro num patch da distro</text>
-  <text class="w" x="300" y="178">  (OpenSSL Debian, 2006–2008)</text>
-  <text class="w" x="600" y="162">⚠ repositório de terceiros com</text>
-  <text class="w" x="600" y="178">  chave valendo para tudo</text>
-
-  <!-- bottom row: your machine -->
-  <rect x="20" y="210" width="860" height="200" rx="12" fill="none" stroke="#34413b" stroke-dasharray="6 5"/>
-  <text class="s" x="36" y="232">o seu computador</text>
-
-  <rect class="box" x="600" y="250" width="270" height="74" rx="10"/>
-  <text class="m" x="616" y="276">apt update</text>
-  <text class="s" x="616" y="296">baixa os índices e confere</text>
-  <text class="s" x="616" y="312">a assinatura (Signed-By)</text>
-
-  <rect class="box" x="300" y="250" width="230" height="74" rx="10"/>
-  <text class="m" x="316" y="276">apt install X</text>
-  <text class="s" x="316" y="296">resolve dependências,</text>
-  <text class="s" x="316" y="312">baixa e confere o hash</text>
-
-  <rect class="box" x="30" y="250" width="200" height="74" rx="10" style="stroke:#e8c25a"/>
-  <text class="m" x="46" y="276" style="fill:#e8c25a">dpkg (como root)</text>
-  <text class="s" x="46" y="296">copia os arquivos e</text>
-  <text class="s" x="46" y="312">roda os scripts</text>
-
-  <path d="M850 140 V246" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <line x1="596" y1="287" x2="534" y2="287" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <line x1="296" y1="287" x2="234" y2="287" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-
-  <text class="w" x="30" y="352">⚠ dpkg -i arquivo.deb baixado de qualquer lugar: nenhuma assinatura é conferida</text>
-  <text class="s" x="30" y="376">A assinatura prova que o pacote veio da distribuição e não foi alterado no caminho.</text>
-  <text class="s" x="30" y="394">Ela não prova que o código é bom: se o problema veio de cima, ele chega assinado.</text>
-
-  <text class="s" x="30" y="444">Os scripts do pacote (preinst, postinst) rodam como root: instalar um pacote é confiar nele por inteiro.</text>
+  <rect data-graph-role="background" width="1100.0" height="760.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="550.0" y="56" text-anchor="middle" class="title">Do autor ao seu disco: a cadeia de um pacote</text>
+  <text x="550.0" y="82" text-anchor="middle" class="subtitle">onde a confiança é conferida, e onde ela já falhou</text>
+  <g id="c-origem" data-graph-role="container" data-container-id="c-origem" data-semantic-role="boundary" data-graph-bounds="40,110,1060,370">
+  <rect data-graph-role="container" x="40.0" y="110.0" width="1020.0" height="260.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="134.0" class="section">quem produz e publica o pacote</text>
+    <rect id="c-origem-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="116" width="235.14" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="c-pc" data-graph-role="container" data-container-id="c-pc" data-semantic-role="boundary" data-graph-bounds="40,410,1060,670">
+  <rect data-graph-role="container" x="40.0" y="410.0" width="1020.0" height="260.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="434.0" class="section">o seu computador</text>
+    <rect id="c-pc-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="416" width="144.92" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="u-m" data-graph-role="edge" data-edge-id="u-m" data-source="upstream" data-target="mantenedor" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 320,198 L 400,198" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="m-r" data-graph-role="edge" data-edge-id="m-r" data-source="mantenedor" data-target="repo" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 660,198 L 740,198" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="r-u" data-graph-role="edge" data-edge-id="r-u" data-source="repo" data-target="update" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.16" data-bridges="" d="M 1000,198 L 1024,198 L 1024,498 L 1000,498" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="u-i" data-graph-role="edge" data-edge-id="u-i" data-source="update" data-target="install" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 740,498 L 660,498" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="i-d" data-graph-role="edge" data-edge-id="i-d" data-source="install" data-target="dpkg" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 400,498 L 320,498" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-upstream" data-graph-role="node" data-node-id="upstream" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,160,320,236">
+  <rect x="60.0" y="160.0" width="260.0" height="76.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="upstream" data-text-max-width="236.0" x="190.0" y="198.0" text-anchor="middle" class="node-title" font-size="16.0">upstream</text>
+  <text data-text-role="subtitle" data-full-text="o autor publica o código" data-text-max-width="236.0" x="190.0" y="220.0" text-anchor="middle" class="node-sub" font-size="12">o autor publica o código</text>
+  </g>
+  <g id="node-mantenedor" data-graph-role="node" data-node-id="mantenedor" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="400,160,660,236">
+  <rect x="400.0" y="160.0" width="260.0" height="76.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="mantenedor" data-text-max-width="236.0" x="530.0" y="198.0" text-anchor="middle" class="node-title" font-size="16.0">mantenedor</text>
+  <text data-text-role="subtitle" data-full-text="aplica patches e gera o .deb" data-text-max-width="236.0" x="530.0" y="220.0" text-anchor="middle" class="node-sub" font-size="12">aplica patches e gera o .deb</text>
+  </g>
+  <g id="node-repo" data-graph-role="node" data-node-id="repo" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="740,160,1000,236">
+  <rect x="740.0" y="160.0" width="260.0" height="76.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="repositório" data-text-max-width="236.0" x="870.0" y="198.0" text-anchor="middle" class="node-title" font-size="16.0">repositório</text>
+  <text data-text-role="subtitle" data-full-text=".debs + índices + InRelease" data-text-max-width="236.0" x="870.0" y="220.0" text-anchor="middle" class="node-sub" font-size="12">.debs + índices + InRelease</text>
+  </g>
+  <g id="node-w-xz" data-graph-role="node" data-node-id="w-xz" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,276,320,340">
+  <rect x="60.0" y="276.0" width="260.0" height="64.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="⚠ upstream malicioso" data-text-max-width="236.0" x="190.0" y="308.0" text-anchor="middle" class="node-title" font-size="15.0">⚠ upstream malicioso</text>
+  <text data-text-role="subtitle" data-full-text="xz, 2024" data-text-max-width="236.0" x="190.0" y="330.0" text-anchor="middle" class="node-sub" font-size="12">xz, 2024</text>
+  </g>
+  <g id="node-w-ssl" data-graph-role="node" data-node-id="w-ssl" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="400,276,660,340">
+  <rect x="400.0" y="276.0" width="260.0" height="64.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="⚠ erro num patch da distro" data-text-max-width="236.0" x="530.0" y="308.0" text-anchor="middle" class="node-title" font-size="15.0">⚠ erro num patch da distro</text>
+  <text data-text-role="subtitle" data-full-text="OpenSSL Debian, 2006–2008" data-text-max-width="236.0" x="530.0" y="330.0" text-anchor="middle" class="node-sub" font-size="12">OpenSSL Debian, 2006–2008</text>
+  </g>
+  <g id="node-w-repo" data-graph-role="node" data-node-id="w-repo" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="740,276,1000,340">
+  <rect x="740.0" y="276.0" width="260.0" height="64.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="⚠ repositório de terceiros" data-text-max-width="236.0" x="870.0" y="308.0" text-anchor="middle" class="node-title" font-size="15.0">⚠ repositório de terceiros</text>
+  <text data-text-role="subtitle" data-full-text="chave valendo para tudo" data-text-max-width="236.0" x="870.0" y="330.0" text-anchor="middle" class="node-sub" font-size="12">chave valendo para tudo</text>
+  </g>
+  <g id="node-update" data-graph-role="node" data-node-id="update" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="740,460,1000,536">
+  <rect x="740.0" y="460.0" width="260.0" height="76.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="apt update" data-text-max-width="236.0" x="870.0" y="498.0" text-anchor="middle" class="node-title" font-size="16.0">apt update</text>
+  <text data-text-role="subtitle" data-full-text="baixa índices, confere assinatura" data-text-max-width="236.0" x="870.0" y="520.0" text-anchor="middle" class="node-sub" font-size="12">baixa índices, confere assinatura</text>
+  </g>
+  <g id="node-install" data-graph-role="node" data-node-id="install" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="400,460,660,536">
+  <rect x="400.0" y="460.0" width="260.0" height="76.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="apt install X" data-text-max-width="236.0" x="530.0" y="498.0" text-anchor="middle" class="node-title" font-size="16.0">apt install X</text>
+  <text data-text-role="subtitle" data-full-text="dependências, download e hash" data-text-max-width="236.0" x="530.0" y="520.0" text-anchor="middle" class="node-sub" font-size="12">dependências, download e hash</text>
+  </g>
+  <g id="node-dpkg" data-graph-role="node" data-node-id="dpkg" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,460,320,536">
+  <rect x="60.0" y="460.0" width="260.0" height="76.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="dpkg (como root)" data-text-max-width="236.0" x="190.0" y="498.0" text-anchor="middle" class="node-title" font-size="16.0">dpkg (como root)</text>
+  <text data-text-role="subtitle" data-full-text="copia arquivos, roda os scripts" data-text-max-width="236.0" x="190.0" y="520.0" text-anchor="middle" class="node-sub" font-size="12">copia arquivos, roda os scripts</text>
+  </g>
+  <g id="node-w-dpkg" data-graph-role="node" data-node-id="w-dpkg" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,576,670,640">
+  <rect x="60.0" y="576.0" width="610.0" height="64.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="⚠ dpkg -i arquivo.deb baixado de qualquer lugar" data-text-max-width="586.0" x="365.0" y="608.0" text-anchor="middle" class="node-title" font-size="15.0">⚠ dpkg -i arquivo.deb baixado de qualquer lugar</text>
+  <text data-text-role="subtitle" data-full-text="nenhuma assinatura é conferida" data-text-max-width="586.0" x="365.0" y="630.0" text-anchor="middle" class="node-sub" font-size="12">nenhuma assinatura é conferida</text>
+  </g>
+  <g id="u-m-label" data-graph-role="label" data-owner="u-m" data-graph-bounds="333.68,167,386.32,187">
+  <rect x="333.68" y="167.0" width="52.64" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="360.0" y="181.0" text-anchor="middle" class="arrow-label">código</text>
+  </g>
+  <g id="m-r-label" data-graph-role="label" data-owner="m-r" data-graph-bounds="680.64,167,719.36,187">
+  <rect x="680.64" y="167.0" width="38.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="700.0" y="181.0" text-anchor="middle" class="arrow-label">.deb</text>
+  </g>
+  <g id="r-u-label" data-graph-role="label" data-owner="r-u" data-graph-bounds="915.32,352,1021,372">
+  <rect x="915.32" y="352.0" width="105.68" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="968.16" y="366.0" text-anchor="middle" class="arrow-label">assinado (GPG)</text>
+  </g>
+  <g id="u-i-label" data-graph-role="label" data-owner="u-i" data-graph-bounds="670.2,467,729.8,487">
+  <rect x="670.2" y="467.0" width="59.599999999999994" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="700.0" y="481.0" text-anchor="middle" class="arrow-label">índices</text>
+  </g>
+  <g id="i-d-label" data-graph-role="label" data-owner="i-d" data-graph-bounds="340.64,467,379.36,487">
+  <rect x="340.64" y="467.0" width="38.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="360.0" y="481.0" text-anchor="middle" class="arrow-label">.deb</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,708,923,724">
+  <text x="48.0" y="720.0" class="footnote">A assinatura prova que o pacote veio da distro sem alteração; não prova que o código é bom: o que vem de cima chega assinado.</text>
+  </g>
 </svg>

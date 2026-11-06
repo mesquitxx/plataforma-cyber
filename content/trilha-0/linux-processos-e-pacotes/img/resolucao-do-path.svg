@@ -1,64 +1,171 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-labelledby="t d">
-  <title id="t">Como o shell decide o que executar, e o sequestro do PATH</title>
-  <desc id="d">Quando você digita ls, o Bash procura nesta ordem: alias, função, builtin, a tabela hash de caminhos já encontrados e, por fim, cada diretório do PATH, da esquerda para a direita; o primeiro que tiver um executável com esse nome vence; se nenhum tiver, o erro é command not found, código 127. Embaixo, o sequestro: depois que o diretório /home/aluno/bin entra na frente do PATH, um ls falso colocado ali vence o /usr/bin/ls verdadeiro. Um caminho com barra, como /usr/bin/ls, pula toda a busca.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12.5px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 840" width="1100" height="840" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="460" fill="#121815"/>
-  <text class="t" x="30" y="36">1. Você digita "ls": a ordem em que o Bash procura</text>
-
-  <rect class="box" x="30" y="58" width="140" height="56" rx="10"/>
-  <text class="m" x="46" y="82">1 alias</text>
-  <text class="s" x="46" y="102">ls --color=auto</text>
-  <rect class="box" x="200" y="58" width="120" height="56" rx="10"/>
-  <text class="m" x="216" y="82">2 função</text>
-  <text class="s" x="216" y="102">do shell</text>
-  <rect class="box" x="350" y="58" width="120" height="56" rx="10"/>
-  <text class="m" x="366" y="82">3 builtin</text>
-  <text class="s" x="366" y="102">cd, kill...</text>
-  <rect class="box" x="500" y="58" width="120" height="56" rx="10"/>
-  <text class="m" x="516" y="82">4 hash</text>
-  <text class="s" x="516" y="102">já achados</text>
-  <rect class="box" x="650" y="58" width="220" height="56" rx="10" style="stroke:#5cc8d8"/>
-  <text class="m" x="666" y="82" style="fill:#5cc8d8">5 PATH, em ordem</text>
-  <text class="s" x="666" y="102">o primeiro achado vence</text>
-  <g stroke="#5ee08a" stroke-width="1.5">
-    <line x1="170" y1="86" x2="196" y2="86" marker-end="url(#g)"/>
-    <line x1="320" y1="86" x2="346" y2="86" marker-end="url(#g)"/>
-    <line x1="470" y1="86" x2="496" y2="86" marker-end="url(#g)"/>
-    <line x1="620" y1="86" x2="646" y2="86" marker-end="url(#g)"/>
+  <rect data-graph-role="background" width="1100.0" height="840.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="550.0" y="56" text-anchor="middle" class="title">Como o shell decide o que executar</text>
+  <text x="550.0" y="82" text-anchor="middle" class="subtitle">a ordem de busca do Bash e o sequestro do PATH</text>
+  <g id="c-ordem" data-graph-role="container" data-container-id="c-ordem" data-semantic-role="boundary" data-graph-bounds="40,110,1060,370">
+  <rect data-graph-role="container" x="40.0" y="110.0" width="1020.0" height="260.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="134.0" class="section">1. Você digita ls: a ordem em que o Bash procura</text>
+    <rect id="c-ordem-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="116" width="346.42" height="30" fill="none" stroke="none"/>
   </g>
-  <text class="s" x="540" y="136" style="fill:#f08c7a">nenhum? "command not found", código 127</text>
-  <text class="s" x="30" y="136">O alias só troca o texto (ls vira ls --color=auto);</text>
-  <text class="s" x="30" y="152">depois a busca continua pelo nome ls.</text>
-
-  <text class="t" x="30" y="200">2. PATH normal do aluno: /usr/bin/ls vence</text>
-  <g>
-    <rect class="box" x="30" y="216" width="150" height="40" rx="8"/><text class="s" x="42" y="241">/usr/local/bin</text>
-    <rect class="box" x="190" y="216" width="150" height="40" rx="8" style="stroke:#5ee08a"/><text class="s" x="202" y="241" style="fill:#5ee08a">/usr/bin  ✔ ls</text>
-    <rect class="box" x="350" y="216" width="110" height="40" rx="8"/><text class="s" x="362" y="241">/bin</text>
-    <rect class="box" x="470" y="216" width="170" height="40" rx="8"/><text class="s" x="482" y="241">/usr/local/games</text>
-    <rect class="box" x="650" y="216" width="130" height="40" rx="8"/><text class="s" x="662" y="241">/usr/games</text>
+  <g id="c-normal" data-graph-role="container" data-container-id="c-normal" data-semantic-role="boundary" data-graph-bounds="40,400,1060,530">
+  <rect data-graph-role="container" x="40.0" y="400.0" width="1020.0" height="130.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="424.0" class="section">2. PATH normal do aluno: /usr/bin/ls vence</text>
+    <rect id="c-normal-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="406" width="309.24" height="30" fill="none" stroke="none"/>
   </g>
-
-  <text class="t" x="30" y="300" style="fill:#f08c7a">3. Depois do sequestro: ~/bin entrou na frente</text>
-  <g>
-    <rect class="box" x="30" y="316" width="170" height="40" rx="8" style="stroke:#f08c7a"/><text class="s" x="42" y="341" style="fill:#f08c7a">/home/aluno/bin ✘</text>
-    <rect class="box" x="210" y="316" width="150" height="40" rx="8"/><text class="s" x="222" y="341">/usr/local/bin</text>
-    <rect class="box" x="370" y="316" width="150" height="40" rx="8"/><text class="s" x="382" y="341">/usr/bin  (ls)</text>
-    <rect class="box" x="530" y="316" width="90" height="40" rx="8"/><text class="s" x="542" y="341">/bin</text>
-    <text class="s" x="632" y="341">...</text>
+  <g id="c-sequestro" data-graph-role="container" data-container-id="c-sequestro" data-semantic-role="boundary" data-graph-bounds="40,560,1060,790">
+  <rect data-graph-role="container" x="40.0" y="560.0" width="1020.0" height="230.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="584.0" class="section">3. Depois do sequestro: ~/bin entrou na frente</text>
+    <rect id="c-sequestro-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="566" width="343.3" height="30" fill="none" stroke="none"/>
   </g>
-  <path d="M115 360 v20" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
-  <text class="s" x="30" y="400" style="fill:#f08c7a">ls falso em ~/bin roda primeiro: faz o que o atacante quiser e chama o ls real para disfarçar.</text>
-  <text class="s" x="30" y="424">Defesa: nunca pôr diretório gravável (ou ".") antes dos do sistema; conferir com type -a;</text>
-  <text class="s" x="30" y="442">em caso de dúvida, chamar pelo caminho completo (/usr/bin/ls), que pula toda a busca.</text>
+  <path id="a1" data-graph-role="edge" data-edge-id="a1" data-source="alias" data-target="funcao" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 220,195 L 265,195" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="a2" data-graph-role="edge" data-edge-id="a2" data-source="funcao" data-target="builtin" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 425,195 L 470,195" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="a3" data-graph-role="edge" data-edge-id="a3" data-source="builtin" data-target="hash" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 630,195 L 675,195" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="a4" data-graph-role="edge" data-edge-id="a4" data-source="hash" data-target="path" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 835,195 L 880,195" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="a5" data-graph-role="edge" data-edge-id="a5" data-source="path" data-target="notfound" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 960,230 L 960,250.4 L 918,250.4 L 918,280" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="n01" data-graph-role="edge" data-edge-id="n01" data-source="n0" data-target="n1" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 225,478 L 260,478" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="h01" data-graph-role="edge" data-edge-id="h01" data-source="h0" data-target="h1" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 225,638 L 260,638" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <g id="node-alias" data-graph-role="node" data-node-id="alias" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,160,220,230">
+  <rect x="60.0" y="160.0" width="160.0" height="70.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="1 alias" data-text-max-width="136.0" x="140.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">1 alias</text>
+  <text data-text-role="subtitle" data-full-text="ls --color=auto" data-text-max-width="136.0" x="140.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">ls --color=auto</text>
+  </g>
+  <g id="node-funcao" data-graph-role="node" data-node-id="funcao" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="265,160,425,230">
+  <rect x="265.0" y="160.0" width="160.0" height="70.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="2 função" data-text-max-width="136.0" x="345.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">2 função</text>
+  <text data-text-role="subtitle" data-full-text="do shell" data-text-max-width="136.0" x="345.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">do shell</text>
+  </g>
+  <g id="node-builtin" data-graph-role="node" data-node-id="builtin" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="470,160,630,230">
+  <rect x="470.0" y="160.0" width="160.0" height="70.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="3 builtin" data-text-max-width="136.0" x="550.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">3 builtin</text>
+  <text data-text-role="subtitle" data-full-text="cd, kill..." data-text-max-width="136.0" x="550.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">cd, kill...</text>
+  </g>
+  <g id="node-hash" data-graph-role="node" data-node-id="hash" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="675,160,835,230">
+  <rect x="675.0" y="160.0" width="160.0" height="70.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="4 hash" data-text-max-width="136.0" x="755.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">4 hash</text>
+  <text data-text-role="subtitle" data-full-text="caminhos já achados" data-text-max-width="136.0" x="755.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">caminhos já achados</text>
+  </g>
+  <g id="node-path" data-graph-role="node" data-node-id="path" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="880,160,1040,230">
+  <rect x="880.0" y="160.0" width="160.0" height="70.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="5 PATH" data-text-max-width="136.0" x="960.0" y="195.0" text-anchor="middle" class="node-title" font-size="16.0">5 PATH</text>
+  <text data-text-role="subtitle" data-full-text="o 1º achado vence" data-text-max-width="136.0" x="960.0" y="217.0" text-anchor="middle" class="node-sub" font-size="12">o 1º achado vence</text>
+  </g>
+  <g id="node-nota-alias" data-graph-role="node" data-node-id="nota-alias" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,280,620,344">
+  <rect x="60.0" y="280.0" width="560.0" height="64.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="o alias só troca o texto" data-text-max-width="536.0" x="340.0" y="312.0" text-anchor="middle" class="node-title" font-size="15.0">o alias só troca o texto</text>
+  <text data-text-role="subtitle" data-full-text="ls vira ls --color=auto e a busca continua pelo nome ls" data-text-max-width="536.0" x="340.0" y="334.0" text-anchor="middle" class="node-sub" font-size="12">ls vira ls --color=auto e a busca continua pelo nome ls</text>
+  </g>
+  <g id="node-notfound" data-graph-role="node" data-node-id="notfound" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="788,280,1048,344">
+  <rect x="788.0" y="280.0" width="260.0" height="64.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="command not found" data-text-max-width="236.0" x="918.0" y="312.0" text-anchor="middle" class="node-title" font-size="15.0">command not found</text>
+  <text data-text-role="subtitle" data-full-text="nenhum achado: código 127" data-text-max-width="236.0" x="918.0" y="334.0" text-anchor="middle" class="node-sub" font-size="12">nenhum achado: código 127</text>
+  </g>
+  <g id="node-n0" data-graph-role="node" data-node-id="n0" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,450,225,506">
+  <rect x="60.0" y="450.0" width="165.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/usr/local/bin" data-text-max-width="141.0" x="142.5" y="478.0" text-anchor="middle" class="node-title" font-size="14.0">/usr/local/bin</text>
+  </g>
+  <g id="node-n1" data-graph-role="node" data-node-id="n1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="260,450,425,506">
+  <rect x="260.0" y="450.0" width="165.0" height="56.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/usr/bin  ✔ ls" data-text-max-width="141.0" x="342.5" y="478.0" text-anchor="middle" class="node-title" font-size="14.0">/usr/bin ✔ ls</text>
+  </g>
+  <g id="node-n2" data-graph-role="node" data-node-id="n2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="460,450,625,506">
+  <rect x="460.0" y="450.0" width="165.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/bin" data-text-max-width="141.0" x="542.5" y="478.0" text-anchor="middle" class="node-title" font-size="14.0">/bin</text>
+  </g>
+  <g id="node-n3" data-graph-role="node" data-node-id="n3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="660,450,825,506">
+  <rect x="660.0" y="450.0" width="165.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/usr/local/games" data-text-max-width="141.0" x="742.5" y="478.0" text-anchor="middle" class="node-title" font-size="14.0">/usr/local/games</text>
+  </g>
+  <g id="node-n4" data-graph-role="node" data-node-id="n4" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="860,450,1025,506">
+  <rect x="860.0" y="450.0" width="165.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/usr/games" data-text-max-width="141.0" x="942.5" y="478.0" text-anchor="middle" class="node-title" font-size="14.0">/usr/games</text>
+  </g>
+  <g id="node-h0" data-graph-role="node" data-node-id="h0" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,610,225,666">
+  <rect x="60.0" y="610.0" width="165.0" height="56.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="~/bin  ✘ ls falso" data-text-max-width="141.0" x="142.5" y="638.0" text-anchor="middle" class="node-title" font-size="14.0">~/bin ✘ ls falso</text>
+  </g>
+  <g id="node-h1" data-graph-role="node" data-node-id="h1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="260,610,425,666">
+  <rect x="260.0" y="610.0" width="165.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/usr/local/bin" data-text-max-width="141.0" x="342.5" y="638.0" text-anchor="middle" class="node-title" font-size="14.0">/usr/local/bin</text>
+  </g>
+  <g id="node-h2" data-graph-role="node" data-node-id="h2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="460,610,625,666">
+  <rect x="460.0" y="610.0" width="165.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/usr/bin  (ls)" data-text-max-width="141.0" x="542.5" y="638.0" text-anchor="middle" class="node-title" font-size="14.0">/usr/bin (ls)</text>
+  </g>
+  <g id="node-h3" data-graph-role="node" data-node-id="h3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="660,610,825,666">
+  <rect x="660.0" y="610.0" width="165.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/bin" data-text-max-width="141.0" x="742.5" y="638.0" text-anchor="middle" class="node-title" font-size="14.0">/bin</text>
+  </g>
+  <g id="node-h4" data-graph-role="node" data-node-id="h4" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="860,610,1025,666">
+  <rect x="860.0" y="610.0" width="165.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="/usr/local/games …" data-text-max-width="141.0" x="942.5" y="638.0" text-anchor="middle" class="node-title" font-size="13.45">/usr/local/games …</text>
+  </g>
+  <g id="node-falso" data-graph-role="node" data-node-id="falso" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,706,1025,770">
+  <rect x="60.0" y="706.0" width="965.0" height="64.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="o ls falso roda primeiro" data-text-max-width="941.0" x="542.5" y="738.0" text-anchor="middle" class="node-title" font-size="15.0">o ls falso roda primeiro</text>
+  <text data-text-role="subtitle" data-full-text="faz o que o atacante quiser e chama o ls real para disfarçar" data-text-max-width="941.0" x="542.5" y="760.0" text-anchor="middle" class="node-sub" font-size="12">faz o que o atacante quiser e chama o ls real para disfarçar</text>
+  </g>
+  <g id="a5-label" data-graph-role="label" data-owner="a5" data-graph-bounds="907.64,237.4,970.36,257.4">
+  <rect x="907.64" y="237.4" width="62.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="939.0" y="251.4" text-anchor="middle" class="arrow-label">nenhum?</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,804,902,820">
+  <text x="48.0" y="816.0" class="footnote">Defesa: nada gravável (nem ".") antes dos diretórios do sistema; confira com type -a; na dúvida, /usr/bin/ls pula a busca.</text>
+  </g>
 </svg>

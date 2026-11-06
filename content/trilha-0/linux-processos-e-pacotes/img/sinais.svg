@@ -1,75 +1,190 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" role="img" aria-labelledby="t d">
-  <title id="t">Como um sinal chega a um processo</title>
-  <desc id="d">À esquerda, quem envia: o teclado (Ctrl+C manda SIGINT 2, Ctrl+Z manda SIGTSTP 20, Ctrl+\ manda SIGQUIT 3), o comando kill (sem opção manda SIGTERM 15; kill -9 manda SIGKILL 9) e o fechamento do terminal (SIGHUP 1). No meio, o kernel entrega o sinal. À direita, o processo pode tratar o sinal com uma rotina própria (trap), ignorá-lo, ou deixar a ação padrão, que quase sempre é terminar. SIGKILL e SIGSTOP passam direto: o kernel aplica sem perguntar ao processo. Quem morre por um sinal N devolve ao shell o código 128+N: 130 para SIGINT, 137 para SIGKILL, 143 para SIGTERM.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12.5px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 980" width="1100" height="980" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="450" fill="#121815"/>
-  <text class="t" x="30" y="36">Quem envia, quem entrega, o que o processo pode fazer</text>
-
-  <!-- senders -->
-  <rect class="box" x="30" y="60" width="260" height="98" rx="10"/>
-  <text class="m" x="46" y="84">Teclado (no terminal)</text>
-  <text class="s" x="46" y="106">Ctrl+C  → SIGINT  (2)</text>
-  <text class="s" x="46" y="124">Ctrl+Z  → SIGTSTP (20)</text>
-  <text class="s" x="46" y="142">Ctrl+\  → SIGQUIT (3)</text>
-
-  <rect class="box" x="30" y="172" width="260" height="98" rx="10"/>
-  <text class="m" x="46" y="196">Comando kill</text>
-  <text class="s" x="46" y="218">kill PID     → SIGTERM (15)</text>
-  <text class="s" x="46" y="236" style="fill:#f08c7a">kill -9 PID  → SIGKILL (9)</text>
-  <text class="s" x="46" y="254" style="fill:#e8c25a">kill -STOP   → SIGSTOP (19)</text>
-
-  <rect class="box" x="30" y="284" width="260" height="62" rx="10"/>
-  <text class="m" x="46" y="308">Terminal fechado</text>
-  <text class="s" x="46" y="330">→ SIGHUP (1) para os jobs</text>
-
-  <!-- kernel -->
-  <rect class="box" x="360" y="150" width="140" height="110" rx="10" style="stroke:#5cc8d8"/>
-  <text class="m" x="396" y="196" style="fill:#5cc8d8">kernel</text>
-  <text class="s" x="378" y="218">confere se você</text>
-  <text class="s" x="378" y="234">pode sinalizar</text>
-
-  <g stroke="#9fb0a6" stroke-width="1.5" fill="none">
-    <path d="M290 110 C330 110 330 180 356 186" marker-end="url(#g)"/>
-    <path d="M290 220 H356" marker-end="url(#g)"/>
-    <path d="M290 315 C330 315 330 250 356 244" marker-end="url(#g)"/>
+  <rect data-graph-role="background" width="1100.0" height="980.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="550.0" y="56" text-anchor="middle" class="title">Como um sinal chega a um processo</text>
+  <text x="550.0" y="82" text-anchor="middle" class="subtitle">quem envia, quem entrega e o que o processo pode fazer</text>
+  <g id="c-teclado" data-graph-role="container" data-container-id="c-teclado" data-semantic-role="boundary" data-graph-bounds="40,110,320,372">
+  <rect data-graph-role="container" x="40.0" y="110.0" width="280.0" height="262.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="134.0" class="section">Teclado (no terminal)</text>
+    <rect id="c-teclado-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="116" width="172.48" height="30" fill="none" stroke="none"/>
   </g>
-
-  <!-- outcomes -->
-  <rect class="box" x="570" y="60" width="300" height="72" rx="10" style="stroke:#5ee08a"/>
-  <text class="m" x="586" y="84" style="fill:#5ee08a">1. Tratar (trap / handler)</text>
-  <text class="s" x="586" y="104">roda uma rotina própria: salvar,</text>
-  <text class="s" x="586" y="120">limpar arquivos, ou até ignorar</text>
-
-  <rect class="box" x="570" y="146" width="300" height="56" rx="10"/>
-  <text class="m" x="586" y="170">2. Ignorar</text>
-  <text class="s" x="586" y="190">ex.: nohup ignora SIGHUP</text>
-
-  <rect class="box" x="570" y="216" width="300" height="56" rx="10"/>
-  <text class="m" x="586" y="240">3. Ação padrão</text>
-  <text class="s" x="586" y="260">quase sempre: terminar</text>
-
-  <rect class="box" x="570" y="296" width="300" height="56" rx="10" style="stroke:#f08c7a"/>
-  <text class="m" x="586" y="320" style="fill:#f08c7a">SIGKILL e SIGSTOP</text>
-  <text class="s" x="586" y="340">não podem ser tratados nem ignorados</text>
-
-  <g stroke="#5ee08a" stroke-width="1.5" fill="none">
-    <path d="M500 186 C535 186 535 96 566 96" marker-end="url(#g)"/>
-    <path d="M500 200 C535 200 535 174 566 174" marker-end="url(#g)"/>
-    <path d="M500 220 C535 220 535 244 566 244" marker-end="url(#g)"/>
+  <g id="c-kill" data-graph-role="container" data-container-id="c-kill" data-semantic-role="boundary" data-graph-bounds="40,392,320,654">
+  <rect data-graph-role="container" x="40.0" y="392.0" width="280.0" height="262.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="416.0" class="section">Comando kill</text>
+    <rect id="c-kill-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="398" width="107.48" height="30" fill="none" stroke="none"/>
   </g>
-  <path d="M500 250 C535 250 535 324 566 324" fill="none" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
-
-  <rect x="30" y="378" width="840" height="52" rx="8" fill="none" stroke="#e8c25a" stroke-dasharray="4 4"/>
-  <text class="s" x="46" y="400" style="fill:#e8c25a">Morreu pelo sinal N? O shell recebe o código 128 + N:</text>
-  <text class="s" x="46" y="418" style="fill:#e8c25a">Ctrl+C → 130 (128+2)   ·   kill -9 → 137 (128+9)   ·   kill → 143 (128+15)</text>
+  <g id="c-term" data-graph-role="container" data-container-id="c-term" data-semantic-role="boundary" data-graph-bounds="40,674,320,796">
+  <rect data-graph-role="container" x="40.0" y="674.0" width="280.0" height="122.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="698.0" class="section">Terminal fechado</text>
+    <rect id="c-term-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="680" width="141.02" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="ctrlc-k" data-graph-role="edge" data-edge-id="ctrlc-k" data-source="ctrlc" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 300,178 L 560,178" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="ctrlz-k" data-graph-role="edge" data-edge-id="ctrlz-k" data-source="ctrlz" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 300,246 L 560,246" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="ctrlq-k" data-graph-role="edge" data-edge-id="ctrlq-k" data-source="ctrlq" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 300,314 L 560,314" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="kill-k" data-graph-role="edge" data-edge-id="kill-k" data-source="kill" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 300,460 L 560,460" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="kill9-k" data-graph-role="edge" data-edge-id="kill9-k" data-source="kill9" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 300,528 L 560,528" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="killstop-k" data-graph-role="edge" data-edge-id="killstop-k" data-source="killstop" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 300,596 L 560,596" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="hup-k" data-graph-role="edge" data-edge-id="hup-k" data-source="hup" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 300,742 L 560,742" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="k-tratar" data-graph-role="edge" data-edge-id="k-tratar" data-source="" data-target="tratar" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 760,190 L 820,190" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="k-ignorar" data-graph-role="edge" data-edge-id="k-ignorar" data-source="" data-target="ignorar" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 760,340 L 820,340" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="k-padrao" data-graph-role="edge" data-edge-id="k-padrao" data-source="" data-target="padrao" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 760,490 L 820,490" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="k-forcado" data-graph-role="edge" data-edge-id="k-forcado" data-source="" data-target="forcado" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 760,690 L 820,690" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <g id="node-ctrlc" data-graph-role="node" data-node-id="ctrlc" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,150,300,206">
+  <rect x="60.0" y="150.0" width="240.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Ctrl+C" data-text-max-width="216.0" x="180.0" y="178.0" text-anchor="middle" class="node-title" font-size="15.0">Ctrl+C</text>
+  <text data-text-role="subtitle" data-full-text="padrão: terminar" data-text-max-width="216.0" x="180.0" y="200.0" text-anchor="middle" class="node-sub" font-size="12">padrão: terminar</text>
+  </g>
+  <g id="node-ctrlz" data-graph-role="node" data-node-id="ctrlz" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,218,300,274">
+  <rect x="60.0" y="218.0" width="240.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Ctrl+Z" data-text-max-width="216.0" x="180.0" y="246.0" text-anchor="middle" class="node-title" font-size="15.0">Ctrl+Z</text>
+  <text data-text-role="subtitle" data-full-text="padrão: parar" data-text-max-width="216.0" x="180.0" y="268.0" text-anchor="middle" class="node-sub" font-size="12">padrão: parar</text>
+  </g>
+  <g id="node-ctrlq" data-graph-role="node" data-node-id="ctrlq" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,286,300,342">
+  <rect x="60.0" y="286.0" width="240.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Ctrl+\" data-text-max-width="216.0" x="180.0" y="314.0" text-anchor="middle" class="node-title" font-size="15.0">Ctrl+\</text>
+  <text data-text-role="subtitle" data-full-text="terminar + core dump" data-text-max-width="216.0" x="180.0" y="336.0" text-anchor="middle" class="node-sub" font-size="12">terminar + core dump</text>
+  </g>
+  <g id="node-kill" data-graph-role="node" data-node-id="kill" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,432,300,488">
+  <rect x="60.0" y="432.0" width="240.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="kill PID" data-text-max-width="216.0" x="180.0" y="460.0" text-anchor="middle" class="node-title" font-size="15.0">kill PID</text>
+  <text data-text-role="subtitle" data-full-text="o jeito educado" data-text-max-width="216.0" x="180.0" y="482.0" text-anchor="middle" class="node-sub" font-size="12">o jeito educado</text>
+  </g>
+  <g id="node-kill9" data-graph-role="node" data-node-id="kill9" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,500,300,556">
+  <rect x="60.0" y="500.0" width="240.0" height="56.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="kill -9 PID" data-text-max-width="216.0" x="180.0" y="528.0" text-anchor="middle" class="node-title" font-size="15.0">kill -9 PID</text>
+  <text data-text-role="subtitle" data-full-text="terminar, sem escolha" data-text-max-width="216.0" x="180.0" y="550.0" text-anchor="middle" class="node-sub" font-size="12">terminar, sem escolha</text>
+  </g>
+  <g id="node-killstop" data-graph-role="node" data-node-id="killstop" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,568,300,624">
+  <rect x="60.0" y="568.0" width="240.0" height="56.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="kill -STOP PID" data-text-max-width="216.0" x="180.0" y="596.0" text-anchor="middle" class="node-title" font-size="15.0">kill -STOP PID</text>
+  <text data-text-role="subtitle" data-full-text="parar, sem escolha" data-text-max-width="216.0" x="180.0" y="618.0" text-anchor="middle" class="node-sub" font-size="12">parar, sem escolha</text>
+  </g>
+  <g id="node-hup" data-graph-role="node" data-node-id="hup" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,714,300,770">
+  <rect x="60.0" y="714.0" width="240.0" height="56.0" rx="10.0" fill="#111827" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="fechar a janela" data-text-max-width="216.0" x="180.0" y="742.0" text-anchor="middle" class="node-title" font-size="15.0">fechar a janela</text>
+  <text data-text-role="subtitle" data-full-text="padrão: terminar" data-text-max-width="216.0" x="180.0" y="764.0" text-anchor="middle" class="node-sub" font-size="12">padrão: terminar</text>
+  </g>
+  <g id="node-kernel" data-graph-role="node" data-node-id="kernel" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="560,150,760,770">
+  <rect x="560.0" y="150.0" width="200.0" height="620.0" rx="10.0" fill="#0c1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="kernel" data-text-max-width="176.0" x="660.0" y="460.0" text-anchor="middle" class="node-title" font-size="20.0">kernel</text>
+  <text data-text-role="subtitle" data-full-text="confere a permissão" data-text-max-width="176.0" x="660.0" y="482.0" text-anchor="middle" class="node-sub" font-size="12">confere a permissão</text>
+  </g>
+  <g id="node-tratar" data-graph-role="node" data-node-id="tratar" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,150,1060,230">
+  <rect x="820.0" y="150.0" width="240.0" height="80.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="1. Tratar (handler)" data-text-max-width="216.0" x="940.0" y="190.0" text-anchor="middle" class="node-title" font-size="16.0">1. Tratar (handler)</text>
+  <text data-text-role="subtitle" data-full-text="roda uma rotina própria" data-text-max-width="216.0" x="940.0" y="212.0" text-anchor="middle" class="node-sub" font-size="12">roda uma rotina própria</text>
+  </g>
+  <g id="node-ignorar" data-graph-role="node" data-node-id="ignorar" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,300,1060,380">
+  <rect x="820.0" y="300.0" width="240.0" height="80.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="2. Ignorar" data-text-max-width="216.0" x="940.0" y="340.0" text-anchor="middle" class="node-title" font-size="16.0">2. Ignorar</text>
+  <text data-text-role="subtitle" data-full-text="ex.: nohup ignora SIGHUP" data-text-max-width="216.0" x="940.0" y="362.0" text-anchor="middle" class="node-sub" font-size="12">ex.: nohup ignora SIGHUP</text>
+  </g>
+  <g id="node-padrao" data-graph-role="node" data-node-id="padrao" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,450,1060,530">
+  <rect x="820.0" y="450.0" width="240.0" height="80.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="3. Ação padrão" data-text-max-width="216.0" x="940.0" y="490.0" text-anchor="middle" class="node-title" font-size="16.0">3. Ação padrão</text>
+  <text data-text-role="subtitle" data-full-text="quase sempre: terminar" data-text-max-width="216.0" x="940.0" y="512.0" text-anchor="middle" class="node-sub" font-size="12">quase sempre: terminar</text>
+  </g>
+  <g id="node-forcado" data-graph-role="node" data-node-id="forcado" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,650,1060,730">
+  <rect x="820.0" y="650.0" width="240.0" height="80.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="SIGKILL e SIGSTOP" data-text-max-width="216.0" x="940.0" y="690.0" text-anchor="middle" class="node-title" font-size="16.0">SIGKILL e SIGSTOP</text>
+  <text data-text-role="subtitle" data-full-text="não dá para tratar nem ignorar" data-text-max-width="216.0" x="940.0" y="712.0" text-anchor="middle" class="node-sub" font-size="12">não dá para tratar nem ignorar</text>
+  </g>
+  <g id="node-regra" data-graph-role="node" data-node-id="regra" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,830,1060,894">
+  <rect x="60.0" y="830.0" width="1000.0" height="64.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Morreu pelo sinal N? O shell recebe o código 128 + N" data-text-max-width="976.0" x="560.0" y="862.0" text-anchor="middle" class="node-title" font-size="16.0">Morreu pelo sinal N? O shell recebe o código 128 + N</text>
+  <text data-text-role="subtitle" data-full-text="Ctrl+C → 130 (128+2)   ·   kill -9 → 137 (128+9)   ·   kill → 143 (128+15)" data-text-max-width="976.0" x="560.0" y="884.0" text-anchor="middle" class="node-sub" font-size="12">Ctrl+C → 130 (128+2) · kill -9 → 137 (128+9) · kill → 143 (128+15)</text>
+  </g>
+  <g id="ctrlc-k-label" data-graph-role="label" data-owner="ctrlc-k" data-graph-bounds="392.64,147,467.36,167">
+  <rect x="392.64" y="147.0" width="74.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="430.0" y="161.0" text-anchor="middle" class="arrow-label">SIGINT (2)</text>
+  </g>
+  <g id="ctrlz-k-label" data-graph-role="label" data-owner="ctrlz-k" data-graph-bounds="384.12,215,475.88,235">
+  <rect x="384.12" y="215.0" width="91.76" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="430.0" y="229.0" text-anchor="middle" class="arrow-label">SIGTSTP (20)</text>
+  </g>
+  <g id="ctrlq-k-label" data-graph-role="label" data-owner="ctrlq-k" data-graph-bounds="389.16,283,470.84,303">
+  <rect x="389.16" y="283.0" width="81.67999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="430.0" y="297.0" text-anchor="middle" class="arrow-label">SIGQUIT (3)</text>
+  </g>
+  <g id="kill-k-label" data-graph-role="label" data-owner="kill-k" data-graph-bounds="382.68,429,477.32,449">
+  <rect x="382.68" y="429.0" width="94.64000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="430.0" y="443.0" text-anchor="middle" class="arrow-label">SIGTERM (15)</text>
+  </g>
+  <g id="kill9-k-label" data-graph-role="label" data-owner="kill9-k" data-graph-bounds="389.16,497,470.84,517">
+  <rect x="389.16" y="497.0" width="81.67999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="430.0" y="511.0" text-anchor="middle" class="arrow-label">SIGKILL (9)</text>
+  </g>
+  <g id="killstop-k-label" data-graph-role="label" data-owner="killstop-k" data-graph-bounds="384.12,565,475.88,585">
+  <rect x="384.12" y="565.0" width="91.76" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="430.0" y="579.0" text-anchor="middle" class="arrow-label">SIGSTOP (19)</text>
+  </g>
+  <g id="hup-k-label" data-graph-role="label" data-owner="hup-k" data-graph-bounds="391.08,711,468.92,731">
+  <rect x="391.08" y="711.0" width="77.84" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="430.0" y="725.0" text-anchor="middle" class="arrow-label">SIGHUP (1)</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="38" y="922" width="740.72" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="48.0" y1="936.0" x2="78.0" y2="936.0" stroke="#94a3b8" stroke-width="2.3" marker-end="url(#arrowH)"/>
+    <text data-graph-role="decoration" x="88.0" y="940.0" class="legend">sinal comum: o processo escolhe    </text>
+    <line data-graph-role="decoration" x1="325.99999999999994" y1="936.0" x2="355.99999999999994" y2="936.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="365.99999999999994" y="940.0" class="legend">o kernel aplica direto    </text>
+    <line data-graph-role="decoration" x1="544.0" y1="936.0" x2="574.0" y2="936.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="584.0" y="940.0" class="legend">o que o processo pode fazer</text>
+  </g>
 </svg>
