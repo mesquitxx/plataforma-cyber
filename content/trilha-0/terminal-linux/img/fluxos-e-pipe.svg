@@ -1,59 +1,117 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
-  <title id="t">stdin, stdout, stderr e o pipe</title>
-  <desc id="d">Todo processo tem três canais: entrada padrão (0, stdin), saída padrão (1, stdout) e saída de erro (2, stderr). No pipeline "sort vazamento.txt | uniq -c | sort -rn &gt; ranking.txt", a saída de cada comando vira a entrada do próximo, a saída final vai para um arquivo e os erros continuam indo para a tela.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .s { font-size: 12.5px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 640" width="1240" height="640" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
-    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="400" fill="#121815"/>
-
-  <!-- Part 1: one process -->
-  <text class="t" x="30" y="36">1. Um processo tem três canais</text>
-  <rect class="box" x="330" y="56" width="200" height="70" rx="10"/>
-  <text class="t" x="390" y="97">processo</text>
-  <line x1="150" y1="91" x2="326" y2="91" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <text class="s" x="30" y="86" style="fill:#5cc8d8">0 stdin</text>
-  <text class="s" x="30" y="104">teclado</text>
-  <line x1="534" y1="76" x2="700" y2="76" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="s" x="710" y="72" style="fill:#5ee08a">1 stdout → tela</text>
-  <text class="s" x="710" y="88">resultado normal</text>
-  <line x1="534" y1="110" x2="700" y2="110" stroke="#f08c7a" stroke-width="2" marker-end="url(#r)"/>
-  <text class="s" x="710" y="114" style="fill:#f08c7a">2 stderr → tela</text>
-  <text class="s" x="710" y="130">mensagens de erro</text>
-
-  <!-- Part 2: pipeline -->
-  <text class="t" x="30" y="186">2. O pipe | liga a saída de um à entrada do próximo</text>
-  <rect class="box" x="30" y="210" width="190" height="56" rx="10"/>
-  <text class="t" x="44" y="243">sort vaz...txt</text>
-  <rect class="box" x="300" y="210" width="150" height="56" rx="10"/>
-  <text class="t" x="320" y="243">uniq -c</text>
-  <rect class="box" x="530" y="210" width="150" height="56" rx="10"/>
-  <text class="t" x="555" y="243">sort -rn</text>
-  <rect class="box" x="760" y="210" width="120" height="56" rx="10" style="stroke:#e8c25a"/>
-  <text class="t" x="770" y="236" style="fill:#e8c25a">ranking</text>
-  <text class="t" x="770" y="256" style="fill:#e8c25a">.txt</text>
-
-  <line x1="220" y1="238" x2="296" y2="238" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="t" x="250" y="230" style="fill:#5ee08a">|</text>
-  <line x1="450" y1="238" x2="526" y2="238" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="t" x="480" y="230" style="fill:#5ee08a">|</text>
-  <line x1="680" y1="238" x2="756" y2="238" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="t" x="708" y="230" style="fill:#e8c25a">&gt;</text>
-
-  <g stroke="#f08c7a" stroke-width="1.5" stroke-dasharray="5 4" fill="none">
-    <path d="M125 266 v50" marker-end="url(#r)"/>
-    <path d="M375 266 v50" marker-end="url(#r)"/>
-    <path d="M605 266 v50" marker-end="url(#r)"/>
+  <rect data-graph-role="background" width="1240.0" height="640.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="620.0" y="56" text-anchor="middle" class="title">O pipe só carrega a saída normal; os erros vão para a tela</text>
+  <text x="620.0" y="82" text-anchor="middle" class="subtitle">sort vazamento.txt | uniq -c | sort -rn &gt; ranking.txt</text>
+  <path id="p1" data-graph-role="edge" data-edge-id="p1" data-source="c1" data-target="c2" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 290,210 L 390,210" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="p2" data-graph-role="edge" data-edge-id="p2" data-source="c2" data-target="c3" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 590,210 L 690,210" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="p3" data-graph-role="edge" data-edge-id="p3" data-source="c3" data-target="file" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 890,210 L 990,210" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e1" data-graph-role="edge" data-edge-id="e1" data-source="c1" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 165,270 L 165,398" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)" stroke-dasharray="6,4"/>
+  <path id="e2" data-graph-role="edge" data-edge-id="e2" data-source="c2" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 490,270 L 490,398" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)" stroke-dasharray="6,4"/>
+  <path id="e3" data-graph-role="edge" data-edge-id="e3" data-source="c3" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 790,270 L 790,398" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)" stroke-dasharray="6,4"/>
+  <g id="node-c1" data-graph-role="node" data-node-id="c1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,150,290,270">
+  <rect x="40.0" y="150.0" width="250.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text x="165.0" y="168.0" text-anchor="middle" class="node-type">COMANDO 1</text>
+  <text data-text-role="title" data-full-text="sort vazamento.txt" data-text-max-width="226.0" x="165.0" y="216.0" text-anchor="middle" class="node-title" font-size="18">sort vazamento.txt</text>
+  <text data-text-role="subtitle" data-full-text="lê o arquivo" data-text-max-width="226.0" x="165.0" y="238.0" text-anchor="middle" class="node-sub" font-size="12">lê o arquivo</text>
   </g>
-  <rect x="30" y="320" width="650" height="30" rx="6" fill="none" stroke="#f08c7a" stroke-dasharray="4 4"/>
-  <text class="s" x="44" y="340" style="fill:#f08c7a">stderr de todos continua indo para a tela (o pipe só carrega o stdout)</text>
-
-  <text class="s" x="30" y="382">Redirecionar:  &gt; arquivo (sobrescreve) · &gt;&gt; arquivo (acrescenta) · 2&gt; arquivo (só erros) · &lt; arquivo (entrada)</text>
+  <g id="node-c2" data-graph-role="node" data-node-id="c2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="390,150,590,270">
+  <rect x="390.0" y="150.0" width="200.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text x="490.0" y="168.0" text-anchor="middle" class="node-type">COMANDO 2</text>
+  <text data-text-role="title" data-full-text="uniq -c" data-text-max-width="176.0" x="490.0" y="216.0" text-anchor="middle" class="node-title" font-size="18">uniq -c</text>
+  <text data-text-role="subtitle" data-full-text="lê do stdin" data-text-max-width="176.0" x="490.0" y="238.0" text-anchor="middle" class="node-sub" font-size="12">lê do stdin</text>
+  </g>
+  <g id="node-c3" data-graph-role="node" data-node-id="c3" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="690,150,890,270">
+  <rect x="690.0" y="150.0" width="200.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text x="790.0" y="168.0" text-anchor="middle" class="node-type">COMANDO 3</text>
+  <text data-text-role="title" data-full-text="sort -rn" data-text-max-width="176.0" x="790.0" y="216.0" text-anchor="middle" class="node-title" font-size="18">sort -rn</text>
+  <text data-text-role="subtitle" data-full-text="lê do stdin" data-text-max-width="176.0" x="790.0" y="238.0" text-anchor="middle" class="node-sub" font-size="12">lê do stdin</text>
+  </g>
+  <g id="node-file" data-graph-role="node" data-node-id="file" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="990,150,1200,270">
+  <rect x="990.0" y="150.0" width="210.0" height="120.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="1095.0" y="168.0" text-anchor="middle" class="node-type">ARQUIVO</text>
+  <text data-text-role="title" data-full-text="ranking.txt" data-text-max-width="186.0" x="1095.0" y="216.0" text-anchor="middle" class="node-title" font-size="18">ranking.txt</text>
+  <text data-text-role="subtitle" data-full-text="o resultado final" data-text-max-width="186.0" x="1095.0" y="238.0" text-anchor="middle" class="node-sub" font-size="12">o resultado final</text>
+  </g>
+  <g id="node-tela" data-graph-role="node" data-node-id="tela" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,400,890,510">
+  <rect x="40.0" y="400.0" width="850.0" height="110.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.8"/>
+  <text x="465.0" y="418.0" text-anchor="middle" class="node-type">FORA DO PIPE</text>
+  <text data-text-role="title" data-full-text="Tela" data-text-max-width="826.0" x="465.0" y="461.0" text-anchor="middle" class="node-title" font-size="22.0">Tela</text>
+  <text data-text-role="subtitle" data-full-text="os erros de todos os comandos chegam aqui" data-text-max-width="826.0" x="465.0" y="483.0" text-anchor="middle" class="node-sub" font-size="12">os erros de todos os comandos chegam aqui</text>
+  </g>
+  <g id="p1-label" data-graph-role="label" data-owner="p1" data-graph-bounds="322,179,358,199">
+  <rect x="322.0" y="179.0" width="36.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="340.0" y="193.0" text-anchor="middle" class="arrow-label">|</text>
+  </g>
+  <g id="p2-label" data-graph-role="label" data-owner="p2" data-graph-bounds="622,179,658,199">
+  <rect x="622.0" y="179.0" width="36.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="640.0" y="193.0" text-anchor="middle" class="arrow-label">|</text>
+  </g>
+  <g id="p3-label" data-graph-role="label" data-owner="p3" data-graph-bounds="922,179,958,199">
+  <rect x="922.0" y="179.0" width="36.0" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="940.0" y="193.0" text-anchor="middle" class="arrow-label">&gt;</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="546" width="463.44" height="68" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="560.0" x2="70.0" y2="560.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="80.0" y="564.0" class="legend">stdout (1): a saída normal, levada pelo pipe ao stdin do próximo</text>
+    <line data-graph-role="decoration" x1="40.0" y1="582.0" x2="70.0" y2="582.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="80.0" y="586.0" class="legend">stderr (2): os erros, que não entram no pipe</text>
+  </g>
 </svg>

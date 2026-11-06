@@ -1,76 +1,128 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">A árvore de diretórios do Linux</title>
-  <desc id="d">Tudo nasce na raiz "/". Abaixo dela: /etc (configurações), /home (pastas dos usuários, como /home/aluno), /root (pasta do administrador), /tmp (temporários, todos escrevem), /var/log (registros), /usr/bin (programas), /dev e /proc (dispositivos e processos vistos como arquivos). Um caminho absoluto começa em "/"; um relativo começa onde você está.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .dir { font-size: 17px; font-weight: 700; }
-    .note { font-size: 12.5px; fill: #9fb0a6; }
-    .hot { fill: #e8c25a; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
-  <rect width="900" height="470" fill="#121815"/>
-
-  <rect class="box" x="400" y="20" width="100" height="44" rx="8" style="stroke:#5ee08a"/>
-  <text class="dir" x="443" y="48" style="fill:#5ee08a">/</text>
-  <text class="note" x="515" y="47">a raiz: o topo de tudo</text>
-
-  <g stroke="#34413b" stroke-width="2" fill="none">
-    <path d="M450 64 v26"/>
-    <path d="M80 90 h740"/>
-    <path d="M80 90 v22 M230 90 v22 M380 90 v22 M530 90 v22 M680 90 v22 M820 90 v22"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1340 720" width="1340" height="720" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
+  <defs>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #e2e8f0; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
+  </defs>
+  <rect data-graph-role="background" width="1340.0" height="720.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="670.0" y="56" text-anchor="middle" class="title">Uma árvore só, que começa em /</text>
+  <text x="670.0" y="82" text-anchor="middle" class="subtitle">todo disco e toda pasta ficam pendurados na raiz</text>
+  <g id="paths" data-graph-role="container" data-container-id="paths" data-semantic-role="boundary" data-graph-bounds="40,440,1300,610">
+  <rect data-graph-role="container" x="40.0" y="440.0" width="1260.0" height="170.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="464.0" class="section">O MESMO ARQUIVO, DOIS ENDEREÇOS</text>
+    <rect id="paths-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="446" width="248.4" height="30" fill="none" stroke="none"/>
   </g>
-
-  <rect class="box" x="30" y="112" width="100" height="40" rx="8"/>
-  <text class="dir" x="52" y="138">etc/</text>
-  <text class="note" x="20" y="174">configurações</text>
-  <text class="note" x="20" y="192">do sistema</text>
-  <text class="note hot" x="20" y="210">passwd, hosts,</text>
-  <text class="note hot" x="20" y="228">shadow (só root)</text>
-
-  <rect class="box" x="180" y="112" width="100" height="40" rx="8" style="stroke:#5cc8d8"/>
-  <text class="dir" x="198" y="138">home/</text>
-  <text class="note" x="170" y="174">pastas pessoais</text>
-  <text class="note" x="170" y="192">dos usuários</text>
-
-  <rect class="box" x="330" y="112" width="100" height="40" rx="8"/>
-  <text class="dir" x="352" y="138">root/</text>
-  <text class="note" x="320" y="174">pasta do root</text>
-  <text class="note hot" x="320" y="192">fechada (700)</text>
-
-  <rect class="box" x="480" y="112" width="100" height="40" rx="8"/>
-  <text class="dir" x="507" y="138">tmp/</text>
-  <text class="note" x="470" y="174">temporários;</text>
-  <text class="note hot" x="470" y="192">todos escrevem</text>
-
-  <rect class="box" x="630" y="112" width="100" height="40" rx="8"/>
-  <text class="dir" x="652" y="138">var/</text>
-  <text class="note" x="620" y="174">dados variáveis</text>
-  <text class="note hot" x="620" y="192">var/log: registros</text>
-
-  <rect class="box" x="770" y="112" width="100" height="40" rx="8"/>
-  <text class="dir" x="792" y="138">usr/</text>
-  <text class="note" x="760" y="174">programas:</text>
-  <text class="note" x="760" y="192">usr/bin/ls,</text>
-  <text class="note" x="760" y="210">usr/bin/grep...</text>
-
-  <!-- home subtree -->
-  <g stroke="#5cc8d8" stroke-width="2" fill="none">
-    <path d="M230 152 v52"/>
-    <path d="M230 204 v40 h30"/>
-    <path d="M300 268 v28 h24 M300 268 v78 h24 M300 268 v128 h24"/>
+  <path id="t1" data-graph-role="edge" data-edge-id="t1" data-source="root" data-target="etc" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 625,206 L 625,224 L 165,224 L 165,290" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="t2" data-graph-role="edge" data-edge-id="t2" data-source="root" data-target="home" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 643,206 L 643,244 L 367,244 L 367,290" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="t3" data-graph-role="edge" data-edge-id="t3" data-source="root" data-target="rootdir" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 661,206 L 661,264 L 569,264 L 569,290" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="t4" data-graph-role="edge" data-edge-id="t4" data-source="root" data-target="tmp" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 679,206 L 679,264 L 771,264 L 771,290" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="t5" data-graph-role="edge" data-edge-id="t5" data-source="root" data-target="var" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 697,206 L 697,244 L 973,244 L 973,290" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="t6" data-graph-role="edge" data-edge-id="t6" data-source="root" data-target="usr" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 715,206 L 715,224 L 1175,224 L 1175,290" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <g id="node-root" data-graph-role="node" data-node-id="root" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="580,110,760,206">
+  <rect x="580.0" y="110.0" width="180.0" height="96.0" rx="10.0" fill="#111827" stroke="#e2e8f0" stroke-width="2.6"/>
+  <text x="670.0" y="128.0" text-anchor="middle" class="node-type">A RAIZ</text>
+  <text data-text-role="title" data-full-text="/" data-text-max-width="156.0" x="670.0" y="164.0" text-anchor="middle" class="node-title" font-size="28.0">/</text>
+  <text data-text-role="subtitle" data-full-text="o topo de tudo" data-text-max-width="156.0" x="670.0" y="186.0" text-anchor="middle" class="node-sub" font-size="12">o topo de tudo</text>
   </g>
-  <rect class="box" x="262" y="226" width="140" height="40" rx="8" style="stroke:#5cc8d8"/>
-  <text class="dir" x="280" y="252" style="fill:#5cc8d8">aluno/</text>
-  <text class="note" x="415" y="244">= ~ (til) para o aluno</text>
-  <text class="note" x="415" y="262">absoluto: /home/aluno</text>
-
-  <text class="dir" x="330" y="302">missao-1/</text>
-  <text class="note" x="455" y="300">.cofre/  ← oculto: começa com ponto</text>
-  <text class="dir" x="330" y="352">missao-2/</text>
-  <text class="note" x="455" y="350">arquivo-morto/2023/08/semana-3/...</text>
-  <text class="dir" x="330" y="402">missao-3/</text>
-  <text class="note" x="455" y="400">vazamento.txt</text>
-
-  <rect x="20" y="425" width="860" height="34" rx="6" fill="none" stroke="#34413b" stroke-dasharray="4 4"/>
-  <text class="note" x="34" y="447">Absoluto: /home/aluno/missao-1   ·   Relativo (estando em /home/aluno): missao-1   ·   .. = pasta de cima</text>
+  <g id="node-etc" data-graph-role="node" data-node-id="etc" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,290,260,400">
+  <rect x="70.0" y="290.0" width="190.0" height="110.0" rx="10.0" fill="#2a2205" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="etc/" data-text-max-width="166.0" x="165.0" y="345.0" text-anchor="middle" class="node-title" font-size="18">etc/</text>
+  <text data-text-role="subtitle" data-full-text="configurações" data-text-max-width="166.0" x="165.0" y="367.0" text-anchor="middle" class="node-sub" font-size="12">configurações</text>
+  </g>
+  <g id="node-home" data-graph-role="node" data-node-id="home" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="272,290,462,400">
+  <rect x="272.0" y="290.0" width="190.0" height="110.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="home/" data-text-max-width="166.0" x="367.0" y="345.0" text-anchor="middle" class="node-title" font-size="18">home/</text>
+  <text data-text-role="subtitle" data-full-text="pessoais: aluno/ = ~" data-text-max-width="166.0" x="367.0" y="367.0" text-anchor="middle" class="node-sub" font-size="12">pessoais: aluno/ = ~</text>
+  </g>
+  <g id="node-rootdir" data-graph-role="node" data-node-id="rootdir" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="474,290,664,400">
+  <rect x="474.0" y="290.0" width="190.0" height="110.0" rx="10.0" fill="#2a2205" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="root/" data-text-max-width="166.0" x="569.0" y="345.0" text-anchor="middle" class="node-title" font-size="18">root/</text>
+  <text data-text-role="subtitle" data-full-text="do root: fechada" data-text-max-width="166.0" x="569.0" y="367.0" text-anchor="middle" class="node-sub" font-size="12">do root: fechada</text>
+  </g>
+  <g id="node-tmp" data-graph-role="node" data-node-id="tmp" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="676,290,866,400">
+  <rect x="676.0" y="290.0" width="190.0" height="110.0" rx="10.0" fill="#2a2205" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="tmp/" data-text-max-width="166.0" x="771.0" y="345.0" text-anchor="middle" class="node-title" font-size="18">tmp/</text>
+  <text data-text-role="subtitle" data-full-text="todos escrevem" data-text-max-width="166.0" x="771.0" y="367.0" text-anchor="middle" class="node-sub" font-size="12">todos escrevem</text>
+  </g>
+  <g id="node-var" data-graph-role="node" data-node-id="var" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="878,290,1068,400">
+  <rect x="878.0" y="290.0" width="190.0" height="110.0" rx="10.0" fill="#2a2205" stroke="#f59e0b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="var/" data-text-max-width="166.0" x="973.0" y="345.0" text-anchor="middle" class="node-title" font-size="18">var/</text>
+  <text data-text-role="subtitle" data-full-text="var/log: registros" data-text-max-width="166.0" x="973.0" y="367.0" text-anchor="middle" class="node-sub" font-size="12">var/log: registros</text>
+  </g>
+  <g id="node-usr" data-graph-role="node" data-node-id="usr" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1080,290,1270,400">
+  <rect x="1080.0" y="290.0" width="190.0" height="110.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="usr/" data-text-max-width="166.0" x="1175.0" y="345.0" text-anchor="middle" class="node-title" font-size="18">usr/</text>
+  <text data-text-role="subtitle" data-full-text="programas" data-text-max-width="166.0" x="1175.0" y="367.0" text-anchor="middle" class="node-sub" font-size="12">programas</text>
+  </g>
+  <g id="node-abs" data-graph-role="node" data-node-id="abs" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="paths" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,490,650,586">
+  <rect x="70.0" y="490.0" width="580.0" height="96.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="2.4" filter="url(#glowBlue)"/>
+  <text x="360.0" y="508.0" text-anchor="middle" class="node-type">ABSOLUTO</text>
+  <text data-text-role="title" data-full-text="/home/aluno/missao-1" data-text-max-width="556.0" x="360.0" y="544.0" text-anchor="middle" class="node-title" font-size="18">/home/aluno/missao-1</text>
+  <text data-text-role="subtitle" data-full-text="começa em / e funciona de qualquer lugar" data-text-max-width="556.0" x="360.0" y="566.0" text-anchor="middle" class="node-sub" font-size="12">começa em / e funciona de qualquer lugar</text>
+  </g>
+  <g id="node-rel" data-graph-role="node" data-node-id="rel" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="paths" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="690,490,1270,586">
+  <rect x="690.0" y="490.0" width="580.0" height="96.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="2.4" filter="url(#glowBlue)"/>
+  <text x="980.0" y="508.0" text-anchor="middle" class="node-type">RELATIVO</text>
+  <text data-text-role="title" data-full-text="missao-1" data-text-max-width="556.0" x="980.0" y="544.0" text-anchor="middle" class="node-title" font-size="18">missao-1</text>
+  <text data-text-role="subtitle" data-full-text="começa onde você está (aqui: /home/aluno)" data-text-max-width="556.0" x="980.0" y="566.0" text-anchor="middle" class="node-sub" font-size="12">começa onde você está (aqui: /home/aluno)</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="626" width="328.32" height="68" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="640.0" x2="70.0" y2="640.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="80.0" y="644.0" class="legend">o que um pentester olha primeiro</text>
+    <line data-graph-role="decoration" x1="40.0" y1="662.0" x2="70.0" y2="662.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="80.0" y="666.0" class="legend">o seu caminho (você está em /home/aluno)</text>
+  </g>
 </svg>
