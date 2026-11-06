@@ -151,7 +151,7 @@ Antes de considerar um módulo pronto, o autor confere item por item. Se algum n
 
 - Gerar todos os diagramas com a skill **fireworks-tech-graph**, estilo 1 (Flat Icon).
 - Rótulos em português; termos técnicos podem ficar em inglês.
-- Exportar como PNG (largura 1440) na pasta do próprio módulo e referenciar com `![descrição](arquivo.png)`.
+- Salvar como SVG na pasta `img/` do módulo, como os demais diagramas da plataforma.
 - **Uma ideia por diagrama**, no máximo ~8 elementos. Se passar disso, dividir em visão geral + detalhe.
 - Para fluxos de ataque, protocolos e requisições, preferir **diagrama de sequência** com passos numerados.
 - Logo abaixo de cada imagem, uma legenda curta dizendo **o que o aluno deve observar**.
