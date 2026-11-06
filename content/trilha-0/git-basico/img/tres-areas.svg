@@ -1,76 +1,152 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">As três áreas do Git e o repositório remoto</title>
-  <desc id="d">Quatro caixas da esquerda para a direita: working tree (os arquivos que você edita), staging area ou index (o próximo commit em preparação), repositório local (a pasta .git, com o histórico de commits) e repositório remoto (por exemplo, o GitHub). Setas verdes para a direita mostram o caminho de uma mudança: git add leva da working tree para a staging area, git commit leva da staging area para o repositório, git push leva do repositório local para o remoto. Setas laranja para a esquerda mostram o caminho de volta: git fetch traz commits do remoto para o repositório local, git switch ou git restore trazem uma versão do repositório para a working tree, git restore --staged tira um arquivo da staging area. Embaixo, os três comandos de comparação: git diff compara working tree com staging area, git diff --staged compara staging area com o último commit, e git status resume tudo.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 14px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .c { font-size: 12.5px; font-weight: 700; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1450 650" width="1450" height="650" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="showcase" data-max-bends-per-edge="2" data-max-total-bends="8" data-max-route-stretch="1.35" data-max-bridged-crossings="0" data-min-node-gap="40.0" data-min-container-gutter="20.0" data-min-label-clearance="4.0" data-min-segment-length="16.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f0a35a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="34">Onde mora cada versão: três áreas no seu PC e uma no servidor</text>
-
-  <rect x="20" y="56" width="640" height="300" rx="12" fill="none" stroke="#34413b" stroke-dasharray="6 5" stroke-width="1.5"/>
-  <text class="s" x="34" y="76">seu computador (pasta do projeto)</text>
-
-  <rect class="box" x="36" y="96" width="180" height="150" rx="10" style="stroke:#5cc8d8"/>
-  <text class="m" x="50" y="122" style="fill:#5cc8d8">working tree</text>
-  <text class="s" x="50" y="146">os arquivos que você</text>
-  <text class="s" x="50" y="162">vê e edita (nano, vim)</text>
-  <text class="s" x="50" y="194">README.md</text>
-  <text class="s" x="50" y="210">escopo.md</text>
-  <text class="s" x="50" y="226">recon/...</text>
-
-  <rect class="box" x="250" y="96" width="180" height="150" rx="10" style="stroke:#e8c25a"/>
-  <text class="m" x="264" y="122" style="fill:#e8c25a">staging area</text>
-  <text class="s" x="264" y="146">(index) o próximo</text>
-  <text class="s" x="264" y="162">commit em preparação</text>
-  <text class="s" x="264" y="194">.git/index</text>
-  <text class="s" x="264" y="210">você escolhe o que</text>
-  <text class="s" x="264" y="226">entra na foto</text>
-
-  <rect class="box" x="464" y="96" width="180" height="150" rx="10" style="stroke:#5ee08a"/>
-  <text class="m" x="478" y="122" style="fill:#5ee08a">repositório</text>
-  <text class="s" x="478" y="146">local: a pasta .git</text>
-  <text class="s" x="478" y="162">com todo o histórico</text>
-  <text class="s" x="478" y="194">c1 ← c2 ← c3</text>
-  <text class="s" x="478" y="210">commits imutáveis,</text>
-  <text class="s" x="478" y="226">cada um com seu hash</text>
-
-  <rect class="box" x="700" y="96" width="180" height="150" rx="10" style="stroke:#b48cf0"/>
-  <text class="m" x="714" y="122" style="fill:#b48cf0">remoto</text>
-  <text class="s" x="714" y="146">outra cópia completa</text>
-  <text class="s" x="714" y="162">(GitHub, servidor,</text>
-  <text class="s" x="714" y="178">pasta .git "bare")</text>
-  <text class="s" x="714" y="210">nome usual: origin</text>
-
-  <!-- forward -->
-  <line x1="216" y1="130" x2="246" y2="130" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <line x1="430" y1="130" x2="460" y2="130" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <line x1="644" y1="130" x2="696" y2="130" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="c" x="196" y="280" style="fill:#5ee08a">git add</text>
-  <line x1="231" y1="268" x2="231" y2="250" stroke="#5ee08a" stroke-width="1"/>
-  <text class="c" x="404" y="280" style="fill:#5ee08a">git commit</text>
-  <line x1="445" y1="268" x2="445" y2="250" stroke="#5ee08a" stroke-width="1"/>
-  <text class="c" x="636" y="280" style="fill:#5ee08a">git push</text>
-  <line x1="670" y1="268" x2="670" y2="250" stroke="#5ee08a" stroke-width="1"/>
-
-  <!-- backward -->
-  <line x1="696" y1="212" x2="648" y2="212" stroke="#f0a35a" stroke-width="2" marker-end="url(#o)"/>
-  <line x1="246" y1="200" x2="220" y2="200" stroke="#f0a35a" stroke-width="2" marker-end="url(#o)"/>
-  <text class="c" x="36" y="306" style="fill:#f0a35a">volta: git restore --staged    (staging area → working tree)</text>
-  <text class="c" x="36" y="324" style="fill:#f0a35a">       git switch / git restore (repositório → working tree)</text>
-  <text class="c" x="36" y="342" style="fill:#f0a35a">       git fetch (remoto → repositório) · git pull = fetch + merge</text>
-
-  <!-- compare -->
-  <rect class="box" x="20" y="372" width="860" height="80" rx="10"/>
-  <text class="m" x="36" y="396">Comparar antes de gravar</text>
-  <text class="s" x="36" y="418">git diff           working tree  × staging area   (o que você mudou e ainda não deu add)</text>
-  <text class="s" x="36" y="436">git diff --staged  staging area  × último commit  (o que vai entrar no próximo commit)</text>
+  <rect data-graph-role="background" width="1450.0" height="650.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="725.0" y="56" text-anchor="middle" class="title">As três áreas do Git e o remoto</text>
+  <text x="725.0" y="82" text-anchor="middle" class="subtitle">onde mora cada versão: três áreas no seu PC e uma no servidor</text>
+  <g id="pc" data-graph-role="container" data-container-id="pc" data-semantic-role="boundary" data-graph-bounds="40,120,1060,410">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="1020.0" height="290.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">SEU COMPUTADOR (PASTA DO PROJETO)</text>
+    <rect id="pc-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="270.5" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="server" data-graph-role="container" data-container-id="server" data-semantic-role="boundary" data-graph-bounds="1210,120,1410,410">
+  <rect data-graph-role="container" x="1210.0" y="120.0" width="200.0" height="290.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="1228.0" y="144.0" class="section">SERVIDOR</text>
+    <rect id="server-header" data-graph-role="reserved" data-reserved-kind="container-header" x="1218" y="126" width="86.94" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="compare" data-graph-role="container" data-container-id="compare" data-semantic-role="boundary" data-graph-bounds="40,440,1410,560">
+  <rect data-graph-role="container" x="40.0" y="440.0" width="1370.0" height="120.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="464.0" class="section">COMPARAR ANTES DE GRAVAR</text>
+    <rect id="compare-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="446" width="205.5" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="fetch" data-graph-role="edge" data-edge-id="fetch" data-source="remote" data-target="repo" data-edge-kind="flow" data-topic-id="" data-flow="feedback" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1230,226 L 1130,226 L 1030,226" fill="none" stroke="#f97316" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowG)"/>
+  <path id="checkout" data-graph-role="edge" data-edge-id="checkout" data-source="repo" data-target="wt" data-edge-kind="flow" data-topic-id="" data-flow="feedback" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.182" data-bridges="" d="M 940,290 L 940,360 L 170,360 L 170,290" fill="none" stroke="#f97316" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowG)"/>
+  <path id="add" data-graph-role="edge" data-edge-id="add" data-source="wt" data-target="stage" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 270,226 L 530,226" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="unstage" data-graph-role="edge" data-edge-id="unstage" data-source="stage" data-target="wt" data-edge-kind="flow" data-topic-id="" data-flow="feedback" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 530,244 L 270,244" fill="none" stroke="#f97316" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowG)"/>
+  <path id="commit" data-graph-role="edge" data-edge-id="commit" data-source="stage" data-target="repo" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 730,235 L 850,235" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="push" data-graph-role="edge" data-edge-id="push" data-source="repo" data-target="remote" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1030,244 L 1230,244" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-wt" data-graph-role="node" data-node-id="wt" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,180,270,290">
+  <rect x="70.0" y="180.0" width="200.0" height="110.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="working tree" data-text-max-width="176.0" x="170.0" y="235.0" text-anchor="middle" class="node-title" font-size="18">working tree</text>
+  <text data-text-role="subtitle" data-full-text="arquivos que você edita" data-text-max-width="176.0" x="170.0" y="257.0" text-anchor="middle" class="node-sub" font-size="12">arquivos que você edita</text>
+  </g>
+  <g id="node-stage" data-graph-role="node" data-node-id="stage" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="530,180,730,290">
+  <rect x="530.0" y="180.0" width="200.0" height="110.0" rx="10.0" fill="#0f172a" stroke="#eab308" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="staging area" data-text-max-width="176.0" x="630.0" y="235.0" text-anchor="middle" class="node-title" font-size="18">staging area</text>
+  <text data-text-role="subtitle" data-full-text="(index) o próximo commit" data-text-max-width="176.0" x="630.0" y="257.0" text-anchor="middle" class="node-sub" font-size="12">(index) o próximo commit</text>
+  </g>
+  <g id="node-repo" data-graph-role="node" data-node-id="repo" data-semantic-role="cylinder" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="850,180,1030,290">
+  <ellipse cx="940.0" cy="193.75" rx="90.0" ry="13.75" fill="#052e16" stroke="#22c55e" stroke-width="2.2"/>
+  <rect x="850.0" y="193.75" width="180.0" height="82.5" fill="#052e16" stroke="#22c55e" stroke-width="2.2"/>
+  <ellipse cx="940.0" cy="276.25" rx="90.0" ry="13.75" fill="#052e16" stroke="#22c55e" stroke-width="2.2"/>
+  <ellipse cx="940.0" cy="221.8" rx="90.0" ry="13.75" fill="none" stroke="#22c55e" stroke-opacity="0.45" stroke-width="1.2"/>
+  <ellipse cx="940.0" cy="246.0" rx="90.0" ry="13.75" fill="none" stroke="#22c55e" stroke-opacity="0.25" stroke-width="1.2"/>
+  <text data-text-role="title" data-full-text="repositório" data-text-max-width="156.0" x="940.0" y="229.0" text-anchor="middle" class="node-title" font-size="18">repositório</text>
+  <text data-text-role="subtitle" data-full-text="pasta .git: histórico" data-text-max-width="156.0" x="940.0" y="253.0" text-anchor="middle" class="node-sub" font-size="12">pasta .git: histórico</text>
+  </g>
+  <g id="node-remote" data-graph-role="node" data-node-id="remote" data-semantic-role="cylinder" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1230,180,1390,290">
+  <ellipse cx="1310.0" cy="193.75" rx="80.0" ry="13.75" fill="#1e1b4b" stroke="#a855f7" stroke-width="2.2"/>
+  <rect x="1230.0" y="193.75" width="160.0" height="82.5" fill="#1e1b4b" stroke="#a855f7" stroke-width="2.2"/>
+  <ellipse cx="1310.0" cy="276.25" rx="80.0" ry="13.75" fill="#1e1b4b" stroke="#a855f7" stroke-width="2.2"/>
+  <ellipse cx="1310.0" cy="221.8" rx="80.0" ry="13.75" fill="none" stroke="#a855f7" stroke-opacity="0.45" stroke-width="1.2"/>
+  <ellipse cx="1310.0" cy="246.0" rx="80.0" ry="13.75" fill="none" stroke="#a855f7" stroke-opacity="0.25" stroke-width="1.2"/>
+  <text data-text-role="title" data-full-text="remoto" data-text-max-width="136.0" x="1310.0" y="229.0" text-anchor="middle" class="node-title" font-size="18">remoto</text>
+  <text data-text-role="subtitle" data-full-text="ex.: GitHub (origin)" data-text-max-width="136.0" x="1310.0" y="253.0" text-anchor="middle" class="node-sub" font-size="12">ex.: GitHub (origin)</text>
+  </g>
+  <g id="node-diff" data-graph-role="node" data-node-id="diff" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,476,710,540">
+  <rect x="70.0" y="476.0" width="640.0" height="64.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="git diff" data-text-max-width="616.0" x="390.0" y="508.0" text-anchor="middle" class="node-title" font-size="15.0">git diff</text>
+  <text data-text-role="subtitle" data-full-text="working tree × staging area" data-text-max-width="616.0" x="390.0" y="530.0" text-anchor="middle" class="node-sub" font-size="12">working tree × staging area</text>
+  </g>
+  <g id="node-diffstaged" data-graph-role="node" data-node-id="diffstaged" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="760,476,1380,540">
+  <rect x="760.0" y="476.0" width="620.0" height="64.0" rx="10.0" fill="#0f172a" stroke="#eab308" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="git diff --staged" data-text-max-width="596.0" x="1070.0" y="508.0" text-anchor="middle" class="node-title" font-size="15.0">git diff --staged</text>
+  <text data-text-role="subtitle" data-full-text="staging area × último commit" data-text-max-width="596.0" x="1070.0" y="530.0" text-anchor="middle" class="node-sub" font-size="12">staging area × último commit</text>
+  </g>
+  <g id="add-label" data-graph-role="label" data-owner="add" data-graph-bounds="371.52,195,428.48,215">
+  <rect x="371.52" y="195.0" width="56.96" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="400.0" y="209.0" text-anchor="middle" class="arrow-label">git add</text>
+  </g>
+  <g id="unstage-label" data-graph-role="label" data-owner="unstage" data-graph-bounds="327.6,231,472.4,251">
+  <rect x="327.6" y="231.0" width="144.8" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="400.0" y="245.0" text-anchor="middle" class="arrow-label">git restore --staged</text>
+  </g>
+  <g id="commit-label" data-graph-role="label" data-owner="commit" data-graph-bounds="752.64,204,827.36,224">
+  <rect x="752.64" y="204.0" width="74.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="790.0" y="218.0" text-anchor="middle" class="arrow-label">git commit</text>
+  </g>
+  <g id="push-label" data-graph-role="label" data-owner="push" data-graph-bounds="1098.04,231,1161.96,251">
+  <rect x="1098.04" y="231.0" width="63.92" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="1130.0" y="245.0" text-anchor="middle" class="arrow-label">git push</text>
+  </g>
+  <g id="fetch-label" data-graph-role="label" data-owner="fetch" data-graph-bounds="1074.56,195,1145.44,215">
+  <rect x="1074.56" y="195.0" width="70.88" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="1110.0" y="209.0" text-anchor="middle" class="arrow-label">git fetch</text>
+  </g>
+  <g id="checkout-label" data-graph-role="label" data-owner="checkout" data-graph-bounds="474.44,329,635.56,349">
+  <rect x="474.44" y="329.0" width="161.12" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="555.0" y="343.0" text-anchor="middle" class="arrow-label">git switch / git restore</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="38" y="596" width="343.92" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="48.0" y1="610.0" x2="78.0" y2="610.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="88.0" y="614.0" class="legend">a mudança avança</text>
+    <line data-graph-role="decoration" x1="222.07999999999998" y1="610.0" x2="252.07999999999998" y2="610.0" stroke="#f97316" stroke-width="2.3" marker-end="url(#arrowG)"/>
+    <text data-graph-role="decoration" x="262.08" y="614.0" class="legend">caminho de volta</text>
+  </g>
 </svg>

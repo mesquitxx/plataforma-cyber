@@ -1,68 +1,157 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
-  <title id="t">Os objetos do Git: commits, trees e blobs ligados por hash</title>
-  <desc id="d">À esquerda, dois arquivos de referência: HEAD contém ref: refs/heads/main, e refs/heads/main contém o hash d9073d6. Ele aponta para o commit d9073d6, com a mensagem Anota o módulo 0.4, que aponta para a tree 34f64db e para o commit pai 8572b8e. O commit pai aponta para a sua própria tree 01a9fb5. Cada tree lista os arquivos daquela versão: a tree nova aponta para o blob 5171deb (README com 4 linhas) e a tree antiga para o blob 8b33437 (README com 3 linhas). Embaixo, a regra: o nome de cada objeto é o SHA-1 do seu conteúdo, então mudar um byte de um blob muda o hash do blob, da tree que o lista e de todos os commits seguintes.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 13.5px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1340 700" width="1340" height="700" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="showcase" data-max-bends-per-edge="2" data-max-total-bends="8" data-max-route-stretch="1.35" data-max-bridged-crossings="0" data-min-node-gap="40.0" data-min-container-gutter="20.0" data-min-label-clearance="4.0" data-min-segment-length="16.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
-    <marker id="v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#b48cf0"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="500" fill="#121815"/>
-  <text class="t" x="30" y="34">Por dentro da pasta .git: tudo é um objeto com nome = hash do conteúdo</text>
-
-  <!-- refs -->
-  <rect class="box" x="30" y="70" width="190" height="60" rx="10" style="stroke:#b48cf0"/>
-  <text class="m" x="44" y="94" style="fill:#b48cf0">.git/HEAD</text>
-  <text class="s" x="44" y="116">ref: refs/heads/main</text>
-  <rect class="box" x="30" y="160" width="190" height="60" rx="10" style="stroke:#b48cf0"/>
-  <text class="m" x="44" y="184" style="fill:#b48cf0">refs/heads/main</text>
-  <text class="s" x="44" y="206">d9073d6dae72...</text>
-  <line x1="125" y1="130" x2="125" y2="156" stroke="#b48cf0" stroke-width="1.8" marker-end="url(#v)"/>
-  <text class="s" x="30" y="250">branch = arquivo de 41</text>
-  <text class="s" x="30" y="266">bytes com um hash</text>
-
-  <!-- commits -->
-  <rect class="box" x="270" y="150" width="230" height="96" rx="10" style="stroke:#5ee08a"/>
-  <text class="m" x="284" y="174" style="fill:#5ee08a">commit d9073d6</text>
-  <text class="s" x="284" y="194">tree   34f64db</text>
-  <text class="s" x="284" y="210">parent 8572b8e</text>
-  <text class="s" x="284" y="226">"Anota o módulo 0.4"</text>
-  <line x1="220" y1="190" x2="266" y2="190" stroke="#b48cf0" stroke-width="1.8" marker-end="url(#v)"/>
-
-  <rect class="box" x="630" y="150" width="240" height="96" rx="10" style="stroke:#5ee08a"/>
-  <text class="m" x="644" y="174" style="fill:#5ee08a">commit 8572b8e</text>
-  <text class="s" x="644" y="194">tree   01a9fb5</text>
-  <text class="s" x="644" y="210">(sem parent: o 1º)</text>
-  <text class="s" x="644" y="226">"Primeiro commit..."</text>
-  <line x1="500" y1="180" x2="626" y2="180" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
-  <text class="s" x="520" y="172">parent</text>
-
-  <!-- trees -->
-  <rect class="box" x="270" y="290" width="230" height="64" rx="10" style="stroke:#e8c25a"/>
-  <text class="m" x="284" y="314" style="fill:#e8c25a">tree 34f64db</text>
-  <text class="s" x="284" y="336">100644 blob 5171deb README.md</text>
-  <line x1="385" y1="246" x2="385" y2="286" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
-
-  <rect class="box" x="630" y="290" width="240" height="64" rx="10" style="stroke:#e8c25a"/>
-  <text class="m" x="644" y="314" style="fill:#e8c25a">tree 01a9fb5</text>
-  <text class="s" x="644" y="336">100644 blob 8b33437 README.md</text>
-  <line x1="750" y1="246" x2="750" y2="286" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
-
-  <!-- blobs -->
-  <rect class="box" x="270" y="384" width="230" height="56" rx="10" style="stroke:#5cc8d8"/>
-  <text class="m" x="284" y="406" style="fill:#5cc8d8">blob 5171deb</text>
-  <text class="s" x="284" y="426">README com 4 linhas</text>
-  <line x1="385" y1="354" x2="385" y2="380" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
-
-  <rect class="box" x="630" y="384" width="240" height="56" rx="10" style="stroke:#5cc8d8"/>
-  <text class="m" x="644" y="406" style="fill:#5cc8d8">blob 8b33437</text>
-  <text class="s" x="644" y="426">README com 3 linhas</text>
-  <line x1="750" y1="354" x2="750" y2="380" stroke="#5ee08a" stroke-width="1.8" marker-end="url(#g)"/>
-
-  <text class="s" x="30" y="472">nome = SHA-1 do conteúdo → mudar 1 byte do blob muda o blob, a tree que o lista e todo commit seguinte</text>
+  <rect data-graph-role="background" width="1340.0" height="700.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="670.0" y="56" text-anchor="middle" class="title">Por dentro da pasta .git</text>
+  <text x="670.0" y="82" text-anchor="middle" class="subtitle">tudo é um objeto cujo nome é o hash do próprio conteúdo</text>
+  <g id="refs" data-graph-role="container" data-container-id="refs" data-semantic-role="boundary" data-graph-bounds="40,120,560,280">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="520.0" height="160.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">REFERÊNCIAS (PONTEIROS)</text>
+    <rect id="refs-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="193.8" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="objects" data-graph-role="container" data-container-id="objects" data-semantic-role="boundary" data-graph-bounds="600,120,1300,570">
+  <rect data-graph-role="container" x="600.0" y="120.0" width="700.0" height="450.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="618.0" y="144.0" class="section">OBJETOS EM .GIT/OBJECTS</text>
+    <rect id="objects-header" data-graph-role="reserved" data-reserved-kind="container-header" x="608" y="126" width="194.06" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="e1-head" data-graph-role="edge" data-edge-id="e1-head" data-source="head" data-target="main" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 270,212 L 330,212" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="e2-main" data-graph-role="edge" data-edge-id="e2-main" data-source="main" data-target="c2" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 530,212 L 640,212" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="e3-parent" data-graph-role="edge" data-edge-id="e3-parent" data-source="c2" data-target="c1" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 900,212 L 1000,212" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e4-tree2" data-graph-role="edge" data-edge-id="e4-tree2" data-source="c2" data-target="t2" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 770,254 L 770,320" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e5-tree1" data-graph-role="edge" data-edge-id="e5-tree1" data-source="c1" data-target="t1" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1130,254 L 1130,320" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e6-blob2" data-graph-role="edge" data-edge-id="e6-blob2" data-source="t2" data-target="b2" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 770,404 L 770,460" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e7-blob1" data-graph-role="edge" data-edge-id="e7-blob1" data-source="t1" data-target="b1" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1130,404 L 1130,460" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-head" data-graph-role="node" data-node-id="head" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,170,270,254">
+  <rect x="70.0" y="170.0" width="200.0" height="84.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text x="170.0" y="188.0" text-anchor="middle" class="node-type">ARQUIVO</text>
+  <text data-text-role="title" data-full-text=".git/HEAD" data-text-max-width="176.0" x="170.0" y="218.0" text-anchor="middle" class="node-title" font-size="16.0">.git/HEAD</text>
+  <text data-text-role="subtitle" data-full-text="ref: refs/heads/main" data-text-max-width="176.0" x="170.0" y="240.0" text-anchor="middle" class="node-sub" font-size="12">ref: refs/heads/main</text>
+  </g>
+  <g id="node-main" data-graph-role="node" data-node-id="main" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="330,170,530,254">
+  <rect x="330.0" y="170.0" width="200.0" height="84.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text x="430.0" y="188.0" text-anchor="middle" class="node-type">BRANCH</text>
+  <text data-text-role="title" data-full-text="refs/heads/main" data-text-max-width="176.0" x="430.0" y="218.0" text-anchor="middle" class="node-title" font-size="16.0">refs/heads/main</text>
+  <text data-text-role="subtitle" data-full-text="d9073d6dae72..." data-text-max-width="176.0" x="430.0" y="240.0" text-anchor="middle" class="node-sub" font-size="12">d9073d6dae72...</text>
+  </g>
+  <g id="node-c2" data-graph-role="node" data-node-id="c2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="640,170,900,254">
+  <rect x="640.0" y="170.0" width="260.0" height="84.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="770.0" y="188.0" text-anchor="middle" class="node-type">COMMIT</text>
+  <text data-text-role="title" data-full-text="d9073d6" data-text-max-width="236.0" x="770.0" y="218.0" text-anchor="middle" class="node-title" font-size="16.0">d9073d6</text>
+  <text data-text-role="subtitle" data-full-text="&quot;Anota o módulo 0.4&quot;" data-text-max-width="236.0" x="770.0" y="240.0" text-anchor="middle" class="node-sub" font-size="12">"Anota o módulo 0.4"</text>
+  </g>
+  <g id="node-c1" data-graph-role="node" data-node-id="c1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1000,170,1260,254">
+  <rect x="1000.0" y="170.0" width="260.0" height="84.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="1130.0" y="188.0" text-anchor="middle" class="node-type">COMMIT</text>
+  <text data-text-role="title" data-full-text="8572b8e" data-text-max-width="236.0" x="1130.0" y="218.0" text-anchor="middle" class="node-title" font-size="16.0">8572b8e</text>
+  <text data-text-role="subtitle" data-full-text="&quot;Primeiro commit...&quot; (sem parent)" data-text-max-width="236.0" x="1130.0" y="240.0" text-anchor="middle" class="node-sub" font-size="12">"Primeiro commit..." (sem parent)</text>
+  </g>
+  <g id="node-t2" data-graph-role="node" data-node-id="t2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="640,320,900,404">
+  <rect x="640.0" y="320.0" width="260.0" height="84.0" rx="10.0" fill="#3f2a00" stroke="#eab308" stroke-width="1.8"/>
+  <text x="770.0" y="338.0" text-anchor="middle" class="node-type">TREE</text>
+  <text data-text-role="title" data-full-text="34f64db" data-text-max-width="236.0" x="770.0" y="368.0" text-anchor="middle" class="node-title" font-size="16.0">34f64db</text>
+  <text data-text-role="subtitle" data-full-text="100644 blob 5171deb README.md" data-text-max-width="236.0" x="770.0" y="390.0" text-anchor="middle" class="node-sub" font-size="12">100644 blob 5171deb README.md</text>
+  </g>
+  <g id="node-t1" data-graph-role="node" data-node-id="t1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1000,320,1260,404">
+  <rect x="1000.0" y="320.0" width="260.0" height="84.0" rx="10.0" fill="#3f2a00" stroke="#eab308" stroke-width="1.8"/>
+  <text x="1130.0" y="338.0" text-anchor="middle" class="node-type">TREE</text>
+  <text data-text-role="title" data-full-text="01a9fb5" data-text-max-width="236.0" x="1130.0" y="368.0" text-anchor="middle" class="node-title" font-size="16.0">01a9fb5</text>
+  <text data-text-role="subtitle" data-full-text="100644 blob 8b33437 README.md" data-text-max-width="236.0" x="1130.0" y="390.0" text-anchor="middle" class="node-sub" font-size="12">100644 blob 8b33437 README.md</text>
+  </g>
+  <g id="node-b2" data-graph-role="node" data-node-id="b2" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="640,460,900,544">
+  <rect x="640.0" y="460.0" width="260.0" height="84.0" rx="10.0" fill="#0c2340" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="770.0" y="478.0" text-anchor="middle" class="node-type">BLOB</text>
+  <text data-text-role="title" data-full-text="5171deb" data-text-max-width="236.0" x="770.0" y="508.0" text-anchor="middle" class="node-title" font-size="16.0">5171deb</text>
+  <text data-text-role="subtitle" data-full-text="README com 4 linhas" data-text-max-width="236.0" x="770.0" y="530.0" text-anchor="middle" class="node-sub" font-size="12">README com 4 linhas</text>
+  </g>
+  <g id="node-b1" data-graph-role="node" data-node-id="b1" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1000,460,1260,544">
+  <rect x="1000.0" y="460.0" width="260.0" height="84.0" rx="10.0" fill="#0c2340" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="1130.0" y="478.0" text-anchor="middle" class="node-type">BLOB</text>
+  <text data-text-role="title" data-full-text="8b33437" data-text-max-width="236.0" x="1130.0" y="508.0" text-anchor="middle" class="node-title" font-size="16.0">8b33437</text>
+  <text data-text-role="subtitle" data-full-text="README com 3 linhas" data-text-max-width="236.0" x="1130.0" y="530.0" text-anchor="middle" class="node-sub" font-size="12">README com 3 linhas</text>
+  </g>
+  <g id="e3-parent-label" data-graph-role="label" data-owner="e3-parent" data-graph-bounds="922.12,181,977.88,201">
+  <rect x="922.12" y="181.0" width="55.76" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="950.0" y="195.0" text-anchor="middle" class="arrow-label">parent</text>
+  </g>
+  <g id="e4-tree2-label" data-graph-role="label" data-owner="e4-tree2" data-graph-bounds="725.16,273,767,293">
+  <rect x="725.16" y="273.0" width="41.839999999999996" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="746.08" y="287.0" text-anchor="middle" class="arrow-label">tree</text>
+  </g>
+  <g id="e5-tree1-label" data-graph-role="label" data-owner="e5-tree1" data-graph-bounds="1085.16,273,1127,293">
+  <rect x="1085.16" y="273.0" width="41.839999999999996" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="1106.08" y="287.0" text-anchor="middle" class="arrow-label">tree</text>
+  </g>
+  <g id="e6-blob2-label" data-graph-role="label" data-owner="e6-blob2" data-graph-bounds="728.28,418,767,438">
+  <rect x="728.28" y="418.0" width="38.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="747.64" y="432.0" text-anchor="middle" class="arrow-label">blob</text>
+  </g>
+  <g id="e7-blob1-label" data-graph-role="label" data-owner="e7-blob1" data-graph-bounds="1088.28,418,1127,438">
+  <rect x="1088.28" y="418.0" width="38.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="1107.64" y="432.0" text-anchor="middle" class="arrow-label">blob</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="38" y="601" width="432.24" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="48.0" y1="615.0" x2="78.0" y2="615.0" stroke="#a855f7" stroke-width="2.3" marker-end="url(#arrowA)"/>
+    <text data-graph-role="decoration" x="88.0" y="619.0" class="legend">ref aponta para</text>
+    <line data-graph-role="decoration" x1="215.12" y1="615.0" x2="245.12" y2="615.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="255.12" y="619.0" class="legend">objeto aponta para (pelo hash)</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,658,755,674">
+  <text x="48.0" y="670.0" class="footnote">nome = SHA-1 do conteúdo: mudar 1 byte do blob muda o blob, a tree que o lista e todo commit seguinte</text>
+  </g>
 </svg>
