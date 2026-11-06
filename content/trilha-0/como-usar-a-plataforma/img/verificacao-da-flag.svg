@@ -1,66 +1,136 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
-  <title id="t">Como a flag é verificada</title>
-  <desc id="d">Você digita a flag no navegador e clica em Enviar. O formulário vai ao servidor local, passando pelo guarda de Host e Origin. No servidor, o texto é normalizado (espaços das pontas removidos e Unicode NFC), passa pela função scrypt junto com o salt da tarefa, e o resultado é comparado com o hash guardado no banco. O banco nunca tem a flag em claro, só hash e salt. A tentativa é registrada: a errada guarda o texto digitado, a certa não. Ao navegador volta só "correta" ou "ainda não".</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 15px; font-weight: 700; }
-    .s { font-size: 12.5px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 660" width="1000" height="660" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="flow" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="430" fill="#121815"/>
-
-  <!-- Browser -->
-  <rect class="box" x="20" y="30" width="230" height="150" rx="10" style="stroke:#5cc8d8"/>
-  <text class="t" x="36" y="56" style="fill:#5cc8d8">Navegador</text>
-  <rect x="36" y="72" width="198" height="30" rx="5" fill="#121815" stroke="#34413b"/>
-  <text class="s" x="46" y="92" style="fill:#e6ede8">FLAG{...}   [Enviar]</text>
-  <text class="s" x="36" y="128">não tem o hash,</text>
-  <text class="s" x="36" y="144">nem a resposta, nem o</text>
-  <text class="s" x="36" y="160">gabarito do quiz</text>
-
-  <line x1="250" y1="87" x2="316" y2="87" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <text class="s" x="258" y="78">POST</text>
-
-  <!-- Server -->
-  <rect class="box" x="320" y="30" width="560" height="250" rx="10" style="stroke:#5ee08a"/>
-  <text class="t" x="336" y="56" style="fill:#5ee08a">Servidor local (127.0.0.1:3000)</text>
-
-  <rect x="336" y="70" width="250" height="34" rx="5" fill="#121815" stroke="#34413b"/>
-  <text class="s" x="346" y="92" style="fill:#e6ede8">1. guarda: Host e Origin locais?</text>
-  <rect x="336" y="114" width="250" height="34" rx="5" fill="#121815" stroke="#34413b"/>
-  <text class="s" x="346" y="136" style="fill:#e6ede8">2. normaliza (pontas + NFC)</text>
-  <rect x="336" y="174" width="250" height="34" rx="5" fill="#121815" stroke="#e8c25a"/>
-  <text class="s" x="346" y="196" style="fill:#e8c25a">3. scrypt(texto, salt)</text>
-  <rect x="336" y="218" width="250" height="34" rx="5" fill="#121815" stroke="#e8c25a"/>
-  <text class="s" x="346" y="240" style="fill:#e8c25a">4. compara com o hash guardado</text>
-
-  <g stroke="#9fb0a6" stroke-width="1.5">
-    <line x1="461" y1="104" x2="461" y2="112"/>
-    <line x1="461" y1="166" x2="461" y2="172"/>
-    <line x1="461" y1="208" x2="461" y2="216"/>
+  <rect data-graph-role="background" width="1000.0" height="660.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="500.0" y="56" text-anchor="middle" class="title">Como a flag é verificada</text>
+  <text x="500.0" y="82" text-anchor="middle" class="subtitle">o navegador só envia um palpite e recebe "certo" ou "errado"</text>
+  <g id="cliente" data-graph-role="container" data-container-id="cliente" data-semantic-role="boundary" data-graph-bounds="40,120,255,590">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="215.0" height="470.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">NAVEGADOR</text>
+    <rect id="cliente-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="97.86" height="30" fill="none" stroke="none"/>
   </g>
-
-  <!-- DB -->
-  <rect x="640" y="80" width="220" height="110" rx="10" fill="#121815" stroke="#e8c25a"/>
-  <text class="t" x="656" y="104" style="fill:#e8c25a">Banco (SQLite)</text>
-  <text class="s" x="656" y="126">hash + salt da tarefa</text>
-  <text class="s" x="656" y="144">nunca a flag em claro</text>
-  <text class="s" x="656" y="166">tentativa errada guarda</text>
-  <text class="s" x="656" y="182">o texto; a certa, não</text>
-  <line x1="636" y1="190" x2="590" y2="230" stroke="#e8c25a" stroke-width="1.5" stroke-dasharray="4 4"/>
-
-  <!-- Answer -->
-  <path d="M336 266 H135 V184" fill="none" stroke="#5ee08a" stroke-width="2" marker-end="url(#g)"/>
-  <text class="s" x="30" y="296" style="fill:#5ee08a">volta só: "Flag correta!" ou "Ainda não."</text>
-
-  <!-- Bottom note -->
-  <rect x="20" y="310" width="860" height="100" rx="10" fill="none" stroke="#34413b" stroke-dasharray="5 4"/>
-  <text class="t" x="36" y="336">Por que assim?</text>
-  <text class="s" x="36" y="360">Se a resposta estivesse no navegador (no HTML ou no JavaScript), bastaria abrir o código-fonte</text>
-  <text class="s" x="36" y="378">da página para "resolver" tudo sem fazer nada. Com só o hash no servidor, a única forma de acertar</text>
-  <text class="s" x="36" y="396">é chegar ao texto certo, e quem abre o banco não encontra a flag escrita em lugar nenhum.</text>
+  <g id="servidor" data-graph-role="container" data-container-id="servidor" data-semantic-role="boundary" data-graph-bounds="295,120,960,590">
+  <rect data-graph-role="container" x="295.0" y="120.0" width="665.0" height="470.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="313.0" y="144.0" class="section">SERVIDOR LOCAL · 127.0.0.1:3000</text>
+    <rect id="servidor-header" data-graph-role="reserved" data-reserved-kind="container-header" x="303" y="126" width="238.26" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="e1-post" data-graph-role="edge" data-edge-id="e1-post" data-source="form" data-target="guarda" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 235,202 L 340,202" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e2" data-graph-role="edge" data-edge-id="e2" data-source="guarda" data-target="normaliza" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 490,234 L 490,272" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="e3" data-graph-role="edge" data-edge-id="e3" data-source="normaliza" data-target="scrypt" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 490,336 L 490,374" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="e4" data-graph-role="edge" data-edge-id="e4" data-source="scrypt" data-target="registra" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 490,438 L 490,476" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="e-hash" data-graph-role="edge" data-edge-id="e-hash" data-source="banco" data-target="scrypt" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 750,406 L 640,406" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="e-grava" data-graph-role="edge" data-edge-id="e-grava" data-source="registra" data-target="banco" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 640,513 L 845,513 L 845,448" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e6-resp" data-graph-role="edge" data-edge-id="e6-resp" data-source="registra" data-target="resposta" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 340,513 L 235,513" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-form" data-graph-role="node" data-node-id="form" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,165,235,239">
+  <rect x="60.0" y="165.0" width="175.0" height="74.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="147.5" y="183.0" text-anchor="middle" class="node-type">VOCÊ</text>
+  <text data-text-role="title" data-full-text="FLAG{...} Enviar" data-text-max-width="151.0" x="147.5" y="208.0" text-anchor="middle" class="node-title" font-size="15.0">FLAG{...} Enviar</text>
+  <text data-text-role="subtitle" data-full-text="digita e envia" data-text-max-width="151.0" x="147.5" y="230.0" text-anchor="middle" class="node-sub" font-size="12">digita e envia</text>
+  </g>
+  <g id="node-resposta" data-graph-role="node" data-node-id="resposta" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,476,235,550">
+  <rect x="60.0" y="476.0" width="175.0" height="74.0" rx="10.0" fill="#111827" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="147.5" y="494.0" text-anchor="middle" class="node-type">VOLTA SÓ</text>
+  <text data-text-role="title" data-full-text="certa / ainda não" data-text-max-width="151.0" x="147.5" y="519.0" text-anchor="middle" class="node-title" font-size="14.0">certa / ainda não</text>
+  <text data-text-role="subtitle" data-full-text="sem hash, sem gabarito" data-text-max-width="151.0" x="147.5" y="541.0" text-anchor="middle" class="node-sub" font-size="12">sem hash, sem gabarito</text>
+  </g>
+  <g id="node-guarda" data-graph-role="node" data-node-id="guarda" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="340,170,640,234">
+  <rect x="340.0" y="170.0" width="300.0" height="64.0" rx="10.0" fill="#111827" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="2. confere a origem" data-text-max-width="276.0" x="490.0" y="202.0" text-anchor="middle" class="node-title" font-size="15.0">2. confere a origem</text>
+  <text data-text-role="subtitle" data-full-text="Host e Origin locais · campos válidos" data-text-max-width="276.0" x="490.0" y="224.0" text-anchor="middle" class="node-sub" font-size="12">Host e Origin locais · campos válidos</text>
+  </g>
+  <g id="node-normaliza" data-graph-role="node" data-node-id="normaliza" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="340,272,640,336">
+  <rect x="340.0" y="272.0" width="300.0" height="64.0" rx="10.0" fill="#111827" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="3. normaliza o texto" data-text-max-width="276.0" x="490.0" y="304.0" text-anchor="middle" class="node-title" font-size="15.0">3. normaliza o texto</text>
+  <text data-text-role="subtitle" data-full-text="tira espaços das pontas · Unicode NFC" data-text-max-width="276.0" x="490.0" y="326.0" text-anchor="middle" class="node-sub" font-size="12">tira espaços das pontas · Unicode NFC</text>
+  </g>
+  <g id="node-scrypt" data-graph-role="node" data-node-id="scrypt" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="340,374,640,438">
+  <rect x="340.0" y="374.0" width="300.0" height="64.0" rx="10.0" fill="#1c1405" stroke="#f59e0b" stroke-width="1.8" filter="url(#glowOrange)"/>
+  <text data-text-role="title" data-full-text="4. scrypt(texto, salt)" data-text-max-width="276.0" x="490.0" y="406.0" text-anchor="middle" class="node-title" font-size="15.0">4. scrypt(texto, salt)</text>
+  <text data-text-role="subtitle" data-full-text="compara com o hash guardado" data-text-max-width="276.0" x="490.0" y="428.0" text-anchor="middle" class="node-sub" font-size="12">compara com o hash guardado</text>
+  </g>
+  <g id="node-registra" data-graph-role="node" data-node-id="registra" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="340,476,640,550">
+  <rect x="340.0" y="476.0" width="300.0" height="74.0" rx="10.0" fill="#111827" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="5. registra a tentativa" data-text-max-width="276.0" x="490.0" y="513.0" text-anchor="middle" class="node-title" font-size="15.0">5. registra a tentativa</text>
+  <text data-text-role="subtitle" data-full-text="errada guarda o texto; certa, não" data-text-max-width="276.0" x="490.0" y="535.0" text-anchor="middle" class="node-sub" font-size="12">errada guarda o texto; certa, não</text>
+  </g>
+  <g id="node-banco" data-graph-role="node" data-node-id="banco" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="750,364,940,448">
+  <rect x="750.0" y="364.0" width="190.0" height="84.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="2.4"/>
+  <text x="845.0" y="382.0" text-anchor="middle" class="node-type">BANCO (SQLITE)</text>
+  <text data-text-role="title" data-full-text="hash + salt" data-text-max-width="166.0" x="845.0" y="412.0" text-anchor="middle" class="node-title" font-size="15.0">hash + salt</text>
+  <text data-text-role="subtitle" data-full-text="nunca a flag em claro" data-text-max-width="166.0" x="845.0" y="434.0" text-anchor="middle" class="node-sub" font-size="12">nunca a flag em claro</text>
+  </g>
+  <g id="e1-post-label" data-graph-role="label" data-owner="e1-post" data-graph-bounds="259.02,171,315.98,191">
+  <rect x="259.02" y="171.0" width="56.96" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="287.5" y="185.0" text-anchor="middle" class="arrow-label">1. POST</text>
+  </g>
+  <g id="e-hash-label" data-graph-role="label" data-owner="e-hash" data-graph-bounds="653.92,375,736.08,395">
+  <rect x="653.92" y="375.0" width="82.16" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="695.0" y="389.0" text-anchor="middle" class="arrow-label">salt + hash</text>
+  </g>
+  <g id="e-grava-label" data-graph-role="label" data-owner="e-grava" data-graph-bounds="718.1,482,766.9,502">
+  <rect x="718.1" y="482.0" width="48.8" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="742.5" y="496.0" text-anchor="middle" class="arrow-label">grava</text>
+  </g>
+  <g id="e6-resp-label" data-graph-role="label" data-owner="e6-resp" data-graph-bounds="245.1,482,329.9,502">
+  <rect x="245.1" y="482.0" width="84.80000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="287.5" y="496.0" text-anchor="middle" class="arrow-label">6. resposta</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,618,720,634">
+  <text x="48.0" y="630.0" class="footnote">A resposta não está no navegador nem em claro no banco: só chega lá quem encontra o texto certo.</text>
+  </g>
 </svg>

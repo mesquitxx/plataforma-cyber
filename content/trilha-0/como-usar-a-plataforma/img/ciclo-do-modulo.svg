@@ -1,60 +1,130 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
-  <title id="t">Os estados de um módulo</title>
-  <desc id="d">Um módulo começa Bloqueado (algum pré-requisito pendente, mas a página continua legível) ou Disponível (todos os pré-requisitos concluídos). Concluir os pré-requisitos o torna Disponível. Qualquer ação numa tarefa o deixa Em andamento. Quando todas as tarefas ficam concluídas, ele passa a Concluído. Desmarcar uma tarefa manual o devolve para Em andamento. Embaixo, os tipos de tarefa: flag e quiz são corrigidos pelo servidor; leitura, exercício e passo de lab são marcados à mão.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .s { font-size: 12.5px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke-width: 1.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="state" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
-    <marker id="y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e8c25a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="400" fill="#121815"/>
-
-  <!-- States -->
-  <rect class="box" x="20" y="40" width="180" height="78" rx="10" stroke="#6b7a72"/>
-  <text class="t" x="36" y="68" style="fill:#9fb0a6">Bloqueado</text>
-  <text class="s" x="36" y="88">pré-requisito</text>
-  <text class="s" x="36" y="104">pendente (legível)</text>
-
-  <rect class="box" x="250" y="40" width="180" height="78" rx="10" stroke="#e6ede8"/>
-  <text class="t" x="266" y="68">Disponível</text>
-  <text class="s" x="266" y="88">pré-requisitos</text>
-  <text class="s" x="266" y="104">concluídos</text>
-
-  <rect class="box" x="480" y="40" width="180" height="78" rx="10" stroke="#5cc8d8"/>
-  <text class="t" x="496" y="68" style="fill:#5cc8d8">Em andamento</text>
-  <text class="s" x="496" y="88">alguma tarefa</text>
-  <text class="s" x="496" y="104">foi tentada</text>
-
-  <rect class="box" x="710" y="40" width="170" height="78" rx="10" stroke="#5ee08a"/>
-  <text class="t" x="726" y="68" style="fill:#5ee08a">Concluído</text>
-  <text class="s" x="726" y="88">todas as tarefas</text>
-  <text class="s" x="726" y="104">concluídas</text>
-
-  <line x1="200" y1="79" x2="246" y2="79" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <line x1="430" y1="79" x2="476" y2="79" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <line x1="660" y1="79" x2="706" y2="79" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <path d="M795 118 v34 h-225 v-30" fill="none" stroke="#e8c25a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#y)"/>
-  <text class="s" x="590" y="170" style="fill:#e8c25a">desmarcar uma tarefa manual</text>
-  <text class="s" x="20" y="150">"Bloqueado" é um aviso, não uma tranca:</text>
-  <text class="s" x="20" y="166">você pode ler o módulo mesmo assim.</text>
-
-  <!-- Task types -->
-  <text class="t" x="20" y="222">Tipos de tarefa</text>
-  <rect class="box" x="20" y="238" width="420" height="138" rx="10" stroke="#5ee08a"/>
-  <text class="t" x="36" y="264" style="fill:#5ee08a">Corrigidas pelo servidor</text>
-  <text class="s" x="36" y="290">flag  →  certa conclui; errada deixa</text>
-  <text class="s" x="36" y="306">         "em andamento" (nunca desfaz)</text>
-  <text class="s" x="36" y="332">quiz  →  acertar ≥ 70% conclui; o gabarito</text>
-  <text class="s" x="36" y="348">         nunca vai ao navegador</text>
-
-  <rect class="box" x="460" y="238" width="420" height="138" rx="10" stroke="#5cc8d8"/>
-  <text class="t" x="476" y="264" style="fill:#5cc8d8">Marcadas à mão</text>
-  <text class="s" x="476" y="290">leitura · exercício · passo de lab</text>
-  <text class="s" x="476" y="316">você marca e desmarca no quadro</text>
-  <text class="s" x="476" y="332">"Tarefas do módulo"</text>
-  <text class="s" x="476" y="358">módulo sem tarefas: botão "Marcar módulo..."</text>
+  <rect data-graph-role="background" width="1000.0" height="600.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="500.0" y="56" text-anchor="middle" class="title">Os estados de um módulo</text>
+  <text x="500.0" y="82" text-anchor="middle" class="subtitle">cada mudança vem de uma ação sua; errar nunca desfaz o que já foi concluído</text>
+  <g id="estados" data-graph-role="container" data-container-id="estados" data-semantic-role="boundary" data-graph-bounds="40,120,960,360">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="920.0" height="240.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">ESTADOS DO MÓDULO</text>
+    <rect id="estados-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="155.58" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="tipos" data-graph-role="container" data-container-id="tipos" data-semantic-role="boundary" data-graph-bounds="40,390,960,540">
+  <rect data-graph-role="container" x="40.0" y="390.0" width="920.0" height="150.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="414.0" class="section">TIPOS DE TAREFA</text>
+    <rect id="tipos-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="396" width="134" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="a4" data-graph-role="edge" data-edge-id="a4" data-source="concluido" data-target="andamento" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.365" data-bridges="" d="M 845,240 L 845,282 L 615,282 L 615,240" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)" stroke-dasharray="6,4"/>
+  <path id="a1" data-graph-role="edge" data-edge-id="a1" data-source="bloqueado" data-target="disponivel" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 240,205 L 300,205" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="a2" data-graph-role="edge" data-edge-id="a2" data-source="disponivel" data-target="andamento" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 470,205 L 530,205" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="a3" data-graph-role="edge" data-edge-id="a3" data-source="andamento" data-target="concluido" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 700,205 L 760,205" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-bloqueado" data-graph-role="node" data-node-id="bloqueado" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,170,240,240">
+  <rect x="70.0" y="170.0" width="170.0" height="70.0" rx="10.0" fill="#111827" stroke="#64748b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Bloqueado" data-text-max-width="146.0" x="155.0" y="205.0" text-anchor="middle" class="node-title" font-size="17.0">Bloqueado</text>
+  <text data-text-role="subtitle" data-full-text="pré-requisito pendente" data-text-max-width="146.0" x="155.0" y="227.0" text-anchor="middle" class="node-sub" font-size="11.24">pré-requisito pendente</text>
+  </g>
+  <g id="node-disponivel" data-graph-role="node" data-node-id="disponivel" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="300,170,470,240">
+  <rect x="300.0" y="170.0" width="170.0" height="70.0" rx="10.0" fill="#111827" stroke="#e2e8f0" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Disponível" data-text-max-width="146.0" x="385.0" y="205.0" text-anchor="middle" class="node-title" font-size="17.0">Disponível</text>
+  <text data-text-role="subtitle" data-full-text="pré-requisitos ok" data-text-max-width="146.0" x="385.0" y="227.0" text-anchor="middle" class="node-sub" font-size="12">pré-requisitos ok</text>
+  </g>
+  <g id="node-andamento" data-graph-role="node" data-node-id="andamento" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="530,170,700,240">
+  <rect x="530.0" y="170.0" width="170.0" height="70.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8" filter="url(#glowPurple)"/>
+  <text data-text-role="title" data-full-text="Em andamento" data-text-max-width="146.0" x="615.0" y="205.0" text-anchor="middle" class="node-title" font-size="17.0">Em andamento</text>
+  <text data-text-role="subtitle" data-full-text="tarefa tentada" data-text-max-width="146.0" x="615.0" y="227.0" text-anchor="middle" class="node-sub" font-size="12">tarefa tentada</text>
+  </g>
+  <g id="node-concluido" data-graph-role="node" data-node-id="concluido" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="760,170,930,240">
+  <rect x="760.0" y="170.0" width="170.0" height="70.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8" filter="url(#glowGreen)"/>
+  <text data-text-role="title" data-full-text="Concluído" data-text-max-width="146.0" x="845.0" y="205.0" text-anchor="middle" class="node-title" font-size="17.0">Concluído</text>
+  <text data-text-role="subtitle" data-full-text="todas as tarefas" data-text-max-width="146.0" x="845.0" y="227.0" text-anchor="middle" class="node-sub" font-size="12">todas as tarefas</text>
+  </g>
+  <g id="node-flag" data-graph-role="node" data-node-id="flag" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,440,330,514">
+  <rect x="70.0" y="440.0" width="260.0" height="74.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="200.0" y="458.0" text-anchor="middle" class="node-type">O SERVIDOR CORRIGE</text>
+  <text data-text-role="title" data-full-text="flag" data-text-max-width="236.0" x="200.0" y="483.0" text-anchor="middle" class="node-title" font-size="17.0">flag</text>
+  <text data-text-role="subtitle" data-full-text="texto certo conclui" data-text-max-width="236.0" x="200.0" y="505.0" text-anchor="middle" class="node-sub" font-size="12">texto certo conclui</text>
+  </g>
+  <g id="node-quiz" data-graph-role="node" data-node-id="quiz" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="370,440,630,514">
+  <rect x="370.0" y="440.0" width="260.0" height="74.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="500.0" y="458.0" text-anchor="middle" class="node-type">O SERVIDOR CORRIGE</text>
+  <text data-text-role="title" data-full-text="quiz" data-text-max-width="236.0" x="500.0" y="483.0" text-anchor="middle" class="node-title" font-size="17.0">quiz</text>
+  <text data-text-role="subtitle" data-full-text="≥ 70% de acertos conclui" data-text-max-width="236.0" x="500.0" y="505.0" text-anchor="middle" class="node-sub" font-size="12">≥ 70% de acertos conclui</text>
+  </g>
+  <g id="node-manual" data-graph-role="node" data-node-id="manual" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="670,440,930,514">
+  <rect x="670.0" y="440.0" width="260.0" height="74.0" rx="10.0" fill="#1c1405" stroke="#f59e0b" stroke-width="1.8"/>
+  <text x="800.0" y="458.0" text-anchor="middle" class="node-type">VOCÊ MARCA À MÃO</text>
+  <text data-text-role="title" data-full-text="leitura · exercício · lab" data-text-max-width="236.0" x="800.0" y="483.0" text-anchor="middle" class="node-title" font-size="15.0">leitura · exercício · lab</text>
+  <text data-text-role="subtitle" data-full-text="quadro Tarefas do módulo" data-text-max-width="236.0" x="800.0" y="505.0" text-anchor="middle" class="node-sub" font-size="12">quadro Tarefas do módulo</text>
+  </g>
+  <g id="a4-label" data-graph-role="label" data-owner="a4" data-graph-bounds="634.56,271,825.44,291">
+  <rect x="634.56" y="271.0" width="190.88" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="730.0" y="285.0" text-anchor="middle" class="arrow-label">desmarcar uma tarefa manual</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="60" y="256" width="339.12" height="90" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="70.0" y1="270.0" x2="100.0" y2="270.0" stroke="#94a3b8" stroke-width="2.3" marker-end="url(#arrowH)"/>
+    <text data-graph-role="decoration" x="110.0" y="274.0" class="legend">concluir os pré-requisitos</text>
+    <line data-graph-role="decoration" x1="70.0" y1="292.0" x2="100.0" y2="292.0" stroke="#a855f7" stroke-width="2.3" marker-end="url(#arrowA)"/>
+    <text data-graph-role="decoration" x="110.0" y="296.0" class="legend">tentar uma tarefa (flag, quiz ou marcação)</text>
+    <line data-graph-role="decoration" x1="70.0" y1="314.0" x2="100.0" y2="314.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="110.0" y="318.0" class="legend">concluir todas as tarefas</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,564,580,580">
+  <text x="48.0" y="576.0" class="footnote">"Bloqueado" é um aviso, não uma tranca: a página do módulo continua legível.</text>
+  </g>
 </svg>

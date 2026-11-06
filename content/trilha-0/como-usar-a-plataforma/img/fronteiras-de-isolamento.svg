@@ -1,89 +1,160 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t d">
-  <title id="t">As fronteiras de isolamento da plataforma</title>
-  <desc id="d">Dentro do Windows roda o WSL. No WSL, o navegador fala com a plataforma em 127.0.0.1:3000. A plataforma é um processo comum, fora de contêiner, e só controla o Docker chamando scripts/lab.sh com uma lista fechada de labs e ações. No Docker, a única porta de lab é a do guac-proxy, em 127.0.0.1:8080; atrás dele, numa rede interna, ficam o Guacamole e o Kali, e o alvo fica numa rede interna de laboratório, alcançável só pelo Kali. O sandbox Linux não tem rede nenhuma. Setas cortadas mostram o que é bloqueado: outros aparelhos da rede de casa não alcançam as portas, e os alvos não alcançam a internet nem o PC.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 14.5px; font-weight: 700; }
-    .s { font-size: 12px; fill: #9fb0a6; }
-    .box { fill: #1c2521; stroke: #34413b; stroke-width: 1.5; }
-    .x { stroke: #f08c7a; stroke-width: 3; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 890" width="1200" height="890" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="network" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5cc8d8"/></marker>
-    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f08c7a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="520" fill="#121815"/>
-
-  <!-- Outside world -->
-  <rect x="20" y="14" width="400" height="44" rx="8" fill="none" stroke="#f08c7a" stroke-dasharray="5 4"/>
-  <text class="t" x="34" y="34" style="fill:#f08c7a">Outros aparelhos da rede de casa</text>
-  <text class="s" x="34" y="50">celular, notebook de visita, TV...</text>
-  <rect x="480" y="14" width="400" height="44" rx="8" fill="none" stroke="#f08c7a" stroke-dasharray="5 4"/>
-  <text class="t" x="494" y="34" style="fill:#f08c7a">Internet</text>
-  <text class="s" x="494" y="50">os alvos nunca chegam até ela</text>
-
-  <!-- Windows / WSL -->
-  <rect x="20" y="78" width="860" height="428" rx="12" fill="none" stroke="#34413b" stroke-width="1.5"/>
-  <text class="s" x="34" y="96">Windows</text>
-  <rect x="36" y="106" width="828" height="388" rx="12" fill="none" stroke="#5cc8d8" stroke-width="1.5"/>
-  <text class="s" x="50" y="124" style="fill:#5cc8d8">WSL (Ubuntu)</text>
-
-  <!-- blocked from LAN -->
-  <line x1="256" y1="58" x2="256" y2="170" stroke="#f08c7a" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#r)"/>
-  <line class="x" x1="244" y1="88" x2="268" y2="112"/><line class="x" x1="268" y1="88" x2="244" y2="112"/>
-
-  <!-- Browser and platform -->
-  <rect class="box" x="56" y="152" width="170" height="54" rx="8"/>
-  <text class="t" x="70" y="176">Navegador</text>
-  <text class="s" x="70" y="194">você</text>
-  <line x1="226" y1="179" x2="282" y2="179" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <rect class="box" x="286" y="140" width="250" height="78" rx="8" style="stroke:#5ee08a"/>
-  <text class="t" x="300" y="164" style="fill:#5ee08a">Plataforma</text>
-  <text class="s" x="300" y="184">127.0.0.1:3000 · processo comum,</text>
-  <text class="s" x="300" y="200">fora de contêiner · confere Host</text>
-
-  <line x1="411" y1="218" x2="411" y2="254" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <rect class="box" x="286" y="258" width="250" height="54" rx="8" style="stroke:#e8c25a"/>
-  <text class="t" x="300" y="282" style="fill:#e8c25a">scripts/lab.sh</text>
-  <text class="s" x="300" y="300">lista fechada de labs e ações</text>
-
-  <!-- Docker -->
-  <rect x="56" y="330" width="790" height="150" rx="10" fill="none" stroke="#34413b" stroke-dasharray="4 4"/>
-  <text class="s" x="432" y="348">Docker · sem docker.sock, sem privileged</text>
-  <line x1="411" y1="312" x2="411" y2="356" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-
-  <rect class="box" x="70" y="362" width="170" height="64" rx="8"/>
-  <text class="t" x="84" y="386">guac-proxy</text>
-  <text class="s" x="84" y="404">127.0.0.1:8080</text>
-  <text class="s" x="84" y="418">única porta de lab</text>
-  <path d="M141 206 V358" fill="none" stroke="#5cc8d8" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#c)"/>
-  <text class="s" x="150" y="236">tela do Kali</text>
-  <text class="s" x="150" y="250">(iframe)</text>
-
-  <rect x="260" y="362" width="370" height="104" rx="8" fill="none" stroke="#5cc8d8" stroke-dasharray="4 3"/>
-  <text class="s" x="272" y="378" style="fill:#5cc8d8">redes internas (sem internet, sem rota para o PC)</text>
-  <rect class="box" x="272" y="388" width="100" height="62" rx="6"/>
-  <text class="t" x="282" y="414">Guaca-</text>
-  <text class="t" x="282" y="432">mole</text>
-  <rect class="box" x="392" y="388" width="90" height="62" rx="6"/>
-  <text class="t" x="410" y="424">Kali</text>
-  <rect class="box" x="502" y="388" width="116" height="62" rx="6" style="stroke:#f08c7a"/>
-  <text class="t" x="514" y="414" style="fill:#f08c7a">alvo</text>
-  <text class="s" x="514" y="432">ex.: DVWA</text>
-  <line x1="240" y1="419" x2="268" y2="419" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <line x1="372" y1="419" x2="388" y2="419" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-  <line x1="482" y1="419" x2="498" y2="419" stroke="#5cc8d8" stroke-width="2" marker-end="url(#c)"/>
-
-  <rect class="box" x="650" y="362" width="182" height="104" rx="8"/>
-  <text class="t" x="664" y="386">linux-sandbox</text>
-  <text class="s" x="664" y="406">network_mode: none</text>
-  <text class="s" x="664" y="422">sem portas, sem sudo</text>
-  <text class="s" x="664" y="438">shell: npm run</text>
-  <text class="s" x="664" y="454">lab:sandbox</text>
-
-  <!-- blocked to internet -->
-  <path d="M560 388 V250 H700 V62" fill="none" stroke="#f08c7a" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#r)"/>
-  <line class="x" x1="688" y1="128" x2="712" y2="152"/><line class="x" x1="712" y1="128" x2="688" y2="152"/>
-  <text class="s" x="724" y="146" style="fill:#f08c7a">bloqueado</text>
-  <text class="s" x="572" y="242" style="fill:#f08c7a">alvo → internet</text>
+  <rect data-graph-role="background" width="1200.0" height="890.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="600.0" y="56" text-anchor="middle" class="title">As fronteiras de isolamento</text>
+  <text x="600.0" y="82" text-anchor="middle" class="subtitle">o que importa é o que fica de fora: a rede de casa não chega às portas, e os alvos não chegam à internet nem ao PC</text>
+  <g id="windows" data-graph-role="container" data-container-id="windows" data-semantic-role="boundary" data-graph-bounds="30,260,930,820">
+  <rect data-graph-role="container" x="30.0" y="260.0" width="900.0" height="560.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="48.0" y="284.0" class="section">WINDOWS</text>
+    <rect id="windows-header" data-graph-role="reserved" data-reserved-kind="container-header" x="38" y="266" width="85.64" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="wsl" data-graph-role="container" data-container-id="wsl" data-semantic-role="boundary" data-graph-bounds="50,300,910,800">
+  <rect data-graph-role="container" x="50.0" y="300.0" width="860.0" height="500.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="68.0" y="324.0" class="section">WSL (UBUNTU)</text>
+    <rect id="wsl-header" data-graph-role="reserved" data-reserved-kind="container-header" x="58" y="306" width="120.74" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="docker" data-graph-role="container" data-container-id="docker" data-semantic-role="boundary" data-graph-bounds="70,450,890,780">
+  <rect data-graph-role="container" x="70.0" y="450.0" width="820.0" height="330.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="330.0" y="472.0" text-anchor="start" dominant-baseline="middle" font-size="13.0" font-weight="700" fill="#38bdf8">DOCKER · SEM DOCKER.SOCK, SEM PRIVILEGED</text>
+  </g>
+  <g id="internas" data-graph-role="container" data-container-id="internas" data-semantic-role="boundary" data-graph-bounds="330,490,870,640">
+  <rect data-graph-role="container" x="330.0" y="490.0" width="540.0" height="150.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="348.0" y="514.0" class="section">REDES INTERNAS · SEM INTERNET, SEM ROTA PARA O PC</text>
+    <rect id="internas-header" data-graph-role="reserved" data-reserved-kind="container-header" x="338" y="496" width="369.82" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="e-http" data-graph-role="edge" data-edge-id="e-http" data-source="navegador" data-target="plataforma" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 290,378 L 360,378" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e-control" data-graph-role="edge" data-edge-id="e-control" data-source="plataforma" data-target="labsh" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 660,378 L 710,378" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="e-docker" data-graph-role="edge" data-edge-id="e-docker" data-source="labsh" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 800,416 L 800,448" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="e-tela" data-graph-role="edge" data-edge-id="e-tela" data-source="navegador" data-target="proxy" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 195,410 L 195,533" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e-guac" data-graph-role="edge" data-edge-id="e-guac" data-source="proxy" data-target="guacamole" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 290,568 L 350,568" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e-kali" data-graph-role="edge" data-edge-id="e-kali" data-source="guacamole" data-target="kali" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 490,568 L 540,568" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e-ataque" data-graph-role="edge" data-edge-id="e-ataque" data-source="kali" data-target="alvo" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 660,568 L 710,568" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="x-lan" data-graph-role="edge" data-edge-id="x-lan" data-source="aparelhos" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 510,186 L 510,254" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)" stroke-dasharray="6,4"/>
+  <path id="x-net" data-graph-role="edge" data-edge-id="x-net" data-source="alvo" data-target="" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 850,568 L 962,568" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)" stroke-dasharray="6,4"/>
+  <g id="node-aparelhos" data-graph-role="node" data-node-id="aparelhos" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="360,122,660,186">
+  <rect x="360.0" y="122.0" width="300.0" height="64.0" rx="10.0" fill="#2a0a0a" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Outros aparelhos" data-text-max-width="276.0" x="510.0" y="154.0" text-anchor="middle" class="node-title" font-size="15.0">Outros aparelhos</text>
+  <text data-text-role="subtitle" data-full-text="celular, notebook de visita, TV..." data-text-max-width="276.0" x="510.0" y="176.0" text-anchor="middle" class="node-sub" font-size="12">celular, notebook de visita, TV...</text>
+  </g>
+  <g id="node-internet" data-graph-role="node" data-node-id="internet" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1000,536,1170,600">
+  <rect x="1000.0" y="536.0" width="170.0" height="64.0" rx="10.0" fill="#2a0a0a" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Internet" data-text-max-width="146.0" x="1085.0" y="568.0" text-anchor="middle" class="node-title" font-size="15.0">Internet</text>
+  <text data-text-role="subtitle" data-full-text="fora de alcance" data-text-max-width="146.0" x="1085.0" y="590.0" text-anchor="middle" class="node-sub" font-size="12">fora de alcance</text>
+  </g>
+  <g id="node-navegador" data-graph-role="node" data-node-id="navegador" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="100,346,290,410">
+  <rect x="100.0" y="346.0" width="190.0" height="64.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Navegador" data-text-max-width="166.0" x="195.0" y="378.0" text-anchor="middle" class="node-title" font-size="15.0">Navegador</text>
+  <text data-text-role="subtitle" data-full-text="você" data-text-max-width="166.0" x="195.0" y="400.0" text-anchor="middle" class="node-sub" font-size="12">você</text>
+  </g>
+  <g id="node-plataforma" data-graph-role="node" data-node-id="plataforma" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="360,346,660,410">
+  <rect x="360.0" y="346.0" width="300.0" height="64.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8" filter="url(#glowGreen)"/>
+  <text data-text-role="title" data-full-text="Plataforma" data-text-max-width="276.0" x="510.0" y="378.0" text-anchor="middle" class="node-title" font-size="15.0">Plataforma</text>
+  <text data-text-role="subtitle" data-full-text="127.0.0.1:3000 · fora de contêiner" data-text-max-width="276.0" x="510.0" y="400.0" text-anchor="middle" class="node-sub" font-size="12">127.0.0.1:3000 · fora de contêiner</text>
+  </g>
+  <g id="node-labsh" data-graph-role="node" data-node-id="labsh" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="710,340,890,416">
+  <rect x="710.0" y="340.0" width="180.0" height="76.0" rx="10.0" fill="#1c1405" stroke="#f59e0b" stroke-width="1.8"/>
+  <text x="800.0" y="358.0" text-anchor="middle" class="node-type">LISTA FECHADA</text>
+  <text data-text-role="title" data-full-text="scripts/lab.sh" data-text-max-width="156.0" x="800.0" y="384.0" text-anchor="middle" class="node-title" font-size="15.0">scripts/lab.sh</text>
+  <text data-text-role="subtitle" data-full-text="liga e desliga labs" data-text-max-width="156.0" x="800.0" y="406.0" text-anchor="middle" class="node-sub" font-size="12">liga e desliga labs</text>
+  </g>
+  <g id="node-proxy" data-graph-role="node" data-node-id="proxy" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="100,533,290,603">
+  <rect x="100.0" y="533.0" width="190.0" height="70.0" rx="10.0" fill="#111827" stroke="#38bdf8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="guac-proxy" data-text-max-width="166.0" x="195.0" y="568.0" text-anchor="middle" class="node-title" font-size="15.0">guac-proxy</text>
+  <text data-text-role="subtitle" data-full-text="127.0.0.1:8080" data-text-max-width="166.0" x="195.0" y="590.0" text-anchor="middle" class="node-sub" font-size="12">127.0.0.1:8080</text>
+  </g>
+  <g id="node-guacamole" data-graph-role="node" data-node-id="guacamole" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="350,536,490,600">
+  <rect x="350.0" y="536.0" width="140.0" height="64.0" rx="10.0" fill="#111827" stroke="#334155" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Guacamole" data-text-max-width="116.0" x="420.0" y="568.0" text-anchor="middle" class="node-title" font-size="15.0">Guacamole</text>
+  <text data-text-role="subtitle" data-full-text="mostra a tela" data-text-max-width="116.0" x="420.0" y="590.0" text-anchor="middle" class="node-sub" font-size="12">mostra a tela</text>
+  </g>
+  <g id="node-kali" data-graph-role="node" data-node-id="kali" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="540,536,660,600">
+  <rect x="540.0" y="536.0" width="120.0" height="64.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Kali" data-text-max-width="96.0" x="600.0" y="568.0" text-anchor="middle" class="node-title" font-size="15.0">Kali</text>
+  <text data-text-role="subtitle" data-full-text="attack box" data-text-max-width="96.0" x="600.0" y="590.0" text-anchor="middle" class="node-sub" font-size="12">attack box</text>
+  </g>
+  <g id="node-alvo" data-graph-role="node" data-node-id="alvo" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="710,536,850,600">
+  <rect x="710.0" y="536.0" width="140.0" height="64.0" rx="10.0" fill="#2a0a0a" stroke="#ef4444" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="alvo" data-text-max-width="116.0" x="780.0" y="568.0" text-anchor="middle" class="node-title" font-size="15.0">alvo</text>
+  <text data-text-role="subtitle" data-full-text="ex.: DVWA" data-text-max-width="116.0" x="780.0" y="590.0" text-anchor="middle" class="node-sub" font-size="12">ex.: DVWA</text>
+  </g>
+  <g id="node-sandbox" data-graph-role="node" data-node-id="sandbox" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="100,680,440,750">
+  <rect x="100.0" y="680.0" width="340.0" height="70.0" rx="10.0" fill="#111827" stroke="#64748b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="linux-sandbox" data-text-max-width="316.0" x="270.0" y="715.0" text-anchor="middle" class="node-title" font-size="15.0">linux-sandbox</text>
+  <text data-text-role="subtitle" data-full-text="network_mode: none · sem portas · sem sudo" data-text-max-width="316.0" x="270.0" y="737.0" text-anchor="middle" class="node-sub" font-size="12">network_mode: none · sem portas · sem sudo</text>
+  </g>
+  <g id="e-http-label" data-graph-role="label" data-owner="e-http" data-graph-bounds="304.08,347,345.92,367">
+  <rect x="304.08" y="347.0" width="41.839999999999996" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="325.0" y="361.0" text-anchor="middle" class="arrow-label">HTTP</text>
+  </g>
+  <g id="e-tela-label" data-graph-role="label" data-owner="e-tela" data-graph-bounds="97.12,457.5,180,477.5">
+  <rect x="97.12" y="457.5" width="82.88" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="138.56" y="471.5" text-anchor="middle" class="arrow-label">tela do Kali</text>
+  </g>
+  <g id="x-lan-label" data-graph-role="label" data-owner="x-lan" data-graph-bounds="492.2,206,577,226">
+  <rect x="492.2" y="206.0" width="84.80000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="534.6" y="220.0" text-anchor="middle" class="arrow-label">✗ bloqueado</text>
+  </g>
+  <g id="x-net-label" data-graph-role="label" data-owner="x-net" data-graph-bounds="863.6,537,948.4,557">
+  <rect x="863.6" y="537.0" width="84.80000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="906.0" y="551.0" text-anchor="middle" class="arrow-label">✗ bloqueado</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,848,839,864">
+  <text x="48.0" y="860.0" class="footnote">Única porta de lab: 127.0.0.1:8080 (guac-proxy). O sandbox não tem rede nenhuma; o Kali só é alcançado pela tela.</text>
+  </g>
 </svg>
