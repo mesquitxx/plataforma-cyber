@@ -1,61 +1,135 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
-  <title id="t">O handshake do HTTP Basic Auth e por que ele se deixa brute-forçar</title>
-  <desc id="d">Diagrama de sequência com duas raias: à esquerda o cliente (atacante, com a ferramenta Hydra), à direita o servidor Apache protegendo /admin. Passo 1: o cliente faz GET /admin/ sem credencial e o servidor responde 401 Unauthorized com o cabeçalho WWW-Authenticate: Basic realm="Restricted Admin Area" — é o desafio. Passo 2: o cliente reenvia o mesmo GET /admin/ agora com o cabeçalho Authorization: Basic seguido de base64(usuario:senha); o base64 NÃO é criptografia, só codificação reversível. Passo 3a: se a senha estiver errada, o servidor responde 401 de novo e o cliente pode tentar outra imediatamente — não há estado, não há passo intermediário, cada tentativa é uma requisição independente. Passo 3b: se a senha estiver certa, o servidor responde 200 OK e entrega a página protegida. Uma nota destacada em ciano embaixo resume: como cada palpite é uma única requisição isolada e a resposta diz na hora se acertou, a ferramenta dispara milhares de palpites por segundo — é isso que torna o Basic Auth sem defesas um alvo fácil de ataque online.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .lane { font-size: 13px; font-weight: 700; }
-    .sub { font-size: 10.5px; fill: #9fb0a6; }
-    .msg { font-size: 11.5px; font-weight: 700; }
-    .ok { fill: #5ee08a; }
-    .bad { fill: #e0795e; }
-    .cur { fill: #5cc8d8; }
-    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
-    .life { stroke: #2c3a33; stroke-width: 1.5; stroke-dasharray: 4 4; }
-    .req { stroke: #9fb0a6; stroke-width: 2; fill: none; marker-end: url(#a); }
-    .res401 { stroke: #e0795e; stroke-width: 2; fill: none; marker-end: url(#ab); }
-    .res200 { stroke: #5ee08a; stroke-width: 2.5; fill: none; marker-end: url(#ag); }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 700" width="980" height="700" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="showcase" data-max-bends-per-edge="2" data-max-total-bends="8" data-max-route-stretch="1.35" data-max-bridged-crossings="0" data-min-node-gap="40.0" data-min-container-gutter="20.0" data-min-label-clearance="4.0" data-min-segment-length="16.0">
   <defs>
-    <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
-    <marker id="ab" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#e0795e"/></marker>
-    <marker id="ag" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5ee08a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #e2e8f0; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="430" fill="#121815"/>
-  <text class="t" x="30" y="32">HTTP Basic Auth: o desafio, a resposta e por que cada palpite é barato</text>
-
-  <!-- lanes -->
-  <rect class="box" x="90" y="56" width="200" height="44" rx="8"/>
-  <text class="lane" x="190" y="76" text-anchor="middle">Cliente (atacante)</text>
-  <text class="sub" x="190" y="92" text-anchor="middle">Hydra · 192.168.0.2</text>
-  <rect class="box" x="610" y="56" width="220" height="44" rx="8"/>
-  <text class="lane" x="720" y="76" text-anchor="middle">Apache — /admin/</text>
-  <text class="sub" x="720" y="92" text-anchor="middle">Basic Auth · 192.168.0.10</text>
-  <line class="life" x1="190" y1="100" x2="190" y2="360"/>
-  <line class="life" x1="720" y1="100" x2="720" y2="360"/>
-
-  <!-- step 1: GET no creds -->
-  <path class="req" d="M190,130 L716,130"/>
-  <text class="msg" x="200" y="123">1. GET /admin/  (sem credencial)</text>
-  <path class="res401" d="M720,166 L194,166"/>
-  <text class="msg bad" x="700" y="159" text-anchor="end">401 Unauthorized</text>
-  <text class="sub" x="700" y="181" text-anchor="end">WWW-Authenticate: Basic realm="Restricted Admin Area"</text>
-
-  <!-- step 2: GET with Authorization -->
-  <path class="req" d="M190,214 L716,214"/>
-  <text class="msg" x="200" y="207">2. GET /admin/  +  Authorization: Basic base64(user:senha)</text>
-  <text class="sub" x="200" y="230">base64 é codificação reversível, NÃO criptografia</text>
-
-  <!-- step 3a: wrong -->
-  <path class="res401" d="M720,264 L194,264"/>
-  <text class="msg bad" x="700" y="257" text-anchor="end">3a. senha errada → 401 (tente de novo na hora)</text>
-
-  <!-- step 3b: right -->
-  <path class="res200" d="M720,304 L194,304"/>
-  <text class="msg ok" x="700" y="297" text-anchor="end">3b. senha certa → 200 OK + página protegida</text>
-
-  <!-- insight -->
-  <rect x="90" y="330" width="740" height="56" rx="8" fill="#10211f" stroke="#5cc8d8" stroke-width="1.8"/>
-  <text class="msg cur" x="104" y="353">Cada palpite é UMA requisição isolada e a resposta diz na hora se acertou:</text>
-  <text class="sub" x="104" y="373">sem estado, sem passo intermediário, sem CAPTCHA — por isso a ferramenta dispara milhares de tentativas por segundo.</text>
+  <rect data-graph-role="background" width="980.0" height="700.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="490.0" y="24" text-anchor="middle" font-size="11.0" font-weight="600" fill="#94a3b8">HTTP BASIC AUTH</text>
+  <text x="952.0" y="24" text-anchor="end" font-size="11.0" font-weight="600" fill="#94a3b8">TRILHA 5 · ATAQUES A SENHAS</text>
+  <text x="490.0" y="56" text-anchor="middle" class="title">Basic Auth: cada palpite tem resposta na hora</text>
+  <text x="490.0" y="82" text-anchor="middle" class="subtitle">Um palpite = uma requisição, e o servidor diz na hora se acertou</text>
+  <g id="client" data-graph-role="container" data-container-id="client" data-semantic-role="boundary" data-graph-bounds="40,118,420,498">
+  <rect data-graph-role="container" x="40.0" y="118.0" width="380.0" height="380.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#475569" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="142.0" class="section">VOCÊ · KALI COM HYDRA</text>
+    <rect id="client-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="124" width="176.64" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="server" data-graph-role="container" data-container-id="server" data-semantic-role="boundary" data-graph-bounds="540,118,940,498">
+  <rect data-graph-role="container" x="540.0" y="118.0" width="400.0" height="380.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#475569" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="558.0" y="142.0" class="section">SERVIDOR · APACHE /ADMIN/</text>
+    <rect id="server-header" data-graph-role="reserved" data-reserved-kind="container-header" x="548" y="124" width="206.28" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="a1" data-graph-role="edge" data-edge-id="a1" data-source="ask" data-target="challenge" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 390,202 L 570,202" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="a2" data-graph-role="edge" data-edge-id="a2" data-source="challenge" data-target="guess" data-edge-kind="flow" data-topic-id="" data-flow="neutral" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 740,234 L 740,258 L 230,258 L 230,306" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <path id="a3" data-graph-role="edge" data-edge-id="a3" data-source="guess" data-target="wrong" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 390,338 L 570,338" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="a4" data-graph-role="edge" data-edge-id="a4" data-source="guess" data-target="right" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 230,370 L 230,444 L 570,444" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-ask" data-graph-role="node" data-node-id="ask" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,170,390,234">
+  <rect x="70.0" y="170.0" width="320.0" height="64.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="1 · Pede /admin/" data-text-max-width="296.0" x="230.0" y="202.0" text-anchor="middle" class="node-title" font-size="18">1 · Pede /admin/</text>
+  <text data-text-role="subtitle" data-full-text="ainda sem usuário e senha" data-text-max-width="296.0" x="230.0" y="224.0" text-anchor="middle" class="node-sub" font-size="12">ainda sem usuário e senha</text>
+  </g>
+  <g id="node-challenge" data-graph-role="node" data-node-id="challenge" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="570,170,910,234">
+  <rect x="570.0" y="170.0" width="340.0" height="64.0" rx="10.0" fill="#111827" stroke="#94a3b8" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="401 · &quot;mande usuário:senha&quot;" data-text-max-width="316.0" x="740.0" y="202.0" text-anchor="middle" class="node-title" font-size="18">401 · "mande usuário:senha"</text>
+  <text data-text-role="subtitle" data-full-text="WWW-Authenticate: Basic" data-text-max-width="316.0" x="740.0" y="224.0" text-anchor="middle" class="node-sub" font-size="12">WWW-Authenticate: Basic</text>
+  </g>
+  <g id="node-guess" data-graph-role="node" data-node-id="guess" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,306,390,370">
+  <rect x="70.0" y="306.0" width="320.0" height="64.0" rx="10.0" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="2 · Reenvia com 1 palpite" data-text-max-width="296.0" x="230.0" y="338.0" text-anchor="middle" class="node-title" font-size="18">2 · Reenvia com 1 palpite</text>
+  <text data-text-role="subtitle" data-full-text="base64(usuário:senha), não é criptografia" data-text-max-width="296.0" x="230.0" y="360.0" text-anchor="middle" class="node-sub" font-size="12">base64(usuário:senha), não é criptografia</text>
+  </g>
+  <g id="node-wrong" data-graph-role="node" data-node-id="wrong" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="570,306,910,370">
+  <rect x="570.0" y="306.0" width="340.0" height="64.0" rx="10.0" fill="#2b0d0d" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="3a · 401: errou" data-text-max-width="316.0" x="740.0" y="338.0" text-anchor="middle" class="node-title" font-size="18">3a · 401: errou</text>
+  <text data-text-role="subtitle" data-full-text="manda o próximo palpite na hora" data-text-max-width="316.0" x="740.0" y="360.0" text-anchor="middle" class="node-sub" font-size="12">manda o próximo palpite na hora</text>
+  </g>
+  <g id="node-right" data-graph-role="node" data-node-id="right" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="570,412,910,476">
+  <rect x="570.0" y="412.0" width="340.0" height="64.0" rx="10.0" fill="#06241a" stroke="#22c55e" stroke-width="1.8" filter="url(#glowGreen)"/>
+  <text data-text-role="title" data-full-text="3b · 200: entrou" data-text-max-width="316.0" x="740.0" y="444.0" text-anchor="middle" class="node-title" font-size="18">3b · 200: entrou</text>
+  <text data-text-role="subtitle" data-full-text="página do /admin aberta" data-text-max-width="316.0" x="740.0" y="466.0" text-anchor="middle" class="node-sub" font-size="12">página do /admin aberta</text>
+  </g>
+  <g id="node-why" data-graph-role="node" data-node-id="why" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,530,940,606">
+  <rect x="40.0" y="530.0" width="900.0" height="76.0" rx="10.0" fill="#2a1d05" stroke="#f59e0b" stroke-width="1.8" filter="url(#glowOrange)"/>
+  <text data-text-role="title" data-full-text="Sem estado, sem espera, sem trava → milhares de palpites por segundo" data-text-max-width="876.0" x="490.0" y="568.0" text-anchor="middle" class="node-title" font-size="18">Sem estado, sem espera, sem trava → milhares de palpites por segundo</text>
+  <text data-text-role="subtitle" data-full-text="é isso que torna o Basic Auth sem defesas um alvo fácil de ataque online" data-text-max-width="876.0" x="490.0" y="590.0" text-anchor="middle" class="node-sub" font-size="12">é isso que torna o Basic Auth sem defesas um alvo fácil de ataque online</text>
+  </g>
+  <g id="a1-label" data-graph-role="label" data-owner="a1" data-graph-bounds="453.68,171,506.32,191">
+  <rect x="453.68" y="171.0" width="52.64" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="480.0" y="185.0" text-anchor="middle" class="arrow-label">pedido</text>
+  </g>
+  <g id="a2-label" data-graph-role="label" data-owner="a2" data-graph-bounds="455.2,227,514.8,247">
+  <rect x="455.2" y="227.0" width="59.599999999999994" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="485.0" y="241.0" text-anchor="middle" class="arrow-label">desafio</text>
+  </g>
+  <g id="a3-label" data-graph-role="label" data-owner="a3" data-graph-bounds="432.56,307,527.44,327">
+  <rect x="432.56" y="307.0" width="94.88" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="480.0" y="321.0" text-anchor="middle" class="arrow-label">senha errada</text>
+  </g>
+  <g id="a4-label" data-graph-role="label" data-owner="a4" data-graph-bounds="356.04,413,443.96,433">
+  <rect x="356.04" y="413.0" width="87.92" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="400.0" y="427.0" text-anchor="middle" class="arrow-label">senha certa</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="38" y="636" width="513.04" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="48.0" y1="650.0" x2="78.0" y2="650.0" stroke="#a855f7" stroke-width="2.3" marker-end="url(#arrowA)"/>
+    <text data-graph-role="decoration" x="88.0" y="654.0" class="legend">pedido</text>
+    <line data-graph-role="decoration" x1="154.64" y1="650.0" x2="184.64" y2="650.0" stroke="#94a3b8" stroke-width="2.3" marker-end="url(#arrowH)"/>
+    <text data-graph-role="decoration" x="194.64" y="654.0" class="legend">desafio</text>
+    <line data-graph-role="decoration" x1="268.24" y1="650.0" x2="298.24" y2="650.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="308.24" y="654.0" class="legend">errou (401)</text>
+    <line data-graph-role="decoration" x1="410.16" y1="650.0" x2="440.16" y2="650.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="450.16" y="654.0" class="legend">entrou (200)</text>
+  </g>
 </svg>
