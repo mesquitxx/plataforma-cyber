@@ -1,67 +1,110 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
-  <title id="t">Filtro de captura e filtro de exibição: duas linguagens, dois momentos</title>
-  <desc id="d">À esquerda, o filtro de captura, na sintaxe BPF (por exemplo host dvwa and tcp port 80), age antes da gravação: o que ele recusa nunca entra no arquivo. É rápido e economiza disco, mas o erro é irreversível. À direita, o filtro de exibição, na sintaxe do Wireshark (por exemplo http.request.method == "POST"), age depois: o arquivo continua com todos os quadros, e o filtro apenas escolhe quais mostrar; dá para trocar à vontade. Embaixo, uma tabela compara a mesma intenção escrita nas duas linguagens: host dvwa contra ip.addr == 192.168.0.3, tcp port 80 contra tcp.port == 80, e mostra que o display filter entende campos de protocolos, como http.cookie, que o BPF não conhece.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" role="img" aria-labelledby="t d">
+  <title id="t">Filtro de captura apaga, filtro de exibição só esconde, e cada um fala uma língua</title>
+  <desc id="d">À esquerda, o filtro de captura, na sintaxe BPF (host dvwa and tcp port 80), age antes de gravar: de quatro pacotes que chegam, o recusado é descartado e o arquivo fica só com três; o erro não tem volta. À direita, o filtro de exibição, na sintaxe do Wireshark (http.request.method == "POST"), age depois de gravar: o arquivo continua com os quatro pacotes e a tela mostra só um; os outros três ficam escondidos e voltam quando o filtro muda. Embaixo, a mesma intenção escrita nas duas línguas: só o DVWA é host dvwa na captura e ip.addr == 192.168.0.3 na exibição; só a porta web é tcp port 80 e tcp.port == 80; só pedidos com cookie não existe na captura e é http.cookie na exibição.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .r { fill: #f08a7e; }
-    .flow { stroke: #5cc8d8; stroke-width: 2.5; marker-end: url(#ar); fill: none; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 19px; font-weight: 700; }
+    .sub { font-size: 13px; fill: #94a3b8; }
+    .h { font-size: 15px; font-weight: 700; }
+    .code { font-size: 13px; fill: #e2e8f0; }
+    .lbl { font-size: 13px; font-weight: 700; }
+    .s { font-size: 12px; fill: #94a3b8; }
+    .red { fill: #f87171; }
+    .green { fill: #34d399; }
+    .blue { fill: #60a5fa; }
+    .gray { fill: #94a3b8; }
+    .th { font-size: 12px; font-weight: 700; fill: #94a3b8; }
+    .td { font-size: 13px; }
+    .leg { font-size: 12px; fill: #94a3b8; }
   </style>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/></marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ef4444"/></marker>
   </defs>
-  <rect width="900" height="400" fill="#121815"/>
-  <text class="t" x="30" y="32">Dois filtros, duas sintaxes, dois momentos</text>
+  <rect width="960" height="600" fill="url(#bg-grad)"/>
 
-  <!-- capture filter -->
-  <rect x="20" y="52" width="420" height="170" rx="10" fill="#16201b" stroke="#e8c46a"/>
-  <text class="h y" x="36" y="78">filtro de CAPTURA (BPF)</text>
-  <text class="s" x="36" y="96">antes de gravar · dumpcap -f · tela inicial</text>
-  <text class="b" x="36" y="126">host dvwa and tcp port 80</text>
-  <rect x="36" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42"/>
-  <rect x="86" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42"/>
-  <rect x="136" y="142" width="40" height="22" rx="4" fill="#3a1f1c" stroke="#f08a7e"/>
-  <rect x="186" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42"/>
-  <path class="flow" d="M236,153 L278,153"/>
-  <text class="b" x="286" y="158">arquivo sem</text>
-  <text class="b" x="286" y="174">o vermelho</text>
-  <text class="b r" x="36" y="196">recusado = perdido para sempre</text>
-  <text class="s" x="36" y="212">bom para capturas longas e redes cheias</text>
+  <text class="title" x="30" y="38">Filtro de captura APAGA; filtro de exibição só ESCONDE</text>
+  <text class="sub" x="30" y="60">E cada um fala uma língua diferente: trocar uma pela outra é o erro nº 1.</text>
 
-  <!-- display filter -->
-  <rect x="460" y="52" width="420" height="170" rx="10" fill="#16201b" stroke="#5ee08a"/>
-  <text class="h g" x="476" y="78">filtro de EXIBIÇÃO (Wireshark)</text>
-  <text class="s" x="476" y="96">depois de gravar · barra verde · tshark -Y</text>
-  <text class="b" x="476" y="126">http.request.method == "POST"</text>
-  <rect x="476" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42" opacity="0.35"/>
-  <rect x="526" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#5ee08a"/>
-  <rect x="576" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42" opacity="0.35"/>
-  <rect x="626" y="142" width="40" height="22" rx="4" fill="#1d2a23" stroke="#3a4b42" opacity="0.35"/>
-  <path class="flow" d="M676,153 L718,153"/>
-  <text class="b" x="726" y="158">tela mostra 1;</text>
-  <text class="b" x="726" y="174">arquivo tem 4</text>
-  <text class="b g" x="476" y="196">escondido ≠ apagado: troque à vontade</text>
-  <text class="s" x="476" y="212">entende campos de protocolo (HTTP, TLS, DNS…)</text>
+  <!-- ===== Left: capture filter ===== -->
+  <rect data-graph-role="container" x="30" y="80" width="440" height="270" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="h" x="50" y="106">filtro de captura</text>
+  <text class="s" x="50" y="126">antes de gravar · língua BPF</text>
+  <rect x="50" y="138" width="400" height="30" rx="5" fill="#1e293b" stroke="#475569"/>
+  <text class="code" x="64" y="158">host dvwa and tcp port 80</text>
 
-  <!-- comparison table -->
-  <rect x="20" y="240" width="860" height="146" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="36" y="264">a mesma intenção nas duas línguas</text>
-  <text class="s" x="36" y="286">intenção</text>
-  <text class="s" x="300" y="286">captura (BPF)</text>
-  <text class="s" x="560" y="286">exibição (Wireshark)</text>
-  <text class="b" x="36" y="308">só o DVWA</text>
-  <text class="b y" x="300" y="308">host dvwa</text>
-  <text class="b g" x="560" y="308">ip.addr == 192.168.0.3</text>
-  <text class="b" x="36" y="330">só a porta web</text>
-  <text class="b y" x="300" y="330">tcp port 80</text>
-  <text class="b g" x="560" y="330">tcp.port == 80</text>
-  <text class="b" x="36" y="352">só pedidos com cookie</text>
-  <text class="b r" x="300" y="352">(não existe)</text>
-  <text class="b g" x="560" y="352">http.cookie</text>
-  <text class="s" x="36" y="374">trocar uma sintaxe pela outra é o erro nº 1: a barra verde fica vermelha</text>
+  <text class="s" x="50" y="196">chegam 4 pacotes</text>
+  <rect x="50" y="206" width="36" height="24" rx="4" fill="#172554" stroke="#3b82f6"/>
+  <rect x="94" y="206" width="36" height="24" rx="4" fill="#172554" stroke="#3b82f6"/>
+  <rect x="138" y="206" width="36" height="24" rx="4" fill="#2a1215" stroke="#ef4444" stroke-width="2"/>
+  <rect x="182" y="206" width="36" height="24" rx="4" fill="#172554" stroke="#3b82f6"/>
+  <line x1="226" y1="218" x2="276" y2="218" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <text class="s" x="284" y="196">o arquivo guarda 3</text>
+  <rect x="284" y="206" width="36" height="24" rx="4" fill="#172554" stroke="#3b82f6"/>
+  <rect x="328" y="206" width="36" height="24" rx="4" fill="#172554" stroke="#3b82f6"/>
+  <rect x="372" y="206" width="36" height="24" rx="4" fill="#172554" stroke="#3b82f6"/>
+
+  <line x1="156" y1="232" x2="156" y2="262" stroke="#ef4444" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow-red)"/>
+  <text class="lbl red" x="172" y="258">✕ recusado</text>
+
+  <rect data-graph-role="container" x="50" y="282" width="400" height="50" rx="6" fill="#2a1215" stroke="#ef4444" stroke-width="2"/>
+  <text class="lbl red" x="250" y="304" text-anchor="middle">apagado para sempre: não tem volta</text>
+  <text class="s" x="250" y="322" text-anchor="middle">bom para capturas longas e redes cheias</text>
+
+  <!-- ===== Right: display filter ===== -->
+  <rect data-graph-role="container" x="490" y="80" width="440" height="270" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="h" x="510" y="106">filtro de exibição</text>
+  <text class="s" x="510" y="126">depois de gravar · língua do Wireshark</text>
+  <rect x="510" y="138" width="400" height="30" rx="5" fill="#1e293b" stroke="#475569"/>
+  <text class="code" x="524" y="158">http.request.method == "POST"</text>
+
+  <text class="s" x="510" y="196">o arquivo tem 4</text>
+  <rect x="510" y="206" width="36" height="24" rx="4" fill="#172554" stroke="#3b82f6"/>
+  <rect x="554" y="206" width="36" height="24" rx="4" fill="#172554" stroke="#3b82f6"/>
+  <rect x="598" y="206" width="36" height="24" rx="4" fill="#172554" stroke="#3b82f6"/>
+  <rect x="642" y="206" width="36" height="24" rx="4" fill="#172554" stroke="#3b82f6"/>
+  <line x1="686" y1="218" x2="736" y2="218" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <text class="s" x="744" y="196">a tela mostra 1</text>
+  <rect x="744" y="206" width="36" height="24" rx="4" fill="#1e293b" stroke="#475569" stroke-dasharray="3 3" opacity="0.5"/>
+  <rect x="788" y="206" width="36" height="24" rx="4" fill="#06281d" stroke="#10b981" stroke-width="2"/>
+  <rect x="832" y="206" width="36" height="24" rx="4" fill="#1e293b" stroke="#475569" stroke-dasharray="3 3" opacity="0.5"/>
+  <rect x="876" y="206" width="36" height="24" rx="4" fill="#1e293b" stroke="#475569" stroke-dasharray="3 3" opacity="0.5"/>
+  <text class="s" x="744" y="252">3 escondidos,</text>
+  <text class="s" x="744" y="268">ainda no arquivo</text>
+
+  <rect data-graph-role="container" x="510" y="282" width="400" height="50" rx="6" fill="#06281d" stroke="#10b981" stroke-width="2"/>
+  <text class="lbl green" x="710" y="304" text-anchor="middle">escondido não é apagado: troque à vontade</text>
+  <text class="s" x="710" y="322" text-anchor="middle">entende campos de protocolo (HTTP, DNS…)</text>
+
+  <!-- ===== Table ===== -->
+  <rect data-graph-role="container" x="30" y="370" width="900" height="160" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="h" x="50" y="396">A mesma intenção nas duas línguas</text>
+  <text class="th" x="50" y="424">quero ver…</text>
+  <text class="th" x="330" y="424">filtro de captura</text>
+  <text class="th" x="610" y="424">filtro de exibição</text>
+  <line x1="50" y1="434" x2="910" y2="434" stroke="#334155" stroke-width="1"/>
+  <text class="td" x="50" y="458">só o DVWA</text>
+  <text class="td" x="330" y="458">host dvwa</text>
+  <text class="td" x="610" y="458">ip.addr == 192.168.0.3</text>
+  <text class="td" x="50" y="484">só a porta web</text>
+  <text class="td" x="330" y="484">tcp port 80</text>
+  <text class="td" x="610" y="484">tcp.port == 80</text>
+  <text class="td" x="50" y="510">só pedidos com cookie</text>
+  <text class="td gray" x="330" y="510">(não existe)</text>
+  <text class="td" x="610" y="510">http.cookie</text>
+
+  <!-- legend -->
+  <line x1="30" y1="550" x2="930" y2="550" stroke="#334155" stroke-width="1"/>
+  <rect x="30" y="566" width="16" height="16" rx="3" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="leg" x="54" y="578">pacote</text>
+  <rect x="230" y="566" width="16" height="16" rx="3" fill="#2a1215" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="leg" x="254" y="578">perdido para sempre</text>
+  <rect x="470" y="566" width="16" height="16" rx="3" fill="#1e293b" stroke="#475569" stroke-dasharray="3 3" opacity="0.6"/>
+  <text class="leg" x="494" y="578">escondido da tela</text>
+  <rect x="700" y="566" width="16" height="16" rx="3" fill="#06281d" stroke="#10b981" stroke-width="1.5"/>
+  <text class="leg" x="724" y="578">mostrado na tela</text>
 </svg>

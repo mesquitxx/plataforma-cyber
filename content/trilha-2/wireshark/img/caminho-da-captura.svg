@@ -1,94 +1,87 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" role="img" aria-labelledby="t d">
-  <title id="t">O caminho de um pacote, da placa de rede até a tela do Wireshark</title>
-  <desc id="d">Um quadro chega à placa de rede (eth1). No kernel, o filtro de captura BPF decide se ele é copiado; o que não passa é descartado para sempre. A biblioteca libpcap entrega as cópias ao dumpcap, o único processo que precisa de root e que, depois de abrir a interface, abre mão das capabilities. O dumpcap grava tudo num arquivo pcapng. O Wireshark lê esse arquivo e passa cada quadro pelos dissectors (Ethernet, IP, TCP, HTTP), monta a árvore de campos e só então aplica o filtro de exibição, que apenas esconde quadros sem apagar nada. Um segundo caminho, tracejado, mostra o Wireshark abrindo um arquivo salvo, sem captura e sem root.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 580" width="960" height="580" role="img" aria-labelledby="t d">
+  <title id="t">O caminho de um pacote: o arquivo separa o que se perde do que só se esconde</title>
+  <desc id="d">Em cima, antes de gravar: um quadro chega à placa de rede; o filtro de captura decide se ele é copiado, e o que ele recusa é descartado para sempre; o gravador, único programa com poder de root, grava as cópias. No meio, destacado, o arquivo da captura, que guarda os bytes e a hora de cada quadro. Embaixo, depois de gravar: o Wireshark lê o arquivo, ao vivo ou semanas depois e sem root, traduz cada protocolo (Ethernet, IP, TCP, HTTP) e aplica o filtro de exibição, que só esconde quadros da tela, sem apagar nada; a tela mostra a lista de pacotes, a árvore de campos e os bytes.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .r { fill: #f08a7e; }
-    .flow { stroke: #5cc8d8; stroke-width: 2.5; marker-end: url(#ar); fill: none; }
-    .drop { stroke: #f08a7e; stroke-width: 2; marker-end: url(#ad); fill: none; stroke-dasharray: 5 4; }
-    .file { stroke: #9fb0a6; stroke-width: 2; marker-end: url(#ag); fill: none; stroke-dasharray: 6 5; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 19px; font-weight: 700; }
+    .sub { font-size: 13px; fill: #94a3b8; }
+    .zone { font-size: 14px; font-weight: 700; }
+    .h { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12px; fill: #94a3b8; }
+    .lbl { font-size: 13px; font-weight: 700; }
+    .red { fill: #f87171; }
+    .green { fill: #34d399; }
+    .gold { fill: #facc15; }
+    .blue { fill: #60a5fa; }
+    .leg { font-size: 12px; fill: #94a3b8; }
   </style>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
-    <marker id="ad" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f08a7e"/></marker>
-    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9fb0a6"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/></marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ef4444"/></marker>
   </defs>
-  <rect width="900" height="440" fill="#121815"/>
-  <text class="t" x="30" y="32">Da placa de rede à tela: quem faz o quê numa captura</text>
+  <rect width="960" height="580" fill="url(#bg-grad)"/>
 
-  <!-- kernel area -->
-  <rect x="20" y="58" width="330" height="190" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <text class="s" x="34" y="78">kernel do Linux</text>
+  <text class="title" x="30" y="38">O arquivo divide tudo: antes dele se perde, depois só se esconde</text>
+  <text class="sub" x="30" y="60">O caminho de um pacote, da placa de rede até a tela do Wireshark.</text>
 
-  <rect x="40" y="100" width="120" height="70" rx="8" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="h" x="56" y="128">placa eth1</text>
-  <text class="s" x="56" y="148">quadros que</text>
-  <text class="s" x="56" y="161">chegam e saem</text>
+  <!-- ===== ANTES de gravar ===== -->
+  <rect data-graph-role="container" x="30" y="78" width="900" height="186" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="zone red" x="50" y="102">ANTES de gravar: o que for recusado some para sempre</text>
 
-  <rect x="200" y="92" width="130" height="86" rx="8" fill="#1d2a23" stroke="#e8c46a"/>
-  <text class="h y" x="214" y="118">filtro de</text>
-  <text class="h y" x="214" y="134">captura (BPF)</text>
-  <text class="s" x="214" y="154">host dvwa and</text>
-  <text class="s" x="214" y="167">tcp port 80</text>
+  <rect x="60" y="122" width="200" height="74" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+  <text class="h" x="160" y="152" text-anchor="middle">1 · placa de rede</text>
+  <text class="s" x="160" y="174" text-anchor="middle">recebe os quadros</text>
 
-  <path class="flow" d="M160,135 L198,135"/>
-  <path class="drop" d="M265,178 L265,226"/>
-  <text class="b r" x="182" y="240">não passou: descartado</text>
+  <rect x="330" y="122" width="250" height="74" rx="6" fill="#2a1215" stroke="#ef4444" stroke-width="2"/>
+  <text class="h red" x="455" y="152" text-anchor="middle">2 · filtro de captura</text>
+  <text class="s" x="455" y="174" text-anchor="middle">decide: copio ou não?</text>
 
-  <!-- user space: dumpcap -->
-  <rect x="380" y="58" width="500" height="190" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <text class="s" x="394" y="78">espaço do usuário</text>
+  <rect x="650" y="122" width="250" height="74" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+  <text class="h" x="775" y="152" text-anchor="middle">3 · gravador</text>
+  <text class="s" x="775" y="174" text-anchor="middle">único programa com root</text>
 
-  <rect x="400" y="92" width="150" height="86" rx="8" fill="#1d2a23" stroke="#f08a7e"/>
-  <text class="h" x="414" y="118">libpcap +</text>
-  <text class="h" x="414" y="134">dumpcap</text>
-  <text class="s" x="414" y="154">roda como root,</text>
-  <text class="s" x="414" y="167">depois larga as caps</text>
+  <line x1="262" y1="159" x2="326" y2="159" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+  <line x1="582" y1="159" x2="646" y2="159" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
 
-  <rect x="590" y="92" width="130" height="86" rx="8" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="h" x="604" y="122">arquivo</text>
-  <text class="h" x="604" y="138">.pcapng</text>
-  <text class="s" x="604" y="158">bytes crus +</text>
-  <text class="s" x="604" y="171">hora de cada um</text>
+  <line x1="455" y1="198" x2="455" y2="228" stroke="#ef4444" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow-red)"/>
+  <text class="lbl red" x="470" y="246">✕ recusado: descartado, não volta mais</text>
 
-  <path class="flow" d="M330,135 L398,135"/>
-  <path class="flow" d="M550,135 L588,135"/>
-  <text class="s" x="740" y="118">captura é</text>
-  <text class="s" x="740" y="132">gravação: o</text>
-  <text class="s" x="740" y="146">que não foi</text>
-  <text class="s" x="740" y="160">gravado não</text>
-  <text class="s" x="740" y="174">volta mais</text>
+  <!-- ===== Arquivo (momento-chave) ===== -->
+  <line x1="775" y1="198" x2="775" y2="282" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+  <rect data-graph-role="container" x="540" y="286" width="390" height="74" rx="6" fill="#1c1a0b" stroke="#facc15" stroke-width="2.5"/>
+  <text class="h gold" x="735" y="316" text-anchor="middle">4 · arquivo da captura</text>
+  <text class="s" x="735" y="338" text-anchor="middle">bytes crus + hora de cada quadro</text>
+  <text class="lbl gold" x="30" y="318">captura é gravação:</text>
+  <text class="s" x="30" y="340">o que não entrou no arquivo não existe</text>
 
-  <!-- Wireshark -->
-  <rect x="20" y="272" width="860" height="150" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <text class="s" x="640" y="292">Wireshark (a interface gráfica)</text>
+  <!-- ===== DEPOIS de gravar ===== -->
+  <rect data-graph-role="container" x="30" y="380" width="900" height="134" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="zone green" x="50" y="404">DEPOIS de gravar: nada se perde</text>
+  <text class="s" x="424" y="404">o Wireshark lê o arquivo: ao vivo ou semanas depois, sem root</text>
 
-  <rect x="40" y="310" width="210" height="92" rx="8" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="h" x="56" y="336">dissectors</text>
-  <text class="s" x="56" y="356">Ethernet → IP → TCP</text>
-  <text class="s" x="56" y="370">→ HTTP → formulário</text>
-  <text class="s" x="56" y="384">(remonta e descomprime)</text>
+  <rect x="60" y="422" width="380" height="74" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+  <text class="h" x="250" y="452" text-anchor="middle">5 · Wireshark traduz</text>
+  <text class="s" x="250" y="474" text-anchor="middle">Ethernet → IP → TCP → HTTP</text>
 
-  <rect x="300" y="310" width="230" height="92" rx="8" fill="#1d2a23" stroke="#5ee08a"/>
-  <text class="h g" x="316" y="336">filtro de exibição</text>
-  <text class="s" x="316" y="356">http.request.method</text>
-  <text class="s" x="316" y="370">  == "POST"</text>
-  <text class="s" x="316" y="388">só esconde; nada some</text>
+  <rect x="520" y="422" width="380" height="74" rx="6" fill="#06281d" stroke="#10b981" stroke-width="2"/>
+  <text class="h green" x="710" y="452" text-anchor="middle">6 · filtro de exibição → tela</text>
+  <text class="s" x="710" y="474" text-anchor="middle">só esconde da tela; o arquivo fica inteiro</text>
 
-  <rect x="580" y="310" width="280" height="92" rx="8" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="h" x="596" y="336">três painéis</text>
-  <text class="s" x="596" y="356">lista de pacotes</text>
-  <text class="s" x="596" y="370">árvore de campos</text>
-  <text class="s" x="596" y="384">bytes em hexadecimal</text>
+  <path d="M640,362 L640,372 L400,372 L400,418" fill="none" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+  <line x1="442" y1="459" x2="516" y2="459" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
 
-  <path class="file" d="M655,178 L655,250 L145,250 L145,306"/>
-  <text class="s" x="300" y="264">o Wireshark lê o arquivo (ao vivo ou depois, sem root)</text>
-  <path class="flow" d="M250,356 L298,356"/>
-  <path class="flow" d="M530,356 L578,356"/>
+  <!-- legend -->
+  <line x1="30" y1="534" x2="930" y2="534" stroke="#334155" stroke-width="1"/>
+  <line x1="30" y1="558" x2="56" y2="558" stroke="#3b82f6" stroke-width="2.5"/>
+  <text class="leg" x="64" y="562">caminho do pacote</text>
+  <rect x="230" y="550" width="16" height="16" rx="3" fill="#2a1215" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="leg" x="254" y="562">perda sem volta</text>
+  <rect x="420" y="550" width="16" height="16" rx="3" fill="#1c1a0b" stroke="#facc15" stroke-width="1.5"/>
+  <text class="leg" x="444" y="562">a fronteira: o arquivo</text>
+  <rect x="660" y="550" width="16" height="16" rx="3" fill="#06281d" stroke="#10b981" stroke-width="1.5"/>
+  <text class="leg" x="684" y="562">sem perda: dá para refazer</text>
 </svg>
