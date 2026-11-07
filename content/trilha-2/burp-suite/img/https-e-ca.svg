@@ -1,70 +1,118 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
-  <title id="t">Como o Burp lê HTTPS: dois túneis TLS e a CA do Burp</title>
-  <desc id="d">Para ler tráfego HTTPS, o Burp quebra a conexão em dois túneis TLS separados. No primeiro túnel, entre o navegador e o Burp, o Burp gera na hora um certificado para o site visitado, assinado pela sua própria autoridade certificadora, a CA do Burp. Para o navegador não reclamar, é preciso instalar e confiar nessa CA, baixada em http://burpsuite. No segundo túnel, entre o Burp e o servidor real, o Burp faz um TLS normal, validando o certificado verdadeiro do servidor. No meio, entre os dois túneis, o Burp vê o conteúdo em texto claro e pode lê-lo e alterá-lo. Uma nota avisa que o certificate pinning é uma defesa: quando o aplicativo exige um certificado específico, ele recusa o certificado da CA do Burp e o túnel do navegador não se estabelece. No laboratório isso não aparece, porque o Juice Shop é acessado por HTTP simples, sem TLS.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .y { fill: #e8c46a; }
-    .g { fill: #5ee08a; }
-    .tls { stroke: #5ee08a; stroke-width: 3; fill: none; }
-    .clear { stroke: #f08a7a; stroke-width: 2; stroke-dasharray: 5 4; marker-end: url(#ap); fill: none; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 640" width="1300" height="640" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="ap" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f08a7a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="400" fill="#121815"/>
-  <text class="t" x="30" y="32">HTTPS pelo Burp: dois túneis TLS, com o texto claro no meio</text>
-
-  <!-- browser -->
-  <rect x="30" y="90" width="150" height="90" rx="8" fill="#16201b" stroke="#3a4b42"/>
-  <text class="h" x="52" y="122">Navegador</text>
-  <text class="s" x="52" y="146">confia na</text>
-  <text class="s" x="52" y="162">CA do Burp</text>
-
-  <!-- burp -->
-  <rect x="360" y="80" width="180" height="150" rx="8" fill="#16201b" stroke="#e8c46a"/>
-  <text class="y" x="398" y="108">Burp Proxy</text>
-  <text class="b g" x="376" y="134">vê texto claro</text>
-  <text class="s" x="376" y="156">gera um certificado</text>
-  <text class="s" x="376" y="170">por host, assinado</text>
-  <text class="s" x="376" y="184">pela CA do Burp</text>
-  <text class="s" x="376" y="208">valida o certificado</text>
-  <text class="s" x="376" y="222">real do servidor</text>
-
-  <!-- server -->
-  <rect x="720" y="90" width="150" height="90" rx="8" fill="#16201b" stroke="#3a4b42"/>
-  <text class="h" x="742" y="122">Servidor</text>
-  <text class="s" x="742" y="146">certificado</text>
-  <text class="s" x="742" y="162">verdadeiro</text>
-
-  <!-- tunnel 1 -->
-  <path class="tls" d="M180,135 L358,135"/>
-  <text class="g" x="196" y="126">túnel TLS 1</text>
-  <text class="s" x="196" y="172">cert. assinado</text>
-  <text class="s" x="196" y="186">pela CA do Burp</text>
-
-  <!-- tunnel 2 -->
-  <path class="tls" d="M540,135 L718,135"/>
-  <text class="g" x="560" y="126">túnel TLS 2</text>
-  <text class="s" x="560" y="172">TLS normal com o</text>
-  <text class="s" x="560" y="186">servidor real</text>
-
-  <!-- pinning note -->
-  <rect x="30" y="265" width="400" height="110" rx="10" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="h" x="46" y="291">Defesa: certificate pinning</text>
-  <text class="b" x="46" y="315">Quando o app exige um certificado</text>
-  <text class="b" x="46" y="333">específico, ele recusa o da CA do Burp:</text>
-  <text class="b y" x="46" y="351">o túnel 1 não se estabelece,</text>
-  <text class="b" x="46" y="369">e o Burp não consegue ler.</text>
-
-  <!-- lab note -->
-  <rect x="460" y="265" width="410" height="110" rx="10" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="h" x="476" y="291">No laboratório</text>
-  <text class="b" x="476" y="315">O Juice Shop é acessado por <tspan fill="#f08a7a">HTTP</tspan></text>
-  <text class="b" x="476" y="333">simples, sem TLS. Não há certificado</text>
-  <text class="b" x="476" y="351">para instalar nem túnel para montar —</text>
-  <text class="b" x="476" y="369">o Burp já vê tudo em texto claro.</text>
+  <rect data-graph-role="background" width="1300.0" height="640.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">Para ler HTTPS, o Burp corta a conexão em dois túneis</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">no meio, entre os túneis, o conteúdo aparece em texto claro — porque o navegador confia no Burp</text>
+  <g id="def" data-graph-role="container" data-container-id="def" data-semantic-role="boundary" data-graph-bounds="40,420,1260,560">
+  <rect data-graph-role="container" x="40.0" y="420.0" width="1220.0" height="140.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="444.0" class="section">À PARTE: DEFESA E O CASO DO LABORATÓRIO</text>
+    <rect id="def-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="426" width="297.28" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="t1" data-graph-role="edge" data-edge-id="t1" data-source="nav" data-target="burp" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 330,245 L 500,245" fill="none" stroke="#38bdf8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="t2" data-graph-role="edge" data-edge-id="t2" data-source="burp" data-target="srv" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 800,245 L 970,245" fill="none" stroke="#38bdf8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <g id="node-nav" data-graph-role="node" data-node-id="nav" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,160,330,330">
+  <rect x="40.0" y="160.0" width="290.0" height="170.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="185.0" y="178.0" text-anchor="middle" class="node-type">VOCÊ INSTALOU A CONFIANÇA</text>
+  <text data-text-role="title" data-full-text="navegador" data-text-max-width="266.0" x="185.0" y="251.0" text-anchor="middle" class="node-title" font-size="20.0">navegador</text>
+  <text data-text-role="subtitle" data-full-text="aceita o certificado feito pelo Burp" data-text-max-width="266.0" x="185.0" y="273.0" text-anchor="middle" class="node-sub" font-size="12">aceita o certificado feito pelo Burp</text>
+  </g>
+  <g id="node-burp" data-graph-role="node" data-node-id="burp" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="500,140,800,350">
+  <rect x="500.0" y="140.0" width="300.0" height="210.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.8"/>
+  <text x="650.0" y="158.0" text-anchor="middle" class="node-type">O MOMENTO-CHAVE · BURP</text>
+  <text data-text-role="title" data-full-text="texto claro aqui" data-text-max-width="276.0" x="650.0" y="251.0" text-anchor="middle" class="node-title" font-size="22.0">texto claro aqui</text>
+  <text data-text-role="subtitle" data-full-text="o Burp lê e altera tudo" data-text-max-width="276.0" x="650.0" y="273.0" text-anchor="middle" class="node-sub" font-size="12">o Burp lê e altera tudo</text>
+  </g>
+  <g id="node-srv" data-graph-role="node" data-node-id="srv" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="970,160,1260,330">
+  <rect x="970.0" y="160.0" width="290.0" height="170.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="1115.0" y="178.0" text-anchor="middle" class="node-type">SITE REAL</text>
+  <text data-text-role="title" data-full-text="servidor" data-text-max-width="266.0" x="1115.0" y="251.0" text-anchor="middle" class="node-title" font-size="20.0">servidor</text>
+  <text data-text-role="subtitle" data-full-text="mostra o certificado verdadeiro" data-text-max-width="266.0" x="1115.0" y="273.0" text-anchor="middle" class="node-sub" font-size="12">mostra o certificado verdadeiro</text>
+  </g>
+  <g id="node-pin" data-graph-role="node" data-node-id="pin" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="def" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,460,810,540">
+  <rect x="70.0" y="460.0" width="740.0" height="80.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="440.0" y="478.0" text-anchor="middle" class="node-type">DEFESA · CERTIFICATE PINNING</text>
+  <text data-text-role="title" data-full-text="o app só aceita UM certificado e recusa o do Burp" data-text-max-width="716.0" x="440.0" y="506.0" text-anchor="middle" class="node-title" font-size="16.0">o app só aceita UM certificado e recusa o do Burp</text>
+  <text data-text-role="subtitle" data-full-text="o túnel 1 não se forma: o Burp fica sem ver nada" data-text-max-width="716.0" x="440.0" y="528.0" text-anchor="middle" class="node-sub" font-size="12">o túnel 1 não se forma: o Burp fica sem ver nada</text>
+  </g>
+  <g id="node-lab" data-graph-role="node" data-node-id="lab" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="def" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="850,460,1230,540">
+  <rect x="850.0" y="460.0" width="380.0" height="80.0" rx="10.0" fill="#111827" stroke="#94a3b8" stroke-width="1.8"/>
+  <text x="1040.0" y="478.0" text-anchor="middle" class="node-type">NO LABORATÓRIO</text>
+  <text data-text-role="title" data-full-text="Juice Shop usa HTTP simples" data-text-max-width="356.0" x="1040.0" y="506.0" text-anchor="middle" class="node-title" font-size="16.0">Juice Shop usa HTTP simples</text>
+  <text data-text-role="subtitle" data-full-text="sem túneis: o Burp já vê tudo" data-text-max-width="356.0" x="1040.0" y="528.0" text-anchor="middle" class="node-sub" font-size="12">sem túneis: o Burp já vê tudo</text>
+  </g>
+  <g id="t1-label" data-graph-role="label" data-owner="t1" data-graph-bounds="361.56,214,468.44,234">
+  <rect x="361.56" y="214.0" width="106.88" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="415.0" y="228.0" text-anchor="middle" class="arrow-label">túnel cifrado 1</text>
+  </g>
+  <g id="t2-label" data-graph-role="label" data-owner="t2" data-graph-bounds="831.56,214,938.44,234">
+  <rect x="831.56" y="214.0" width="106.88" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="885.0" y="228.0" text-anchor="middle" class="arrow-label">túnel cifrado 2</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="578" width="838.96" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="592.0" x2="70.0" y2="592.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="80.0" y="596.0" class="legend">túnel cifrado (ninguém de fora lê)      </text>
+    <line data-graph-role="decoration" x1="344.87999999999994" y1="592.0" x2="374.87999999999994" y2="592.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="384.87999999999994" y="596.0" class="legend">onde o conteúdo fica legível      </text>
+    <line data-graph-role="decoration" x1="613.76" y1="592.0" x2="643.76" y2="592.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="653.76" y="596.0" class="legend">defesa    </text>
+    <line data-graph-role="decoration" x1="740.8" y1="592.0" x2="770.8" y2="592.0" stroke="#94a3b8" stroke-width="2.3" marker-end="url(#arrowH)"/>
+    <text data-graph-role="decoration" x="780.8" y="596.0" class="legend">nota do lab</text>
+  </g>
 </svg>

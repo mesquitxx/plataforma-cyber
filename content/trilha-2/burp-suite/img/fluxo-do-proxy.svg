@@ -1,77 +1,127 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" role="img" aria-labelledby="t d">
-  <title id="t">O caminho de uma requisição com o Burp no meio</title>
-  <desc id="d">Dentro do contêiner Kali, o Firefox manda cada requisição HTTP para o Burp Proxy, que escuta em 127.0.0.1 na porta 8080. O Burp segura a requisição (pode ler e alterar), decide encaminhar ou descartar, e só então a repassa pela rede interna lab_net para o Juice Shop, na porta 3000. A resposta volta pelo mesmo caminho: do Juice Shop para o Burp e do Burp para o Firefox. Sem o Burp, a seta iria direto do Firefox ao Juice Shop. O Juice Shop e a lab_net não têm internet.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .req { stroke: #5cc8d8; stroke-width: 2.5; marker-end: url(#ar); fill: none; }
-    .res { stroke: #5ee08a; stroke-width: 2.5; marker-end: url(#ag); fill: none; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 560" width="1300" height="560" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
-    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5ee08a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="420" fill="#121815"/>
-  <text class="t" x="30" y="32">Firefox → Burp Proxy → Juice Shop (e a resposta de volta)</text>
-
-  <!-- Kali container box -->
-  <rect x="20" y="60" width="600" height="250" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <text class="s" x="34" y="80">contêiner Kali (a sua attack box)</text>
-
-  <!-- Firefox -->
-  <rect x="48" y="110" width="150" height="90" rx="8" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="h" x="70" y="140">Firefox</text>
-  <text class="s" x="70" y="162">navegador</text>
-  <text class="s" x="70" y="180">proxy manual:</text>
-  <text class="s" x="70" y="194">127.0.0.1:8080</text>
-
-  <!-- Burp -->
-  <rect x="245" y="95" width="160" height="120" rx="8" fill="#1d2a23" stroke="#e8c46a"/>
-  <text class="y" x="268" y="122">Burp Proxy</text>
-  <text class="s" x="268" y="144">escuta 127.0.0.1</text>
-  <text class="s" x="268" y="158">porta 8080</text>
-  <text class="b g" x="268" y="182">lê · altera</text>
-  <text class="b g" x="268" y="198">encaminha · descarta</text>
-
-  <!-- Juice Shop -->
-  <rect x="450" y="110" width="150" height="90" rx="8" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="h" x="472" y="140">Juice Shop</text>
-  <text class="s" x="472" y="162">servidor web</text>
-  <text class="s" x="472" y="180">porta 3000</text>
-
-  <!-- request arrows -->
-  <path class="req" d="M198,138 L243,138"/>
-  <path class="req" d="M405,138 L448,138"/>
-  <text class="b" x="200" y="128">requisição</text>
-
-  <!-- response arrows -->
-  <path class="res" d="M448,175 L407,175"/>
-  <path class="res" d="M243,175 L200,175"/>
-  <text class="b g" x="205" y="195">resposta</text>
-
-  <!-- lab_net label -->
-  <text class="s" x="412" y="235">lab_net (rede interna, sem internet)</text>
-
-  <!-- side note -->
-  <rect x="650" y="60" width="230" height="250" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="666" y="86">Por que funciona</text>
-  <text class="b" x="666" y="116">O navegador é só</text>
-  <text class="b" x="666" y="134">um cliente. Mandando</text>
-  <text class="b" x="666" y="152">o tráfego pelo Burp,</text>
-  <text class="b" x="666" y="170">você vê e edita tudo</text>
-  <text class="b" x="666" y="188">que sai e que volta —</text>
-  <text class="b" x="666" y="206">inclusive o que a</text>
-  <text class="b" x="666" y="224">interface tentou</text>
-  <text class="b" x="666" y="242">esconder ou proibir.</text>
-  <text class="s" x="666" y="276">É um man-in-the-middle</text>
-  <text class="s" x="666" y="292">consentido, na sua</text>
-  <text class="s" x="666" y="308">própria máquina.</text>
-
-  <text class="s" x="30" y="345">A seta azul é a requisição; a verde, a resposta. Sem o Burp, elas iriam direto entre o Firefox e o Juice Shop.</text>
-  <text class="s" x="30" y="365">Como o Burp está no caminho, cada mensagem passa por ele antes de seguir.</text>
+  <rect data-graph-role="background" width="1300.0" height="560.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">Com o Burp no meio, cada mensagem para nele antes de seguir</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">o navegador é só um cliente: o que a tela esconde ou proíbe, você vê e altera no Burp</text>
+  <g id="kali" data-graph-role="container" data-container-id="kali" data-semantic-role="boundary" data-graph-bounds="40,120,890,450">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="850.0" height="330.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">CONTÊINER KALI (SUA MÁQUINA DE ATAQUE)</text>
+    <rect id="kali-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="295.2" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="lab" data-graph-role="container" data-container-id="lab" data-semantic-role="boundary" data-graph-bounds="950,120,1260,450">
+  <rect data-graph-role="container" x="950.0" y="120.0" width="310.0" height="330.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="968.0" y="144.0" class="section">REDE DO LAB, SEM INTERNET</text>
+    <rect id="lab-header" data-graph-role="reserved" data-reserved-kind="container-header" x="958" y="126" width="203.42" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="r1" data-graph-role="edge" data-edge-id="r1" data-source="ff" data-target="burp" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 315,291 L 445,291" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="r2" data-graph-role="edge" data-edge-id="r2" data-source="burp" data-target="js" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 855,291 L 985,291" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="s1" data-graph-role="edge" data-edge-id="s1" data-source="js" data-target="burp" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 985,309 L 855,309" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="s2" data-graph-role="edge" data-edge-id="s2" data-source="burp" data-target="ff" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 445,309 L 315,309" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-ff" data-graph-role="node" data-node-id="ff" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="kali" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="75,215,315,385">
+  <rect x="75.0" y="215.0" width="240.0" height="170.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="195.0" y="233.0" text-anchor="middle" class="node-type">NAVEGADOR</text>
+  <text data-text-role="title" data-full-text="Firefox" data-text-max-width="216.0" x="195.0" y="306.0" text-anchor="middle" class="node-title" font-size="20.0">Firefox</text>
+  <text data-text-role="subtitle" data-full-text="manda tudo para o Burp" data-text-max-width="216.0" x="195.0" y="328.0" text-anchor="middle" class="node-sub" font-size="12">manda tudo para o Burp</text>
+  </g>
+  <g id="node-burp" data-graph-role="node" data-node-id="burp" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="kali" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="445,195,855,405">
+  <rect x="445.0" y="195.0" width="410.0" height="210.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.6" filter="url(#glowOrange)"/>
+  <text x="650.0" y="213.0" text-anchor="middle" class="node-type">O MOMENTO-CHAVE</text>
+  <text data-text-role="title" data-full-text="o Burp segura a mensagem" data-text-max-width="386.0" x="650.0" y="306.0" text-anchor="middle" class="node-title" font-size="20.0">o Burp segura a mensagem</text>
+  <text data-text-role="subtitle" data-full-text="e espera você decidir o que fazer com ela" data-text-max-width="386.0" x="650.0" y="328.0" text-anchor="middle" class="node-sub" font-size="12">e espera você decidir o que fazer com ela</text>
+  <rect x="463.0" y="385.0" width="62" height="16" rx="3" fill="#3a2a07" stroke="#f59e0b" stroke-width="1"/>
+  <text x="494.0" y="396.5" text-anchor="middle" font-size="11" font-weight="500" fill="#fde68a">ler</text>
+  <rect x="533.0" y="385.0" width="74" height="16" rx="3" fill="#3a2a07" stroke="#f59e0b" stroke-width="1"/>
+  <text x="570.0" y="396.5" text-anchor="middle" font-size="11" font-weight="500" fill="#fde68a">alterar</text>
+  <rect x="615.0" y="385.0" width="122" height="16" rx="3" fill="#3a2a07" stroke="#f59e0b" stroke-width="1"/>
+  <text x="676.0" y="396.5" text-anchor="middle" font-size="11" font-weight="500" fill="#fde68a">deixar passar</text>
+  <rect x="745.0" y="385.0" width="90" height="16" rx="3" fill="#3a2a07" stroke="#f59e0b" stroke-width="1"/>
+  <text x="790.0" y="396.5" text-anchor="middle" font-size="11" font-weight="500" fill="#fde68a">descartar</text>
+  </g>
+  <g id="node-js" data-graph-role="node" data-node-id="js" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="lab" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="985,215,1225,385">
+  <rect x="985.0" y="215.0" width="240.0" height="170.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="1105.0" y="233.0" text-anchor="middle" class="node-type">SERVIDOR</text>
+  <text data-text-role="title" data-full-text="Juice Shop" data-text-max-width="216.0" x="1105.0" y="306.0" text-anchor="middle" class="node-title" font-size="20.0">Juice Shop</text>
+  <text data-text-role="subtitle" data-full-text="o site do laboratório" data-text-max-width="216.0" x="1105.0" y="328.0" text-anchor="middle" class="node-sub" font-size="12">o site do laboratório</text>
+  </g>
+  <g id="r1-label" data-graph-role="label" data-owner="r1" data-graph-bounds="341.32,260,418.68,280">
+  <rect x="341.32" y="260.0" width="77.35999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="380.0" y="274.0" text-anchor="middle" class="arrow-label">requisição</text>
+  </g>
+  <g id="r2-label" data-graph-role="label" data-owner="r2" data-graph-bounds="881.32,260,958.68,280">
+  <rect x="881.32" y="260.0" width="77.35999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="920.0" y="274.0" text-anchor="middle" class="arrow-label">requisição</text>
+  </g>
+  <g id="s1-label" data-graph-role="label" data-owner="s1" data-graph-bounds="885.16,296,954.84,316">
+  <rect x="885.16" y="296.0" width="69.67999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="920.0" y="310.0" text-anchor="middle" class="arrow-label">resposta</text>
+  </g>
+  <g id="s2-label" data-graph-role="label" data-owner="s2" data-graph-bounds="345.16,296,414.84,316">
+  <rect x="345.16" y="296.0" width="69.67999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="380.0" y="310.0" text-anchor="middle" class="arrow-label">resposta</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="478" width="633.68" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="492.0" x2="70.0" y2="492.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="80.0" y="496.0" class="legend">requisição (ida)    </text>
+    <line data-graph-role="decoration" x1="224.63999999999996" y1="492.0" x2="254.63999999999996" y2="492.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="264.64" y="496.0" class="legend">resposta (volta)    </text>
+    <line data-graph-role="decoration" x1="415.52" y1="492.0" x2="445.52" y2="492.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="455.52" y="496.0" class="legend">onde você controla a mensagem</text>
+  </g>
 </svg>

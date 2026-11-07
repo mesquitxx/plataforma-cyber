@@ -1,62 +1,108 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" role="img" aria-labelledby="t d">
-  <title id="t">O ciclo de trabalho no Burp Suite</title>
-  <desc id="d">Um ciclo com quatro etapas ligadas por setas. Primeiro, o Proxy captura o tráfego enquanto você navega e guarda tudo no HTTP history. Segundo, o Target e o Scope organizam o que foi capturado no site map e filtram só o que está no escopo. Terceiro, você manda uma requisição interessante para o Repeater e a reenvia alterada quantas vezes quiser, comparando as respostas. Quarto, quando quer testar muitas variações de uma vez, manda a requisição para o Intruder, marca as posições e dispara uma lista de payloads, lendo os resultados por status, tamanho e tempo. O Intruder e o Repeater devolvem achados que valem uma nova navegação, fechando o ciclo. No centro, uma nota lembra que Decoder e Comparer ajudam a entender valores codificados e a comparar respostas em qualquer etapa.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 14px; font-weight: 700; fill: #5cc8d8; }
-    .n { font-size: 13px; font-weight: 700; fill: #121815; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .flow { stroke: #e8c46a; stroke-width: 2.5; marker-end: url(#ay); fill: none; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 590" width="1300" height="590" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="ay" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8c46a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="460" fill="#121815"/>
-  <text class="t" x="30" y="32">O fluxo de um teste web no Burp</text>
-
-  <!-- 1 Proxy -->
-  <rect x="40" y="70" width="330" height="110" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <circle cx="68" cy="98" r="14" fill="#5cc8d8"/><text class="n" x="63" y="103">1</text>
-  <text class="h" x="92" y="103">Proxy</text>
-  <text class="b" x="56" y="130">Navegue com o tráfego passando pelo Burp.</text>
-  <text class="b" x="56" y="150">Tudo fica no <tspan fill="#e8c46a">HTTP history</tspan>: cada requisição</text>
-  <text class="b" x="56" y="168">e resposta, para você revisitar.</text>
-
-  <!-- 2 Target/Scope -->
-  <rect x="530" y="70" width="330" height="110" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <circle cx="558" cy="98" r="14" fill="#5cc8d8"/><text class="n" x="553" y="103">2</text>
-  <text class="h" x="582" y="103">Target + Scope</text>
-  <text class="b" x="546" y="130">O <tspan fill="#e8c46a">site map</tspan> organiza o que você viu.</text>
-  <text class="b" x="546" y="150">O <tspan fill="#e8c46a">scope</tspan> filtra só o alvo autorizado</text>
-  <text class="b" x="546" y="168">e tira o ruído do resto.</text>
-
-  <!-- 3 Repeater -->
-  <rect x="530" y="270" width="330" height="110" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <circle cx="558" cy="298" r="14" fill="#5cc8d8"/><text class="n" x="553" y="303">3</text>
-  <text class="h" x="582" y="303">Repeater</text>
-  <text class="b" x="546" y="330">Pegue uma requisição interessante e a</text>
-  <text class="b" x="546" y="350">reenvie alterada, à mão, quantas vezes</text>
-  <text class="b" x="546" y="368">quiser. Compare as respostas.</text>
-
-  <!-- 4 Intruder -->
-  <rect x="40" y="270" width="330" height="110" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <circle cx="68" cy="298" r="14" fill="#5cc8d8"/><text class="n" x="63" y="303">4</text>
-  <text class="h" x="92" y="303">Intruder</text>
-  <text class="b" x="56" y="330">Marque <tspan fill="#e8c46a">posições</tspan> e dispare uma lista de</text>
-  <text class="b" x="56" y="350">payloads. Ache o fora-da-curva por</text>
-  <text class="b" x="56" y="368">status, tamanho e tempo.</text>
-
-  <!-- flow arrows -->
-  <path class="flow" d="M370,125 L528,125"/>
-  <path class="flow" d="M695,180 L695,268"/>
-  <path class="flow" d="M528,325 L372,325"/>
-  <path class="flow" d="M205,270 C205,230 205,210 205,182"/>
-  <text class="s" x="300" y="258">achados → nova navegação</text>
-
-  <!-- center note -->
-  <rect x="300" y="200" width="300" height="60" rx="10" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="b" x="316" y="226"><tspan fill="#5ee08a">Decoder</tspan> e <tspan fill="#5ee08a">Comparer</tspan> ajudam em</text>
-  <text class="s" x="316" y="246">qualquer etapa: decodificar e comparar.</text>
+  <rect data-graph-role="background" width="1300.0" height="590.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">Trabalhar no Burp é um ciclo, não uma linha reta</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">capturar, organizar, aprofundar, automatizar — e o que você descobre te leva a navegar de novo</text>
+  <path id="back" data-graph-role="edge" data-edge-id="back" data-source="intruder" data-target="proxy" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.186" data-bridges="" d="M 1137.5,310 L 1137.5,400 L 170,400 L 170,310" fill="none" stroke="#f59e0b" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="a1" data-graph-role="edge" data-edge-id="a1" data-source="proxy" data-target="target" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 300,230 L 365,230" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="a2" data-graph-role="edge" data-edge-id="a2" data-source="target" data-target="repeater" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 625,230 L 690,230" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="a3" data-graph-role="edge" data-edge-id="a3" data-source="repeater" data-target="intruder" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 950,230 L 1015,230" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <g id="node-proxy" data-graph-role="node" data-node-id="proxy" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="40,150,300,310">
+  <rect x="40.0" y="150.0" width="260.0" height="160.0" rx="10.0" fill="#0b1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="170.0" y="168.0" text-anchor="middle" class="node-type">1 · PROXY</text>
+  <text data-text-role="title" data-full-text="capturar" data-text-max-width="236.0" x="170.0" y="236.0" text-anchor="middle" class="node-title" font-size="22.0">capturar</text>
+  <text data-text-role="subtitle" data-full-text="guarda tudo o que você navega" data-text-max-width="236.0" x="170.0" y="258.0" text-anchor="middle" class="node-sub" font-size="12">guarda tudo o que você navega</text>
+  </g>
+  <g id="node-target" data-graph-role="node" data-node-id="target" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="365,150,625,310">
+  <rect x="365.0" y="150.0" width="260.0" height="160.0" rx="10.0" fill="#0b1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="495.0" y="168.0" text-anchor="middle" class="node-type">2 · TARGET + SCOPE</text>
+  <text data-text-role="title" data-full-text="organizar" data-text-max-width="236.0" x="495.0" y="236.0" text-anchor="middle" class="node-title" font-size="22.0">organizar</text>
+  <text data-text-role="subtitle" data-full-text="filtra só o alvo autorizado" data-text-max-width="236.0" x="495.0" y="258.0" text-anchor="middle" class="node-sub" font-size="12">filtra só o alvo autorizado</text>
+  </g>
+  <g id="node-repeater" data-graph-role="node" data-node-id="repeater" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="690,150,950,310">
+  <rect x="690.0" y="150.0" width="260.0" height="160.0" rx="10.0" fill="#0b1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="820.0" y="168.0" text-anchor="middle" class="node-type">3 · REPEATER</text>
+  <text data-text-role="title" data-full-text="aprofundar à mão" data-text-max-width="236.0" x="820.0" y="236.0" text-anchor="middle" class="node-title" font-size="22.0">aprofundar à mão</text>
+  <text data-text-role="subtitle" data-full-text="reenvia uma requisição alterada" data-text-max-width="236.0" x="820.0" y="258.0" text-anchor="middle" class="node-sub" font-size="12">reenvia uma requisição alterada</text>
+  </g>
+  <g id="node-intruder" data-graph-role="node" data-node-id="intruder" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1015,150,1260,310">
+  <rect x="1015.0" y="150.0" width="245.0" height="160.0" rx="10.0" fill="#0b1e33" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="1137.5" y="168.0" text-anchor="middle" class="node-type">4 · INTRUDER</text>
+  <text data-text-role="title" data-full-text="automatizar" data-text-max-width="221.0" x="1137.5" y="236.0" text-anchor="middle" class="node-title" font-size="22.0">automatizar</text>
+  <text data-text-role="subtitle" data-full-text="dispara muitas variações" data-text-max-width="221.0" x="1137.5" y="258.0" text-anchor="middle" class="node-sub" font-size="12">dispara muitas variações</text>
+  </g>
+  <g id="node-apoio" data-graph-role="node" data-node-id="apoio" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="290,440,1010,516">
+  <rect x="290.0" y="440.0" width="720.0" height="76.0" rx="10.0" fill="#111827" stroke="#94a3b8" stroke-width="1.8"/>
+  <text x="650.0" y="458.0" text-anchor="middle" class="node-type">APOIO EM QUALQUER ETAPA · DECODER E COMPARER</text>
+  <text data-text-role="title" data-full-text="decodificar valores e comparar duas respostas" data-text-max-width="696.0" x="650.0" y="484.0" text-anchor="middle" class="node-title" font-size="16.0">decodificar valores e comparar duas respostas</text>
+  </g>
+  <g id="back-label" data-graph-role="label" data-owner="back" data-graph-bounds="527.23,369,780.27,389">
+  <rect x="527.23" y="369.0" width="253.0399999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="653.75" y="383.0" text-anchor="middle" class="arrow-label">o que você descobre → navegar de novo</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="531" width="712.16" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40.0" y1="545.0" x2="70.0" y2="545.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="80.0" y="549.0" class="legend">etapas do ciclo    </text>
+    <line data-graph-role="decoration" x1="218.16" y1="545.0" x2="248.16" y2="545.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="258.15999999999997" y="549.0" class="legend">a volta: um achado puxa mais navegação      </text>
+    <line data-graph-role="decoration" x1="551.3599999999998" y1="545.0" x2="581.3599999999998" y2="545.0" stroke="#94a3b8" stroke-width="2.3" marker-end="url(#arrowH)"/>
+    <text data-graph-role="decoration" x="591.3599999999998" y="549.0" class="legend">ferramentas de apoio</text>
+  </g>
 </svg>
