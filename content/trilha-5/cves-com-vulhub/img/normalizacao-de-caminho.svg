@@ -1,82 +1,106 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" role="img" aria-labelledby="t d">
-  <title id="t">O bug de normalização de caminho: 2.4.49 contra 2.4.51</title>
-  <desc id="d">Diagrama em duas faixas. À esquerda, a mesma requisição maliciosa entra nas duas: GET barra cgi-bin barra ponto porcento 2e barra, uma sequência que vira ../ depois de decodificada. A faixa de cima é o Apache 2.4.49, vulnerável: o servidor casa o ScriptAlias cgi-bin e trata o alvo como CGI; decodifica o porcento 2e para ponto só DEPOIS de checar a presença de ../, então o filtro não enxerga a travessia; resolve os ../ e sai do document root até alcançar /bin/sh; o mod_cgid então EXECUTA o /bin/sh, resultando em remote code execution. A caixa final é vermelha. A faixa de baixo é o Apache 2.4.51, corrigido: a normalização reescrita rejeita segmentos de ponto codificados antes de mapear o caminho; a requisição nunca sai do document root e o servidor responde com erro 400 ou 404. A caixa final é verde. A lição no rodapé: a ordem decodificar/normalizar é a raiz do bug; a 2.4.50 consertou pela metade.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" width="960" height="500" role="img" aria-labelledby="t d">
+  <title id="t">Por que o Apache 2.4.49 caiu: o filtro procura ".." antes de decodificar</title>
+  <desc id="d">Fluxo do ataque em cinco passos, da esquerda para a direita. 1: o atacante envia /cgi-bin/.%2e/.%2e/... até /bin/sh; o ".%2e" é um ".." disfarçado. 2, o momento da falha, destacado em amarelo: o filtro procura "..", mas só vê ".%2e" e deixa passar. 3: só agora o servidor decodifica %2e em ponto, e ".%2e/" vira "../". 4: os "../" sobem para fora da pasta do site e chegam a /bin/sh. 5, em vermelho: na pasta cgi-bin o servidor executa o arquivo alcançado; ele roda /bin/sh e o atacante executa comandos no servidor (RCE). Uma chave sobre os passos 2 e 3 marca o erro de ordem: filtrar antes de decodificar. Separada embaixo, em verde e menor, a correção da 2.4.51: os pontos codificados são rejeitados antes de achar o arquivo, a resposta é 400 ou 404 e nada sai da pasta do site.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .lane { font-size: 12.5px; font-weight: 700; }
-    .step { font-size: 11px; }
-    .sub { font-size: 10px; fill: #9fb0a6; }
-    .mono { fill: #5cc8d8; }
-    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
-    .boxbad { fill: #231414; stroke: #ff6b6b; stroke-width: 2.5; }
-    .boxgood { fill: #132018; stroke: #5ee08a; stroke-width: 2.5; }
-    .req { fill: #1b2620; stroke: #5cc8d8; stroke-width: 2; }
-    .flow { stroke: #4a5a52; stroke-width: 2; fill: none; marker-end: url(#a); }
-    .flowbad { stroke: #ff6b6b; stroke-width: 2; fill: none; marker-end: url(#ab); }
-    .flowgood { stroke: #5ee08a; stroke-width: 2; fill: none; marker-end: url(#ag); }
-    .bad { fill: #ff6b6b; font-weight: 700; }
-    .good { fill: #5ee08a; font-weight: 700; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 17px; font-weight: 700; }
+    .key { font-size: 13.5px; font-weight: 700; fill: #fde68a; }
+    .lane { font-size: 11px; font-weight: 700; fill: #94a3b8; }
+    .h { font-size: 13px; font-weight: 700; }
+    .sub { font-size: 11px; fill: #94a3b8; }
+    .code { font-size: 11.5px; fill: #e2e8f0; font-weight: 700; }
+    .red { fill: #ef4444; }
+    .gold { fill: #eab308; }
+    .green { fill: #10b981; }
+    .leg { font-size: 11px; fill: #94a3b8; }
+    .bold { font-weight: 700; }
+    .body { font-size: 12px; }
   </style>
   <defs>
-    <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#4a5a52"/></marker>
-    <marker id="ab" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#ff6b6b"/></marker>
-    <marker id="ag" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5ee08a"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ef4444"/></marker>
+    <filter id="glow-gold"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow-red"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-  <rect width="960" height="440" fill="#121815"/>
-  <text class="t" x="30" y="34">A mesma requisição, dois servidores: onde a normalização falha</text>
+  <rect width="960" height="500" fill="url(#bg-grad)"/>
 
-  <!-- request -->
-  <rect class="req" x="24" y="185" width="150" height="86" rx="8"/>
-  <text class="step" x="99" y="212" text-anchor="middle">requisição</text>
-  <text class="mono" x="99" y="232" text-anchor="middle" style="font-size:10px">/cgi-bin/</text>
-  <text class="mono" x="99" y="247" text-anchor="middle" style="font-size:10px">.%2e/%2e%2e/</text>
-  <text class="sub" x="99" y="263" text-anchor="middle">".%2e" vira ".."</text>
+  <!-- title + key idea -->
+  <text class="title" x="30" y="36">Por que o Apache 2.4.49 caiu</text>
+  <rect x="30" y="50" width="900" height="38" rx="6" fill="#2a2108" stroke="#eab308" stroke-width="1.5"/>
+  <text class="key" x="480" y="74" text-anchor="middle">O filtro procura ".." ANTES de decodificar: o ".%2e" disfarçado passa e depois vira ".."</text>
 
-  <path class="flow" d="M174,205 C195,170 205,130 226,112"/>
-  <path class="flow" d="M174,251 C195,286 205,326 226,344"/>
+  <text class="lane" x="30" y="122">O ATAQUE</text>
 
-  <!-- vulnerable lane (top) -->
-  <text class="lane bad" x="230" y="78">Apache 2.4.49 — vulnerável (CVE-2021-41773)</text>
-  <rect class="box" x="230" y="90" width="150" height="56" rx="7"/>
-  <text class="step" x="305" y="112" text-anchor="middle">casa ScriptAlias</text>
-  <text class="sub" x="305" y="129" text-anchor="middle">cgi-bin = tratar como CGI</text>
+  <!-- order-error bracket over steps 2 and 3 -->
+  <path d="M213,150 L213,140 L564,140 L564,150" fill="none" stroke="#eab308" stroke-width="1.5"/>
+  <text class="sub gold bold" x="388" y="133" text-anchor="middle">erro de ORDEM: filtra primeiro, decodifica depois</text>
 
-  <rect class="box" x="400" y="90" width="165" height="56" rx="7"/>
-  <text class="step" x="482" y="108" text-anchor="middle">decodifica %2e</text>
-  <text class="sub" x="482" y="124" text-anchor="middle">DEPOIS de checar "..":</text>
-  <text class="sub" x="482" y="138" text-anchor="middle">o filtro não vê a travessia</text>
+  <!-- step 1 -->
+  <rect x="30" y="160" width="168" height="130" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+  <text class="h" x="114" y="184" text-anchor="middle">1. Atacante envia</text>
+  <rect x="42" y="196" width="144" height="44" rx="4" fill="#020617" stroke="#334155"/>
+  <text class="code" x="114" y="214" text-anchor="middle">/cgi-bin/.%2e/</text>
+  <text class="code" x="114" y="231" text-anchor="middle">.%2e/…/bin/sh</text>
+  <text class="sub" x="114" y="260" text-anchor="middle">".%2e" é um ".."</text>
+  <text class="sub" x="114" y="276" text-anchor="middle">disfarçado</text>
 
-  <rect class="box" x="585" y="90" width="150" height="56" rx="7"/>
-  <text class="step" x="660" y="112" text-anchor="middle">resolve ../../../</text>
-  <text class="sub" x="660" y="129" text-anchor="middle">sai do document root</text>
+  <!-- step 2: key moment -->
+  <rect x="213" y="160" width="168" height="130" rx="6" fill="#2a2108" stroke="#eab308" stroke-width="2.5" filter="url(#glow-gold)"/>
+  <text class="h" x="297" y="184" text-anchor="middle">2. Filtro: ".."?</text>
+  <rect x="247" y="196" width="100" height="26" rx="4" fill="#020617" stroke="#eab308"/>
+  <text class="code" x="297" y="214" text-anchor="middle">.%2e</text>
+  <text class="h gold" x="297" y="248" text-anchor="middle">não vê ".."</text>
+  <text class="h gold" x="297" y="266" text-anchor="middle">→ deixa passar</text>
+  <text class="sub" x="297" y="282" text-anchor="middle">(ainda disfarçado)</text>
 
-  <rect class="boxbad" x="755" y="88" width="175" height="60" rx="7"/>
-  <text class="step bad" x="842" y="110" text-anchor="middle">mod_cgid EXECUTA</text>
-  <text class="mono" x="842" y="127" text-anchor="middle" style="font-size:10px">/bin/sh</text>
-  <text class="bad" x="842" y="141" text-anchor="middle" style="font-size:10px">→ RCE</text>
+  <!-- step 3 -->
+  <rect x="396" y="160" width="168" height="130" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+  <text class="h" x="480" y="184" text-anchor="middle">3. Decodifica %2e</text>
+  <rect x="408" y="196" width="144" height="26" rx="4" fill="#020617" stroke="#334155"/>
+  <text class="code" x="480" y="214" text-anchor="middle">.%2e/  →  ../</text>
+  <text class="sub" x="480" y="248" text-anchor="middle">tarde demais:</text>
+  <text class="sub" x="480" y="264" text-anchor="middle">agora é ".." de verdade</text>
 
-  <path class="flow" d="M380,118 L398,118"/>
-  <path class="flow" d="M565,118 L583,118"/>
-  <path class="flowbad" d="M735,118 L753,118"/>
+  <!-- step 4 -->
+  <rect x="579" y="160" width="168" height="130" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+  <text class="h" x="663" y="184" text-anchor="middle">4. Sobe com ../</text>
+  <text class="sub" x="663" y="210" text-anchor="middle">sai da pasta do site</text>
+  <text class="sub" x="663" y="226" text-anchor="middle">(document root)</text>
+  <rect x="613" y="240" width="100" height="26" rx="4" fill="#020617" stroke="#334155"/>
+  <text class="code" x="663" y="258" text-anchor="middle">/bin/sh</text>
 
-  <!-- patched lane (bottom) -->
-  <text class="lane good" x="230" y="318">Apache 2.4.51 — corrigido (a 2.4.50 não bastou: CVE-2021-42013)</text>
-  <rect class="box" x="230" y="330" width="235" height="56" rx="7"/>
-  <text class="step" x="347" y="352" text-anchor="middle">normalização reescrita</text>
-  <text class="sub" x="347" y="369" text-anchor="middle">rejeita dot-segment codificado antes de mapear</text>
+  <!-- step 5: consequence -->
+  <rect x="762" y="160" width="168" height="130" rx="6" fill="#2a1215" stroke="#ef4444" stroke-width="2.5" filter="url(#glow-red)"/>
+  <text class="h red" x="846" y="184" text-anchor="middle">5. Ele EXECUTA</text>
+  <text class="sub" x="846" y="204" text-anchor="middle">em /cgi-bin ele roda</text>
+  <text class="sub" x="846" y="219" text-anchor="middle">o arquivo alcançado</text>
+  <text class="h" x="846" y="248" text-anchor="middle">atacante roda</text>
+  <text class="h" x="846" y="266" text-anchor="middle">comandos (RCE)</text>
 
-  <rect class="box" x="485" y="330" width="170" height="56" rx="7"/>
-  <text class="step" x="570" y="352" text-anchor="middle">fica no document root</text>
-  <text class="sub" x="570" y="369" text-anchor="middle">não alcança /bin/sh</text>
+  <!-- attack arrows -->
+  <path d="M198,225 L211,225" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrow-red)"/>
+  <path d="M381,225 L394,225" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrow-red)"/>
+  <path d="M564,225 L577,225" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrow-red)"/>
+  <path d="M747,225 L760,225" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrow-red)"/>
 
-  <rect class="boxgood" x="675" y="328" width="175" height="60" rx="7"/>
-  <text class="step good" x="762" y="353" text-anchor="middle">400 / 404</text>
-  <text class="sub" x="762" y="370" text-anchor="middle">travessia barrada</text>
+  <!-- separator -->
+  <line x1="30" y1="322" x2="930" y2="322" stroke="#334155" stroke-width="1" stroke-dasharray="6 5"/>
 
-  <path class="flowgood" d="M465,358 L483,358"/>
-  <path class="flowgood" d="M655,358 L673,358"/>
+  <!-- defense (secondary) -->
+  <text class="lane" x="30" y="350">A CORREÇÃO (para comparar)</text>
+  <rect x="30" y="362" width="900" height="56" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text class="body bold green" x="48" y="386">Apache 2.4.51:</text>
+  <text class="body" x="168" y="386">rejeita os pontos codificados ANTES de achar o arquivo</text>
+  <text class="sub" x="48" y="406">→ responde 400 / 404 e nada sai da pasta do site (a 2.4.50 consertou só pela metade)</text>
 
-  <text class="sub" x="30" y="414">A raiz é a ORDEM decodificar/normalizar: decodificar %2e DEPOIS de filtrar ".." deixa a travessia passar.</text>
-  <text class="sub" x="30" y="430">A 2.4.50 tapou só o caso óbvio (%2e); a dupla codificação (%%32%65) ainda passava — e virou a CVE-2021-42013.</text>
+  <!-- legend -->
+  <rect x="30" y="448" width="14" height="14" rx="3" fill="#eab308"/>
+  <text class="leg" x="52" y="460">amarelo = onde está a falha</text>
+  <rect x="290" y="448" width="14" height="14" rx="3" fill="#ef4444"/>
+  <text class="leg" x="312" y="460">vermelho = o ataque e o que o atacante ganha</text>
+  <rect x="680" y="448" width="14" height="14" rx="3" fill="#10b981"/>
+  <text class="leg" x="702" y="460">verde = corrigido</text>
 </svg>
