@@ -1,60 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">Como uma dependência transitiva vulnerável entra na aplicação sem você escolher</title>
-  <desc id="d">Uma árvore de dependências em três níveis. No topo, a sua aplicação. Dela descem duas dependências diretas, que você de fato declarou: uma biblioteca de relatórios na versão 3.2 e um cliente HTTP na versão 2.0. A biblioteca de relatórios, por sua vez, puxa sozinha duas dependências transitivas que você nunca escolheu: um utilitário de datas e um parser de XML na versão 1.4. Esse parser de XML 1.4 está marcado em vermelho como vulnerável, com a etiqueta CVE conhecida e execução remota de código. Uma seta aponta para ele com o aviso de que você nunca o declarou, mas ele roda com todo o poder da sua aplicação. O rodapé resume: o seu código tem poucas linhas suas e muitas linhas de terceiros; a falha de qualquer peça da árvore é a sua falha.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540" role="img" aria-labelledby="t d">
+  <title id="t">A falha de uma peça que você nem escolheu vira falha sua</title>
+  <desc id="d">Uma árvore de dependências dividida em duas faixas. Na faixa de cima, o que você escolheu: a sua aplicação, o código que você escreve, e as duas dependências diretas que você declarou, relatorios 3.2 e http-client 2.0. Na faixa de baixo, o que veio junto sem você pedir: a biblioteca relatorios puxou sozinha duas dependências transitivas, datas-util 5.1 e parser-xml 1.4. O parser-xml 1.4 está destacado em vermelho: tem uma falha pública conhecida, e você nunca o declarou. Uma seta vermelha sai dele para a consequência: o atacante explora essa falha e roda comandos no seu servidor, com o poder da sua aplicação, porque a peça roda dentro dela. Legenda: azul é o que você escolheu, cinza é o que veio junto, vermelho é a falha e o que o atacante ganha.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 15.5px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .r { fill: #ef7b6b; font-weight: 700; }
-    .y { fill: #e8c46a; }
-    .app { fill: #1b2a3a; stroke: #5cc8d8; stroke-width: 1.6; }
-    .direct { fill: #16201b; stroke: #5ee08a; stroke-width: 1.4; }
-    .trans { fill: #171c19; stroke: #6b7a70; stroke-width: 1.3; }
-    .vuln { fill: #241717; stroke: #ef7b6b; stroke-width: 1.8; }
-    .edge { stroke: #6b7a70; stroke-width: 1.6; fill: none; }
-    .edgev { stroke: #ef7b6b; stroke-width: 2; fill: none; marker-end: url(#ar); }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 19px; font-weight: 700; }
+    .sub { font-size: 13px; fill: #94a3b8; }
+    .zone { font-size: 12px; font-weight: 700; fill: #94a3b8; }
+    .name { font-size: 14px; font-weight: 700; }
+    .nameb { font-size: 14px; font-weight: 700; fill: #93c5fd; }
+    .namer { font-size: 15px; font-weight: 700; fill: #f87171; }
+    .body { font-size: 12px; fill: #cbd5e1; }
+    .res { font-size: 14px; font-weight: 700; fill: #fecaca; }
+    .muted { font-size: 12px; fill: #94a3b8; }
   </style>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ef7b6b"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ef4444"/></marker>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#64748b"/></marker>
+    <filter id="glow-red"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="24" y="32">Árvore de dependências: o que você declara é só a ponta</text>
+  <rect width="960" height="540" fill="url(#bg-grad)"/>
 
-  <!-- app -->
-  <rect class="app" x="350" y="56" width="200" height="54" rx="10"/>
-  <text class="h c" x="450" y="80" text-anchor="middle" fill="#5cc8d8">Sua aplicação</text>
-  <text class="s" x="450" y="98" text-anchor="middle">o código que você escreve</text>
+  <text class="title" x="40" y="44">A falha de uma peça que você nem escolheu vira falha sua</text>
+  <text class="sub" x="40" y="68">Você declara só a ponta da árvore; o resto vem junto, sem você ver.</text>
 
-  <!-- level 2: direct deps -->
-  <line class="edge" x1="430" y1="110" x2="235" y2="168"/>
-  <line class="edge" x1="470" y1="110" x2="665" y2="168"/>
-  <rect class="direct" x="120" y="170" width="230" height="58" rx="9"/>
-  <text class="h" x="235" y="194" text-anchor="middle" fill="#5ee08a">relatorios 3.2</text>
-  <text class="s" x="235" y="214" text-anchor="middle">dependência direta (você declarou)</text>
-  <rect class="direct" x="550" y="170" width="230" height="58" rx="9"/>
-  <text class="h" x="665" y="194" text-anchor="middle" fill="#5ee08a">http-client 2.0</text>
-  <text class="s" x="665" y="214" text-anchor="middle">dependência direta (você declarou)</text>
+  <!-- zone 1: what you chose -->
+  <rect data-graph-role="container" x="40" y="88" width="880" height="176" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="zone" x="56" y="110">VOCÊ ESCOLHEU</text>
 
-  <!-- level 3: transitive deps under relatorios -->
-  <line class="edge" x1="195" y1="228" x2="150" y2="300"/>
-  <line class="edgev" x1="275" y1="228" x2="360" y2="298"/>
-  <rect class="trans" x="40" y="302" width="200" height="58" rx="9"/>
-  <text class="b" x="140" y="326" text-anchor="middle">datas-util 5.1</text>
-  <text class="s" x="140" y="346" text-anchor="middle">transitiva (não declarada)</text>
+  <rect x="380" y="100" width="200" height="56" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="nameb" x="480" y="124" text-anchor="middle">Sua aplicação</text>
+  <text class="body" x="480" y="144" text-anchor="middle">o código que você escreve</text>
 
-  <rect class="vuln" x="270" y="302" width="250" height="78" rx="9"/>
-  <text class="h r" x="395" y="326" text-anchor="middle">parser-xml 1.4</text>
-  <text class="b y" x="395" y="346" text-anchor="middle">CVE conhecida · RCE</text>
-  <text class="s" x="395" y="366" text-anchor="middle">transitiva (não declarada)</text>
+  <path d="M450,156 L300,188" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+  <path d="M510,156 L660,188" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
 
-  <!-- warning -->
-  <text class="b r" x="548" y="330">você nunca a escolheu —</text>
-  <text class="b r" x="548" y="348">mas ela roda com todo o</text>
-  <text class="b r" x="548" y="366">poder da sua aplicação</text>
+  <rect x="150" y="190" width="230" height="58" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="nameb" x="265" y="214" text-anchor="middle">relatorios 3.2</text>
+  <text class="body" x="265" y="234" text-anchor="middle">dependência direta</text>
 
-  <line x1="24" y1="408" x2="876" y2="408" stroke="#2a332e" stroke-width="1"/>
-  <text class="s" x="24" y="432">Poucas linhas são suas; a maioria é de terceiros, em árvore. A falha de qualquer</text>
-  <text class="s" x="24" y="450">peça — mesmo uma que você nunca declarou — é explorável como falha da sua aplicação.</text>
+  <rect x="580" y="190" width="230" height="58" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="nameb" x="695" y="214" text-anchor="middle">http-client 2.0</text>
+  <text class="body" x="695" y="234" text-anchor="middle">dependência direta</text>
+
+  <!-- zone 2: came along -->
+  <rect data-graph-role="container" x="40" y="282" width="620" height="166" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1" stroke-dasharray="4 4"/>
+  <text class="zone" x="644" y="304" text-anchor="end">VEIO JUNTO, SEM VOCÊ PEDIR</text>
+
+  <path d="M230,248 L180,328" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+  <path d="M300,248 L420,320" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+
+  <rect x="60" y="330" width="220" height="58" rx="6" fill="#1e293b" stroke="#64748b" stroke-width="1.2"/>
+  <text class="name" x="170" y="354" text-anchor="middle">datas-util 5.1</text>
+  <text class="body" x="170" y="374" text-anchor="middle">dependência transitiva</text>
+
+  <rect x="320" y="322" width="310" height="104" rx="6" fill="#3b0f16" stroke="#ef4444" stroke-width="2.2" filter="url(#glow-red)"/>
+  <text class="namer" x="475" y="350" text-anchor="middle">parser-xml 1.4</text>
+  <text class="body" x="475" y="372" text-anchor="middle">dependência transitiva</text>
+  <text class="res" x="475" y="396" text-anchor="middle">falha pública conhecida</text>
+  <text class="muted" x="475" y="415" text-anchor="middle">e você nunca a declarou</text>
+
+  <!-- consequence -->
+  <path d="M630,374 L692,374" fill="none" stroke="#ef4444" stroke-width="2.2" marker-end="url(#arrow-red)"/>
+  <rect x="696" y="314" width="224" height="120" rx="6" fill="#450a0a" stroke="#ef4444" stroke-width="2.2" filter="url(#glow-red)"/>
+  <text class="res" x="808" y="340" text-anchor="middle">Atacante explora</text>
+  <text class="body" x="808" y="364" text-anchor="middle">e roda comandos no seu</text>
+  <text class="body" x="808" y="382" text-anchor="middle">servidor, com o poder</text>
+  <text class="body" x="808" y="400" text-anchor="middle">da sua aplicação</text>
+  <text class="muted" x="808" y="422" text-anchor="middle">a peça roda DENTRO dela</text>
+
+  <!-- legend -->
+  <line x1="40" y1="496" x2="76" y2="496" stroke="#3b82f6" stroke-width="2"/>
+  <text class="muted" x="86" y="500">o que você escolheu</text>
+  <line x1="320" y1="496" x2="356" y2="496" stroke="#64748b" stroke-width="2"/>
+  <text class="muted" x="366" y="500">veio junto, sem você pedir</text>
+  <line x1="650" y1="496" x2="686" y2="496" stroke="#ef4444" stroke-width="2"/>
+  <text class="muted" x="696" y="500">falha / ganho do atacante</text>
 </svg>
