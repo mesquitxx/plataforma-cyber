@@ -1,56 +1,96 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">Por que repetir o nonce no CTR entrega o segundo texto a quem conhece o primeiro</title>
-  <desc id="d">Três faixas. Em cima, o servidor cifra dois arquivos com a mesma chave K e o mesmo nonce N: o AES gera o mesmo keystream S nas duas vezes, e cada arquivo leva um XOR com S, dando C1 igual a P1 XOR S e C2 igual a P2 XOR S. No meio, o atacante, que não tem a chave, faz C1 XOR C2: o keystream se cancela, porque S XOR S é zero, e sobra P1 XOR P2. Embaixo, com P1 conhecido (o aviso público), o atacante faz C1 XOR P1 e recupera o próprio keystream S; depois faz C2 XOR S e lê P2, o cofre, até o comprimento de P1. A legenda lembra que o AES não foi quebrado em nenhum momento e que o defeito é o nonce repetido.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 630" width="1000" height="630" role="img" aria-labelledby="t d">
+  <title id="t">Nonce repetido no CTR: o keystream se cancela e o atacante lê o cofre sem a chave</title>
+  <desc id="d">Três passos numerados e o resultado. Passo 1: o servidor, com a chave, cifra dois arquivos com a mesma chave e o mesmo nonce, então o AES gera o mesmo keystream S, em laranja, nas duas vezes: C1 = P1 XOR S, onde P1 é o aviso público, e C2 = P2 XOR S, onde P2 é o cofre. Passo 2: o atacante, sem a chave, faz C1 XOR C2, que é (P1 XOR S) XOR (P2 XOR S); os dois S aparecem riscados, porque S XOR S = 0 e o keystream some, e sobra P1 XOR P2; onde os textos têm o mesmo byte, o resultado é zero. Passo 3: conhecendo o aviso público P1, ele faz C1 XOR P1 e recupera S; depois faz C2 XOR S e obtém P2, o cofre. Faixa vermelha final: o atacante lê o cofre sem a chave e sem quebrar o AES, até o tamanho do texto conhecido. Legenda: laranja é o keystream S, o mesmo nas duas mensagens; vermelho é o que o atacante ganha.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .c { font-size: 12px; text-anchor: middle; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .ok { font-size: 12px; font-weight: 700; fill: #5ee08a; }
-    .no { font-size: 12px; font-weight: 700; fill: #f08a7e; }
-    .mid { font-size: 12px; font-weight: 700; fill: #e8c46a; }
-    .okc { font-size: 12px; font-weight: 700; fill: #5ee08a; text-anchor: middle; }
-    .noc { font-size: 12px; font-weight: 700; fill: #f08a7e; text-anchor: middle; }
-    .midc { font-size: 12px; font-weight: 700; fill: #e8c46a; text-anchor: middle; }
-    .ln { stroke: #9fb0a6; stroke-width: 1.4; fill: none; marker-end: url(#a); }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 19px; font-weight: 700; }
+    .h { font-size: 14px; font-weight: 700; }
+    .b { font-size: 13px; }
+    .c { font-size: 13px; text-anchor: middle; }
+    .f { font-size: 16px; }
+    .s { font-size: 12px; fill: #94a3b8; }
+    .org { fill: #fb923c; }
+    .bold { font-weight: 700; }
+    .red { fill: #f87171; }
+    .ink1f0f12 { fill: #1f0f12; }
   </style>
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9fb0a6"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#f97316"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+    </marker>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="32">CTR com nonce repetido: o keystream se cancela e o segredo cai sem a chave</text>
+  <rect width="1000" height="630" fill="url(#bg-grad)"/>
 
-  <rect x="20" y="50" width="860" height="130" rx="8" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="36" y="74">1. O servidor (com a chave) — mesmo K, mesmo nonce N, duas vezes</text>
-  <rect x="40" y="92" width="150" height="34" rx="5" fill="#1b2a24" stroke="#e8c46a"/><text class="midc" x="115" y="113">AES-CTR(K, N)</text>
-  <path class="ln" d="M190,109 L238,109"/>
-  <rect x="240" y="92" width="150" height="34" rx="5" fill="#1b2a24" stroke="#f08a7e"/><text class="noc" x="315" y="113">keystream S</text>
-  <path class="ln" d="M390,109 L438,109"/>
-  <rect x="440" y="88" width="200" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="540" y="107">C1 = P1 ⊕ S  (aviso)</text>
-  <rect x="440" y="128" width="200" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="540" y="147">C2 = P2 ⊕ S  (cofre)</text>
-  <path class="ln" d="M390,116 L420,116 L420,143 L438,143"/>
-  <text class="s" x="660" y="107">o mesmo S nas duas:</text>
-  <text class="s" x="660" y="123">o CTR só depende de K, N</text>
-  <text class="s" x="660" y="139">e do contador — nunca</text>
-  <text class="s" x="660" y="155">do texto claro</text>
+  <text class="title" x="40" y="40">Nonce repetido no CTR: o <tspan class="org">keystream se cancela</tspan> e o cofre cai</text>
+  <text class="s" x="40" y="64">O AES nunca é quebrado. O defeito é um só: o par (chave, nonce) foi usado duas vezes.</text>
 
-  <rect x="20" y="194" width="860" height="104" rx="8" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="36" y="218">2. O atacante (sem a chave) — junta os dois cifrados</text>
-  <rect x="40" y="236" width="300" height="34" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="190" y="257">C1 ⊕ C2 = P1 ⊕ S ⊕ P2 ⊕ S</text>
-  <path class="ln" d="M340,253 L398,253"/>
-  <rect x="400" y="236" width="180" height="34" rx="5" fill="#1b2a24" stroke="#e8c46a"/><text class="midc" x="490" y="257">S ⊕ S = 0</text>
-  <path class="ln" d="M580,253 L638,253"/>
-  <rect x="640" y="236" width="220" height="34" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="750" y="257">C1 ⊕ C2 = P1 ⊕ P2</text>
-  <text class="s" x="40" y="288">onde P1 e P2 coincidem (o mesmo cabeçalho "COOPERATIVA ATLAS - "), o XOR dá bytes 00</text>
+  <!-- Step 1 -->
+  <rect data-graph-role="container" x="40" y="84" width="920" height="136" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text class="h" x="58" y="108">1. O servidor (com a chave) cifra dois arquivos — mesma chave, MESMO nonce</text>
+  <rect x="60" y="144" width="230" height="28" rx="6" fill="#1e293b" stroke="#64748b"/><text class="c" x="175" y="163">mesma chave + nonce N</text>
+  <path d="M290,158 H338" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="340" y="144" width="140" height="28" rx="6" fill="#1c1917" stroke="#f97316" stroke-width="2"/><text class="c org" x="410" y="163" font-weight="700">keystream S</text>
+  <text class="s org" x="410" y="192" text-anchor="middle">o mesmo S nas duas</text>
+  <path d="M480,158 H520 V138 H558" stroke="#f97316" stroke-width="1.5" fill="none" marker-end="url(#arrow-orange)"/>
+  <path d="M520,158 V178 H558" stroke="#f97316" stroke-width="1.5" fill="none" marker-end="url(#arrow-orange)"/>
+  <rect x="560" y="124" width="200" height="28" rx="6" fill="#1e293b" stroke="#64748b"/><text class="c" x="660" y="143">C1 = P1 ⊕ <tspan class="org bold">S</tspan></text>
+  <rect x="560" y="164" width="200" height="28" rx="6" fill="#1e293b" stroke="#64748b"/><text class="c" x="660" y="183">C2 = P2 ⊕ <tspan class="org bold">S</tspan></text>
+  <text class="s" x="780" y="143">P1 = aviso público</text>
+  <text class="s" x="780" y="183">P2 = cofre (secreto)</text>
 
-  <rect x="20" y="312" width="860" height="144" rx="8" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="36" y="336">3. Com um texto claro conhecido (o aviso público)</text>
-  <rect x="40" y="354" width="220" height="34" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="150" y="375">C1 ⊕ P1 = S</text>
-  <path class="ln" d="M260,371 L318,371"/>
-  <rect x="320" y="354" width="200" height="34" rx="5" fill="#1b2a24" stroke="#f08a7e"/><text class="noc" x="420" y="375">keystream S</text>
-  <path class="ln" d="M520,371 L578,371"/>
-  <rect x="580" y="354" width="280" height="34" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="720" y="375">C2 ⊕ S = P2  (o cofre)</text>
-  <text class="s" x="40" y="410">P2 só é lido até o comprimento de P1: o keystream recuperado tem o tamanho do texto conhecido</text>
-  <text class="mid" x="40" y="432">O AES não foi quebrado. O defeito é um só: o par (chave, nonce) foi usado duas vezes.</text>
+  <!-- Step 2: the key moment -->
+  <rect data-graph-role="container" x="40" y="236" width="920" height="120" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text class="h" x="58" y="260">2. O atacante (sem a chave) junta os dois cifrados</text>
+  <text class="f" x="104" y="301">C1 ⊕ C2 =</text>
+  <rect x="206" y="280" width="96" height="30" rx="6" fill="#1e293b" stroke="#64748b"/>
+  <text class="f" x="262" y="301" text-anchor="end">P1 ⊕</text>
+  <text class="f org" x="280" y="301" text-anchor="middle" font-weight="700">S</text>
+  <path d="M271,305 L289,287" stroke="#e2e8f0" stroke-width="2"/>
+  <text class="f" x="339" y="301" text-anchor="middle">⊕</text>
+  <rect x="376" y="280" width="96" height="30" rx="6" fill="#1e293b" stroke="#64748b"/>
+  <text class="f" x="432" y="301" text-anchor="end">P2 ⊕</text>
+  <text class="f org" x="450" y="301" text-anchor="middle" font-weight="700">S</text>
+  <path d="M441,305 L459,287" stroke="#e2e8f0" stroke-width="2"/>
+  <text class="f" x="500" y="301" text-anchor="middle">=</text>
+  <rect x="530" y="280" width="140" height="30" rx="6" fill="#1e293b" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text class="f" x="600" y="301" text-anchor="middle" font-weight="700">P1 ⊕ P2</text>
+  <text class="b org" x="339" y="338" text-anchor="middle" font-weight="700">S ⊕ S = 0 → o keystream some</text>
+  <text class="s" x="700" y="294">onde os dois textos têm</text>
+  <text class="s" x="700" y="312">o mesmo byte, dá zero</text>
+
+  <!-- Step 3 -->
+  <rect data-graph-role="container" x="40" y="372" width="920" height="110" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text class="h" x="58" y="396">3. Com o texto do aviso público (P1), recupera S e abre o cofre</text>
+  <rect x="60" y="420" width="180" height="30" rx="6" fill="#1e293b" stroke="#64748b"/><text class="c" x="150" y="440">C1 ⊕ P1</text>
+  <path d="M240,435 H298" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="300" y="420" width="170" height="30" rx="6" fill="#1c1917" stroke="#f97316" stroke-width="2"/><text class="c org" x="385" y="440" font-weight="700">S recuperado</text>
+  <path d="M470,435 H528" stroke="#f97316" stroke-width="1.5" fill="none" marker-end="url(#arrow-orange)"/>
+  <rect x="530" y="420" width="170" height="30" rx="6" fill="#1e293b" stroke="#64748b"/><text class="c" x="615" y="440">C2 ⊕ <tspan class="org bold">S</tspan></text>
+  <path d="M700,435 H758" stroke="#ef4444" stroke-width="1.5" fill="none" marker-end="url(#arrow-red)"/>
+  <rect x="760" y="420" width="180" height="30" rx="6" fill="#1f0f12" stroke="#ef4444" stroke-width="2"/><text class="c red" x="850" y="440" font-weight="700">P2 = o cofre</text>
+
+  <!-- Consequence -->
+  <path d="M850,450 V500" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrow-red)"/>
+  <rect x="40" y="504" width="920" height="66" rx="8" fill="#ef4444"/>
+  <text class="ink1f0f12" x="500" y="531" text-anchor="middle" font-size="16" font-weight="700">O atacante lê o cofre sem a chave e sem quebrar o AES</text>
+  <text class="ink1f0f12" x="500" y="556" text-anchor="middle" font-size="13" font-weight="700">(até o tamanho do texto que ele já conhecia)</text>
+
+  <!-- Legend -->
+  <g class="s">
+    <rect x="40" y="596" width="14" height="14" rx="3" fill="#1c1917" stroke="#f97316" stroke-width="1.5"/>
+    <text x="62" y="608">keystream S: o mesmo nas duas mensagens</text>
+    <rect x="440" y="596" width="14" height="14" rx="3" fill="#1f0f12" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="462" y="608">o que o atacante ganha</text>
+    <text x="740" y="608">⊕ = XOR</text>
+  </g>
 </svg>

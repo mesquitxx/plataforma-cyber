@@ -1,118 +1,139 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="t d">
-  <title id="t">Os quatro modos de operação do AES, lado a lado</title>
-  <desc id="d">Quatro painéis. ECB: cada bloco de texto claro P1, P2, P3 passa sozinho pelo AES com a chave K e vira C1, C2, C3; se P1 for igual a P3, C1 sai igual a C3, e o padrão vaza. CBC: o IV entra num XOR com P1 antes do AES; cada texto cifrado entra num XOR com o próximo bloco de texto claro; blocos iguais saem diferentes; o IV precisa ser imprevisível; a decifração é P_i = D(C_i) XOR C_(i-1). CTR: o AES cifra nonce mais contador (1, 2, 3) e gera um keystream; o keystream entra num XOR com o texto claro; o modo vira uma cifra de fluxo, não precisa de padding, e o par chave e nonce nunca pode se repetir. GCM: é o CTR mais um autenticador GHASH com a subchave H, que cobre os dados associados (AAD) e o texto cifrado e produz uma tag de 16 bytes; a decifração confere a tag antes de liberar qualquer byte.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" role="img" aria-labelledby="t d">
+  <title id="t">O AES é o mesmo nos quatro modos; o modo decide se blocos iguais vazam e se dá para perceber alteração</title>
+  <desc id="d">Quatro painéis, cada um recebendo a mesma entrada: dois blocos de texto iguais, A e A. ECB: cada bloco passa sozinho pelo AES e os dois saem iguais, X e X, em vermelho: o desenho vaza; não percebe alteração; não exige nada a mais. CBC: um valor inicial aleatório entra num XOR com o primeiro bloco antes do AES, e o primeiro cifrado entra no XOR do segundo bloco; os blocos saem diferentes, X e Y, em verde; não percebe alteração; exige um valor inicial aleatório, novo a cada mensagem. CTR: o AES cifra um número único mais um contador, e o resultado leva XOR com cada bloco de texto; saem diferentes; não percebe alteração; exige um número único por mensagem, nunca repetido. GCM: cifra como o CTR e ainda calcula um selo de 16 bytes sobre o cifrado; saem diferentes; percebe alteração, porque confere o selo antes de abrir; exige um número único por mensagem. Legenda: azul é o AES, o mesmo nos quatro; dourado é o que o modo exige; verde é o que protege; vermelho é a falha.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .c { font-size: 12px; text-anchor: middle; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .sc { font-size: 10.5px; fill: #9fb0a6; text-anchor: middle; }
-    .ok { font-size: 12px; font-weight: 700; fill: #5ee08a; }
-    .no { font-size: 12px; font-weight: 700; fill: #f08a7e; }
-    .mid { font-size: 12px; font-weight: 700; fill: #e8c46a; }
-    .okc { font-size: 12px; font-weight: 700; fill: #5ee08a; text-anchor: middle; }
-    .noc { font-size: 12px; font-weight: 700; fill: #f08a7e; text-anchor: middle; }
-    .midc { font-size: 12px; font-weight: 700; fill: #e8c46a; text-anchor: middle; }
-    .ln { stroke: #9fb0a6; stroke-width: 1.4; fill: none; marker-end: url(#a); }
-    .lr { stroke: #f08a7e; stroke-width: 1.6; fill: none; marker-end: url(#ar); }
-    .lg { stroke: #5ee08a; stroke-width: 1.6; fill: none; marker-end: url(#ag); }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 19px; font-weight: 700; }
+    .h { font-size: 15px; font-weight: 700; }
+    .b { font-size: 13px; }
+    .c { font-size: 13px; text-anchor: middle; }
+    .s { font-size: 12px; fill: #94a3b8; }
+    .blu { fill: #93c5fd; }
+    .gld { fill: #facc15; }
+    .grn { fill: #34d399; }
+    .red { fill: #f87171; }
   </style>
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9fb0a6"/></marker>
-    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f08a7e"/></marker>
-    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5ee08a"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-gold" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#eab308"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
   </defs>
-  <rect width="900" height="620" fill="#121815"/>
-  <text class="t" x="30" y="32">Um bloco de AES é só um bloco: o modo decide como encadear</text>
-  <rect x="20" y="50" width="420" height="270" rx="8" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="36" y="74">ECB — Electronic Codebook</text>
-  <rect x="50" y="92" width="80" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="90.0" y="111.0">P1</text>
-  <path class="ln" d="M90,122 L90,150"/>
-  <rect x="50" y="152" width="80" height="34" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="90.0" y="173.0">AES K</text>
-  <path class="ln" d="M90,186 L90,214"/>
-  <rect x="50" y="216" width="80" height="30" rx="5" fill="#1b2a24" stroke="#f08a7e"/><text class="noc" x="90.0" y="235.0">C1</text>
-  <rect x="180" y="92" width="80" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="220.0" y="111.0">P2</text>
-  <path class="ln" d="M220,122 L220,150"/>
-  <rect x="180" y="152" width="80" height="34" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="220.0" y="173.0">AES K</text>
-  <path class="ln" d="M220,186 L220,214"/>
-  <rect x="180" y="216" width="80" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="220.0" y="235.0">C2</text>
-  <rect x="310" y="92" width="80" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="350.0" y="111.0">P3 = P1</text>
-  <path class="ln" d="M350,122 L350,150"/>
-  <rect x="310" y="152" width="80" height="34" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="350.0" y="173.0">AES K</text>
-  <path class="ln" d="M350,186 L350,214"/>
-  <rect x="310" y="216" width="80" height="30" rx="5" fill="#1b2a24" stroke="#f08a7e"/><text class="noc" x="350.0" y="235.0">C3 = C1</text>
-  <text class="s" x="36" y="274">cada bloco é cifrado sozinho, sempre igual</text>
-  <text class="no" x="36" y="292">✗ blocos iguais → cifrados iguais: o desenho vaza</text>
-  <text class="no" x="36" y="310">✗ sem IV: a mesma mensagem dá sempre o mesmo cifrado</text>
-  <rect x="460" y="50" width="420" height="270" rx="8" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="476" y="74">CBC — Cipher Block Chaining</text>
-  <rect x="476" y="92" width="50" height="30" rx="5" fill="#1b2a24" stroke="#e8c46a"/><text class="midc" x="501.0" y="111.0">IV</text>
-  <rect x="560" y="92" width="80" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="600.0" y="111.0">P1</text>
-  <path class="ln" d="M600,122 L600,131"/>
-  <circle cx="600" cy="141" r="9" fill="#121815" stroke="#e8c46a" stroke-width="1.6"/><path d="M591,141 H609 M600,132 V150" stroke="#e8c46a" stroke-width="1.6"/>
-  <path class="ln" d="M600,150 L600,160"/>
-  <rect x="560" y="162" width="80" height="34" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="600.0" y="183.0">AES K</text>
-  <path class="ln" d="M600,196 L600,214"/>
-  <rect x="560" y="216" width="80" height="30" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="600.0" y="235.0">C1</text>
-  <rect x="710" y="92" width="80" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="750.0" y="111.0">P2</text>
-  <path class="ln" d="M750,122 L750,131"/>
-  <circle cx="750" cy="141" r="9" fill="#121815" stroke="#e8c46a" stroke-width="1.6"/><path d="M741,141 H759 M750,132 V150" stroke="#e8c46a" stroke-width="1.6"/>
-  <path class="ln" d="M750,150 L750,160"/>
-  <rect x="710" y="162" width="80" height="34" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="750.0" y="183.0">AES K</text>
-  <path class="ln" d="M750,196 L750,214"/>
-  <rect x="710" y="216" width="80" height="30" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="750.0" y="235.0">C2</text>
-  <path class="ln" d="M501,122 L501,141 L589,141"/>
-  <path class="ln" d="M600,246 L600,256 L680,256 L680,141 L739,141"/>
-  <text class="s" x="476" y="274">cada bloco recebe o XOR do cifrado anterior</text>
-  <text class="ok" x="476" y="292">✓ blocos iguais saem diferentes (IV aleatório)</text>
-  <text class="mid" x="476" y="310">! IV imprevisível, padding, sem integridade</text>
-  <rect x="20" y="336" width="420" height="270" rx="8" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="36" y="360">CTR — Counter</text>
-  <rect x="40" y="378" width="100" height="30" rx="5" fill="#1b2a24" stroke="#e8c46a"/><text class="midc" x="90.0" y="397.0">nonce‖1</text>
-  <path class="ln" d="M90,408 L90,418"/>
-  <rect x="50" y="420" width="80" height="30" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="90.0" y="439.0">AES K</text>
-  <path class="ln" d="M90,450 L90,467"/>
-  <circle cx="90" cy="477" r="9" fill="#121815" stroke="#e8c46a" stroke-width="1.6"/><path d="M81,477 H99 M90,468 V486" stroke="#e8c46a" stroke-width="1.6"/>
-  <text class="b" x="38" y="481">P1</text>
-  <path class="ln" d="M58,477 L79,477"/>
-  <path class="ln" d="M90,486 L90,502"/>
-  <rect x="50" y="504" width="80" height="28" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="90.0" y="522.0">C1</text>
-  <rect x="170" y="378" width="100" height="30" rx="5" fill="#1b2a24" stroke="#e8c46a"/><text class="midc" x="220.0" y="397.0">nonce‖2</text>
-  <path class="ln" d="M220,408 L220,418"/>
-  <rect x="180" y="420" width="80" height="30" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="220.0" y="439.0">AES K</text>
-  <path class="ln" d="M220,450 L220,467"/>
-  <circle cx="220" cy="477" r="9" fill="#121815" stroke="#e8c46a" stroke-width="1.6"/><path d="M211,477 H229 M220,468 V486" stroke="#e8c46a" stroke-width="1.6"/>
-  <text class="b" x="168" y="481">P2</text>
-  <path class="ln" d="M188,477 L209,477"/>
-  <path class="ln" d="M220,486 L220,502"/>
-  <rect x="180" y="504" width="80" height="28" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="220.0" y="522.0">C2</text>
-  <rect x="300" y="378" width="100" height="30" rx="5" fill="#1b2a24" stroke="#e8c46a"/><text class="midc" x="350.0" y="397.0">nonce‖3</text>
-  <path class="ln" d="M350,408 L350,418"/>
-  <rect x="310" y="420" width="80" height="30" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="350.0" y="439.0">AES K</text>
-  <path class="ln" d="M350,450 L350,467"/>
-  <circle cx="350" cy="477" r="9" fill="#121815" stroke="#e8c46a" stroke-width="1.6"/><path d="M341,477 H359 M350,468 V486" stroke="#e8c46a" stroke-width="1.6"/>
-  <text class="b" x="298" y="481">P3</text>
-  <path class="ln" d="M318,477 L339,477"/>
-  <path class="ln" d="M350,486 L350,502"/>
-  <rect x="310" y="504" width="80" height="28" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="350.0" y="522.0">C3</text>
-  <text class="s" x="36" y="556">o AES gera um keystream; o dado só leva um XOR</text>
-  <text class="ok" x="36" y="574">✓ cifra de fluxo: sem padding, paralelizável</text>
-  <text class="no" x="36" y="592">✗ nonce repetido = keystream repetido (Missão 2)</text>
-  <rect x="460" y="336" width="420" height="270" rx="8" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="476" y="360">GCM — Galois/Counter Mode (AEAD)</text>
-  <rect x="476" y="380" width="170" height="34" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="561.0" y="401.0">CTR (como ao lado)</text>
-  <text class="s" x="486" y="432">P → C</text>
-  <path class="ln" d="M646,397 L700,397"/>
-  <rect x="702" y="380" width="160" height="34" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="782.0" y="401.0">C (cifrado)</text>
-  <rect x="476" y="446" width="170" height="30" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="561.0" y="465.0">AAD (não cifrado)</text>
-  <path class="ln" d="M782,414 L782,494"/>
-  <path class="ln" d="M561,476 L561,511 L700,511"/>
-  <rect x="702" y="494" width="160" height="34" rx="5" fill="#1b2a24" stroke="#e8c46a"/><text class="midc" x="782.0" y="515.0">GHASH (subchave H)</text>
-  <path class="ln" d="M782,528 L782,542"/>
-  <rect x="702" y="544" width="160" height="26" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="782.0" y="561.0">tag de 16 bytes</text>
-  <text class="s" x="476" y="556">decifrar = conferir a tag ANTES</text>
-  <text class="ok" x="476" y="574">✓ sigilo + integridade + AAD</text>
-  <text class="no" x="476" y="592">✗ nonce repetido entrega H</text>
+  <rect width="1000" height="680" fill="url(#bg-grad)"/>
+
+  <text class="title" x="40" y="40"><tspan class="blu">O AES é o mesmo nos quatro</tspan> — o modo é que decide o resto</text>
+  <text class="s" x="40" y="64">Mesma entrada nos quatro painéis: dois blocos de texto IGUAIS (A e A). Observe se eles saem iguais.</text>
+
+  <!-- ECB -->
+  <rect data-graph-role="container" x="40" y="84" width="450" height="260" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text class="h" x="58" y="110">ECB</text>
+  <text class="s" x="98" y="110">— cada bloco é cifrado sozinho</text>
+  <rect x="140" y="124" width="60" height="24" rx="4" fill="#1e293b" stroke="#64748b"/><text class="c" x="170" y="141">A</text>
+  <rect x="300" y="124" width="60" height="24" rx="4" fill="#1e293b" stroke="#64748b"/><text class="c" x="330" y="141">A</text>
+  <path d="M170,148 V190" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M330,148 V190" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="130" y="192" width="80" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/><text class="c" x="170" y="211">AES</text>
+  <rect x="290" y="192" width="80" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/><text class="c" x="330" y="211">AES</text>
+  <path d="M170,220 V236" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M330,220 V236" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="140" y="238" width="60" height="26" rx="4" fill="#1f0f12" stroke="#ef4444" stroke-width="2"/><text class="c red" x="170" y="256" font-weight="700">X</text>
+  <rect x="300" y="238" width="60" height="26" rx="4" fill="#1f0f12" stroke="#ef4444" stroke-width="2"/><text class="c red" x="330" y="256" font-weight="700">X</text>
+  <text class="red" x="250" y="258" text-anchor="middle" font-size="20" font-weight="700">=</text>
+  <text class="b red" x="374" y="256">iguais!</text>
+  <text class="b red" x="58" y="292">✗ blocos iguais saem iguais: o desenho vaza</text>
+  <text class="b red" x="58" y="312">✗ não percebe se alguém alterar o cifrado</text>
+  <text class="b gld" x="58" y="332">exige: nada a mais</text>
+
+  <!-- CBC -->
+  <rect data-graph-role="container" x="510" y="84" width="450" height="260" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text class="h" x="528" y="110">CBC</text>
+  <text class="s" x="568" y="110">— cada bloco recebe o cifrado anterior</text>
+  <rect x="650" y="124" width="60" height="24" rx="4" fill="#1e293b" stroke="#64748b"/><text class="c" x="680" y="141">A</text>
+  <rect x="810" y="124" width="60" height="24" rx="4" fill="#1e293b" stroke="#64748b"/><text class="c" x="840" y="141">A</text>
+  <path d="M680,148 V163" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M840,148 V163" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <circle cx="680" cy="174" r="9" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/><path d="M671,174 H689 M680,165 V183" stroke="#e2e8f0" stroke-width="1.5"/>
+  <circle cx="840" cy="174" r="9" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/><path d="M831,174 H849 M840,165 V183" stroke="#e2e8f0" stroke-width="1.5"/>
+  <rect x="528" y="162" width="96" height="24" rx="4" fill="#2a2410" stroke="#eab308" stroke-width="1.5"/><text class="c gld" x="576" y="179">aleatório</text>
+  <path d="M624,174 H669" stroke="#eab308" stroke-width="1.5" fill="none" marker-end="url(#arrow-gold)"/>
+  <path d="M680,183 V190" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M840,183 V190" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="640" y="192" width="80" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/><text class="c" x="680" y="211">AES</text>
+  <rect x="800" y="192" width="80" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/><text class="c" x="840" y="211">AES</text>
+  <path d="M680,220 V236" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M840,220 V236" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="650" y="238" width="60" height="26" rx="4" fill="#052e16" stroke="#10b981" stroke-width="2"/><text class="c grn" x="680" y="256" font-weight="700">X</text>
+  <rect x="810" y="238" width="60" height="26" rx="4" fill="#052e16" stroke="#10b981" stroke-width="2"/><text class="c grn" x="840" y="256" font-weight="700">Y</text>
+  <path d="M710,251 H760 V174 H829" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <text class="b grn" x="528" y="292">✓ blocos iguais saem diferentes</text>
+  <text class="b red" x="528" y="312">✗ não percebe se alguém alterar o cifrado</text>
+  <text class="b gld" x="528" y="332">exige: valor inicial aleatório, novo a cada vez</text>
+
+  <!-- CTR -->
+  <rect data-graph-role="container" x="40" y="355" width="450" height="260" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text class="h" x="58" y="381">CTR</text>
+  <text class="s" x="98" y="381">— o AES cifra um contador, não o texto</text>
+  <rect x="155" y="395" width="110" height="24" rx="4" fill="#2a2410" stroke="#eab308" stroke-width="1.5"/><text class="c gld" x="210" y="412">nº único + 1</text>
+  <rect x="315" y="395" width="110" height="24" rx="4" fill="#2a2410" stroke="#eab308" stroke-width="1.5"/><text class="c gld" x="370" y="412">nº único + 2</text>
+  <path d="M210,419 V433" stroke="#eab308" stroke-width="1.5" fill="none" marker-end="url(#arrow-gold)"/>
+  <path d="M370,419 V433" stroke="#eab308" stroke-width="1.5" fill="none" marker-end="url(#arrow-gold)"/>
+  <rect x="170" y="435" width="80" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/><text class="c" x="210" y="454">AES</text>
+  <rect x="330" y="435" width="80" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/><text class="c" x="370" y="454">AES</text>
+  <path d="M210,463 V469" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M370,463 V469" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <circle cx="210" cy="480" r="9" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/><path d="M201,480 H219 M210,471 V489" stroke="#e2e8f0" stroke-width="1.5"/>
+  <circle cx="370" cy="480" r="9" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/><path d="M361,480 H379 M370,471 V489" stroke="#e2e8f0" stroke-width="1.5"/>
+  <rect x="130" y="468" width="50" height="24" rx="4" fill="#1e293b" stroke="#64748b"/><text class="c" x="155" y="485">A</text>
+  <rect x="290" y="468" width="50" height="24" rx="4" fill="#1e293b" stroke="#64748b"/><text class="c" x="315" y="485">A</text>
+  <path d="M180,480 H199" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M340,480 H359" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M210,489 V507" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M370,489 V507" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="180" y="509" width="60" height="26" rx="4" fill="#052e16" stroke="#10b981" stroke-width="2"/><text class="c grn" x="210" y="527" font-weight="700">X</text>
+  <rect x="340" y="509" width="60" height="26" rx="4" fill="#052e16" stroke="#10b981" stroke-width="2"/><text class="c grn" x="370" y="527" font-weight="700">Y</text>
+  <text class="b grn" x="58" y="563">✓ blocos iguais saem diferentes</text>
+  <text class="b red" x="58" y="583">✗ não percebe se alguém alterar o cifrado</text>
+  <text class="b gld" x="58" y="603">exige: número único, nunca repetido</text>
+
+  <!-- GCM -->
+  <rect data-graph-role="container" x="510" y="355" width="450" height="260" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text class="h" x="528" y="381">GCM</text>
+  <text class="s" x="568" y="381">— o CTR mais um selo de conferência</text>
+  <rect x="570" y="395" width="60" height="24" rx="4" fill="#1e293b" stroke="#64748b"/><text class="c" x="600" y="412">A</text>
+  <rect x="680" y="395" width="60" height="24" rx="4" fill="#1e293b" stroke="#64748b"/><text class="c" x="710" y="412">A</text>
+  <path d="M600,419 V433" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M710,419 V433" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="540" y="435" width="230" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/><text class="c" x="655" y="454">cifra como o CTR (AES)</text>
+  <path d="M600,463 V507" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M710,463 V507" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="570" y="509" width="60" height="26" rx="4" fill="#052e16" stroke="#10b981" stroke-width="2"/><text class="c grn" x="600" y="527" font-weight="700">X</text>
+  <rect x="680" y="509" width="60" height="26" rx="4" fill="#052e16" stroke="#10b981" stroke-width="2"/><text class="c grn" x="710" y="527" font-weight="700">Y</text>
+  <path d="M740,522 H803" stroke="#10b981" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)"/>
+  <text class="s" x="870" y="497" text-anchor="middle">feito sobre o cifrado</text>
+  <rect x="805" y="507" width="130" height="30" rx="6" fill="#052e16" stroke="#10b981" stroke-width="2"/><text class="c grn" x="870" y="527" font-weight="700">selo 16 bytes</text>
+  <text class="b grn" x="528" y="563">✓ blocos iguais saem diferentes</text>
+  <text class="b grn" x="528" y="583">✓ percebe alteração: confere o selo</text>
+  <text class="b gld" x="528" y="603">exige: número único, nunca repetido</text>
+
+  <!-- Legend -->
+  <g class="s">
+    <rect x="40" y="644" width="14" height="14" rx="3" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="62" y="656">AES: o mesmo nos quatro</text>
+    <rect x="290" y="644" width="14" height="14" rx="3" fill="#2a2410" stroke="#eab308" stroke-width="1.5"/>
+    <text x="312" y="656">o que o modo exige</text>
+    <rect x="500" y="644" width="14" height="14" rx="3" fill="#052e16" stroke="#10b981" stroke-width="1.5"/>
+    <text x="522" y="656">protege</text>
+    <rect x="620" y="644" width="14" height="14" rx="3" fill="#1f0f12" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="642" y="656">falha</text>
+    <text x="740" y="656">⊕ = XOR (visto no 3.1)</text>
+  </g>
 </svg>

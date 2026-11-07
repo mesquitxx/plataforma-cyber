@@ -1,65 +1,96 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
-  <title id="t">Por que mexer no IV muda o primeiro bloco do CBC sem estragar nada</title>
-  <desc id="d">Decifração CBC de um token de dois blocos. Em cima, o ataque da Missão 3: o atacante troca o IV por IV linha, igual a IV XOR P1 XOR P1 linha, só nos bytes 5 a 9. O bloco C1 passa pelo AES inverso com a chave, dando D(C1), que não muda; D(C1) XOR IV linha dá exatamente role=admin;uid=7. C1 também entra no XOR do segundo bloco, que continua decifrando ;exp=2026-12-31 sem mudança. Embaixo, o caso visto no módulo 3.1: mexer num byte de C1 em vez do IV faz D(C1) virar lixo imprevisível, estragando P1 inteiro, e troca o mesmo bit em P2. Nenhuma das duas versões é detectada, porque o CBC não tem integridade.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 670" width="1000" height="670" role="img" aria-labelledby="t d">
+  <title id="t">Bit-flipping no CBC: quem controla o IV controla o primeiro bloco, e guest vira admin</title>
+  <desc id="d">Decifração CBC de um token de dois blocos. Em destaque, o ataque da Missão 3: o atacante troca o IV por IV linha, alterando só os bytes 5 a 9 com IV XOR (guest XOR admin). O bloco C1, intacto, é decifrado com a chave e dá D(C1), que não muda; D(C1) XOR IV linha dá role=admin;uid=7, com admin em vermelho, onde antes era role=guest;uid=7. O C1 intacto também entra no XOR do segundo bloco, que continua decifrando ;exp=2026-12-31: nada estraga. Faixa vermelha: o servidor aceita o token e o atacante vira admin sem a chave; o CBC sozinho não tem integridade. Embaixo, separada e secundária, a comparação com o módulo 3.1: trocar um byte de C1 em vez do IV faz o P1 inteiro virar lixo e leva a mesma troca para P2. Por último, em verde, a defesa: usar AES-GCM, em que qualquer bit trocado reprova a tag e nada é liberado. Legenda: vermelho é o que o atacante altera e o que ganha; azul é decifrar com a chave, que o atacante não controla; verde é a defesa; cinza tracejado é bloco estragado.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .c { font-size: 12px; text-anchor: middle; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .sc { font-size: 10.5px; fill: #9fb0a6; text-anchor: middle; }
-    .ok { font-size: 12px; font-weight: 700; fill: #5ee08a; }
-    .no { font-size: 12px; font-weight: 700; fill: #f08a7e; }
-    .mid { font-size: 12px; font-weight: 700; fill: #e8c46a; }
-    .okc { font-size: 12px; font-weight: 700; fill: #5ee08a; text-anchor: middle; }
-    .noc { font-size: 12px; font-weight: 700; fill: #f08a7e; text-anchor: middle; }
-    .midc { font-size: 12px; font-weight: 700; fill: #e8c46a; text-anchor: middle; }
-    .ln { stroke: #9fb0a6; stroke-width: 1.4; fill: none; marker-end: url(#a); }
-    .lr { stroke: #f08a7e; stroke-width: 1.6; fill: none; marker-end: url(#ar); }
-    .lg { stroke: #5ee08a; stroke-width: 1.6; fill: none; marker-end: url(#ag); }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 19px; font-weight: 700; }
+    .h { font-size: 14px; font-weight: 700; }
+    .b { font-size: 13px; }
+    .c { font-size: 13px; text-anchor: middle; }
+    .f { font-size: 15px; text-anchor: middle; }
+    .s { font-size: 12px; fill: #94a3b8; }
+    .red { fill: #f87171; }
+    .grn { fill: #34d399; }
+    .mut { fill: #64748b; }
+    .bold { font-weight: 700; }
+    .ink1f0f12 { fill: #1f0f12; }
   </style>
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9fb0a6"/></marker>
-    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f08a7e"/></marker>
-    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5ee08a"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+    </marker>
   </defs>
-  <rect width="900" height="500" fill="#121815"/>
-  <text class="t" x="30" y="32">CBC na decifração: P1 = D(C1) ⊕ IV — e quem controla o IV controla P1</text>
-  <rect x="20" y="50" width="860" height="250" rx="8" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="36" y="74">Missão 3 — mexer só no IV</text>
-  <rect x="40" y="92" width="190" height="34" rx="5" fill="#1b2a24" stroke="#f08a7e"/><text class="noc" x="135.0" y="113.0">IV' = IV ⊕ P1 ⊕ P1'</text>
-  <text class="s" x="44" y="144">bytes 5 a 9 trocados</text>
-  <rect x="330" y="92" width="150" height="34" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="405.0" y="113.0">C1 (intacto)</text>
-  <path class="ln" d="M405,126 L405,146"/>
-  <rect x="330" y="148" width="150" height="34" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="405.0" y="169.0">AES⁻¹ K</text>
-  <path class="ln" d="M405,182 L405,202"/>
-  <text class="s" x="420" y="197">D(C1)</text>
-  <circle cx="405" cy="212" r="9" fill="#121815" stroke="#e8c46a" stroke-width="1.6"/><path d="M396,212 H414 M405,203 V221" stroke="#e8c46a" stroke-width="1.6"/>
-  <path class="ln" d="M405,221 L405,238"/>
-  <rect x="600" y="92" width="150" height="34" rx="5" fill="#1b2a24" stroke="#9fb0a6"/><text class="c" x="675.0" y="113.0">C2 (intacto)</text>
-  <path class="ln" d="M675,126 L675,146"/>
-  <rect x="600" y="148" width="150" height="34" rx="5" fill="#1b2a24" stroke="#5cc8d8"/><text class="c" x="675.0" y="169.0">AES⁻¹ K</text>
-  <path class="ln" d="M675,182 L675,202"/>
-  <text class="s" x="690" y="197">D(C2)</text>
-  <circle cx="675" cy="212" r="9" fill="#121815" stroke="#e8c46a" stroke-width="1.6"/><path d="M666,212 H684 M675,203 V221" stroke="#e8c46a" stroke-width="1.6"/>
-  <path class="ln" d="M675,221 L675,238"/>
-  <path class="lr" d="M135,126 L135,212 L396,212"/>
-  <path class="ln" d="M480,109 L540,109 L540,212 L666,212"/>
-  <rect x="270" y="240" width="270" height="34" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="405.0" y="261.0">role=admin;uid=7</text>
-  <rect x="560" y="240" width="230" height="34" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="675.0" y="261.0">;exp=2026-12-31</text>
-  <text class="ok" x="276" y="292">P1 muda exatamente onde o IV mudou</text>
-  <text class="ok" x="566" y="292">P2 não sente nada</text>
-  <rect x="20" y="316" width="860" height="168" rx="8" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="36" y="340">Módulo 3.1 — mexer num byte de C1 (o bloco seguinte é o alvo)</text>
-  <rect x="40" y="356" width="160" height="30" rx="5" fill="#1b2a24" stroke="#e8c46a"/><text class="midc" x="120.0" y="375.0">C1 com 1 byte trocado</text>
-  <path class="ln" d="M200,371 L300,371"/>
-  <rect x="302" y="356" width="300" height="30" rx="5" fill="#1b2a24" stroke="#f08a7e"/><text class="noc" x="452.0" y="375.0">D(C1) vira lixo → P1 inteiro estraga</text>
-  <path class="ln" d="M200,380 L300,410"/>
-  <rect x="302" y="396" width="300" height="30" rx="5" fill="#1b2a24" stroke="#5ee08a"/><text class="okc" x="452.0" y="415.0">P2 recebe o MESMO bit trocado</text>
-  <text class="s" x="626" y="376">é o 'pagar R$ 100' do 3.1:</text>
-  <text class="s" x="626" y="394">a conta mudou e o 1º bloco</text>
-  <text class="s" x="626" y="412">virou lixo</text>
-  <text class="mid" x="36" y="452">Nas duas versões o servidor decifra sem reclamar: CBC sozinho não tem integridade.</text>
-  <text class="ok" x="36" y="472">Com AES-GCM (ou CBC + HMAC), qualquer bit trocado reprova a tag e nada é liberado.</text>
+  <rect width="1000" height="670" fill="url(#bg-grad)"/>
+
+  <text class="title" x="40" y="40">Quem controla o IV controla o 1º bloco: <tspan class="red">guest vira admin</tspan></text>
+  <text class="s" x="40" y="64">Decifrar no CBC: P1 = D(C1) ⊕ IV. Se C1 fica intacto, D(C1) não muda — e cada bit trocado no IV muda igual em P1.</text>
+
+  <!-- Attack -->
+  <rect data-graph-role="container" x="40" y="84" width="920" height="252" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text class="h" x="58" y="108">Ataque (Missão 3): o atacante mexe SÓ no IV</text>
+
+  <text class="s red" x="60" y="172">bytes 5 a 9: IV ⊕ (guest ⊕ admin)</text>
+  <rect x="60" y="180" width="190" height="28" rx="6" fill="#1f0f12" stroke="#ef4444" stroke-width="2"/><text class="c red bold" x="155" y="199">IV' (alterado)</text>
+  <path d="M250,194 H280 V240 H359" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrow-red)"/>
+
+  <rect x="310" y="120" width="120" height="30" rx="6" fill="#1e293b" stroke="#64748b"/><text class="c" x="370" y="140">C1 (intacto)</text>
+  <path d="M370,150 V178" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="310" y="180" width="120" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/><text class="c" x="370" y="199">decifra (AES)</text>
+  <path d="M370,208 V230" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <text class="s" x="382" y="224">D(C1): não muda</text>
+  <circle cx="370" cy="240" r="9" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/><path d="M361,240 H379 M370,231 V249" stroke="#e2e8f0" stroke-width="1.5"/>
+  <path d="M370,249 V268" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrow-red)"/>
+  <rect x="250" y="270" width="240" height="32" rx="6" fill="#1f0f12" stroke="#ef4444" stroke-width="2"/><text class="f" x="370" y="291">role=<tspan class="red bold">admin</tspan>;uid=7</text>
+  <text class="s" x="370" y="322" text-anchor="middle">antes: role=guest;uid=7</text>
+
+  <path d="M430,135 H600 V240 H729" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="680" y="120" width="120" height="30" rx="6" fill="#1e293b" stroke="#64748b"/><text class="c" x="740" y="140">C2 (intacto)</text>
+  <path d="M740,150 V178" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="680" y="180" width="120" height="28" rx="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/><text class="c" x="740" y="199">decifra (AES)</text>
+  <path d="M740,208 V230" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <circle cx="740" cy="240" r="9" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/><path d="M731,240 H749 M740,231 V249" stroke="#e2e8f0" stroke-width="1.5"/>
+  <path d="M740,249 V268" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="620" y="270" width="240" height="32" rx="6" fill="#1e293b" stroke="#64748b"/><text class="f" x="740" y="291">;exp=2026-12-31</text>
+  <text class="s" x="740" y="322" text-anchor="middle">P2 decifra igual: nada estraga</text>
+
+  <!-- Consequence -->
+  <rect x="40" y="350" width="920" height="60" rx="8" fill="#ef4444"/>
+  <text class="ink1f0f12" x="500" y="375" text-anchor="middle" font-size="16" font-weight="700">O servidor aceita o token: o atacante vira admin sem saber a chave</text>
+  <text class="ink1f0f12" x="500" y="398" text-anchor="middle" font-size="13" font-weight="700">o CBC sozinho não tem integridade, então ninguém percebe a troca</text>
+
+  <!-- Comparison (secondary) -->
+  <rect data-graph-role="container" x="40" y="430" width="920" height="126" rx="8" fill="#0f172a" stroke="#334155" stroke-dasharray="6 4"/>
+  <text class="b bold" x="58" y="454">Comparação (módulo 3.1): mexer num byte de C1, e não no IV</text>
+  <rect x="60" y="480" width="200" height="30" rx="6" fill="#1f0f12" stroke="#ef4444" stroke-width="1.5"/><text class="c red" x="160" y="500">C1 com 1 byte trocado</text>
+  <path d="M260,488 H298" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M260,502 H280 V521 H298" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="300" y="470" width="260" height="28" rx="6" fill="none" stroke="#64748b" stroke-dasharray="4 3"/><text class="c mut" x="430" y="489">P1 inteiro vira lixo</text>
+  <rect x="300" y="507" width="260" height="28" rx="6" fill="#1f0f12" stroke="#ef4444" stroke-width="1.5"/><text class="c red" x="430" y="526">P2 recebe a MESMA troca</text>
+  <text class="s" x="590" y="489">foi o 1234-5 → 9234-5 do 3.1.</text>
+  <text class="s" x="590" y="507">Mexer no IV é a versão limpa:</text>
+  <text class="s" x="590" y="525">o IV não passa pelo AES, nada estraga.</text>
+
+  <!-- Defense (separate, secondary) -->
+  <rect x="40" y="572" width="920" height="40" rx="8" fill="#052e16" stroke="#10b981" stroke-width="1.5"/>
+  <text class="b grn" x="58" y="597">Defesa: usar AES-GCM — qualquer bit trocado reprova a tag e nada é liberado</text>
+
+  <!-- Legend -->
+  <g class="s">
+    <rect x="40" y="636" width="14" height="14" rx="3" fill="#1f0f12" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="62" y="648">atacante altera / ganha</text>
+    <rect x="270" y="636" width="14" height="14" rx="3" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="292" y="648">decifra com a chave</text>
+    <rect x="470" y="636" width="14" height="14" rx="3" fill="#052e16" stroke="#10b981" stroke-width="1.5"/>
+    <text x="492" y="648">defesa</text>
+    <rect x="580" y="636" width="14" height="14" rx="3" fill="none" stroke="#64748b" stroke-dasharray="3 2"/>
+    <text x="602" y="648">bloco estragado</text>
+    <text x="780" y="648">⊕ = XOR</text>
+  </g>
 </svg>
