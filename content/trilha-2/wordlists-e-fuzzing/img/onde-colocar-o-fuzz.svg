@@ -1,48 +1,136 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
-  <title id="t">Onde a palavra FUZZ pode entrar num pedido HTTP</title>
-  <desc id="d">Um pedido HTTP mostrado linha a linha, com cinco lugares diferentes marcados onde a palavra FUZZ pode ser inserida. No caminho da URL, para descobrir diretórios e arquivos: barra FUZZ. Logo depois do nome do arquivo, como extensão, para descobrir variantes: arquivo ponto FUZZ. No nome de um parâmetro da query, para descobrir parâmetros escondidos: interrogação FUZZ igual a um valor. No valor de um parâmetro, para testar muitos valores: parâmetro igual a FUZZ. E no cabeçalho Host, para descobrir hosts virtuais: Host dois-pontos FUZZ ponto o domínio. A ideia central: FUZZ é só um marcador de posição; você decide em que parte do pedido ele entra, e cada parte descobre uma coisa diferente.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="960" height="560" role="img" aria-labelledby="t d">
+  <title id="t">O mesmo FUZZ, em lugares diferentes do pedido, descobre coisas diferentes</title>
+  <desc id="d">No alto, um pedido HTTP com cinco lugares marcados onde a palavra FUZZ pode entrar; na prática se usa um de cada vez. Embaixo, um cartão por lugar. 1, no caminho (/FUZZ): acha pastas e arquivos sem link. 2, na extensão (arquivo.FUZZ): acha cópias como .bak, .old e .zip. 3, no nome de um parâmetro (?FUZZ=1): acha opções escondidas, como debug ou admin. Esses três você usa neste módulo, contra o DVWA. 4, no valor de um parâmetro (?id=FUZZ): testa muitos valores, como ids e nomes. 5, na linha Host (Host: FUZZ.exemplo.com): acha outros sites no mesmo servidor. Esses dois voltam nas trilhas de Web e de Redes.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 13px; }
-    .s { font-size: 11px; fill: #9fb0a6; }
-    .fz { fill: #e8c46a; font-weight: 700; }
-    .num { fill: #5ee08a; font-weight: 700; }
-    .ln { stroke: #3a4b42; stroke-width: 1.5; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 19px; font-weight: 700; }
+    .sub { font-size: 13px; fill: #94a3b8; }
+    .req { font-size: 18px; }
+    .fz { font-size: 18px; font-weight: 700; fill: #facc15; }
+    .num { font-size: 13px; font-weight: 700; fill: #0f0f1a; }
+    .h { font-size: 14px; font-weight: 700; }
+    .code { font-size: 13px; }
+    .cfz { font-size: 13px; font-weight: 700; fill: #facc15; }
+    .s { font-size: 12px; fill: #cbd5e1; }
+    .note { font-size: 12px; fill: #94a3b8; }
+    .grp { font-size: 13px; font-weight: 700; }
+    .green { fill: #34d399; }
+    .gray { fill: #94a3b8; }
+    .leg { font-size: 12px; fill: #94a3b8; }
   </style>
-  <rect width="900" height="430" fill="#121815"/>
-  <text class="t" x="30" y="34">FUZZ é só um marcador: o lugar onde você o põe decide o que descobre</text>
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="560" fill="url(#bg-grad)"/>
 
-  <!-- request block -->
-  <rect x="24" y="60" width="520" height="150" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <text class="b" x="44" y="92">GET /<tspan class="fz">FUZZ</tspan>/admin<tspan class="fz">.FUZZ</tspan>?<tspan class="fz">FUZZ</tspan>=<tspan class="fz">FUZZ</tspan> HTTP/1.1</text>
-  <text class="b" x="44" y="120">Host: <tspan class="fz">FUZZ</tspan>.exemplo.com</text>
-  <text class="b" x="44" y="148">User-Agent: curl/8.5.0</text>
-  <text class="s" x="44" y="186">(um pedido real usa uma posição de cada vez; aqui estão todas juntas só para mostrar)</text>
+  <text class="title" x="30" y="38">O mesmo FUZZ, em lugares diferentes, descobre coisas diferentes</text>
+  <text class="sub" x="30" y="60">A ferramenta troca FUZZ por cada palavra da lista. Você só escolhe ONDE ele fica.</text>
 
-  <!-- numbered legend -->
-  <circle cx="40" cy="250" r="12" fill="#1d2a23" stroke="#e8c46a"/><text class="num" x="35" y="255">1</text>
-  <text class="b" x="64" y="246">caminho: <tspan class="fz">/FUZZ</tspan></text>
-  <text class="s" x="64" y="264">descobre diretórios e arquivos não linkados</text>
+  <!-- ===== Request anatomy ===== -->
+  <rect data-graph-role="container" x="30" y="80" width="900" height="170" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="h" x="50" y="104">um pedido HTTP, com os 5 lugares possíveis</text>
 
-  <circle cx="40" cy="300" r="12" fill="#1d2a23" stroke="#e8c46a"/><text class="num" x="35" y="305">2</text>
-  <text class="b" x="64" y="296">extensão: <tspan class="fz">arquivo.FUZZ</tspan></text>
-  <text class="s" x="64" y="314">acha variantes: .bak, .old, .dist, .zip, .txt</text>
+  <!-- line 1: GET /FUZZ/arquivo.FUZZ?FUZZ=FUZZ HTTP/1.1 (18px mono, ~10.84px/char) -->
+  <rect x="112" y="152" width="47" height="28" rx="4" fill="#2a2205" stroke="#eab308" stroke-width="1.5"/>
+  <rect x="253" y="152" width="47" height="28" rx="4" fill="#2a2205" stroke="#eab308" stroke-width="1.5"/>
+  <rect x="307" y="152" width="47" height="28" rx="4" fill="#2a2205" stroke="#eab308" stroke-width="1.5"/>
+  <rect x="361" y="152" width="47" height="28" rx="4" fill="#2a2205" stroke="#eab308" stroke-width="1.5"/>
+  <text class="req" x="60" y="172">GET /</text>
+  <text class="fz" x="114" y="172">FUZZ</text>
+  <text class="req" x="158" y="172">/arquivo.</text>
+  <text class="fz" x="255" y="172">FUZZ</text>
+  <text class="req" x="299" y="172">?</text>
+  <text class="fz" x="309" y="172">FUZZ</text>
+  <text class="req" x="353" y="172">=</text>
+  <text class="fz" x="363" y="172">FUZZ</text>
+  <text class="req" x="420" y="172">HTTP/1.1</text>
+  <!-- badges above line 1 -->
+  <circle cx="135" cy="132" r="11" fill="#34d399"/><text class="num" x="135" y="137" text-anchor="middle">1</text>
+  <circle cx="276" cy="132" r="11" fill="#34d399"/><text class="num" x="276" y="137" text-anchor="middle">2</text>
+  <circle cx="330" cy="132" r="11" fill="#34d399"/><text class="num" x="330" y="137" text-anchor="middle">3</text>
+  <circle cx="384" cy="132" r="11" fill="#94a3b8"/><text class="num" x="384" y="137" text-anchor="middle">4</text>
 
-  <circle cx="40" cy="350" r="12" fill="#1d2a23" stroke="#e8c46a"/><text class="num" x="35" y="355">3</text>
-  <text class="b" x="64" y="346">nome de parâmetro: <tspan class="fz">?FUZZ=</tspan>valor</text>
-  <text class="s" x="64" y="364">revela parâmetros escondidos (debug, admin, id)</text>
+  <!-- line 2: Host: FUZZ.exemplo.com -->
+  <rect x="123" y="214" width="47" height="28" rx="4" fill="#2a2205" stroke="#eab308" stroke-width="1.5"/>
+  <text class="req" x="60" y="234">Host: </text>
+  <text class="fz" x="125" y="234">FUZZ</text>
+  <text class="req" x="169" y="234">.exemplo.com</text>
+  <circle cx="146" cy="196" r="11" fill="#94a3b8"/><text class="num" x="146" y="201" text-anchor="middle">5</text>
 
-  <circle cx="490" cy="300" r="12" fill="#1d2a23" stroke="#e8c46a"/><text class="num" x="485" y="305">4</text>
-  <text class="b" x="514" y="296">valor de parâmetro: <tspan class="fz">?id=FUZZ</tspan></text>
-  <text class="s" x="514" y="314">testa muitos valores (ids, usuários, senhas)</text>
+  <!-- side note -->
+  <rect x="560" y="128" width="350" height="96" rx="6" fill="#1e293b" stroke="#475569"/>
+  <text class="s" x="578" y="156">Na prática, um FUZZ por vez.</text>
+  <text class="note" x="578" y="180">Aqui aparecem os cinco juntos</text>
+  <text class="note" x="578" y="198">só para você comparar os lugares.</text>
 
-  <circle cx="490" cy="350" r="12" fill="#1d2a23" stroke="#e8c46a"/><text class="num" x="485" y="355">5</text>
-  <text class="b" x="514" y="346">cabeçalho Host: <tspan class="fz">Host: FUZZ</tspan></text>
-  <text class="s" x="514" y="364">descobre virtual hosts no mesmo IP</text>
+  <!-- ===== Group labels ===== -->
+  <line x1="30" y1="290" x2="552" y2="290" stroke="#10b981" stroke-width="2"/>
+  <text class="grp green" x="30" y="280">neste módulo, contra o DVWA</text>
+  <line x1="582" y1="290" x2="930" y2="290" stroke="#64748b" stroke-width="2" stroke-dasharray="6 4"/>
+  <text class="grp gray" x="582" y="280">voltam nas trilhas de Web e de Redes</text>
 
-  <rect x="486" y="236" width="390" height="40" rx="8" fill="#16201b" stroke="#5ee08a"/>
-  <text class="s g" x="502" y="253">Neste módulo você usa 1, 2 e 3 contra o DVWA.</text>
-  <text class="s" x="502" y="269">4 e 5 voltam nas trilhas de Web e de Redes.</text>
+  <!-- ===== Cards ===== -->
+  <!-- 1 -->
+  <rect x="30" y="304" width="166" height="160" rx="6" fill="#06281d" stroke="#10b981" stroke-width="1.5"/>
+  <circle cx="52" cy="328" r="11" fill="#34d399"/><text class="num" x="52" y="333" text-anchor="middle">1</text>
+  <text class="h" x="70" y="333">caminho</text>
+  <rect x="44" y="350" width="138" height="28" rx="4" fill="#0f172a" stroke="#334155"/>
+  <text class="code" x="56" y="369">/</text><text class="cfz" x="64" y="369">FUZZ</text>
+  <text class="s" x="44" y="408">acha pastas e</text>
+  <text class="s" x="44" y="426">arquivos que</text>
+  <text class="s" x="44" y="444">nenhum link mostra</text>
+
+  <!-- 2 -->
+  <rect x="208" y="304" width="166" height="160" rx="6" fill="#06281d" stroke="#10b981" stroke-width="1.5"/>
+  <circle cx="230" cy="328" r="11" fill="#34d399"/><text class="num" x="230" y="333" text-anchor="middle">2</text>
+  <text class="h" x="248" y="333">extensão</text>
+  <rect x="222" y="350" width="138" height="28" rx="4" fill="#0f172a" stroke="#334155"/>
+  <text class="code" x="234" y="369">arquivo.</text><text class="cfz" x="297" y="369">FUZZ</text>
+  <text class="s" x="222" y="408">acha cópias</text>
+  <text class="s" x="222" y="426">esquecidas:</text>
+  <text class="s" x="222" y="444">.bak .old .zip</text>
+
+  <!-- 3 -->
+  <rect x="386" y="304" width="166" height="160" rx="6" fill="#06281d" stroke="#10b981" stroke-width="1.5"/>
+  <circle cx="408" cy="328" r="11" fill="#34d399"/><text class="num" x="408" y="333" text-anchor="middle">3</text>
+  <text class="h" x="426" y="326">nome de</text>
+  <text class="h" x="426" y="343">parâmetro</text>
+  <rect x="400" y="354" width="138" height="28" rx="4" fill="#0f172a" stroke="#334155"/>
+  <text class="code" x="412" y="373">?</text><text class="cfz" x="420" y="373">FUZZ</text><text class="code" x="452" y="373">=1</text>
+  <text class="s" x="400" y="408">acha opções que</text>
+  <text class="s" x="400" y="426">a página aceita e</text>
+  <text class="s" x="400" y="444">esconde (debug)</text>
+
+  <!-- 4 -->
+  <rect x="582" y="304" width="166" height="160" rx="6" fill="#1e293b" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <circle cx="604" cy="328" r="11" fill="#94a3b8"/><text class="num" x="604" y="333" text-anchor="middle">4</text>
+  <text class="h" x="622" y="326">valor de</text>
+  <text class="h" x="622" y="343">parâmetro</text>
+  <rect x="596" y="354" width="138" height="28" rx="4" fill="#0f172a" stroke="#334155"/>
+  <text class="code" x="608" y="373">?id=</text><text class="cfz" x="640" y="373">FUZZ</text>
+  <text class="s" x="596" y="408">testa muitos</text>
+  <text class="s" x="596" y="426">valores: ids,</text>
+  <text class="s" x="596" y="444">nomes, senhas</text>
+
+  <!-- 5 -->
+  <rect x="764" y="304" width="166" height="160" rx="6" fill="#1e293b" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <circle cx="786" cy="328" r="11" fill="#94a3b8"/><text class="num" x="786" y="333" text-anchor="middle">5</text>
+  <text class="h" x="804" y="333">linha Host</text>
+  <rect x="778" y="350" width="138" height="28" rx="4" fill="#0f172a" stroke="#334155"/>
+  <text class="cfz" x="788" y="369" font-size="12">FUZZ</text><text class="code" x="817" y="369" font-size="12">.exemplo.com</text>
+  <text class="s" x="778" y="408">acha outros</text>
+  <text class="s" x="778" y="426">sites guardados</text>
+  <text class="s" x="778" y="444">no mesmo servidor</text>
+
+  <!-- legend -->
+  <line x1="30" y1="500" x2="930" y2="500" stroke="#334155" stroke-width="1"/>
+  <rect x="30" y="518" width="16" height="16" rx="3" fill="#2a2205" stroke="#eab308" stroke-width="1.5"/>
+  <text class="leg" x="54" y="530">FUZZ: o lugar que a ferramenta troca</text>
+  <rect x="360" y="518" width="16" height="16" rx="3" fill="#06281d" stroke="#10b981" stroke-width="1.5"/>
+  <text class="leg" x="384" y="530">você usa neste módulo</text>
+  <rect x="610" y="518" width="16" height="16" rx="3" fill="#1e293b" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <text class="leg" x="634" y="530">fica para trilhas futuras</text>
 </svg>
