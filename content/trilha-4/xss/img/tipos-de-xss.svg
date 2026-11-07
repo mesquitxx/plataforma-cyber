@@ -1,101 +1,107 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" role="img" aria-labelledby="t d">
-  <title id="t">Os três tipos de XSS: onde o payload vive e quando ele dispara</title>
-  <desc id="d">Três faixas comparam os caminhos do mesmo ataque. Faixa de cima, XSS refletido: o atacante monta um link com o payload na URL e engana a vítima para clicar; o servidor devolve o payload dentro da própria resposta HTTP daquele pedido, sem guardar nada, e o navegador da vítima o executa. O payload só atinge quem abre aquele link específico. Faixa do meio, XSS armazenado: o atacante envia o payload uma única vez para um campo que o servidor salva no banco, como um comentário; a partir daí, toda vítima que abrir a página recebe o payload junto com o conteúdo e o executa. Atinge todos os visitantes, por isso é o mais grave. Faixa de baixo, DOM XSS: o payload entra pela URL, em geral no fragmento depois do caractere cerquilha, e nunca é enviado ao servidor; o próprio JavaScript da página lê esse valor da location e o escreve no DOM, e aí ele dispara. O servidor nunca vê o ataque, o que dificulta a detecção no log.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" width="1000" height="640" role="img" aria-labelledby="t d">
+  <title id="t">Três tipos de XSS: onde o código do atacante fica guardado</title>
+  <desc id="d">Três faixas comparam os tipos de XSS. Refletido: o código fica no link, o servidor só o devolve na resposta sem guardar nada, e atinge só quem clicar no link. Armazenado: o código fica salvo no banco do site, enviado uma vez num comentário, e o site o entrega junto com a página a todo visitante; é o mais grave. DOM: o código fica só no navegador, depois do # do link, que não é enviado ao servidor; o JavaScript da página o escreve no DOM; atinge quem abrir o link e o servidor nunca recebe o código, por isso é o mais difícil de detectar.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 17px; font-weight: 700; }
-    .h { font-size: 13.5px; font-weight: 700; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .code { font-size: 11px; fill: #5cc8d8; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .c { fill: #5cc8d8; }
-    .r { fill: #e88a8a; }
-    .node { fill: #15130f; stroke: #e8c46a; stroke-width: 1.3; }
-    .atk { fill: #2a1b1b; stroke: #e88a8a; stroke-width: 1.3; }
-    .vic { fill: #16201b; stroke: #5ee08a; stroke-width: 1.3; }
-    .srv { fill: #1b2a3a; stroke: #5cc8d8; stroke-width: 1.2; }
-    .lane { fill: #0f1512; stroke: #2c3a33; stroke-width: 1.2; }
-    .line { stroke: #4a5a51; stroke-width: 1.8; fill: none; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 20px; font-weight: 700; }
+    .idea { font-size: 14px; font-weight: 700; }
+    .colh { font-size: 12px; font-weight: 700; fill: #94a3b8; }
+    .colh-gold { fill: #facc15; }
+    .colh-red { fill: #f87171; }
+    .type { font-size: 16px; font-weight: 700; }
+    .sub { font-size: 12px; fill: #94a3b8; }
+    .head-gold { font-size: 14px; font-weight: 700; fill: #facc15; }
+    .head-red { font-size: 14px; font-weight: 700; fill: #f87171; }
+    .body { font-size: 13px; }
+    .code { font-size: 12px; fill: #fde68a; }
+    .em { font-size: 13px; font-weight: 700; fill: #f87171; }
+    .lbl { font-size: 12px; fill: #fca5a5; }
+    .leg { font-size: 12px; fill: #cbd5e1; }
   </style>
-  <rect width="900" height="600" fill="#121815"/>
-  <text class="t" x="24" y="32">Três tipos de XSS: onde o payload vive e quando dispara</text>
-
-  <!-- ===== Reflected ===== -->
-  <rect class="lane" x="20" y="52" width="860" height="152" rx="10"/>
-  <text class="h y" x="34" y="76">1. Refletido (reflected)</text>
-  <text class="s" x="34" y="94">some com a resposta; atinge só quem clica no link</text>
-  <rect class="atk" x="34" y="110" width="150" height="64" rx="8"/>
-  <text class="h r" x="46" y="132">atacante</text>
-  <text class="b" x="46" y="150">monta um link</text>
-  <text class="code" x="46" y="166">?name=&lt;script&gt;…</text>
-  <path class="line" d="M184,142 L250,142" marker-end="url(#a)"/>
-  <text class="s" x="190" y="134">clica</text>
-  <rect class="vic" x="250" y="110" width="150" height="64" rx="8"/>
-  <text class="h g" x="262" y="132">vítima</text>
-  <text class="b" x="262" y="152">abre o link</text>
-  <path class="line" d="M400,142 L470,142" marker-end="url(#a)"/>
-  <rect class="srv" x="470" y="110" width="170" height="64" rx="8"/>
-  <text class="h c" x="482" y="132">servidor</text>
-  <text class="b" x="482" y="150">devolve o payload</text>
-  <text class="b" x="482" y="166">na própria resposta</text>
-  <path class="line" d="M640,142 L710,142" marker-end="url(#a)"/>
-  <rect class="vic" x="710" y="110" width="156" height="64" rx="8"/>
-  <text class="h g" x="722" y="132">navegador</text>
-  <text class="b" x="722" y="152">executa o JS</text>
-  <text class="s" x="722" y="168">(não grava nada)</text>
-
-  <!-- ===== Stored ===== -->
-  <rect class="lane" x="20" y="216" width="860" height="160" rx="10"/>
-  <text class="h y" x="34" y="240">2. Armazenado (stored)</text>
-  <text class="s" x="34" y="258">fica salvo no banco; atinge TODA vítima que abrir a página</text>
-  <rect class="atk" x="34" y="274" width="150" height="64" rx="8"/>
-  <text class="h r" x="46" y="296">atacante</text>
-  <text class="b" x="46" y="314">envia 1 vez</text>
-  <text class="s" x="46" y="330">(um comentário)</text>
-  <path class="line" d="M184,306 L250,306" marker-end="url(#a)"/>
-  <rect class="srv" x="250" y="274" width="180" height="64" rx="8"/>
-  <text class="h c" x="262" y="296">servidor + banco</text>
-  <text class="b" x="262" y="316">GRAVA o payload</text>
-  <text class="code" x="262" y="332">INSERT INTO …</text>
-  <path class="line" d="M340,338 L340,356 L710,356 L710,338" marker-end="url(#a)"/>
-  <text class="s" x="470" y="372">toda visita recebe o payload junto com o conteúdo</text>
-  <rect class="vic" x="470" y="274" width="156" height="64" rx="8"/>
-  <text class="h g" x="482" y="296">vítima A</text>
-  <text class="b" x="482" y="316">abre a página</text>
-  <rect class="vic" x="648" y="274" width="156" height="64" rx="8"/>
-  <text class="h g" x="660" y="296">vítima B, C…</text>
-  <text class="b" x="660" y="316">executam o JS</text>
-
-  <!-- ===== DOM ===== -->
-  <rect class="lane" x="20" y="388" width="860" height="176" rx="10"/>
-  <text class="h y" x="34" y="412">3. DOM (baseado no DOM)</text>
-  <text class="s" x="34" y="430">o payload NÃO passa pelo servidor; o JS da própria página o executa</text>
-  <rect class="atk" x="34" y="446" width="150" height="70" rx="8"/>
-  <text class="h r" x="46" y="468">atacante</text>
-  <text class="b" x="46" y="486">link com o payload</text>
-  <text class="code" x="46" y="502">#&lt;img onerror…&gt;</text>
-  <path class="line" d="M184,481 L250,481" marker-end="url(#a)"/>
-  <rect class="vic" x="250" y="446" width="156" height="70" rx="8"/>
-  <text class="h g" x="262" y="468">navegador</text>
-  <text class="b" x="262" y="486">JS lê location</text>
-  <text class="code" x="262" y="502">document.write(…)</text>
-  <path class="line" d="M406,481 L476,481" marker-end="url(#a)"/>
-  <rect class="vic" x="476" y="446" width="156" height="70" rx="8"/>
-  <text class="h g" x="488" y="468">DOM</text>
-  <text class="b" x="488" y="486">payload escrito</text>
-  <text class="b" x="488" y="502">no documento → executa</text>
-  <rect class="srv" x="660" y="446" width="200" height="70" rx="8"/>
-  <text class="h c" x="672" y="468">servidor</text>
-  <text class="b r" x="672" y="488">nunca vê o payload</text>
-  <text class="s" x="672" y="504">(o # não é enviado)</text>
-  <path class="line" d="M340,516 L340,540 L760,540 L760,516" stroke-dasharray="5 5"/>
-  <text class="s" x="470" y="556">o fragmento depois do # fica só no navegador — o log do servidor não registra o ataque</text>
-
   <defs>
-    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
-      <path d="M0,0 L9,4.5 L0,9 z" fill="#4a5a51"/>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
     </marker>
+    <filter id="glow-gold">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
+  <rect width="1000" height="640" fill="url(#bg-grad)"/>
+
+  <!-- title + main idea -->
+  <text class="title" x="500" y="38" text-anchor="middle">Três tipos de XSS: onde o código do atacante fica guardado</text>
+  <rect x="150" y="54" width="700" height="34" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1.5"/>
+  <text class="idea" x="500" y="76" text-anchor="middle">Onde ele fica decide quem é atingido e se o servidor vê o ataque</text>
+
+  <!-- column headers -->
+  <text class="colh" x="115" y="122" text-anchor="middle">TIPO</text>
+  <text class="colh colh-gold" x="385" y="122" text-anchor="middle">ONDE O CÓDIGO FICA</text>
+  <text class="colh colh-red" x="795" y="122" text-anchor="middle">QUEM É ATINGIDO</text>
+
+  <!-- lane 1: reflected -->
+  <rect data-graph-role="background" x="20" y="132" width="960" height="130" rx="8" fill="#0f172a" fill-opacity="0.55" stroke="#334155"/>
+  <text class="type" x="40" y="188">1. Refletido</text>
+  <text class="sub" x="40" y="208">(reflected)</text>
+  <rect x="210" y="147" width="350" height="100" rx="6" fill="#2a2208" stroke="#eab308" stroke-width="2" filter="url(#glow-gold)"/>
+  <text class="head-gold" x="226" y="172">NO LINK (não fica salvo)</text>
+  <text class="body" x="226" y="196">o atacante põe o código no link:</text>
+  <text class="code" x="226" y="215">?name=&lt;script&gt;…&lt;/script&gt;</text>
+  <text class="body" x="226" y="235">o servidor só o devolve na resposta</text>
+  <line x1="560" y1="197" x2="626" y2="197" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <text class="lbl" x="595" y="188" text-anchor="middle">dispara</text>
+  <rect x="630" y="147" width="330" height="100" rx="6" fill="#1f0d10" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="head-red" x="646" y="182">SÓ QUEM CLICAR NO LINK</text>
+  <text class="body" x="646" y="208">o navegador de quem clica</text>
+  <text class="body" x="646" y="228">executa o código, uma vez</text>
+
+  <!-- lane 2: stored -->
+  <rect data-graph-role="background" x="20" y="277" width="960" height="130" rx="8" fill="#0f172a" fill-opacity="0.55" stroke="#334155"/>
+  <text class="type" x="40" y="333">2. Armazenado</text>
+  <text class="sub" x="40" y="353">(stored)</text>
+  <rect x="210" y="292" width="350" height="100" rx="6" fill="#2a2208" stroke="#eab308" stroke-width="2" filter="url(#glow-gold)"/>
+  <text class="head-gold" x="226" y="317">NO BANCO DO SITE (fica salvo)</text>
+  <text class="body" x="226" y="341">o atacante envia 1 vez, num</text>
+  <text class="body" x="226" y="360">comentário; o site entrega o código</text>
+  <text class="body" x="226" y="379">junto com a página, a cada visita</text>
+  <line x1="560" y1="342" x2="626" y2="342" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <text class="lbl" x="595" y="333" text-anchor="middle">dispara</text>
+  <rect x="646" y="286" width="322" height="100" rx="6" fill="#1f0d10" stroke="#ef4444" stroke-opacity="0.45"/>
+  <rect x="638" y="289" width="326" height="100" rx="6" fill="#1f0d10" stroke="#ef4444" stroke-opacity="0.7"/>
+  <rect x="630" y="292" width="330" height="100" rx="6" fill="#1f0d10" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="head-red" x="646" y="320">TODO VISITANTE DA PÁGINA</text>
+  <text class="body" x="646" y="345">ninguém precisa clicar em link:</text>
+  <text class="body" x="646" y="364">basta abrir a página</text>
+  <text class="em" x="646" y="383">→ o mais grave</text>
+
+  <!-- lane 3: DOM -->
+  <rect data-graph-role="background" x="20" y="422" width="960" height="130" rx="8" fill="#0f172a" fill-opacity="0.55" stroke="#334155"/>
+  <text class="type" x="40" y="478">3. DOM</text>
+  <text class="sub" x="40" y="498">(baseado no DOM)</text>
+  <rect x="210" y="437" width="350" height="100" rx="6" fill="#2a2208" stroke="#eab308" stroke-width="2" filter="url(#glow-gold)"/>
+  <text class="head-gold" x="226" y="462">SÓ NO NAVEGADOR</text>
+  <text class="body" x="226" y="486">o código vai depois do # do link:</text>
+  <text class="code" x="226" y="505">#&lt;img src=x onerror=…&gt;</text>
+  <text class="body" x="226" y="525">o JS da página o escreve no DOM</text>
+  <line x1="560" y1="487" x2="626" y2="487" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <text class="lbl" x="595" y="478" text-anchor="middle">dispara</text>
+  <rect x="630" y="437" width="330" height="100" rx="6" fill="#1f0d10" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="head-red" x="646" y="462">QUEM ABRIR O LINK</text>
+  <text class="body" x="646" y="486">o servidor nunca recebe o código</text>
+  <text class="body" x="646" y="505">(a parte depois do # não é enviada)</text>
+  <text class="em" x="646" y="525">→ o mais difícil de detectar</text>
+
+  <g id="legend">
+  <rect x="20" y="572" width="960" height="48" rx="6" fill="#0f172a" stroke="#334155"/>
+  <rect x="44" y="589" width="22" height="14" rx="3" fill="#2a2208" stroke="#eab308" stroke-width="2"/>
+  <text class="leg" x="76" y="601">onde o código do atacante fica</text>
+  <line x1="370" y1="596" x2="404" y2="596" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <text class="leg" x="414" y="601">o código dispara</text>
+  <rect x="600" y="589" width="22" height="14" rx="3" fill="#1f0d10" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="leg" x="632" y="601">quem é atingido (as vítimas)</text>
+  </g>
 </svg>
