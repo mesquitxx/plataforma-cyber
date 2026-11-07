@@ -1,83 +1,102 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t d">
-  <title id="t">Árvore de decisão: qual técnica de SQL injection usar conforme o que a resposta mostra</title>
-  <desc id="d">Uma árvore que parte da pergunta central: depois de injetar, o que a resposta da aplicação deixa ver? Primeiro ramo: a resposta mostra os dados da consulta na página? Se sim, é in-band, e o caminho é union-based, usando UNION SELECT para anexar os dados que você quer às colunas que a página já exibe. Se a resposta não mostra os dados mas vaza a mensagem de erro do banco, é error-based, extraindo dados dentro do texto do erro. Se a resposta não mostra dados nem erro, é blind (cega): resta inferir. Dois sub-ramos do blind: se a página muda entre dois estados conforme a condição é verdadeira ou falsa, é boolean-based, extraindo um bit por requisição com SUBSTRING e comparação; se a página não muda de forma visível, resta o time-based, medindo o tempo com SLEEP para ler cada bit pelo atraso. Uma caixa lateral lembra que o out-of-band usa um canal externo, como DNS, quando nenhum dos anteriores dá sinal.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 610" width="960" height="610" role="img" aria-labelledby="t d">
+  <title id="t">Qual técnica de SQL injection usar? Depende do que a resposta deixa ver</title>
+  <desc id="d">Quatro perguntas, de cima para baixo: pare no primeiro sim. Quanto mais para baixo, menos a resposta mostra e mais trabalhoso é tirar o dado. Grupo in-band, em verde, o dado volta na própria resposta. Pergunta 1: os dados da consulta aparecem na página? Então é union-based: anexe o que quiser às colunas que a página já mostra, com ' UNION SELECT user, password. Pergunta 2: a mensagem de erro do banco aparece? Então é error-based: force o banco a pôr o dado dentro do texto do erro. Grupo blind, ou cega, em laranja, o dado nunca aparece e você deduz. Pergunta 3: a página só muda entre 2 estados conforme a condição é verdadeira ou falsa? Então é boolean-based: uma resposta sim ou não por pedido, comparando letra a letra com ' AND SUBSTRING(..,1,1)='a. Pergunta 4: nada muda na tela? Então é time-based: meça o tempo; se a condição é verdadeira, o banco espera e a resposta atrasa, com ' AND IF(cond, SLEEP(2), 0). Em cinza tracejado, separado e raro: out-of-band, quando nada acima dá sinal, o banco fala por um canal externo, como uma consulta DNS que você observa. Legenda: verde é in-band, laranja é blind, cinza tracejado é out-of-band.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .code { font-size: 11px; fill: #5cc8d8; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .c { fill: #5cc8d8; }
-    .q { fill: #15130f; stroke: #e8c46a; stroke-width: 1.3; }
-    .leaf { fill: #16201b; stroke: #5ee08a; stroke-width: 1.3; }
-    .side { fill: #1b2a3a; stroke: #5cc8d8; stroke-width: 1.2; }
-    .line { stroke: #2c3a33; stroke-width: 1.6; fill: none; }
+    text { font-family: 'DejaVu Sans Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 20px; font-weight: 700; }
+    .sub { font-size: 13px; fill: #94a3b8; }
+    .col { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.04em; }
+    .grp { font-size: 13px; font-weight: 700; }
+    .lbl { font-size: 13px; }
+    .tech { font-size: 15px; font-weight: 700; }
+    .code { font-size: 12px; fill: #cbd5e1; }
+    .small { font-size: 12px; fill: #94a3b8; }
+    .inb { fill: #34d399; }
+    .bld { fill: #fb923c; }
+    .panel-in { fill: #0f172a; stroke: #10b981; stroke-width: 1.4; }
+    .panel-bl { fill: #0f172a; stroke: #f97316; stroke-width: 1.4; }
+    .obs { fill: #111827; stroke: #64748b; stroke-width: 1.4; }
+    .tech-in { fill: #052e16; stroke: #10b981; stroke-width: 1.6; }
+    .tech-bl { fill: #2a1708; stroke: #f97316; stroke-width: 1.6; }
+    .edge { stroke: #64748b; stroke-width: 2; fill: none; }
   </style>
-  <rect width="900" height="520" fill="#121815"/>
-  <text class="t" x="24" y="30">Qual técnica usar? Depende do que a resposta deixa ver</text>
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#64748b"/></marker>
+  </defs>
+  <rect width="960" height="610" fill="url(#bg-grad)"/>
 
-  <!-- Q1 -->
-  <rect class="q" x="300" y="52" width="300" height="52" rx="10"/>
-  <text class="h y" x="450" y="74" text-anchor="middle">A resposta mostra os dados</text>
-  <text class="h y" x="450" y="92" text-anchor="middle">da consulta na própria página?</text>
+  <!-- key idea -->
+  <text class="title" x="30" y="42">Qual técnica usar? Depende do que a resposta deixa ver</text>
+  <text class="sub" x="30" y="66">Pergunte de cima para baixo e pare no primeiro SIM. Quanto mais para baixo,</text>
+  <text class="sub" x="30" y="84">menos a página mostra e mais trabalho dá tirar o dado.</text>
 
-  <!-- branch to in-band -->
-  <path class="line" d="M300,78 L150,78 L150,150"/>
-  <text class="s g" x="158" y="70">sim</text>
-  <rect class="leaf" x="40" y="150" width="220" height="92" rx="10"/>
-  <text class="h g" x="52" y="172">in-band — union-based</text>
-  <text class="b" x="52" y="192">os dados voltam na tela;</text>
-  <text class="b" x="52" y="208">anexe o que quiser às</text>
-  <text class="b" x="52" y="224">colunas exibidas:</text>
-  <text class="code" x="52" y="240">' UNION SELECT user,pass..</text>
+  <text class="col" x="46" y="112">A RESPOSTA MOSTRA...</text>
+  <text class="col" x="378" y="112">TÉCNICA</text>
+  <text class="col" x="572" y="112">COMO O DADO SAI</text>
 
-  <!-- Q2 -->
-  <path class="line" d="M600,78 L750,78 L750,150"/>
-  <text class="s" x="705" y="70">não</text>
-  <rect class="q" x="620" y="150" width="256" height="52" rx="10"/>
-  <text class="h y" x="748" y="172" text-anchor="middle">...mas vaza a mensagem</text>
-  <text class="h y" x="748" y="190" text-anchor="middle">de erro do banco?</text>
+  <!-- in-band group -->
+  <rect class="panel-in" data-graph-role="container" x="30" y="122" width="900" height="182" rx="8"/>
+  <text class="grp inb" x="46" y="144">IN-BAND — o dado volta na própria resposta</text>
 
-  <!-- error-based leaf -->
-  <path class="line" d="M620,176 L560,176 L560,250"/>
-  <text class="s g" x="568" y="168">sim</text>
-  <rect class="leaf" x="440" y="250" width="240" height="78" rx="10"/>
-  <text class="h g" x="452" y="272">error-based</text>
-  <text class="b" x="452" y="292">force o banco a pôr o dado</text>
-  <text class="b" x="452" y="308">dentro do texto do erro</text>
-  <text class="s" x="452" y="322">(EXTRACTVALUE, CAST...)</text>
+  <rect class="obs" x="46" y="156" width="300" height="60" rx="6"/>
+  <text class="lbl" x="60" y="181">1. os dados da consulta</text>
+  <text class="lbl" x="60" y="201">   aparecem na página?</text>
+  <path class="edge" d="M346,186 L372,186" marker-end="url(#arrow-gray)"/>
+  <rect class="tech-in" x="376" y="156" width="180" height="60" rx="6"/>
+  <text class="tech inb" x="390" y="192">union-based</text>
+  <text class="small" x="572" y="180">anexe o que quiser às colunas</text>
+  <text class="small" x="572" y="196">que a página já mostra:</text>
+  <text class="code" x="572" y="212">' UNION SELECT user, password ...</text>
 
-  <!-- Q3 blind -->
-  <path class="line" d="M748,202 L748,250"/>
-  <text class="s" x="756" y="230">não</text>
-  <rect class="q" x="636" y="250" width="240" height="52" rx="10"/>
-  <text class="h y" x="756" y="272" text-anchor="middle">cega (blind): a página</text>
-  <text class="h y" x="756" y="290" text-anchor="middle">muda entre 2 estados?</text>
+  <rect class="obs" x="46" y="230" width="300" height="60" rx="6"/>
+  <text class="lbl" x="60" y="255">2. a mensagem de erro</text>
+  <text class="lbl" x="60" y="275">   do banco aparece?</text>
+  <path class="edge" d="M346,260 L372,260" marker-end="url(#arrow-gray)"/>
+  <rect class="tech-in" x="376" y="230" width="180" height="60" rx="6"/>
+  <text class="tech inb" x="390" y="266">error-based</text>
+  <text class="small" x="572" y="256">force o banco a pôr o dado</text>
+  <text class="small" x="572" y="272">dentro do texto do erro</text>
 
-  <!-- boolean leaf -->
-  <path class="line" d="M636,276 L300,276 L300,360"/>
-  <text class="s g" x="308" y="268">sim</text>
-  <rect class="leaf" x="180" y="360" width="256" height="96" rx="10"/>
-  <text class="h g" x="192" y="382">boolean-based blind</text>
-  <text class="b" x="192" y="402">1 bit por requisição: compare</text>
-  <text class="b" x="192" y="418">caractere a caractere e veja</text>
-  <text class="b" x="192" y="434">qual dos 2 estados volta:</text>
-  <text class="code" x="192" y="450">' AND SUBSTRING(..,1,1)='a</text>
+  <!-- blind group -->
+  <rect class="panel-bl" data-graph-role="container" x="30" y="320" width="900" height="182" rx="8"/>
+  <text class="grp bld" x="46" y="342">BLIND (CEGA) — o dado nunca aparece; você deduz</text>
 
-  <!-- time leaf -->
-  <path class="line" d="M876,276 L876,360"/>
-  <text class="s" x="884" y="320">não</text>
-  <rect class="leaf" x="520" y="360" width="300" height="96" rx="10"/>
-  <text class="h g" x="532" y="382">time-based blind</text>
-  <text class="b" x="532" y="402">nada muda na tela: meça o TEMPO.</text>
-  <text class="b" x="532" y="418">se a condição for verdadeira, o</text>
-  <text class="b" x="532" y="434">banco dorme e a resposta atrasa:</text>
-  <text class="code" x="532" y="450">' AND IF(cond, SLEEP(2), 0)</text>
+  <rect class="obs" x="46" y="354" width="300" height="60" rx="6"/>
+  <text class="lbl" x="60" y="379">3. a página só muda entre</text>
+  <text class="lbl" x="60" y="399">   2 estados (sim / não)?</text>
+  <path class="edge" d="M346,384 L372,384" marker-end="url(#arrow-gray)"/>
+  <rect class="tech-bl" x="376" y="354" width="180" height="60" rx="6"/>
+  <text class="tech bld" x="390" y="390">boolean-based</text>
+  <text class="small" x="572" y="378">1 resposta sim/não por pedido,</text>
+  <text class="small" x="572" y="394">comparando letra a letra:</text>
+  <text class="code" x="572" y="410">' AND SUBSTRING(..,1,1)='a</text>
 
-  <!-- out-of-band side note -->
-  <rect class="side" x="40" y="474" width="820" height="34" rx="8"/>
-  <text class="b c" x="52" y="495">out-of-band: quando nada acima dá sinal, faça o banco falar por um canal externo (ex.: uma consulta DNS que você observa) — raro e dependente de função específica.</text>
+  <rect class="obs" x="46" y="428" width="300" height="60" rx="6"/>
+  <text class="lbl" x="60" y="453">4. nada muda na tela?</text>
+  <text class="small" x="60" y="473">   (último recurso)</text>
+  <path class="edge" d="M346,458 L372,458" marker-end="url(#arrow-gray)"/>
+  <rect class="tech-bl" x="376" y="428" width="180" height="60" rx="6"/>
+  <text class="tech bld" x="390" y="464">time-based</text>
+  <text class="small" x="572" y="452">meça o TEMPO: se a condição é</text>
+  <text class="small" x="572" y="468">verdadeira, a resposta atrasa:</text>
+  <text class="code" x="572" y="484">' AND IF(cond, SLEEP(2), 0)</text>
+
+  <!-- out-of-band: separate and secondary -->
+  <rect x="30" y="518" width="900" height="44" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text class="small" x="46" y="537">Raro — out-of-band: quando nada acima dá sinal, o banco "fala" por um</text>
+  <text class="small" x="46" y="553">canal externo (ex.: uma consulta DNS que você observa).</text>
+
+  <!-- legend -->
+  <g id="legend">
+  <rect x="30" y="578" width="14" height="14" rx="3" fill="#34d399"/>
+  <text class="small" x="52" y="590">in-band: o dado vem na resposta</text>
+  <rect x="330" y="578" width="14" height="14" rx="3" fill="#fb923c"/>
+  <text class="small" x="352" y="590">blind: você deduz o dado</text>
+  <rect x="580" y="578" width="14" height="14" rx="3" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text class="small" x="602" y="590">out-of-band (raro)</text>
+  </g>
 </svg>
