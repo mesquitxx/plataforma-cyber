@@ -1,86 +1,106 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="t d">
-  <title id="t">Como um cookie de sessão transforma um protocolo sem estado em um login</title>
-  <desc id="d">Diagrama de sequência com três participantes: navegador, servidor de aplicação e o armazenamento de sessões do servidor. Passo 1: o navegador envia POST /login com usuário e senha. Passo 2: o servidor confere a senha, sorteia um identificador de sessão aleatório (9f3c...) e grava no armazenamento: 9f3c... corresponde a carla, papel cliente. Passo 3: o servidor responde 302 com Location /painel e Set-Cookie sid=9f3c...; Path=/; Secure; HttpOnly; SameSite=Lax. Passo 4: o navegador guarda o cookie no pote, associado ao host e ao caminho. Passo 5: em toda requisição seguinte ao mesmo site, o navegador anexa sozinho o cabeçalho Cookie: sid=9f3c.... Passo 6: o servidor procura o identificador no armazenamento e descobre que é a carla. Passo 7: responde 200 com a página dela. O quadro da direita resume: quem apresenta o sid é a carla para o servidor; por isso o identificador é uma credencial. Os atributos protegem contra roubo por JavaScript (HttpOnly), contra leitura na rede (Secure), contra envio em requisições de outros sites (SameSite) e o servidor deve trocar o sid no login para evitar fixação de sessão.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" width="960" height="720" role="img" aria-labelledby="t d">
+  <title id="t">O HTTP esquece, o cookie lembra: quem apresenta o sid é a carla para o servidor</title>
+  <desc id="d">Diagrama de sequência entre o navegador, o servidor e as sessões guardadas no servidor. O sid é o session ID, o identificador aleatório da sessão. Passo 1: o navegador envia POST /login com usuário carla e a senha. Passo 2: o servidor confere a senha, sorteia um sid novo e grava: 9f3c… é a carla, papel cliente. Passo 3: o servidor responde com Set-Cookie: sid=9f3c…, e o navegador guarda o sid no pote de cookies. Depois, em toda requisição ao mesmo site: passo 4, em destaque, o navegador envia GET /painel e anexa sozinho Cookie: sid=9f3c…, sem o código pedir. Passo 5: o servidor pergunta às sessões quem é 9f3c… e a resposta é a carla, cliente. Passo 6: o servidor responde 200 OK com Olá, carla. Caixa de destaque: o sid é uma credencial; quem apresentar 9f3c… entra como a carla, sem digitar senha. Separada e secundária: a proteção, explicada logo abaixo no texto, são os atributos do cookie, que limitam para onde e quando o sid é enviado. Legenda: cinza é o fluxo normal, azul é o sid, amarelo é o momento-chave.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; }
-    .b { font-size: 12px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .c { fill: #5cc8d8; }
-    .r { fill: #ef7b6b; }
-    .life { stroke: #2c3a33; stroke-width: 2; }
-    .msg { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ar); fill: none; }
-    .back { stroke: #5ee08a; stroke-width: 2; marker-end: url(#ag); fill: none; }
-    .note { fill: #2a2614; stroke: #e8c46a; stroke-width: 1.2; }
+    text { font-family: 'DejaVu Sans Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 20px; font-weight: 700; }
+    .sub { font-size: 13px; fill: #94a3b8; }
+    .col { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.04em; }
+    .name { font-size: 15px; font-weight: 700; }
+    .lbl { font-size: 13px; }
+    .bold { font-size: 13px; font-weight: 700; }
+    .big { font-size: 15px; font-weight: 700; }
+    .small { font-size: 12px; fill: #94a3b8; }
+    .sid { fill: #60a5fa; }
+    .key { fill: #facc15; }
+    .actor { fill: #111827; stroke: #64748b; stroke-width: 1.4; }
+    .life { stroke: #334155; stroke-width: 2; stroke-dasharray: 4 4; }
+    .edge { stroke: #64748b; stroke-width: 2; fill: none; }
+    .edge-ret { stroke: #64748b; stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
+    .edge-sid { stroke: #60a5fa; stroke-width: 2; fill: none; }
+    .edge-key { stroke: #facc15; stroke-width: 3; fill: none; }
+    .note-sid { fill: #0c1a33; stroke: #60a5fa; stroke-width: 1.2; }
+    .keybox { fill: #1f1a07; stroke: #facc15; stroke-width: 2; }
+    .panel { fill: #0f172a; stroke: #334155; stroke-width: 1.2; }
   </style>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
-    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5ee08a"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#64748b"/></marker>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#60a5fa"/></marker>
+    <marker id="arrow-gold" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#facc15"/></marker>
   </defs>
-  <rect width="900" height="540" fill="#121815"/>
-  <text class="t" x="24" y="32">Sessão por cookie: o HTTP esquece, o cookie lembra</text>
+  <rect width="960" height="720" fill="url(#bg-grad)"/>
 
-  <rect x="40" y="50" width="120" height="32" rx="8" fill="#16201b" stroke="#5ee08a"/>
-  <text class="h g" x="62" y="71">Navegador</text>
-  <rect x="330" y="50" width="120" height="32" rx="8" fill="#16201b" stroke="#5ee08a"/>
-  <text class="h g" x="352" y="71">Servidor</text>
-  <rect x="500" y="50" width="120" height="32" rx="8" fill="#16201b" stroke="#5ee08a"/>
-  <text class="h g" x="520" y="71">Sessões</text>
-  <line class="life" x1="100" y1="82" x2="100" y2="510"/>
-  <line class="life" x1="390" y1="82" x2="390" y2="510"/>
-  <line class="life" x1="560" y1="82" x2="560" y2="510"/>
+  <!-- key idea -->
+  <text class="title" x="30" y="42">O HTTP esquece, o cookie lembra:</text>
+  <text class="title" x="30" y="68">quem apresenta o sid é a carla para o servidor</text>
+  <text class="sub" x="30" y="92"><tspan class="sid">sid</tspan> = o session ID, o identificador aleatório que o servidor sorteia no login</text>
 
-  <text class="b c" x="110" y="108">1  POST /login</text>
-  <text class="s" x="128" y="122">usuario=carla&amp;senha=...</text>
-  <path class="msg" d="M102,130 L386,130"/>
+  <!-- participants -->
+  <rect class="actor" data-graph-role="node" id="p-browser" x="50" y="112" width="200" height="38" rx="6"/>
+  <text class="name" x="150" y="136" text-anchor="middle">Navegador</text>
+  <rect class="actor" data-graph-role="node" id="p-server" x="380" y="112" width="200" height="38" rx="6"/>
+  <text class="name" x="480" y="136" text-anchor="middle">Servidor</text>
+  <rect class="actor" data-graph-role="node" id="p-store" x="700" y="112" width="200" height="38" rx="6"/>
+  <text class="name" x="800" y="136" text-anchor="middle">Sessões guardadas</text>
+  <line class="life" x1="150" y1="150" x2="150" y2="580"/>
+  <line class="life" x1="480" y1="150" x2="480" y2="580"/>
+  <line class="life" x1="800" y1="150" x2="800" y2="580"/>
 
-  <text class="b" x="398" y="156">2  senha ok? sid novo</text>
-  <path class="msg" d="M392,166 L556,166"/>
-  <rect class="note" x="572" y="146" width="160" height="38" rx="4"/>
-  <text class="s y" x="580" y="162">9f3c… → carla,</text>
-  <text class="s y" x="580" y="176">papel=cliente</text>
+  <!-- 1 login -->
+  <text class="bold" x="166" y="186">1  POST /login</text>
+  <text class="small" x="290" y="186">usuario=carla&amp;senha=…</text>
+  <path class="edge" data-graph-role="edge" d="M152,198 L474,198" marker-end="url(#arrow-gray)"/>
 
-  <text class="b g" x="110" y="208">3  302 Location: /painel</text>
-  <text class="s" x="128" y="224">Set-Cookie: sid=9f3c…; Path=/;</text>
-  <text class="s" x="128" y="238">Secure; HttpOnly; SameSite=Lax</text>
-  <path class="back" d="M388,248 L104,248"/>
+  <!-- 2 server stores session -->
+  <text class="bold" x="496" y="234">2  senha ok: sorteia sid novo</text>
+  <path class="edge" data-graph-role="edge" d="M482,246 L794,246" marker-end="url(#arrow-gray)"/>
+  <rect class="note-sid" x="690" y="258" width="240" height="30" rx="4"/>
+  <text class="bold sid" x="704" y="278">9f3c… = carla, cliente</text>
 
-  <rect class="note" x="20" y="262" width="220" height="38" rx="4"/>
-  <text class="s y" x="28" y="278">4  pote: host loja.exemplo,</text>
-  <text class="s y" x="28" y="292">path /, sid=9f3c…</text>
+  <!-- 3 Set-Cookie -->
+  <text class="bold sid" x="166" y="314">3  Set-Cookie: sid=9f3c…</text>
+  <path class="edge-sid" data-graph-role="edge" d="M478,326 L156,326" marker-end="url(#arrow-blue)"/>
+  <rect class="note-sid" x="30" y="338" width="260" height="30" rx="4"/>
+  <text class="small" x="44" y="358">guarda o <tspan class="sid">sid</tspan> no pote de cookies</text>
 
-  <text class="b c" x="110" y="332">5  GET /painel</text>
-  <text class="s" x="128" y="348">Cookie: sid=9f3c…  (automático)</text>
-  <path class="msg" d="M102,358 L386,358"/>
+  <!-- later requests -->
+  <text class="col" x="166" y="398">DEPOIS, EM TODA REQUISIÇÃO:</text>
 
-  <text class="b" x="398" y="384">6  quem é 9f3c…?</text>
-  <path class="msg" d="M392,394 L556,394"/>
-  <path class="back" d="M556,414 L394,414"/>
-  <text class="s g" x="410" y="430">carla, cliente</text>
+  <!-- 4 key moment: the cookie goes along by itself -->
+  <rect data-graph-role="decoration" data-owner="step-4" x="140" y="410" width="350" height="72" rx="6" fill="#facc15" fill-opacity="0.10" stroke="#facc15" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text class="bold" x="166" y="430">4  GET /painel   Cookie: <tspan class="sid">sid=9f3c…</tspan></text>
+  <path class="edge-key" data-graph-role="edge" d="M152,444 L472,444" marker-end="url(#arrow-gold)"/>
+  <text class="big key" x="166" y="470">o navegador anexa SOZINHO</text>
 
-  <text class="b g" x="110" y="460">7  200 OK "Olá, carla"</text>
-  <path class="back" d="M388,474 L104,474"/>
+  <!-- 5 lookup -->
+  <text class="bold" x="496" y="490">5  quem é <tspan class="sid">9f3c…</tspan>?</text>
+  <path class="edge" data-graph-role="edge" d="M482,502 L794,502" marker-end="url(#arrow-gray)"/>
+  <text class="bold" x="600" y="526">é a carla, cliente</text>
+  <path class="edge-ret" data-graph-role="edge" d="M798,538 L486,538" marker-end="url(#arrow-gray)"/>
 
-  <rect x="652" y="216" width="232" height="282" rx="8" fill="#16201b" stroke="#ef7b6b"/>
-  <text class="h r" x="666" y="240">Quem tem o sid</text>
-  <text class="h r" x="666" y="256">é a carla</text>
-  <text class="s" x="666" y="282">O sid é uma credencial.</text>
-  <text class="s" x="666" y="300">Cada atributo fecha uma</text>
-  <text class="s" x="666" y="314">porta de roubo ou abuso:</text>
-  <text class="s c" x="666" y="340">HttpOnly</text>
-  <text class="s" x="740" y="340">JS não lê</text>
-  <text class="s c" x="666" y="362">Secure</text>
-  <text class="s" x="740" y="362">só via HTTPS</text>
-  <text class="s c" x="666" y="384">SameSite</text>
-  <text class="s" x="740" y="384">não vai junto</text>
-  <text class="s" x="740" y="398">de outro site</text>
-  <text class="s c" x="666" y="420">sid novo</text>
-  <text class="s" x="740" y="420">no login:</text>
-  <text class="s" x="740" y="434">contra fixação</text>
-  <text class="s c" x="666" y="456">expirar</text>
-  <text class="s" x="740" y="456">e invalidar</text>
-  <text class="s" x="740" y="470">no servidor</text>
+  <!-- 6 response -->
+  <text class="bold" x="166" y="556">6  200 OK  "Olá, carla"</text>
+  <path class="edge-ret" data-graph-role="edge" d="M478,568 L156,568" marker-end="url(#arrow-gray)"/>
+
+  <!-- consequence: the sid is a credential -->
+  <rect class="keybox" x="30" y="596" width="900" height="50" rx="8"/>
+  <text class="big key" x="50" y="627">O sid é uma credencial: quem apresentar 9f3c… entra como a carla, sem senha.</text>
+
+  <!-- defense: separate and secondary -->
+  <rect class="panel" x="30" y="656" width="900" height="30" rx="6"/>
+  <text class="small" x="46" y="676">Proteção (logo abaixo no texto): os atributos do cookie limitam para onde e quando o sid vai.</text>
+
+  <!-- legend -->
+  <g id="legend">
+  <rect x="30" y="698" width="14" height="14" rx="3" fill="#64748b"/>
+  <text class="small" x="52" y="710">fluxo normal</text>
+  <rect x="236" y="698" width="14" height="14" rx="3" fill="#60a5fa"/>
+  <text class="small" x="258" y="710">o sid</text>
+  <rect x="400" y="698" width="14" height="14" rx="3" fill="#facc15"/>
+  <text class="small" x="422" y="710">o momento-chave</text>
+  </g>
 </svg>

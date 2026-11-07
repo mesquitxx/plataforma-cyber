@@ -1,77 +1,104 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">O mesmo dado em cinco contextos e a decodificação dupla</title>
-  <desc id="d">Parte de cima: o dado digitado pelo usuário é O'Neil &lt;b&gt; &amp; Cia. Uma tabela mostra cinco contextos para onde ele pode ir, os caracteres que mandam em cada um, o que acontece se o dado entrar cru e o tratamento certo. Na URL, os caracteres especiais são &amp;, =, +, #, % e espaço; cru, o &amp; quebra o parâmetro em dois; o certo é percent-encoding: O%27Neil%20%3Cb%3E%20%26%20Cia. No HTML, os especiais são &lt;, &gt;, &amp;, aspas; cru, o &lt;b&gt; vira negrito, e um &lt;script&gt; viraria código, que é XSS; o certo é entidade HTML: O&amp;#39;Neil &amp;lt;b&amp;gt; &amp;amp; Cia. Numa string JavaScript, os especiais são aspas, barra invertida e &lt;/script&gt;; cru, a aspa fecha a string; o certo é escape JavaScript ou, melhor, JSON. No SQL, os especiais são aspas e ponto e vírgula; cru, a aspa fecha o literal e o resto vira comando, que é SQL injection; o certo é parâmetro, num prepared statement. No shell, os especiais são ponto e vírgula, cifrão, crase, pipe; cru, é command injection; o certo é passar uma lista de argumentos, sem shell. Parte de baixo: a decodificação dupla. O texto ..%252f vira ..%2f na primeira decodificação e ../ na segunda. Um filtro que olha depois da primeira decodificação não vê ../ e deixa passar; se o servidor decodifica de novo depois do filtro, o caminho escapa da pasta. Foi o erro do IIS em 2001 (MS01-026).</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" role="img" aria-labelledby="t d">
+  <title id="t">O mesmo dado, cinco lugares: o perigo depende de onde ele cai</title>
+  <desc id="d">No topo, o dado digitado pelo usuário: O'Neil &lt;b&gt; &amp; Cia, com os caracteres que mandam em algum lugar em amarelo (a aspa, o menor-que, o maior-que e o e-comercial). Uma tabela mostra cinco lugares para onde esse dado pode ir. Para cada um: os caracteres que mandam ali, em amarelo; o que acontece se o dado entrar cru, em vermelho; e o tratamento certo, em verde. URL: mandam &amp; = # %; cru, o &amp; parte o parâmetro em dois; certo, percent-encoding, O%27Neil%20%3Cb%3E%20%26%20Cia. HTML: mandam &lt; &gt; &amp; e aspas; cru, o &lt;b&gt; vira tag de verdade e um &lt;script&gt; viraria código, que é XSS; certo, entidades HTML, O&amp;#39;Neil &amp;lt;b&amp;gt; &amp;amp; Cia. JavaScript: mandam as aspas e a barra invertida; cru, a aspa fecha a string e o resto vira código; certo, escape de JavaScript ou JSON. SQL: mandam a aspa, o ponto e vírgula e o traço duplo; cru, a aspa fecha o texto e o resto vira comando, que é SQL injection; certo, não escapar, e sim mandar o dado como parâmetro, separado do comando. Shell: mandam ponto e vírgula, barra vertical, e-comercial e cifrão; cru, o &amp; ou o ; começa outro comando, que é command injection; certo, uma lista de argumentos, sem passar pelo shell. Caixa de destaque: não existe limpar uma vez para tudo; cada lugar tem a sua regra, aplicada na saída, na hora em que o dado entra nele. Legenda: amarelo é o caractere que manda, vermelho é o que acontece se entrar cru, verde é o tratamento certo.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 12px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .r { fill: #ef7b6b; }
-    .row { fill: #16201b; }
-    .arrow { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ar); fill: none; }
+    text { font-family: 'DejaVu Sans Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 20px; font-weight: 700; }
+    .col { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.04em; }
+    .name { font-size: 15px; font-weight: 700; }
+    .lbl { font-size: 13px; }
+    .bold { font-size: 13px; font-weight: 700; }
+    .big { font-size: 16px; font-weight: 700; }
+    .small { font-size: 12px; fill: #94a3b8; }
+    .key { fill: #facc15; }
+    .no { fill: #f87171; }
+    .ok { fill: #34d399; }
+    .strong { font-weight: 700; }
+    .data { fill: #111827; stroke: #94a3b8; stroke-width: 1.6; }
+    .row { fill: #0f172a; stroke: #334155; stroke-width: 1.2; }
+    .ctx { fill: #111827; stroke: #64748b; stroke-width: 1.2; }
+    .keybox { fill: #111827; stroke: #e2e8f0; stroke-width: 1.6; }
   </style>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="24" y="30">O mesmo dado, cinco contextos: o perigo depende de onde ele cai</text>
-  <text class="b" x="24" y="56">dado do usuário:</text>
-  <text class="b y" x="160" y="56">O'Neil &lt;b&gt; &amp; Cia</text>
+  <rect width="960" height="640" fill="url(#bg-grad)"/>
 
-  <text class="h" x="24" y="88">contexto</text>
-  <text class="h" x="118" y="88">mandam aqui</text>
-  <text class="h" x="268" y="88">se entrar cru</text>
-  <text class="h" x="520" y="88">tratamento certo</text>
+  <!-- key idea -->
+  <text class="title" x="30" y="42">O mesmo dado, cinco lugares:</text>
+  <text class="title" x="30" y="68">o perigo depende de onde ele cai</text>
 
-  <rect class="row" x="18" y="96" width="864" height="34" rx="4"/>
-  <text class="b" x="24" y="118">URL</text>
-  <text class="s" x="118" y="118">&amp; = + # % espaço</text>
-  <text class="s r" x="268" y="118">o &amp; parte o parâmetro em dois</text>
-  <text class="s g" x="520" y="118">percent-encoding: O%27Neil%20%3Cb%3E%20%26%20Cia</text>
+  <!-- the user data -->
+  <rect class="data" x="30" y="86" width="900" height="44" rx="6"/>
+  <text class="lbl" x="46" y="114">dado digitado pelo usuário:</text>
+  <text class="big" x="300" y="115">O<tspan class="key">'</tspan>Neil <tspan class="key">&lt;</tspan>b<tspan class="key">&gt;</tspan> <tspan class="key">&amp;</tspan> Cia</text>
 
-  <rect class="row" x="18" y="136" width="864" height="34" rx="4"/>
-  <text class="b" x="24" y="158">HTML</text>
-  <text class="s" x="118" y="158">&lt; &gt; &amp; " '</text>
-  <text class="s r" x="268" y="158">&lt;b&gt; vira tag; &lt;script&gt; vira XSS</text>
-  <text class="s g" x="520" y="158">entidades: O&amp;#39;Neil &amp;lt;b&amp;gt; &amp;amp; Cia</text>
+  <!-- column headers -->
+  <text class="col" x="46" y="160">LUGAR</text>
+  <text class="col" x="160" y="160">QUEM MANDA</text>
+  <text class="col" x="300" y="160">SE ENTRAR CRU</text>
+  <text class="col" x="620" y="160">O CERTO</text>
 
-  <rect class="row" x="18" y="176" width="864" height="34" rx="4"/>
-  <text class="b" x="24" y="198">JS</text>
-  <text class="s" x="118" y="198">' " \ &lt;/script&gt;</text>
-  <text class="s r" x="268" y="198">a aspa fecha a string</text>
-  <text class="s g" x="520" y="198">escape JS / JSON: "O'Neil \u003cb\u003e &amp; Cia"</text>
+  <!-- URL -->
+  <rect class="row" x="30" y="170" width="900" height="56" rx="6"/>
+  <text class="name" x="46" y="203">URL</text>
+  <text class="bold key" x="160" y="203">&amp; = # %</text>
+  <text class="bold no" x="300" y="194">o &amp; parte o parâmetro</text>
+  <text class="bold no" x="300" y="214">em dois</text>
+  <text class="small" x="620" y="194">percent-encoding:</text>
+  <text class="bold ok" x="620" y="214">O%27Neil%20%3Cb%3E%20%26%20Cia</text>
 
-  <rect class="row" x="18" y="216" width="864" height="34" rx="4"/>
-  <text class="b" x="24" y="238">SQL</text>
-  <text class="s" x="118" y="238">' ; --</text>
-  <text class="s r" x="268" y="238">a aspa fecha o literal: SQLi</text>
-  <text class="s g" x="520" y="238">não escapar: parâmetro (prepared statement)</text>
+  <!-- HTML -->
+  <rect class="row" x="30" y="234" width="900" height="56" rx="6"/>
+  <text class="name" x="46" y="267">HTML</text>
+  <text class="bold key" x="160" y="267">&lt; &gt; &amp; " '</text>
+  <text class="bold no" x="300" y="258">&lt;b&gt; vira tag de verdade;</text>
+  <text class="bold no" x="300" y="278">&lt;script&gt; viraria código: XSS</text>
+  <text class="small" x="620" y="258">entidades HTML:</text>
+  <text class="bold ok" x="620" y="278">O&amp;#39;Neil &amp;lt;b&amp;gt; &amp;amp; Cia</text>
 
-  <rect class="row" x="18" y="256" width="864" height="34" rx="4"/>
-  <text class="b" x="24" y="278">shell</text>
-  <text class="s" x="118" y="278">; | $ ` &amp; &gt;</text>
-  <text class="s r" x="268" y="278">o ; começa outro comando</text>
-  <text class="s g" x="520" y="278">lista de argumentos, sem shell</text>
+  <!-- JS -->
+  <rect class="row" x="30" y="298" width="900" height="56" rx="6"/>
+  <text class="name" x="46" y="331">JS</text>
+  <text class="bold key" x="160" y="331">' " &#92;</text>
+  <text class="bold no" x="300" y="322">a aspa fecha a string</text>
+  <text class="bold no" x="300" y="342">e o resto vira código</text>
+  <text class="small" x="620" y="322">escape de JavaScript / JSON:</text>
+  <text class="bold ok" x="620" y="342">"O'Neil &#92;u003cb&#92;u003e &amp; Cia"</text>
 
-  <text class="s" x="24" y="312">Não existe "sanitizar uma vez para tudo": cada contexto tem sua regra, aplicada na SAÍDA, no momento em que o dado entra nele.</text>
+  <!-- SQL -->
+  <rect class="row" x="30" y="362" width="900" height="56" rx="6"/>
+  <text class="name" x="46" y="395">SQL</text>
+  <text class="bold key" x="160" y="395">' ; --</text>
+  <text class="bold no" x="300" y="386">a aspa fecha o texto e o</text>
+  <text class="bold no" x="300" y="406">resto vira comando: SQL injection</text>
+  <text class="small" x="620" y="386">não escapar: mandar como</text>
+  <text class="bold ok" x="620" y="406">parâmetro, separado do comando</text>
 
-  <text class="t" x="24" y="352">Decodificação dupla: o filtro olha uma camada, o servidor usa outra</text>
-  <rect class="row" x="24" y="368" width="170" height="40" rx="6"/>
-  <text class="b y" x="40" y="393">..%252f</text>
-  <path class="arrow" d="M196,388 L256,388"/>
-  <text class="s" x="194" y="362">decodifica</text>
-  <rect class="row" x="260" y="368" width="170" height="40" rx="6"/>
-  <text class="b y" x="276" y="393">..%2f</text>
-  <path class="arrow" d="M432,388 L520,388"/>
-  <text class="s" x="436" y="380">decodifica</text>
-  <text class="s" x="436" y="404">de novo</text>
-  <rect class="row" x="524" y="368" width="170" height="40" rx="6"/>
-  <text class="b r" x="540" y="393">../</text>
-  <text class="s g" x="262" y="428">o filtro procura "../" aqui:</text>
-  <text class="s g" x="262" y="442">não acha, deixa passar</text>
-  <text class="s r" x="526" y="428">o servidor usa isto:</text>
-  <text class="s r" x="526" y="442">saiu da pasta (IIS, MS01-026)</text>
+  <!-- shell -->
+  <rect class="row" x="30" y="426" width="900" height="56" rx="6"/>
+  <text class="name" x="46" y="459">shell</text>
+  <text class="bold key" x="160" y="459">; | &amp; $</text>
+  <text class="bold no" x="300" y="450">o &amp; ou o ; começa outro</text>
+  <text class="bold no" x="300" y="470">comando: command injection</text>
+  <text class="small" x="620" y="450">sem passar pelo shell:</text>
+  <text class="bold ok" x="620" y="470">uma lista de argumentos</text>
+
+  <!-- key takeaway -->
+  <rect class="keybox" x="30" y="502" width="900" height="72" rx="8"/>
+  <text class="big" x="50" y="532">Não existe "limpar uma vez para tudo": cada lugar tem a sua regra,</text>
+  <text class="big" x="50" y="556">aplicada na SAÍDA, na hora em que o dado entra nele.</text>
+
+  <!-- legend -->
+  <g id="legend">
+  <rect x="30" y="600" width="14" height="14" rx="3" fill="#facc15"/>
+  <text class="small" x="52" y="612">caractere que manda</text>
+  <rect x="260" y="600" width="14" height="14" rx="3" fill="#f87171"/>
+  <text class="small" x="282" y="612">o que acontece se entrar cru</text>
+  <rect x="560" y="600" width="14" height="14" rx="3" fill="#34d399"/>
+  <text class="small" x="582" y="612">o tratamento certo</text>
+  </g>
 </svg>
