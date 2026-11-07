@@ -1,60 +1,111 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
-  <title id="t">Como um sistema guarda e confere uma senha sem nunca guardar a senha</title>
-  <desc id="d">Duas colunas. No cadastro, a senha digitada é combinada com um salt aleatório e passa por uma função de derivação de chave lenta (KDF, como Argon2 ou bcrypt); o sistema guarda apenas o salt e o hash resultante, nunca a senha em claro. No login, a senha digitada é combinada com o MESMO salt guardado, passa pela mesma KDF e o hash resultante é comparado com o hash armazenado: se forem iguais, o acesso é liberado. No rodapé, o aviso de que, se o banco vazar, o atacante leva só salt mais hash, e precisa quebrar cada hash offline.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" width="1000" height="640" role="img" aria-labelledby="t d">
+  <title id="t">A senha nunca é guardada: o login só compara hashes</title>
+  <desc id="d">Duas linhas ligadas pelo banco de dados no meio. Cadastro: a senha monkey1337, em verde, junta-se a um valor aleatório chamado salt, em amarelo, e passa por um hash lento (Argon2, bcrypt ou scrypt), em azul. O salt e o hash descem para o banco, que guarda só esses dois campos; o campo da senha aparece riscado, porque a senha não é guardada. Login: a senha digitada agora junta-se ao mesmo salt, lido do banco, passa pelo mesmo hash lento, e o hash novo é comparado com o hash guardado, que também vem do banco. Se forem iguais, o acesso é liberado; se forem diferentes, a senha está errada. Faixa vermelha no rodapé: se o banco vazar, o atacante leva só salt e hash, nunca a senha, e precisa adivinhar e testar, hash por hash, na própria máquina. Legenda: verde é a senha, amarelo é o salt, azul é o hash, vermelho é o que vaza para o atacante.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .r { fill: #f08a7e; }
-    .fw { stroke: #5cc8d8; stroke-width: 2.5; marker-end: url(#ar); fill: none; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 19px; font-weight: 700; }
+    .sec { font-size: 13px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.12em; }
+    .b { font-size: 14px; font-weight: 700; }
+    .s { font-size: 12px; fill: #94a3b8; }
+    .grn { fill: #34d399; }
+    .yel { fill: #facc15; }
+    .blu { fill: #60a5fa; }
+    .red { fill: #f87171; }
+    .mut { fill: #64748b; }
+    .ink { fill: #1f0f12; }
   </style>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-yellow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#eab308"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/>
+    </marker>
   </defs>
-  <rect width="900" height="430" fill="#121815"/>
-  <text class="t" x="30" y="30">A senha nunca é guardada; só o salt e o hash</text>
+  <rect width="1000" height="640" fill="url(#bg-grad)"/>
 
-  <text class="h" x="40" y="66">CADASTRO</text>
-  <text class="h" x="500" y="66">LOGIN</text>
-  <line x1="450" y1="48" x2="450" y2="360" stroke="#2b3a31" stroke-width="1"/>
+  <text class="title" x="40" y="40">A senha <tspan class="red">nunca é guardada</tspan>: o login só compara hashes</text>
+  <text class="s" x="40" y="64">O site não precisa saber a sua senha. Só precisa conferir se o hash de agora bate com o do cadastro.</text>
 
-  <!-- Cadastro -->
-  <rect x="40" y="80" width="200" height="40" rx="8" fill="#16201b" stroke="#5ee08a"/>
-  <text class="b g" x="56" y="105">senha: monkey1337</text>
-  <path class="fw" d="M140,120 L140,150"/>
-  <rect x="40" y="150" width="200" height="40" rx="8" fill="#16201b" stroke="#e8c46a"/>
-  <text class="b y" x="56" y="168">+ salt aleatório</text>
-  <text class="s" x="56" y="183">único por senha (ex.: AaBbCcDd)</text>
-  <path class="fw" d="M140,190 L140,220"/>
-  <rect x="40" y="220" width="200" height="46" rx="8" fill="#16201b" stroke="#5cc8d8"/>
-  <text class="b h" x="56" y="240">KDF lenta</text>
-  <text class="s" x="56" y="257">Argon2 / bcrypt / scrypt</text>
-  <path class="fw" d="M140,266 L140,296"/>
-  <rect x="40" y="296" width="330" height="54" rx="8" fill="#101a22" stroke="#5cc8d8"/>
-  <text class="b h" x="56" y="316">GUARDA no banco: salt + hash</text>
-  <text class="s" x="56" y="334">$6$AaBbCcDd$q1iHdMXPab/s... (a senha NÃO entra aqui)</text>
+  <!-- CADASTRO -->
+  <text class="sec" x="40" y="104">CADASTRO</text>
+  <rect x="40" y="116" width="220" height="54" rx="6" fill="#052e16" stroke="#10b981" stroke-width="1.5"/>
+  <text class="s" x="58" y="138">sua senha</text>
+  <text class="b grn" x="58" y="159">monkey1337</text>
+  <text class="b" x="280" y="149" text-anchor="middle">+</text>
+  <rect x="300" y="116" width="220" height="54" rx="6" fill="#1c1a06" stroke="#eab308" stroke-width="1.5"/>
+  <text class="b yel" x="318" y="138">valor aleatório (salt)</text>
+  <text class="s" x="318" y="159">um por usuário: AaBbCcDd</text>
+  <path d="M520,143 H578" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="580" y="116" width="220" height="54" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="b blu" x="598" y="138">hash lento</text>
+  <text class="s" x="598" y="159">Argon2 / bcrypt / scrypt</text>
 
-  <!-- Login -->
-  <rect x="500" y="80" width="200" height="40" rx="8" fill="#16201b" stroke="#5ee08a"/>
-  <text class="b g" x="516" y="105">senha digitada</text>
-  <path class="fw" d="M600,120 L600,150"/>
-  <rect x="500" y="150" width="200" height="40" rx="8" fill="#16201b" stroke="#e8c46a"/>
-  <text class="b y" x="516" y="168">+ o MESMO salt</text>
-  <text class="s" x="516" y="183">lido do registro do usuário</text>
-  <path class="fw" d="M600,190 L600,220"/>
-  <rect x="500" y="220" width="200" height="46" rx="8" fill="#16201b" stroke="#5cc8d8"/>
-  <text class="b h" x="516" y="240">mesma KDF</text>
-  <text class="s" x="516" y="257">com os mesmos parâmetros</text>
-  <path class="fw" d="M600,266 L600,296"/>
-  <rect x="500" y="296" width="360" height="54" rx="8" fill="#101a22" stroke="#5ee08a"/>
-  <text class="b" x="516" y="316">hash novo == hash guardado ?</text>
-  <text class="s g" x="516" y="334">igual → acesso liberado · diferente → senha errada</text>
+  <!-- BANCO -->
+  <rect data-graph-role="container" x="300" y="216" width="660" height="98" rx="8" fill="#0f172a" stroke="#94a3b8" stroke-width="1.5"/>
+  <text class="sec" x="40" y="246">BANCO</text>
+  <text class="s" x="40" y="266">guarda só</text>
+  <text class="s" x="40" y="284">dois campos</text>
+  <rect x="320" y="256" width="200" height="44" rx="6" fill="#1c1a06" stroke="#eab308" stroke-width="1.5"/>
+  <text class="b yel" x="420" y="283" text-anchor="middle">salt: AaBbCcDd</text>
+  <rect x="580" y="256" width="220" height="44" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="b blu" x="690" y="283" text-anchor="middle">hash: q1iHdMXP…</text>
+  <rect x="820" y="256" width="124" height="44" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text class="b mut" x="882" y="276" text-anchor="middle">senha</text>
+  <path d="M856,272 H908" stroke="#94a3b8" stroke-width="2"/>
+  <text class="s" x="882" y="293" text-anchor="middle">não fica aqui</text>
 
-  <rect x="40" y="372" width="820" height="42" rx="8" fill="#201616" stroke="#f08a7e"/>
-  <text class="b r" x="56" y="390">Se o banco vazar, o atacante leva só salt + hash — nunca a senha.</text>
-  <text class="s" x="56" y="406">Para descobrir a senha, ele precisa QUEBRAR cada hash offline, um por um. É disso que trata este módulo.</text>
+  <!-- into the bank -->
+  <path d="M410,170 V254" stroke="#eab308" stroke-width="1.5" fill="none" marker-end="url(#arrow-yellow)"/>
+  <path d="M690,170 V254" stroke="#3b82f6" stroke-width="1.5" fill="none" marker-end="url(#arrow-blue)"/>
+
+  <!-- LOGIN -->
+  <text class="sec" x="40" y="356">LOGIN</text>
+  <path d="M410,300 V366" stroke="#eab308" stroke-width="1.5" fill="none" marker-end="url(#arrow-yellow)"/>
+  <path d="M780,300 V334 H882 V366" stroke="#3b82f6" stroke-width="1.5" fill="none" marker-end="url(#arrow-blue)"/>
+  <text class="s blu" x="794" y="326">hash guardado</text>
+  <rect x="40" y="368" width="220" height="54" rx="6" fill="#052e16" stroke="#10b981" stroke-width="1.5"/>
+  <text class="s" x="58" y="390">senha digitada agora</text>
+  <text class="b grn" x="58" y="411">monkey1337 ?</text>
+  <text class="b" x="280" y="401" text-anchor="middle">+</text>
+  <rect x="300" y="368" width="220" height="54" rx="6" fill="#1c1a06" stroke="#eab308" stroke-width="1.5"/>
+  <text class="b yel" x="318" y="390">o MESMO salt</text>
+  <text class="s" x="318" y="411">lido do banco</text>
+  <path d="M520,395 H578" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="580" y="368" width="220" height="54" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="b blu" x="598" y="390">o mesmo hash lento</text>
+  <text class="s" x="598" y="411">mesmos parâmetros</text>
+  <path d="M800,395 H818" stroke="#3b82f6" stroke-width="1.5" fill="none" marker-end="url(#arrow-blue)"/>
+  <rect x="820" y="368" width="140" height="54" rx="6" fill="#0f1e3a" stroke="#e2e8f0" stroke-width="2"/>
+  <text class="b" x="890" y="390" text-anchor="middle">hash novo</text>
+  <text class="b" x="890" y="411" text-anchor="middle">= guardado?</text>
+
+  <!-- outcome -->
+  <path d="M890,422 V450" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <rect x="500" y="452" width="460" height="48" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+  <text x="730" y="481" text-anchor="middle" font-size="13" font-weight="700"><tspan class="grn">iguais → entra</tspan>  ·  <tspan class="mut">diferentes → senha errada</tspan></text>
+
+  <!-- consequence of a leak -->
+  <rect x="40" y="520" width="920" height="64" rx="8" fill="#ef4444"/>
+  <text class="ink" x="500" y="547" text-anchor="middle" font-size="16" font-weight="700">Se o banco vazar, o atacante leva só salt + hash — nunca a senha</text>
+  <text class="ink" x="500" y="571" text-anchor="middle" font-size="13" font-weight="700">Para achar a senha, ele precisa adivinhar e testar, hash por hash, na própria máquina.</text>
+
+  <!-- legend -->
+  <g class="s">
+    <rect x="40" y="604" width="14" height="14" rx="3" fill="#052e16" stroke="#10b981" stroke-width="1.5"/>
+    <text x="62" y="616">senha</text>
+    <rect x="150" y="604" width="14" height="14" rx="3" fill="#1c1a06" stroke="#eab308" stroke-width="1.5"/>
+    <text x="172" y="616">salt (valor aleatório)</text>
+    <rect x="370" y="604" width="14" height="14" rx="3" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="392" y="616">hash</text>
+    <rect x="470" y="604" width="14" height="14" rx="3" fill="#ef4444"/>
+    <text x="492" y="616">o que vaza para o atacante</text>
+  </g>
 </svg>
