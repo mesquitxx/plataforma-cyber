@@ -1,62 +1,95 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">As famílias de criptografia pós-quântica e os padrões do NIST</title>
-  <desc id="d">Tabela com duas colunas, troca de chaves (KEM) e assinatura, e cinco linhas de famílias matemáticas. Reticulados: ML-KEM, o FIPS 203, antigo Kyber, como KEM principal; ML-DSA, o FIPS 204, antigo Dilithium, como assinatura principal, e FN-DSA, o futuro FIPS 206, baseado no Falcon, em elaboração. Hash: nenhum KEM; SLH-DSA, o FIPS 205, antigo SPHINCS+, assinatura sem estado de reserva, e LMS e XMSS, assinaturas com estado do NIST SP 800-208. Códigos corretores de erro: HQC, escolhido em março de 2025 como KEM de reserva, com matemática diferente da do ML-KEM; nenhuma assinatura. Isogenias: SIKE, KEM que chegou à quarta rodada e foi quebrado em julho de 2022 por um ataque clássico. Multivariada: Rainbow, assinatura finalista da terceira rodada, quebrada em fevereiro de 2022 num laptop. As duas últimas linhas aparecem em vermelho, como quebradas. Embaixo, a lição: padronizar em mais de uma família de matemática é a reserva contra surpresas.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 630" width="960" height="630" role="img" aria-labelledby="t d">
+  <title id="t">Pós-quântica: cinco famílias de matemática; três deram padrões, duas caíram</title>
+  <desc id="d">Tabela com as famílias nas linhas e duas colunas, troca de chaves (KEM) e assinatura. Em cima, as três famílias que deram padrões. Reticulados: ML-KEM, FIPS 203, ex-Kyber, o KEM principal, e ML-DSA, FIPS 204, ex-Dilithium, a assinatura principal, ambos em verde, publicados; e FN-DSA, FIPS 206, em amarelo, a caminho. Hash: nenhum KEM; SLH-DSA, FIPS 205, ex-SPHINCS+, assinatura de reserva, e LMS/XMSS, SP 800-208, com estado, ambos em verde. Códigos corretores de erro: HQC, escolhido em março de 2025 como KEM de reserva, com matemática diferente da do ML-KEM, em amarelo; nenhuma assinatura. Embaixo, separadas sob o rótulo Caíram durante o concurso, para ataques clássicos: Isogenias, com o KEM SIKE quebrado em julho de 2022 num núcleo de CPU, e Multivariada, com a assinatura Rainbow quebrada em fevereiro de 2022 num fim de semana num laptop, em vermelho. No quadro de destaque, a lição: padronizar em mais de uma família de matemática é a reserva contra surpresas. Legenda: verde publicado, amarelo a caminho, vermelho quebrado.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .r { fill: #e86a6a; }
-    .row { fill: #16201b; stroke: #2c3a33; stroke-width: 1.2; }
-    .dead { fill: #241515; stroke: #e86a6a; stroke-width: 1.2; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 17px; font-weight: 700; }
+    .col { font-size: 12px; font-weight: 700; fill: #94a3b8; }
+    .h { font-size: 14px; font-weight: 700; }
+    .b { font-size: 13px; font-weight: 700; }
+    .s { font-size: 11.5px; fill: #94a3b8; }
+    .dash { font-size: 13px; fill: #475569; }
+    .grn { fill: #6ee7b7; }
+    .gold { fill: #facc15; }
+    .red { fill: #fca5a5; }
+    .lesson { font-size: 15px; font-weight: 700; }
   </style>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="32">Pós-quântica: cinco famílias de matemática, e o que sobrou de cada uma</text>
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="630" fill="url(#bg-grad)"/>
 
-  <text class="h" x="40" y="66">Família</text>
-  <text class="h" x="250" y="66">Troca de chaves (KEM)</text>
-  <text class="h" x="560" y="66">Assinatura</text>
+  <text class="title" x="40" y="40">Pós-quântica: 5 famílias de matemática; 3 deram padrões, 2 caíram</text>
 
-  <rect class="row" x="30" y="76" width="840" height="76" rx="8"/>
-  <text class="b" x="40" y="100">Reticulados</text>
-  <text class="s" x="40" y="118">(lattices, LWE)</text>
-  <text class="b g" x="250" y="100">ML-KEM · FIPS 203</text>
-  <text class="s" x="250" y="118">ex-Kyber; o padrão principal</text>
-  <text class="b g" x="560" y="100">ML-DSA · FIPS 204</text>
-  <text class="s" x="560" y="118">ex-Dilithium; o padrão principal</text>
-  <text class="b y" x="560" y="138">FN-DSA · FIPS 206 (em elaboração)</text>
+  <!-- Column headers -->
+  <text class="col" x="56" y="84">FAMÍLIA</text>
+  <text class="col" x="306" y="84">TROCA DE CHAVES (KEM)</text>
+  <text class="col" x="606" y="84">ASSINATURA</text>
 
-  <rect class="row" x="30" y="160" width="840" height="64" rx="8"/>
-  <text class="b" x="40" y="184">Hash</text>
-  <text class="s" x="40" y="202">(só funções de hash)</text>
-  <text class="s" x="250" y="184">—</text>
-  <text class="b g" x="560" y="184">SLH-DSA · FIPS 205</text>
-  <text class="s" x="560" y="202">ex-SPHINCS+; reserva, sem estado</text>
-  <text class="s" x="560" y="216">LMS/XMSS · SP 800-208 (com estado)</text>
+  <!-- Row 1: lattices -->
+  <rect x="40" y="96" width="880" height="84" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="h" x="56" y="122">Reticulados</text>
+  <text class="s" x="56" y="142">(grade de pontos, LWE)</text>
+  <circle cx="312" cy="118" r="5" fill="#10b981"/>
+  <text class="b grn" x="324" y="122">ML-KEM · FIPS 203</text>
+  <text class="s" x="324" y="142">ex-Kyber; o principal</text>
+  <circle cx="612" cy="118" r="5" fill="#10b981"/>
+  <text class="b grn" x="624" y="122">ML-DSA · FIPS 204</text>
+  <text class="s" x="624" y="142">ex-Dilithium; a principal</text>
+  <circle cx="612" cy="162" r="5" fill="#eab308"/>
+  <text class="b gold" x="624" y="166">FN-DSA · FIPS 206</text>
 
-  <rect class="row" x="30" y="232" width="840" height="56" rx="8"/>
-  <text class="b" x="40" y="256">Códigos</text>
-  <text class="s" x="40" y="274">(corretores de erro)</text>
-  <text class="b y" x="250" y="256">HQC (escolhido em 03/2025)</text>
-  <text class="s" x="250" y="274">reserva do ML-KEM, outra matemática</text>
-  <text class="s" x="560" y="256">—</text>
+  <!-- Row 2: hash -->
+  <rect x="40" y="188" width="880" height="80" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="h" x="56" y="214">Hash</text>
+  <text class="s" x="56" y="234">(só funções de hash)</text>
+  <text class="dash" x="324" y="214">—</text>
+  <circle cx="612" cy="210" r="5" fill="#10b981"/>
+  <text class="b grn" x="624" y="214">SLH-DSA · FIPS 205</text>
+  <text class="s" x="624" y="232">ex-SPHINCS+; reserva</text>
+  <circle cx="612" cy="252" r="5" fill="#10b981"/>
+  <text class="b grn" x="624" y="256">LMS/XMSS · SP 800-208</text>
 
-  <rect class="dead" x="30" y="296" width="840" height="56" rx="8"/>
-  <text class="b" x="40" y="320">Isogenias</text>
-  <text class="s" x="40" y="338">(curvas elípticas)</text>
-  <text class="b r" x="250" y="320">SIKE ✗ quebrado em 07/2022</text>
-  <text class="s" x="250" y="338">ataque clássico, um núcleo de CPU</text>
-  <text class="s" x="560" y="320">—</text>
+  <!-- Row 3: codes -->
+  <rect x="40" y="276" width="880" height="64" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="h" x="56" y="302">Códigos</text>
+  <text class="s" x="56" y="322">(corretores de erro)</text>
+  <circle cx="312" cy="298" r="5" fill="#eab308"/>
+  <text class="b gold" x="324" y="302">HQC · escolhido 03/2025</text>
+  <text class="s" x="324" y="322">reserva do ML-KEM, outra matemática</text>
+  <text class="dash" x="624" y="302">—</text>
 
-  <rect class="dead" x="30" y="360" width="840" height="56" rx="8"/>
-  <text class="b" x="40" y="384">Multivariada</text>
-  <text class="s" x="40" y="402">(equações quadráticas)</text>
-  <text class="s" x="250" y="384">—</text>
-  <text class="b r" x="560" y="384">Rainbow ✗ quebrado em 02/2022</text>
-  <text class="s" x="560" y="402">"um fim de semana num laptop"</text>
+  <!-- Separator -->
+  <line x1="40" y1="362" x2="920" y2="362" stroke="#ef4444" stroke-width="1" stroke-dasharray="5 4"/>
+  <text class="b red" x="40" y="386">CAÍRAM DURANTE O CONCURSO, PARA ATAQUES CLÁSSICOS</text>
 
-  <text class="b" x="30" y="446">Lição: padronizar em mais de uma família é a reserva contra surpresas.</text>
+  <!-- Row 4: isogenies -->
+  <rect x="40" y="398" width="880" height="60" rx="6" fill="#2a0f14" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="h" x="56" y="423">Isogenias</text>
+  <text class="s" x="56" y="443">(curvas elípticas)</text>
+  <text class="b red" x="312" y="423">✗ SIKE · quebrado 07/2022</text>
+  <text class="s" x="324" y="443">num único núcleo de CPU</text>
+  <text class="dash" x="624" y="423">—</text>
+
+  <!-- Row 5: multivariate -->
+  <rect x="40" y="466" width="880" height="60" rx="6" fill="#2a0f14" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="h" x="56" y="491">Multivariada</text>
+  <text class="s" x="56" y="511">(equações quadráticas)</text>
+  <text class="dash" x="324" y="491">—</text>
+  <text class="b red" x="612" y="491">✗ Rainbow · quebrado 02/2022</text>
+  <text class="s" x="624" y="511">"um fim de semana num laptop"</text>
+
+  <!-- Lesson + legend -->
+  <rect x="40" y="540" width="880" height="44" rx="8" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text class="lesson" x="56" y="567">Lição: padronizar em mais de uma família é a reserva contra surpresas.</text>
+  <g class="s">
+    <circle cx="46" cy="608" r="5" fill="#10b981"/>
+    <text x="58" y="612">publicado</text>
+    <circle cx="166" cy="608" r="5" fill="#eab308"/>
+    <text x="178" y="612">a caminho</text>
+    <text class="red" x="286" y="612">✗ quebrado</text>
+  </g>
 </svg>
