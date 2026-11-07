@@ -1,76 +1,141 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">A attack box e o que ela alcança</title>
-  <desc id="d">No centro, o contêiner kali com duas interfaces: eth0 na rede desktop_net e eth1 na rede lab_net. Na desktop_net, à esquerda, está só o guacd, que o Kali alcança e resolve pelo nome. Na lab_net, à direita, ficam os alvos quando o lab tem um, como o DVWA no lab dvwa; no lab kali ela está vazia. Acima, setas cortadas em vermelho mostram o que o Kali não alcança: a internet (sem rota padrão, ping responde Network is unreachable), o PC e o Windows (as bridges internas não têm IP no host), os bancos de dados e a interface web do Guacamole (outras redes, nomes que não resolvem). Dentro do Kali, o DNS embutido do Docker em 127.0.0.11 só responde nomes de contêineres das redes do próprio Kali.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .r { fill: #f08a7a; }
-  </style>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="32">A attack box por dentro: duas redes internas e nada além delas</text>
-
-  <!-- forbidden zone -->
-  <g fill="#1f1714" stroke="#5a3a33" stroke-width="1.5">
-    <rect x="40" y="56" width="190" height="70" rx="8"/>
-    <rect x="260" y="56" width="190" height="70" rx="8"/>
-    <rect x="480" y="56" width="190" height="70" rx="8"/>
-    <rect x="700" y="56" width="170" height="70" rx="8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 785" width="1300" height="785" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
+  <defs>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
+  </defs>
+  <rect data-graph-role="background" width="1300.0" height="785.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">O Kali só alcança a tela e os alvos do lab</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">internet, seu PC e o resto da plataforma ficam fora de alcance: as duas redes são internas, sem saída</text>
+  <g id="fora" data-graph-role="container" data-container-id="fora" data-semantic-role="boundary" data-graph-bounds="40,130,1260,320">
+  <rect data-graph-role="container" x="40.0" y="130.0" width="1220.0" height="190.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#fb7185" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="154.0" class="section">FORA DE ALCANCE</text>
+    <rect id="fora-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="136" width="137.38" height="30" fill="none" stroke="none"/>
   </g>
-  <text class="b r" x="52" y="80">Internet</text>
-  <text class="s" x="52" y="98">sem rota padrão:</text>
-  <text class="s" x="52" y="114">"Network is unreachable"</text>
-  <text class="b r" x="272" y="80">PC (WSL) e Windows</text>
-  <text class="s" x="272" y="98">bridges internas sem</text>
-  <text class="s" x="272" y="114">IP no host</text>
-  <text class="b r" x="492" y="80">guac-db, guacamole</text>
-  <text class="s" x="492" y="98">outras redes; os nomes</text>
-  <text class="s" x="492" y="114">nem resolvem</text>
-  <text class="b r" x="712" y="80">guac-proxy</text>
-  <text class="s" x="712" y="98">só fala com o</text>
-  <text class="s" x="712" y="114">guacamole</text>
-
-  <g stroke="#f08a7a" stroke-width="2" stroke-dasharray="5 4">
-    <line x1="135" y1="130" x2="390" y2="232"/>
-    <line x1="355" y1="130" x2="420" y2="232"/>
-    <line x1="575" y1="130" x2="480" y2="232"/>
-    <line x1="785" y1="130" x2="510" y2="232"/>
+  <g id="tela" data-graph-role="container" data-container-id="tela" data-semantic-role="boundary" data-graph-bounds="40,450,400,650">
+  <rect data-graph-role="container" x="40.0" y="450.0" width="360.0" height="200.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="474.0" class="section">REDE DA TELA (desktop_net)</text>
+    <rect id="tela-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="456" width="217.46" height="30" fill="none" stroke="none"/>
   </g>
-  <g fill="#f08a7a" font-size="18" font-weight="700">
-    <text x="252" y="186" style="fill:#f08a7a">✕</text>
-    <text x="378" y="186" style="fill:#f08a7a">✕</text>
-    <text x="520" y="186" style="fill:#f08a7a">✕</text>
-    <text x="640" y="186" style="fill:#f08a7a">✕</text>
+  <g id="alvos" data-graph-role="container" data-container-id="alvos" data-semantic-role="boundary" data-graph-bounds="900,450,1260,650">
+  <rect data-graph-role="container" x="900.0" y="450.0" width="360.0" height="200.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="918.0" y="474.0" class="section">REDE DOS ALVOS (lab_net)</text>
+    <rect id="alvos-header" data-graph-role="reserved" data-reserved-kind="container-header" x="908" y="456" width="199" height="30" fill="none" stroke="none"/>
   </g>
-
-  <!-- kali -->
-  <rect x="330" y="236" width="240" height="120" rx="10" fill="#1a2420" stroke="#5ee08a" stroke-width="2"/>
-  <text class="h" x="346" y="260">kali (contêiner)</text>
-  <text class="s" x="346" y="280">usuário kali, sudo só aqui dentro</text>
-  <text class="s" x="346" y="298">DNS: 127.0.0.11 (embutido)</text>
-  <text class="s" x="346" y="316">escuta: o servidor VNC (?)</text>
-  <text class="b g" x="346" y="342">eth0</text>
-  <text class="b g" x="520" y="342">eth1</text>
-
-  <!-- desktop_net -->
-  <rect x="40" y="300" width="230" height="130" rx="8" fill="#16201c" stroke="#34413b" stroke-dasharray="6 4"/>
-  <text class="h" x="52" y="322">desktop_net (interna)</text>
-  <rect x="70" y="344" width="150" height="56" rx="6" fill="#1a2420" stroke="#34413b"/>
-  <text class="b" x="84" y="366">guacd</text>
-  <text class="s" x="84" y="386">resolve e alcança</text>
-  <line x1="222" y1="372" x2="344" y2="345" stroke="#5ee08a" stroke-width="2"/>
-
-  <!-- lab_net -->
-  <rect x="630" y="300" width="240" height="130" rx="8" fill="#16201c" stroke="#34413b" stroke-dasharray="6 4"/>
-  <text class="h" x="642" y="322">lab_net (interna)</text>
-  <rect x="660" y="344" width="180" height="56" rx="6" fill="#1a2420" stroke="#34413b"/>
-  <text class="b" x="674" y="366">alvos do lab</text>
-  <text class="s" x="674" y="386">dvwa, juice-shop...</text>
-  <text class="s" x="674" y="420">(vazia no lab kali)</text>
-  <line x1="548" y1="345" x2="658" y2="372" stroke="#5ee08a" stroke-width="2"/>
-
-  <text class="s" x="40" y="452">Verde: caminho que existe. Vermelho tracejado: caminho que o desenho corta (provado pelo scripts/lab.sh verify).</text>
+  <path id="no1" data-graph-role="edge" data-edge-id="no1" data-source="kali" data-target="inet" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 632,490 L 632,400 L 570,400 L 240,400 L 240,280" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)" stroke-dasharray="6,4"/>
+  <path id="no3" data-graph-role="edge" data-edge-id="no3" data-source="kali" data-target="resto" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 668,490 L 668,400 L 730,400 L 1060,400 L 1060,280" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)" stroke-dasharray="6,4"/>
+  <path id="ok1" data-graph-role="edge" data-edge-id="ok1" data-source="kali" data-target="guacd" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 500,560 L 370,560 L 370,565 L 370,565" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="ok2" data-graph-role="edge" data-edge-id="ok2" data-source="kali" data-target="alvo" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 800,560 L 820.4,560 L 820.4,565 L 930,565" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="no2" data-graph-role="edge" data-edge-id="no2" data-source="kali" data-target="pc" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 650,490 L 650,280" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)" stroke-dasharray="6,4"/>
+  <g id="node-inet" data-graph-role="node" data-node-id="inet" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="fora" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="90,180,390,280">
+  <rect x="90.0" y="180.0" width="300.0" height="100.0" rx="10.0" fill="#2a0a0a" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Internet" data-text-max-width="276.0" x="240.0" y="230.0" text-anchor="middle" class="node-title" font-size="18">Internet</text>
+  <text data-text-role="subtitle" data-full-text="não há rota para fora" data-text-max-width="276.0" x="240.0" y="252.0" text-anchor="middle" class="node-sub" font-size="12">não há rota para fora</text>
+  </g>
+  <g id="node-pc" data-graph-role="node" data-node-id="pc" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="fora" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="500,180,800,280">
+  <rect x="500.0" y="180.0" width="300.0" height="100.0" rx="10.0" fill="#2a0a0a" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Seu PC e o Windows" data-text-max-width="276.0" x="650.0" y="230.0" text-anchor="middle" class="node-title" font-size="18">Seu PC e o Windows</text>
+  <text data-text-role="subtitle" data-full-text="as redes não têm IP nele" data-text-max-width="276.0" x="650.0" y="252.0" text-anchor="middle" class="node-sub" font-size="12">as redes não têm IP nele</text>
+  </g>
+  <g id="node-resto" data-graph-role="node" data-node-id="resto" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="fora" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="910,180,1210,280">
+  <rect x="910.0" y="180.0" width="300.0" height="100.0" rx="10.0" fill="#2a0a0a" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Resto da plataforma" data-text-max-width="276.0" x="1060.0" y="230.0" text-anchor="middle" class="node-title" font-size="18">Resto da plataforma</text>
+  <text data-text-role="subtitle" data-full-text="banco e login: outras redes" data-text-max-width="276.0" x="1060.0" y="252.0" text-anchor="middle" class="node-sub" font-size="12">banco e login: outras redes</text>
+  </g>
+  <g id="node-kali" data-graph-role="node" data-node-id="kali" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="500,490,800,630">
+  <rect x="500.0" y="490.0" width="300.0" height="140.0" rx="10.0" fill="#0f172a" stroke="#38bdf8" stroke-width="2.6" filter="url(#glowBlue)"/>
+  <text x="650.0" y="508.0" text-anchor="middle" class="node-type">SUA MÁQUINA DE ATAQUE</text>
+  <text data-text-role="title" data-full-text="Kali" data-text-max-width="276.0" x="650.0" y="566.0" text-anchor="middle" class="node-title" font-size="18">Kali</text>
+  <text data-text-role="subtitle" data-full-text="uma perna em cada rede interna" data-text-max-width="276.0" x="650.0" y="588.0" text-anchor="middle" class="node-sub" font-size="12">uma perna em cada rede interna</text>
+  </g>
+  <g id="node-guacd" data-graph-role="node" data-node-id="guacd" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="tela" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,510,370,620">
+  <rect x="70.0" y="510.0" width="300.0" height="110.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="220.0" y="528.0" text-anchor="middle" class="node-type">TRADUTOR DA TELA</text>
+  <text data-text-role="title" data-full-text="guacd" data-text-max-width="276.0" x="220.0" y="571.0" text-anchor="middle" class="node-title" font-size="18">guacd</text>
+  <text data-text-role="subtitle" data-full-text="único vizinho nesta rede" data-text-max-width="276.0" x="220.0" y="593.0" text-anchor="middle" class="node-sub" font-size="12">único vizinho nesta rede</text>
+  </g>
+  <g id="node-alvo" data-graph-role="node" data-node-id="alvo" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="alvos" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="930,510,1230,620">
+  <rect x="930.0" y="510.0" width="300.0" height="110.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="1080.0" y="528.0" text-anchor="middle" class="node-type">ALVOS DO LAB</text>
+  <text data-text-role="title" data-full-text="dvwa, juice-shop..." data-text-max-width="276.0" x="1080.0" y="571.0" text-anchor="middle" class="node-title" font-size="18">dvwa, juice-shop...</text>
+  <text data-text-role="subtitle" data-full-text="vazia no lab kali" data-text-max-width="276.0" x="1080.0" y="593.0" text-anchor="middle" class="node-sub" font-size="12">vazia no lab kali</text>
+  </g>
+  <g id="ok1-label" data-graph-role="label" data-owner="ok1" data-graph-bounds="405.2,529,464.8,549">
+  <rect x="405.2" y="529.0" width="59.6" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="435.0" y="543.0" text-anchor="middle" class="arrow-label">alcança</text>
+  </g>
+  <g id="ok2-label" data-graph-role="label" data-owner="ok2" data-graph-bounds="845.4,534,905,554">
+  <rect x="845.4" y="534.0" width="59.6" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="875.2" y="548.0" text-anchor="middle" class="arrow-label">alcança</text>
+  </g>
+  <g id="no1-label" data-graph-role="label" data-owner="no1" data-graph-bounds="362.6,369,447.4,389">
+  <rect x="362.6" y="369.0" width="84.80000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="405.0" y="383.0" text-anchor="middle" class="arrow-label">sem caminho</text>
+  </g>
+  <g id="no3-label" data-graph-role="label" data-owner="no3" data-graph-bounds="852.6,369,937.4,389">
+  <rect x="852.6" y="369.0" width="84.80000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="895.0" y="383.0" text-anchor="middle" class="arrow-label">sem caminho</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="38" y="691" width="458.4" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="48.0" y1="705.0" x2="78.0" y2="705.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="88.0" y="709.0" class="legend">caminho que existe      </text>
+    <line data-graph-role="decoration" x1="255.67999999999995" y1="705.0" x2="285.67999999999995" y2="705.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="295.67999999999995" y="709.0" class="legend">caminho cortado de propósito</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,743,447,759">
+  <text x="48.0" y="755.0" class="footnote">Você vai provar cada corte de dentro do Kali na Missão 3.</text>
+  </g>
 </svg>

@@ -1,64 +1,125 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" role="img" aria-labelledby="t d">
-  <title id="t">O que sobrevive a Parar, Resetar e purge</title>
-  <desc id="d">À esquerda, o sistema de arquivos do contêiner kali em duas camadas. A camada da imagem cyberlab/kali-xfce:local (somente leitura: /usr com as ferramentas, /etc, /opt) e, por cima, a camada gravável do contêiner (o que você muda fora da home, como /tmp e arquivos criados com sudo em /opt). Ao lado, o volume kali_home montado em /home/kali, com ~/engajamentos e ~/ferramentas. À direita, uma tabela com três ações. Parar: a camada gravável e o volume ficam. Resetar: a camada gravável é descartada e recriada da imagem; o volume fica. purge, só pelo terminal: o contêiner e o volume são apagados, inclusive /home/kali. Conclusão: trabalho que importa mora em /home/kali, e cópia de segurança com scripts/lab.sh backup-home.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .r { fill: #f08a7a; }
-  </style>
-  <rect width="900" height="440" fill="#121815"/>
-  <text class="t" x="30" y="32">Onde o seu trabalho mora, e o que cada botão apaga</text>
-
-  <rect x="30" y="56" width="300" height="70" rx="6" fill="#1f1714" stroke="#5a3a33"/>
-  <text class="h" x="44" y="78">camada gravável do contêiner</text>
-  <text class="s" x="44" y="98">/tmp, /opt/teste.txt (sudo), configs</text>
-  <text class="s" x="44" y="114">mudadas fora da home</text>
-
-  <rect x="30" y="134" width="300" height="90" rx="6" fill="#1a2420" stroke="#34413b"/>
-  <text class="h" x="44" y="156">imagem cyberlab/kali-xfce:local</text>
-  <text class="s" x="44" y="176">somente leitura: /usr (ferramentas),</text>
-  <text class="s" x="44" y="192">/etc, kernel NÃO (vem do host)</text>
-  <text class="s" x="44" y="208">muda só com scripts/lab.sh rebuild</text>
-
-  <rect x="350" y="56" width="190" height="168" rx="6" fill="#14231b" stroke="#5ee08a" stroke-width="2"/>
-  <text class="h" x="364" y="78">volume kali_home</text>
-  <text class="s" x="364" y="96">montado em /home/kali</text>
-  <text class="b g" x="364" y="126">~/engajamentos/</text>
-  <text class="b g" x="364" y="146">~/ferramentas/</text>
-  <text class="s" x="364" y="168">.BurpSuite, .mozilla,</text>
-  <text class="s" x="364" y="184">.config ...</text>
-
-  <!-- table -->
-  <g fill="#1a2420" stroke="#34413b">
-    <rect x="570" y="56" width="300" height="34"/>
-    <rect x="570" y="90" width="300" height="44"/>
-    <rect x="570" y="134" width="300" height="44"/>
-    <rect x="570" y="178" width="300" height="46"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 770" width="1300" height="770" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
+  <defs>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
+  </defs>
+  <rect data-graph-role="background" width="1300.0" height="770.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="650.0" y="56" text-anchor="middle" class="title">Só o /home/kali sobrevive ao Resetar</text>
+  <text x="650.0" y="82" text-anchor="middle" class="subtitle">o resto do contêiner volta a ser a imagem; apagar de vez leva até a home</text>
+  <g id="acoes" data-graph-role="container" data-container-id="acoes" data-semantic-role="boundary" data-graph-bounds="40,120,460,650">
+  <rect data-graph-role="container" x="40.0" y="120.0" width="420.0" height="530.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="144.0" class="section">O QUE VOCÊ FAZ</text>
+    <rect id="acoes-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="126" width="126.98" height="30" fill="none" stroke="none"/>
   </g>
-  <text class="b" x="580" y="78">ação</text>
-  <text class="b" x="680" y="78">camada</text>
-  <text class="b" x="775" y="78">/home/kali</text>
-  <text class="b" x="580" y="117">Parar</text>
-  <text class="b g" x="680" y="117">fica</text>
-  <text class="b g" x="775" y="117">fica</text>
-  <text class="b" x="580" y="161">Resetar</text>
-  <text class="b r" x="680" y="161">apagada</text>
-  <text class="b g" x="775" y="161">fica</text>
-  <text class="b" x="580" y="200">purge</text>
-  <text class="s" x="580" y="215">(só terminal)</text>
-  <text class="b r" x="680" y="205">apagada</text>
-  <text class="b r" x="775" y="205">APAGADO</text>
-
-  <rect x="30" y="250" width="840" height="168" rx="8" fill="#16201c" stroke="#34413b"/>
-  <text class="h" x="46" y="276">Regra prática</text>
-  <text class="b" x="46" y="300">1. Tudo que importa (notas, saídas, scripts) mora em /home/kali.</text>
-  <text class="b" x="46" y="322">2. O que você fizer com sudo fora da home some no próximo Resetar: é de propósito.</text>
-  <text class="b" x="46" y="344">3. Ferramenta nova não se instala com apt (não há internet): ela entra no Dockerfile</text>
-  <text class="b" x="46" y="362">   e chega com scripts/lab.sh rebuild, pelo terminal do WSL.</text>
-  <text class="b" x="46" y="384">4. Antes de um purge, ou de um rebuild arriscado: scripts/lab.sh backup-home.</text>
-  <text class="s" x="46" y="406">Medido no lab: /tmp/fora-do-home.txt e /opt/teste.txt sumiram depois do Resetar; ~/engajamentos continuou lá.</text>
+  <g id="kali" data-graph-role="container" data-container-id="kali" data-semantic-role="boundary" data-graph-bounds="820,120,1260,650">
+  <rect data-graph-role="container" x="820.0" y="120.0" width="440.0" height="530.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="838.0" y="144.0" class="section">DENTRO DO KALI</text>
+    <rect id="kali-header" data-graph-role="reserved" data-reserved-kind="container-header" x="828" y="126" width="126.46" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="p1" data-graph-role="edge" data-edge-id="p1" data-source="purge" data-target="sistema" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 250,500 L 250,460 L 380,460 L 1040,460 L 1040,420" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="r1" data-graph-role="edge" data-edge-id="r1" data-source="resetar" data-target="sistema" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 420,355 L 860,355" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="p2" data-graph-role="edge" data-edge-id="p2" data-source="purge" data-target="home" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 420,555 L 860,555" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <g id="node-parar" data-graph-role="node" data-node-id="parar" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="acoes" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="80,170,420,260">
+  <rect x="80.0" y="170.0" width="340.0" height="90.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Parar" data-text-max-width="316.0" x="250.0" y="215.0" text-anchor="middle" class="node-title" font-size="18">Parar</text>
+  <text data-text-role="subtitle" data-full-text="não apaga nada" data-text-max-width="316.0" x="250.0" y="237.0" text-anchor="middle" class="node-sub" font-size="12">não apaga nada</text>
+  </g>
+  <g id="node-resetar" data-graph-role="node" data-node-id="resetar" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="acoes" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="80,290,420,420">
+  <rect x="80.0" y="290.0" width="340.0" height="130.0" rx="10.0" fill="#0f172a" stroke="#e2e8f0" stroke-width="2.6" filter="url(#glowBlue)"/>
+  <text x="250.0" y="308.0" text-anchor="middle" class="node-type">O MOMENTO-CHAVE</text>
+  <text data-text-role="title" data-full-text="Resetar" data-text-max-width="316.0" x="250.0" y="361.0" text-anchor="middle" class="node-title" font-size="18">Resetar</text>
+  <text data-text-role="subtitle" data-full-text="recria o contêiner a partir da imagem" data-text-max-width="316.0" x="250.0" y="383.0" text-anchor="middle" class="node-sub" font-size="12">recria o contêiner a partir da imagem</text>
+  </g>
+  <g id="node-purge" data-graph-role="node" data-node-id="purge" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="acoes" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="80,500,420,610">
+  <rect x="80.0" y="500.0" width="340.0" height="110.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Apagar de vez" data-text-max-width="316.0" x="250.0" y="555.0" text-anchor="middle" class="node-title" font-size="18">Apagar de vez</text>
+  <text data-text-role="subtitle" data-full-text="purge, só pelo terminal" data-text-max-width="316.0" x="250.0" y="577.0" text-anchor="middle" class="node-sub" font-size="12">purge, só pelo terminal</text>
+  </g>
+  <g id="node-sistema" data-graph-role="node" data-node-id="sistema" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="kali" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="860,290,1220,420">
+  <rect x="860.0" y="290.0" width="360.0" height="130.0" rx="10.0" fill="#2a0a0a" stroke="#fb7185" stroke-width="1.8"/>
+  <text x="1040.0" y="308.0" text-anchor="middle" class="node-type">VOLTA A SER A IMAGEM</text>
+  <text data-text-role="title" data-full-text="Resto do sistema" data-text-max-width="336.0" x="1040.0" y="361.0" text-anchor="middle" class="node-title" font-size="18">Resto do sistema</text>
+  <text data-text-role="subtitle" data-full-text="/tmp, /opt, o que você mudou com sudo" data-text-max-width="336.0" x="1040.0" y="383.0" text-anchor="middle" class="node-sub" font-size="12">/tmp, /opt, o que você mudou com sudo</text>
+  </g>
+  <g id="node-home" data-graph-role="node" data-node-id="home" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="kali" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="860,490,1220,620">
+  <rect x="860.0" y="490.0" width="360.0" height="130.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="2.6" filter="url(#glowGreen)"/>
+  <text x="1040.0" y="508.0" text-anchor="middle" class="node-type">SOBREVIVE AO RESETAR</text>
+  <text data-text-role="title" data-full-text="/home/kali" data-text-max-width="336.0" x="1040.0" y="561.0" text-anchor="middle" class="node-title" font-size="18">/home/kali</text>
+  <text data-text-role="subtitle" data-full-text="~/engajamentos, ~/ferramentas, configs" data-text-max-width="336.0" x="1040.0" y="583.0" text-anchor="middle" class="node-sub" font-size="12">~/engajamentos, ~/ferramentas, configs</text>
+  </g>
+  <g id="r1-label" data-graph-role="label" data-owner="r1" data-graph-bounds="615.6,324,664.4,344">
+  <rect x="615.6" y="324.0" width="48.8" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="640.0" y="338.0" text-anchor="middle" class="arrow-label">apaga</text>
+  </g>
+  <g id="p1-label" data-graph-role="label" data-owner="p1" data-graph-bounds="685.6,429,734.4,449">
+  <rect x="685.6" y="429.0" width="48.8" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="710.0" y="443.0" text-anchor="middle" class="arrow-label">apaga</text>
+  </g>
+  <g id="p2-label" data-graph-role="label" data-owner="p2" data-graph-bounds="615.6,524,664.4,544">
+  <rect x="615.6" y="524.0" width="48.8" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="640.0" y="538.0" text-anchor="middle" class="arrow-label">apaga</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="38" y="676" width="423.36" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="48.0" y1="690.0" x2="78.0" y2="690.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="88.0" y="694.0" class="legend">é apagado      </text>
+    <line data-graph-role="decoration" x1="201.92000000000002" y1="690.0" x2="231.92000000000002" y2="690.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="241.92000000000002" y="694.0" class="legend">sobrevive ao Parar e ao Resetar</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,728,580,744">
+  <text x="48.0" y="740.0" class="footnote">Regra prática: tudo que importa (notas, saídas, scripts) mora em /home/kali.</text>
+  </g>
 </svg>

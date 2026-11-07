@@ -1,92 +1,134 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
-  <title id="t">O caminho da sua tela até o Kali</title>
-  <desc id="d">Da esquerda para a direita, cinco caixas ligadas por setas. Primeira: o navegador no Windows, que abre a plataforma em 127.0.0.1:3000 e, dentro dela, um iframe para 127.0.0.1:8080. Segunda: guac-proxy, um nginx, a única porta de laboratório publicada, só no loopback. Terceira: guacamole, a aplicação web do Apache Guacamole, que confere o login do usuário restrito plataforma. Quarta: guacd, que traduz o protocolo do Guacamole para VNC. Quinta: o Kali, onde um servidor VNC espera o guacd e desenha o desktop XFCE. Embaixo de cada seta, a rede usada: loopback do PC, guac_edge, guac_back e desktop_net, todas internas a partir do proxy. Uma faixa inferior lembra que nenhuma dessas redes tem saída para a internet.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .r { fill: #f08a7a; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 560" width="1560" height="560" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
     </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="430" fill="#121815"/>
-  <text class="t" x="30" y="32">O caminho da sua tela: do navegador ao desktop do Kali</text>
-
-  <!-- boxes -->
-  <g fill="#1a2420" stroke="#34413b" stroke-width="1.5">
-    <rect x="20" y="70" width="150" height="170" rx="8"/>
-    <rect x="200" y="70" width="150" height="170" rx="8"/>
-    <rect x="380" y="70" width="150" height="170" rx="8"/>
-    <rect x="560" y="70" width="150" height="170" rx="8"/>
-    <rect x="740" y="70" width="145" height="170" rx="8" stroke="#5ee08a"/>
+  <rect data-graph-role="background" width="1560.0" height="560.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="780.0" y="56" text-anchor="middle" class="title">Sua tela chega ao Kali por uma única porta, aberta só no seu PC</text>
+  <text x="780.0" y="82" text-anchor="middle" class="subtitle">depois dessa porta, cada salto passa por uma rede interna, sem internet</text>
+  <g id="pc" data-graph-role="container" data-container-id="pc" data-semantic-role="boundary" data-graph-bounds="40,130,290,430">
+  <rect data-graph-role="container" x="40.0" y="130.0" width="250.0" height="300.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="154.0" class="section">SEU PC (WINDOWS)</text>
+    <rect id="pc-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="136" width="147.78" height="30" fill="none" stroke="none"/>
   </g>
-
-  <text class="h" x="32" y="94">Navegador</text>
-  <text class="b" x="32" y="116">(Windows)</text>
-  <text class="s" x="32" y="140">plataforma em</text>
-  <text class="s g" x="32" y="156">127.0.0.1:3000</text>
-  <text class="s" x="32" y="180">iframe para</text>
-  <text class="s g" x="32" y="196">127.0.0.1:8080</text>
-  <text class="s" x="32" y="222">o seu teclado/mouse</text>
-
-  <text class="h" x="212" y="94">guac-proxy</text>
-  <text class="b" x="212" y="116">(nginx)</text>
-  <text class="s" x="212" y="140">única porta de lab</text>
-  <text class="s" x="212" y="156">publicada, só no</text>
-  <text class="s" x="212" y="172">loopback do PC</text>
-  <text class="s" x="212" y="196">sem NAT: não sai</text>
-  <text class="s" x="212" y="212">para a internet</text>
-
-  <text class="h" x="392" y="94">guacamole</text>
-  <text class="b" x="392" y="116">(aplicação web)</text>
-  <text class="s" x="392" y="140">confere o login do</text>
-  <text class="s" x="392" y="156">usuário restrito</text>
-  <text class="s g" x="392" y="172">plataforma</text>
-  <text class="s" x="392" y="196">abre a conexão</text>
-  <text class="s" x="392" y="212">"Kali (attack box)"</text>
-
-  <text class="h" x="572" y="94">guacd</text>
-  <text class="b" x="572" y="116">(tradutor)</text>
-  <text class="s" x="572" y="140">fala o protocolo</text>
-  <text class="s" x="572" y="156">do Guacamole com o</text>
-  <text class="s" x="572" y="172">navegador e VNC</text>
-  <text class="s" x="572" y="188">com o Kali</text>
-  <text class="s" x="572" y="212">usa a senha VNC</text>
-
-  <text class="h" x="752" y="94">kali</text>
-  <text class="b" x="752" y="116">(attack box)</text>
-  <text class="s" x="752" y="140">um servidor VNC</text>
-  <text class="s g" x="752" y="156">espera o guacd</text>
-  <text class="s" x="752" y="180">desenha o desktop</text>
-  <text class="s" x="752" y="196">XFCE do usuário</text>
-  <text class="s" x="752" y="212">kali</text>
-
-  <!-- arrows -->
-  <g stroke="#5ee08a" stroke-width="2" marker-end="url(#a)">
-    <line x1="172" y1="155" x2="196" y2="155"/>
-    <line x1="352" y1="155" x2="376" y2="155"/>
-    <line x1="532" y1="155" x2="556" y2="155"/>
-    <line x1="712" y1="155" x2="736" y2="155"/>
+  <g id="internas" data-graph-role="container" data-container-id="internas" data-semantic-role="boundary" data-graph-bounds="660,130,1520,430">
+  <rect data-graph-role="container" x="660.0" y="130.0" width="860.0" height="300.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="678.0" y="154.0" class="section">REDES INTERNAS, SEM INTERNET</text>
+    <rect id="internas-header" data-graph-role="reserved" data-reserved-kind="container-header" x="668" y="136" width="225.52" height="30" fill="none" stroke="none"/>
   </g>
-
-  <!-- networks -->
-  <text class="s" x="140" y="272">loopback</text>
-  <text class="s" x="140" y="286">(HTTP/WebSocket)</text>
-  <text class="s" x="320" y="272">guac_edge</text>
-  <text class="s" x="320" y="286">(interna)</text>
-  <text class="s" x="500" y="272">guac_back</text>
-  <text class="s" x="500" y="286">(interna)</text>
-  <text class="s" x="680" y="272">desktop_net</text>
-  <text class="s" x="680" y="286">(interna, VNC)</text>
-
-  <rect x="20" y="318" width="865" height="88" rx="8" fill="#1f1714" stroke="#5a3a33"/>
-  <text class="b r" x="36" y="344">Nenhuma rede depois do navegador tem saída para a internet.</text>
-  <text class="s" x="36" y="366">O Kali não é publicado em porta nenhuma do PC: a única forma de chegar à tela dele é este caminho,</text>
-  <text class="s" x="36" y="384">e o guacd é a única máquina da desktop_net além do próprio Kali.</text>
+  <path id="a1" data-graph-role="edge" data-edge-id="a1" data-source="nav" data-target="porta" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 265,280 L 380,280" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="a2" data-graph-role="edge" data-edge-id="a2" data-source="porta" data-target="login" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 590,280 L 690,280" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="a3" data-graph-role="edge" data-edge-id="a3" data-source="login" data-target="trad" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 900,280 L 990,280" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="a4" data-graph-role="edge" data-edge-id="a4" data-source="trad" data-target="kali" data-edge-kind="flow" data-topic-id="" data-flow="" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1200,280 L 1290,280" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <g id="node-nav" data-graph-role="node" data-node-id="nav" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="pc" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="65,200,265,360">
+  <rect x="65.0" y="200.0" width="200.0" height="160.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="165.0" y="218.0" text-anchor="middle" class="node-type">VOCÊ</text>
+  <text data-text-role="title" data-full-text="Navegador" data-text-max-width="176.0" x="165.0" y="286.0" text-anchor="middle" class="node-title" font-size="18">Navegador</text>
+  <text data-text-role="subtitle" data-full-text="teclado, mouse e tela" data-text-max-width="176.0" x="165.0" y="308.0" text-anchor="middle" class="node-sub" font-size="12">teclado, mouse e tela</text>
+  </g>
+  <g id="node-porta" data-graph-role="node" data-node-id="porta" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="380,185,590,375">
+  <rect x="380.0" y="185.0" width="210.0" height="190.0" rx="10.0" fill="#2a1f05" stroke="#f59e0b" stroke-width="2.6" filter="url(#glowOrange)"/>
+  <text x="485.0" y="203.0" text-anchor="middle" class="node-type">A ÚNICA PORTA</text>
+  <text data-text-role="title" data-full-text="Porteiro" data-text-max-width="186.0" x="485.0" y="286.0" text-anchor="middle" class="node-title" font-size="18">Porteiro</text>
+  <text data-text-role="subtitle" data-full-text="guac-proxy, só no 127.0.0.1" data-text-max-width="186.0" x="485.0" y="308.0" text-anchor="middle" class="node-sub" font-size="12">guac-proxy, só no 127.0.0.1</text>
+  </g>
+  <g id="node-login" data-graph-role="node" data-node-id="login" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="internas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="690,200,900,360">
+  <rect x="690.0" y="200.0" width="210.0" height="160.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="795.0" y="218.0" text-anchor="middle" class="node-type">LOGIN</text>
+  <text data-text-role="title" data-full-text="Confere quem é" data-text-max-width="186.0" x="795.0" y="286.0" text-anchor="middle" class="node-title" font-size="18">Confere quem é</text>
+  <text data-text-role="subtitle" data-full-text="guacamole" data-text-max-width="186.0" x="795.0" y="308.0" text-anchor="middle" class="node-sub" font-size="12">guacamole</text>
+  </g>
+  <g id="node-trad" data-graph-role="node" data-node-id="trad" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="internas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="990,200,1200,360">
+  <rect x="990.0" y="200.0" width="210.0" height="160.0" rx="10.0" fill="#0f172a" stroke="#64748b" stroke-width="1.8"/>
+  <text x="1095.0" y="218.0" text-anchor="middle" class="node-type">TRADUTOR</text>
+  <text data-text-role="title" data-full-text="Converte a tela" data-text-max-width="186.0" x="1095.0" y="286.0" text-anchor="middle" class="node-title" font-size="18">Converte a tela</text>
+  <text data-text-role="subtitle" data-full-text="guacd" data-text-max-width="186.0" x="1095.0" y="308.0" text-anchor="middle" class="node-sub" font-size="12">guacd</text>
+  </g>
+  <g id="node-kali" data-graph-role="node" data-node-id="kali" data-semantic-role="node" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="internas" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1290,200,1500,360">
+  <rect x="1290.0" y="200.0" width="210.0" height="160.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="2.4" filter="url(#glowGreen)"/>
+  <text x="1395.0" y="218.0" text-anchor="middle" class="node-type">DESTINO</text>
+  <text data-text-role="title" data-full-text="Kali" data-text-max-width="186.0" x="1395.0" y="286.0" text-anchor="middle" class="node-title" font-size="18">Kali</text>
+  <text data-text-role="subtitle" data-full-text="desenha o desktop" data-text-max-width="186.0" x="1395.0" y="308.0" text-anchor="middle" class="node-sub" font-size="12">desenha o desktop</text>
+  </g>
+  <g id="a1-label" data-graph-role="label" data-owner="a1" data-graph-bounds="273.02,249,371.98,269">
+  <rect x="273.02" y="249.0" width="98.96000000000001" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="322.5" y="263.0" text-anchor="middle" class="arrow-label">127.0.0.1:8080</text>
+  </g>
+  <g id="a2-label" data-graph-role="label" data-owner="a2" data-graph-bounds="594.12,249,685.88,269">
+  <rect x="594.12" y="249.0" width="91.75999999999999" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="640.0" y="263.0" text-anchor="middle" class="arrow-label">rede interna</text>
+  </g>
+  <g id="a3-label" data-graph-role="label" data-owner="a3" data-graph-bounds="915.2,249,974.8,269">
+  <rect x="915.2" y="249.0" width="59.6" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="945.0" y="263.0" text-anchor="middle" class="arrow-label">interna</text>
+  </g>
+  <g id="a4-label" data-graph-role="label" data-owner="a4" data-graph-bounds="1215.2,249,1274.8,269">
+  <rect x="1215.2" y="249.0" width="59.6" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="1245.0" y="263.0" text-anchor="middle" class="arrow-label">interna</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="38" y="456" width="663.92" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="48.0" y1="470.0" x2="78.0" y2="470.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="88.0" y="474.0" class="legend">caminho da sua tela   </text>
+    <line data-graph-role="decoration" x1="247.04" y1="470.0" x2="277.03999999999996" y2="470.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="287.03999999999996" y="474.0" class="legend">única porta de lab aberta no PC      </text>
+    <line data-graph-role="decoration" x1="534.64" y1="470.0" x2="564.64" y2="470.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="574.64" y="474.0" class="legend">onde a tela chega</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="48,518,622,534">
+  <text x="48.0" y="530.0" class="footnote">O Kali não tem porta nenhuma aberta no PC: este é o único caminho até a tela dele.</text>
+  </g>
 </svg>
