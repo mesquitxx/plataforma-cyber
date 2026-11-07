@@ -1,65 +1,135 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
-  <title id="t">Anatomia de uma entrada do MITRE ATT&amp;CK</title>
-  <desc id="d">Quatro níveis, da esquerda para a direita, ligados por setas. Tática TA0006, Credential Access: o porquê, o adversário quer roubar contas e senhas. Técnica T1552, Unsecured Credentials: o como, em termos gerais, achar credenciais guardadas sem proteção. Subtécnica T1552.001, Credentials In Files: o como, específico, credenciais em arquivos. Procedimento: o grupo FIN13, G1016, obteve credenciais administrativas vasculhando arquivos locais de uma máquina comprometida, ou seja, como um adversário real fez. Embaixo, a página da subtécnica traz também as mitigações, como M1047 Audit e M1027 Password Policies, e uma estratégia de detecção.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; white-space: pre; }
-    .t { font-size: 16px; font-weight: 700; }
-    .m { font-size: 12.5px; font-weight: 700; }
-    .s { font-size: 11.5px; fill: #9fb0a6; }
-    .c { font-size: 11.5px; fill: #e6ede8; }
-    .box { fill: #1c2521; stroke-width: 1.6; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" width="1440" height="760" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ee08a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="400" fill="#121815"/>
-  <text class="t" x="30" y="34">Do "porquê" ao "como um grupo real fez"</text>
-
-  <rect class="box" x="30" y="60" width="190" height="170" rx="10" style="stroke:#5cc8d8"/>
-  <text class="s" x="44" y="84">TÁTICA (o porquê)</text>
-  <text class="m" x="44" y="108" style="fill:#5cc8d8">TA0006</text>
-  <text class="m" x="44" y="126" style="fill:#5cc8d8">Credential Access</text>
-  <text class="c" x="44" y="156">o adversário quer</text>
-  <text class="c" x="44" y="174">roubar contas e</text>
-  <text class="c" x="44" y="192">senhas</text>
-
-  <rect class="box" x="245" y="60" width="190" height="170" rx="10" style="stroke:#e8c25a"/>
-  <text class="s" x="259" y="84">TÉCNICA (o como)</text>
-  <text class="m" x="259" y="108" style="fill:#e8c25a">T1552</text>
-  <text class="m" x="259" y="126" style="fill:#e8c25a">Unsecured</text>
-  <text class="m" x="259" y="144" style="fill:#e8c25a">Credentials</text>
-  <text class="c" x="259" y="174">achar credenciais</text>
-  <text class="c" x="259" y="192">guardadas sem</text>
-  <text class="c" x="259" y="210">proteção</text>
-
-  <rect class="box" x="460" y="60" width="190" height="170" rx="10" style="stroke:#f0a35a"/>
-  <text class="s" x="474" y="84">SUBTÉCNICA</text>
-  <text class="m" x="474" y="108" style="fill:#f0a35a">T1552.001</text>
-  <text class="m" x="474" y="126" style="fill:#f0a35a">Credentials</text>
-  <text class="m" x="474" y="144" style="fill:#f0a35a">In Files</text>
-  <text class="c" x="474" y="174">senha em arquivo:</text>
-  <text class="c" x="474" y="192">config, script,</text>
-  <text class="c" x="474" y="210">backup</text>
-
-  <rect class="box" x="675" y="60" width="195" height="170" rx="10" style="stroke:#f06a6a"/>
-  <text class="s" x="689" y="84">PROCEDIMENTO</text>
-  <text class="m" x="689" y="108" style="fill:#f06a6a">FIN13 (G1016)</text>
-  <text class="c" x="689" y="138">obteve credenciais</text>
-  <text class="c" x="689" y="156">de administrador</text>
-  <text class="c" x="689" y="174">vasculhando arquivos</text>
-  <text class="c" x="689" y="192">locais de uma máquina</text>
-  <text class="c" x="689" y="210">comprometida</text>
-
-  <g stroke="#5ee08a" stroke-width="2" marker-end="url(#g)">
-    <line x1="220" y1="145" x2="242" y2="145"/>
-    <line x1="435" y1="145" x2="457" y2="145"/>
-    <line x1="650" y1="145" x2="672" y2="145"/>
+  <rect data-graph-role="background" width="1440.0" height="760.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="720.0" y="56" text-anchor="middle" class="title">ATT&amp;CK: do porquê do adversário até o que um grupo real fez</text>
+  <text x="720.0" y="82" text-anchor="middle" class="subtitle">cada nível desce um degrau, do objetivo geral ao caso concreto · exemplo: T1552.001</text>
+  <g id="atk" data-graph-role="container" data-container-id="atk" data-semantic-role="boundary" data-graph-bounds="40,115,860,675">
+  <rect data-graph-role="container" x="40.0" y="115.0" width="820.0" height="560.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="139.0" class="section">A ENTRADA DO ATAQUE, DO GERAL AO CONCRETO</text>
+    <rect id="atk-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="121" width="315.74" height="30" fill="none" stroke="none"/>
   </g>
-
-  <rect class="box" x="30" y="256" width="840" height="120" rx="10" style="stroke:#5ee08a"/>
-  <text class="m" x="46" y="280" style="fill:#5ee08a">a mesma página serve à defesa</text>
-  <text class="c" x="46" y="304">Mitigations: M1047 Audit (procurar antes do atacante arquivos com senha),</text>
-  <text class="c" x="46" y="322">M1027 Password Policies (proibir senha em arquivo), M1022 (restringir permissões),</text>
-  <text class="c" x="46" y="340">M1017 User Training</text>
-  <text class="c" x="46" y="362">Detection Strategy: como perceber alguém lendo esses arquivos</text>
+  <g id="def" data-graph-role="container" data-container-id="def" data-semantic-role="boundary" data-graph-bounds="900,330,1400,580">
+  <rect data-graph-role="container" x="900.0" y="330.0" width="500.0" height="250.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="918.0" y="354.0" class="section">A DEFESA (À PARTE)</text>
+    <rect id="def-header" data-graph-role="reserved" data-reserved-kind="container-header" x="908" y="336" width="157.14" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="e1" data-graph-role="edge" data-edge-id="e1" data-source="tat" data-target="tec" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 450,250 L 450,290" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e2" data-graph-role="edge" data-edge-id="e2" data-source="tec" data-target="sub" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 450,380 L 450,420" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e3" data-graph-role="edge" data-edge-id="e3" data-source="sub" data-target="proc" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 450,510 L 450,550" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="e4" data-graph-role="edge" data-edge-id="e4" data-source="sub" data-target="mit" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 830,465 L 920,465" fill="none" stroke="#22c55e" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <g id="node-tat" data-graph-role="node" data-node-id="tat" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="atk" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,160,830,250">
+  <rect x="70.0" y="160.0" width="760.0" height="90.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="450.0" y="178.0" text-anchor="middle" class="node-type">TÁTICA · O PORQUÊ</text>
+  <text data-text-role="title" data-full-text="TA0006 Credential Access" data-text-max-width="736.0" x="450.0" y="211.0" text-anchor="middle" class="node-title" font-size="19.0">TA0006 Credential Access</text>
+  <text data-text-role="subtitle" data-full-text="o adversário quer roubar contas e senhas" data-text-max-width="736.0" x="450.0" y="233.0" text-anchor="middle" class="node-sub" font-size="12">o adversário quer roubar contas e senhas</text>
+  </g>
+  <g id="node-tec" data-graph-role="node" data-node-id="tec" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="atk" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,290,830,380">
+  <rect x="70.0" y="290.0" width="760.0" height="90.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="450.0" y="308.0" text-anchor="middle" class="node-type">TÉCNICA · O COMO</text>
+  <text data-text-role="title" data-full-text="T1552 Unsecured Credentials" data-text-max-width="736.0" x="450.0" y="341.0" text-anchor="middle" class="node-title" font-size="19.0">T1552 Unsecured Credentials</text>
+  <text data-text-role="subtitle" data-full-text="achar senhas guardadas sem proteção" data-text-max-width="736.0" x="450.0" y="363.0" text-anchor="middle" class="node-sub" font-size="12">achar senhas guardadas sem proteção</text>
+  </g>
+  <g id="node-sub" data-graph-role="node" data-node-id="sub" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="atk" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,420,830,510">
+  <rect x="70.0" y="420.0" width="760.0" height="90.0" rx="10.0" fill="#0c1a2e" stroke="#38bdf8" stroke-width="1.8"/>
+  <text x="450.0" y="438.0" text-anchor="middle" class="node-type">SUBTÉCNICA · O COMO, ESPECÍFICO</text>
+  <text data-text-role="title" data-full-text="T1552.001 Credentials In Files" data-text-max-width="736.0" x="450.0" y="471.0" text-anchor="middle" class="node-title" font-size="19.0">T1552.001 Credentials In Files</text>
+  <text data-text-role="subtitle" data-full-text="senha em arquivo: configuração, script, backup" data-text-max-width="736.0" x="450.0" y="493.0" text-anchor="middle" class="node-sub" font-size="12">senha em arquivo: configuração, script, backup</text>
+  </g>
+  <g id="node-proc" data-graph-role="node" data-node-id="proc" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="atk" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="70,550,830,650">
+  <rect x="70.0" y="550.0" width="760.0" height="100.0" rx="10.0" fill="#2a0f16" stroke="#fb7185" stroke-width="2.8"/>
+  <text x="450.0" y="568.0" text-anchor="middle" class="node-type">PROCEDIMENTO · O QUE UM GRUPO REAL FEZ E GANHOU</text>
+  <text data-text-role="title" data-full-text="FIN13 (G1016) obteve senhas de administrador" data-text-max-width="736.0" x="450.0" y="606.0" text-anchor="middle" class="node-title" font-size="19.0">FIN13 (G1016) obteve senhas de administrador</text>
+  <text data-text-role="subtitle" data-full-text="vasculhando arquivos locais de uma máquina já comprometida" data-text-max-width="736.0" x="450.0" y="628.0" text-anchor="middle" class="node-sub" font-size="12">vasculhando arquivos locais de uma máquina já comprometida</text>
+  </g>
+  <g id="node-mit" data-graph-role="node" data-node-id="mit" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="def" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="920,375,1380,555">
+  <rect x="920.0" y="375.0" width="460.0" height="180.0" rx="10.0" fill="#052e16" stroke="#22c55e" stroke-width="1.8"/>
+  <text x="1150.0" y="393.0" text-anchor="middle" class="node-type">A MESMA PÁGINA SERVE À DEFESA</text>
+  <text data-text-role="title" data-full-text="achar a senha antes do atacante" data-text-max-width="436.0" x="1150.0" y="471.0" text-anchor="middle" class="node-title" font-size="19.0">achar a senha antes do atacante</text>
+  <text data-text-role="subtitle" data-full-text="procurar arquivos com senha; proibir senha em arquivo" data-text-max-width="436.0" x="1150.0" y="493.0" text-anchor="middle" class="node-sub" font-size="12">procurar arquivos com senha; proibir senha em arquivo</text>
+  <rect x="938.0" y="535.0" width="106" height="16" rx="3" fill="#0b3b22" stroke="#166534" stroke-width="1"/>
+  <text x="991.0" y="546.5" text-anchor="middle" font-size="11" font-weight="500" fill="#bbf7d0">M1047 Audit</text>
+  <rect x="1052.0" y="535.0" width="202" height="16" rx="3" fill="#0b3b22" stroke="#166534" stroke-width="1"/>
+  <text x="1153.0" y="546.5" text-anchor="middle" font-size="11" font-weight="500" fill="#bbf7d0">M1027 Password Policies</text>
+  </g>
+  <g id="e1-label" data-graph-role="label" data-owner="e1" data-graph-bounds="398.2,256,447,276">
+  <rect x="398.2" y="256.0" width="48.8" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="422.6" y="270.0" text-anchor="middle" class="arrow-label">como?</text>
+  </g>
+  <g id="e2-label" data-graph-role="label" data-owner="e2" data-graph-bounds="270.04,386,447,406">
+  <rect x="270.04" y="386.0" width="176.96000000000004" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="358.52" y="400.0" text-anchor="middle" class="arrow-label">de que forma, exatamente?</text>
+  </g>
+  <g id="e3-label" data-graph-role="label" data-owner="e3" data-graph-bounds="254.44,516,447,536">
+  <rect x="254.44" y="516.0" width="192.56" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="350.72" y="530.0" text-anchor="middle" class="arrow-label">quem já fez isso de verdade?</text>
+  </g>
+  <g id="e4-label" data-graph-role="label" data-owner="e4" data-graph-bounds="836.32,434,913.68,454">
+  <rect x="836.32" y="434.0" width="77.36" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="875.0" y="448.0" text-anchor="middle" class="arrow-label">mitigações</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="38" y="706" width="651.44" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="48.0" y1="720.0" x2="78.0" y2="720.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="88.0" y="724.0" class="legend">os níveis do catálogo    </text>
+    <line data-graph-role="decoration" x1="265.28" y1="720.0" x2="295.28" y2="720.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="305.28" y="724.0" class="legend">o caso real: o que o atacante ganhou    </text>
+    <line data-graph-role="decoration" x1="576.3999999999999" y1="720.0" x2="606.3999999999999" y2="720.0" stroke="#22c55e" stroke-width="2.3" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="616.3999999999999" y="724.0" class="legend">a defesa</text>
+  </g>
 </svg>
