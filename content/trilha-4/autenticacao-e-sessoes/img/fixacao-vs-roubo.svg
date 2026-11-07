@@ -1,45 +1,101 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
-  <title id="t">Session fixation e session hijacking lado a lado</title>
-  <desc id="d">Comparação de dois ataques a sessão. À esquerda, session fixation (fixação de sessão): o atacante obtém um identificador de sessão antes do login e engana a vítima para que ela entre usando justamente esse identificador; como o servidor não troca o identificador ao autenticar, o atacante, que já o conhece, passa a compartilhar a sessão autenticada da vítima. A defesa é emitir um identificador novo no momento do login. À direita, session hijacking (roubo de sessão): a vítima já está logada com o seu token; o atacante captura esse token, seja por XSS lendo o armazenamento do navegador, por sniffing de tráfego sem HTTPS, ou por um token sem prazo que vazou, e o reaproveita para agir como a vítima. As defesas são cookies HttpOnly e Secure, HTTPS em tudo, e tokens com expiração e invalidação no servidor.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 670" width="960" height="670" role="img" aria-labelledby="t d">
+  <title id="t">Fixação x roubo de sessão: o mesmo resultado, antes ou depois do login</title>
+  <desc id="d">Uma linha do tempo com o login da vítima no meio separa os dois ataques. À esquerda, antes do login, a fixação de sessão (session fixation): 1, o atacante pega um identificador de sessão novo, ainda sem login, e o anota; 2, faz a vítima entrar usando esse mesmo identificador, por um link com o id ou um cookie plantado; 3, a falha: o servidor não troca o identificador no login, e o id que o atacante conhece vira uma sessão logada. À direita, depois do login, o roubo de sessão (session hijacking): 1, a vítima entra normalmente e recebe um identificador válido; 2, o atacante captura esse identificador, por um script na página que lê o localStorage, por tráfego sem HTTPS ou por um token sem prazo vazado num log; 3, o atacante usa o identificador roubado e o servidor o aceita como se fosse a vítima. Os dois caminhos chegam ao mesmo resultado: o atacante está logado como a vítima, sem saber a senha dela. Numa faixa separada, as defesas: contra a fixação, emitir um identificador novo no login; contra o roubo, cookies HttpOnly e Secure, HTTPS em tudo, prazo curto e invalidação no servidor. Legenda: azul é a vítima e o uso normal, vermelho é ação do atacante ou falha, verde é defesa.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #f08a7e; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 19px; font-weight: 700; }
+    .sub { font-size: 13px; fill: #94a3b8; }
+    .head { font-size: 15px; font-weight: 700; fill: #f87171; }
+    .tl { font-size: 13px; font-weight: 700; fill: #94a3b8; }
+    .step { font-size: 13px; font-weight: 700; }
+    .body { font-size: 12px; fill: #cbd5e1; }
+    .badb { font-size: 13px; font-weight: 700; fill: #f87171; }
+    .res { font-size: 15px; font-weight: 700; fill: #fecaca; }
+    .def { font-size: 13px; font-weight: 700; fill: #34d399; }
+    .muted { font-size: 12px; fill: #94a3b8; }
   </style>
-  <rect width="900" height="400" fill="#121815"/>
-  <text class="t" x="30" y="32">Dois jeitos de assumir a sessão de alguém</text>
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#64748b"/></marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ef4444"/></marker>
+    <filter id="glow-red"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="960" height="670" fill="url(#bg-grad)"/>
 
-  <rect x="30" y="52" width="400" height="258" rx="10" fill="#16201b" stroke="#f08a7e"/>
-  <text class="h" x="46" y="78">Session fixation</text>
-  <text class="s" x="46" y="98">o atacante FIXA o id antes do login</text>
-  <text class="b" x="46" y="128">1. atacante pega um id de sessão em branco</text>
-  <text class="b" x="46" y="150">2. induz a vítima a logar com ESSE id</text>
-  <text class="b" x="46" y="172">   (link com o id, cookie plantado...)</text>
-  <text class="b" x="46" y="194">3. servidor NÃO troca o id ao autenticar</text>
-  <text class="b y" x="46" y="216">4. o id antigo agora é uma sessão logada</text>
-  <text class="b y" x="46" y="232">   que o atacante já conhecia</text>
-  <text class="g" x="46" y="264">Defesa: emitir um id NOVO no login</text>
-  <text class="s" x="46" y="284">(rotacionar o identificador ao autenticar;</text>
-  <text class="s" x="46" y="300">nunca aceitar id vindo do cliente)</text>
+  <text class="title" x="40" y="44">Fixação x roubo: o mesmo prêmio, antes ou depois do login</text>
+  <text class="sub" x="40" y="68">Quem tem um id de sessão válido É a sessão: o servidor vê o id, não a pessoa.</text>
 
-  <rect x="470" y="52" width="400" height="258" rx="10" fill="#16201b" stroke="#f08a7e"/>
-  <text class="h" x="486" y="78">Session hijacking</text>
-  <text class="s" x="486" y="98">o atacante ROUBA um id já logado</text>
-  <text class="b" x="486" y="128">1. vítima já está logada (tem o token)</text>
-  <text class="b" x="486" y="150">2. atacante captura o token por:</text>
-  <text class="b" x="486" y="172">   - XSS lendo o localStorage</text>
-  <text class="b" x="486" y="194">   - sniffing de tráfego sem HTTPS</text>
-  <text class="b" x="486" y="216">   - token sem prazo que vazou em log</text>
-  <text class="b y" x="486" y="238">3. reaproveita o token: vira a vítima</text>
-  <text class="g" x="486" y="264">Defesa: HttpOnly + Secure, HTTPS,</text>
-  <text class="s" x="486" y="284">expiração curta e invalidação no servidor</text>
-  <text class="s" x="486" y="300">(a Missão 3 explora a falta disso)</text>
+  <!-- timeline -->
+  <path d="M40,104 L393,104" fill="none" stroke="#64748b" stroke-width="1.6"/>
+  <path d="M567,104 L916,104" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow-gray)"/>
+  <text class="tl" x="220" y="96" text-anchor="middle">ANTES do login</text>
+  <text class="tl" x="740" y="96" text-anchor="middle">DEPOIS do login</text>
+  <rect x="395" y="86" width="170" height="36" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="step" x="480" y="109" text-anchor="middle">login da vítima</text>
+  <line x1="480" y1="122" x2="480" y2="400" stroke="#3b82f6" stroke-opacity="0.6" stroke-width="1.5" stroke-dasharray="5 5"/>
 
-  <rect x="30" y="330" width="840" height="52" rx="10" fill="#101a2a" stroke="#5cc8d8"/>
-  <text class="s" x="46" y="352">Em comum: quem tem o identificador de sessão válido É a sessão. O servidor não vê a pessoa, só o token.</text>
-  <text class="s" x="46" y="370">Por isso o identificador precisa ser imprevisível, protegido no transporte e no armazenamento, e descartável.</text>
+  <!-- left panel: fixation -->
+  <rect data-graph-role="container" x="40" y="134" width="420" height="266" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="head" x="56" y="160">Fixação de sessão</text>
+  <text class="muted" x="56" y="179">o atacante planta um id ANTES</text>
+
+  <rect x="56" y="192" width="388" height="54" rx="6" fill="#2a0f14" stroke="#ef4444" stroke-width="1.2"/>
+  <text class="step" x="70" y="214">1. Atacante pega um id novo</text>
+  <text class="body" x="70" y="234">ainda sem login, e o anota</text>
+  <path d="M250,246 L250,258" fill="none" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <rect x="56" y="262" width="388" height="54" rx="6" fill="#2a0f14" stroke="#ef4444" stroke-width="1.2"/>
+  <text class="step" x="70" y="284">2. Faz a vítima entrar com ESSE id</text>
+  <text class="body" x="70" y="304">link com o id ou cookie plantado</text>
+  <path d="M250,316 L250,328" fill="none" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <rect x="56" y="332" width="388" height="54" rx="6" fill="#3b0f16" stroke="#ef4444" stroke-width="2.2" filter="url(#glow-red)"/>
+  <text class="badb" x="70" y="354">3. Servidor NÃO troca o id no login</text>
+  <text class="body" x="70" y="374">o id que o atacante conhece fica logado</text>
+
+  <!-- right panel: hijacking -->
+  <rect data-graph-role="container" x="500" y="134" width="420" height="266" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="head" x="516" y="160">Roubo de sessão</text>
+  <text class="muted" x="516" y="179">o atacante pega um id DEPOIS</text>
+
+  <rect x="516" y="192" width="388" height="54" rx="6" fill="#0f1e3a" stroke="#3b82f6" stroke-width="1.2"/>
+  <text class="step" x="530" y="214">1. Vítima entra normalmente</text>
+  <text class="body" x="530" y="234">e recebe um id (token) válido</text>
+  <path d="M710,246 L710,258" fill="none" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <rect x="516" y="262" width="388" height="54" rx="6" fill="#3b0f16" stroke="#ef4444" stroke-width="2.2" filter="url(#glow-red)"/>
+  <text class="badb" x="530" y="284">2. Atacante captura esse id</text>
+  <text class="body" x="530" y="304">script na página, rede sem HTTPS, log vazado</text>
+  <path d="M710,316 L710,328" fill="none" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <rect x="516" y="332" width="388" height="54" rx="6" fill="#2a0f14" stroke="#ef4444" stroke-width="1.2"/>
+  <text class="step" x="530" y="354">3. Usa o id roubado</text>
+  <text class="body" x="530" y="374">o servidor o aceita como da vítima</text>
+
+  <!-- converge to result -->
+  <path d="M250,400 L250,452 L284,452" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <path d="M710,400 L710,452 L676,452" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <rect x="288" y="420" width="384" height="64" rx="6" fill="#450a0a" stroke="#ef4444" stroke-width="2.2" filter="url(#glow-red)"/>
+  <text class="res" x="480" y="447" text-anchor="middle">Atacante logado como a vítima</text>
+  <text class="body" x="480" y="468" text-anchor="middle">sem nunca saber a senha dela</text>
+
+  <!-- defenses: separate, secondary -->
+  <rect x="40" y="512" width="880" height="96" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1" stroke-dasharray="4 4"/>
+  <text class="muted" x="56" y="534">Defesas (cada ataque tem a sua)</text>
+  <text class="def" x="56" y="558">contra a fixação</text>
+  <text class="body" x="56" y="578">emitir um id NOVO no login</text>
+  <text class="def" x="516" y="558">contra o roubo</text>
+  <text class="body" x="516" y="578">HttpOnly + Secure, HTTPS, prazo curto,</text>
+  <text class="body" x="516" y="594">invalidação no servidor</text>
+
+  <!-- legend -->
+  <line x1="40" y1="638" x2="76" y2="638" stroke="#3b82f6" stroke-width="2"/>
+  <text class="muted" x="86" y="642">vítima / uso normal</text>
+  <line x1="300" y1="638" x2="336" y2="638" stroke="#ef4444" stroke-width="2"/>
+  <text class="muted" x="346" y="642">ação do atacante / falha</text>
+  <line x1="610" y1="638" x2="646" y2="638" stroke="#34d399" stroke-width="2"/>
+  <text class="muted" x="656" y="642">defesa</text>
 </svg>
