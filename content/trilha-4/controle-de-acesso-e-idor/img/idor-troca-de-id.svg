@@ -1,52 +1,104 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="t d">
-  <title id="t">IDOR: trocar o identificador do objeto na requisição</title>
-  <desc id="d">Sequência de duas requisições do atacante ao servidor. Na primeira, o atacante, autenticado como o usuário 25 e dono do carrinho de número 6, pede o seu próprio carrinho em GET barra rest barra basket barra 6; o servidor responde com os dados do carrinho 6 — comportamento legítimo. Na segunda, o atacante troca apenas o número na URL para GET barra rest barra basket barra 1; o servidor verifica que o token é válido (o atacante está logado) mas não verifica se o carrinho 1 pertence a ele, e devolve o carrinho 1, que é do administrador. O ponto crítico, marcado em vermelho, é a checagem que falta: comparar o dono do objeto pedido com o usuário do token. Essa checagem ausente é o coração do IDOR, Insecure Direct Object Reference, referência direta e insegura a objeto.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 580" width="960" height="580" role="img" aria-labelledby="t d">
+  <title id="t">IDOR: trocar só o número entrega o carrinho de outra pessoa</title>
+  <desc id="d">Duas linhas comparam dois pedidos do mesmo atacante, logado como usuário 25 e dono do carrinho 6. No pedido normal, ele pede GET /rest/basket/6 com o seu token; o servidor confere que o login é válido e que o carrinho 6 é dele, e devolve o carrinho 6, o dele. No ataque, ele troca só o número para GET /rest/basket/1, com o mesmo token. O número 1, em destaque, é a única mudança. O servidor confere de novo que o login é válido, mas a pergunta "este carrinho é seu?" ninguém faz: é aí que está a falha, marcada em amarelo. O servidor devolve o carrinho 1, que é do administrador. Consequência: o atacante lê o carrinho de qualquer pessoa só mudando o número, logado com a própria conta. Separada, em verde, a defesa: no servidor, comparar o dono do carrinho com quem está logado e negar se não bater. Legenda: azul é o que é seu, vermelho é o que é de outra pessoa, amarelo é onde está a falha, verde é a defesa.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; }
-    .b { font-size: 11.5px; }
-    .c { font-size: 11.5px; fill: #e8c46a; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .r { fill: #f08a7e; }
+    text { font-family: 'DejaVu Sans Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 20px; font-weight: 700; }
+    .sub { font-size: 13px; fill: #94a3b8; }
+    .col { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.04em; }
+    .tag { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; }
+    .code { font-size: 14px; }
+    .big { font-size: 15px; font-weight: 700; }
+    .lbl { font-size: 13px; }
+    .bold { font-size: 13px; font-weight: 700; }
+    .small { font-size: 12px; fill: #94a3b8; }
+    .me { fill: #60a5fa; }
+    .atk { fill: #f87171; }
+    .key { fill: #facc15; }
+    .def { fill: #34d399; }
+    .panel { fill: #0f172a; stroke: #334155; stroke-width: 1.2; }
+    .panel-me { fill: #0f1a2e; stroke: #3b82f6; stroke-width: 1.5; }
+    .panel-atk { fill: #1f1315; stroke: #ef4444; stroke-width: 1.8; }
+    .edge { stroke: #64748b; stroke-width: 2; fill: none; }
+    .edge-atk { stroke: #ef4444; stroke-width: 2; fill: none; }
   </style>
-  <rect width="900" height="520" fill="#121815"/>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
-    <marker id="agr" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5ee08a"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#64748b"/></marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ef4444"/></marker>
+    <filter id="glow-gold" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <text class="t" x="30" y="34">IDOR: muda o número, muda o dono — e ninguém confere</text>
+  <rect width="960" height="580" fill="url(#bg-grad)"/>
 
-  <text class="h" x="120" y="72" text-anchor="middle" fill="#f08a7e">atacante</text>
-  <text class="s" x="120" y="90" text-anchor="middle">logado como user 25 (basket 6)</text>
-  <text class="h" x="700" y="72" text-anchor="middle" fill="#5cc8d8">servidor</text>
-  <line x1="120" y1="100" x2="120" y2="490" stroke="#2a3a31" stroke-width="1"/>
-  <line x1="700" y1="100" x2="700" y2="490" stroke="#2a3a31" stroke-width="1"/>
+  <!-- key idea -->
+  <text class="title" x="30" y="42">Muda o número, muda o dono, e ninguém confere</text>
+  <text class="sub" x="30" y="66">O atacante está logado como ele mesmo (usuário 25, dono do carrinho 6).</text>
 
-  <!-- legit request -->
-  <text class="c" x="140" y="132">1) pede o PRÓPRIO carrinho (legítimo)</text>
-  <line x1="120" y1="148" x2="700" y2="148" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
-  <text class="b" x="150" y="142">GET /rest/basket/6  + token</text>
-  <rect x="470" y="162" width="300" height="52" rx="8" fill="#16201b" stroke="#5ee08a"/>
-  <text class="b g" x="486" y="184">token válido? sim. dono do 6? você.</text>
-  <text class="s" x="486" y="202">as duas conferem → responde</text>
-  <line x1="700" y1="232" x2="120" y2="232" stroke="#5ee08a" stroke-width="1.5" marker-end="url(#agr)"/>
-  <text class="b g" x="150" y="226">200 { carrinho 6: o seu }</text>
+  <!-- column headers -->
+  <text class="col" x="30" y="106">1. O ATACANTE PEDE</text>
+  <text class="col" x="320" y="106">2. O SERVIDOR CONFERE</text>
+  <text class="col" x="690" y="106">3. O SERVIDOR DEVOLVE</text>
 
-  <!-- idor request -->
-  <text class="c" x="140" y="286">2) troca SÓ o número: 6 → 1</text>
-  <line x1="120" y1="302" x2="700" y2="302" stroke="#5cc8d8" stroke-width="1.5" marker-end="url(#ar)"/>
-  <text class="b" x="150" y="296">GET /rest/basket/1  + o MESMO token</text>
-  <rect x="440" y="316" width="330" height="86" rx="8" fill="#16201b" stroke="#f08a7e"/>
-  <text class="b g" x="456" y="340">token válido? sim (você está logado)</text>
-  <text class="b r" x="456" y="362">dono do 1? o admin — mas NINGUÉM</text>
-  <text class="b r" x="456" y="380">compara o dono com o seu id.</text>
-  <text class="s" x="456" y="396">a checagem de posse não existe</text>
-  <line x1="700" y1="420" x2="120" y2="420" stroke="#f08a7e" stroke-width="1.5" marker-end="url(#ar)"/>
-  <text class="b r" x="150" y="414">200 { carrinho 1: do ADMIN }</text>
+  <!-- row A: normal request -->
+  <text class="tag me" x="30" y="134">PEDIDO NORMAL</text>
+  <rect class="panel-me" x="30" y="144" width="250" height="76" rx="6"/>
+  <text class="code" x="46" y="176">GET /rest/basket/<tspan class="big me">6</tspan></text>
+  <text class="small" x="46" y="202">+ o seu token (login)</text>
+  <path class="edge" d="M280,182 L316,182" marker-end="url(#arrow-gray)"/>
 
-  <rect x="30" y="446" width="840" height="56" rx="8" fill="#16201b" stroke="#5ee08a"/>
-  <text class="b g" x="46" y="470">A checagem que faltava (uma linha): o dono do objeto pedido é igual ao usuário do token?</text>
-  <text class="s" x="46" y="490">Se não for, responde 403/404. Nunca confie no identificador que veio do cliente como prova de posse.</text>
+  <rect class="panel" x="320" y="144" width="330" height="76" rx="6"/>
+  <text class="lbl" x="336" y="174"><tspan class="bold me">✓</tspan> o login é válido?  sim</text>
+  <text class="lbl" x="336" y="200"><tspan class="bold me">✓</tspan> o carrinho é seu?  sim</text>
+  <path class="edge" d="M650,182 L686,182" marker-end="url(#arrow-gray)"/>
+
+  <rect class="panel-me" x="690" y="144" width="240" height="76" rx="6"/>
+  <text class="bold" x="706" y="174">carrinho 6</text>
+  <text class="lbl me" x="706" y="200">o seu (tudo certo)</text>
+
+  <!-- row B: attack -->
+  <text class="tag atk" x="30" y="268">ATAQUE: TROCA SÓ O NÚMERO</text>
+  <rect class="panel-atk" x="30" y="278" width="250" height="100" rx="6"/>
+  <text class="code" x="46" y="316">GET /rest/basket/</text>
+  <rect x="196" y="296" width="26" height="28" rx="5" fill="#2a1215" stroke="#ef4444" stroke-width="2"/>
+  <text class="big atk" x="209" y="316" text-anchor="middle">1</text>
+  <text class="small" x="46" y="344">+ o MESMO token</text>
+  <text class="small" x="46" y="364">(antes era 6)</text>
+  <path class="edge-atk" d="M280,328 L316,328" marker-end="url(#arrow-red)"/>
+
+  <rect class="panel-atk" x="320" y="278" width="330" height="100" rx="6"/>
+  <text class="lbl" x="336" y="304"><tspan class="bold me">✓</tspan> o login é válido?  sim</text>
+  <rect x="332" y="318" width="306" height="48" rx="5" fill="#2a2410" stroke="#facc15" stroke-width="2" filter="url(#glow-gold)"/>
+  <text class="bold key" x="346" y="338">✗ o carrinho é seu?</text>
+  <text class="lbl key" x="346" y="358">ninguém pergunta  ← a falha</text>
+  <path class="edge-atk" d="M650,328 L686,328" marker-end="url(#arrow-red)"/>
+
+  <rect class="panel-atk" x="690" y="278" width="240" height="100" rx="6"/>
+  <text class="bold" x="706" y="308">carrinho 1</text>
+  <text class="lbl atk" x="706" y="334">que é do</text>
+  <text class="big atk" x="706" y="358">ADMINISTRADOR</text>
+
+  <!-- consequence -->
+  <rect x="30" y="404" width="900" height="64" rx="6" fill="#2a1215" stroke="#ef4444" stroke-width="2"/>
+  <text class="bold atk" x="480" y="430" text-anchor="middle">O que o atacante ganha: lê o carrinho de QUALQUER pessoa</text>
+  <text class="bold atk" x="480" y="452" text-anchor="middle">só mudando o número, logado com a própria conta.</text>
+
+  <!-- defense (secondary) -->
+  <rect x="30" y="484" width="900" height="40" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text class="small" x="46" y="509"><tspan class="def">como se defende:</tspan> no servidor, comparar o dono do carrinho com quem está logado; se não bater, negar.</text>
+
+  <!-- legend -->
+  <rect x="30" y="546" width="14" height="14" rx="3" fill="#60a5fa"/>
+  <text class="small" x="52" y="558">o que é seu</text>
+  <rect x="200" y="546" width="14" height="14" rx="3" fill="#f87171"/>
+  <text class="small" x="222" y="558">de outra pessoa</text>
+  <rect x="400" y="546" width="14" height="14" rx="3" fill="#facc15"/>
+  <text class="small" x="422" y="558">onde está a falha</text>
+  <rect x="600" y="546" width="14" height="14" rx="3" fill="#34d399"/>
+  <text class="small" x="622" y="558">defesa</text>
 </svg>
