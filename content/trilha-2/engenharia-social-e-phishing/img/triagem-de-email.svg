@@ -1,65 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">Árvore de triagem de um e-mail suspeito</title>
-  <desc id="d">Uma ordem de perguntas para julgar um e-mail, de cima para baixo. Primeira pergunta: a Authentication-Results mostra dmarc igual a fail ou o SPF igual a fail com o From do domínio? Se sim, é spoofing de domínio, uma falsificação que o DMARC pegou. Se não, segunda pergunta: o domínio do From é realmente o da organização, ou é um parecido? Se for parecido, é um domínio lookalike ou um nome em Punycode, mesmo com todas as checagens passando, porque o atacante autenticou o próprio domínio. Se o domínio é mesmo o certo, terceira pergunta: o texto do link bate com o endereço real do href, e o host de destino é do domínio esperado? Se o link leva a outro lugar ou passa por um parâmetro de redirecionamento, é um link enganoso ou open redirect. Quarta pergunta: há anexo executável, documento com macro, arquivo LNK, ISO ou HTML? Se sim, trate como anexo perigoso. Se nada disso aparece e mesmo assim a mensagem gera urgência, pede segredo ou foge do processo normal, verifique por outro canal antes de agir. A régua de ouro no rodapé: passar no SPF, no DKIM e no DMARC só prova de qual domínio a mensagem veio, nunca que ela é confiável.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 668" width="960" height="668" fill="#e2e8f0" role="img" aria-labelledby="t d">
+  <title id="t">É phishing? Pergunte nesta ordem</title>
+  <desc id="d">Árvore de triagem de um e-mail suspeito. Em destaque no topo, a régua de ouro: passar no SPF, no DKIM e no DMARC só prova de qual domínio o e-mail veio, nunca que ele é confiável. Depois, cinco perguntas em ordem, cada uma com um desvio para a direita quando a resposta acende o alerta. 1: a checagem diz dmarc=fail, ou spf=fail com o From do domínio? Se sim, é falsificação do domínio, que o DMARC pegou. Se passou, continue, porque passar não prova confiança. 2: o domínio do From é o certo ou um parecido, como valeverde-ti.example ou um nome xn--? Se parecido, é domínio sósia ou Punycode, que passa em tudo porque o domínio é do atacante. 3: o texto do link bate com o endereço real (href)? Cuidado com ?url= e ?next=. Se não bate, é link enganoso. 4: há anexo executável, macro, .lnk, .iso ou .html? Se sim, anexo perigoso: não abra nem habilite edição. 5: nada disso, mas a mensagem pede urgência ou segredo, ou foge do processo normal? Então confirme por outro canal, ligando para o número que você já tinha.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 15px; font-weight: 700; }
-    .q { font-size: 11.5px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 11px; }
-    .s { font-size: 10px; fill: #9fb0a6; }
-    .r { font-size: 11px; font-weight: 700; fill: #e07a6a; }
-    .w { font-size: 11px; fill: #e8c46a; }
+    text { font-family: 'DejaVu Sans Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; letter-spacing: 0.02em; }
+    .title { font-size: 20px; font-weight: 700; }
+    .rule1 { font-size: 14px; font-weight: 700; fill: #f8fafc; }
+    .rule2 { font-size: 13px; fill: #cbd5e1; }
+    .q { font-size: 13px; font-weight: 700; }
+    .num { font-size: 15px; font-weight: 700; fill: #60a5fa; }
+    .sub { font-size: 11px; fill: #94a3b8; }
+    .v { font-size: 12.5px; font-weight: 700; }
+    .vs { font-size: 10.5px; fill: #cbd5e1; }
+    .yes { font-size: 10.5px; font-weight: 700; }
+    .no { font-size: 11px; fill: #94a3b8; }
+    .nokey { font-size: 11px; font-weight: 700; fill: #f8fafc; }
+    .leg { font-size: 11.5px; fill: #94a3b8; }
   </style>
   <defs>
-    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-      <path d="M0,0 L9,3 L0,6 Z" fill="#9fb0a6"/>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
     </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
+    </marker>
+    <marker id="arrow-amber" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+    </marker>
+    <filter id="glow-white">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <rect x="0" y="0" width="900" height="470" fill="#0f1613"/>
-  <text class="t" x="24" y="30">É phishing? Pergunte nesta ordem</text>
+  <rect width="960" height="668" fill="url(#bg-grad)"/>
+
+  <text class="title" x="480" y="42" text-anchor="middle">É phishing? Pergunte nesta ordem</text>
+
+  <!-- golden rule (main idea) -->
+  <rect x="60" y="62" width="840" height="60" rx="6" fill="#1e293b" stroke="#e2e8f0" stroke-width="1.5" filter="url(#glow-white)"/>
+  <text class="rule1" x="480" y="87" text-anchor="middle">Régua de ouro: passar no SPF + DKIM + DMARC só prova DE QUAL DOMÍNIO veio</text>
+  <text class="rule2" x="480" y="109" text-anchor="middle">— nunca que o e-mail é confiável. Por isso as perguntas continuam depois da 1.</text>
 
   <!-- Q1 -->
-  <rect x="24" y="48" width="470" height="52" rx="6" fill="#141d2a" stroke="#3f5f8a"/>
-  <text class="q" x="40" y="70">1. dmarc=fail  (ou spf=fail com From do domínio)?</text>
-  <text class="s" x="40" y="88">leia a Authentication-Results do cabeçalho</text>
-  <rect x="560" y="48" width="316" height="52" rx="6" fill="#2a1c1a" stroke="#8a4a3f"/>
-  <text class="r" x="576" y="70">SIM → spoofing de domínio</text>
-  <text class="s" x="576" y="88">falsificação que o DMARC pegou</text>
-  <line x1="494" y1="74" x2="556" y2="74" stroke="#9fb0a6" marker-end="url(#a)"/>
+  <rect x="40" y="150" width="530" height="58" rx="6" fill="#0f1d3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="num" x="58" y="175">1</text>
+  <text class="q" x="82" y="175">A checagem diz dmarc=fail?</text>
+  <text class="sub" x="82" y="195">(ou spf=fail com o From do domínio) — veja a Authentication-Results</text>
+  <line x1="570" y1="179" x2="642" y2="179" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <text class="yes" x="606" y="171" text-anchor="middle" fill="#f87171">sim</text>
+  <rect x="650" y="150" width="270" height="58" rx="6" fill="#2a0f12" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="v" x="666" y="175" fill="#f87171">Falsificação do domínio</text>
+  <text class="vs" x="666" y="195">o DMARC pegou</text>
+
+  <!-- Q1 -> Q2 : key moment -->
+  <line x1="120" y1="208" x2="120" y2="240" stroke="#e2e8f0" stroke-width="2" marker-end="url(#arrow-gray)"/>
+  <text class="nokey" x="136" y="228">passou? continue — ainda pode ser golpe</text>
 
   <!-- Q2 -->
-  <rect x="24" y="124" width="470" height="52" rx="6" fill="#141d2a" stroke="#3f5f8a"/>
-  <text class="q" x="40" y="146">2. o domínio do From é o CERTO, ou um parecido?</text>
-  <text class="s" x="40" y="164">valeverde.example × valeverde-ti.example × xn--…</text>
-  <rect x="560" y="124" width="316" height="52" rx="6" fill="#2a1c1a" stroke="#8a4a3f"/>
-  <text class="r" x="576" y="146">PARECIDO → lookalike / punycode</text>
-  <text class="s" x="576" y="164">passa tudo: o atacante autenticou o dele</text>
-  <line x1="494" y1="150" x2="556" y2="150" stroke="#9fb0a6" marker-end="url(#a)"/>
+  <rect x="40" y="244" width="530" height="58" rx="6" fill="#0f1d3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="num" x="58" y="269">2</text>
+  <text class="q" x="82" y="269">O domínio do From é o certo, ou um parecido?</text>
+  <text class="sub" x="82" y="289">valeverde.example × valeverde-ti.example × xn--…</text>
+  <line x1="570" y1="273" x2="642" y2="273" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <text class="yes" x="606" y="265" text-anchor="middle" fill="#f87171">parecido</text>
+  <rect x="650" y="244" width="270" height="58" rx="6" fill="#2a0f12" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="v" x="666" y="269" fill="#f87171">Domínio sósia / Punycode</text>
+  <text class="vs" x="666" y="289">passa em tudo: o domínio é dele</text>
+
+  <line x1="120" y1="302" x2="120" y2="334" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+  <text class="no" x="136" y="322">é o certo</text>
 
   <!-- Q3 -->
-  <rect x="24" y="200" width="470" height="52" rx="6" fill="#141d2a" stroke="#3f5f8a"/>
-  <text class="q" x="40" y="222">3. o texto do link bate com o href e o host de destino?</text>
-  <text class="s" x="40" y="240">cuidado com ?url=, ?next=, ?u= (open redirect)</text>
-  <rect x="560" y="200" width="316" height="52" rx="6" fill="#2a1c1a" stroke="#8a4a3f"/>
-  <text class="r" x="576" y="222">LEVA A OUTRO LUGAR → redirect</text>
-  <text class="s" x="576" y="240">o host visível não é o de destino</text>
-  <line x1="494" y1="226" x2="556" y2="226" stroke="#9fb0a6" marker-end="url(#a)"/>
+  <rect x="40" y="338" width="530" height="58" rx="6" fill="#0f1d3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="num" x="58" y="363">3</text>
+  <text class="q" x="82" y="363">O texto do link bate com o endereço real (href)?</text>
+  <text class="sub" x="82" y="383">cuidado com ?url= e ?next= (open redirect)</text>
+  <line x1="570" y1="367" x2="642" y2="367" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <text class="yes" x="606" y="359" text-anchor="middle" fill="#f87171">não</text>
+  <rect x="650" y="338" width="270" height="58" rx="6" fill="#2a0f12" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="v" x="666" y="363" fill="#f87171">Link enganoso</text>
+  <text class="vs" x="666" y="383">leva a outro lugar</text>
+
+  <line x1="120" y1="396" x2="120" y2="428" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+  <text class="no" x="136" y="416">bate</text>
 
   <!-- Q4 -->
-  <rect x="24" y="276" width="470" height="52" rx="6" fill="#141d2a" stroke="#3f5f8a"/>
-  <text class="q" x="40" y="298">4. há anexo executável / macro / .lnk / .iso / .html?</text>
-  <text class="s" x="40" y="316">o tipo do anexo é o alerta, não a checagem</text>
-  <rect x="560" y="276" width="316" height="52" rx="6" fill="#2a1c1a" stroke="#8a4a3f"/>
-  <text class="r" x="576" y="298">SIM → anexo perigoso</text>
-  <text class="s" x="576" y="316">não abra; não "habilite edição"</text>
-  <line x1="494" y1="302" x2="556" y2="302" stroke="#9fb0a6" marker-end="url(#a)"/>
+  <rect x="40" y="432" width="530" height="58" rx="6" fill="#0f1d3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="num" x="58" y="457">4</text>
+  <text class="q" x="82" y="457">Tem anexo executável, macro, .lnk, .iso ou .html?</text>
+  <text class="sub" x="82" y="477">o tipo do anexo já é o alerta</text>
+  <line x1="570" y1="461" x2="642" y2="461" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <text class="yes" x="606" y="453" text-anchor="middle" fill="#f87171">sim</text>
+  <rect x="650" y="432" width="270" height="58" rx="6" fill="#2a0f12" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="v" x="666" y="457" fill="#f87171">Anexo perigoso</text>
+  <text class="vs" x="666" y="477">não abra, não "habilite edição"</text>
+
+  <line x1="120" y1="490" x2="120" y2="522" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+  <text class="no" x="136" y="510">não</text>
 
   <!-- Q5 -->
-  <rect x="24" y="352" width="852" height="46" rx="6" fill="#1a2a22" stroke="#3b6b4f"/>
-  <text class="w" x="40" y="374">5. nada acima, mas gera URGÊNCIA, pede SEGREDO ou foge do processo?</text>
-  <text class="b" x="40" y="392">→ verifique por OUTRO canal (ligue para o número conhecido) antes de agir. É o padrão do BEC.</text>
+  <rect x="40" y="526" width="530" height="58" rx="6" fill="#0f1d3a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="num" x="58" y="551">5</text>
+  <text class="q" x="82" y="551">Nada disso, mas pede urgência ou segredo,</text>
+  <text class="q" x="82" y="571">ou foge do processo normal?</text>
+  <line x1="570" y1="555" x2="642" y2="555" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+  <text class="yes" x="606" y="547" text-anchor="middle" fill="#fbbf24">sim</text>
+  <rect x="650" y="526" width="270" height="58" rx="6" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.5"/>
+  <text class="v" x="666" y="551" fill="#fbbf24">Confirme por outro canal</text>
+  <text class="vs" x="666" y="571">ligue para o número que já tinha</text>
 
-  <!-- rule -->
-  <rect x="24" y="414" width="852" height="40" rx="6" fill="#2a1c1a" stroke="#8a4a3f"/>
-  <text class="w" x="40" y="440">Régua de ouro: SPF + DKIM + DMARC só provam DE QUAL DOMÍNIO veio — nunca que é confiável.</text>
+  <!-- legend -->
+  <rect x="60" y="626" width="14" height="14" rx="3" fill="#0f1d3a" stroke="#3b82f6"/>
+  <text class="leg" x="82" y="638">pergunta</text>
+  <rect x="210" y="626" width="14" height="14" rx="3" fill="#2a0f12" stroke="#ef4444"/>
+  <text class="leg" x="232" y="638">sinal de golpe</text>
+  <rect x="400" y="626" width="14" height="14" rx="3" fill="#2a1f05" stroke="#f59e0b"/>
+  <text class="leg" x="422" y="638">ação antes de agir</text>
+  <rect x="600" y="626" width="14" height="14" rx="3" fill="#1e293b" stroke="#e2e8f0"/>
+  <text class="leg" x="622" y="638">ideia principal</text>
 </svg>

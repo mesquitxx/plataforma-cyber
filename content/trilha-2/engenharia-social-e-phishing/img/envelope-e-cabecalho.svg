@@ -1,64 +1,108 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="t d">
-  <title id="t">Os dois "remetentes" de um e-mail e o que cada checagem olha</title>
-  <desc id="d">Um e-mail tem dois endereços de remetente que não precisam ser iguais. À esquerda, o ENVELOPE SMTP, que o servidor usa para entregar e devolver a mensagem: o comando MAIL FROM, que vira o cabeçalho Return-Path. O SPF confere esse envelope contra o IP de quem conectou, perguntando se aquele IP pode enviar por aquele domínio. À direita, o CABEÇALHO, que é o que o programa de e-mail mostra para a pessoa: o campo From, o nome de exibição e o Reply-To. O usuário só vê o cabeçalho; nunca vê o envelope. No meio, o DKIM assina alguns cabeçalhos e o corpo com uma chave privada, e o destinatário confere a assinatura com a chave pública publicada no DNS do domínio assinante. Embaixo, o DMARC amarra tudo: ele exige que o domínio do From visível esteja ALINHADO com o domínio que passou no SPF ou no DKIM, e aplica uma política de nada fazer, pôr em quarentena ou rejeitar. A lição em destaque: SPF e DKIM podem dar pass e o e-mail ainda ser falso, porque eles olham o envelope e o domínio assinante, não o From que a pessoa lê; só o alinhamento do DMARC liga as duas pontas.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" fill="#e2e8f0" role="img" aria-labelledby="t d">
+  <title id="t">Um e-mail tem dois remetentes — e você só enxerga um</title>
+  <desc id="d">Duas caixas lado a lado, separadas por um sinal de diferente. À esquerda, o ENVELOPE, usado pelos servidores e que a pessoa nunca vê: MAIL FROM bounce@mail-sender.example, que vira o cabeçalho Return-Path. À direita, o CABEÇALHO, o que aparece na tela: De: Diretoria Financeira, com o endereço diretoria@valeverde.example escondido ou em letra miúda; o nome em destaque é texto livre. Em destaque no topo: nada obriga os dois a serem iguais; o atacante põe um domínio dele no envelope e escreve Diretoria Financeira no From. Abaixo do cabeçalho, o que o atacante ganha: você lê Diretoria e confia. Embaixo, o que cada checagem confere: o SPF olha o envelope; o DKIM olha o domínio que assinou; só o DMARC compara com o From que você lê.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 15px; font-weight: 700; }
-    .h { font-size: 13.5px; font-weight: 700; fill: #5cc8d8; }
-    .w { font-size: 11.5px; fill: #e8c46a; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .r { fill: #e07a6a; }
-    .g { fill: #74c48a; }
+    text { font-family: 'DejaVu Sans Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; letter-spacing: 0.02em; }
+    .title { font-size: 20px; font-weight: 700; }
+    .key1 { font-size: 14px; font-weight: 700; fill: #fca5a5; }
+    .key2 { font-size: 13px; }
+    .h { font-size: 15px; font-weight: 700; }
+    .sub { font-size: 11px; fill: #94a3b8; }
+    .lbl { font-size: 12px; fill: #94a3b8; }
+    .code { font-size: 13px; font-weight: 700; }
+    .big { font-size: 17px; font-weight: 700; fill: #fde68a; }
+    .muted { font-size: 10.5px; fill: #64748b; }
+    .row { font-size: 12px; }
+    .name { font-size: 13px; font-weight: 700; }
+    .chip { font-size: 11.5px; font-weight: 700; }
+    .leg { font-size: 11.5px; fill: #94a3b8; }
   </style>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-      <path d="M0,0 L9,3 L0,6 Z" fill="#9fb0a6"/>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ef4444"/>
     </marker>
+    <filter id="glow-red">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <rect x="0" y="0" width="900" height="540" fill="#0f1613"/>
-  <text class="t" x="24" y="32">Um e-mail tem dois remetentes — e você só enxerga um</text>
+  <rect width="960" height="640" fill="url(#bg-grad)"/>
+
+  <text class="title" x="480" y="44" text-anchor="middle">Um e-mail tem dois remetentes — e você só enxerga um</text>
+
+  <!-- key idea -->
+  <rect x="60" y="64" width="840" height="58" rx="6" fill="#2a0f12" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="key1" x="480" y="88" text-anchor="middle">Nada obriga os dois a serem iguais.</text>
+  <text class="key2" x="480" y="110" text-anchor="middle">O atacante põe um domínio dele no envelope e escreve “Diretoria Financeira” no From.</text>
 
   <!-- envelope -->
-  <rect x="24" y="54" width="380" height="150" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
-  <text class="h" x="42" y="80">ENVELOPE SMTP (o carteiro usa)</text>
-  <text class="b" x="42" y="104">MAIL FROM: &lt;bounce@mail-sender.example&gt;</text>
-  <text class="s" x="42" y="124">vira o cabeçalho Return-Path</text>
-  <text class="w" x="42" y="152">↑ o SPF confere ISTO</text>
-  <text class="s" x="42" y="172">o IP que conectou pode enviar</text>
-  <text class="s" x="42" y="188">por mail-sender.example? (sim/não)</text>
+  <rect x="40" y="150" width="360" height="170" rx="6" fill="#0c2533" stroke="#22d3ee" stroke-width="1.5"/>
+  <text class="h" x="60" y="176" fill="#22d3ee">ENVELOPE</text>
+  <text class="sub" x="60" y="196">usado pelos servidores · você nunca vê</text>
+  <rect x="60" y="210" width="320" height="58" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text class="lbl" x="76" y="232">MAIL FROM:</text>
+  <text class="code" x="76" y="254">bounce@mail-sender.example</text>
+  <text class="sub" x="60" y="300">vira o cabeçalho Return-Path</text>
+
+  <!-- mismatch -->
+  <circle cx="480" cy="228" r="30" fill="#2a0f12" stroke="#ef4444" stroke-width="2" filter="url(#glow-red)"/>
+  <text x="480" y="240" text-anchor="middle" font-size="32" font-weight="700" fill="#ef4444">≠</text>
+  <text x="480" y="282" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fca5a5">podem ser</text>
+  <text x="480" y="298" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fca5a5">diferentes</text>
 
   <!-- header -->
-  <rect x="496" y="54" width="380" height="150" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
-  <text class="h" x="514" y="80">CABEÇALHO (a pessoa lê)</text>
-  <text class="b" x="514" y="104">From: "Diretoria" &lt;diretoria@valeverde.example&gt;</text>
-  <text class="b" x="514" y="124">Reply-To: contato-exec.example</text>
-  <text class="w" x="514" y="152">↑ é SÓ isto que aparece na tela</text>
-  <text class="s" x="514" y="172">o nome de exibição e o From</text>
-  <text class="s" x="514" y="188">podem dizer qualquer coisa</text>
+  <rect x="560" y="150" width="360" height="170" rx="6" fill="#2a1f05" stroke="#f59e0b" stroke-width="1.5"/>
+  <text class="h" x="580" y="176" fill="#f59e0b">CABEÇALHO (o From)</text>
+  <text class="sub" x="580" y="196">o que aparece na sua tela</text>
+  <rect x="580" y="210" width="320" height="64" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text class="lbl" x="596" y="236">De:</text>
+  <text class="big" x="630" y="237">Diretoria Financeira</text>
+  <text class="muted" x="596" y="260">diretoria@valeverde.example</text>
+  <text class="sub" x="580" y="300">o nome em destaque é texto livre</text>
 
-  <text class="s" x="412" y="124" text-anchor="middle">≠</text>
-  <text class="s" x="412" y="140" text-anchor="middle">não</text>
-  <text class="s" x="412" y="156" text-anchor="middle">precisam</text>
-  <text class="s" x="412" y="172" text-anchor="middle">bater</text>
+  <!-- consequence -->
+  <line x1="740" y1="320" x2="740" y2="346" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <rect x="560" y="350" width="360" height="56" rx="6" fill="#2a0f12" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="name" x="740" y="373" text-anchor="middle" fill="#fca5a5">O que o atacante ganha:</text>
+  <text class="row" x="740" y="394" text-anchor="middle">você lê “Diretoria” e confia</text>
 
-  <!-- DKIM -->
-  <rect x="24" y="230" width="852" height="92" rx="8" fill="#17211d" stroke="#3b6b4f"/>
-  <text class="h" x="42" y="256">DKIM — assinatura criptográfica</text>
-  <text class="b" x="42" y="280">quem envia assina cabeçalhos + corpo com a chave PRIVADA; o destinatário</text>
-  <text class="b" x="42" y="300">confere com a chave PÚBLICA publicada em sel1._domainkey.&lt;domínio&gt; (DNS).</text>
-  <text class="s" x="560" y="280">diz: "a mensagem não foi mexida</text>
-  <text class="s" x="560" y="300">e veio de quem tem a chave de d="></text>
+  <!-- why -->
+  <rect x="40" y="350" width="360" height="56" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text class="row" x="220" y="373" text-anchor="middle" fill="#cbd5e1">Ninguém confere: o SMTP (1982)</text>
+  <text class="row" x="220" y="394" text-anchor="middle" fill="#cbd5e1">não autentica o remetente</text>
 
-  <!-- DMARC -->
-  <rect x="24" y="348" width="852" height="110" rx="8" fill="#141d2a" stroke="#3f5f8a"/>
-  <text class="h" x="42" y="374" fill="#8ab4f8">DMARC — amarra o From visível às checagens</text>
-  <text class="b" x="42" y="398">exige ALINHAMENTO: o domínio do From (o que a pessoa vê) tem de bater com</text>
-  <text class="b" x="42" y="418">o domínio que passou no SPF <tspan class="s">ou</tspan> no DKIM. Senão, dmarc=fail.</text>
-  <text class="b" x="42" y="438">política: <tspan class="g">p=none</tspan> (só relata) · <tspan class="w">p=quarantine</tspan> · <tspan class="r">p=reject</tspan> (barra na porta)</text>
+  <!-- checks panel (secondary) -->
+  <rect x="40" y="432" width="880" height="150" rx="6" fill="#0f172a" stroke="#334155" stroke-dasharray="5 4"/>
+  <text class="name" x="60" y="456" fill="#cbd5e1">O que cada checagem confere</text>
+  <text class="sub" x="300" y="456">(detalhes na seção 2.4)</text>
 
-  <!-- lesson -->
-  <rect x="24" y="478" width="852" height="46" rx="8" fill="#2a1c1a" stroke="#8a4a3f"/>
-  <text class="w" x="42" y="498">A pegadinha: SPF e DKIM podem dar PASS e o e-mail ainda ser falso.</text>
-  <text class="b" x="42" y="516">Eles olham o envelope e o domínio assinante — não o From que você lê. Só o alinhamento do DMARC liga as pontas.</text>
+  <text class="name" x="60" y="490">SPF</text>
+  <text class="row" x="140" y="490" fill="#cbd5e1">o servidor que enviou pode usar o domínio do envelope?</text>
+  <rect x="700" y="474" width="200" height="24" rx="12" fill="#0c2533" stroke="#22d3ee"/>
+  <text class="chip" x="800" y="491" text-anchor="middle" fill="#22d3ee">olha: o envelope</text>
+
+  <text class="name" x="60" y="524">DKIM</text>
+  <text class="row" x="140" y="524" fill="#cbd5e1">a assinatura bate com o domínio que assinou?</text>
+  <rect x="700" y="508" width="200" height="24" rx="12" fill="#1e293b" stroke="#64748b"/>
+  <text class="chip" x="800" y="525" text-anchor="middle" fill="#cbd5e1">olha: quem assinou</text>
+
+  <rect x="50" y="540" width="860" height="32" rx="6" fill="#052e16" stroke="#10b981"/>
+  <text class="name" x="60" y="561" fill="#10b981">DMARC</text>
+  <text class="row" x="140" y="561">a única que compara com o From que você lê</text>
+  <rect x="700" y="544" width="200" height="24" rx="12" fill="#2a1f05" stroke="#f59e0b"/>
+  <text class="chip" x="800" y="561" text-anchor="middle" fill="#f59e0b">olha: o From</text>
+
+  <!-- legend -->
+  <rect x="60" y="604" width="14" height="14" rx="3" fill="#0c2533" stroke="#22d3ee"/>
+  <text class="leg" x="82" y="616">envelope (entrega)</text>
+  <rect x="270" y="604" width="14" height="14" rx="3" fill="#2a1f05" stroke="#f59e0b"/>
+  <text class="leg" x="292" y="616">o que você vê</text>
+  <rect x="440" y="604" width="14" height="14" rx="3" fill="#2a0f12" stroke="#ef4444"/>
+  <text class="leg" x="462" y="616">o engano</text>
+  <rect x="580" y="604" width="14" height="14" rx="3" fill="#052e16" stroke="#10b981"/>
+  <text class="leg" x="602" y="616">checagem que protege o From</text>
 </svg>
