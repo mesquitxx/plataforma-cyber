@@ -1,38 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" width="900" height="440" role="img" aria-labelledby="t d">
   <title id="t">Como um texto claro conhecido entrega a chave de um XOR repetido</title>
-  <desc id="d">Primeira linha: o texto cifrado interceptado, byte a byte, começando por df 6c 18 f7. Segunda linha: o cabeçalho que todo pedido tem, conhecido pelo manual do protocolo: C R I P, ou 43 52 49 50. Fazendo XOR byte a byte das duas linhas sai a chave: 9c 3e 51 a7 e assim por diante. Isso funciona porque cifrado = claro XOR chave, e portanto cifrado XOR claro = chave. Com 22 bytes de cabeçalho conhecido, a chave de 12 bytes aparece inteira e começa a se repetir no 13º byte, o que revela o tamanho dela. Com a chave, todas as mensagens, passadas e futuras, se abrem.</desc>
+  <desc id="d">Primeira linha: o texto cifrado interceptado, byte a byte: df 6c 18 f7 86 47 06 b7 b9 53 2c 1d bc 42 71 f7. Segunda linha: o começo que todo pedido tem, conhecido pelo manual do protocolo: CRIPTOMAX v1 | P, em hex 43 52 49 50 54 4f 4d 41 58 20 76 31 20 7c 20 50. O XOR byte a byte das duas linhas é a chave: 9c 3e 51 a7 d2 08 4b f6 e1 73 5a 2c, que volta a aparecer a partir do 13º byte (9c 3e 51 a7), revelando que a chave tem 12 bytes. Funciona porque cifrado = claro XOR chave, e x XOR x = 0. O que o atacante ganha: a chave inteira, que abre a terceira mensagem e todas as outras, passadas e futuras. À parte, a defesa: chave aleatória, do tamanho da mensagem e nunca reusada, o one-time pad.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .r { fill: #f08a7e; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 17px; font-weight: 700; }
+    .key { font-size: 14px; font-weight: 700; }
+    .rowl { font-size: 13px; font-weight: 700; }
+    .lbl { font-size: 13px; }
+    .sub { font-size: 11px; fill: #94a3b8; }
+    .hx { font-size: 14px; text-anchor: middle; }
+    .kx { font-size: 14px; font-weight: 700; text-anchor: middle; fill: #10b981; }
+    .gold { fill: #eab308; } .green { fill: #10b981; } .red { fill: #ef4444; }
   </style>
-  <rect width="900" height="400" fill="#121815"/>
-  <text class="t" x="30" y="32">cifrado ⊕ claro conhecido = chave</text>
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/><stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="440" fill="url(#bg-grad)"/>
 
-  <rect x="20" y="50" width="860" height="200" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="36" y="80">cifrado</text>
-  <text class="b r" x="190" y="80">df  6c  18  f7  86  47  06  b7  b9  53  2c  1d  bc  42  71  f7 …</text>
-  <text class="h" x="36" y="112">claro</text>
-  <text class="s" x="36" y="126">(do manual)</text>
-  <text class="b y" x="190" y="112">C   R   I   P   T   O   M   A   X   ␠   v   1   ␠   |   ␠   P  …</text>
-  <text class="b y" x="190" y="130">43  52  49  50  54  4f  4d  41  58  20  76  31  20  7c  20  50 …</text>
-  <line x1="190" y1="142" x2="830" y2="142" stroke="#3a4b42"/>
-  <text class="h" x="36" y="166">⊕ = chave</text>
-  <text class="b g" x="190" y="166">9c  3e  51  a7  d2  08  4b  f6  e1  73  5a  2c  <tspan class="y">9c  3e  51  a7</tspan> …</text>
-  <rect x="185" y="152" width="265" height="20" rx="4" fill="none" stroke="#5ee08a"/>
-  <text class="s g" x="190" y="190">12 bytes de chave</text>
-  <text class="s y" x="458" y="190">↑ repetiu: o período é 12</text>
-  <text class="s" x="36" y="236">por quê: cifrado = claro ⊕ chave  →  cifrado ⊕ claro = claro ⊕ chave ⊕ claro = chave   (x ⊕ x = 0)</text>
+  <text class="title" x="30" y="34">Ataque de texto claro conhecido contra a cifra da CriptoMax</text>
+  <rect x="20" y="48" width="860" height="44" rx="6" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text class="key" x="450" y="68" text-anchor="middle">cifrado ⊕ texto claro conhecido = a <tspan class="green">CHAVE</tspan></text>
+  <text class="sub" x="450" y="85" text-anchor="middle">porque cifrado = claro ⊕ chave, e x ⊕ x = 0</text>
 
-  <rect x="20" y="266" width="860" height="118" rx="10" fill="#16201b" stroke="#f08a7e"/>
-  <text class="h r" x="36" y="292">O que a CriptoMax achava que tinha</text>
-  <text class="b" x="36" y="314">"ninguém conhece o algoritmo" → o código vazou (cifra.py)</text>
-  <text class="b" x="36" y="334">"a chave é secreta" → todo pedido começa igual; o cabeçalho É texto claro conhecido</text>
-  <text class="b" x="36" y="354">"cada mensagem é independente" → a mesma chave cifra todas: quebrou uma, quebrou todas</text>
-  <text class="s" x="36" y="374">Um one-time pad com chave aleatória, do tamanho da mensagem e nunca reusada não teria nenhum desses problemas.</text>
+  <!-- cifrado -->
+  <text class="rowl" x="30" y="122">cifrado</text>
+  <text class="sub" x="30" y="137">(interceptado)</text>
+  <text class="hx" x="220" y="124">df</text><text class="hx" x="260" y="124">6c</text><text class="hx" x="300" y="124">18</text><text class="hx" x="340" y="124">f7</text>
+  <text class="hx" x="380" y="124">86</text><text class="hx" x="420" y="124">47</text><text class="hx" x="460" y="124">06</text><text class="hx" x="500" y="124">b7</text>
+  <text class="hx" x="540" y="124">b9</text><text class="hx" x="580" y="124">53</text><text class="hx" x="620" y="124">2c</text><text class="hx" x="660" y="124">1d</text>
+  <text class="hx" x="700" y="124">bc</text><text class="hx" x="740" y="124">42</text><text class="hx" x="780" y="124">71</text><text class="hx" x="820" y="124">f7</text>
+  <text class="lbl" x="860" y="124">…</text>
+
+  <!-- claro conhecido -->
+  <text class="rowl gold" x="30" y="162">⊕ claro</text>
+  <text class="sub" x="30" y="177">(do manual)</text>
+  <text class="hx gold" x="220" y="160">C</text><text class="hx gold" x="260" y="160">R</text><text class="hx gold" x="300" y="160">I</text><text class="hx gold" x="340" y="160">P</text>
+  <text class="hx gold" x="380" y="160">T</text><text class="hx gold" x="420" y="160">O</text><text class="hx gold" x="460" y="160">M</text><text class="hx gold" x="500" y="160">A</text>
+  <text class="hx gold" x="540" y="160">X</text><text class="hx gold" x="580" y="160">␣</text><text class="hx gold" x="620" y="160">v</text><text class="hx gold" x="660" y="160">1</text>
+  <text class="hx gold" x="700" y="160">␣</text><text class="hx gold" x="740" y="160">|</text><text class="hx gold" x="780" y="160">␣</text><text class="hx gold" x="820" y="160">P</text>
+  <text class="hx gold" x="220" y="180">43</text><text class="hx gold" x="260" y="180">52</text><text class="hx gold" x="300" y="180">49</text><text class="hx gold" x="340" y="180">50</text>
+  <text class="hx gold" x="380" y="180">54</text><text class="hx gold" x="420" y="180">4f</text><text class="hx gold" x="460" y="180">4d</text><text class="hx gold" x="500" y="180">41</text>
+  <text class="hx gold" x="540" y="180">58</text><text class="hx gold" x="580" y="180">20</text><text class="hx gold" x="620" y="180">76</text><text class="hx gold" x="660" y="180">31</text>
+  <text class="hx gold" x="700" y="180">20</text><text class="hx gold" x="740" y="180">7c</text><text class="hx gold" x="780" y="180">20</text><text class="hx gold" x="820" y="180">50</text>
+  <text class="lbl gold" x="860" y="180">…</text>
+
+  <line x1="200" y1="192" x2="840" y2="192" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <!-- chave recuperada: o momento-chave -->
+  <text class="rowl green" x="30" y="218">= chave</text>
+  <rect x="202" y="200" width="476" height="28" rx="6" fill="#0b2a20" stroke="#10b981" stroke-width="2"/>
+  <rect x="682" y="200" width="156" height="28" rx="6" fill="#0b2a20" stroke="#10b981" stroke-width="2" stroke-dasharray="5 4"/>
+  <text class="kx" x="220" y="219">9c</text><text class="kx" x="260" y="219">3e</text><text class="kx" x="300" y="219">51</text><text class="kx" x="340" y="219">a7</text>
+  <text class="kx" x="380" y="219">d2</text><text class="kx" x="420" y="219">08</text><text class="kx" x="460" y="219">4b</text><text class="kx" x="500" y="219">f6</text>
+  <text class="kx" x="540" y="219">e1</text><text class="kx" x="580" y="219">73</text><text class="kx" x="620" y="219">5a</text><text class="kx" x="660" y="219">2c</text>
+  <text class="kx" x="700" y="219">9c</text><text class="kx" x="740" y="219">3e</text><text class="kx" x="780" y="219">51</text><text class="kx" x="820" y="219">a7</text>
+  <text class="lbl green" x="440" y="248" text-anchor="middle">a chave inteira: 12 bytes</text>
+  <text class="lbl green" x="760" y="248" text-anchor="middle">repetiu! → tamanho 12</text>
+
+  <!-- consequência do ataque -->
+  <rect x="20" y="266" width="860" height="68" rx="6" fill="#2a1215" stroke="#ef4444" stroke-width="2"/>
+  <text class="key red" x="36" y="292">O ATACANTE GANHA: a chave inteira, sem nunca tê-la recebido</text>
+  <text class="lbl" x="36" y="318">→ abre a 3ª mensagem e todas as outras, passadas e futuras (a mesma chave cifra tudo)</text>
+
+  <!-- defesa: separada e secundária -->
+  <rect x="20" y="352" width="860" height="44" rx="6" fill="#0f172a" stroke="#334155" stroke-dasharray="4 4"/>
+  <text class="sub" x="36" y="370">defesa (à parte): chave aleatória, do tamanho da mensagem e nunca reusada, o one-time pad.</text>
+  <text class="sub" x="36" y="386">Aqui a chave é curta e repetida, então um pedaço conhecido de texto basta.</text>
+
+  <!-- legenda -->
+  <text class="sub" x="30" y="424">cores:</text>
+  <rect x="80" y="415" width="12" height="12" rx="2" fill="#eab308"/><text class="sub" x="98" y="425">texto que o manual entrega</text>
+  <rect x="300" y="415" width="12" height="12" rx="2" fill="#10b981"/><text class="sub" x="318" y="425">a chave descoberta</text>
+  <rect x="480" y="415" width="12" height="12" rx="2" fill="#ef4444"/><text class="sub" x="498" y="425">o que o atacante ganha</text>
+  <text class="sub" x="700" y="425">␣ = espaço</text>
 </svg>

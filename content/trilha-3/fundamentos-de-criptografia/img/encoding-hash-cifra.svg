@@ -1,71 +1,86 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
-  <title id="t">Encoding, hash e cifra: três esteiras diferentes</title>
-  <desc id="d">Três faixas horizontais com a mesma entrada, a senha senha123. Na primeira, encoding: o Base64 transforma senha123 em c2VuaGExMjM= e qualquer pessoa desfaz a transformação, sem chave nenhuma; a seta de volta está aberta. Na segunda, hash: o SHA-256 transforma senha123 em 64 caracteres hexadecimais de tamanho fixo e não existe seta de volta; só dá para calcular de novo e comparar. Na terceira, cifra: o AES transforma senha123 em bytes ilegíveis usando uma chave, e a volta só existe para quem tem a chave, desenhada como um cadeado na seta de retorno. Embaixo, um resumo: encoding protege nada, hash prova que não mudou, cifra esconde de quem não tem a chave.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" width="900" height="450" role="img" aria-labelledby="t d">
+  <title id="t">Encoding, hash e cifra: a diferença está na volta</title>
+  <desc id="d">Três faixas com a mesma entrada, senha123, e a mesma ida. A diferença está na seta de volta. Encoding (ex.: Base64) vira c2VuaGExMjM= e a volta é aberta a qualquer um: não esconde nada. Hash (ex.: SHA-256) vira 55a5e9e7…, sempre 64 símbolos, e não existe volta: só dá para recalcular e comparar, o que prova que não mudou. Cifra (ex.: AES) vira bytes ilegíveis usando uma chave, e a volta só existe para quem tem a chave: esconde de verdade.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; }
-    .b { font-size: 12px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .r { fill: #f08a7e; }
-    .c { fill: #5cc8d8; }
-    .fw { stroke: #5cc8d8; stroke-width: 2.5; marker-end: url(#ar); fill: none; }
-    .bk { stroke: #9fb0a6; stroke-width: 2; stroke-dasharray: 6 4; marker-end: url(#ag); fill: none; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 17px; font-weight: 700; }
+    .key { font-size: 14px; font-weight: 700; }
+    .name { font-size: 16px; font-weight: 700; }
+    .lbl { font-size: 13px; }
+    .sub { font-size: 11px; fill: #94a3b8; }
+    .verdict { font-size: 13px; font-weight: 700; }
+    .red { fill: #ef4444; } .gold { fill: #eab308; } .green { fill: #10b981; }
   </style>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
-    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9fb0a6"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/><stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/></marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ef4444"/></marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#10b981"/></marker>
   </defs>
-  <rect width="900" height="430" fill="#121815"/>
-  <text class="t" x="30" y="32">Três esteiras para a mesma entrada</text>
+  <rect width="900" height="450" fill="url(#bg-grad)"/>
 
-  <!-- encoding -->
-  <rect x="20" y="50" width="860" height="95" rx="10" fill="#16201b" stroke="#f08a7e"/>
-  <text class="h r" x="36" y="74">ENCODING (Base64, hex, URL)</text>
-  <text class="s" x="36" y="92">representação · sem chave · algoritmo público</text>
-  <rect x="36" y="102" width="110" height="30" rx="5" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="b" x="50" y="122">senha123</text>
-  <path class="fw" d="M156,112 L330,112"/>
-  <text class="s" x="200" y="104">base64</text>
-  <rect x="340" y="102" width="150" height="30" rx="5" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="b" x="354" y="122">c2VuaGExMjM=</text>
-  <path class="bk" d="M330,128 L156,128"/>
-  <text class="s" x="190" y="142">base64 -d (qualquer um)</text>
-  <text class="b r" x="520" y="116">volta aberta a todos</text>
-  <text class="s" x="520" y="134">protege: nada</text>
+  <text class="title" x="30" y="34">Encoding, hash e cifra: a ida é igual, a diferença está na VOLTA</text>
+  <rect x="20" y="48" width="860" height="40" rx="6" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text class="key" x="450" y="73" text-anchor="middle">Só a cifra esconde. Pergunte: existe volta? E ela exige um segredo?</text>
 
-  <!-- hash -->
-  <rect x="20" y="160" width="860" height="95" rx="10" fill="#16201b" stroke="#e8c46a"/>
-  <text class="h y" x="36" y="184">HASH (SHA-256)</text>
-  <text class="s" x="36" y="202">mão única · tamanho fixo · sem chave</text>
-  <rect x="36" y="212" width="110" height="30" rx="5" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="b" x="50" y="232">senha123</text>
-  <path class="fw" d="M156,227 L330,227"/>
-  <text class="s" x="200" y="219">sha256sum</text>
-  <rect x="340" y="212" width="330" height="30" rx="5" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="b" x="352" y="232">55a5e9e7…(64 hex, sempre)</text>
-  <text class="b y" x="690" y="224">sem volta</text>
-  <text class="s" x="690" y="242">só recalcular e comparar</text>
+  <!-- Lane 1: encoding (red = volta aberta a qualquer um) -->
+  <rect x="20" y="102" width="860" height="96" rx="6" data-graph-role="container" fill="#0f172a" stroke="#ef4444" stroke-width="1.5"/>
+  <text class="name red" x="36" y="134">Encoding</text>
+  <text class="sub" x="36" y="154">ex.: Base64</text>
+  <rect x="200" y="116" width="110" height="30" rx="6" fill="#1e293b" stroke="#334155"/>
+  <text class="lbl" x="255" y="136" text-anchor="middle">senha123</text>
+  <path d="M312,131 L416,131" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <text class="sub" x="364" y="124" text-anchor="middle">ida</text>
+  <rect x="420" y="116" width="180" height="30" rx="6" fill="#1e293b" stroke="#334155"/>
+  <text class="lbl" x="510" y="136" text-anchor="middle">c2VuaGExMjM=</text>
+  <path d="M510,147 V166 H255 V150" stroke="#ef4444" stroke-width="2.5" fill="none" marker-end="url(#arrow-red)"/>
+  <text class="lbl red" x="382" y="186" text-anchor="middle">volta: qualquer um, sem chave</text>
+  <rect x="640" y="116" width="225" height="62" rx="6" fill="#2a1215" stroke="#ef4444"/>
+  <text class="verdict red" x="752" y="142" text-anchor="middle">NÃO ESCONDE NADA</text>
+  <text class="sub" x="752" y="162" text-anchor="middle">só muda a representação</text>
 
-  <!-- cipher -->
-  <rect x="20" y="270" width="860" height="95" rx="10" fill="#16201b" stroke="#5ee08a"/>
-  <text class="h g" x="36" y="294">CIFRA (AES, ChaCha20)</text>
-  <text class="s" x="36" y="312">reversível · só com a chave · algoritmo público</text>
-  <rect x="36" y="322" width="110" height="30" rx="5" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="b" x="50" y="342">senha123</text>
-  <path class="fw" d="M156,332 L330,332"/>
-  <text class="s" x="190" y="324">cifrar + chave</text>
-  <rect x="340" y="322" width="150" height="30" rx="5" fill="#1d2a23" stroke="#3a4b42"/>
-  <text class="b" x="354" y="342">8f 1c e2 07 …</text>
-  <path class="bk" d="M330,348 L156,348"/>
-  <rect x="236" y="352" width="14" height="11" rx="2" fill="#5ee08a"/>
-  <path d="M239,352 v-4 a4,4 0 0 1 8,0 v4" stroke="#5ee08a" stroke-width="2" fill="none"/>
-  <text class="s" x="262" y="362">decifrar (só com a chave)</text>
-  <text class="b g" x="520" y="336">volta só para quem tem a chave</text>
-  <text class="s" x="520" y="354">protege: confidencialidade</text>
+  <!-- Lane 2: hash (gold = não existe volta) -->
+  <rect x="20" y="208" width="860" height="96" rx="6" data-graph-role="container" fill="#0f172a" stroke="#eab308" stroke-width="1.5"/>
+  <text class="name gold" x="36" y="240">Hash</text>
+  <text class="sub" x="36" y="260">ex.: SHA-256</text>
+  <rect x="200" y="222" width="110" height="30" rx="6" fill="#1e293b" stroke="#334155"/>
+  <text class="lbl" x="255" y="242" text-anchor="middle">senha123</text>
+  <path d="M312,237 L416,237" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <text class="sub" x="364" y="230" text-anchor="middle">ida</text>
+  <rect x="420" y="222" width="180" height="30" rx="6" fill="#1e293b" stroke="#334155"/>
+  <text class="lbl" x="510" y="242" text-anchor="middle">55a5e9e7… (64)</text>
+  <path d="M510,253 V272 H410" stroke="#eab308" stroke-width="2.5" stroke-dasharray="6 4" fill="none"/>
+  <path d="M396,264 L412,280 M412,264 L396,280" stroke="#eab308" stroke-width="3" fill="none"/>
+  <text class="lbl gold" x="250" y="277" text-anchor="middle">não existe volta</text>
+  <text class="sub" x="382" y="296" text-anchor="middle">só dá para recalcular e comparar</text>
+  <rect x="640" y="222" width="225" height="62" rx="6" fill="#2a2210" stroke="#eab308"/>
+  <text class="verdict gold" x="752" y="248" text-anchor="middle">PROVA QUE NÃO MUDOU</text>
+  <text class="sub" x="752" y="268" text-anchor="middle">tamanho fixo, sem segredo</text>
 
-  <text class="b" x="30" y="396">Encoding <tspan class="r">não esconde nada</tspan> · hash <tspan class="y">prova que não mudou</tspan> · cifra <tspan class="g">esconde de quem não tem a chave</tspan></text>
-  <text class="s" x="30" y="416">Pergunta que separa os três: "existe volta? e, se existe, ela exige um segredo?"</text>
+  <!-- Lane 3: cifra (green = volta só com a chave) -->
+  <rect x="20" y="314" width="860" height="96" rx="6" data-graph-role="container" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
+  <text class="name green" x="36" y="346">Cifra</text>
+  <text class="sub" x="36" y="366">ex.: AES</text>
+  <rect x="200" y="328" width="110" height="30" rx="6" fill="#1e293b" stroke="#334155"/>
+  <text class="lbl" x="255" y="348" text-anchor="middle">senha123</text>
+  <path d="M312,343 L416,343" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <text class="sub" x="364" y="336" text-anchor="middle">ida + chave</text>
+  <rect x="420" y="328" width="180" height="30" rx="6" fill="#1e293b" stroke="#334155"/>
+  <text class="lbl" x="510" y="348" text-anchor="middle">8f 1c e2 07 …</text>
+  <path d="M510,359 V378 H255 V362" stroke="#10b981" stroke-width="2.5" fill="none" marker-end="url(#arrow-green)"/>
+  <rect x="376" y="371" width="14" height="11" rx="2" fill="#10b981"/>
+  <path d="M379,371 v-4 a4,4 0 0 1 8,0 v4" stroke="#10b981" stroke-width="2" fill="none"/>
+  <text class="lbl green" x="382" y="400" text-anchor="middle">volta: só quem tem a chave</text>
+  <rect x="640" y="328" width="225" height="62" rx="6" fill="#0b2a20" stroke="#10b981"/>
+  <text class="verdict green" x="752" y="354" text-anchor="middle">ESCONDE DE VERDADE</text>
+  <text class="sub" x="752" y="374" text-anchor="middle">o segredo mora na chave</text>
+
+  <!-- Legend -->
+  <text class="sub" x="30" y="436">cores:</text>
+  <rect x="80" y="427" width="12" height="12" rx="2" fill="#ef4444"/><text class="sub" x="98" y="437">volta aberta a qualquer um</text>
+  <rect x="310" y="427" width="12" height="12" rx="2" fill="#eab308"/><text class="sub" x="328" y="437">não existe volta</text>
+  <rect x="465" y="427" width="12" height="12" rx="2" fill="#10b981"/><text class="sub" x="483" y="437">volta só com a chave</text>
+  <rect x="650" y="427" width="12" height="12" rx="2" fill="#94a3b8"/><text class="sub" x="668" y="437">ida (igual nas três)</text>
 </svg>

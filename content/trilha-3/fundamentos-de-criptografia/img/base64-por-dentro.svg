@@ -1,70 +1,108 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" width="900" height="440" role="img" aria-labelledby="t d">
   <title id="t">Base64 por dentro: Man vira TWFu</title>
-  <desc id="d">Os três caracteres M, a e n viram três bytes: 77, 97 e 110, ou em bits 01001101, 01100001 e 01101110. Os 24 bits são relidos em quatro grupos de 6 bits: 010011, 010110, 000101 e 101110, que valem 19, 22, 5 e 46. Cada número é a posição de um caractere no alfabeto Base64 (A a Z de 0 a 25, a a z de 26 a 51, 0 a 9 de 52 a 61, mais + e /): 19 é T, 22 é W, 5 é F, 46 é u. Resultado: TWFu. Embaixo, o caso em que sobram bytes: Ma vira TWE= e M vira TQ==; o sinal de igual é o padding, que completa o bloco de 4 caracteres. Não há chave em nenhum passo.</desc>
+  <desc id="d">Os três caracteres M, a e n viram os bytes 77, 97 e 110, ou 24 bits: 01001101, 01100001 e 01101110, cada byte numa cor. O momento-chave: os mesmos 24 bits são relidos em quatro grupos de 6 bits, que cortam as fronteiras dos bytes e misturam as cores. Os grupos valem 19, 22, 5 e 46, e cada número é a posição de uma letra no alfabeto público do Base64: T, W, F, u. Resultado: TWFu. Embaixo, a tabela pública (A a Z de 0 a 25, a a z de 26 a 51, 0 a 9 de 52 a 61, + é 62 e / é 63) e o caso em que sobram bytes: Ma vira TWE= e M vira TQ==; o sinal de igual completa o bloco de 4 caracteres. Nenhum passo usa chave.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .big { font-size: 20px; font-weight: 700; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .y { fill: #e8c46a; }
-    .r { fill: #f08a7e; }
-    .fw { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ar); fill: none; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 17px; font-weight: 700; }
+    .key { font-size: 14px; font-weight: 700; }
+    .step { font-size: 12px; font-weight: 700; fill: #94a3b8; }
+    .lbl { font-size: 13px; }
+    .sub { font-size: 11px; fill: #94a3b8; }
+    .big { font-size: 24px; font-weight: 700; }
+    .bit { font-size: 14px; font-weight: 700; fill: #0f0f1a; }
+    .val { font-size: 14px; font-weight: 700; }
+    .pur { fill: #a855f7; } .ora { fill: #f97316; } .blu { fill: #3b82f6; } .gold { fill: #eab308; }
   </style>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/><stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/></marker>
   </defs>
-  <rect width="900" height="400" fill="#121815"/>
-  <text class="t" x="30" y="32">Base64 à mão: 3 bytes entram, 4 caracteres saem</text>
+  <rect width="900" height="440" fill="url(#bg-grad)"/>
 
-  <text class="h" x="30" y="66">1. texto</text>
-  <text class="big" x="190" y="68">M</text>
-  <text class="big" x="420" y="68">a</text>
-  <text class="big" x="650" y="68">n</text>
+  <text class="title" x="30" y="34">Base64 à mão: 3 bytes entram, 4 caracteres saem</text>
+  <rect x="20" y="48" width="860" height="40" rx="6" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text class="key" x="450" y="73" text-anchor="middle">Nenhum passo usa chave: só reagrupar bits e consultar uma tabela pública</text>
 
-  <text class="h" x="30" y="104">2. bytes</text>
-  <text class="b" x="180" y="104">77</text>
-  <text class="b" x="410" y="104">97</text>
-  <text class="b" x="640" y="104">110</text>
+  <!-- 1. texto -->
+  <text class="step" x="30" y="122">1. texto</text>
+  <text class="big pur" x="314" y="124" text-anchor="middle">M</text>
+  <text class="big ora" x="522" y="124" text-anchor="middle">a</text>
+  <text class="big blu" x="730" y="124" text-anchor="middle">n</text>
 
-  <text class="h" x="30" y="142">3. 24 bits</text>
-  <rect x="120" y="124" width="690" height="28" rx="5" fill="#16201b" stroke="#3a4b42"/>
-  <text class="b y" x="140" y="143">0 1 0 0 1 1 0 1</text>
-  <text class="b y" x="370" y="143">0 1 1 0 0 0 0 1</text>
-  <text class="b y" x="600" y="143">0 1 1 0 1 1 1 0</text>
+  <!-- 2. bytes -->
+  <text class="step" x="30" y="152">2. bytes</text>
+  <text class="lbl pur" x="314" y="152" text-anchor="middle">77</text>
+  <text class="lbl ora" x="522" y="152" text-anchor="middle">97</text>
+  <text class="lbl blu" x="730" y="152" text-anchor="middle">110</text>
 
-  <text class="h" x="30" y="196">4. grupos</text>
-  <text class="h" x="30" y="212">de 6 bits</text>
-  <rect x="120" y="178" width="160" height="28" rx="5" fill="#16201b" stroke="#5ee08a"/>
-  <rect x="296" y="178" width="160" height="28" rx="5" fill="#16201b" stroke="#5ee08a"/>
-  <rect x="472" y="178" width="160" height="28" rx="5" fill="#16201b" stroke="#5ee08a"/>
-  <rect x="648" y="178" width="160" height="28" rx="5" fill="#16201b" stroke="#5ee08a"/>
-  <text class="b g" x="146" y="197">0 1 0 0 1 1</text>
-  <text class="b g" x="322" y="197">0 1 0 1 1 0</text>
-  <text class="b g" x="498" y="197">0 0 0 1 0 1</text>
-  <text class="b g" x="674" y="197">1 0 1 1 1 0</text>
+  <!-- 3. os 24 bits (cor = de qual letra veio) -->
+  <text class="step" x="30" y="188">3. os 24 bits</text>
+  <g>
+    <!-- M = 01001101 -->
+    <rect x="211" y="170" width="24" height="26" rx="3" fill="#a855f7"/><text class="bit" x="223" y="188" text-anchor="middle">0</text>
+    <rect x="237" y="170" width="24" height="26" rx="3" fill="#a855f7"/><text class="bit" x="249" y="188" text-anchor="middle">1</text>
+    <rect x="263" y="170" width="24" height="26" rx="3" fill="#a855f7"/><text class="bit" x="275" y="188" text-anchor="middle">0</text>
+    <rect x="289" y="170" width="24" height="26" rx="3" fill="#a855f7"/><text class="bit" x="301" y="188" text-anchor="middle">0</text>
+    <rect x="315" y="170" width="24" height="26" rx="3" fill="#a855f7"/><text class="bit" x="327" y="188" text-anchor="middle">1</text>
+    <rect x="341" y="170" width="24" height="26" rx="3" fill="#a855f7"/><text class="bit" x="353" y="188" text-anchor="middle">1</text>
+    <rect x="367" y="170" width="24" height="26" rx="3" fill="#a855f7"/><text class="bit" x="379" y="188" text-anchor="middle">0</text>
+    <rect x="393" y="170" width="24" height="26" rx="3" fill="#a855f7"/><text class="bit" x="405" y="188" text-anchor="middle">1</text>
+    <!-- a = 01100001 -->
+    <rect x="419" y="170" width="24" height="26" rx="3" fill="#f97316"/><text class="bit" x="431" y="188" text-anchor="middle">0</text>
+    <rect x="445" y="170" width="24" height="26" rx="3" fill="#f97316"/><text class="bit" x="457" y="188" text-anchor="middle">1</text>
+    <rect x="471" y="170" width="24" height="26" rx="3" fill="#f97316"/><text class="bit" x="483" y="188" text-anchor="middle">1</text>
+    <rect x="497" y="170" width="24" height="26" rx="3" fill="#f97316"/><text class="bit" x="509" y="188" text-anchor="middle">0</text>
+    <rect x="523" y="170" width="24" height="26" rx="3" fill="#f97316"/><text class="bit" x="535" y="188" text-anchor="middle">0</text>
+    <rect x="549" y="170" width="24" height="26" rx="3" fill="#f97316"/><text class="bit" x="561" y="188" text-anchor="middle">0</text>
+    <rect x="575" y="170" width="24" height="26" rx="3" fill="#f97316"/><text class="bit" x="587" y="188" text-anchor="middle">0</text>
+    <rect x="601" y="170" width="24" height="26" rx="3" fill="#f97316"/><text class="bit" x="613" y="188" text-anchor="middle">1</text>
+    <!-- n = 01101110 -->
+    <rect x="627" y="170" width="24" height="26" rx="3" fill="#3b82f6"/><text class="bit" x="639" y="188" text-anchor="middle">0</text>
+    <rect x="653" y="170" width="24" height="26" rx="3" fill="#3b82f6"/><text class="bit" x="665" y="188" text-anchor="middle">1</text>
+    <rect x="679" y="170" width="24" height="26" rx="3" fill="#3b82f6"/><text class="bit" x="691" y="188" text-anchor="middle">1</text>
+    <rect x="705" y="170" width="24" height="26" rx="3" fill="#3b82f6"/><text class="bit" x="717" y="188" text-anchor="middle">0</text>
+    <rect x="731" y="170" width="24" height="26" rx="3" fill="#3b82f6"/><text class="bit" x="743" y="188" text-anchor="middle">1</text>
+    <rect x="757" y="170" width="24" height="26" rx="3" fill="#3b82f6"/><text class="bit" x="769" y="188" text-anchor="middle">1</text>
+    <rect x="783" y="170" width="24" height="26" rx="3" fill="#3b82f6"/><text class="bit" x="795" y="188" text-anchor="middle">1</text>
+    <rect x="809" y="170" width="24" height="26" rx="3" fill="#3b82f6"/><text class="bit" x="821" y="188" text-anchor="middle">0</text>
+  </g>
 
-  <text class="h" x="30" y="246">5. valor</text>
-  <text class="b" x="190" y="246">19</text>
-  <text class="b" x="366" y="246">22</text>
-  <text class="b" x="546" y="246">5</text>
-  <text class="b" x="718" y="246">46</text>
+  <!-- 4. momento-chave: os mesmos bits relidos de 6 em 6 (cortam as fronteiras dos bytes) -->
+  <text class="step" x="30" y="224">4. relidos em</text>
+  <text class="step" x="30" y="240">grupos de 6</text>
+  <path d="M211,204 V212 H363 V204" stroke="#e2e8f0" stroke-width="2" fill="none"/>
+  <path d="M367,204 V212 H519 V204" stroke="#e2e8f0" stroke-width="2" fill="none"/>
+  <path d="M523,204 V212 H675 V204" stroke="#e2e8f0" stroke-width="2" fill="none"/>
+  <path d="M679,204 V212 H831 V204" stroke="#e2e8f0" stroke-width="2" fill="none"/>
+  <text class="val" x="287" y="236" text-anchor="middle">= 19</text>
+  <text class="val" x="443" y="236" text-anchor="middle">= 22</text>
+  <text class="val" x="599" y="236" text-anchor="middle">= 5</text>
+  <text class="val" x="755" y="236" text-anchor="middle">= 46</text>
 
-  <path class="fw" d="M198,254 L198,272"/>
-  <path class="fw" d="M374,254 L374,272"/>
-  <path class="fw" d="M550,254 L550,272"/>
-  <path class="fw" d="M726,254 L726,272"/>
+  <!-- 5. tabela -->
+  <path d="M287,244 V262" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M443,244 V262" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M599,244 V262" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <path d="M755,244 V262" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
+  <text class="step" x="30" y="288">5. tabela</text>
+  <rect x="247" y="266" width="80" height="34" rx="6" fill="#1e293b" stroke="#e2e8f0"/><text class="big" x="287" y="292" text-anchor="middle">T</text>
+  <rect x="403" y="266" width="80" height="34" rx="6" fill="#1e293b" stroke="#e2e8f0"/><text class="big" x="443" y="292" text-anchor="middle">W</text>
+  <rect x="559" y="266" width="80" height="34" rx="6" fill="#1e293b" stroke="#e2e8f0"/><text class="big" x="599" y="292" text-anchor="middle">F</text>
+  <rect x="715" y="266" width="80" height="34" rx="6" fill="#1e293b" stroke="#e2e8f0"/><text class="big" x="755" y="292" text-anchor="middle">u</text>
 
-  <text class="h" x="30" y="296">6. alfabeto</text>
-  <text class="big g" x="190" y="298">T</text>
-  <text class="big g" x="366" y="298">W</text>
-  <text class="big g" x="542" y="298">F</text>
-  <text class="big g" x="718" y="298">u</text>
+  <!-- tabela pública + sobra -->
+  <rect x="20" y="318" width="860" height="84" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text class="lbl" x="36" y="342" xml:space="preserve">tabela pública:  A–Z = 0–25  ·  a–z = 26–51  ·  0–9 = 52–61  ·  + = 62  ·  / = 63</text>
+  <text class="lbl" x="36" y="368" xml:space="preserve">sobrou byte?   "Ma" → TWE<tspan class="gold">=</tspan>      "M" → TQ<tspan class="gold">==</tspan></text>
+  <text class="sub" x="36" y="388">o <tspan class="gold">=</tspan> só completa o bloco de 4 caracteres (enchimento)</text>
 
-  <rect x="20" y="318" width="860" height="70" rx="10" fill="#16201b" stroke="#2c3a33"/>
-  <text class="s" x="36" y="338">alfabeto: A–Z = 0–25 · a–z = 26–51 · 0–9 = 52–61 · + = 62 · / = 63   (Base64url troca + por - e / por _)</text>
-  <text class="b" x="36" y="360">Sobrou byte?   "Ma" → <tspan class="g">TWE</tspan><tspan class="y">=</tspan>   ·   "M" → <tspan class="g">TQ</tspan><tspan class="y">==</tspan>   ·   o sinal <tspan class="y">=</tspan> é o padding, que completa o bloco de 4</text>
-  <text class="b r" x="36" y="380">Em nenhum passo existe chave: quem conhece a tabela desfaz tudo.</text>
+  <!-- legenda -->
+  <text class="sub" x="30" y="426">cores:</text>
+  <rect x="80" y="417" width="12" height="12" rx="2" fill="#a855f7"/><text class="sub" x="98" y="427">bits do M</text>
+  <rect x="180" y="417" width="12" height="12" rx="2" fill="#f97316"/><text class="sub" x="198" y="427">bits do a</text>
+  <rect x="280" y="417" width="12" height="12" rx="2" fill="#3b82f6"/><text class="sub" x="298" y="427">bits do n</text>
+  <rect x="380" y="417" width="12" height="12" rx="2" fill="#eab308"/><text class="sub" x="398" y="427">enchimento (=)</text>
+  <text class="sub" x="560" y="427">repare: os grupos de 6 cortam as letras</text>
 </svg>

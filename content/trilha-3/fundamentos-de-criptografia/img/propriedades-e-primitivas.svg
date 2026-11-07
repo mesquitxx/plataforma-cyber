@@ -1,48 +1,76 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" role="img" aria-labelledby="t d">
-  <title id="t">Que propriedade cada ferramenta entrega</title>
-  <desc id="d">Tabela com cinco ferramentas nas linhas e quatro propriedades nas colunas. Encoding (Base64): não entrega confidencialidade, nem integridade, nem autenticidade, nem não repúdio. Hash (SHA-256): entrega integridade contra erro acidental, mas não contra um atacante que troca o arquivo e o hash juntos; não entrega as demais. MAC (HMAC-SHA-256): entrega integridade e autenticidade entre quem compartilha a chave, mas não não repúdio, porque os dois lados têm a mesma chave. Cifra simétrica sozinha (AES-CBC): entrega confidencialidade, mas não integridade. Cifra autenticada (AES-GCM, ChaCha20-Poly1305): confidencialidade, integridade e autenticidade entre quem tem a chave. Assinatura digital (Ed25519, RSA): integridade, autenticidade e não repúdio, sem confidencialidade.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470" role="img" aria-labelledby="t d">
+  <title id="t">Que garantia cada ferramenta entrega</title>
+  <desc id="d">Tabela com seis ferramentas nas linhas e quatro garantias nas colunas: confidencialidade (ninguém mais lê), integridade (não mudou), autenticidade (veio de quem diz) e não repúdio (não pode negar). Encoding não garante nada. Hash garante integridade só contra erro acidental, porque o atacante troca o arquivo e o hash juntos. Hash com chave secreta garante integridade e autenticidade, mas não não repúdio, porque os dois lados têm a mesma chave. Cifra sozinha garante só confidencialidade: esconde, mas não percebe alteração. Cifra que também detecta alteração garante confidencialidade, integridade e autenticidade. Assinatura com chave privada garante integridade, autenticidade e não repúdio, mas não esconde. Nenhuma linha garante tudo, e disponibilidade não é problema de criptografia.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 12px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 12px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .ok { font-size: 15px; font-weight: 700; fill: #5ee08a; }
-    .no { font-size: 15px; font-weight: 700; fill: #f08a7e; }
-    .mid { font-size: 15px; font-weight: 700; fill: #e8c46a; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 17px; font-weight: 700; }
+    .key { font-size: 14px; font-weight: 700; }
+    .col { font-size: 12px; font-weight: 700; }
+    .name { font-size: 13px; font-weight: 700; }
+    .sub { font-size: 11px; fill: #94a3b8; }
+    .ok { font-size: 18px; font-weight: 700; fill: #10b981; }
+    .no { font-size: 18px; font-weight: 700; fill: #ef4444; }
+    .mid { font-size: 18px; font-weight: 700; fill: #eab308; }
   </style>
-  <rect width="900" height="380" fill="#121815"/>
-  <text class="t" x="30" y="32">Cada ferramenta resolve uma pergunta diferente</text>
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/><stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="470" fill="url(#bg-grad)"/>
 
-  <rect x="20" y="48" width="860" height="36" rx="6" fill="#16201b" stroke="#2c3a33"/>
-  <text class="h" x="36" y="71">ferramenta</text>
-  <text class="h" x="330" y="64">confidencialidade</text><text class="s" x="330" y="78">ninguém mais lê</text>
-  <text class="h" x="480" y="64">integridade</text><text class="s" x="480" y="78">não mudou</text>
-  <text class="h" x="610" y="64">autenticidade</text><text class="s" x="610" y="78">veio de quem diz</text>
-  <text class="h" x="750" y="64">não repúdio</text><text class="s" x="750" y="78">não pode negar</text>
+  <text class="title" x="30" y="34">Cada ferramenta responde a uma pergunta diferente</text>
+  <rect x="20" y="48" width="860" height="40" rx="6" fill="#0f172a" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text class="key" x="450" y="73" text-anchor="middle">Nenhuma garante tudo: escolha a linha pela garantia de que você precisa</text>
 
-  <text class="b" x="36" y="112">Encoding (Base64, hex)</text>
-  <text class="no" x="380" y="113">✗</text><text class="no" x="520" y="113">✗</text><text class="no" x="655" y="113">✗</text><text class="no" x="795" y="113">✗</text>
+  <!-- cabeçalho -->
+  <text class="sub" x="36" y="122">ferramenta</text>
+  <text class="col" x="455" y="114" text-anchor="middle">confidencialidade</text><text class="sub" x="455" y="130" text-anchor="middle">ninguém mais lê</text>
+  <text class="col" x="590" y="114" text-anchor="middle">integridade</text><text class="sub" x="590" y="130" text-anchor="middle">não mudou</text>
+  <text class="col" x="712" y="114" text-anchor="middle">autenticidade</text><text class="sub" x="712" y="130" text-anchor="middle">veio de quem diz</text>
+  <text class="col" x="830" y="114" text-anchor="middle">não repúdio</text><text class="sub" x="830" y="130" text-anchor="middle">não pode negar</text>
+  <line x1="20" y1="140" x2="880" y2="140" stroke="#334155"/>
 
-  <text class="b" x="36" y="148">Hash (SHA-256)</text>
-  <text class="no" x="380" y="149">✗</text><text class="mid" x="520" y="149">~</text><text class="no" x="655" y="149">✗</text><text class="no" x="795" y="149">✗</text>
-  <text class="s" x="36" y="162">só contra erro acidental: o atacante troca arquivo e hash</text>
+  <!-- linha 1: encoding -->
+  <rect x="20" y="146" width="860" height="44" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text class="name" x="36" y="165">Encoding (Base64)</text>
+  <text class="sub" x="36" y="182">só muda a representação</text>
+  <text class="no" x="455" y="175" text-anchor="middle">✗</text><text class="no" x="590" y="175" text-anchor="middle">✗</text><text class="no" x="712" y="175" text-anchor="middle">✗</text><text class="no" x="830" y="175" text-anchor="middle">✗</text>
 
-  <text class="b" x="36" y="192">MAC (HMAC-SHA-256)</text>
-  <text class="no" x="380" y="193">✗</text><text class="ok" x="520" y="193">✓</text><text class="ok" x="655" y="193">✓</text><text class="no" x="795" y="193">✗</text>
-  <text class="s" x="36" y="206">entre quem tem a mesma chave; qualquer um dos dois pode ter gerado</text>
+  <!-- linha 2: hash -->
+  <rect x="20" y="196" width="860" height="44" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text class="name" x="36" y="215">Hash (SHA-256)</text>
+  <text class="sub" x="36" y="232">o atacante troca arquivo e hash juntos</text>
+  <text class="no" x="455" y="225" text-anchor="middle">✗</text><text class="mid" x="590" y="225" text-anchor="middle">~</text><text class="no" x="712" y="225" text-anchor="middle">✗</text><text class="no" x="830" y="225" text-anchor="middle">✗</text>
 
-  <text class="b" x="36" y="236">Cifra sozinha (AES-CBC)</text>
-  <text class="ok" x="380" y="237">✓</text><text class="no" x="520" y="237">✗</text><text class="no" x="655" y="237">✗</text><text class="no" x="795" y="237">✗</text>
-  <text class="s" x="36" y="250">esconde, mas aceita texto cifrado adulterado (seção 6)</text>
+  <!-- linha 3: hash com chave -->
+  <rect x="20" y="246" width="860" height="44" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text class="name" x="36" y="265">Hash com chave secreta</text>
+  <text class="sub" x="36" y="282">os dois lados têm a mesma chave</text>
+  <text class="no" x="455" y="275" text-anchor="middle">✗</text><text class="ok" x="590" y="275" text-anchor="middle">✓</text><text class="ok" x="712" y="275" text-anchor="middle">✓</text><text class="no" x="830" y="275" text-anchor="middle">✗</text>
 
-  <text class="b" x="36" y="280">Cifra autenticada (AES-GCM)</text>
-  <text class="ok" x="380" y="281">✓</text><text class="ok" x="520" y="281">✓</text><text class="ok" x="655" y="281">✓</text><text class="no" x="795" y="281">✗</text>
-  <text class="s" x="36" y="294">o padrão moderno para dados: esconde e detecta alteração</text>
+  <!-- linha 4: cifra sozinha -->
+  <rect x="20" y="296" width="860" height="44" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text class="name" x="36" y="315">Cifra sozinha</text>
+  <text class="sub" x="36" y="332">esconde, mas não percebe alteração</text>
+  <text class="ok" x="455" y="325" text-anchor="middle">✓</text><text class="no" x="590" y="325" text-anchor="middle">✗</text><text class="no" x="712" y="325" text-anchor="middle">✗</text><text class="no" x="830" y="325" text-anchor="middle">✗</text>
 
-  <text class="b" x="36" y="324">Assinatura digital (Ed25519)</text>
-  <text class="no" x="380" y="325">✗</text><text class="ok" x="520" y="325">✓</text><text class="ok" x="655" y="325">✓</text><text class="ok" x="795" y="325">✓</text>
-  <text class="s" x="36" y="338">chave privada só do autor; qualquer um confere com a pública (Trilha 3.4)</text>
+  <!-- linha 5: cifra que detecta alteração -->
+  <rect x="20" y="346" width="860" height="44" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text class="name" x="36" y="365">Cifra que detecta alteração</text>
+  <text class="sub" x="36" y="382">o padrão moderno para dados</text>
+  <text class="ok" x="455" y="375" text-anchor="middle">✓</text><text class="ok" x="590" y="375" text-anchor="middle">✓</text><text class="ok" x="712" y="375" text-anchor="middle">✓</text><text class="no" x="830" y="375" text-anchor="middle">✗</text>
 
-  <text class="s" x="30" y="368">Disponibilidade, a terceira letra da tríade CIA, não é problema de criptografia: nenhuma linha acima a garante.</text>
+  <!-- linha 6: assinatura -->
+  <rect x="20" y="396" width="860" height="44" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text class="name" x="36" y="415">Assinatura (chave privada)</text>
+  <text class="sub" x="36" y="432">só o autor assina; todos conferem</text>
+  <text class="no" x="455" y="425" text-anchor="middle">✗</text><text class="ok" x="590" y="425" text-anchor="middle">✓</text><text class="ok" x="712" y="425" text-anchor="middle">✓</text><text class="ok" x="830" y="425" text-anchor="middle">✓</text>
+
+  <!-- legenda -->
+  <text class="sub" x="30" y="460">cores:</text>
+  <text class="ok" x="82" y="462">✓</text><text class="sub" x="102" y="460">garante</text>
+  <text class="mid" x="180" y="462">~</text><text class="sub" x="200" y="460">só contra erro acidental</text>
+  <text class="no" x="390" y="462">✗</text><text class="sub" x="408" y="460">não garante</text>
+  <text class="sub" x="530" y="460">disponibilidade: nenhuma linha garante</text>
 </svg>
