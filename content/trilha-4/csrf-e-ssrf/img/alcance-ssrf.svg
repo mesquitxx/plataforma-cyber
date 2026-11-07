@@ -1,82 +1,127 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="t d">
-  <title id="t">O alcance de um ataque SSRF: o servidor vulnerável como intermediário confiável</title>
-  <desc id="d">Da esquerda para a direita. O atacante, na internet, envia um pedido ao servidor vulnerável com uma URL sob o seu controle, no lugar de uma URL esperada. Esse servidor fica na borda: ele aceita pedidos da internet, mas também tem acesso à rede interna, que normalmente é inalcançável de fora. Ao receber a URL do atacante, o servidor faz, ele mesmo, uma requisição para o destino que a URL aponta. Como o pedido parte de dentro, ele atravessa o firewall de borda e chega a lugares que o atacante jamais alcançaria direto: serviços internos sem autenticação (bancos de dados, painéis de administração), o próprio loopback do servidor (127.0.0.1) e, em nuvem, o serviço de metadados em 169.254.169.254, que entrega credenciais temporárias de acesso. Uma linha tracejada marca a fronteira de confiança: tudo à direita dela confia no servidor porque o pedido veio de dentro. O rodapé resume: o atacante empresta a posição de rede do servidor; a falha não é o servidor buscar uma URL, é buscar uma URL que o usuário controla sem validar o destino.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 15.5px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; }
-    .b { font-size: 11.5px; }
-    .code { font-size: 11px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .g { fill: #5ee08a; }
-    .c { fill: #5cc8d8; }
-    .r { fill: #ef7b6b; font-weight: 700; }
-    .y { fill: #e8c46a; }
-    .attacker { fill: #241717; stroke: #ef7b6b; stroke-width: 1.4; }
-    .server { fill: #1b2a3a; stroke: #5cc8d8; stroke-width: 1.4; }
-    .internal { fill: #16201b; stroke: #5ee08a; stroke-width: 1.3; }
-    .meta { fill: #15130f; stroke: #e8c46a; stroke-width: 1.3; }
-    .arrr { stroke: #ef7b6b; stroke-width: 2.2; marker-end: url(#ar); fill: none; }
-    .arrc { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ac); fill: none; }
-    .fw { stroke: #e8c46a; stroke-width: 1.6; stroke-dasharray: 7 5; fill: none; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 780" width="1080" height="780" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ef7b6b"/></marker>
-    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="500" fill="#121815"/>
-  <text class="t" x="24" y="30">SSRF: o atacante empresta a posição de rede do servidor</text>
-
-  <!-- attacker -->
-  <rect class="attacker" x="24" y="90" width="190" height="120" rx="10"/>
-  <text class="h r" x="40" y="116">Atacante (internet)</text>
-  <text class="s" x="40" y="140">manda um parâmetro de URL</text>
-  <text class="code r" x="40" y="162">url=http://169.254.169.254/</text>
-  <text class="code r" x="40" y="178">   latest/meta-data/...</text>
-  <text class="s" x="40" y="200">no lugar da URL esperada</text>
-
-  <!-- vulnerable server on the edge -->
-  <rect class="server" x="300" y="80" width="200" height="150" rx="10"/>
-  <text class="h c" x="316" y="106">Servidor vulnerável</text>
-  <text class="s" x="316" y="128">aceita pedidos de fora</text>
-  <text class="s" x="316" y="146">e alcança a rede interna</text>
-  <text class="b y" x="316" y="172">ele mesmo busca a URL</text>
-  <text class="s" x="316" y="190">que o usuário mandou,</text>
-  <text class="s" x="316" y="206">sem validar o destino</text>
-
-  <path class="arrr" d="M214,150 L296,150"/>
-  <text class="s" x="216" y="140">1) pedido com URL</text>
-  <text class="s" x="216" y="170">controlada</text>
-
-  <!-- firewall boundary -->
-  <path class="fw" d="M560,56 L560,470"/>
-  <text class="s y" x="566" y="52" style="font-size:10px">fronteira de confiança — o que está à direita confia em quem vem de dentro</text>
-
-  <!-- internal services -->
-  <rect class="internal" x="600" y="70" width="276" height="74" rx="10"/>
-  <text class="h g" x="616" y="94">Serviços internos</text>
-  <text class="s" x="616" y="114">bancos de dados, painéis de admin,</text>
-  <text class="s" x="616" y="130">APIs sem autenticação (confiam na rede)</text>
-
-  <rect class="internal" x="600" y="158" width="276" height="62" rx="10"/>
-  <text class="h g" x="616" y="182">Loopback do servidor</text>
-  <text class="code c" x="616" y="204">http://127.0.0.1:porta/ (só local)</text>
-
-  <rect class="meta" x="600" y="234" width="276" height="86" rx="10"/>
-  <text class="h y" x="616" y="258">Metadata service (nuvem)</text>
-  <text class="code c" x="616" y="280">http://169.254.169.254/latest/</text>
-  <text class="s r" x="616" y="300">entrega CREDENCIAIS temporárias</text>
-  <text class="s" x="616" y="314">do papel (role) da máquina — o caso Capital One</text>
-
-  <path class="arrc" d="M500,120 C540,100 560,100 596,100"/>
-  <path class="arrc" d="M500,165 C540,180 560,185 596,185"/>
-  <path class="arrc" d="M500,210 C540,250 560,270 596,276"/>
-  <text class="s c" x="300" y="300">2) o servidor faz a requisição de DENTRO: atravessa o firewall de borda</text>
-
-  <!-- footer -->
-  <rect x="24" y="356" width="852" height="112" rx="10" fill="#15130f" stroke="#e8c46a" stroke-width="1.2"/>
-  <text class="h y" x="40" y="382">A falha não é "o servidor busca uma URL". É buscar uma URL que o usuário controla, sem validar o destino.</text>
-  <text class="s" x="40" y="408" style="font-size:11.5px">Direto da internet, o atacante não alcança 127.0.0.1 do servidor, nem a rede interna, nem o 169.254.169.254 — tudo isso é privado.</text>
-  <text class="s" x="40" y="428" style="font-size:11.5px">Mas o servidor alcança. Ao fazê-lo buscar a URL do atacante, o pedido ganha a origem (e a confiança) de quem está dentro.</text>
-  <text class="s" x="40" y="452" style="font-size:11.5px">169.254.169.254 é um endereço <tspan class="y">link-local</tspan>: só responde de dentro da própria máquina, e por isso guarda segredos da instância.</text>
+  <rect data-graph-role="background" width="1080.0" height="780.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="540.0" y="56" text-anchor="middle" class="title">SSRF: o atacante usa o servidor como ponte</text>
+  <text x="540.0" y="82" text-anchor="middle" class="subtitle">o pedido nasce dentro da rede e alcança o que era privado</text>
+  <g id="internet" data-graph-role="container" data-container-id="internet" data-semantic-role="boundary" data-graph-bounds="40,130,300,550">
+  <rect data-graph-role="container" x="40.0" y="130.0" width="260.0" height="420.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="154.0" class="section">INTERNET</text>
+    <rect id="internet-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="136" width="86.94" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="interna" data-graph-role="container" data-container-id="interna" data-semantic-role="boundary" data-graph-bounds="440,130,1040,550">
+  <rect data-graph-role="container" x="440.0" y="130.0" width="600.0" height="420.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="458.0" y="154.0" class="section">REDE INTERNA: FECHADA PARA QUEM VEM DE FORA</text>
+    <rect id="interna-header" data-graph-role="reserved" data-reserved-kind="container-header" x="448" y="136" width="333.68" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="a1" data-graph-role="edge" data-edge-id="a1" data-source="atacante" data-target="servidor" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 280,340 L 470,340" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <path id="a2" data-graph-role="edge" data-edge-id="a2" data-source="servidor" data-target="internos" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 710,322 L 730.4,322 L 730.4,220 L 790,220" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="a3" data-graph-role="edge" data-edge-id="a3" data-source="servidor" data-target="loopback" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 710,340 L 790,340" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="a4" data-graph-role="edge" data-edge-id="a4" data-source="servidor" data-target="metadata" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 710,358 L 730.4,358 L 730.4,460 L 790,460" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <path id="a5" data-graph-role="edge" data-edge-id="a5" data-source="metadata" data-target="ganho" data-edge-kind="flow" data-topic-id="" data-flow="data" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 905,500 L 905,640 L 800,640" fill="none" stroke="#fb7185" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowE)"/>
+  <g id="node-atacante" data-graph-role="node" data-node-id="atacante" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,290,280,390">
+  <rect x="60.0" y="290.0" width="220.0" height="100.0" rx="10.0" fill="#1f0f14" stroke="#fb7185" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Atacante" data-text-max-width="196.0" x="170.0" y="340.0" text-anchor="middle" class="node-title" font-size="18">Atacante</text>
+  <text data-text-role="subtitle" data-full-text="de fora, não alcança a rede" data-text-max-width="196.0" x="170.0" y="362.0" text-anchor="middle" class="node-sub" font-size="12">de fora, não alcança a rede</text>
+  </g>
+  <g id="node-servidor" data-graph-role="node" data-node-id="servidor" data-semantic-role="double_rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="470,290,710,390">
+  <rect x="470.0" y="290.0" width="240.0" height="100.0" rx="10.0" fill="#2a2206" stroke="#f59e0b" stroke-width="2.0"/>
+  <rect x="476.0" y="296.0" width="228.0" height="88.0" rx="7.0" fill="none" stroke="#f59e0b" stroke-width="1.2" opacity="0.65"/>
+  <text data-text-role="title" data-full-text="Servidor vulnerável" data-text-max-width="208.0" x="590.0" y="340.0" text-anchor="middle" class="node-title" font-size="18">Servidor vulnerável</text>
+  <text data-text-role="subtitle" data-full-text="busca a URL sem conferir" data-text-max-width="208.0" x="590.0" y="362.0" text-anchor="middle" class="node-sub" font-size="12">busca a URL sem conferir</text>
+  </g>
+  <g id="node-internos" data-graph-role="node" data-node-id="internos" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="790,180,1020,260">
+  <rect x="790.0" y="180.0" width="230.0" height="80.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Serviços internos" data-text-max-width="206.0" x="905.0" y="220.0" text-anchor="middle" class="node-title" font-size="18">Serviços internos</text>
+  <text data-text-role="subtitle" data-full-text="banco de dados, painel admin" data-text-max-width="206.0" x="905.0" y="242.0" text-anchor="middle" class="node-sub" font-size="12">banco de dados, painel admin</text>
+  </g>
+  <g id="node-loopback" data-graph-role="node" data-node-id="loopback" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="790,300,1020,380">
+  <rect x="790.0" y="300.0" width="230.0" height="80.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="O próprio servidor" data-text-max-width="206.0" x="905.0" y="340.0" text-anchor="middle" class="node-title" font-size="18">O próprio servidor</text>
+  <text data-text-role="subtitle" data-full-text="127.0.0.1 (loopback)" data-text-max-width="206.0" x="905.0" y="362.0" text-anchor="middle" class="node-sub" font-size="12">127.0.0.1 (loopback)</text>
+  </g>
+  <g id="node-metadata" data-graph-role="node" data-node-id="metadata" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="790,420,1020,500">
+  <rect x="790.0" y="420.0" width="230.0" height="80.0" rx="10.0" fill="#0f172a" stroke="#475569" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Metadados da nuvem" data-text-max-width="206.0" x="905.0" y="460.0" text-anchor="middle" class="node-title" font-size="18">Metadados da nuvem</text>
+  <text data-text-role="subtitle" data-full-text="169.254.169.254" data-text-max-width="206.0" x="905.0" y="482.0" text-anchor="middle" class="node-sub" font-size="12">169.254.169.254</text>
+  </g>
+  <g id="node-ganho" data-graph-role="node" data-node-id="ganho" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="300,600,800,680">
+  <rect x="300.0" y="600.0" width="500.0" height="80.0" rx="10.0" fill="#3a0d12" stroke="#ef4444" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Atacante ganha o que era privado" data-text-max-width="476.0" x="550.0" y="640.0" text-anchor="middle" class="node-title" font-size="17.0">Atacante ganha o que era privado</text>
+  <text data-text-role="subtitle" data-full-text="dados internos e até credenciais da máquina" data-text-max-width="476.0" x="550.0" y="662.0" text-anchor="middle" class="node-sub" font-size="12">dados internos e até credenciais da máquina</text>
+  </g>
+  <g id="a1-label" data-graph-role="label" data-owner="a1" data-graph-bounds="324.8,309,425.2,329">
+  <rect x="324.8" y="309.0" width="100.4" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="375.0" y="323.0" text-anchor="middle" class="arrow-label">1. manda a URL</text>
+  </g>
+  <g id="a2-label" data-graph-role="label" data-owner="a2" data-graph-bounds="599.16,257,727.4,277">
+  <rect x="599.16" y="257.0" width="128.24" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="663.28" y="271.0" text-anchor="middle" class="arrow-label">2. busca de dentro</text>
+  </g>
+  <g id="a5-label" data-graph-role="label" data-owner="a5" data-graph-bounds="773.76,556,902,576">
+  <rect x="773.76" y="556.0" width="128.24" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="837.88" y="570.0" text-anchor="middle" class="arrow-label">3. a resposta vaza</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="50" y="721" width="431.76" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="60.0" y1="735.0" x2="90.0" y2="735.0" stroke="#fb7185" stroke-width="2.3" marker-end="url(#arrowE)"/>
+    <text data-graph-role="decoration" x="100.0" y="739.0" class="legend">ataque</text>
+    <line data-graph-role="decoration" x1="169.76" y1="735.0" x2="199.76" y2="735.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="209.76" y="739.0" class="legend">momento-chave (o servidor pede por ele)</text>
+  </g>
 </svg>

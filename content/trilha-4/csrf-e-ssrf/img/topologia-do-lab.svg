@@ -1,92 +1,123 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" role="img" aria-labelledby="t d">
-  <title id="t">Topologia do laboratório webgoat: quem fala com quem nas duas missões</title>
-  <desc id="d">À esquerda, o Kali, a sua máquina de ataque, dentro da rede interna lab_net. No centro, um único contêiner chamado webgoat, com duas aplicações no mesmo host: o WebGoat na porta 8080, que é a vítima com as lições, e o WebWolf na porta 9090, que faz o papel do site do atacante e hospeda arquivos. Na Missão 1, o Kali manda o POST de review ao WebGoat simulando o navegador da vítima, com o cookie JSESSIONID e o cabeçalho Referer que você escolhe. Uma nota lembra que webgoat:8080 e webgoat:9090 são o mesmo site, porque a porta não conta para o site nem para o cookie. Na Missão 2, o Kali manda ao WebGoat um parâmetro url; o próprio servidor do WebGoat é quem tenta abrir essa URL, saindo em direção à internet. Essa saída bate num muro: a lab_net é interna e não tem rota para fora, então a conexão falha. À direita, fora do muro, ficam a internet e o seu PC, que nenhum contêiner alcança.</desc>
-  <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 15.5px; font-weight: 700; }
-    .h { font-size: 12.5px; font-weight: 700; }
-    .b { font-size: 11px; }
-    .s { font-size: 10px; fill: #9fb0a6; }
-    .code { font-size: 10.5px; fill: #5cc8d8; }
-    .g { fill: #5ee08a; }
-    .c { fill: #5cc8d8; }
-    .r { fill: #ef7b6b; font-weight: 700; }
-    .y { fill: #e8c46a; }
-    .net { fill: none; stroke: #5ee08a; stroke-width: 1.2; stroke-dasharray: 6 4; }
-    .box { fill: #16201b; stroke: #5ee08a; stroke-width: 1.4; }
-    .vic { fill: #1b2a3a; stroke: #5cc8d8; stroke-width: 1.3; }
-    .atk { fill: #2a1f12; stroke: #e8c46a; stroke-width: 1.3; }
-    .out { fill: #241717; stroke: #ef7b6b; stroke-width: 1.2; }
-    .a1 { stroke: #e8c46a; stroke-width: 2; marker-end: url(#ay); fill: none; }
-    .a2 { stroke: #5cc8d8; stroke-width: 2; marker-end: url(#ac); fill: none; }
-    .a3 { stroke: #ef7b6b; stroke-width: 2; marker-end: url(#ar); fill: none; stroke-dasharray: 5 4; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 660" width="1080" height="660" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="2" data-visual-theme="Dark Terminal" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
   <defs>
-    <marker id="ay" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8c46a"/></marker>
-    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cc8d8"/></marker>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ef7b6b"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+    </marker>
+    <linearGradient id="terminalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#3b82f6" flood-opacity="0.65"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#a855f7" flood-opacity="0.72"/>
+    </filter>
+    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#22c55e" flood-opacity="0.62"/>
+    </filter>
+    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#f97316" flood-opacity="0.62"/>
+    </filter>
+    <style>
+    text { font-family: 'SF Mono', 'Fira Code', Menlo, 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', monospace; }
+    .title { font-size: 30px; font-weight: 700; fill: #e2e8f0; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #94a3b8; }
+    .section { font-size: 13px; font-weight: 700; fill: #38bdf8; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .node-title { font-weight: 700; fill: #e2e8f0; }
+    .node-sub { font-weight: 500; fill: #94a3b8; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #94a3b8; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #cbd5e1; }
+    .legend { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #94a3b8; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #e2e8f0; }
+    </style>
   </defs>
-  <rect width="900" height="430" fill="#121815"/>
-  <text class="t" x="24" y="30">O lab webgoat: quem fala com quem nas duas missões</text>
-
-  <!-- lab_net -->
-  <rect class="net" x="16" y="48" width="652" height="366" rx="12"/>
-  <text class="s g" x="30" y="66">lab_net (rede interna do Docker, sem rota para fora)</text>
-
-  <!-- Kali -->
-  <rect class="box" x="34" y="150" width="170" height="112" rx="10"/>
-  <text class="h g" x="50" y="176">Kali</text>
-  <text class="b" x="50" y="196">sua máquina de ataque</text>
-  <text class="s" x="50" y="216">curl faz o papel do</text>
-  <text class="s" x="50" y="230">navegador da vítima</text>
-  <text class="s" x="50" y="248">(Missão 1) e do cliente</text>
-
-  <!-- webgoat container -->
-  <rect class="box" x="300" y="84" width="350" height="316" rx="12"/>
-  <text class="h g" x="316" y="106">contêiner "webgoat" (um único host)</text>
-
-  <rect class="vic" x="318" y="122" width="314" height="120" rx="9"/>
-  <text class="h c" x="334" y="146">WebGoat  webgoat:8080/WebGoat</text>
-  <text class="s" x="334" y="166">a vítima: lições CSRF e SSRF</text>
-  <text class="code" x="334" y="186">POST /csrf/review</text>
-  <text class="code" x="334" y="204">POST /SSRF/task1  /SSRF/task2</text>
-  <text class="s" x="334" y="226">cookie JSESSIONID (HttpOnly, sem SameSite)</text>
-
-  <rect class="atk" x="318" y="262" width="314" height="78" rx="9"/>
-  <text class="h y" x="334" y="286">WebWolf  webgoat:9090/WebWolf</text>
-  <text class="s" x="334" y="306">o "site do atacante": hospeda a página</text>
-  <text class="s" x="334" y="320">com o formulário forjado</text>
-
-  <text class="s y" x="318" y="362">8080 e 9090 = mesmo host = mesmo SITE:</text>
-  <text class="s y" x="318" y="376">a porta não conta para o site nem para o cookie.</text>
-
-  <!-- arrows from Kali -->
-  <path class="a1" d="M204,180 C250,180 270,176 316,176"/>
-  <text class="b y" x="210" y="160">Missão 1</text>
-  <text class="s" x="210" y="196">Cookie + Referer</text>
-  <path class="a2" d="M204,236 C252,236 268,204 316,204"/>
-  <text class="b c" x="210" y="270">Missão 2</text>
-  <text class="s" x="210" y="284">url=...</text>
-
-  <!-- SSRF outbound -->
-  <path class="a3" d="M632,196 L674,196"/>
-  <text class="h r" x="681" y="201" style="font-size:16px">✕</text>
-  <text class="s r" x="640" y="186">o SERVIDOR tenta</text>
-  <text class="s r" x="640" y="214">abrir a URL</text>
-
-  <!-- wall -->
-  <rect x="680" y="60" width="14" height="354" fill="#ef7b6b" opacity="0.35"/>
-  <text class="h r" x="700" y="252">muro: sem</text>
-  <text class="h r" x="700" y="270">internet e</text>
-  <text class="h r" x="700" y="288">sem acesso</text>
-  <text class="h r" x="700" y="306">ao seu PC</text>
-
-  <rect class="out" x="746" y="150" width="138" height="80" rx="9"/>
-  <text class="h r" x="760" y="176">internet</text>
-  <text class="s" x="760" y="196">ifconfig.pro,</text>
-  <text class="s" x="760" y="210">metadata de nuvem</text>
-
-  <rect class="out" x="746" y="330" width="138" height="56" rx="9"/>
-  <text class="h r" x="760" y="354">seu PC</text>
-  <text class="s" x="760" y="372">fora do alcance</text>
+  <rect data-graph-role="background" width="1080.0" height="660.0" fill="url(#terminalGradient)"/>
+  <circle cx="20.0" cy="20" r="5.5" fill="#ef4444"/>
+  <circle cx="38.0" cy="20" r="5.5" fill="#f59e0b"/>
+  <circle cx="56.0" cy="20" r="5.5" fill="#10b981"/>
+  <text x="540.0" y="56" text-anchor="middle" class="title">O lab webgoat: quem fala com quem</text>
+  <text x="540.0" y="82" text-anchor="middle" class="subtitle">na Missão 2 é o próprio servidor que tenta sair — e esbarra no muro</text>
+  <g id="labnet" data-graph-role="container" data-container-id="labnet" data-semantic-role="boundary" data-graph-bounds="40,130,800,550">
+  <rect data-graph-role="container" x="40.0" y="130.0" width="760.0" height="420.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="58.0" y="154.0" class="section">LAB_NET: REDE INTERNA DO LAB</text>
+    <rect id="labnet-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="136" width="222.92" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="host" data-graph-role="container" data-container-id="host" data-semantic-role="boundary" data-graph-bounds="410,180,780,530">
+  <rect data-graph-role="container" x="410.0" y="180.0" width="370.0" height="350.0" rx="16.0" fill="rgba(15,23,42,0.28)" stroke="#334155" stroke-width="1.4" stroke-dasharray="7 6"/>
+  <text x="428.0" y="204.0" class="section">CONTÊINER WEBGOAT (UM SÓ HOST)</text>
+    <rect id="host-header" data-graph-role="reserved" data-reserved-kind="container-header" x="418" y="186" width="247.62" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="m1" data-graph-role="edge" data-edge-id="m1" data-source="kali" data-target="webgoat" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 250,300 L 440,300" fill="none" stroke="#a855f7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="m2" data-graph-role="edge" data-edge-id="m2" data-source="kali" data-target="webgoat" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.022" data-bridges="" d="M 155,255 L 155,245 L 600,245 L 600,250" fill="none" stroke="#38bdf8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="m3" data-graph-role="edge" data-edge-id="m3" data-source="webgoat" data-target="muro" data-edge-kind="flow" data-topic-id="" data-flow="async" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 760,300 L 860,300" fill="none" stroke="#f59e0b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowF)"/>
+  <g id="node-kali" data-graph-role="node" data-node-id="kali" data-semantic-role="terminal" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="60,255,250,345">
+  <rect x="60.0" y="255.0" width="190.0" height="90.0" rx="10.0" fill="#111111" stroke="#475569" stroke-width="2.0"/>
+  <rect x="60.0" y="255.0" width="190.0" height="18" rx="10.0" fill="#222222" opacity="0.95"/>
+  <circle cx="76.0" cy="264.0" r="4" fill="#ef4444"/>
+  <circle cx="90.0" cy="264.0" r="4" fill="#f59e0b"/>
+  <circle cx="104.0" cy="264.0" r="4" fill="#10b981"/>
+  <text x="78.0" y="299.0" font-size="28" font-weight="700" fill="#10b981">$</text>
+  <text x="98.0" y="299.0" font-size="22" font-weight="500" fill="#94a3b8">_</text>
+  <text data-text-role="title" data-full-text="Kali" data-text-max-width="166.0" x="155.0" y="331.0" text-anchor="middle" class="node-title" font-size="18">Kali</text>
+  <text data-text-role="subtitle" data-full-text="faz o papel do navegador" data-text-max-width="166.0" x="155.0" y="365.0" text-anchor="middle" class="node-sub" font-size="12">faz o papel do navegador</text>
+  </g>
+  <g id="node-webgoat" data-graph-role="node" data-node-id="webgoat" data-semantic-role="double_rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="440,250,760,350">
+  <rect x="440.0" y="250.0" width="320.0" height="100.0" rx="10.0" fill="#111827" stroke="#cbd5e1" stroke-width="2.0"/>
+  <rect x="446.0" y="256.0" width="308.0" height="88.0" rx="7.0" fill="none" stroke="#cbd5e1" stroke-width="1.2" opacity="0.65"/>
+  <text data-text-role="title" data-full-text="WebGoat  :8080" data-text-max-width="288.0" x="600.0" y="300.0" text-anchor="middle" class="node-title" font-size="18">WebGoat :8080</text>
+  <text data-text-role="subtitle" data-full-text="a vítima: lições CSRF e SSRF" data-text-max-width="288.0" x="600.0" y="322.0" text-anchor="middle" class="node-sub" font-size="12">a vítima: lições CSRF e SSRF</text>
+  </g>
+  <g id="node-webwolf" data-graph-role="node" data-node-id="webwolf" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="440,410,760,500">
+  <rect x="440.0" y="410.0" width="320.0" height="90.0" rx="10.0" fill="#111827" stroke="#64748b" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="WebWolf  :9090" data-text-max-width="296.0" x="600.0" y="455.0" text-anchor="middle" class="node-title" font-size="18">WebWolf :9090</text>
+  <text data-text-role="subtitle" data-full-text="site do atacante (mesmo site do 8080)" data-text-max-width="296.0" x="600.0" y="477.0" text-anchor="middle" class="node-sub" font-size="12">site do atacante (mesmo site do 8080)</text>
+  </g>
+  <g id="node-muro" data-graph-role="node" data-node-id="muro" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="860,250,1060,350">
+  <rect x="860.0" y="250.0" width="200.0" height="100.0" rx="10.0" fill="#1e1e24" stroke="#94a3b8" stroke-width="3.0"/>
+  <text data-text-role="title" data-full-text="✕ Muro do lab" data-text-max-width="176.0" x="960.0" y="300.0" text-anchor="middle" class="node-title" font-size="18">✕ Muro do lab</text>
+  <text data-text-role="subtitle" data-full-text="sem internet nem PC" data-text-max-width="176.0" x="960.0" y="322.0" text-anchor="middle" class="node-sub" font-size="12">sem internet nem PC</text>
+  </g>
+  <g id="m1-label" data-graph-role="label" data-owner="m1" data-graph-bounds="266.48,269,423.52,289">
+  <rect x="266.48" y="269.0" width="157.04" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="345.0" y="283.0" text-anchor="middle" class="arrow-label">Missão 1: POST + cookie</text>
+  </g>
+  <g id="m2-label" data-graph-role="label" data-owner="m2" data-graph-bounds="321.9,232,433.1,252">
+  <rect x="321.9" y="232.0" width="111.20000000000002" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="377.5" y="246.0" text-anchor="middle" class="arrow-label">Missão 2: url=...</text>
+  </g>
+  <g id="m3-label" data-graph-role="label" data-owner="m3" data-graph-bounds="778.64,269,841.36,289">
+  <rect x="778.64" y="269.0" width="62.72" height="20" rx="6" fill="#0f172a" opacity="0.92"/>
+  <text x="810.0" y="283.0" text-anchor="middle" class="arrow-label">barrado</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="50" y="586" width="579.2" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="60.0" y1="600.0" x2="90.0" y2="600.0" stroke="#a855f7" stroke-width="2.3" marker-end="url(#arrowA)"/>
+    <text data-graph-role="decoration" x="100.0" y="604.0" class="legend">Missão 1 (CSRF)</text>
+    <line data-graph-role="decoration" x1="226.88" y1="600.0" x2="256.88" y2="600.0" stroke="#38bdf8" stroke-width="2.3" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="266.88" y="604.0" class="legend">Missão 2 (SSRF)</text>
+    <line data-graph-role="decoration" x1="393.76" y1="600.0" x2="423.76" y2="600.0" stroke="#f59e0b" stroke-width="2.3" marker-end="url(#arrowF)"/>
+    <text data-graph-role="decoration" x="433.76" y="604.0" class="legend">o servidor tenta abrir a URL</text>
+  </g>
 </svg>
