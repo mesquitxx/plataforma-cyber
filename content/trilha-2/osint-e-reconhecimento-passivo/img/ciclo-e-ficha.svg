@@ -1,63 +1,104 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 580" width="960" height="580" role="img" aria-labelledby="t d">
   <title id="t">O ciclo de inteligência e a ficha de cada achado</title>
-  <desc id="d">À esquerda, um ciclo de cinco etapas ligadas por setas: requisito (o que o teste precisa saber, dentro do escopo), coleta (as fontes abertas), processamento (limpar, tirar duplicatas, normalizar), análise (cruzar fontes e classificar) e difusão (o dossiê e o relatório), que volta ao requisito com novas perguntas. À direita, a ficha que acompanha cada achado no dossiê, com sete campos: o achado, a fonte exata, a data da coleta em UTC, como foi coletado (passivo ou semipassivo), a confiabilidade da fonte de A a F, a credibilidade da informação de 1 a 8 e o status de escopo. Um exemplo preenchido mostra o nome intranet.valeverde.example, achado no crt.sh e confirmado no DNS e no RDAP.</desc>
+  <desc id="d">Título: cada volta do ciclo termina numa ficha; sem fonte, data e nota de confiança, um achado de OSINT não vale como evidência. À esquerda, um ciclo de cinco etapas ligadas por setas: 1, requisito (a pergunta, dentro do escopo); 2, coleta (nas fontes abertas); 3, processamento (limpar, tirar repetidos); 4, análise (cruzar fontes, classificar); e 5, difusão (dossiê e relatório), que volta ao requisito, porque cada volta gera perguntas novas. Da difusão, uma seta dourada leva ao dossiê: a ficha de um achado, em destaque, com sete campos preenchidos com o exemplo intranet.valeverde.example: achado, fonte (crt.sh, DNS e dono do IP), data em UTC, como foi coletado (passivo, sem tocar no alvo), nota da fonte (normalmente confiável), nota da informação (confirmada por outra fonte) e escopo (sim, é do cliente).</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .b { font-size: 11.5px; }
-    .s { font-size: 10.5px; fill: #9fb0a6; }
-    .y { font-size: 11.5px; fill: #e8c46a; }
-    .g { font-size: 11.5px; fill: #7fd49a; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 19px; font-weight: 700; }
+    .sub { font-size: 13px; fill: #94a3b8; }
+    .h { font-size: 14px; font-weight: 700; }
+    .n { fill: #60a5fa; }
+    .s { font-size: 11px; fill: #94a3b8; }
+    .lab { font-size: 12px; fill: #94a3b8; }
+    .val { font-size: 12px; }
+    .gold { fill: #facc15; }
+    .leg { font-size: 12px; fill: #94a3b8; }
+    .big { font-size: 15px; }
+    .bold { font-weight: 700; }
   </style>
   <defs>
-    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8c46a"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/>
+    </marker>
+    <marker id="arrow-gold" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <polygon points="0 0, 10 4, 0 8" fill="#facc15"/>
+    </marker>
+    <filter id="glow-gold" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="32">Do requisito ao dossiê: o ciclo e a ficha</text>
+  <rect width="960" height="580" fill="url(#bg-grad)"/>
 
-  <rect x="150" y="56" width="206" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
-  <text class="h" x="166" y="78">1. Requisito</text>
-  <text class="s" x="166" y="98">o que o teste precisa saber</text>
+  <text class="title" x="40" y="40">Cada volta do ciclo termina numa ficha</text>
+  <text class="sub" x="40" y="62">Sem fonte, data e nota de confiança, um achado de OSINT não vale como evidência.</text>
 
-  <rect x="300" y="160" width="160" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
-  <text class="h" x="314" y="182">2. Coleta</text>
-  <text class="s" x="314" y="202">CT, DNS, RDAP, busca</text>
+  <!-- cycle steps -->
+  <rect x="160" y="112" width="220" height="56" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="h" x="176" y="135"><tspan class="n">1</tspan> Requisito</text>
+  <text class="s" x="176" y="155">a pergunta, dentro do escopo</text>
 
-  <rect x="250" y="292" width="200" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
-  <text class="h" x="264" y="314">3. Processamento</text>
-  <text class="s" x="264" y="334">limpar, sort -u, normalizar</text>
+  <rect x="18" y="234" width="190" height="56" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="h" x="34" y="257"><tspan class="n">2</tspan> Coleta</text>
+  <text class="s" x="34" y="277">nas fontes abertas</text>
 
-  <rect x="40" y="292" width="170" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
-  <text class="h" x="54" y="314">4. Análise</text>
-  <text class="s" x="54" y="334">cruzar e classificar</text>
+  <rect x="65" y="402" width="190" height="56" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="h" x="81" y="425"><tspan class="n">3</tspan> Processamento</text>
+  <text class="s" x="81" y="445">limpar, tirar repetidos</text>
 
-  <rect x="30" y="160" width="160" height="56" rx="8" fill="#1a2a22" stroke="#3b6b4f"/>
-  <text class="h" x="44" y="182">5. Difusão</text>
-  <text class="s" x="44" y="202">dossiê e relatório</text>
+  <rect x="295" y="402" width="210" height="56" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="h" x="311" y="425"><tspan class="n">4</tspan> Análise</text>
+  <text class="s" x="311" y="445">cruzar fontes, classificar</text>
 
-  <path d="M340 100 Q400 120 390 156" stroke="#e8c46a" stroke-width="2" fill="none" marker-end="url(#ar)"/>
-  <path d="M380 216 Q380 260 360 288" stroke="#e8c46a" stroke-width="2" fill="none" marker-end="url(#ar)"/>
-  <line x1="250" y1="320" x2="214" y2="320" stroke="#e8c46a" stroke-width="2" marker-end="url(#ar)"/>
-  <path d="M110 292 Q100 250 110 220" stroke="#e8c46a" stroke-width="2" fill="none" marker-end="url(#ar)"/>
-  <path d="M110 160 Q120 110 146 92" stroke="#e8c46a" stroke-width="2" fill="none" marker-end="url(#ar)"/>
-  <text class="s" x="40" y="390">cada volta gera perguntas novas,</text>
-  <text class="s" x="40" y="406">mas o requisito nunca sai do escopo</text>
+  <rect x="332" y="234" width="190" height="56" rx="6" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="h" x="348" y="257"><tspan class="n">5</tspan> Difusão</text>
+  <text class="s" x="348" y="277">dossiê e relatório</text>
 
-  <rect x="500" y="56" width="370" height="390" rx="8" fill="#16201b" stroke="#3b6b4f" stroke-dasharray="5 4"/>
-  <text class="y" x="518" y="82">Ficha de um achado (dossiê)</text>
-  <text class="b" x="518" y="112">achado ..... intranet.valeverde.example</text>
-  <text class="b" x="518" y="140">fonte ...... crt.sh, certificado 0b20;</text>
-  <text class="b" x="518" y="158">             DNS; RDAP da faixa</text>
-  <text class="b" x="518" y="186">coleta ..... 2026-10-20T14:05Z (UTC)</text>
-  <text class="b" x="518" y="214">como ....... passivo (CT, RDAP) +</text>
-  <text class="b" x="518" y="232">             semipassivo (DNS)</text>
-  <text class="b" x="518" y="260">fonte ...... B  (normalmente confiável)</text>
-  <text class="b" x="518" y="288">informação . 1  (confirmada por fontes</text>
-  <text class="b" x="518" y="306">             independentes)</text>
-  <text class="g" x="518" y="334">escopo ..... escopo (203.0.113.0/26)</text>
-  <text class="s" x="518" y="372">A–F e 1–8: escalas do manual ATP 2-22.9</text>
-  <text class="s" x="518" y="390">do Exército dos EUA (2012). Fonte nova</text>
-  <text class="s" x="518" y="408">começa em F e 8: "sem base para julgar",</text>
-  <text class="s" x="518" y="426">não "não confiável".</text>
+  <!-- cycle arrows -->
+  <line x1="196" y1="170" x2="140" y2="229" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#arrow-blue)"/>
+  <line x1="118" y1="292" x2="146" y2="397" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#arrow-blue)"/>
+  <line x1="257" y1="430" x2="290" y2="430" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#arrow-blue)"/>
+  <line x1="408" y1="400" x2="424" y2="295" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#arrow-blue)"/>
+  <line x1="410" y1="232" x2="358" y2="173" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#arrow-blue)"/>
+
+  <text class="s" x="270" y="298" text-anchor="middle">cada volta gera</text>
+  <text class="s" x="270" y="314" text-anchor="middle">perguntas novas</text>
+
+  <!-- to the dossier -->
+  <line x1="524" y1="262" x2="564" y2="262" stroke="#facc15" stroke-width="2.4" marker-end="url(#arrow-gold)"/>
+  <text class="s gold" x="544" y="250" text-anchor="middle">dossiê</text>
+
+  <!-- record card -->
+  <rect x="570" y="96" width="360" height="400" rx="8" fill="#1c1a0b" stroke="#facc15" stroke-width="2.2" filter="url(#glow-gold)"/>
+  <text class="h big gold" x="590" y="126">Ficha de um achado</text>
+  <text class="s" x="590" y="146">o que fica de cada volta</text>
+
+  <g stroke="#3f3a1a" stroke-width="1">
+    <line x1="590" y1="200" x2="910" y2="200"/>
+    <line x1="590" y1="240" x2="910" y2="240"/>
+    <line x1="590" y1="280" x2="910" y2="280"/>
+    <line x1="590" y1="320" x2="910" y2="320"/>
+    <line x1="590" y1="360" x2="910" y2="360"/>
+    <line x1="590" y1="400" x2="910" y2="400"/>
+  </g>
+  <text class="lab" x="590" y="184">achado</text><text class="val" x="700" y="184">intranet.valeverde.example</text>
+  <text class="lab" x="590" y="224">fonte</text><text class="val" x="700" y="224">crt.sh + DNS + dono do IP</text>
+  <text class="lab" x="590" y="264">data</text><text class="val" x="700" y="264">2026-10-20 14:05 UTC</text>
+  <text class="lab" x="590" y="304">como</text><text class="val" x="700" y="304">passivo, sem tocar no alvo</text>
+  <text class="lab" x="590" y="344">nota da fonte</text><text class="val" x="700" y="344">normalmente confiável</text>
+  <text class="lab" x="590" y="384">nota da info</text><text class="val" x="700" y="384">confirmada por outra fonte</text>
+  <text class="lab" x="590" y="424">escopo</text><text class="val" x="700" y="424">sim, é do cliente</text>
+
+  <rect x="590" y="446" width="320" height="34" rx="5" fill="#2a2508" stroke="#facc15" stroke-width="1"/>
+  <text class="val bold gold" x="750" y="468" text-anchor="middle">sem fonte, data e nota → não é evidência</text>
+
+  <!-- legend -->
+  <line x1="40" y1="528" x2="920" y2="528" stroke="#334155" stroke-width="1"/>
+  <rect x="40" y="544" width="14" height="14" rx="3" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="leg" x="62" y="556">etapa do ciclo</text>
+  <rect x="260" y="544" width="14" height="14" rx="3" fill="#1c1a0b" stroke="#facc15" stroke-width="1.5"/>
+  <text class="leg" x="282" y="556">o que fica como evidência</text>
 </svg>
