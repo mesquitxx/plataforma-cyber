@@ -1,72 +1,107 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">Defesa em profundidade: cada camada sozinha quebra a cadeia</title>
-  <desc id="d">Uma coluna central lista os cinco elos da cadeia de ataque, de cima para baixo, ligados por uma linha vertical: versão 2.4.49 vulnerável; CGI ligado e diretório raiz liberado; banner e /internal vazando informação; senha fraca no /admin; e exfiltração sem detecção. À direita de cada elo há uma caixa verde com a defesa que corta aquele elo: atualizar para a 2.4.51; desligar o CGI e negar o acesso ao diretório raiz; ServerTokens Prod e remover o /internal; senha forte com bloqueio de conta e segundo fator; e registrar e alertar sobre o padrão de traversal nos logs. Cada defesa tem uma tesoura indicando que, sozinha, ela interrompe a cadeia. A legenda abaixo reforça: o atacante precisa de todos os elos; o defensor precisa de apenas um.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-labelledby="t d">
+  <title id="t">Defesa em profundidade: corte UM elo e a cadeia inteira cai</title>
+  <desc id="d">À esquerda, em destaque, está a cadeia de ataque: cinco elos em vermelho, numerados de 1 a 5 e ligados por uma linha vertical vermelha — versão 2.4.49 vulnerável; CGI ligado e raiz liberada; banner e /internal vazando; senha fraca no /admin; e ação sem detecção. À direita, em verde e de forma secundária, está uma defesa para cada elo: atualizar para a 2.4.51; desligar o CGI e negar o acesso à raiz; ServerTokens Prod e tirar o /internal; senha forte com bloqueio e segundo fator; e registrar e alertar sobre o traversal. Uma tesoura verde em cada linha mostra que aquela defesa, sozinha, corta a cadeia naquele ponto. A ideia central: o atacante precisa de todos os cinco elos; o defensor precisa cortar apenas um.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .step { font-size: 12px; font-weight: 700; }
-    .sub { font-size: 10px; fill: #9fb0a6; }
-    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
-    .def { fill: #13201a; stroke: #5ee08a; stroke-width: 1.8; }
-    .dt { font-size: 11px; font-weight: 700; fill: #5ee08a; }
-    .ds { font-size: 9.5px; fill: #86b79a; }
-    .chain { stroke: #4a5a52; stroke-width: 3; fill: none; }
-    .cut { stroke: #5ee08a; stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
-    .cap { font-size: 11.5px; fill: #9fb0a6; }
+    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e2e8f0; }
+    .title { font-size: 18px; font-weight: 700; }
+    .sub   { font-size: 12px; fill: #94a3b8; }
+    .hdrA  { font-size: 12.5px; font-weight: 700; fill: #f87171; letter-spacing: 0.08em; }
+    .hdrD  { font-size: 12.5px; font-weight: 700; fill: #34d399; letter-spacing: 0.08em; }
+    .lt    { font-size: 12.5px; font-weight: 700; fill: #fca5a5; }
+    .ls    { font-size: 10px; fill: #94a3b8; }
+    .dt    { font-size: 12px; font-weight: 700; fill: #6ee7b7; }
+    .ds    { font-size: 9.5px; fill: #7f9b8c; }
+    .cut   { font-size: 10px; font-weight: 700; fill: #34d399; }
+    .cap   { font-size: 12.5px; font-weight: 700; fill: #e2e8f0; }
+    .leg   { font-size: 11px; fill: #cbd5e1; }
   </style>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="32">Defesa em profundidade: cada camada sozinha quebra a cadeia</text>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/><stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="600" fill="url(#bg)"/>
 
-  <!-- vertical chain line -->
-  <path class="chain" d="M250,70 L250,404"/>
+  <text class="title" x="30" y="38">Defesa em profundidade: corte UM elo e a cadeia inteira cai</text>
+  <text class="sub"   x="30" y="60">O atacante precisa dos 5 elos; o defensor precisa cortar só um.</text>
 
-  <!-- rows: y centers 84,150,216,282,348 ... use 5 rows -->
-  <!-- 1 -->
-  <rect class="box" x="120" y="60" width="260" height="48" rx="7"/>
-  <text class="step" x="250" y="80" text-anchor="middle">1. Versão 2.4.49 vulnerável</text>
-  <text class="sub" x="250" y="97" text-anchor="middle">CVE-2021-41773</text>
-  <rect class="def" x="520" y="60" width="330" height="48" rx="7"/>
-  <text class="dt" x="536" y="80">Atualizar para a 2.4.51</text>
-  <text class="ds" x="536" y="97">a 2.4.50 não bastou (CVE-2021-42013)</text>
+  <text class="hdrA" x="70"  y="92">CADEIA DE ATAQUE</text>
+  <text class="hdrD" x="560" y="92">DEFESAS — cada uma corta a cadeia</text>
 
-  <!-- 2 -->
-  <rect class="box" x="120" y="134" width="260" height="48" rx="7"/>
-  <text class="step" x="250" y="154" text-anchor="middle">2. CGI ligado + raiz liberada</text>
-  <text class="sub" x="250" y="171" text-anchor="middle">mod_cgid · &lt;Directory /&gt;</text>
-  <rect class="def" x="520" y="134" width="330" height="48" rx="7"/>
-  <text class="dt" x="536" y="154">Desligar CGI · Require all denied</text>
-  <text class="ds" x="536" y="171">sem interpretador no caminho, sem RCE</text>
+  <!-- red chain spine (behind links, on their right edge) -->
+  <path d="M360,140 L360,440" fill="none" stroke="#ef4444" stroke-width="5"/>
 
-  <!-- 3 -->
-  <rect class="box" x="120" y="208" width="260" height="48" rx="7"/>
-  <text class="step" x="250" y="228" text-anchor="middle">3. Banner e /internal vazam</text>
-  <text class="sub" x="250" y="245" text-anchor="middle">ServerTokens Full · autoindex</text>
-  <rect class="def" x="520" y="208" width="330" height="48" rx="7"/>
-  <text class="dt" x="536" y="228">ServerTokens Prod · remover /internal</text>
-  <text class="ds" x="536" y="245">menos pistas para o atacante mapear</text>
+  <!-- rows: centers 140 215 290 365 440 -->
+  <!-- dashed defense connectors + scissors, drawn before boxes -->
+  <g stroke="#34d399" stroke-width="1.6" fill="none" stroke-dasharray="6 4">
+    <path d="M560,140 L392,140"/>
+    <path d="M560,215 L392,215"/>
+    <path d="M560,290 L392,290"/>
+    <path d="M560,365 L392,365"/>
+    <path d="M560,440 L392,440"/>
+  </g>
 
-  <!-- 4 -->
-  <rect class="box" x="120" y="282" width="260" height="48" rx="7"/>
-  <text class="step" x="250" y="302" text-anchor="middle">4. Senha fraca no /admin</text>
-  <text class="sub" x="250" y="319" text-anchor="middle">superman · password1 (reúso)</text>
-  <rect class="def" x="520" y="282" width="330" height="48" rx="7"/>
-  <text class="dt" x="536" y="302">Senha forte · lockout · MFA</text>
-  <text class="ds" x="536" y="319">tira o reúso e trava o spraying</text>
+  <!-- LINK 1 -->
+  <rect x="70" y="112" width="290" height="56" rx="6" fill="#1a1012" stroke="#ef4444" stroke-width="1.8"/>
+  <text class="lt" x="86" y="137">1 · Versão 2.4.49 vulnerável</text>
+  <text class="ls" x="86" y="156">CVE-2021-41773</text>
+  <!-- LINK 2 -->
+  <rect x="70" y="187" width="290" height="56" rx="6" fill="#1a1012" stroke="#ef4444" stroke-width="1.8"/>
+  <text class="lt" x="86" y="212">2 · CGI ligado, raiz liberada</text>
+  <text class="ls" x="86" y="231">mod_cgid · &lt;Directory /&gt;</text>
+  <!-- LINK 3 -->
+  <rect x="70" y="262" width="290" height="56" rx="6" fill="#1a1012" stroke="#ef4444" stroke-width="1.8"/>
+  <text class="lt" x="86" y="287">3 · Banner e /internal vazam</text>
+  <text class="ls" x="86" y="306">versão cheia + listagem</text>
+  <!-- LINK 4 -->
+  <rect x="70" y="337" width="290" height="56" rx="6" fill="#1a1012" stroke="#ef4444" stroke-width="1.8"/>
+  <text class="lt" x="86" y="362">4 · Senha fraca no /admin</text>
+  <text class="ls" x="86" y="381">superman · password1 (reúso)</text>
+  <!-- LINK 5 -->
+  <rect x="70" y="412" width="290" height="56" rx="6" fill="#1a1012" stroke="#ef4444" stroke-width="1.8"/>
+  <text class="lt" x="86" y="437">5 · Ação sem detecção</text>
+  <text class="ls" x="86" y="456">traversal e queries silenciosos</text>
 
-  <!-- 5 -->
-  <rect class="box" x="120" y="356" width="260" height="48" rx="7"/>
-  <text class="step" x="250" y="376" text-anchor="middle">5. Ação sem detecção</text>
-  <text class="sub" x="250" y="393" text-anchor="middle">traversal e queries silenciosos</text>
-  <rect class="def" x="520" y="356" width="330" height="48" rx="7"/>
-  <text class="dt" x="536" y="376">Registrar e alertar no traversal</text>
-  <text class="ds" x="536" y="393">logs + alerta cortam o tempo de permanência</text>
+  <!-- scissors on the chain, one per row -->
+  <g>
+    <g transform="translate(360,140)"><circle cx="-2" cy="-7" r="3.4" fill="none" stroke="#34d399" stroke-width="1.6"/><circle cx="-2" cy="7" r="3.4" fill="none" stroke="#34d399" stroke-width="1.6"/><line x1="1" y1="-5" x2="16" y2="5" stroke="#34d399" stroke-width="1.6"/><line x1="1" y1="5" x2="16" y2="-5" stroke="#34d399" stroke-width="1.6"/></g>
+    <g transform="translate(360,215)"><circle cx="-2" cy="-7" r="3.4" fill="none" stroke="#34d399" stroke-width="1.6"/><circle cx="-2" cy="7" r="3.4" fill="none" stroke="#34d399" stroke-width="1.6"/><line x1="1" y1="-5" x2="16" y2="5" stroke="#34d399" stroke-width="1.6"/><line x1="1" y1="5" x2="16" y2="-5" stroke="#34d399" stroke-width="1.6"/></g>
+    <g transform="translate(360,290)"><circle cx="-2" cy="-7" r="3.4" fill="none" stroke="#34d399" stroke-width="1.6"/><circle cx="-2" cy="7" r="3.4" fill="none" stroke="#34d399" stroke-width="1.6"/><line x1="1" y1="-5" x2="16" y2="5" stroke="#34d399" stroke-width="1.6"/><line x1="1" y1="5" x2="16" y2="-5" stroke="#34d399" stroke-width="1.6"/></g>
+    <g transform="translate(360,365)"><circle cx="-2" cy="-7" r="3.4" fill="none" stroke="#34d399" stroke-width="1.6"/><circle cx="-2" cy="7" r="3.4" fill="none" stroke="#34d399" stroke-width="1.6"/><line x1="1" y1="-5" x2="16" y2="5" stroke="#34d399" stroke-width="1.6"/><line x1="1" y1="5" x2="16" y2="-5" stroke="#34d399" stroke-width="1.6"/></g>
+    <g transform="translate(360,440)"><circle cx="-2" cy="-7" r="3.4" fill="none" stroke="#34d399" stroke-width="1.6"/><circle cx="-2" cy="7" r="3.4" fill="none" stroke="#34d399" stroke-width="1.6"/><line x1="1" y1="-5" x2="16" y2="5" stroke="#34d399" stroke-width="1.6"/><line x1="1" y1="5" x2="16" y2="-5" stroke="#34d399" stroke-width="1.6"/></g>
+  </g>
+  <text class="cut" x="384" y="128">corta aqui</text>
 
-  <!-- cut links from chain to each defense -->
-  <path class="cut" d="M380,84 L520,84"/>
-  <path class="cut" d="M380,158 L520,158"/>
-  <path class="cut" d="M380,232 L520,232"/>
-  <path class="cut" d="M380,306 L520,306"/>
-  <path class="cut" d="M380,380 L520,380"/>
+  <!-- DEFENSE 1 -->
+  <rect x="560" y="112" width="360" height="56" rx="6" fill="#0f2019" stroke="#34d399" stroke-width="1.4"/>
+  <text class="dt" x="576" y="137">Atualizar para a 2.4.51</text>
+  <text class="ds" x="576" y="156">a 2.4.50 não bastou (CVE-2021-42013)</text>
+  <!-- DEFENSE 2 -->
+  <rect x="560" y="187" width="360" height="56" rx="6" fill="#0f2019" stroke="#34d399" stroke-width="1.4"/>
+  <text class="dt" x="576" y="212">Desligar CGI · Require all denied</text>
+  <text class="ds" x="576" y="231">sem interpretador no caminho, sem RCE</text>
+  <!-- DEFENSE 3 -->
+  <rect x="560" y="262" width="360" height="56" rx="6" fill="#0f2019" stroke="#34d399" stroke-width="1.4"/>
+  <text class="dt" x="576" y="287">ServerTokens Prod · tirar /internal</text>
+  <text class="ds" x="576" y="306">menos pistas para o atacante mapear</text>
+  <!-- DEFENSE 4 -->
+  <rect x="560" y="337" width="360" height="56" rx="6" fill="#0f2019" stroke="#34d399" stroke-width="1.4"/>
+  <text class="dt" x="576" y="362">Senha forte · lockout · MFA</text>
+  <text class="ds" x="576" y="381">tira o reúso e trava o spraying</text>
+  <!-- DEFENSE 5 -->
+  <rect x="560" y="412" width="360" height="56" rx="6" fill="#0f2019" stroke="#34d399" stroke-width="1.4"/>
+  <text class="dt" x="576" y="437">Registrar e alertar no traversal</text>
+  <text class="ds" x="576" y="456">logs + alerta cortam o tempo oculto</text>
 
-  <text class="cap" x="30" y="440">O atacante precisa de TODOS os elos; o defensor precisa de apenas UM. É isso que "defense in depth" compra.</text>
+  <!-- bottom caption (the key idea restated) -->
+  <rect x="70" y="500" width="820" height="40" rx="6" fill="#141622" stroke="#334155" stroke-width="1.2"/>
+  <text class="cap" x="480" y="525" text-anchor="middle">O atacante só vence com a cadeia completa — o defensor vence cortando qualquer UM elo.</text>
+
+  <!-- legend -->
+  <g>
+    <rect x="70" y="560" width="14" height="14" rx="3" fill="#1a1012" stroke="#ef4444" stroke-width="1.8"/>
+    <text class="leg" x="90" y="571">elo da cadeia de ataque</text>
+    <rect x="300" y="560" width="14" height="14" rx="3" fill="#0f2019" stroke="#34d399" stroke-width="1.8"/>
+    <text class="leg" x="320" y="571">defesa que corta a cadeia (secundária)</text>
+  </g>
 </svg>
