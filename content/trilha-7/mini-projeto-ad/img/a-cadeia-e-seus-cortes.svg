@@ -1,78 +1,106 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" role="img" aria-labelledby="t2 d2">
-  <title id="t2">A cadeia e seus cortes: a defesa que interrompe cada elo</title>
-  <desc id="d2">Seis elos da cadeia de ataque, um por linha, cada um emparelhado com a defesa que o quebra. Elo 1, foothold com credencial válida: cortado por autenticação multifator (MFA) e senhas fortes, que impedem o roubo inicial da conta. Elo 2, enumeração do diretório: quase não dá para impedir a leitura (é desenho do Active Directory), mas a administração em camadas, chamada tiering, reduz o valor do que o atacante enxerga, e a leitura anômala pode ser detectada. Elo 3, Kerberoasting da conta de serviço: cortado por contas gerenciadas, gMSA, com senha longa e rotacionada, que tornam a quebra offline inviável, e por forçar AES em vez de RC4. Elo 4, movimento lateral reutilizando a credencial: cortado por LAPS, que dá uma senha de administrador local única por máquina, pelo grupo Protected Users e por restringir os compartilhamentos administrativos. Elo 5, DCSync que replica os segredos do controlador: detectado pelo evento 4662 quando a replicação parte de uma conta que não é um controlador de domínio. Elo 6, golden ticket forjado com o hash do krbtgt: cortado pela rotação dupla da senha do krbtgt, que expurga a chave roubada. A faixa final resume a tese: quebrar um único elo quebra a cadeia inteira.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" role="img" aria-labelledby="t d">
+  <title id="t">A cadeia e seus cortes: quebrar um único elo já derruba o ataque inteiro</title>
+  <desc id="d">À esquerda, os seis elos do ataque empilhados e ligados por uma corrente vertical, mostrando que um depende do anterior: elo 1, foothold, a credencial roubada; elo 2, enumeração, ler o diretório do Active Directory; elo 3, Kerberoasting, quebrar a senha da conta de serviço; elo 4, movimento lateral, reutilizar a credencial em outro host; elo 5, DCSync, replicar os segredos do controlador; elo 6, golden ticket, forjar TGTs e virar Domain Admin. À direita de cada elo, separada e secundária, a defesa que o corta, com uma tesoura verde cruzando a corrente no ponto do corte. Elo 1 é cortado por MFA e senhas fortes, que impedem o roubo inicial da conta. Elo 2, pela administração em camadas, chamada tiering, somada à detecção de leitura anômala, já que não dá para desligar a leitura do diretório. Elo 3, por contas gerenciadas gMSA de senha longa e por forçar AES, deixando nada fraco para quebrar offline. Elo 4, por LAPS, grupo Protected Users e restrição dos compartilhamentos administrativos, de modo que o hash de uma máquina não abre as outras. Elo 5, pela detecção do evento 4662 quando a replicação vem de uma conta que não é controlador. Elo 6, pela rotação dupla da senha do krbtgt, que expurga a chave roubada. A faixa final resume a tese da defesa em profundidade: o atacante precisa vencer todos os elos, mas o defensor precisa cortar só um.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .atk { font-size: 12px; font-weight: 700; fill: #e0864f; }
-    .def { font-size: 11.5px; fill: #5ee08a; }
-    .lab { font-size: 10px; fill: #9fb0a6; }
-    .abox { fill: #1f1512; stroke: #e0864f; stroke-width: 2; }
-    .dbox { fill: #0f1b20; stroke: #5ee08a; stroke-width: 2; }
-    .cut { stroke: #e0864f; stroke-width: 2.5; marker-end: url(#sc); }
-    .rule { font-size: 12px; fill: #cfe0d6; }
+    text { font-family: 'SF Mono','Fira Code','Cascadia Code','Courier New',monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 20px; font-weight: 700; }
+    .atk  { font-size: 13px; font-weight: 700; fill: #fb923c; }
+    .atks { font-size: 10.5px; fill: #cbd5e1; }
+    .def  { font-size: 12px; font-weight: 700; fill: #34d399; }
+    .defs { font-size: 10.5px; fill: #94a3b8; }
+    .lg   { font-size: 11px; fill: #cbd5e1; }
+    .banner { font-size: 13px; font-weight: 700; fill: #fde68a; }
   </style>
   <defs>
-    <marker id="sc" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5ee08a"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
   </defs>
-  <rect width="960" height="420" fill="#121815"/>
-  <text class="t" x="30" y="32">A cadeia e seus cortes: onde a defesa quebra cada elo</text>
+  <rect width="960" height="600" fill="url(#bg-grad)"/>
 
-  <!-- rows: attack box (left) -> defense box (right) -->
-  <!-- row 1 -->
-  <rect class="abox" x="24" y="52" width="300" height="46" rx="7"/>
-  <text class="atk" x="40" y="72">1 · foothold</text>
-  <text class="lab" x="40" y="90">credencial válida roubada</text>
-  <path class="cut" d="M332 75 L408 75"/>
-  <rect class="dbox" x="416" y="52" width="520" height="46" rx="7"/>
-  <text class="def" x="432" y="72">MFA + senhas fortes</text>
-  <text class="lab" x="432" y="90">tira o roubo inicial da conta</text>
+  <text class="title" x="40" y="40">A cadeia e seus cortes: quebre um elo e derruba a campanha</text>
 
-  <!-- row 2 -->
-  <rect class="abox" x="24" y="110" width="300" height="46" rx="7"/>
-  <text class="atk" x="40" y="130">2 · enumeração</text>
-  <text class="lab" x="40" y="148">lê o diretório (por desenho)</text>
-  <path class="cut" d="M332 133 L408 133"/>
-  <rect class="dbox" x="416" y="110" width="520" height="46" rx="7"/>
-  <text class="def" x="432" y="130">tiering reduz o valor do que se vê · detectar leitura anômala</text>
-  <text class="lab" x="432" y="148">não dá para "desligar" a leitura sem quebrar o domínio</text>
+  <!-- chain spine behind attack links -->
+  <line x1="60" y1="95" x2="60" y2="503" stroke="#7c2d12" stroke-width="6"/>
+  <line x1="60" y1="95" x2="60" y2="503" stroke="#fb923c" stroke-width="2" stroke-dasharray="2 6"/>
 
-  <!-- row 3 -->
-  <rect class="abox" x="24" y="168" width="300" height="46" rx="7"/>
-  <text class="atk" x="40" y="188">3 · Kerberoasting</text>
-  <text class="lab" x="40" y="206">quebra a senha do serviço</text>
-  <path class="cut" d="M332 191 L408 191"/>
-  <rect class="dbox" x="416" y="168" width="520" height="46" rx="7"/>
-  <text class="def" x="432" y="188">gMSA (senha longa, rotacionada) + forçar AES</text>
-  <text class="lab" x="432" y="206">sem senha fraca, não há o que quebrar offline</text>
+  <!-- ============ ELO 1 ============ -->
+  <rect x="40" y="95" width="400" height="58" rx="6" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+  <text class="atk"  x="76" y="120">1 · foothold</text>
+  <text class="atks" x="76" y="140">credencial roubada</text>
+  <!-- cut -->
+  <g transform="translate(455,124)" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"><line x1="0" y1="-7" x2="14" y2="7"/><line x1="0" y1="7" x2="14" y2="-7"/></g>
+  <line x1="440" y1="124" x2="455" y2="124" stroke="#34d399" stroke-width="2"/>
+  <line x1="469" y1="124" x2="500" y2="124" stroke="#34d399" stroke-width="2"/>
+  <rect x="500" y="95" width="420" height="58" rx="6" fill="#052e16" stroke="#34d399" stroke-width="1.5"/>
+  <text class="def"  x="516" y="120">MFA + senhas fortes</text>
+  <text class="defs" x="516" y="140">impede o roubo inicial da conta</text>
 
-  <!-- row 4 -->
-  <rect class="abox" x="24" y="226" width="300" height="46" rx="7"/>
-  <text class="atk" x="40" y="246">4 · movimento lateral</text>
-  <text class="lab" x="40" y="264">reusa a credencial em outro host</text>
-  <path class="cut" d="M332 249 L408 249"/>
-  <rect class="dbox" x="416" y="226" width="520" height="46" rx="7"/>
-  <text class="def" x="432" y="246">LAPS + Protected Users + restringir ADMIN$</text>
-  <text class="lab" x="432" y="264">o hash de uma máquina não abre as outras</text>
+  <!-- ============ ELO 2 ============ -->
+  <rect x="40" y="165" width="400" height="58" rx="6" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+  <text class="atk"  x="76" y="190">2 · enumeração</text>
+  <text class="atks" x="76" y="210">lê o diretório do AD</text>
+  <g transform="translate(455,194)" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"><line x1="0" y1="-7" x2="14" y2="7"/><line x1="0" y1="7" x2="14" y2="-7"/></g>
+  <line x1="440" y1="194" x2="455" y2="194" stroke="#34d399" stroke-width="2"/>
+  <line x1="469" y1="194" x2="500" y2="194" stroke="#34d399" stroke-width="2"/>
+  <rect x="500" y="165" width="420" height="58" rx="6" fill="#052e16" stroke="#34d399" stroke-width="1.5"/>
+  <text class="def"  x="516" y="190">tiering + detectar leitura anômala</text>
+  <text class="defs" x="516" y="210">não dá para desligar a leitura do diretório</text>
 
-  <!-- row 5 -->
-  <rect class="abox" x="24" y="284" width="300" height="46" rx="7"/>
-  <text class="atk" x="40" y="304">5 · DCSync</text>
-  <text class="lab" x="40" y="322">replica os segredos do DC</text>
-  <path class="cut" d="M332 307 L408 307"/>
-  <rect class="dbox" x="416" y="284" width="520" height="46" rx="7"/>
-  <text class="def" x="432" y="304">detectar o evento 4662 (replicação vinda de não-DC)</text>
-  <text class="lab" x="432" y="322">quem não é controlador não tem por que replicar</text>
+  <!-- ============ ELO 3 ============ -->
+  <rect x="40" y="235" width="400" height="58" rx="6" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+  <text class="atk"  x="76" y="260">3 · Kerberoasting</text>
+  <text class="atks" x="76" y="280">quebra a senha do serviço</text>
+  <g transform="translate(455,264)" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"><line x1="0" y1="-7" x2="14" y2="7"/><line x1="0" y1="7" x2="14" y2="-7"/></g>
+  <line x1="440" y1="264" x2="455" y2="264" stroke="#34d399" stroke-width="2"/>
+  <line x1="469" y1="264" x2="500" y2="264" stroke="#34d399" stroke-width="2"/>
+  <rect x="500" y="235" width="420" height="58" rx="6" fill="#052e16" stroke="#34d399" stroke-width="1.5"/>
+  <text class="def"  x="516" y="260">gMSA (senha longa) + forçar AES</text>
+  <text class="defs" x="516" y="280">sem senha fraca, nada a quebrar offline</text>
 
-  <!-- row 6 -->
-  <rect class="abox" x="24" y="342" width="300" height="46" rx="7"/>
-  <text class="atk" x="40" y="362">6 · golden ticket</text>
-  <text class="lab" x="40" y="380">forja TGTs com o krbtgt</text>
-  <path class="cut" d="M332 365 L408 365"/>
-  <rect class="dbox" x="416" y="342" width="520" height="46" rx="7"/>
-  <text class="def" x="432" y="362">rotação DUPLA da senha do krbtgt</text>
-  <text class="lab" x="432" y="380">expurga a chave roubada do histórico de duas</text>
+  <!-- ============ ELO 4 ============ -->
+  <rect x="40" y="305" width="400" height="58" rx="6" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+  <text class="atk"  x="76" y="330">4 · movimento lateral</text>
+  <text class="atks" x="76" y="350">reusa a credencial em outro host</text>
+  <g transform="translate(455,334)" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"><line x1="0" y1="-7" x2="14" y2="7"/><line x1="0" y1="7" x2="14" y2="-7"/></g>
+  <line x1="440" y1="334" x2="455" y2="334" stroke="#34d399" stroke-width="2"/>
+  <line x1="469" y1="334" x2="500" y2="334" stroke="#34d399" stroke-width="2"/>
+  <rect x="500" y="305" width="420" height="58" rx="6" fill="#052e16" stroke="#34d399" stroke-width="1.5"/>
+  <text class="def"  x="516" y="330">LAPS + Protected Users + ADMIN$ restrito</text>
+  <text class="defs" x="516" y="350">o hash de uma máquina não abre as outras</text>
 
-  <!-- banner -->
-  <text class="rule" x="480" y="410" text-anchor="middle">a tese da defesa em profundidade: quebrar UM elo quebra a cadeia inteira.</text>
+  <!-- ============ ELO 5 ============ -->
+  <rect x="40" y="375" width="400" height="58" rx="6" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+  <text class="atk"  x="76" y="400">5 · DCSync</text>
+  <text class="atks" x="76" y="420">replica os segredos do DC</text>
+  <g transform="translate(455,404)" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"><line x1="0" y1="-7" x2="14" y2="7"/><line x1="0" y1="7" x2="14" y2="-7"/></g>
+  <line x1="440" y1="404" x2="455" y2="404" stroke="#34d399" stroke-width="2"/>
+  <line x1="469" y1="404" x2="500" y2="404" stroke="#34d399" stroke-width="2"/>
+  <rect x="500" y="375" width="420" height="58" rx="6" fill="#052e16" stroke="#34d399" stroke-width="1.5"/>
+  <text class="def"  x="516" y="400">detectar o evento 4662</text>
+  <text class="defs" x="516" y="420">replicação vinda de quem não é controlador</text>
+
+  <!-- ============ ELO 6 ============ -->
+  <rect x="40" y="445" width="400" height="58" rx="6" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+  <text class="atk"  x="76" y="470">6 · golden ticket</text>
+  <text class="atks" x="76" y="490">forja TGTs = Domain Admin</text>
+  <g transform="translate(455,474)" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"><line x1="0" y1="-7" x2="14" y2="7"/><line x1="0" y1="7" x2="14" y2="-7"/></g>
+  <line x1="440" y1="474" x2="455" y2="474" stroke="#34d399" stroke-width="2"/>
+  <line x1="469" y1="474" x2="500" y2="474" stroke="#34d399" stroke-width="2"/>
+  <rect x="500" y="445" width="420" height="58" rx="6" fill="#052e16" stroke="#34d399" stroke-width="1.5"/>
+  <text class="def"  x="516" y="470">rotação DUPLA da senha do krbtgt</text>
+  <text class="defs" x="516" y="490">expurga a chave roubada</text>
+
+  <!-- legend -->
+  <g transform="translate(40,540)">
+    <rect x="0" y="-11" width="20" height="10" rx="2" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+    <text class="lg" x="28" y="-2">elo do ataque (a corrente)</text>
+    <g transform="translate(260,-6)" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"><line x1="0" y1="-5" x2="10" y2="5"/><line x1="0" y1="5" x2="10" y2="-5"/></g>
+    <text class="lg" x="282" y="-2">o corte da defesa</text>
+  </g>
+
+  <!-- banner: tese -->
+  <rect x="40" y="558" width="880" height="30" rx="6" fill="#0f172a" stroke="#eab308" stroke-width="1.5"/>
+  <text class="banner" x="480" y="578" text-anchor="middle">defesa em profundidade: o atacante precisa vencer TODOS os elos — o defensor precisa cortar só UM</text>
 </svg>
