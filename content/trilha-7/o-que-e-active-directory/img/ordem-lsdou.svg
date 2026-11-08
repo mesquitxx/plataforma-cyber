@@ -1,74 +1,102 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" role="img" aria-labelledby="t d">
-  <title id="t">A ordem de aplicação das GPOs (LSDOU), com Enforced e Block Inheritance</title>
-  <desc id="d">Da esquerda para a direita, cinco caixas em sequência, ligadas por setas, mostram a ordem em que um computador aplica as políticas: 1, GPO local; 2, GPOs ligadas ao site; 3, GPOs ligadas ao domínio; 4, GPOs ligadas à OU pai; 5, GPOs ligadas à OU filha, onde o computador está. Acima da sequência, uma legenda diz: cada passo pode sobrescrever o anterior, então, por padrão, vence a GPO mais próxima do objeto, a da direita. Entre a caixa do domínio e a da OU pai há uma parede vertical vermelha rotulada Block Inheritance na OU pai: ela barra as GPOs normais que vêm de cima, do site e do domínio. Por baixo da parede passa uma seta em amarelo, saindo de uma GPO do domínio marcada como Enforced e indo até o fim da sequência: um link Enforced atravessa o Block Inheritance e não pode ser sobrescrito pelas GPOs de baixo; ele vence. Uma faixa no rodapé resume as três regras: a ordem é Local, Site, Domínio, OU; o mais próximo vence; Enforced vence tudo e fura o Block Inheritance; e uma configuração Não configurada não sobrescreve nada.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 516" width="960" height="516" role="img" aria-labelledby="t d">
+  <title id="t">A ordem de aplicação das GPOs (LSDOU): vence a mais perto do PC, Block Inheritance barra as de cima e Enforced fura o bloqueio</title>
+  <desc id="d">Título: a GPO mais perto do PC vence, mas Enforced fura o bloqueio. Subtítulo: regra padrão, cada passo sobrescreve o anterior, então vence o mais perto do PC. Cinco caixas em sequência, da esquerda para a direita, mostram a ordem de aplicação: 1, Local, a própria máquina; 2, Site, o local físico; 3, Domínio, corp.local; 4, OU pai, OU Financeiro, que liga o bloqueio; 5, OU filha, OU Estações, onde está o PC, em verde. Entre o domínio e a OU pai há uma parede vermelha rotulada Block Inheritance, bloquear herança. A seta normal que vem do domínio para na parede. Uma linha vermelha tracejada sob as caixas 1 a 3 diz: as GPOs normais de 1 a 3 ficam barradas. Uma seta dourada sai da caixa do domínio, atravessa a parede por baixo e chega à caixa da OU filha: é a GPO do domínio com link Enforced, que fura a barreira, e as GPOs de baixo não conseguem sobrescrevê-la. Uma caixa verde mostra o resultado: no PC da OU Estações valem as GPOs das OUs pai e filha mais a GPO Enforced do domínio, que vence as de baixo. A legenda explica as quatro cores.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .s { font-size: 11px; fill: #9fb0a6; }
-    .n { font-size: 22px; font-weight: 700; fill: #5ee08a; }
-    .w { font-size: 12px; font-weight: 700; fill: #f0c05a; }
-    .r { font-size: 12px; font-weight: 700; fill: #f07a6a; }
-    .box { fill: #16201b; stroke: #9fb0a6; stroke-width: 1.8; }
-    .near { fill: #16201b; stroke: #5ee08a; stroke-width: 2.5; }
-    .flow { stroke: #5cc8d8; stroke-width: 2; fill: none; marker-end: url(#a); }
-    .enf { stroke: #f0c05a; stroke-width: 2.5; fill: none; marker-end: url(#e); }
-    .wall { fill: #f07a6a; }
+    text { font-family: 'SF Mono','Fira Code','Cascadia Code','Courier New',monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 19px; font-weight: 700; }
+    .sub   { font-size: 12px; fill: #94a3b8; }
+    .hd    { font-size: 11px; fill: #94a3b8; }
+    .num   { font-size: 18px; font-weight: 700; fill: #94a3b8; }
+    .numg  { font-size: 18px; font-weight: 700; fill: #34d399; }
+    .nm    { font-size: 13px; font-weight: 700; fill: #e2e8f0; }
+    .ns    { font-size: 11px; fill: #94a3b8; }
+    .red   { font-size: 12px; font-weight: 700; fill: #f87171; }
+    .reds  { font-size: 11px; font-weight: 700; fill: #f87171; }
+    .gold  { font-size: 12px; font-weight: 700; fill: #facc15; }
+    .grn   { font-size: 13px; font-weight: 700; fill: #34d399; }
+    .grnt  { font-size: 12px; fill: #e2e8f0; }
+    .lg    { font-size: 11px; fill: #cbd5e1; }
   </style>
   <defs>
-    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
-    <marker id="e" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#f0c05a"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glow-gold"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <marker id="a-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#64748b"/></marker>
+    <marker id="a-gold" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#facc15"/></marker>
   </defs>
-  <rect width="960" height="520" fill="#121815"/>
-  <text class="t" x="30" y="34">Em que ordem as GPOs são aplicadas: L → S → D → OU</text>
-  <text class="s" x="30" y="60">Cada passo pode sobrescrever o anterior: por padrão, vence a GPO mais próxima do objeto (à direita).</text>
+  <rect width="960" height="516" fill="url(#bg-grad)"/>
 
-  <rect class="box" x="30" y="110" width="150" height="110" rx="10"/>
-  <text class="n" x="46" y="142">1</text>
-  <text class="h" x="46" y="170">Local</text>
-  <text class="s" x="46" y="190">política da</text>
-  <text class="s" x="46" y="206">própria máquina</text>
+  <text class="title" x="30" y="38">A GPO mais perto do PC vence — mas Enforced fura o bloqueio</text>
+  <text class="sub" x="30" y="60">Regra padrão: cada passo sobrescreve o anterior, então vence o mais perto do PC.</text>
 
-  <path class="flow" d="M182,165 L210,165"/>
-  <rect class="box" x="212" y="110" width="150" height="110" rx="10"/>
-  <text class="n" x="228" y="142">2</text>
-  <text class="h" x="228" y="170">Site</text>
-  <text class="s" x="228" y="190">ligadas ao site</text>
-  <text class="s" x="228" y="206">(local físico)</text>
+  <text class="hd" x="40" y="100">ordem de aplicação →</text>
+  <text class="red" x="571" y="116" text-anchor="middle">Block Inheritance (bloquear herança)</text>
 
-  <path class="flow" d="M364,165 L392,165"/>
-  <rect class="box" x="394" y="110" width="150" height="110" rx="10"/>
-  <text class="n" x="410" y="142">3</text>
-  <text class="h" x="410" y="170">Domínio</text>
-  <text class="s" x="410" y="190">ligadas a</text>
-  <text class="s" x="410" y="206">DC=corp,DC=local</text>
+  <!-- 1 Local -->
+  <rect x="40" y="134" width="150" height="100" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="1.5"/>
+  <text class="num" x="54" y="162">1</text>
+  <text class="nm" x="54" y="186">Local</text>
+  <text class="ns" x="54" y="206">a própria máquina</text>
+  <path d="M192,184 L211,184" stroke="#64748b" stroke-width="1.8" fill="none" marker-end="url(#a-gray)"/>
 
-  <rect class="wall" x="560" y="96" width="10" height="138"/>
-  <text class="r" x="512" y="88">Block Inheritance</text>
+  <!-- 2 Site -->
+  <rect x="215" y="134" width="150" height="100" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="1.5"/>
+  <text class="num" x="229" y="162">2</text>
+  <text class="nm" x="229" y="186">Site</text>
+  <text class="ns" x="229" y="206">o local físico</text>
+  <path d="M367,184 L386,184" stroke="#64748b" stroke-width="1.8" fill="none" marker-end="url(#a-gray)"/>
 
-  <path class="flow" d="M546,165 L590,165"/>
-  <rect class="box" x="592" y="110" width="150" height="110" rx="10"/>
-  <text class="n" x="608" y="142">4</text>
-  <text class="h" x="608" y="170">OU pai</text>
-  <text class="s" x="608" y="190">OU=Financeiro</text>
-  <text class="s" x="608" y="206">(bloqueia herança)</text>
+  <!-- 3 Domain -->
+  <rect x="390" y="134" width="150" height="100" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="1.5"/>
+  <text class="num" x="404" y="162">3</text>
+  <text class="nm" x="404" y="186">Domínio</text>
+  <text class="ns" x="404" y="206">corp.local</text>
+  <path d="M542,184 L561,184" stroke="#64748b" stroke-width="1.8" fill="none" marker-end="url(#a-gray)"/>
 
-  <path class="flow" d="M744,165 L772,165"/>
-  <rect class="near" x="774" y="110" width="156" height="110" rx="10"/>
-  <text class="n" x="790" y="142">5</text>
-  <text class="h" x="790" y="170">OU filha</text>
-  <text class="s" x="790" y="190">OU=Estacoes</text>
-  <text class="s" x="790" y="206">onde está o PC</text>
+  <!-- the wall -->
+  <rect data-graph-role="decoration" x="566" y="126" width="10" height="190" rx="2" fill="#ef4444"/>
 
-  <text class="w" x="400" y="262">GPO do domínio com o link Enforced</text>
-  <path class="enf" d="M469,222 L469,290 L852,290 L852,226"/>
-  <text class="w" x="560" y="312">fura o Block Inheritance e não pode ser</text>
-  <text class="w" x="560" y="330">sobrescrita pelas GPOs de baixo: ela vence.</text>
+  <!-- 4 parent OU -->
+  <rect x="610" y="134" width="150" height="100" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="1.5"/>
+  <text class="num" x="624" y="162">4</text>
+  <text class="nm" x="624" y="186">OU pai</text>
+  <text class="ns" x="624" y="206">OU Financeiro</text>
+  <text class="reds" x="624" y="224">liga o bloqueio</text>
+  <path d="M762,184 L781,184" stroke="#64748b" stroke-width="1.8" fill="none" marker-end="url(#a-gray)"/>
 
-  <text class="s" x="30" y="380">Regras para ler qualquer cenário de GPO:</text>
-  <text class="s" x="30" y="402">1. Ordem: Local → Site → Domínio → OU pai → OU filha. A mais próxima vence.</text>
-  <text class="s" x="30" y="422">2. Na mesma OU, a GPO com a menor "ordem de link" (link order 1) tem precedência.</text>
-  <text class="s" x="30" y="442">3. Block Inheritance (propriedade da OU) barra o que vem de cima — exceto links Enforced.</text>
-  <text class="s" x="30" y="462">4. Enforced (propriedade do link) vence tudo; entre dois Enforced, vence o mais alto.</text>
-  <text class="s" x="30" y="482">5. "Não configurado" não sobrescreve nada; link desabilitado não é aplicado.</text>
+  <!-- 5 child OU (the PC) -->
+  <rect x="785" y="134" width="150" height="100" rx="6" fill="#052e16" stroke="#34d399" stroke-width="2"/>
+  <text class="numg" x="799" y="162">5</text>
+  <text class="nm" x="799" y="186">OU filha</text>
+  <text class="ns" x="799" y="206">OU Estações</text>
+  <text class="grn" x="799" y="224">o PC está aqui</text>
+
+  <!-- barred range -->
+  <line x1="40" y1="250" x2="470" y2="250" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <text class="red" x="40" y="272">✕ GPOs normais de 1 a 3 ficam barradas</text>
+
+  <!-- enforced link pierces the wall (gap opened in the wall) -->
+  <rect data-graph-role="bridge-mask" x="563" y="273" width="16" height="22" fill="#14141f"/>
+  <path d="M500,236 L500,284 L860,284 L860,240" stroke="#facc15" stroke-width="3" fill="none" filter="url(#glow-gold)" marker-end="url(#a-gold)"/>
+  <text class="gold" x="500" y="334">GPO do domínio com link Enforced: fura a barreira,</text>
+  <text class="gold" x="500" y="352">e as GPOs de baixo não conseguem sobrescrevê-la.</text>
+
+  <!-- result -->
+  <rect x="40" y="372" width="895" height="72" rx="8" fill="#052e16" stroke="#34d399" stroke-width="2"/>
+  <text class="grn" x="58" y="400">Resultado no PC da OU Estações</text>
+  <text class="grnt" x="58" y="426">valem as GPOs das OUs pai e filha + a GPO Enforced do domínio, que vence as de baixo.</text>
+
+  <!-- legend -->
+  <g transform="translate(40,488)">
+    <rect x="0" y="-10" width="22" height="12" rx="2" fill="#0f172a" stroke="#64748b" stroke-width="1.5"/>
+    <text class="lg" x="30" y="0">GPO normal</text>
+    <rect x="150" y="-11" width="8" height="14" rx="1" fill="#ef4444"/>
+    <text class="lg" x="168" y="0">bloqueio (Block Inheritance)</text>
+    <line x1="400" y1="-4" x2="424" y2="-4" stroke="#facc15" stroke-width="3"/>
+    <text class="lg" x="432" y="0">link Enforced</text>
+    <rect x="570" y="-10" width="22" height="12" rx="2" fill="#052e16" stroke="#34d399" stroke-width="1.5"/>
+    <text class="lg" x="600" y="0">o PC e o que vale nele</text>
+  </g>
 </svg>

@@ -1,115 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="t d">
-  <title id="t">Por que o Active Directory é o alvo: do primeiro acesso ao controle da empresa, e onde a defesa corta</title>
-  <desc id="d">Da esquerda para a direita, cinco caixas ligadas por setas mostram o raciocínio de um atacante numa rede corporativa Windows. Caixa 1, uma estação comprometida: o atacante tem uma conta de domínio comum. Caixa 2, ler o diretório: como todo usuário autenticado lê quase todo o AD, a conta comum já revela usuários, grupos, computadores e GPOs; isso é o módulo 7.2. Caixa 3, credenciais mais fortes: abusos do Kerberos e reutilização de senhas e hashes, módulos 7.3 e 7.4. Caixa 4, um grupo privilegiado como Domain Admins, que é administrador local de todo computador do domínio. Caixa 5, o controlador de domínio e o NTDS.dit, com a senha de todas as contas: a empresa inteira. Embaixo de cada seta há uma tesoura amarela marcando onde a defesa corta o caminho: higiene de credenciais e LAPS na estação; menos caminhos e contas-isca na leitura do diretório; senhas longas, gMSA e Protected Users contra o abuso de credenciais; grupos privilegiados vazios e o modelo de camadas; e o DC tratado como Tier 0, com backup offline. Uma faixa no rodapé resume: o AD concentra a confiança de toda a empresa num só lugar; por isso ele é o alvo, e por isso cada corte na cadeia vale tanto.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" role="img" aria-labelledby="t d">
+  <title id="t">Por que o Active Directory é o alvo: de uma conta comum até a empresa inteira</title>
+  <desc id="d">Título: uma conta comum basta para começar, e o fim é a empresa inteira. Da esquerda para a direita, quatro caixas laranja mostram os passos do atacante, ligadas por setas. Passo 1, conta comum: um phishing ou uma senha vazada, sem nenhum privilégio. Passo 2, lê o diretório: o AD é feito para ser lido, então a conta já vê usuários e grupos; módulo 7.2. Passo 3, conta com poder: senha fraca de uma conta de serviço ou um administrador logado em PC comum; módulos 7.3 e 7.4. Passo 4, Domain Admins: administrador local de todo computador do domínio. A última caixa, em vermelho e em destaque, é o que o atacante ganha: o DC, fim do jogo; ele copia a senha de todas as contas e usa uma política para rodar código em todas as máquinas, ou seja, a empresa inteira. Abaixo das caixas, uma barra que vai de laranja a vermelho mostra o poder do atacante crescendo de nenhum privilégio a dono de tudo. Separado, num painel discreto, aparece onde a defesa corta cada passo: administrador não entra em PC comum; menos caminhos até o poder; senhas longas nas contas de serviço; grupos de administrador vazios no dia a dia; DC isolado e backup offline. Uma faixa amarela resume: o AD concentra a confiança da empresa num só lugar, e por isso ele é o alvo. A legenda explica as três cores.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .s { font-size: 11px; fill: #9fb0a6; }
-    .n { font-size: 20px; font-weight: 700; fill: #5ee08a; }
-    .w { font-size: 11px; font-weight: 700; fill: #f0c05a; }
-    .r { font-size: 12px; font-weight: 700; fill: #f07a6a; }
-    .box { fill: #16201b; stroke: #9fb0a6; stroke-width: 1.8; }
-    .dc { fill: #16201b; stroke: #f07a6a; stroke-width: 2.5; }
-    .cut { fill: #1b2721; stroke: #f0c05a; stroke-width: 1.4; stroke-dasharray: 5 3; }
-    .flow { stroke: #5cc8d8; stroke-width: 2; fill: none; marker-end: url(#a); }
-    .tick { stroke: #f0c05a; stroke-width: 1.4; fill: none; stroke-dasharray: 3 3; }
+    text { font-family: 'SF Mono','Fira Code','Cascadia Code','Courier New',monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 19px; font-weight: 700; }
+    .sub   { font-size: 12px; fill: #94a3b8; }
+    .n     { font-size: 20px; font-weight: 700; fill: #fb923c; }
+    .h     { font-size: 13px; font-weight: 700; fill: #fb923c; }
+    .s     { font-size: 11px; fill: #cbd5e1; }
+    .m     { font-size: 11px; fill: #94a3b8; }
+    .rh    { font-size: 14px; font-weight: 700; fill: #f87171; }
+    .rs    { font-size: 11px; fill: #fecaca; }
+    .rb    { font-size: 12px; font-weight: 700; fill: #f87171; }
+    .bar   { font-size: 11px; fill: #94a3b8; }
+    .dh    { font-size: 12px; font-weight: 700; fill: #34d399; }
+    .dt    { font-size: 11px; fill: #94a3b8; }
+    .cut   { font-size: 12px; fill: #34d399; }
+    .ban   { font-size: 15px; font-weight: 700; fill: #fde68a; }
+    .lg    { font-size: 11px; fill: #cbd5e1; }
   </style>
   <defs>
-    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <linearGradient id="power" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c2d12"/>
+      <stop offset="70%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#ef4444"/>
+    </linearGradient>
+    <filter id="glow-red"><feGaussianBlur stdDeviation="3.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <marker id="a-or" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#fb923c"/></marker>
+    <marker id="a-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ef4444"/></marker>
   </defs>
-  <rect width="960" height="560" fill="#121815"/>
-  <text class="t" x="30" y="34">Por que o AD é o alvo: a cadeia do atacante e onde a defesa corta</text>
+  <rect width="960" height="600" fill="url(#bg-grad)"/>
 
-  <rect class="box" x="20" y="70" width="168" height="150" rx="10"/>
-  <text class="n" x="34" y="100">1</text>
-  <text class="h" x="34" y="126">Estação</text>
-  <text class="s" x="34" y="146">um phishing, uma</text>
-  <text class="s" x="34" y="162">senha vazada:</text>
-  <text class="s" x="34" y="178">conta de domínio</text>
-  <text class="s" x="34" y="194">COMUM (alima)</text>
+  <text class="title" x="30" y="38">Uma conta comum basta para começar — e o fim é a empresa inteira</text>
+  <text class="sub" x="30" y="60">O AD junta contas, grupos e políticas num lugar só: o poder concentrado já é o prêmio.</text>
 
-  <path class="flow" d="M190,145 L208,145"/>
-  <rect class="box" x="210" y="70" width="168" height="150" rx="10"/>
-  <text class="n" x="224" y="100">2</text>
-  <text class="h" x="224" y="126">Ler o diretório</text>
-  <text class="s" x="224" y="146">todo usuário lê</text>
-  <text class="s" x="224" y="162">quase todo o AD:</text>
-  <text class="s" x="224" y="178">grupos, GPOs, SPNs</text>
-  <text class="s" x="224" y="194">(módulo 7.2)</text>
+  <!-- step 1 -->
+  <rect x="40" y="92" width="150" height="198" rx="6" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+  <text class="n" x="54" y="120">1</text>
+  <text class="h" x="54" y="146">Conta comum</text>
+  <text class="s" x="54" y="170">phishing ou senha</text>
+  <text class="s" x="54" y="188">vazada</text>
+  <text class="m" x="54" y="214">nenhum</text>
+  <text class="m" x="54" y="232">privilégio</text>
+  <path d="M192,190 L208,190" stroke="#fb923c" stroke-width="2" fill="none" marker-end="url(#a-or)"/>
 
-  <path class="flow" d="M380,145 L398,145"/>
-  <rect class="box" x="400" y="70" width="168" height="150" rx="10"/>
-  <text class="n" x="414" y="100">3</text>
-  <text class="h" x="414" y="126">Credencial forte</text>
-  <text class="s" x="414" y="146">abuso do Kerberos,</text>
-  <text class="s" x="414" y="162">hash reutilizado,</text>
-  <text class="s" x="414" y="178">salto entre máquinas</text>
-  <text class="s" x="414" y="194">(7.3 e 7.4)</text>
+  <!-- step 2 -->
+  <rect x="214" y="92" width="150" height="198" rx="6" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+  <text class="n" x="228" y="120">2</text>
+  <text class="h" x="228" y="146">Lê o diretório</text>
+  <text class="s" x="228" y="170">o AD é feito para</text>
+  <text class="s" x="228" y="188">ser lido: a conta</text>
+  <text class="s" x="228" y="206">já vê usuários</text>
+  <text class="s" x="228" y="224">e grupos</text>
+  <text class="m" x="228" y="270">(7.2)</text>
+  <path d="M366,190 L382,190" stroke="#fb923c" stroke-width="2" fill="none" marker-end="url(#a-or)"/>
 
-  <path class="flow" d="M570,145 L588,145"/>
-  <rect class="box" x="590" y="70" width="168" height="150" rx="10"/>
-  <text class="n" x="604" y="100">4</text>
-  <text class="h" x="604" y="126">Domain Admins</text>
-  <text class="s" x="604" y="146">admin local de</text>
-  <text class="s" x="604" y="162">TODO computador</text>
-  <text class="s" x="604" y="178">do domínio</text>
-  <text class="s" x="604" y="194">(RID 512)</text>
+  <!-- step 3 -->
+  <rect x="388" y="92" width="150" height="198" rx="6" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+  <text class="n" x="402" y="120">3</text>
+  <text class="h" x="402" y="146">Conta com poder</text>
+  <text class="s" x="402" y="170">senha fraca de</text>
+  <text class="s" x="402" y="188">serviço ou admin</text>
+  <text class="s" x="402" y="206">logado em PC</text>
+  <text class="s" x="402" y="224">comum</text>
+  <text class="m" x="402" y="270">(7.3 e 7.4)</text>
+  <path d="M540,190 L556,190" stroke="#fb923c" stroke-width="2" fill="none" marker-end="url(#a-or)"/>
 
-  <path class="flow" d="M760,145 L778,145"/>
-  <rect class="dc" x="780" y="70" width="162" height="150" rx="10"/>
-  <text class="n" x="794" y="100">5</text>
-  <text class="r" x="794" y="126">DC + NTDS.dit</text>
-  <text class="s" x="794" y="146">a senha de todas</text>
-  <text class="s" x="794" y="162">as contas; GPO para</text>
-  <text class="s" x="794" y="178">todas as máquinas:</text>
-  <text class="r" x="794" y="196">a empresa inteira</text>
+  <!-- step 4 -->
+  <rect x="562" y="92" width="150" height="198" rx="6" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+  <text class="n" x="576" y="120">4</text>
+  <text class="h" x="576" y="146">Domain Admins</text>
+  <text class="s" x="576" y="170">admin local de</text>
+  <text class="s" x="576" y="188">TODO computador</text>
+  <text class="s" x="576" y="206">do domínio</text>
+  <path d="M714,190 L734,190" stroke="#ef4444" stroke-width="2.5" fill="none" marker-end="url(#a-red)"/>
 
-  <path class="tick" d="M104,222 L104,262"/>
-  <path class="tick" d="M294,222 L294,262"/>
-  <path class="tick" d="M484,222 L484,262"/>
-  <path class="tick" d="M674,222 L674,262"/>
-  <path class="tick" d="M861,222 L861,262"/>
+  <!-- the prize -->
+  <rect x="740" y="92" width="190" height="198" rx="6" fill="#2a0f12" stroke="#ef4444" stroke-width="2.5" filter="url(#glow-red)"/>
+  <text class="rh" x="754" y="120">O DC: fim do jogo</text>
+  <text class="rs" x="754" y="146">copia a senha de</text>
+  <text class="rs" x="754" y="164">TODAS as contas</text>
+  <text class="rs" x="754" y="190">e usa uma política</text>
+  <text class="rs" x="754" y="208">para rodar código</text>
+  <text class="rs" x="754" y="226">em TODAS as máquinas</text>
+  <text class="rb" x="754" y="266">= a empresa inteira</text>
 
-  <text class="w" x="20" y="252">✂ onde a defesa corta</text>
+  <!-- attacker power grows -->
+  <rect x="40" y="304" width="890" height="10" rx="5" fill="url(#power)"/>
+  <text class="bar" x="40" y="334">poder do atacante: de nenhum privilégio …</text>
+  <text class="bar" x="930" y="334" text-anchor="end">… a dono de tudo</text>
 
-  <rect class="cut" x="20" y="264" width="168" height="120" rx="8"/>
-  <text class="s" x="32" y="288">admin nunca loga</text>
-  <text class="s" x="32" y="304">em estação comum;</text>
-  <text class="s" x="32" y="320">LAPS: senha local</text>
-  <text class="s" x="32" y="336">diferente por</text>
-  <text class="s" x="32" y="352">máquina; MFA</text>
+  <!-- defense: separate and secondary -->
+  <rect data-graph-role="container" x="40" y="362" width="890" height="96" rx="6" fill="#0f172a" fill-opacity="0.6" stroke="#334155" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text class="dh" x="56" y="384">onde a defesa corta (detalhes na seção 8)</text>
+  <text class="cut" x="56" y="412">✂</text>
+  <text class="dt" x="74" y="412">admin não</text>
+  <text class="dt" x="74" y="430">entra em PC comum</text>
+  <text class="cut" x="230" y="412">✂</text>
+  <text class="dt" x="248" y="412">menos caminhos</text>
+  <text class="dt" x="248" y="430">até o poder</text>
+  <text class="cut" x="404" y="412">✂</text>
+  <text class="dt" x="422" y="412">senhas longas nas</text>
+  <text class="dt" x="422" y="430">contas de serviço</text>
+  <text class="cut" x="578" y="412">✂</text>
+  <text class="dt" x="596" y="412">grupos de admin</text>
+  <text class="dt" x="596" y="430">vazios no dia a dia</text>
+  <text class="cut" x="756" y="412">✂</text>
+  <text class="dt" x="774" y="412">DC isolado e</text>
+  <text class="dt" x="774" y="430">backup offline</text>
 
-  <rect class="cut" x="210" y="264" width="168" height="120" rx="8"/>
-  <text class="s" x="222" y="288">menos caminhos</text>
-  <text class="s" x="222" y="304">(rode o BloodHound</text>
-  <text class="s" x="222" y="320">você mesmo);</text>
-  <text class="s" x="222" y="336">contas-isca que</text>
-  <text class="s" x="222" y="352">disparam alerta</text>
+  <!-- key idea -->
+  <rect x="40" y="482" width="890" height="48" rx="6" fill="#1f1a08" stroke="#eab308" stroke-width="1.8"/>
+  <text class="ban" x="485" y="512" text-anchor="middle">O AD concentra a confiança da empresa num só lugar: por isso ele é o alvo.</text>
 
-  <rect class="cut" x="400" y="264" width="168" height="120" rx="8"/>
-  <text class="s" x="412" y="288">senhas longas,</text>
-  <text class="s" x="412" y="304">gMSA, sem RC4;</text>
-  <text class="s" x="412" y="320">Protected Users;</text>
-  <text class="s" x="412" y="336">sem GPP com</text>
-  <text class="s" x="412" y="352">senha (MS14-025)</text>
-
-  <rect class="cut" x="590" y="264" width="168" height="120" rx="8"/>
-  <text class="s" x="602" y="288">grupos privilegiados</text>
-  <text class="s" x="602" y="304">VAZIOS no dia a dia;</text>
-  <text class="s" x="602" y="320">camadas (tiering)</text>
-  <text class="s" x="602" y="336">e PAW; alerta em</text>
-  <text class="s" x="602" y="352">mudança de membros</text>
-
-  <rect class="cut" x="780" y="264" width="162" height="120" rx="8"/>
-  <text class="s" x="792" y="288">DC é Tier 0:</text>
-  <text class="s" x="792" y="304">nada além de AD</text>
-  <text class="s" x="792" y="320">nele; backup</text>
-  <text class="s" x="792" y="336">OFFLINE testado;</text>
-  <text class="s" x="792" y="352">plano de recuperação</text>
-
-  <text class="s" x="30" y="430">Um único diretório guarda quem é quem, quem pode o quê e a configuração de todas as máquinas.</text>
-  <text class="s" x="30" y="450">Ele não precisa de uma "falha" para ser perigoso: o poder concentrado já é o prêmio.</text>
-  <text class="w" x="30" y="486">O AD concentra a confiança da empresa num só lugar: por isso ele é o alvo,</text>
-  <text class="w" x="30" y="506">e por isso cada corte nesta cadeia (de qualquer elo) vale tanto.</text>
+  <!-- legend -->
+  <g transform="translate(40,566)">
+    <rect x="0" y="-10" width="22" height="12" rx="2" fill="#1c1917" stroke="#fb923c" stroke-width="1.5"/>
+    <text class="lg" x="30" y="0">passo do atacante</text>
+    <rect x="220" y="-10" width="22" height="12" rx="2" fill="#2a0f12" stroke="#ef4444" stroke-width="1.5"/>
+    <text class="lg" x="250" y="0">o que o atacante ganha</text>
+    <text class="cut" x="470" y="0">✂</text>
+    <text class="lg" x="490" y="0">defesa (secundária, ver seção 8)</text>
+  </g>
 </svg>
