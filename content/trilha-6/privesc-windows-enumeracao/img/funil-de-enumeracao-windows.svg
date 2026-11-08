@@ -1,58 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 600" role="img" aria-labelledby="t d">
-  <title id="t">O funil da enumeração de escalação de privilégio no Windows</title>
-  <desc id="d">Um funil vertical de quatro estágios que vai do acesso inicial a uma lista curta de vetores. No topo, uma caixa larga representa o foothold: você está dentro, como uma conta de serviço de baixo privilégio, por exemplo a conta do pool do IIS ou NETWORK SERVICE, e executa comando mas sem poder. Dela desce o funil. Estágio 1, o mais largo, COLETAR tudo: contexto e nível de patch (whoami, systeminfo, lista de hotfixes), privilégios do token (whoami barra priv), serviços (sc, accesschk), permissões de arquivo e registro (icacls, reg query), tarefas agendadas e credenciais (cmdkey, unattend.xml) — à mão com binários nativos e com as ferramentas WinPEAS, Seatbelt, PowerUp e WES-NG. Estágio 2, LER E REDUZIR O RUÍDO: ler a legenda de cores do WinPEAS (vermelho e amarelo primeiro), lembrar que o Defender e o AMSI pegam as ferramentas, e que sc, reg e icacls são silenciosos. Estágio 3, TRIAR pelas quatro classes do módulo 6.1: má configuração, software vulnerável, credenciais e abuso de recurso legítimo. Estágio 4, o mais estreito, CANDIDATOS PRIORIZADOS por confiabilidade, ruído e estabilidade. Uma seta sai do fundo do funil para uma caixa final destacada em ciano: módulo 6.5, explorar o vetor escolhido.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" role="img" aria-labelledby="t d">
+  <title id="t">O funil da enumeracao no Windows: de "estou dentro" a "este e o vetor"</title>
+  <desc id="d">Um funil vertical que estreita de cima para baixo. No topo, o foothold: uma conta de servico de baixo privilegio, voce executa comando mas sem poder. Abaixo, quatro faixas cada vez mais estreitas. Faixa 1 COLETAR tudo, a mais larga: contexto e patch, privilegios do token, servicos, permissoes, tarefas e credenciais, a mao e com WinPEAS, Seatbelt, PowerUp e WES-NG. Faixa 2 LER e reduzir o ruido: ler a legenda de cores do WinPEAS e lembrar que o Defender e o AMSI pegam as ferramentas. Faixa 3 TRIAR pelas quatro classes do 6.1: ma configuracao, software vulneravel, credenciais, abuso de recurso. Faixa 4 CANDIDATOS priorizados, a mais estreita: por confiabilidade, ruido e estabilidade. Do fundo sai uma seta para a caixa dourada do modulo 6.5, explorar o vetor escolhido. Uma regua a esquerda marca a passagem de muito para pouco.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .stage { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .item { font-size: 10.5px; fill: #cfe0d6; }
-    .sub { font-size: 10px; fill: #9fb0a6; }
-    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
-    .boxcur { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
-    .foot { font-size: 12.5px; font-weight: 700; }
-    .flow { stroke: #5cc8d8; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
-    .method { font-size: 11px; font-weight: 700; fill: #5ee08a; }
+    text { font-family: 'SF Mono','Fira Code','Cascadia Code','Courier New',monospace; fill: #e2e8f0; }
+    .title { font-size: 18px; font-weight: 700; }
+    .sub { font-size: 12.5px; fill: #94a3b8; }
+    .stage { font-size: 15px; font-weight: 700; fill: #60a5fa; }
+    .item { font-size: 11.5px; fill: #cbd5e1; }
+    .foot { font-size: 13px; font-weight: 700; }
+    .res { font-size: 14px; font-weight: 700; fill: #facc15; }
+    .guide { font-size: 11px; fill: #64748b; font-weight: 700; }
+    .leg { font-size: 11px; fill: #94a3b8; }
   </style>
   <defs>
-    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-blue" markerWidth="9" markerHeight="7" refX="7.5" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#60a5fa"/></marker>
+    <marker id="arrow-gold" markerWidth="9" markerHeight="7" refX="7.5" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#facc15"/></marker>
+    <marker id="arrow-guide" markerWidth="8" markerHeight="7" refX="6.5" refY="3.5" orient="auto"><polygon points="0 0, 8 3.5, 0 7" fill="#64748b"/></marker>
   </defs>
-  <rect width="920" height="600" fill="#121815"/>
-  <text class="t" x="30" y="32">O funil da enumeração no Windows — de "estou dentro" a "este é o vetor"</text>
+  <rect width="960" height="640" fill="url(#bg-grad)"/>
+
+  <text class="title" x="40" y="40">O funil da enumeracao no Windows — de "estou dentro" a "este e o vetor"</text>
+  <text class="sub" x="40" y="62">Colete tudo no host e va estreitando ate sobrar poucos vetores para explorar.</text>
+
+  <!-- left ruler: muito -> pouco -->
+  <path d="M30,120 L30,498" stroke="#475569" stroke-width="1.5" fill="none" marker-end="url(#arrow-guide)"/>
+  <text class="guide" x="24" y="132" text-anchor="end" transform="rotate(-90 24 132)">muito</text>
+  <text class="guide" x="24" y="490" text-anchor="start" transform="rotate(-90 24 490)">pouco</text>
 
   <!-- foothold -->
-  <rect class="box" x="210" y="50" width="500" height="48" rx="8"/>
-  <text class="foot" x="460" y="71" text-anchor="middle">FOOTHOLD — conta de serviço de baixo privilégio</text>
-  <text class="sub" x="460" y="89" text-anchor="middle">ex.: iis apppool\site, NETWORK SERVICE · executa comando, mas sem poder</text>
-  <path class="flow" d="M460,98 L460,118"/>
+  <rect x="235" y="80" width="490" height="46" rx="6" fill="#0f172a" stroke="#475569" stroke-width="1.5"/>
+  <text class="foot" x="480" y="101" text-anchor="middle">FOOTHOLD — conta de servico de baixo privilegio</text>
+  <text class="sub" x="480" y="118" text-anchor="middle">voce executa comando, mas sem poder</text>
+  <path d="M480,126 L480,146" stroke="#60a5fa" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
 
-  <!-- stage 1: COLETAR (widest) -->
-  <rect class="box" x="55" y="122" width="810" height="108" rx="8"/>
-  <text class="stage" x="75" y="146">1 · COLETAR tudo</text>
-  <text class="item" x="75" y="168">contexto + patch (whoami, systeminfo, hotfixes) · token (whoami /priv, /groups) · serviços (sc, accesschk)</text>
-  <text class="item" x="75" y="186">permissões arquivo/registro (icacls, reg query) · tarefas agendadas · credenciais (cmdkey, unattend.xml)</text>
-  <text class="sub" x="75" y="208">à mão (binários nativos)  +  ferramentas: WinPEAS · Seatbelt · PowerUp · WES-NG (cruza o patch level)</text>
-  <path class="flow" d="M460,230 L460,250"/>
+  <!-- band 1: COLETAR (widest) -->
+  <polygon points="70,152 890,152 806,246 154,246" fill="#13213a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="stage" x="480" y="180" text-anchor="middle">1 - COLETAR tudo</text>
+  <text class="item" x="480" y="202" text-anchor="middle">contexto e patch · token · servicos · permissoes · tarefas · credenciais</text>
+  <text class="item" x="480" y="222" text-anchor="middle" fill="#94a3b8">a mao (binarios nativos) + WinPEAS · Seatbelt · PowerUp · WES-NG</text>
 
-  <!-- stage 2: LER -->
-  <rect class="box" x="150" y="254" width="620" height="60" rx="8"/>
-  <text class="stage" x="170" y="278">2 · LER e reduzir o ruído</text>
-  <text class="item" x="170" y="298">legenda do WinPEAS: RED/YELLOW primeiro · Defender/AMSI pegam as ferramentas · sc/reg/icacls são silenciosos</text>
-  <path class="flow" d="M460,314 L460,334"/>
+  <!-- band 2: LER -->
+  <polygon points="154,248 806,248 722,326 238,326" fill="#122036" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="stage" x="480" y="278" text-anchor="middle">2 - LER e reduzir o ruido</text>
+  <text class="item" x="480" y="302" text-anchor="middle">ler a legenda (RED/YELLOW primeiro) · Defender e AMSI pegam as ferramentas</text>
 
-  <!-- stage 3: TRIAR (4 classes) -->
-  <rect class="box" x="230" y="338" width="460" height="76" rx="8"/>
-  <text class="stage" x="250" y="362">3 · TRIAR pelas 4 classes (6.1)</text>
-  <text class="item" x="250" y="384">má configuração · software vulnerável</text>
-  <text class="item" x="250" y="402">credenciais · abuso de recurso legítimo</text>
-  <path class="flow" d="M460,414 L460,434"/>
+  <!-- band 3: TRIAR -->
+  <polygon points="238,328 722,328 638,406 322,406" fill="#111d31" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="stage" x="480" y="358" text-anchor="middle">3 - TRIAR pelas 4 classes (6.1)</text>
+  <text class="item" x="480" y="382" text-anchor="middle">ma config · software vulneravel · credenciais · abuso de recurso</text>
 
-  <!-- stage 4: CANDIDATOS (narrowest) -->
-  <rect class="box" x="300" y="438" width="320" height="58" rx="8"/>
-  <text class="stage" x="320" y="462">4 · CANDIDATOS priorizados</text>
-  <text class="sub" x="320" y="483">confiabilidade · ruído · estabilidade</text>
-  <path class="flow" d="M460,496 L460,522"/>
+  <!-- band 4: CANDIDATOS (narrowest) -->
+  <polygon points="322,408 638,408 592,486 368,486" fill="#101a2b" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="stage" x="480" y="438" text-anchor="middle">4 - CANDIDATOS priorizados</text>
+  <text class="item" x="480" y="462" text-anchor="middle">por confiabilidade · ruido · estabilidade</text>
 
   <!-- exit to 6.5 -->
-  <rect class="boxcur" x="300" y="526" width="320" height="48" rx="8"/>
-  <text class="method" x="460" y="555" text-anchor="middle">→ módulo 6.5: explorar o vetor escolhido</text>
+  <path d="M480,486 L480,514" stroke="#facc15" stroke-width="2.5" fill="none" marker-end="url(#arrow-gold)"/>
+  <rect x="290" y="518" width="380" height="52" rx="6" fill="#2a2206" stroke="#facc15" stroke-width="2"/>
+  <text class="res" x="480" y="549" text-anchor="middle">modulo 6.5: explorar o vetor escolhido</text>
+
+  <!-- legend -->
+  <rect x="700" y="520" width="14" height="14" rx="3" fill="#13213a" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="leg" x="722" y="531">etapas da enumeracao</text>
+  <rect x="700" y="544" width="14" height="14" rx="3" fill="#2a2206" stroke="#facc15" stroke-width="1.5"/>
+  <text class="leg" x="722" y="555">resultado: o vetor</text>
 </svg>
