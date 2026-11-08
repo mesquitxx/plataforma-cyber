@@ -1,83 +1,130 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-labelledby="t d">
-  <title id="t">A arquitetura do Metasploit Framework</title>
-  <desc id="d">No centro está o console (msfconsole), o programa com que o pentester conversa. À esquerda, uma pilha com os seis tipos de módulo que o console carrega da sua biblioteca local: exploit (abre a porta explorando uma falha), payload (o que roda depois de entrar), auxiliary (scanners e tarefas sem exploração, como o check), post (pós-exploração, roda dentro de uma sessão), encoder e nop (dão forma ao payload). Do console sai uma seta para a direita passando pelo datastore, um conjunto de variáveis como RHOSTS, RPORT, LHOST e PAYLOAD que o usuário define com o comando set. Configurado, o console combina um exploit com um payload e dispara contra o alvo; quando dá certo, abre uma sessão (session) — um canal de controle sobre o alvo, por exemplo um Meterpreter. Uma nota embaixo lembra que, nesta attack box, o Metasploit roda sem banco de dados (dbless): o search usa um cache local de módulos.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" role="img" aria-labelledby="t d">
+  <title id="t">A arquitetura do Metasploit</title>
+  <desc id="d">Ideia-chave: o console (msfconsole) junta duas peças separadas — um módulo exploit (explora a falha) e um payload (o que roda depois de entrar) — usando as variáveis do datastore, e dispara contra o alvo; se funciona, abre uma sessão de controle. À esquerda, a biblioteca de módulos com os seis tipos; exploit e payload aparecem destacados em laranja porque são as duas peças que o console combina. No centro, o msfconsole e, abaixo, o datastore com as variáveis definidas pelo comando set (RHOSTS, RPORT, LHOST, PAYLOAD). À direita, a caixa laranja "exploit + payload" montados e disparados contra o alvo (Apache 2.4.49 do lab), que abre uma session verde. Uma nota lembra que o Metasploit roda aqui sem banco (dbless) e o search usa o cache local de módulos.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .h { font-size: 13.5px; font-weight: 700; }
-    .step { font-size: 12.5px; font-weight: 700; }
-    .sub { font-size: 10.5px; fill: #9fb0a6; }
-    .mono { font-size: 11px; fill: #5cc8d8; }
-    .cur { fill: #5cc8d8; }
-    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
-    .boxcur { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
-    .boxg { fill: #16201b; stroke: #5ee08a; stroke-width: 2.5; }
-    .flow { stroke: #4a5a52; stroke-width: 2; fill: none; marker-end: url(#a); }
-    .flowcur { stroke: #5cc8d8; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
-    .bl { font-size: 11px; fill: #5ee08a; }
+    text { font-family: 'SF Mono','Fira Code','Cascadia Code','DejaVu Sans Mono','Courier New',monospace; fill: #e2e8f0; }
+    .title { font-size: 19px; font-weight: 700; }
+    .key   { font-size: 12.5px; fill: #fdba74; }
+    .hdr   { font-size: 13.5px; font-weight: 700; }
+    .lbl   { font-size: 13px; font-weight: 700; }
+    .sub   { font-size: 10.5px; fill: #94a3b8; }
+    .mono  { font-size: 11px; fill: #7dd3fc; }
+    .tag   { font-size: 10.5px; fill: #cbd5e1; }
+    .note  { font-size: 11px; fill: #cbd5e1; }
+    .panel { fill: #0f172a; stroke: #334155; stroke-width: 1.2; }
+    .mod   { fill: #111827; stroke: #334155; stroke-width: 1; }
+    .modhot{ fill: #2a1708; stroke: #f97316; stroke-width: 1.6; }
+    .blue  { fill: #0b1f33; stroke: #38bdf8; stroke-width: 1.8; }
+    .orange{ fill: #2a1708; stroke: #f97316; stroke-width: 2.2; }
+    .target{ fill: #0f172a; stroke: #64748b; stroke-width: 1.6; }
+    .green { fill: #052e1b; stroke: #34d399; stroke-width: 2.2; }
+    .keybox{ fill: #1c1206; stroke: #b45309; stroke-width: 1.2; }
+    .a-mut { stroke: #64748b; stroke-width: 1.8; fill: none; marker-end: url(#m-mut); }
+    .a-blue{ stroke: #38bdf8; stroke-width: 2; fill: none; marker-end: url(#m-blue); }
+    .a-org { stroke: #f97316; stroke-width: 2; fill: none; marker-end: url(#m-org); }
+    .a-fire{ stroke: #f97316; stroke-width: 3.6; fill: none; marker-end: url(#m-org); }
+    .a-grn { stroke: #34d399; stroke-width: 2; fill: none; marker-end: url(#m-grn); }
   </style>
   <defs>
-    <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#4a5a52"/></marker>
-    <marker id="ac" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="m-mut" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#64748b"/></marker>
+    <marker id="m-blue" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#38bdf8"/></marker>
+    <marker id="m-org" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f97316"/></marker>
+    <marker id="m-grn" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#34d399"/></marker>
+    <filter id="g-blue" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="g-org" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="g-grn" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-  <rect width="900" height="470" fill="#121815"/>
-  <text class="t" x="30" y="34">A arquitetura do Metasploit Framework</text>
 
-  <!-- module library (left) -->
-  <rect class="box" x="24" y="70" width="210" height="330" rx="8"/>
-  <text class="h" x="129" y="96" text-anchor="middle">Biblioteca de módulos</text>
-  <rect class="box" x="40" y="112" width="178" height="40" rx="6"/>
-  <text class="step" x="52" y="130">exploit</text>
-  <text class="sub" x="52" y="146">explora a falha, abre a porta</text>
-  <rect class="box" x="40" y="160" width="178" height="40" rx="6"/>
-  <text class="step" x="52" y="178">payload</text>
-  <text class="sub" x="52" y="194">o que roda depois de entrar</text>
-  <rect class="box" x="40" y="208" width="178" height="40" rx="6"/>
-  <text class="step" x="52" y="226">auxiliary</text>
-  <text class="sub" x="52" y="242">scanners, check (sem exploit)</text>
-  <rect class="box" x="40" y="256" width="178" height="40" rx="6"/>
-  <text class="step" x="52" y="274">post</text>
-  <text class="sub" x="52" y="290">pós-exploração, na sessão</text>
-  <rect class="box" x="40" y="304" width="178" height="40" rx="6"/>
-  <text class="step" x="52" y="322">encoder</text>
-  <text class="sub" x="52" y="338">dá nova forma ao payload</text>
-  <rect class="box" x="40" y="352" width="178" height="40" rx="6"/>
-  <text class="step" x="52" y="370">nop</text>
-  <text class="sub" x="52" y="386">preenchimento (no-op)</text>
+  <rect width="960" height="600" fill="url(#bg)"/>
+  <text class="title" x="30" y="40">A arquitetura do Metasploit</text>
 
-  <!-- console (center) -->
-  <rect class="boxcur" x="300" y="176" width="180" height="118" rx="8"/>
-  <text class="step cur" x="390" y="222" text-anchor="middle">msfconsole</text>
-  <text class="sub" x="390" y="242" text-anchor="middle">o console com que</text>
-  <text class="sub" x="390" y="257" text-anchor="middle">você conversa</text>
-  <text class="mono" x="390" y="278" text-anchor="middle">search · use · run</text>
+  <!-- key idea banner -->
+  <rect class="keybox" x="30" y="54" width="900" height="36" rx="6"/>
+  <rect x="30" y="54" width="5" height="36" fill="#f97316"/>
+  <text class="key" x="46" y="77">Ideia-chave: o console junta um <tspan fill="#fdba74" font-weight="700">exploit</tspan> a um <tspan fill="#fdba74" font-weight="700">payload</tspan> e dispara no alvo — se funciona, abre uma sessão.</text>
+
+  <!-- library -->
+  <rect class="panel" x="30" y="112" width="236" height="330" rx="8"/>
+  <text class="hdr" x="44" y="136">Biblioteca de módulos</text>
+  <text class="sub" x="44" y="152">o que o console carrega</text>
+  <rect class="modhot" x="44" y="162" width="208" height="40" rx="6"/>
+  <text class="lbl" x="56" y="180" fill="#fdba74">exploit</text>
+  <text class="sub" x="56" y="195">explora a falha, abre a porta</text>
+  <rect class="modhot" x="44" y="208" width="208" height="40" rx="6"/>
+  <text class="lbl" x="56" y="226" fill="#fdba74">payload</text>
+  <text class="sub" x="56" y="241">o que roda depois de entrar</text>
+  <rect class="mod" x="44" y="254" width="208" height="38" rx="6"/>
+  <text class="lbl" x="56" y="272">auxiliary</text>
+  <text class="sub" x="56" y="286">scanners e o check</text>
+  <rect class="mod" x="44" y="298" width="208" height="38" rx="6"/>
+  <text class="lbl" x="56" y="316">post</text>
+  <text class="sub" x="56" y="330">pós-exploração, na sessão</text>
+  <rect class="mod" x="44" y="342" width="208" height="38" rx="6"/>
+  <text class="lbl" x="56" y="360">encoder</text>
+  <text class="sub" x="56" y="374">nova forma ao payload</text>
+  <rect class="mod" x="44" y="386" width="208" height="38" rx="6"/>
+  <text class="lbl" x="56" y="404">nop</text>
+  <text class="sub" x="56" y="418">preenchimento (no-op)</text>
+
+  <!-- console -->
+  <rect class="blue" x="330" y="190" width="172" height="92" rx="8" filter="url(#g-blue)"/>
+  <text class="lbl" x="416" y="222" text-anchor="middle" fill="#7dd3fc">msfconsole</text>
+  <text class="sub" x="416" y="240" text-anchor="middle">o console com que você fala</text>
+  <text class="mono" x="416" y="263" text-anchor="middle">search · use · run</text>
 
   <!-- datastore -->
-  <rect class="box" x="540" y="86" width="196" height="110" rx="8"/>
-  <text class="h" x="638" y="112" text-anchor="middle">datastore</text>
-  <text class="sub" x="638" y="132" text-anchor="middle">as variáveis que você</text>
-  <text class="sub" x="638" y="147" text-anchor="middle">define com set</text>
-  <text class="mono" x="638" y="170" text-anchor="middle">RHOSTS · RPORT</text>
-  <text class="mono" x="638" y="186" text-anchor="middle">LHOST · PAYLOAD</text>
+  <rect class="blue" x="330" y="332" width="172" height="100" rx="8"/>
+  <text class="hdr" x="416" y="356" text-anchor="middle" fill="#7dd3fc">datastore</text>
+  <text class="sub" x="416" y="374" text-anchor="middle">o que você define com set</text>
+  <text class="mono" x="416" y="397" text-anchor="middle">RHOSTS · RPORT</text>
+  <text class="mono" x="416" y="414" text-anchor="middle">LHOST · PAYLOAD</text>
 
-  <!-- exploit+payload fired -->
-  <rect class="box" x="540" y="214" width="196" height="64" rx="8"/>
-  <text class="step" x="638" y="240" text-anchor="middle">exploit + payload</text>
-  <text class="sub" x="638" y="260" text-anchor="middle">disparados contra o alvo</text>
+  <!-- combined (highlight) -->
+  <rect class="orange" x="560" y="188" width="184" height="104" rx="8" filter="url(#g-org)"/>
+  <text class="lbl" x="652" y="220" text-anchor="middle"><tspan fill="#fdba74">exploit</tspan> <tspan fill="#e2e8f0">+</tspan> <tspan fill="#fdba74">payload</tspan></text>
+  <text class="sub" x="652" y="240" text-anchor="middle">a falha e o que roda,</text>
+  <text class="sub" x="652" y="255" text-anchor="middle">montados juntos</text>
+  <text class="mono" x="652" y="278" text-anchor="middle" fill="#fdba74">disparados no alvo</text>
+
+  <!-- target -->
+  <rect class="target" x="788" y="190" width="150" height="90" rx="8"/>
+  <text class="lbl" x="863" y="222" text-anchor="middle">alvo</text>
+  <text class="sub" x="863" y="242" text-anchor="middle">Apache 2.4.49</text>
+  <text class="sub" x="863" y="258" text-anchor="middle">(lab vulhub)</text>
 
   <!-- session -->
-  <rect class="boxg" x="786" y="202" width="96" height="90" rx="8"/>
-  <text class="step" x="834" y="238" text-anchor="middle" fill="#5ee08a">session</text>
-  <text class="sub" x="834" y="258" text-anchor="middle">canal de</text>
-  <text class="sub" x="834" y="272" text-anchor="middle">controle</text>
+  <rect class="green" x="788" y="350" width="150" height="90" rx="8" filter="url(#g-grn)"/>
+  <text class="lbl" x="863" y="386" text-anchor="middle" fill="#6ee7b7">session</text>
+  <text class="sub" x="863" y="406" text-anchor="middle">canal de controle</text>
+  <text class="sub" x="863" y="422" text-anchor="middle">sobre o alvo</text>
 
-  <!-- flows -->
-  <path class="flow" d="M234,235 L298,235"/>
-  <text class="sub" x="266" y="226" text-anchor="middle">carrega</text>
-  <path class="flowcur" d="M480,210 C512,190 512,160 538,142"/>
-  <path class="flowcur" d="M480,246 L538,246"/>
-  <path class="flowcur" d="M736,246 L784,246"/>
+  <!-- arrows -->
+  <path class="a-mut" d="M268,236 L326,236"/>
+  <text class="tag" x="297" y="228" text-anchor="middle">carrega</text>
+  <path class="a-blue" d="M416,330 L416,286"/>
+  <text class="tag" x="470" y="312" text-anchor="middle">set</text>
+  <path class="a-org" d="M502,236 L556,238"/>
+  <text class="tag" x="529" y="228" text-anchor="middle" fill="#fdba74">monta</text>
+  <path class="a-fire" d="M744,238 L784,236"/>
+  <text class="tag" x="766" y="226" text-anchor="middle" fill="#fdba74" font-weight="700">dispara</text>
+  <path class="a-grn" d="M863,282 L863,346"/>
+  <text class="tag" x="910" y="318" text-anchor="middle" fill="#6ee7b7">abre</text>
 
-  <!-- dbless note -->
-  <text class="bl" x="30" y="432">Nesta attack box: sem PostgreSQL (dbless). O `search` usa o cache local de módulos; a sessão não é gravada entre usos.</text>
+  <!-- legend -->
+  <text class="sub" x="30" y="498" font-weight="700" fill="#cbd5e1">Cores:</text>
+  <line x1="88" y1="494" x2="118" y2="494" class="a-blue"/>
+  <text class="sub" x="124" y="498">você controla no Kali (console, datastore)</text>
+  <line x1="420" y1="494" x2="450" y2="494" class="a-org"/>
+  <text class="sub" x="456" y="498">o ataque que sai (exploit + payload)</text>
+  <line x1="712" y1="494" x2="742" y2="494" class="a-grn"/>
+  <text class="sub" x="748" y="498">o que você ganha (a sessão)</text>
+
+  <!-- note -->
+  <rect x="30" y="528" width="900" height="44" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text class="note" x="46" y="548">Nesta attack box, o Metasploit roda sem banco de dados (dbless): o <tspan fill="#7dd3fc">search</tspan> usa o cache local de módulos;</text>
+  <text class="note" x="46" y="564">a sessão não fica gravada entre usos. A ferramenta não dá privilégio — você entra como a conta do serviço.</text>
 </svg>
