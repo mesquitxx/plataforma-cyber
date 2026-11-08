@@ -1,71 +1,128 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="t d">
-  <title id="t">Os quatro vetores de escalação local no Linux convergindo para uid 0</title>
-  <desc id="d">À esquerda, uma caixa representa você: a conta de baixo privilégio app, uid 1000, sem grupos interessantes. Dela partem quatro trilhas horizontais, cada uma um vetor de escalação. Trilha 1, SUID: um binário com o bit setuid de root fora do padrão (por exemplo uma cópia do find); o que você controla é a execução dele, o poder vem do euid 0; a ação é find com -exec barra bin barra sh -p. Trilha 2, sudo: uma regra NOPASSWD que deixa você rodar um programa como root; você controla o argumento, o poder é o root do sudo; a ação é sudo env barra bin barra sh. Trilha 3, cron: um script que o root executa de tempos em tempos e que é gravável por você; você controla o conteúdo do script, o poder é o root que o cron usa; a ação é reescrever o script e esperar. Trilha 4, capabilities: um binário comum, como uma cópia do python, que carrega a capability cap_setuid; você controla o que ele roda, o poder é a capability; a ação é chamar setuid 0. As quatro trilhas convergem para uma caixa destacada em ciano à direita: ROOT, uid 0. Abaixo, uma faixa lembra a regra do módulo 6.1: o vetor mora no cruzamento entre o que você controla e o que tem poder.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" role="img" aria-labelledby="t d">
+  <title id="t">Cada vetor de escalação é o encontro entre o que você controla e o que tem poder de root, levando a uid 0</title>
+  <desc id="d">A ideia central, no título: um vetor nasce quando algo que VOCÊ controla (em azul) cruza com algo que tem PODER de root (em laranja). À esquerda, a conta sem poder (app, uid 1000). No centro, quatro faixas, uma por vetor. SUID: você controla rodar o binário; o poder vem de o dono do arquivo ser root. sudo: você controla o argumento; o poder é a regra que roda como root. cron: você controla o script gravável; o poder é o cron que executa como root. capability: você controla o código que o binário roda; o poder é a capability cap_setuid. As quatro faixas apontam, em verde, para a mesma caixa destacada à direita: ROOT, uid 0, controle total. O verde marca o resultado do ataque.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .vec { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .ctl { font-size: 10px; fill: #9fb0a6; }
-    .act { font-size: 11px; font-weight: 700; fill: #5ee08a; }
-    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
-    .you { fill: #16201b; stroke: #9fb0a6; stroke-width: 2; }
-    .root { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
-    .lbl { font-size: 12.5px; font-weight: 700; }
-    .flow { stroke: #5cc8d8; stroke-width: 2; fill: none; marker-end: url(#ac); }
-    .rule { font-size: 11.5px; fill: #cfe0d6; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 17px; font-weight: 700; }
+    .sub { font-size: 12.5px; fill: #94a3b8; }
+    .vname { font-size: 15px; font-weight: 700; fill: #e2e8f0; }
+    .vtag { font-size: 11px; fill: #94a3b8; }
+    .vnum { font-size: 13px; font-weight: 700; fill: #0f172a; }
+    .chip { font-size: 12px; }
+    .chiplead { font-size: 12px; font-weight: 700; }
+    .you { font-size: 15px; font-weight: 700; fill: #e2e8f0; }
+    .ymeta { font-size: 11.5px; fill: #94a3b8; }
+    .root { font-size: 18px; font-weight: 700; fill: #6ee7b7; }
+    .rmeta { font-size: 12px; fill: #a7f3d0; }
+    .leg { font-size: 12.5px; fill: #cbd5e1; }
+    .foot { font-size: 11px; fill: #64748b; }
+    .lane { fill: #0f172a; stroke: #334155; stroke-width: 1.2; }
+    .blue { fill: #10213f; stroke: #3b82f6; stroke-width: 1.2; }
+    .orange { fill: #2a1708; stroke: #f97316; stroke-width: 1.2; }
   </style>
   <defs>
-    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-green" markerWidth="9" markerHeight="7" refX="7.5" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-slate" markerWidth="8" markerHeight="6" refX="6.5" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <filter id="glow-green" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <rect width="960" height="560" fill="#121815"/>
-  <text class="t" x="30" y="34">Quatro caminhos, um destino: de uid 1000 a uid 0</text>
+  <rect width="960" height="600" fill="url(#bg-grad)"/>
 
-  <!-- you -->
-  <rect class="you" x="30" y="190" width="150" height="110" rx="8"/>
-  <text class="lbl" x="105" y="235" text-anchor="middle">VOCÊ</text>
-  <text class="ctl" x="105" y="255" text-anchor="middle">app · uid 1000</text>
-  <text class="ctl" x="105" y="271" text-anchor="middle">sem grupos</text>
-  <text class="ctl" x="105" y="287" text-anchor="middle">interessantes</text>
+  <!-- title: the main idea, color-coded to the legend -->
+  <text class="title" x="34" y="40">Um vetor = algo que <tspan fill="#60a5fa">VOCÊ controla</tspan>  <tspan fill="#94a3b8">✕</tspan>  algo com <tspan fill="#fb923c">PODER de root</tspan>  <tspan fill="#94a3b8">→</tspan>  <tspan fill="#34d399">uid 0</tspan></text>
+  <text class="sub" x="34" y="64">Os quatro caminhos saem da mesma conta sem poder e chegam ao mesmo root; muda só onde está a ponte larga demais.</text>
 
-  <!-- root -->
-  <rect class="root" x="782" y="200" width="148" height="90" rx="8"/>
-  <text class="lbl" x="856" y="240" text-anchor="middle" fill="#5cc8d8">ROOT</text>
-  <text class="ctl" x="856" y="260" text-anchor="middle">uid=0</text>
-  <text class="ctl" x="856" y="276" text-anchor="middle">controle total</text>
+  <!-- VOCÊ: the low-privilege start -->
+  <rect class="lane" x="34" y="258" width="120" height="110" rx="8" stroke="#64748b" stroke-width="2"/>
+  <text class="you" x="94" y="300" text-anchor="middle">VOCÊ</text>
+  <text class="ymeta" x="94" y="322" text-anchor="middle">app</text>
+  <text class="ymeta" x="94" y="339" text-anchor="middle">uid 1000</text>
+  <text class="ymeta" x="94" y="356" text-anchor="middle">sem poder</text>
 
-  <!-- lane 1: SUID -->
-  <rect class="box" x="300" y="60" width="330" height="70" rx="8"/>
-  <text class="vec" x="318" y="84">1 · SUID</text>
-  <text class="ctl" x="318" y="102">controla: executar o binário · poder: euid 0</text>
-  <text class="act" x="318" y="121">find . -exec /bin/sh -p \;</text>
-  <path class="flow" d="M180,215 C240,120 250,95 298,95"/>
-  <path class="flow" d="M630,95 C720,95 730,180 780,222"/>
+  <!-- connectors: from VOCÊ to each lane (neutral: these are the four options) -->
+  <path d="M154,313 C178,148 186,148 202,148" fill="none" stroke="#64748b" stroke-width="1.4" marker-end="url(#arrow-slate)"/>
+  <path d="M154,313 C178,258 186,258 202,258" fill="none" stroke="#64748b" stroke-width="1.4" marker-end="url(#arrow-slate)"/>
+  <path d="M154,313 C178,368 186,368 202,368" fill="none" stroke="#64748b" stroke-width="1.4" marker-end="url(#arrow-slate)"/>
+  <path d="M154,313 C178,478 186,478 202,478" fill="none" stroke="#64748b" stroke-width="1.4" marker-end="url(#arrow-slate)"/>
 
-  <!-- lane 2: sudo -->
-  <rect class="box" x="300" y="145" width="330" height="70" rx="8"/>
-  <text class="vec" x="318" y="169">2 · sudo</text>
-  <text class="ctl" x="318" y="187">controla: o argumento · poder: root do sudo</text>
-  <text class="act" x="318" y="206">sudo env /bin/sh</text>
-  <path class="flow" d="M180,230 C240,190 250,180 298,180"/>
-  <path class="flow" d="M630,180 C710,180 720,215 780,232"/>
+  <!-- LANE 1: SUID (center 148) -->
+  <rect class="lane" x="204" y="102" width="556" height="92" rx="9"/>
+  <circle cx="236" cy="148" r="15" fill="#e2e8f0"/>
+  <text class="vnum" x="236" y="153" text-anchor="middle">1</text>
+  <text class="vname" x="262" y="144">SUID</text>
+  <text class="vtag" x="262" y="164">setuid root</text>
+  <line x1="358" y1="116" x2="358" y2="180" stroke="#334155" stroke-width="1"/>
+  <rect class="blue" x="368" y="114" width="380" height="30" rx="6"/>
+  <text class="chip" x="380" y="133"><tspan class="chiplead" fill="#60a5fa">controla:</tspan> rodar o binário</text>
+  <rect class="orange" x="368" y="152" width="380" height="30" rx="6"/>
+  <text class="chip" x="380" y="171"><tspan class="chiplead" fill="#fb923c">poder:</tspan> o dono do arquivo é root (euid 0)</text>
 
-  <!-- lane 3: cron -->
-  <rect class="box" x="300" y="300" width="330" height="70" rx="8"/>
-  <text class="vec" x="318" y="324">3 · cron</text>
-  <text class="ctl" x="318" y="342">controla: o conteúdo do script · poder: root do cron</text>
-  <text class="act" x="318" y="361">reescrever o script e esperar</text>
-  <path class="flow" d="M180,265 C240,335 250,335 298,335"/>
-  <path class="flow" d="M630,335 C710,335 720,275 780,258"/>
+  <!-- LANE 2: sudo (center 258) -->
+  <rect class="lane" x="204" y="212" width="556" height="92" rx="9"/>
+  <circle cx="236" cy="258" r="15" fill="#e2e8f0"/>
+  <text class="vnum" x="236" y="263" text-anchor="middle">2</text>
+  <text class="vname" x="262" y="254">sudo</text>
+  <text class="vtag" x="262" y="274">NOPASSWD</text>
+  <line x1="358" y1="226" x2="358" y2="290" stroke="#334155" stroke-width="1"/>
+  <rect class="blue" x="368" y="224" width="380" height="30" rx="6"/>
+  <text class="chip" x="380" y="243"><tspan class="chiplead" fill="#60a5fa">controla:</tspan> o argumento que você passa</text>
+  <rect class="orange" x="368" y="262" width="380" height="30" rx="6"/>
+  <text class="chip" x="380" y="281"><tspan class="chiplead" fill="#fb923c">poder:</tspan> a regra roda como root</text>
 
-  <!-- lane 4: capabilities -->
-  <rect class="box" x="300" y="385" width="330" height="70" rx="8"/>
-  <text class="vec" x="318" y="409">4 · capabilities</text>
-  <text class="ctl" x="318" y="427">controla: o que o binário roda · poder: cap_setuid</text>
-  <text class="act" x="318" y="446">python -c 'os.setuid(0)'</text>
-  <path class="flow" d="M180,280 C240,420 250,420 298,420"/>
-  <path class="flow" d="M630,420 C715,420 730,285 780,268"/>
+  <!-- LANE 3: cron (center 368) -->
+  <rect class="lane" x="204" y="322" width="556" height="92" rx="9"/>
+  <circle cx="236" cy="368" r="15" fill="#e2e8f0"/>
+  <text class="vnum" x="236" y="373" text-anchor="middle">3</text>
+  <text class="vname" x="262" y="364">cron</text>
+  <text class="vtag" x="262" y="384">agendado</text>
+  <line x1="358" y1="336" x2="358" y2="400" stroke="#334155" stroke-width="1"/>
+  <rect class="blue" x="368" y="334" width="380" height="30" rx="6"/>
+  <text class="chip" x="380" y="353"><tspan class="chiplead" fill="#60a5fa">controla:</tspan> o script (gravável por você)</text>
+  <rect class="orange" x="368" y="372" width="380" height="30" rx="6"/>
+  <text class="chip" x="380" y="391"><tspan class="chiplead" fill="#fb923c">poder:</tspan> o cron executa como root</text>
 
-  <!-- rule -->
-  <rect class="box" x="30" y="500" width="900" height="40" rx="8"/>
-  <text class="rule" x="480" y="525" text-anchor="middle">regra do 6.1: o vetor mora no cruzamento entre o que VOCÊ controla e o que tem PODER</text>
+  <!-- LANE 4: capability (center 478) -->
+  <rect class="lane" x="204" y="432" width="556" height="92" rx="9"/>
+  <circle cx="236" cy="478" r="15" fill="#e2e8f0"/>
+  <text class="vnum" x="236" y="483" text-anchor="middle">4</text>
+  <text class="vname" x="262" y="474">capability</text>
+  <text class="vtag" x="262" y="494">root fatiado</text>
+  <line x1="358" y1="446" x2="358" y2="510" stroke="#334155" stroke-width="1"/>
+  <rect class="blue" x="368" y="444" width="380" height="30" rx="6"/>
+  <text class="chip" x="380" y="463"><tspan class="chiplead" fill="#60a5fa">controla:</tspan> o código que o binário roda</text>
+  <rect class="orange" x="368" y="482" width="380" height="30" rx="6"/>
+  <text class="chip" x="380" y="501"><tspan class="chiplead" fill="#fb923c">poder:</tspan> cap_setuid (trocar o uid)</text>
+
+  <!-- green arrows: each crossing produces the same result -->
+  <path d="M760,148 C784,148 790,290 804,312" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <path d="M760,258 C784,258 790,296 804,308" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <path d="M760,368 C784,368 790,330 804,318" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <path d="M760,478 C784,478 790,336 804,322" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+  <!-- ROOT: the consequence -->
+  <rect x="808" y="258" width="124" height="110" rx="10" fill="#052e16" stroke="#10b981" stroke-width="2.5" filter="url(#glow-green)"/>
+  <text class="root" x="870" y="302" text-anchor="middle">ROOT</text>
+  <text class="rmeta" x="870" y="326" text-anchor="middle">uid = 0</text>
+  <text class="rmeta" x="870" y="345" text-anchor="middle">controle</text>
+  <text class="rmeta" x="870" y="361" text-anchor="middle">total</text>
+
+  <!-- legend: one meaning per color -->
+  <rect x="364" y="546" width="16" height="16" rx="3" class="blue"/>
+  <text class="leg" x="388" y="559">o que VOCÊ controla</text>
+  <rect x="548" y="546" width="16" height="16" rx="3" class="orange"/>
+  <text class="leg" x="572" y="559">o que tem PODER de root</text>
+  <circle cx="756" cy="554" r="8" fill="#052e16" stroke="#10b981" stroke-width="2"/>
+  <text class="leg" x="772" y="559">resultado: você vira root</text>
+
+  <text class="foot" x="34" y="586">Trilha 6 · escalação de privilégio local — o vetor mora no cruzamento entre controle e poder.</text>
 </svg>
