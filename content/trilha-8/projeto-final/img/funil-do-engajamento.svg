@@ -1,70 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" role="img" aria-labelledby="t d">
-  <title id="t">O funil do engajamento: do contrato ao relatório</title>
-  <desc id="d">Um fluxo da esquerda para a direita em três estágios. Estágio 1, pré-engajamento: definir escopo, obter autorização por escrito, acordar as regras de engajamento e a janela de teste, e rodar o preflight que confere alvos contra o escopo; nada é tocado antes disso. Estágio 2, execução: um laço repetido — reconhecimento, foothold, escalação de privilégio e pós-exploração enxuta — envolto por uma faixa de OPSEC e notas ao vivo, porque cada comando e evidência é registrado enquanto o teste acontece. Estágio 3, entrega: o relatório, com resumo executivo, achados com risco e técnica ATT&amp;CK, narrativa do ataque e recomendações de correção. Uma seta grossa mostra que todo o trabalho desemboca no relatório. A faixa de rodapé resume a tese: a invasão é o meio; o entregável é o relatório; o contorno — escopo, autorização, OPSEC e limpeza — é o que separa o profissional do criminoso.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" width="960" height="500" role="img" aria-labelledby="t d">
+  <title id="t">O funil do engajamento: autorizar antes, atacar em laço anotando tudo, e tudo desemboca no relatório</title>
+  <desc id="d">Três estágios da esquerda para a direita. Estágio 1, pré-engajamento, em azul: escopo definido, autorização por escrito, regras de engajamento, janela de teste e preflight que confere se o alvo está no escopo; nada é tocado antes disso. Uma seta rotulada autorizado leva ao estágio 2. Estágio 2, execução, em laranja: um laço de quatro passos, recon, foothold, escalação e pós-exploração, que se repete, envolvido por uma faixa de OPSEC e notas ao vivo, em que cada comando e evidência é registrado na hora. Uma seta verde grossa, rotulada cada volta do laço vira um achado, leva ao estágio 3. Estágio 3, a entrega, em verde e destacado: o relatório, com resumo executivo, achados com risco e técnica ATT&amp;CK, a narrativa do ataque e recomendações de correção; é o produto que o cliente compra. Uma legenda explica as três cores.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .st { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .li { font-size: 10px; fill: #cfe0d6; }
-    .loop { font-size: 11px; font-weight: 700; fill: #5ee08a; }
-    .box { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2; }
-    .exec { fill: #10201c; stroke: #5ee08a; stroke-width: 2; }
-    .rep { fill: #201a12; stroke: #e0a15e; stroke-width: 2.5; }
-    .band { fill: #0c1410; stroke: #30423a; stroke-width: 1.5; }
-    .flow { stroke: #9fb0a6; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
-    .big { stroke: #e0a15e; stroke-width: 5; fill: none; marker-end: url(#ao); }
-    .cyc { stroke: #5ee08a; stroke-width: 2; fill: none; marker-end: url(#ag); }
-    .rule { font-size: 11.5px; fill: #cfe0d6; }
-    .lane { font-size: 9px; fill: #9fb0a6; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 17px; font-weight: 700; }
+    .key { font-size: 15px; font-weight: 700; fill: #e2e8f0; }
+    .keyok { font-size: 15px; font-weight: 700; fill: #10b981; }
+    .hb { font-size: 14px; font-weight: 700; fill: #3b82f6; }
+    .ho { font-size: 14px; font-weight: 700; fill: #f97316; }
+    .hg { font-size: 14px; font-weight: 700; fill: #10b981; }
+    .li { font-size: 12px; fill: #cbd5e1; }
+    .loop { font-size: 12px; font-weight: 700; fill: #e2e8f0; }
+    .lbl { font-size: 11px; fill: #94a3b8; }
+    .elb { font-size: 11px; font-weight: 700; fill: #3b82f6; }
+    .elg { font-size: 11px; font-weight: 700; fill: #10b981; }
+    .band { font-size: 11px; fill: #fdba74; }
+    .leg { font-size: 12px; fill: #94a3b8; }
   </style>
   <defs>
-    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
-    <marker id="ao" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e0a15e"/></marker>
-    <marker id="ag" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5ee08a"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/></marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f97316"/></marker>
+    <marker id="arrow-green" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto"><polygon points="0 0, 6 2.5, 0 5" fill="#10b981"/></marker>
+    <filter id="glow-green"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-  <rect width="960" height="440" fill="#121815"/>
-  <text class="t" x="30" y="34">O funil do engajamento: o trabalho todo desemboca no relatório</text>
+  <rect width="960" height="500" fill="url(#bg-grad)"/>
+
+  <text id="title" class="title" x="480" y="36" text-anchor="middle">O funil do engajamento: do contrato ao relatório</text>
+
+  <!-- key idea banner -->
+  <rect id="key-banner" x="120" y="54" width="720" height="58" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
+  <text class="key" x="480" y="78" text-anchor="middle">A invasão é só o meio. Tudo desemboca no relatório —</text>
+  <text class="keyok" x="480" y="100" text-anchor="middle">o único produto que o cliente compra</text>
 
   <!-- stage 1: pre-engagement -->
-  <rect class="box" x="30" y="70" width="210" height="236" rx="8"/>
-  <text class="st" x="135" y="96" text-anchor="middle">1 · pré-engajamento</text>
-  <text class="li" x="48" y="130">• escopo definido</text>
-  <text class="li" x="48" y="152">• autorização por escrito</text>
-  <text class="li" x="48" y="174">• regras de engajamento</text>
-  <text class="li" x="48" y="196">• janela de teste</text>
-  <text class="li" x="48" y="218">• preflight: alvo ∈ escopo?</text>
-  <text class="li" x="48" y="256" fill="#9fb0a6">nada é tocado</text>
-  <text class="li" x="48" y="272" fill="#9fb0a6">antes disto.</text>
+  <rect id="stage-1" x="24" y="140" width="210" height="262" rx="6" fill="#1e3a5f" fill-opacity="0.45" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="hb" x="129" y="168" text-anchor="middle">1 · PRÉ-ENGAJAMENTO</text>
+  <text class="lbl" x="129" y="188" text-anchor="middle">antes de qualquer ataque</text>
+  <text class="li" x="38" y="220">• escopo definido</text>
+  <text class="li" x="38" y="244">• autorização por escrito</text>
+  <text class="li" x="38" y="268">• regras de engajamento</text>
+  <text class="li" x="38" y="292">• janela de teste</text>
+  <text class="li" x="38" y="316">• preflight: alvo está</text>
+  <text class="li" x="54" y="332">no escopo?</text>
+  <line x1="38" y1="352" x2="220" y2="352" stroke="#334155" stroke-width="1"/>
+  <text class="lbl" x="129" y="376" text-anchor="middle">nada é atacado</text>
+  <text class="lbl" x="129" y="391" text-anchor="middle">antes disto</text>
 
   <!-- stage 2: execution loop -->
-  <rect class="exec" x="300" y="70" width="330" height="236" rx="8"/>
-  <text class="st" x="465" y="96" text-anchor="middle" fill="#5ee08a">2 · execução (laço)</text>
-  <rect class="box" x="322" y="118" width="130" height="34" rx="6"/><text class="loop" x="387" y="140" text-anchor="middle">recon</text>
-  <rect class="box" x="478" y="118" width="130" height="34" rx="6"/><text class="loop" x="543" y="140" text-anchor="middle">foothold</text>
-  <rect class="box" x="322" y="214" width="130" height="34" rx="6"/><text class="loop" x="387" y="236" text-anchor="middle">pós-explor.</text>
-  <rect class="box" x="478" y="214" width="130" height="34" rx="6"/><text class="loop" x="543" y="236" text-anchor="middle">escalação</text>
-  <path class="cyc" d="M452,135 L478,135"/>
-  <path class="cyc" d="M543,152 L543,214"/>
-  <path class="cyc" d="M478,231 L452,231"/>
-  <path class="cyc" d="M387,214 L387,152"/>
-  <rect class="band" x="322" y="264" width="286" height="30" rx="6"/>
-  <text class="li" x="465" y="283" text-anchor="middle" fill="#5ee08a">OPSEC + notas ao vivo (cada comando e evidência)</text>
+  <g id="stage-2-group" transform="translate(14,0)">
+  <rect id="stage-2" x="300" y="140" width="330" height="262" rx="6" fill="#1c1917" stroke="#f97316" stroke-width="1.5"/>
+  <text class="ho" x="465" y="168" text-anchor="middle">2 · EXECUÇÃO (o laço)</text>
+  <text class="lbl" x="465" y="188" text-anchor="middle">se repete a cada novo alvo</text>
+  <rect id="loop-recon" x="322" y="204" width="128" height="36" rx="6" fill="#0f172a" stroke="#f97316" stroke-width="1"/>
+  <text class="loop" x="386" y="227" text-anchor="middle">recon</text>
+  <rect id="loop-foothold" x="480" y="204" width="128" height="36" rx="6" fill="#0f172a" stroke="#f97316" stroke-width="1"/>
+  <text class="loop" x="544" y="227" text-anchor="middle">foothold</text>
+  <rect id="loop-escalation" x="480" y="290" width="128" height="36" rx="6" fill="#0f172a" stroke="#f97316" stroke-width="1"/>
+  <text class="loop" x="544" y="313" text-anchor="middle">escalação</text>
+  <rect id="loop-postex" x="322" y="290" width="128" height="36" rx="6" fill="#0f172a" stroke="#f97316" stroke-width="1"/>
+  <text class="loop" x="386" y="313" text-anchor="middle">pós-exploração</text>
+  <path id="e-recon-foot" d="M450,222 L476,222" stroke="#f97316" stroke-width="1.5" fill="none" marker-end="url(#arrow-orange)"/>
+  <path id="e-foot-esc" d="M544,240 L544,286" stroke="#f97316" stroke-width="1.5" fill="none" marker-end="url(#arrow-orange)"/>
+  <path id="e-esc-post" d="M480,308 L454,308" stroke="#f97316" stroke-width="1.5" fill="none" marker-end="url(#arrow-orange)"/>
+  <path id="e-post-recon" d="M386,290 L386,244" stroke="#f97316" stroke-width="1.5" fill="none" marker-end="url(#arrow-orange)"/>
+  <rect id="opsec-band" x="322" y="346" width="286" height="40" rx="6" fill="#0f172a" stroke="#f97316" stroke-width="1" stroke-dasharray="4 3"/>
+  <text class="band" x="465" y="362" text-anchor="middle">em volta de tudo: OPSEC + notas ao vivo</text>
+  <text class="band" x="465" y="378" text-anchor="middle">(cada comando e evidência, na hora)</text>
+  </g>
 
-  <!-- stage 3: report -->
-  <rect class="rep" x="690" y="70" width="240" height="236" rx="8"/>
-  <text class="st" x="810" y="96" text-anchor="middle" fill="#e0a15e">3 · entrega: o relatório</text>
-  <text class="li" x="708" y="130">• resumo executivo</text>
-  <text class="li" x="708" y="152">• achados (risco + ATT&amp;CK)</text>
-  <text class="li" x="708" y="174">• narrativa do ataque</text>
-  <text class="li" x="708" y="196">• recomendações / correção</text>
-  <text class="li" x="708" y="218">• anexos e evidências</text>
-  <text class="li" x="708" y="256" fill="#9fb0a6">é o produto que</text>
-  <text class="li" x="708" y="272" fill="#9fb0a6">o cliente compra.</text>
+  <!-- stage 3: report (key moment) -->
+  <rect id="stage-3" x="700" y="140" width="236" height="262" rx="6" fill="#052e16" stroke="#10b981" stroke-width="2.5" filter="url(#glow-green)"/>
+  <text class="hg" x="818" y="168" text-anchor="middle">3 · ENTREGA</text>
+  <text class="hg" x="818" y="188" text-anchor="middle">O RELATÓRIO</text>
+  <text class="li" x="716" y="220">• resumo executivo</text>
+  <text class="li" x="716" y="244">• achados com risco</text>
+  <text class="li" x="732" y="260">e técnica ATT&amp;CK</text>
+  <text class="li" x="716" y="284">• narrativa do ataque</text>
+  <text class="li" x="716" y="308">• recomendações</text>
+  <text class="li" x="732" y="324">de correção</text>
+  <line x1="716" y1="352" x2="920" y2="352" stroke="#10b981" stroke-width="1" stroke-opacity="0.5"/>
+  <text class="elg" x="818" y="376" text-anchor="middle">é o produto que</text>
+  <text class="elg" x="818" y="391" text-anchor="middle">o cliente compra</text>
 
-  <!-- flows -->
-  <path class="flow" d="M240,188 L300,188"/>
-  <path class="big" d="M630,188 L690,188"/>
+  <!-- stage edges -->
+  <path id="e-1-2" d="M234,271 L306,271" stroke="#3b82f6" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <text class="elb" x="272" y="261" text-anchor="middle">autorizado</text>
+  <path id="e-2-3" d="M644,271 L692,271" stroke="#10b981" stroke-width="6" fill="none" marker-end="url(#arrow-green)"/>
+  <text class="elg" x="668" y="426" text-anchor="middle">cada volta do laço vira um achado no relatório</text>
+  <line x1="668" y1="412" x2="668" y2="282" stroke="#10b981" stroke-width="1" stroke-dasharray="3 3" stroke-opacity="0.7"/>
 
-  <text class="rule" x="30" y="390">A invasão é o meio; o entregável é o relatório. O contorno — escopo, autorização, OPSEC e limpeza —</text>
-  <text class="rule" x="30" y="408">é o que separa o profissional do criminoso. Cada volta do laço vira uma linha de achado no relatório.</text>
+  <!-- legend -->
+  <rect x="150" y="458" width="22" height="14" rx="3" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="leg" x="180" y="470">contrato (autoriza)</text>
+  <rect x="380" y="458" width="22" height="14" rx="3" fill="#1c1917" stroke="#f97316" stroke-width="1.5"/>
+  <text class="leg" x="410" y="470">o ataque (o meio)</text>
+  <rect x="600" y="458" width="22" height="14" rx="3" fill="#052e16" stroke="#10b981" stroke-width="2"/>
+  <text class="leg" x="630" y="470">o entregável (relatório)</text>
 </svg>
