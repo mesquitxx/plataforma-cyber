@@ -1,93 +1,100 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 470" role="img" aria-labelledby="t d">
-  <title id="t">Árvore de decisão: travei num CTF sem dicas, e agora?</title>
-  <desc id="d">Uma árvore de decisão que começa na pergunta "travei, e agora?" e desce por verificações, cada uma com uma resposta e uma ação. Primeiro: enumerei TUDO o que esta identidade vê? Se não, a ação é voltar e enumerar por completo, de forma sistemática. Se sim, segue. Segundo: estou insistindo no mesmo vetor há mais do que o meu time-box? Se sim, a ação é abandonar esse vetor, que virou um rabbit hole, e marcar como descartado nas notas. Se não, segue. Terceiro: re-enumerei como a identidade atual, e não como a anterior? Se não, a ação é rodar de novo sudo menos l, id, getcap e grupos com a nova identidade. Se sim, segue. Quarto: o que achei é um achado real ou uma isca? Se parece uma isca, a ação é descartá-la e voltar à enumeração. Se é um achado real, a ação final é levantar uma nova hipótese e testá-la dentro de um novo time-box. Todas as setas de ação acabam reconduzindo ao laço da autonomia.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 660" width="960" height="660" role="img" aria-labelledby="t d">
+  <title id="t">Árvore de desempate: travei num CTF sem dicas, e agora?</title>
+  <desc id="d">Uma coluna de quatro perguntas, respondidas em ordem a partir de "TRAVEI". Pergunta 1: enumerei tudo o que esta conta vê? Se não, enumere por completo, com script e checagem manual. Pergunta 2: estou no mesmo caminho além do time-box? Se sim, é um rabbit hole: abandone, anote como descartado e volte a enumerar. Pergunta 3: re-enumerei como a conta atual? Se não, rode de novo sudo -l, id, getcap e grupos com a nova conta. Pergunta 4: isto é achado real ou isca? Se for isca, descarte e volte a enumerar. Se for achado real, a saída em destaque: levante uma nova hipótese e teste dentro de um novo time-box, de volta ao laço da autonomia.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .q { font-size: 11px; font-weight: 700; fill: #5cc8d8; }
-    .qbox { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2; }
-    .a { font-size: 10px; fill: #cfe0d6; }
-    .abox { fill: #16201b; stroke: #5ee08a; stroke-width: 2; }
-    .start { fill: #201a16; stroke: #e0a15e; stroke-width: 2.5; }
-    .sx { font-size: 13px; font-weight: 700; fill: #e0a15e; }
-    .flow { stroke: #9fb0a6; stroke-width: 2.2; fill: none; marker-end: url(#ac); }
-    .lbl { font-size: 10px; font-weight: 700; }
-    .yes { fill: #e0a15e; }
-    .no { fill: #5ee08a; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 17px; font-weight: 700; }
+    .key { font-size: 14px; font-weight: 700; fill: #10b981; }
+    .keyn { font-size: 14px; font-weight: 700; fill: #f8fafc; }
+    .keysub { font-size: 12px; fill: #cbd5e1; }
+    .start { font-size: 15px; font-weight: 700; fill: #e2e8f0; }
+    .q { font-size: 13px; font-weight: 700; fill: #38bdf8; }
+    .a { font-size: 13px; font-weight: 700; fill: #f97316; }
+    .sub { font-size: 12px; fill: #cbd5e1; }
+    .lno { font-size: 12px; font-weight: 700; fill: #f97316; }
+    .lok { font-size: 12px; font-weight: 700; fill: #10b981; }
+    .leg { font-size: 12px; fill: #94a3b8; }
   </style>
   <defs>
-    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/></marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#10b981"/></marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f97316"/></marker>
+    <filter id="glow-green"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-  <rect width="820" height="470" fill="#121815"/>
-  <text class="t" x="30" y="34">Travei, e agora? — a árvore que te tira do lugar (sem dica externa)</text>
+  <rect width="960" height="660" fill="url(#bg-grad)"/>
+
+  <text id="title" class="title" x="480" y="38" text-anchor="middle">Travei, e agora? — desça as 4 perguntas, em ordem</text>
+  <rect id="key-banner" x="150" y="56" width="660" height="52" rx="6" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
+  <text class="keyn" x="480" y="78" text-anchor="middle">Quase sempre o bloqueio está numa destas perguntas</text>
+  <text class="keysub" x="480" y="97" text-anchor="middle">responda antes de pedir qualquer dica (nenhum ramo é “ler o writeup”)</text>
 
   <!-- start -->
-  <rect class="start" x="40" y="60" width="190" height="52" rx="8"/>
-  <text class="sx" x="135" y="83" text-anchor="middle">TRAVEI</text>
-  <text class="a" x="135" y="101" text-anchor="middle">desça a árvore, em ordem</text>
+  <rect id="start" x="160" y="128" width="220" height="40" rx="20" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
+  <text class="start" x="270" y="153" text-anchor="middle">TRAVEI</text>
+  <path id="e-start-q1" d="M270,168 L270,186" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow-gray)"/>
 
   <!-- Q1 -->
-  <rect class="qbox" x="300" y="56" width="300" height="60" rx="8"/>
-  <text class="q" x="450" y="80" text-anchor="middle">1 · enumerei TUDO que esta</text>
-  <text class="q" x="450" y="96" text-anchor="middle">identidade vê?</text>
-  <!-- Q1 no -> action -->
-  <rect class="abox" x="630" y="54" width="170" height="64" rx="8"/>
-  <text class="a" x="715" y="78" text-anchor="middle">NÃO → enumere por</text>
-  <text class="a" x="715" y="93" text-anchor="middle">completo, sistemático</text>
-  <text class="a" x="715" y="108" text-anchor="middle">(script + manual)</text>
+  <rect id="q1" x="60" y="190" width="420" height="62" rx="6" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+  <text class="q" x="270" y="215" text-anchor="middle">1 · Enumerei TUDO o que esta conta vê?</text>
+  <text class="sub" x="270" y="236" text-anchor="middle">arquivos, serviços, permissões, grupos</text>
+  <path id="e-q1-a1" d="M480,221 L566,221" stroke="#f97316" stroke-width="2" fill="none" marker-end="url(#arrow-orange)"/>
+  <text class="lno" x="523" y="213" text-anchor="middle">não</text>
+  <rect id="a1" x="570" y="190" width="350" height="62" rx="6" fill="#2a1408" stroke="#f97316" stroke-width="1.5"/>
+  <text class="a" x="745" y="215" text-anchor="middle">Enumere por completo</text>
+  <text class="sub" x="745" y="236" text-anchor="middle">com método: script + checagem manual</text>
+  <path id="e-q1-q2" d="M270,252 L270,282" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <text class="lok" x="282" y="272">sim</text>
 
   <!-- Q2 -->
-  <rect class="qbox" x="300" y="156" width="300" height="60" rx="8"/>
-  <text class="q" x="450" y="180" text-anchor="middle">2 · estou no mesmo vetor</text>
-  <text class="q" x="450" y="196" text-anchor="middle">há mais que o time-box?</text>
-  <rect class="abox" x="630" y="154" width="170" height="64" rx="8"/>
-  <text class="a" x="715" y="178" text-anchor="middle">SIM → é rabbit hole:</text>
-  <text class="a" x="715" y="193" text-anchor="middle">abandone e marque</text>
-  <text class="a" x="715" y="208" text-anchor="middle">como descartado</text>
+  <rect id="q2" x="60" y="286" width="420" height="62" rx="6" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+  <text class="q" x="270" y="311" text-anchor="middle">2 · Estou no mesmo caminho além</text>
+  <text class="q" x="270" y="331" text-anchor="middle">do tempo que me dei (time-box)?</text>
+  <path id="e-q2-a2" d="M480,317 L566,317" stroke="#f97316" stroke-width="2" fill="none" marker-end="url(#arrow-orange)"/>
+  <text class="lno" x="523" y="309" text-anchor="middle">sim</text>
+  <rect id="a2" x="570" y="286" width="350" height="62" rx="6" fill="#2a1408" stroke="#f97316" stroke-width="1.5"/>
+  <text class="a" x="745" y="311" text-anchor="middle">É rabbit hole: abandone</text>
+  <text class="sub" x="745" y="332" text-anchor="middle">anote “descartado” e volte a enumerar</text>
+  <path id="e-q2-q3" d="M270,348 L270,378" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <text class="lok" x="282" y="368">não</text>
 
   <!-- Q3 -->
-  <rect class="qbox" x="300" y="256" width="300" height="60" rx="8"/>
-  <text class="q" x="450" y="280" text-anchor="middle">3 · re-enumerei como a</text>
-  <text class="q" x="450" y="296" text-anchor="middle">identidade ATUAL?</text>
-  <rect class="abox" x="630" y="254" width="170" height="64" rx="8"/>
-  <text class="a" x="715" y="278" text-anchor="middle">NÃO → rode de novo</text>
-  <text class="a" x="715" y="293" text-anchor="middle">sudo -l, id, getcap,</text>
-  <text class="a" x="715" y="308" text-anchor="middle">grupos (nova id)</text>
+  <rect id="q3" x="60" y="382" width="420" height="62" rx="6" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+  <text class="q" x="270" y="407" text-anchor="middle">3 · Re-enumerei como a conta ATUAL?</text>
+  <text class="sub" x="270" y="428" text-anchor="middle">(e não só como a conta anterior)</text>
+  <path id="e-q3-a3" d="M480,413 L566,413" stroke="#f97316" stroke-width="2" fill="none" marker-end="url(#arrow-orange)"/>
+  <text class="lno" x="523" y="405" text-anchor="middle">não</text>
+  <rect id="a3" x="570" y="382" width="350" height="62" rx="6" fill="#2a1408" stroke="#f97316" stroke-width="1.5"/>
+  <text class="a" x="745" y="407" text-anchor="middle">Rode tudo de novo como ela</text>
+  <text class="sub" x="745" y="428" text-anchor="middle">sudo -l, id, getcap, grupos</text>
+  <path id="e-q3-q4" d="M270,444 L270,474" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <text class="lok" x="282" y="464">sim</text>
 
   <!-- Q4 -->
-  <rect class="qbox" x="300" y="356" width="300" height="60" rx="8"/>
-  <text class="q" x="450" y="380" text-anchor="middle">4 · é achado real ou isca?</text>
-  <text class="q" x="450" y="396" text-anchor="middle">(leva a algum lugar?)</text>
-  <rect class="abox" x="630" y="354" width="170" height="64" rx="8"/>
-  <text class="a" x="715" y="378" text-anchor="middle">ISCA → descarte e</text>
-  <text class="a" x="715" y="393" text-anchor="middle">volte à enumeração</text>
-  <text class="a" x="715" y="408" text-anchor="middle">(decoy ≠ vetor)</text>
+  <rect id="q4" x="60" y="478" width="420" height="62" rx="6" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+  <text class="q" x="270" y="503" text-anchor="middle">4 · Isto é achado real ou isca?</text>
+  <text class="sub" x="270" y="524" text-anchor="middle">leva ao objetivo, ou não serve para nada?</text>
+  <path id="e-q4-a4" d="M480,509 L566,509" stroke="#f97316" stroke-width="2" fill="none" marker-end="url(#arrow-orange)"/>
+  <text class="lno" x="523" y="501" text-anchor="middle">isca</text>
+  <rect id="a4" x="570" y="478" width="350" height="62" rx="6" fill="#2a1408" stroke="#f97316" stroke-width="1.5"/>
+  <text class="a" x="745" y="503" text-anchor="middle">Descarte sem apego</text>
+  <text class="sub" x="745" y="524" text-anchor="middle">e volte a enumerar</text>
+  <path id="e-q4-out" d="M270,540 L270,570" stroke="#10b981" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <text class="lok" x="282" y="560">achado real</text>
 
-  <!-- bottom: real finding -->
-  <rect class="abox" x="300" y="420" width="300" height="38" rx="8"/>
-  <text class="a" x="450" y="444" text-anchor="middle">ACHADO REAL → nova hipótese + teste (novo time-box)</text>
+  <!-- way out (key moment) -->
+  <rect id="way-out" x="60" y="574" width="420" height="62" rx="6" fill="#052e16" stroke="#10b981" stroke-width="2.5" filter="url(#glow-green)"/>
+  <text class="key" x="270" y="599" text-anchor="middle">DESTRAVOU: nova hipótese + teste</text>
+  <text class="sub" x="270" y="620" text-anchor="middle">com um novo time-box (de volta ao laço)</text>
 
-  <!-- start -> Q1 -->
-  <path class="flow" d="M230,86 L296,86"/>
-  <!-- Q1 yes down to Q2 ; no to action -->
-  <path class="flow" d="M600,86 L626,86"/>
-  <text class="lbl no" x="614" y="78" text-anchor="middle"></text>
-  <path class="flow" d="M450,116 L450,152"/>
-  <text class="lbl no" x="466" y="138">sim</text>
-  <!-- Q2 no down; yes to action -->
-  <path class="flow" d="M600,186 L626,186"/>
-  <path class="flow" d="M450,216 L450,252"/>
-  <text class="lbl no" x="466" y="238">não</text>
-  <!-- Q3 yes down; no to action -->
-  <path class="flow" d="M600,286 L626,286"/>
-  <path class="flow" d="M450,316 L450,352"/>
-  <text class="lbl no" x="466" y="338">sim</text>
-  <!-- Q4 -> real finding; isca to action -->
-  <path class="flow" d="M600,386 L626,386"/>
-  <path class="flow" d="M450,416 L450,418"/>
-  <!-- yes labels on the side arrows to actions -->
-  <text class="lbl yes" x="614" y="48" text-anchor="middle">não</text>
-  <text class="lbl yes" x="614" y="148" text-anchor="middle">sim</text>
-  <text class="lbl yes" x="614" y="248" text-anchor="middle">não</text>
-  <text class="lbl yes" x="614" y="348" text-anchor="middle">isca</text>
+  <!-- legend -->
+  <rect x="570" y="584" width="16" height="12" rx="2" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+  <text class="leg" x="594" y="594">pergunta a responder</text>
+  <rect x="570" y="606" width="16" height="12" rx="2" fill="#2a1408" stroke="#f97316" stroke-width="1.5"/>
+  <text class="leg" x="594" y="616">achou o bloqueio: corrija</text>
+  <rect x="570" y="628" width="16" height="12" rx="2" fill="#052e16" stroke="#10b981" stroke-width="1.5"/>
+  <text class="leg" x="594" y="638">tudo certo: siga em frente</text>
 </svg>

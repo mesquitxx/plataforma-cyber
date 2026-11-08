@@ -1,71 +1,81 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 460" role="img" aria-labelledby="t d">
-  <title id="t">O laço da autonomia: enumerar, levantar hipótese, testar, registrar</title>
-  <desc id="d">Um ciclo fechado de quatro passos que gira no sentido horário. Passo 1, enumerar: colher tudo o que a identidade atual enxerga (arquivos, serviços, permissões, grupos). Passo 2, levantar hipótese: escolher o vetor mais promissor a partir do que a enumeração revelou. Passo 3, testar com time-box: tentar o vetor por um tempo limitado. Passo 4, registrar: anotar comando, evidência e horário, deu certo ou não. Do passo 3 saem duas setas: se funcionou, você muda de identidade e o laço recomeça do passo 1 com a nova identidade; se não funcionou dentro do time-box, você volta ao passo 1 para enumerar de novo, sem insistir no mesmo vetor. No centro, a regra: cada salto reinicia o laço, porque a nova identidade enxerga coisas que a anterior não via.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="960" height="560" role="img" aria-labelledby="t d">
+  <title id="t">O laço da autonomia: enumerar, levantar hipótese, testar com tempo limitado, registrar — e cada salto reinicia o laço</title>
+  <desc id="d">Quatro passos em sequência, da esquerda para a direita: 1 enumerar tudo o que a conta atual enxerga; 2 levantar hipótese, escolhendo o caminho mais promissor; 3 testar por tempo limitado (time-box); 4 registrar comando, saída e horário, tenha dado certo ou não. Do passo 4 saem duas voltas para o passo 1. A laranja, tracejada: não funcionou, descarte o caminho e enumere de novo com a mesma conta. A verde, em destaque: funcionou, você virou outra conta (por exemplo de www-data para karen, depois root) e recomeça do passo 1 como essa conta nova, porque ela enxerga coisas que a anterior não via.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .st { font-size: 14px; font-weight: 700; fill: #5cc8d8; }
-    .n { font-size: 10.5px; fill: #cfe0d6; }
-    .box { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2; }
-    .center { fill: #16201b; stroke: #5ee08a; stroke-width: 2; }
-    .cx { font-size: 11px; fill: #5ee08a; font-weight: 700; }
-    .cn { font-size: 9.5px; fill: #9fb0a6; }
-    .flow { stroke: #9fb0a6; stroke-width: 2.5; fill: none; marker-end: url(#ac); }
-    .ok { stroke: #5ee08a; stroke-width: 2.5; fill: none; marker-end: url(#ag); }
-    .no { stroke: #e0a15e; stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; marker-end: url(#ao); }
-    .lok { font-size: 9.5px; fill: #5ee08a; }
-    .lno { font-size: 9.5px; fill: #e0a15e; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'DejaVu Sans Mono', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 17px; font-weight: 700; }
+    .key { font-size: 14px; font-weight: 700; fill: #10b981; }
+    .keysub { font-size: 12px; fill: #cbd5e1; }
+    .step { font-size: 14px; font-weight: 700; fill: #38bdf8; }
+    .sub { font-size: 12px; fill: #cbd5e1; }
+    .lno { font-size: 12px; font-weight: 700; fill: #f97316; }
+    .lok { font-size: 12px; font-weight: 700; fill: #10b981; }
+    .leg { font-size: 12px; fill: #94a3b8; }
   </style>
   <defs>
-    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
-    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5ee08a"/></marker>
-    <marker id="ao" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#e0a15e"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="arrow-cyan" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#38bdf8"/></marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#10b981"/></marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f97316"/></marker>
+    <filter id="glow-green"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-  <rect width="760" height="460" fill="#121815"/>
-  <text class="t" x="30" y="36">O laço da autonomia — o que fazer quando ninguém te diz o próximo passo</text>
+  <rect width="960" height="560" fill="url(#bg-grad)"/>
 
-  <!-- 1 enumerar (top-left) -->
-  <rect class="box" x="70" y="90" width="230" height="86" rx="8"/>
-  <text class="st" x="185" y="120" text-anchor="middle">1 · enumerar</text>
-  <text class="n" x="185" y="142" text-anchor="middle">tudo o que ESTA identidade vê:</text>
-  <text class="n" x="185" y="158" text-anchor="middle">arquivos, serviços, perms, grupos</text>
+  <text id="title" class="title" x="480" y="38" text-anchor="middle">O laço da autonomia — a resposta para “e agora?”</text>
 
-  <!-- 2 hipótese (top-right) -->
-  <rect class="box" x="460" y="90" width="230" height="86" rx="8"/>
-  <text class="st" x="575" y="120" text-anchor="middle">2 · hipótese</text>
-  <text class="n" x="575" y="142" text-anchor="middle">escolher o vetor mais</text>
-  <text class="n" x="575" y="158" text-anchor="middle">promissor do que apareceu</text>
+  <!-- key idea banner -->
+  <rect id="key-banner" x="150" y="56" width="660" height="56" rx="6" fill="#052e16" stroke="#10b981" stroke-width="1.5"/>
+  <text class="key" x="480" y="80" text-anchor="middle">Cada salto reinicia o laço</text>
+  <text class="keysub" x="480" y="100" text-anchor="middle">virou outra conta? enumere de novo, do zero — ela vê o que a anterior não via</text>
 
-  <!-- 3 testar (bottom-right) -->
-  <rect class="box" x="460" y="300" width="230" height="86" rx="8"/>
-  <text class="st" x="575" y="330" text-anchor="middle">3 · testar (time-box)</text>
-  <text class="n" x="575" y="352" text-anchor="middle">tentar o vetor por um</text>
-  <text class="n" x="575" y="368" text-anchor="middle">tempo LIMITADO</text>
+  <!-- steps -->
+  <rect id="step-1" x="40" y="150" width="190" height="100" rx="6" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+  <text class="step" x="135" y="180" text-anchor="middle">1 · ENUMERAR</text>
+  <text class="sub" x="135" y="204" text-anchor="middle">tudo o que a conta</text>
+  <text class="sub" x="135" y="222" text-anchor="middle">atual enxerga</text>
 
-  <!-- 4 registrar (bottom-left) -->
-  <rect class="box" x="70" y="300" width="230" height="86" rx="8"/>
-  <text class="st" x="185" y="330" text-anchor="middle">4 · registrar</text>
-  <text class="n" x="185" y="352" text-anchor="middle">comando + evidência + horário</text>
-  <text class="n" x="185" y="368" text-anchor="middle">(deu certo OU não)</text>
+  <rect id="step-2" x="270" y="150" width="190" height="100" rx="6" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+  <text class="step" x="365" y="180" text-anchor="middle">2 · HIPÓTESE</text>
+  <text class="sub" x="365" y="204" text-anchor="middle">escolher o caminho</text>
+  <text class="sub" x="365" y="222" text-anchor="middle">mais promissor</text>
 
-  <!-- center rule -->
-  <rect class="center" x="300" y="200" width="160" height="76" rx="8"/>
-  <text class="cx" x="380" y="228" text-anchor="middle">cada salto</text>
-  <text class="cx" x="380" y="244" text-anchor="middle">reinicia o laço</text>
-  <text class="cn" x="380" y="262" text-anchor="middle">a nova identidade vê</text>
+  <rect id="step-3" x="500" y="150" width="190" height="100" rx="6" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+  <text class="step" x="595" y="180" text-anchor="middle">3 · TESTAR</text>
+  <text class="sub" x="595" y="204" text-anchor="middle">por tempo limitado</text>
+  <text class="sub" x="595" y="222" text-anchor="middle">(time-box ~20 min)</text>
 
-  <!-- arrows of the cycle -->
-  <path class="flow" d="M300,133 L455,133"/>
-  <path class="flow" d="M575,176 L575,296"/>
-  <!-- test -> register (no / dentro do time-box, não achou) -->
-  <path class="no" d="M460,355 L305,355"/>
-  <text class="lno" x="382" y="348" text-anchor="middle">não funcionou → volta a enumerar</text>
-  <!-- register -> enumerate (loop back up) -->
-  <path class="flow" d="M185,300 L185,180"/>
-  <!-- test -> success leaves the loop -->
-  <path class="ok" d="M690,343 L742,343 L742,133 L694,133"/>
-  <text class="lok" x="726" y="240" text-anchor="middle">funcionou:</text>
-  <text class="lok" x="726" y="256" text-anchor="middle">nova</text>
-  <text class="lok" x="726" y="272" text-anchor="middle">identidade,</text>
-  <text class="lok" x="726" y="288" text-anchor="middle">recomeça</text>
+  <rect id="step-4" x="730" y="150" width="190" height="100" rx="6" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+  <text class="step" x="825" y="180" text-anchor="middle">4 · REGISTRAR</text>
+  <text class="sub" x="825" y="204" text-anchor="middle">comando + saída</text>
+  <text class="sub" x="825" y="222" text-anchor="middle">+ horário, sempre</text>
+
+  <path id="e-1-2" d="M230,200 L266,200" stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arrow-cyan)"/>
+  <path id="e-2-3" d="M460,200 L496,200" stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arrow-cyan)"/>
+  <path id="e-3-4" d="M690,200 L726,200" stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arrow-cyan)"/>
+
+  <!-- failure loop: same identity -->
+  <path id="e-fail" d="M790,250 L790,310 L170,310 L170,254" stroke="#f97316" stroke-width="2" stroke-dasharray="7 5" fill="none" marker-end="url(#arrow-orange)"/>
+  <text class="lno" x="480" y="300" text-anchor="middle">não funcionou → descarte o caminho e enumere de novo (mesma conta)</text>
+
+  <!-- success loop: new identity (key moment) -->
+  <path id="e-ok-a" d="M860,250 L860,420 L654,420" stroke="#10b981" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <text class="lok" x="872" y="370">funcionou</text>
+  <rect id="new-identity" x="310" y="370" width="340" height="100" rx="6" fill="#052e16" stroke="#10b981" stroke-width="2.5" filter="url(#glow-green)"/>
+  <text class="key" x="480" y="398" text-anchor="middle">VOCÊ VIROU OUTRA CONTA</text>
+  <text class="sub" x="480" y="422" text-anchor="middle">www-data → karen → root</text>
+  <text class="sub" x="480" y="444" text-anchor="middle">o que muda: o que você enxerga</text>
+  <path id="e-ok-b" d="M310,420 L90,420 L90,254" stroke="#10b981" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <text class="lok" x="104" y="384">recomece do 1</text>
+  <text class="lok" x="104" y="400">como a nova conta</text>
+
+  <!-- legend -->
+  <line x1="180" y1="520" x2="210" y2="520" stroke="#38bdf8" stroke-width="2"/>
+  <text class="leg" x="218" y="524">passos do laço</text>
+  <line x1="380" y1="520" x2="410" y2="520" stroke="#10b981" stroke-width="3"/>
+  <text class="leg" x="418" y="524">funcionou / nova conta</text>
+  <line x1="630" y1="520" x2="660" y2="520" stroke="#f97316" stroke-width="2" stroke-dasharray="7 5"/>
+  <text class="leg" x="668" y="524">não funcionou</text>
 </svg>
