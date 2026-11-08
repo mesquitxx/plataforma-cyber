@@ -1,79 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-labelledby="t d">
-  <title id="t">As três trocas do protocolo Kerberos e os pontos onde o Kerberoasting e o AS-REP roasting extraem material quebrável</title>
-  <desc id="d">O diagrama mostra, em três faixas horizontais, o fluxo normal do Kerberos entre VOCÊ (a conta de domínio que o atacante controla, à esquerda) e o controlador de domínio (KDC, à direita). Troca 1, Autenticação: você envia um AS-REQ ao serviço de autenticação (AS) e recebe de volta um AS-REP contendo o TGT, o ticket-granting ticket. Um aviso em destaque marca aqui o AS-REP roasting: se a conta dispensa a pré-autenticação (bit DONT_REQ_PREAUTH), parte do AS-REP vem cifrada com uma chave derivada da senha do usuário, e qualquer um pode pedir esse AS-REP e quebrá-lo offline, sem nem ter a senha. Troca 2, Ticket de serviço: você apresenta o TGT num TGS-REQ ao serviço de concessão de tickets (TGS) e recebe um TGS-REP contendo o service ticket. Outro aviso marca aqui o Kerberoasting: o service ticket é cifrado com uma chave derivada da senha da conta de serviço (service account), então qualquer usuário autenticado pede o ticket e quebra essa senha offline. Troca 3, Uso: você apresenta o service ticket ao serviço de aplicação (um SQL Server, um IIS) num AP-REQ. Uma faixa embaixo lembra que o pass-the-hash não usa Kerberos: ele é do protocolo NTLM, onde o NT hash por si só prova a identidade, sem senha e sem ticket.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" role="img" aria-labelledby="t d">
+  <title id="t">As três trocas do Kerberos e onde o atacante rouba a senha</title>
+  <desc id="d">Em duas das três trocas do Kerberos, o KDC (controlador de domínio, à direita) devolve a VOCÊ (a conta de domínio que o atacante controla, à esquerda) um ticket cuja parte sensível é cifrada com a senha de uma conta. Troca 1, Autenticação: você manda o AS-REQ e recebe o AS-REP com o TGT; se a conta não exige pré-autenticação, esse AS-REP vem cifrado com a chave do usuário — é onde o AS-REP roasting morde. Troca 2, Ticket de serviço: você apresenta o TGT e o SPN num TGS-REQ e recebe o TGS-REP com o service ticket, cifrado com a chave da conta de serviço — é onde o Kerberoasting morde. O que o atacante ganha: ele pega a parte cifrada dos dois tickets, testa senhas offline no próprio PC e, quando uma decifra, descobriu a senha, sem falar de novo com o domínio. A troca 3 (uso) só apresenta o ticket ao serviço e não entrega material novo. O pass-the-hash fica fora: é do protocolo NTLM, não do Kerberos.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .vec { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .ctl { font-size: 10px; fill: #9fb0a6; }
-    .act { font-size: 11px; font-weight: 700; fill: #5ee08a; }
-    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
-    .you { fill: #16201b; stroke: #9fb0a6; stroke-width: 2; }
-    .sys { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
-    .lbl { font-size: 12.5px; font-weight: 700; }
-    .flow { stroke: #5cc8d8; stroke-width: 2; fill: none; marker-end: url(#ac); }
-    .back { stroke: #9fb0a6; stroke-width: 2; fill: none; marker-end: url(#ag); stroke-dasharray: 4 3; }
-    .bite { fill: #20160f; stroke: #e0a05e; stroke-width: 2; }
-    .bitetx { font-size: 10.5px; font-weight: 700; fill: #e0a05e; }
-    .bitesub { font-size: 9.5px; fill: #d8b68e; }
-    .rule { font-size: 11.5px; fill: #cfe0d6; }
-    .ex { font-size: 11px; font-weight: 700; fill: #5cc8d8; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 17px; font-weight: 700; }
+    .sub { font-size: 11.5px; fill: #94a3b8; }
+    .colname { font-size: 13px; font-weight: 700; }
+    .colsub { font-size: 10px; fill: #94a3b8; }
+    .lane { font-size: 12px; font-weight: 700; fill: #38bdf8; }
+    .msg { font-size: 10px; fill: #94a3b8; }
+    .bitetx { font-size: 11px; font-weight: 700; fill: #f97316; }
+    .bitesub { font-size: 9.5px; fill: #fdba74; }
+    .gaintitle { font-size: 12px; font-weight: 700; fill: #34d399; }
+    .gaintx { font-size: 11.5px; fill: #e2e8f0; }
+    .muted { font-size: 10.5px; fill: #94a3b8; }
+    .mutedbold { font-size: 10.5px; font-weight: 700; fill: #94a3b8; }
+    .legtx { font-size: 10.5px; fill: #cbd5e1; }
   </style>
   <defs>
-    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
-    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="ac" markerWidth="9" markerHeight="7" refX="7.5" refY="3.5" orient="auto"><polygon points="0 0, 8 3.5, 0 7" fill="#38bdf8"/></marker>
+    <marker id="ao" markerWidth="9" markerHeight="7" refX="7.5" refY="3.5" orient="auto"><polygon points="0 0, 8 3.5, 0 7" fill="#f97316"/></marker>
   </defs>
-  <rect width="960" height="600" fill="#121815"/>
-  <text class="t" x="30" y="34">Kerberos em três trocas — e onde cada ataque morde</text>
+  <rect width="960" height="600" fill="url(#bg-grad)"/>
 
-  <!-- VOCE (tall, left) -->
-  <rect class="you" x="24" y="70" width="150" height="400" rx="8"/>
-  <text class="lbl" x="99" y="255" text-anchor="middle">VOCÊ</text>
-  <text class="ctl" x="99" y="275" text-anchor="middle">conta de</text>
-  <text class="ctl" x="99" y="289" text-anchor="middle">domínio</text>
-  <text class="ctl" x="99" y="303" text-anchor="middle">(j.silva)</text>
+  <text class="title" x="30" y="36">As três trocas do Kerberos — e onde o atacante rouba a senha</text>
+  <text class="sub" x="30" y="58">Em duas trocas, o KDC devolve um ticket cifrado com a senha de uma conta; o atacante quebra esse ticket offline.</text>
 
-  <!-- Lane 1: AS -->
-  <text class="ex" x="196" y="86">Troca 1 — Autenticação</text>
-  <rect class="box" x="640" y="78" width="296" height="86" rx="8"/>
-  <text class="vec" x="658" y="102">AS · serviço de autenticação</text>
-  <text class="ctl" x="658" y="120">valida você e emite o TGT</text>
-  <text class="act" x="658" y="140">devolve: AS-REP { TGT }</text>
-  <path class="flow" d="M176,100 L636,100"/>
-  <text class="ctl" x="400" y="95" text-anchor="middle">① AS-REQ</text>
-  <path class="back" d="M636,135 L176,135"/>
-  <text class="ctl" x="400" y="130" text-anchor="middle">AS-REP → TGT</text>
+  <!-- VOCE column -->
+  <rect x="28" y="84" width="146" height="220" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="1.5"/>
+  <text class="colname" x="101" y="178" text-anchor="middle">VOCÊ</text>
+  <text class="colsub" x="101" y="198" text-anchor="middle">conta de domínio</text>
+  <text class="colsub" x="101" y="212" text-anchor="middle">que o atacante</text>
+  <text class="colsub" x="101" y="226" text-anchor="middle">controla (j.silva)</text>
 
-  <!-- bite 1: AS-REP roasting -->
-  <rect class="bite" x="196" y="176" width="430" height="48" rx="6"/>
-  <text class="bitetx" x="210" y="196">↯ AS-REP roasting</text>
-  <text class="bitesub" x="210" y="212">conta sem pré-auth → o AS-REP vem cifrado com a chave do usuário: quebra offline, sem senha</text>
+  <!-- KDC column -->
+  <rect x="786" y="84" width="146" height="220" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text class="colname" x="859" y="185" text-anchor="middle" fill="#38bdf8">KDC</text>
+  <text class="colsub" x="859" y="205" text-anchor="middle">controlador</text>
+  <text class="colsub" x="859" y="219" text-anchor="middle">de domínio</text>
 
-  <!-- Lane 2: TGS -->
-  <text class="ex" x="196" y="262">Troca 2 — Ticket de serviço</text>
-  <rect class="box" x="640" y="254" width="296" height="86" rx="8"/>
-  <text class="vec" x="658" y="278">TGS · concessão de tickets</text>
-  <text class="ctl" x="658" y="296">recebe o TGT e emite o ticket</text>
-  <text class="act" x="658" y="316">devolve: TGS-REP { service ticket }</text>
-  <path class="flow" d="M176,276 L636,276"/>
-  <text class="ctl" x="400" y="271" text-anchor="middle">② TGS-REQ + TGT + SPN</text>
-  <path class="back" d="M636,311 L176,311"/>
-  <text class="ctl" x="400" y="306" text-anchor="middle">TGS-REP → service ticket</text>
+  <!-- Lane 1 -->
+  <text class="lane" x="196" y="104">Troca 1 — Autenticação</text>
+  <line x1="174" y1="120" x2="784" y2="120" stroke="#38bdf8" stroke-width="1.8" marker-end="url(#ac)"/>
+  <text class="msg" x="480" y="116" text-anchor="middle">① AS-REQ</text>
+  <line x1="786" y1="140" x2="176" y2="140" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#ac)"/>
+  <text class="msg" x="480" y="136" text-anchor="middle">AS-REP → TGT</text>
+  <rect x="196" y="150" width="568" height="36" rx="5" fill="#1c1008" stroke="#f97316" stroke-width="1.6"/>
+  <text class="bitetx" x="210" y="166">↯ AS-REP roasting — conta sem pré-autenticação</text>
+  <text class="bitesub" x="210" y="180">o AS-REP vem cifrado com a chave (senha) do usuário</text>
 
-  <!-- bite 2: Kerberoasting -->
-  <rect class="bite" x="196" y="352" width="430" height="48" rx="6"/>
-  <text class="bitetx" x="210" y="372">↯ Kerberoasting</text>
-  <text class="bitesub" x="210" y="388">service ticket cifrado com a chave da service account: qualquer um pede e quebra offline</text>
+  <!-- Lane 2 -->
+  <text class="lane" x="196" y="210">Troca 2 — Ticket de serviço</text>
+  <line x1="174" y1="228" x2="784" y2="228" stroke="#38bdf8" stroke-width="1.8" marker-end="url(#ac)"/>
+  <text class="msg" x="480" y="224" text-anchor="middle">② TGS-REQ + TGT + SPN</text>
+  <line x1="786" y1="248" x2="176" y2="248" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#ac)"/>
+  <text class="msg" x="480" y="244" text-anchor="middle">TGS-REP → service ticket</text>
+  <rect x="196" y="258" width="568" height="36" rx="5" fill="#1c1008" stroke="#f97316" stroke-width="1.6"/>
+  <text class="bitetx" x="210" y="274">↯ Kerberoasting — conta de serviço com SPN</text>
+  <text class="bitesub" x="210" y="288">o service ticket vem cifrado com a chave (senha) da conta de serviço</text>
 
-  <!-- Lane 3: use -->
-  <text class="ex" x="196" y="438">Troca 3 — Uso</text>
-  <rect class="sys" x="640" y="430" width="296" height="40" rx="8"/>
-  <text class="lbl" x="788" y="455" text-anchor="middle" fill="#5cc8d8">Serviço (SQL / IIS)</text>
-  <path class="flow" d="M176,450 L636,450"/>
-  <text class="ctl" x="400" y="445" text-anchor="middle">③ AP-REQ + service ticket</text>
+  <!-- offline crack arrow -->
+  <line x1="480" y1="296" x2="480" y2="326" stroke="#f97316" stroke-width="2" marker-end="url(#ao)"/>
+  <text class="bitesub" x="492" y="316" fill="#f97316">quebra offline</text>
 
-  <!-- rule: pass-the-hash is NTLM -->
-  <rect class="box" x="24" y="510" width="912" height="60" rx="8"/>
-  <text class="act" x="44" y="535">pass-the-hash não usa nada disto.</text>
-  <text class="rule" x="44" y="555">É do protocolo NTLM: o NT hash, por si só, prova a identidade — sem senha em claro e sem nenhum ticket Kerberos.</text>
+  <!-- Gain band (climax) -->
+  <rect x="28" y="330" width="904" height="74" rx="6" fill="#052e16" stroke="#34d399" stroke-width="2"/>
+  <text class="gaintitle" x="48" y="354">O que o atacante ganha com as duas mordidas acima</text>
+  <text class="gaintx" x="48" y="376">pega a parte cifrada dos dois tickets e testa senhas no próprio PC, offline —</text>
+  <text class="gaintx" x="48" y="394">quando uma decifra, achou a senha, sem nunca mais falar com o domínio.</text>
+
+  <!-- Troca 3 note (secondary) -->
+  <text class="mutedbold" x="30" y="432">Troca 3 — Uso:</text>
+  <text class="muted" x="138" y="432">você só apresenta o service ticket ao serviço (SQL / IIS); nada novo para quebrar.</text>
+
+  <!-- Pass-the-hash out of scope -->
+  <rect x="28" y="446" width="904" height="56" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="1.5"/>
+  <text class="mutedbold" x="48" y="470">pass-the-hash fica fora deste fluxo.</text>
+  <text class="muted" x="48" y="490">É do protocolo NTLM, não do Kerberos: o NT hash, por si só, já prova a identidade — sem senha em claro e sem ticket.</text>
+
+  <!-- Legend -->
+  <line x1="30" y1="534" x2="58" y2="534" stroke="#38bdf8" stroke-width="2.4"/>
+  <text class="legtx" x="64" y="538">troca normal do Kerberos</text>
+  <rect x="246" y="528" width="16" height="12" rx="2" fill="#1c1008" stroke="#f97316" stroke-width="1.6"/>
+  <text class="legtx" x="268" y="538">onde o ataque morde</text>
+  <rect x="432" y="528" width="16" height="12" rx="2" fill="#052e16" stroke="#34d399" stroke-width="1.6"/>
+  <text class="legtx" x="454" y="538">o que o atacante ganha</text>
+  <rect x="640" y="528" width="16" height="12" rx="2" fill="#0f172a" stroke="#64748b" stroke-width="1.6"/>
+  <text class="legtx" x="662" y="538">fora do foco (pass-the-hash)</text>
 </svg>

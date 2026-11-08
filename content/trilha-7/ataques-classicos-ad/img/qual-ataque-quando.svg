@@ -1,81 +1,102 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" role="img" aria-labelledby="t d">
-  <title id="t">Árvore de decisão: qual dos três ataques clássicos de Active Directory se aplica a cada achado da enumeração</title>
-  <desc id="d">No topo, uma caixa representa o ponto de partida: um achado da enumeração de domínio feita no módulo 7.2. Dela descem três ramos, um para cada ataque, cada ramo com uma pergunta, o ataque correspondente e o que se obtém. Ramo da esquerda: a pergunta é "tenho só o NT hash de uma conta, sem a senha em claro?"; se sim, o ataque é pass-the-hash, e o resultado é autenticar usando o próprio hash como credencial, sem quebrar nada e sem nunca aprender a senha. Ramo do meio: a pergunta é "é uma conta de usuário com servicePrincipalName preenchido?"; se sim, o ataque é Kerberoasting, e o resultado é pedir o ticket de serviço ao KDC e quebrar offline a senha da conta de serviço. Ramo da direita: a pergunta é "a conta tem o bit DONT_REQ_PREAUTH ligado?"; se sim, o ataque é AS-REP roasting, e o resultado é pedir o AS-REP e quebrar offline a senha do usuário, sem nem precisar de uma credencial inicial. Uma faixa embaixo resume: Kerberoasting e AS-REP roasting recuperam a senha quebrando offline; pass-the-hash dispensa a senha porque o hash já é a credencial.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="960" height="560" role="img" aria-labelledby="t d">
+  <title id="t">Qual ataque usar para cada achado da enumeração, e o que o atacante ganha em cada um</title>
+  <desc id="d">Do achado da enumeração do módulo 7.2 descem três ramos, um por ataque, cada um com a pergunta que decide, o ataque e o que o atacante ganha. Ramo da esquerda: tenho só o NT hash da conta, sem a senha em claro? Se sim, pass-the-hash — autentica usando o próprio hash como credencial, sem quebrar nada. Ramo do meio: é uma conta de usuário com SPN preenchido? Se sim, Kerberoasting — pede o service ticket e quebra offline a senha da conta de serviço. Ramo da direita: a conta está sem pré-autenticação (bit DONT_REQ_PREAUTH)? Se sim, AS-REP roasting — pede o AS-REP e quebra offline a senha do usuário. Em todos, o desfecho é uma credencial nas mãos do atacante: os dois roasting recuperam a senha quebrando offline; o pass-the-hash dispensa a senha porque o hash já é a credencial.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .q { font-size: 11px; font-weight: 700; fill: #e6ede8; }
-    .ctl { font-size: 10px; fill: #9fb0a6; }
-    .res { font-size: 10px; fill: #cfe0d6; }
-    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
-    .root { fill: #16201b; stroke: #9fb0a6; stroke-width: 2; }
-    .atk { fill: #0f1b20; stroke: #5cc8d8; stroke-width: 2.5; }
-    .atktx { font-size: 13px; font-weight: 700; fill: #5cc8d8; }
-    .flow { stroke: #9fb0a6; stroke-width: 2; fill: none; marker-end: url(#ac); }
-    .rule { font-size: 11.5px; fill: #cfe0d6; }
+    text { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; fill: #e2e8f0; }
+    .title { font-size: 17px; font-weight: 700; }
+    .sub { font-size: 11.5px; fill: #94a3b8; }
+    .rootlbl { font-size: 12px; font-weight: 700; fill: #38bdf8; }
+    .rootsub { font-size: 10px; fill: #94a3b8; }
+    .qlbl { font-size: 11.5px; font-weight: 700; fill: #38bdf8; }
+    .q { font-size: 11px; font-weight: 700; }
+    .qsub { font-size: 9.5px; fill: #94a3b8; }
+    .atk { font-size: 13px; font-weight: 700; fill: #f97316; }
+    .gainlbl { font-size: 9.5px; font-weight: 700; fill: #34d399; }
+    .gain { font-size: 10.5px; fill: #e2e8f0; }
+    .rule { font-size: 11px; fill: #cbd5e1; }
+    .rulebold { font-size: 11px; font-weight: 700; }
+    .legtx { font-size: 10.5px; fill: #cbd5e1; }
   </style>
   <defs>
-    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#9fb0a6"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <marker id="ac" markerWidth="9" markerHeight="7" refX="7.5" refY="3.5" orient="auto"><polygon points="0 0, 8 3.5, 0 7" fill="#64748b"/></marker>
+    <marker id="ao" markerWidth="9" markerHeight="7" refX="7.5" refY="3.5" orient="auto"><polygon points="0 0, 8 3.5, 0 7" fill="#f97316"/></marker>
   </defs>
-  <rect width="960" height="520" fill="#121815"/>
-  <text class="t" x="30" y="34">Qual ataque quando: do achado da enumeração ao ataque certo</text>
+  <rect width="960" height="560" fill="url(#bg-grad)"/>
+
+  <text class="title" x="30" y="36">Qual ataque quando — e o que o atacante ganha em cada um</text>
+  <text class="sub" x="30" y="58">Cada achado da enumeração aponta para um ataque; o fim é sempre uma credencial — por quebra offline ou pelo hash que já basta.</text>
 
   <!-- root -->
-  <rect class="root" x="360" y="56" width="240" height="46" rx="8"/>
-  <text class="q" x="480" y="78" text-anchor="middle">achado da enumeração (7.2)</text>
-  <text class="ctl" x="480" y="94" text-anchor="middle">uma conta e seus atributos</text>
+  <rect x="360" y="78" width="240" height="48" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+  <text class="rootlbl" x="480" y="100" text-anchor="middle">achado da enumeração (7.2)</text>
+  <text class="rootsub" x="480" y="116" text-anchor="middle">uma conta e seus atributos</text>
 
   <!-- branch connectors -->
-  <path class="flow" d="M400,102 C300,120 160,120 160,150"/>
-  <path class="flow" d="M480,102 L480,150"/>
-  <path class="flow" d="M560,102 C660,120 800,120 800,150"/>
+  <path d="M400,126 C260,150 172,150 172,172" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#ac)"/>
+  <path d="M480,126 L480,172" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#ac)"/>
+  <path d="M560,126 C700,150 788,150 788,172" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#ac)"/>
 
-  <!-- COL A: pass-the-hash -->
-  <rect class="box" x="24" y="152" width="272" height="66" rx="8"/>
-  <text class="q" x="40" y="176">tenho só o NT hash</text>
-  <text class="q" x="40" y="192">da conta?</text>
-  <text class="ctl" x="40" y="209">(dumpado do SAM/LSASS, não a senha)</text>
-  <path class="flow" d="M160,218 L160,252"/>
-  <rect class="atk" x="24" y="254" width="272" height="44" rx="8"/>
-  <text class="atktx" x="160" y="281" text-anchor="middle">pass-the-hash</text>
-  <path class="flow" d="M160,298 L160,332"/>
-  <rect class="box" x="24" y="334" width="272" height="78" rx="8"/>
-  <text class="res" x="40" y="356">autentica usando o hash</text>
-  <text class="res" x="40" y="372">como se fosse a senha —</text>
-  <text class="res" x="40" y="388">não quebra nada, nunca</text>
-  <text class="res" x="40" y="404">aprende a senha em claro</text>
+  <!-- ===== Column A: pass-the-hash ===== -->
+  <rect x="28" y="174" width="288" height="66" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.6"/>
+  <text class="qlbl" x="44" y="196">Pergunta</text>
+  <text class="q" x="44" y="214">tenho só o NT hash da conta?</text>
+  <text class="qsub" x="44" y="230">(dumpado do LSASS / SAM, não a senha)</text>
+  <line x1="172" y1="240" x2="172" y2="270" stroke="#f97316" stroke-width="2" marker-end="url(#ao)"/>
+  <rect x="28" y="272" width="288" height="44" rx="6" fill="#1c1008" stroke="#f97316" stroke-width="1.8"/>
+  <text class="atk" x="172" y="300" text-anchor="middle">pass-the-hash</text>
+  <line x1="172" y1="316" x2="172" y2="346" stroke="#f97316" stroke-width="2" marker-end="url(#ao)"/>
+  <rect x="28" y="348" width="288" height="78" rx="6" fill="#052e16" stroke="#34d399" stroke-width="1.8"/>
+  <text class="gainlbl" x="44" y="368">O ATACANTE GANHA</text>
+  <text class="gain" x="44" y="386">autentica usando o hash</text>
+  <text class="gain" x="44" y="402">como se fosse a senha —</text>
+  <text class="gain" x="44" y="418">não quebra nada</text>
 
-  <!-- COL B: Kerberoasting -->
-  <rect class="box" x="344" y="152" width="272" height="66" rx="8"/>
-  <text class="q" x="360" y="176">conta de usuário</text>
-  <text class="q" x="360" y="192">com SPN?</text>
-  <text class="ctl" x="360" y="209">(servicePrincipalName povoado)</text>
-  <path class="flow" d="M480,218 L480,252"/>
-  <rect class="atk" x="344" y="254" width="272" height="44" rx="8"/>
-  <text class="atktx" x="480" y="281" text-anchor="middle">Kerberoasting</text>
-  <path class="flow" d="M480,298 L480,332"/>
-  <rect class="box" x="344" y="334" width="272" height="78" rx="8"/>
-  <text class="res" x="360" y="356">pede o TGS-REP ao KDC e</text>
-  <text class="res" x="360" y="372">quebra offline a senha da</text>
-  <text class="res" x="360" y="388">service account que cifra</text>
-  <text class="res" x="360" y="404">o ticket</text>
+  <!-- ===== Column B: Kerberoasting ===== -->
+  <rect x="336" y="174" width="288" height="66" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.6"/>
+  <text class="qlbl" x="352" y="196">Pergunta</text>
+  <text class="q" x="352" y="214">conta de usuário com SPN?</text>
+  <text class="qsub" x="352" y="230">(servicePrincipalName preenchido)</text>
+  <line x1="480" y1="240" x2="480" y2="270" stroke="#f97316" stroke-width="2" marker-end="url(#ao)"/>
+  <rect x="336" y="272" width="288" height="44" rx="6" fill="#1c1008" stroke="#f97316" stroke-width="1.8"/>
+  <text class="atk" x="480" y="300" text-anchor="middle">Kerberoasting</text>
+  <line x1="480" y1="316" x2="480" y2="346" stroke="#f97316" stroke-width="2" marker-end="url(#ao)"/>
+  <rect x="336" y="348" width="288" height="78" rx="6" fill="#052e16" stroke="#34d399" stroke-width="1.8"/>
+  <text class="gainlbl" x="352" y="368">O ATACANTE GANHA</text>
+  <text class="gain" x="352" y="386">pede o service ticket e</text>
+  <text class="gain" x="352" y="402">quebra offline a senha da</text>
+  <text class="gain" x="352" y="418">conta de serviço</text>
 
-  <!-- COL C: AS-REP roasting -->
-  <rect class="box" x="664" y="152" width="272" height="66" rx="8"/>
-  <text class="q" x="680" y="176">conta com</text>
-  <text class="q" x="680" y="192">DONT_REQ_PREAUTH?</text>
-  <text class="ctl" x="680" y="209">(bit 0x400000 no userAccountControl)</text>
-  <path class="flow" d="M800,218 L800,252"/>
-  <rect class="atk" x="664" y="254" width="272" height="44" rx="8"/>
-  <text class="atktx" x="800" y="281" text-anchor="middle">AS-REP roasting</text>
-  <path class="flow" d="M800,298 L800,332"/>
-  <rect class="box" x="664" y="334" width="272" height="78" rx="8"/>
-  <text class="res" x="680" y="356">pede o AS-REP e quebra</text>
-  <text class="res" x="680" y="372">offline a senha do usuário —</text>
-  <text class="res" x="680" y="388">nem precisa de uma</text>
-  <text class="res" x="680" y="404">credencial inicial</text>
+  <!-- ===== Column C: AS-REP roasting ===== -->
+  <rect x="644" y="174" width="288" height="66" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.6"/>
+  <text class="qlbl" x="660" y="196">Pergunta</text>
+  <text class="q" x="660" y="214">conta sem pré-autenticação?</text>
+  <text class="qsub" x="660" y="230">(bit DONT_REQ_PREAUTH ligado)</text>
+  <line x1="788" y1="240" x2="788" y2="270" stroke="#f97316" stroke-width="2" marker-end="url(#ao)"/>
+  <rect x="644" y="272" width="288" height="44" rx="6" fill="#1c1008" stroke="#f97316" stroke-width="1.8"/>
+  <text class="atk" x="788" y="300" text-anchor="middle">AS-REP roasting</text>
+  <line x1="788" y1="316" x2="788" y2="346" stroke="#f97316" stroke-width="2" marker-end="url(#ao)"/>
+  <rect x="644" y="348" width="288" height="78" rx="6" fill="#052e16" stroke="#34d399" stroke-width="1.8"/>
+  <text class="gainlbl" x="660" y="368">O ATACANTE GANHA</text>
+  <text class="gain" x="660" y="386">pede o AS-REP e quebra</text>
+  <text class="gain" x="660" y="402">offline a senha do usuário —</text>
+  <text class="gain" x="660" y="418">nem precisa de credencial</text>
 
-  <!-- rule -->
-  <rect class="box" x="24" y="452" width="912" height="44" rx="8"/>
-  <text class="rule" x="480" y="479" text-anchor="middle">roasting recupera a senha quebrando offline; pass-the-hash dispensa a senha — o hash já é a credencial</text>
+  <!-- contrast rule -->
+  <rect x="28" y="452" width="904" height="46" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+  <text class="rulebold" x="48" y="473" fill="#34d399">roasting (meio + direita):</text>
+  <text class="rule" x="238" y="473">recupera a senha quebrando offline.</text>
+  <text class="rulebold" x="48" y="491" fill="#f97316">pass-the-hash (esquerda):</text>
+  <text class="rule" x="238" y="491">dispensa a senha — o hash já é a credencial.</text>
+
+  <!-- Legend -->
+  <rect x="560" y="458" width="16" height="12" rx="2" fill="#0f172a" stroke="#38bdf8" stroke-width="1.6"/>
+  <text class="legtx" x="582" y="468">a pergunta que decide</text>
+  <rect x="560" y="478" width="16" height="12" rx="2" fill="#1c1008" stroke="#f97316" stroke-width="1.6"/>
+  <text class="legtx" x="582" y="488">o ataque</text>
+  <rect x="760" y="458" width="16" height="12" rx="2" fill="#052e16" stroke="#34d399" stroke-width="1.6"/>
+  <text class="legtx" x="782" y="468">o que o atacante ganha</text>
 </svg>
