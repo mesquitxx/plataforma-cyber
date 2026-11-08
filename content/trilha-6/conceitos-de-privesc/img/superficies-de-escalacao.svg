@@ -1,77 +1,115 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 560" role="img" aria-labelledby="t d">
-  <title id="t">O lugar da escalação de privilégio na cadeia de ataque e suas superfícies</title>
-  <desc id="d">Em cima, uma linha de quatro caixas da esquerda para a direita mostra a cadeia de um ataque: reconhecimento, acesso inicial (foothold de baixo privilégio), escalação de privilégio (destacada em ciano) e pós-exploração. Setas ligam uma à outra. Da caixa destacada de escalação descem duas colunas de superfícies. À esquerda, as superfícies no Linux: SUID/SGID fora do padrão; sudo mal configurado; Linux capabilities; cron ou timer gravável; PATH sequestrável; serviço rodando como root; credenciais em arquivos; kernel desatualizado. À direita, as superfícies no Windows: serviço com binário ou pasta gravável; unquoted service path; AlwaysInstallElevated; tarefa agendada; DLL hijacking; privilégios de token (SeImpersonate); credenciais no registro e em arquivos; driver de kernel vulnerável. No rodapé, uma faixa resume o método do pentester: enumerar, listar candidatos, priorizar por confiabilidade e ruído, explorar.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 650" width="960" height="650" role="img" aria-labelledby="t d">
+  <title id="t">A escalação é o 3º passo do ataque, e a brecha que ela procura é de 4 tipos</title>
+  <desc id="d">No topo, a cadeia de um ataque em quatro passos: 1. reconhecimento (mapear o alvo), 2. acesso inicial (entrar como usuário fraco), 3. escalação, destacada em laranja (achar e usar a brecha) e 4. pós-exploração, em verde, já como root ou SYSTEM. Do passo 3 desce uma seta, "onde procurar a brecha", até quatro cartões laranja, um por tipo de brecha, cada um com um exemplo no Linux e um no Windows. 1, poder dado a mais (má configuração): no Linux, sudo frouxo ou uma tarefa do root que você pode editar; no Windows, um serviço cuja pasta qualquer um edita. 2, programa com falha (software vulnerável): no Linux, programa SUID com bug ou kernel antigo; no Windows, serviço ou driver com bug. 3, senha esquecida (credenciais): no Linux, senha em arquivo de configuração ou no histórico; no Windows, senha no registro ou em arquivos. 4, recurso legítimo abusado: no Linux, uma capability a mais como cap_setuid; no Windows, um token com SeImpersonate. No rodapé, o método: enumerar, listar candidatos, priorizar, explorar.</desc>
   <style>
-    text { font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; fill: #e6ede8; }
-    .t { font-size: 16px; font-weight: 700; }
-    .step { font-size: 12px; font-weight: 700; }
-    .sub { font-size: 10px; fill: #9fb0a6; }
-    .cur { fill: #5cc8d8; }
-    .box { fill: #16201b; stroke: #2c3a33; stroke-width: 1.5; }
-    .boxcur { fill: #16201b; stroke: #5cc8d8; stroke-width: 2.5; }
-    .h { font-size: 12.5px; font-weight: 700; }
-    .item { font-size: 10.5px; fill: #cfe0d6; }
-    .flow { stroke: #4a5a52; stroke-width: 2; fill: none; marker-end: url(#a); }
-    .drop { stroke: #5cc8d8; stroke-width: 2; fill: none; marker-end: url(#ac); }
-    .method { font-size: 11px; font-weight: 700; fill: #5ee08a; }
+    text { font-family: 'DejaVu Sans Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace; fill: #e2e8f0; letter-spacing: 0.02em; }
+    .title { font-size: 17px; font-weight: 700; }
+    .subtitle { font-size: 13px; fill: #94a3b8; }
+    .step { font-size: 14px; font-weight: 700; }
+    .sub { font-size: 12px; fill: #94a3b8; }
+    .hot { fill: #fb923c; }
+    .gain { fill: #6ee7b7; }
+    .ctitle { font-size: 15px; font-weight: 700; fill: #fb923c; }
+    .ckind { font-size: 12px; fill: #94a3b8; }
+    .os { font-size: 12px; font-weight: 700; fill: #94a3b8; }
+    .ex { font-size: 13px; fill: #e2e8f0; }
+    .drop { font-size: 12px; font-weight: 700; fill: #fb923c; }
+    .method { font-size: 12px; fill: #94a3b8; }
+    .leg { font-size: 12px; fill: #94a3b8; }
   </style>
   <defs>
-    <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#4a5a52"/></marker>
-    <marker id="ac" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#5cc8d8"/></marker>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glow-orange" x="-10%" y="-30%" width="120%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <marker id="arrow-gray" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#94a3b8"/></marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#f97316"/></marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#10b981"/></marker>
   </defs>
-  <rect width="920" height="560" fill="#121815"/>
-  <text class="t" x="30" y="34">Onde a escalação acontece — e o que ela procura</text>
+  <rect width="960" height="650" fill="url(#bg-grad)"/>
 
-  <!-- chain -->
-  <rect class="box" x="30" y="56" width="180" height="54" rx="8"/>
-  <text class="step" x="120" y="80" text-anchor="middle">1. Reconhecimento</text>
-  <text class="sub" x="120" y="98" text-anchor="middle">mapear o alvo</text>
+  <text class="title" x="40" y="42">A escalação é o 3º passo do ataque — e a brecha é sempre de 4 tipos</text>
+  <text class="subtitle" x="40" y="66">Os mesmos 4 tipos valem no Linux e no Windows</text>
 
-  <rect class="box" x="246" y="56" width="180" height="54" rx="8"/>
-  <text class="step" x="336" y="80" text-anchor="middle">2. Acesso inicial</text>
-  <text class="sub" x="336" y="98" text-anchor="middle">foothold de baixo privilégio</text>
+  <!-- attack chain -->
+  <rect x="40" y="88" width="190" height="64" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="1.5"/>
+  <text class="step" x="135" y="115" text-anchor="middle">1. Reconhecimento</text>
+  <text class="sub" x="135" y="137" text-anchor="middle">mapear o alvo</text>
+  <path d="M230,120 L262,120" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow-gray)"/>
 
-  <rect class="boxcur" x="462" y="56" width="196" height="54" rx="8"/>
-  <text class="step cur" x="560" y="80" text-anchor="middle">3. Escalação de</text>
-  <text class="step cur" x="560" y="96" text-anchor="middle">privilégio</text>
+  <rect x="266" y="88" width="200" height="64" rx="6" fill="#0f172a" stroke="#64748b" stroke-width="1.5"/>
+  <text class="step" x="366" y="115" text-anchor="middle">2. Acesso inicial</text>
+  <text class="sub" x="366" y="137" text-anchor="middle">entra como usuário fraco</text>
+  <path d="M466,120 L498,120" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow-gray)"/>
 
-  <rect class="box" x="694" y="56" width="196" height="54" rx="8"/>
-  <text class="step" x="792" y="80" text-anchor="middle">4. Pós-exploração</text>
-  <text class="sub" x="792" y="98" text-anchor="middle">persistência · saque</text>
+  <rect x="502" y="88" width="190" height="64" rx="6" fill="#1c1917" stroke="#f97316" stroke-width="2.5" filter="url(#glow-orange)"/>
+  <text class="step hot" x="597" y="115" text-anchor="middle">3. ESCALAÇÃO</text>
+  <text class="sub" x="597" y="137" text-anchor="middle">achar e usar a brecha</text>
+  <path d="M692,120 L724,120" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
 
-  <path class="flow" d="M210,83 L244,83"/>
-  <path class="flow" d="M426,83 L460,83"/>
-  <path class="flow" d="M658,83 L692,83"/>
+  <rect x="728" y="88" width="192" height="64" rx="6" fill="#052e16" stroke="#10b981" stroke-width="2"/>
+  <text class="step gain" x="824" y="115" text-anchor="middle">4. Pós-exploração</text>
+  <text class="sub" x="824" y="137" text-anchor="middle">já como root / SYSTEM</text>
 
-  <!-- drops to the two surface columns -->
-  <path class="drop" d="M520,110 L300,150"/>
-  <path class="drop" d="M600,110 L620,150"/>
+  <!-- drop from step 3 -->
+  <path d="M597,152 L597,196" stroke="#f97316" stroke-width="2" fill="none" marker-end="url(#arrow-orange)"/>
+  <text class="drop" x="611" y="180">onde procurar a brecha</text>
 
-  <!-- Linux surfaces -->
-  <rect class="box" x="40" y="156" width="390" height="360" rx="8"/>
-  <text class="h cur" x="60" y="182">Superfícies no LINUX</text>
-  <text class="item" x="60" y="212">• SUID / SGID fora do padrão</text>
-  <text class="item" x="60" y="248">• sudo mal configurado (sudo -l)</text>
-  <text class="item" x="60" y="284">• Linux capabilities (getcap)</text>
-  <text class="item" x="60" y="320">• cron / timer gravável rodado por root</text>
-  <text class="item" x="60" y="356">• PATH sequestrável</text>
-  <text class="item" x="60" y="392">• serviço rodando como root</text>
-  <text class="item" x="60" y="428">• credenciais em arquivos de config</text>
-  <text class="item" x="60" y="464">• kernel desatualizado (ex.: Dirty COW)</text>
+  <!-- container of the 4 kinds -->
+  <rect x="40" y="200" width="880" height="350" rx="8" fill="none" stroke="#f97316" stroke-width="1.2" stroke-dasharray="6 5" opacity="0.7"/>
 
-  <!-- Windows surfaces -->
-  <rect class="box" x="490" y="156" width="390" height="360" rx="8"/>
-  <text class="h cur" x="510" y="182">Superfícies no WINDOWS</text>
-  <text class="item" x="510" y="212">• serviço com binário / pasta gravável</text>
-  <text class="item" x="510" y="248">• unquoted service path</text>
-  <text class="item" x="510" y="284">• AlwaysInstallElevated</text>
-  <text class="item" x="510" y="320">• tarefa agendada gravável</text>
-  <text class="item" x="510" y="356">• DLL hijacking (ordem de busca)</text>
-  <text class="item" x="510" y="392">• privilégios de token (SeImpersonate)</text>
-  <text class="item" x="510" y="428">• credenciais no registro / Unattend.xml</text>
-  <text class="item" x="510" y="464">• driver de kernel vulnerável (ex.: CLFS)</text>
+  <!-- card 1 -->
+  <rect x="60" y="222" width="400" height="140" rx="6" fill="#1c1917" stroke="#ea580c" stroke-width="1.5"/>
+  <text class="ctitle" x="80" y="250">1  Poder dado a mais</text>
+  <text class="ckind" x="80" y="270">(má configuração)</text>
+  <text class="os" x="80" y="304">Linux</text>
+  <text class="ex" x="160" y="304">sudo frouxo · tarefa do root</text>
+  <text class="ex" x="160" y="322">que você pode editar</text>
+  <text class="os" x="80" y="348">Windows</text>
+  <text class="ex" x="160" y="348">serviço cuja pasta todos editam</text>
 
-  <!-- method band -->
-  <rect class="box" x="40" y="524" width="840" height="24" rx="6"/>
-  <text class="method" x="460" y="540" text-anchor="middle">método: enumerar → listar candidatos → priorizar (confiabilidade · ruído · estabilidade) → explorar</text>
+  <!-- card 2 -->
+  <rect x="500" y="222" width="400" height="140" rx="6" fill="#1c1917" stroke="#ea580c" stroke-width="1.5"/>
+  <text class="ctitle" x="520" y="250">2  Programa com falha</text>
+  <text class="ckind" x="520" y="270">(software vulnerável)</text>
+  <text class="os" x="520" y="304">Linux</text>
+  <text class="ex" x="600" y="304">programa SUID com bug</text>
+  <text class="ex" x="600" y="322">· kernel antigo</text>
+  <text class="os" x="520" y="348">Windows</text>
+  <text class="ex" x="600" y="348">serviço ou driver com bug</text>
+
+  <!-- card 3 -->
+  <rect x="60" y="390" width="400" height="140" rx="6" fill="#1c1917" stroke="#ea580c" stroke-width="1.5"/>
+  <text class="ctitle" x="80" y="418">3  Senha esquecida</text>
+  <text class="ckind" x="80" y="438">(credenciais)</text>
+  <text class="os" x="80" y="472">Linux</text>
+  <text class="ex" x="160" y="472">senha em arquivo de config</text>
+  <text class="ex" x="160" y="490">· histórico de comandos</text>
+  <text class="os" x="80" y="516">Windows</text>
+  <text class="ex" x="160" y="516">senha no registro ou em arquivo</text>
+
+  <!-- card 4 -->
+  <rect x="500" y="390" width="400" height="140" rx="6" fill="#1c1917" stroke="#ea580c" stroke-width="1.5"/>
+  <text class="ctitle" x="520" y="418">4  Recurso legítimo abusado</text>
+  <text class="ckind" x="520" y="438">(usado para o que não era)</text>
+  <text class="os" x="520" y="472">Linux</text>
+  <text class="ex" x="600" y="472">capability a mais</text>
+  <text class="ex" x="600" y="490">(ex.: cap_setuid)</text>
+  <text class="os" x="520" y="516">Windows</text>
+  <text class="ex" x="600" y="516">token com SeImpersonate</text>
+
+  <!-- method -->
+  <text class="method" x="480" y="580" text-anchor="middle">método: enumerar → listar candidatos → priorizar → explorar</text>
+
+  <!-- legend -->
+  <rect x="160" y="612" width="14" height="14" rx="3" fill="#0f172a" stroke="#64748b" stroke-width="1.5"/>
+  <text class="leg" x="182" y="624">passos do ataque</text>
+  <rect x="352" y="612" width="14" height="14" rx="3" fill="#1c1917" stroke="#f97316" stroke-width="2"/>
+  <text class="leg" x="374" y="624">a escalação e suas brechas</text>
+  <rect x="620" y="612" width="14" height="14" rx="3" fill="#052e16" stroke="#10b981" stroke-width="2"/>
+  <text class="leg" x="642" y="624">o que o atacante ganha</text>
 </svg>
