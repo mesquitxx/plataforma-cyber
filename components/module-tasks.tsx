@@ -1,4 +1,5 @@
 import { CircleCheck, Circle, CirclePlay, Flag, ListChecks, ListTodo, type LucideIcon } from "lucide-react";
+import Link from "next/link";
 import type { ModuleTaskView } from "@/db/queries/progress";
 import type { ProgressStatus, TaskType } from "@/db/schema";
 import { cn } from "@/lib/utils";
@@ -22,15 +23,19 @@ type ModuleTasksProps = {
   moduleSlug: string;
   tasks: ModuleTaskView[];
   moduleCompleted: boolean;
+  /** Link to each graded task's card (the module is paginated: it may be in another part). */
+  taskHrefs?: Record<string, string>;
 };
 
 /**
  * "Tarefas do módulo" panel, generated from the front-matter at the end of
  * every module page. Flags and quizzes link to their cards (graded there);
- * reading, exercise and lab step tasks are ticked by hand. A module without
- * tasks gets a manual "complete / reopen" button instead.
+ * reading, exercise and lab step tasks are ticked by hand. A card may sit in
+ * another part of the paginated module, hence `taskHrefs` (default: anchor
+ * on the same page). A module without tasks gets a manual "complete /
+ * reopen" button instead.
  */
-export function ModuleTasks({ moduleSlug, tasks, moduleCompleted }: ModuleTasksProps) {
+export function ModuleTasks({ moduleSlug, tasks, moduleCompleted, taskHrefs = {} }: ModuleTasksProps) {
   return (
     <section aria-labelledby="tarefas-do-modulo" className="rounded-lg border bg-card">
       <header className="flex items-center justify-between gap-2 border-b px-4 py-3">
@@ -72,9 +77,12 @@ export function ModuleTasks({ moduleSlug, tasks, moduleCompleted }: ModuleTasksP
                 )}
                 <span className="min-w-0 flex-1">
                   {graded ? (
-                    <a href={`#tarefa-${task.slug}`} className="underline-offset-4 hover:underline">
+                    <Link
+                      href={taskHrefs[task.slug] ?? `#tarefa-${task.slug}`}
+                      className="underline-offset-4 hover:underline"
+                    >
                       {task.title}
-                    </a>
+                    </Link>
                   ) : (
                     task.title
                   )}

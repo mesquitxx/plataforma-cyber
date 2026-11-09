@@ -1,7 +1,8 @@
+import { createElement, Fragment, type ReactNode } from "react";
 import type { Metadata } from "next";
-import type { MDXContent } from "mdx/types";
+import type { MDXComponents, MDXContent } from "mdx/types";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { FileText, Lock } from "lucide-react";
 import { FlagInput } from "@/components/content/flag-input";
@@ -9,15 +10,27 @@ import { ModuleGlossary } from "@/components/content/glossary-term";
 import { Quiz } from "@/components/content/quiz";
 import { LabBadge } from "@/components/lab-badge";
 import { LabPanel } from "@/components/labs/lab-panel";
+import type { PartMenuItem } from "@/components/module-part-menu";
+import { ModulePartNav } from "@/components/module-part-nav";
 import { ModuleStateBadge, ModuleStateIcon } from "@/components/module-state";
 import { ModuleTasks } from "@/components/module-tasks";
 import { PageBreadcrumb } from "@/components/page-breadcrumb";
 import { Pager } from "@/components/pager";
+import { ScrollToPartTop } from "@/components/scroll-to-part-top";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { getCurriculum } from "@/db/queries/curriculum";
 import { getModuleTasks } from "@/db/queries/progress";
 import { findModule } from "@/lib/curriculum-state";
+import {
+  mdxTopLevelChildren,
+  PART_PARAM,
+  partHref,
+  resolvePartParam,
+  splitContentChildren,
+  type ModulePlan,
+} from "@/lib/module-pages";
+import { loadModulePlan } from "@/lib/module-pages-server";
 import { contentPhaseForTrack } from "@/lib/roadmap";
 
 type Props = PageProps<"/trilhas/[trackSlug]/[moduleSlug]">;
@@ -36,18 +49,53 @@ async function loadModuleContent(trackSlug: string, moduleSlug: string): Promise
   }
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   await connection();
   const { trackSlug, moduleSlug } = await params;
   const found = findModule(getCurriculum(), trackSlug, moduleSlug);
-  return {
-    title: found ? `${found.module.number} ${found.module.title}` : "Módulo não encontrado",
-  };
+  if (!found) return { title: "Módulo não encontrado" };
+  const title = `${found.module.number} ${found.module.title}`;
+  const total = loadModulePlan(found.track.slug, found.module.slug)?.parts.length ?? 0;
+  if (total < 2) return { title };
+  const { part } = resolvePartParam((await searchParams)[PART_PARAM], total);
+  return { title: `${title} · parte ${part} de ${total}` };
 }
 
-export default async function ModulePage({ params }: Props) {
+type PaginatedContent = {
+  plan: ModulePlan;
+  /** 1-based. */
+  part: number;
+  children: ReactNode[];
+};
+
+/**
+ * Renders the compiled module and keeps only the blocks of the current part
+ * (lib/module-pages.ts). If the module and its pagination plan disagree, the
+ * whole module is shown: pagination must never hide content.
+ */
+function paginate(
+  Content: MDXContent,
+  components: MDXComponents,
+  plan: ModulePlan | null,
+  rawPart: string | string[] | undefined,
+  moduleHref: string,
+): { whole: ReactNode } | PaginatedContent {
+  const tree = Content({ components });
+  const blocks = mdxTopLevelChildren(tree);
+  const split = plan && blocks ? splitContentChildren(blocks, plan) : null;
+  if (!plan || !split) {
+    console.warn(`[module-pages] ${moduleHref}: content and pagination plan disagree; showing the whole module`);
+    return { whole: tree };
+  }
+  const { part, redirectTo } = resolvePartParam(rawPart, plan.parts.length);
+  if (redirectTo !== null) redirect(partHref(moduleHref, redirectTo));
+  return { plan, part, children: split[part - 1] };
+}
+
+export default async function ModulePage({ params, searchParams }: Props) {
   await connection();
   const { trackSlug, moduleSlug } = await params;
+  const query = await searchParams;
   const found = findModule(getCurriculum(), trackSlug, moduleSlug);
   if (!found) notFound();
 
@@ -55,6 +103,39 @@ export default async function ModulePage({ params }: Props) {
   const Content = await loadModuleContent(track.slug, module.slug);
   const tasks = getModuleTasks(module.slug);
   const tasksDone = tasks.filter((t) => t.status === "completed").length;
+
+  const components: MDXComponents = {
+    // Bind the module: MDX authors only write <FlagInput task="..." />.
+    FlagInput: (props: { task: string }) => <FlagInput {...props} moduleSlug={module.slug} />,
+    Quiz: (props: { task: string }) => <Quiz {...props} moduleSlug={module.slug} />,
+    ModuleGlossary: () => <ModuleGlossary moduleSlug={module.slug} />,
+  };
+  const content = Content
+    ? paginate(Content, components, loadModulePlan(track.slug, module.slug), query[PART_PARAM], module.href)
+    : null;
+  const paged = content && "plan" in content ? content : null;
+  const currentPart = paged ? paged.plan.parts[paged.part - 1] : null;
+  const isFirstPart = !paged || paged.part === 1;
+
+  const partItems: PartMenuItem[] =
+    paged?.plan.parts.map((p) => ({
+      number: p.number,
+      href: partHref(module.href, p.number),
+      sectionTitle: p.sectionTitle,
+      subtitle: p.subtitle,
+      hasTasks: p.tasks.length > 0,
+    })) ?? [];
+  // Task cards live in one part each: link there (same part: plain anchor).
+  const taskHrefs: Record<string, string> = {};
+  for (const p of paged?.plan.parts ?? []) {
+    for (const slug of p.tasks) {
+      taskHrefs[slug] = p.number === paged?.part ? `#tarefa-${slug}` : partHref(module.href, p.number, `tarefa-${slug}`);
+    }
+  }
+  const partNav = (label: string) =>
+    paged && paged.plan.parts.length > 1 ? (
+      <ModulePartNav parts={partItems} current={paged.part} label={label} />
+    ) : null;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
@@ -90,8 +171,11 @@ export default async function ModulePage({ params }: Props) {
         )}
       </section>
 
-      {/* Soft lock: the page stays readable, with a warning. */}
-      {module.state === "locked" && (
+      {paged && <ScrollToPartTop part={paged.part} />}
+      {partNav("Partes do módulo (topo)")}
+
+      {/* Soft lock: the page stays readable, with a warning (first part only). */}
+      {isFirstPart && module.state === "locked" && (
         <div
           role="note"
           className="flex gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm"
@@ -115,7 +199,7 @@ export default async function ModulePage({ params }: Props) {
         </div>
       )}
 
-      {module.prerequisites.length > 0 && (
+      {isFirstPart && module.prerequisites.length > 0 && (
         <section className="space-y-2">
           <h2 className="font-mono text-sm text-muted-foreground">$ cat pre-requisitos</h2>
           <ul className="grid gap-1.5 sm:grid-cols-2">
@@ -138,17 +222,27 @@ export default async function ModulePage({ params }: Props) {
       {/* The module's lab, right before the content that uses it. */}
       {module.labSlug && <LabPanel slug={module.labSlug} />}
 
-      {Content ? (
-        <article className="prose prose-lab max-w-none">
-          <Content
-            components={{
-              // Bind the module: MDX authors only write <FlagInput task="..." />.
-              FlagInput: (props: { task: string }) => <FlagInput {...props} moduleSlug={module.slug} />,
-              Quiz: (props: { task: string }) => <Quiz {...props} moduleSlug={module.slug} />,
-              ModuleGlossary: () => <ModuleGlossary moduleSlug={module.slug} />,
-            }}
-          />
-        </article>
+      {content ? (
+        <>
+          <article className="prose prose-lab max-w-none">
+            {paged ? (
+              <>
+                {/* A split section repeats its title (page chrome, not module content). */}
+                {currentPart?.continuation && (
+                  <h2>
+                    {currentPart.sectionTitle}{" "}
+                    <span className="text-base font-normal text-muted-foreground">(continuação)</span>
+                  </h2>
+                )}
+                {/* Spread as static children: the blocks are the MDX's own, unkeyed. */}
+                {createElement(Fragment, null, ...paged.children)}
+              </>
+            ) : (
+              "whole" in content && content.whole
+            )}
+          </article>
+          {partNav("Partes do módulo (fim)")}
+        </>
       ) : (
         <Card className="border-dashed">
           <CardHeader>
@@ -167,7 +261,12 @@ export default async function ModulePage({ params }: Props) {
         </Card>
       )}
 
-      <ModuleTasks moduleSlug={module.slug} tasks={tasks} moduleCompleted={module.state === "completed"} />
+      <ModuleTasks
+        moduleSlug={module.slug}
+        tasks={tasks}
+        moduleCompleted={module.state === "completed"}
+        taskHrefs={taskHrefs}
+      />
 
       <Pager
         previous={previous ? { href: previous.href, label: `${previous.number} ${previous.title}` } : null}

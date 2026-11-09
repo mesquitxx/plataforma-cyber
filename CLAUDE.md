@@ -115,6 +115,14 @@ O detalhamento módulo a módulo está em [`docs/CURRICULO.md`](docs/CURRICULO.m
   flags. **Flags nunca em claro** no MDX, no banco ou no navegador: o
   front-matter guarda hash + salt (`npm run flag:hash`), a validação é uma
   Server Action, e só tentativas **erradas** guardam o valor digitado.
+- Paginação dos módulos (só na exibição; `content/` não muda):
+  `lib/module-pages.ts` (puro) faz o plano com o parser do MDX. Cada `##`
+  vira uma parte, e seções acima de ~2500 palavras são divididas em blocos
+  `###` inteiros. A página compila o MDX inteiro e mostra só os blocos da
+  parte `?parte=N`; se o plano não bater, mostra o módulo todo.
+  `lib/module-pages-server.ts` lê o `.mdx` com cache. `lib/module-pages.test.ts`
+  compila **todos** os módulos e confere que as partes somam o arquivo e o
+  HTML inteiros.
 - `npm run db:migrate` desliga as *foreign keys* em volta do migrador: as
   migrações que recriam tabelas (drizzle-kit) disparariam `ON DELETE` em
   cascata dentro da transação.
